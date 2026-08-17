@@ -1,0 +1,245 @@
+---
+###############################################################################
+# Test plan
+# -----------------------------------------------------------------------------
+# The info module ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2
+# only reads data — the Layer2Stretch MAC address feature exposes no CRUD
+# operations. Coverage below therefore focuses on:
+#   * argument-spec / required-param validation (negative)
+#   * mutually exclusive rules (negative)
+#   * shape and semantics of the list response (empty / non-empty)
+#   * shape and semantics of the get-by-ext_id response
+#   * API-level negative tests when the MAC ext_id is bogus (server returns
+#     "not found" with a specific error code)
+#   * pagination (page/limit) — the only two OData query params that the
+#     server actually implements for this endpoint today; ``filter`` and
+#     ``orderby`` are advertised by the SDK but currently rejected by the
+#     server with ``NETWORKING-10002`` ("Odata Error: Error while parsing
+#     URI"), so we do not assert them here.
+# The tests are written to run against a live Prism Central with or without
+# an existing Layer2 Stretch — when one is found, we exercise the full happy
+# path; when none exists, the list happy-path still succeeds and returns an
+# empty payload while the get-by-ext_id negative paths still fire.
+###############################################################################
+
+- name: Start LearnedMacAddressesByLayer2StretchId info tests
+  ansible.builtin.debug:
+    msg: Start LearnedMacAddressesByLayer2StretchId info tests
+
+- name: Set fixed synthetic UUIDs used by negative tests
+  ansible.builtin.set_fact:
+    fake_layer2_stretch_ext_id: "00000000-0000-0000-0000-0000000ffff1"
+    fake_mac_ext_id: "00000000-0000-0000-0000-0000000ffff2"
+
+###############################################################################
+# Negative — argument spec / mutually exclusive validation
+###############################################################################
+
+- name: Call info module without layer2_stretch_ext_id (should fail)
+  nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Verify missing layer2_stretch_ext_id fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'missing required arguments: layer2_stretch_ext_id' in result.msg"
+    success_msg: "Missing required layer2_stretch_ext_id failed as expected"
+    fail_msg: "Missing required layer2_stretch_ext_id did not fail with the expected message"
+
+- name: Call info module with mutually exclusive ext_id and filter (should fail)
+  nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+    layer2_stretch_ext_id: "{{ fake_layer2_stretch_ext_id }}"
+    ext_id: "{{ fake_mac_ext_id }}"
+    filter: "value eq '50:6b:8d:9f:00:11'"
+  register: result
+  ignore_errors: true
+
+- name: Verify mutually exclusive ext_id + filter fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'parameters are mutually exclusive: ext_id|filter' in result.msg"
+    success_msg: "Mutually exclusive ext_id + filter failed as expected"
+    fail_msg: "Mutually exclusive ext_id + filter did not fail with the expected message"
+
+###############################################################################
+# Positive (list) — list against an arbitrary UUID returns an empty payload,
+# not an error. This proves the module handles the empty case correctly and
+# populates the expected result keys.
+###############################################################################
+
+- name: List learned MAC addresses for a synthetic parent stretch (list is empty)
+  nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+    layer2_stretch_ext_id: "{{ fake_layer2_stretch_ext_id }}"
+  register: result
+
+- name: Verify empty list response has correct shape
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response == []
+      - result.layer2_stretch_ext_id == fake_layer2_stretch_ext_id
+      - result.total_available_results == 0
+    success_msg: "Empty list response has correct shape"
+    fail_msg: "Empty list response shape did not match expectations"
+
+- name: List learned MAC addresses with limit=1 (pagination)
+  nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+    layer2_stretch_ext_id: "{{ fake_layer2_stretch_ext_id }}"
+    limit: 1
+  register: result
+
+- name: Verify limit=1 result
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - (result.response | length) <= 1
+      - result.layer2_stretch_ext_id == fake_layer2_stretch_ext_id
+    success_msg: "List with limit=1 returned the expected shape"
+    fail_msg: "List with limit=1 returned an unexpected shape"
+
+- name: List learned MAC addresses with page=0 and limit=5 (pagination)
+  nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+    layer2_stretch_ext_id: "{{ fake_layer2_stretch_ext_id }}"
+    page: 0
+    limit: 5
+  register: result
+
+- name: Verify page + limit pagination response
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - (result.response | length) <= 5
+    success_msg: "List with page + limit returned the expected shape"
+    fail_msg: "List with page + limit returned an unexpected shape"
+
+###############################################################################
+# Discover an existing Layer2Stretch on the cluster (if any) so we can also
+# exercise the happy path with real data. Skip the block gracefully when no
+# stretches exist on the target cluster (this is the case for most lab PCs
+# that don't have Flow Virtual Networking L2 extensions configured).
+###############################################################################
+
+- name: Query Prism Central for existing Layer2 Stretches
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port | default(9440) }}/api/networking/v4.3/config/layer2-stretches"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs | default(false) }}"
+    return_content: true
+    status_code: [200, 401, 403, 404]
+  register: layer2_stretch_lookup
+  ignore_errors: true
+
+- name: Determine whether a real Layer2 Stretch exists
+  ansible.builtin.set_fact:
+    real_layer2_stretch_ext_id: >-
+      {{
+        (layer2_stretch_lookup.json.data
+          | default([], true)
+          | list
+          | first
+          | default({})).extId
+        | default('')
+      }}
+
+- name: Debug — Layer2Stretch discovery outcome
+  ansible.builtin.debug:
+    msg: >-
+      Discovered Layer2 Stretch:
+      {{ real_layer2_stretch_ext_id
+         if real_layer2_stretch_ext_id
+         else 'none (only negative + empty-list paths exercised)' }}
+
+- name: Positive — list all learned MAC addresses on the real stretch
+  when: real_layer2_stretch_ext_id | length > 0
+  block:
+    - name: List all learned MAC addresses (real stretch)
+      nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+        layer2_stretch_ext_id: "{{ real_layer2_stretch_ext_id }}"
+      register: result
+
+    - name: Verify list-all response
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response is iterable
+          - result.layer2_stretch_ext_id == real_layer2_stretch_ext_id
+          - result.total_available_results is defined
+        success_msg: "List all learned MAC addresses succeeded on the real stretch"
+        fail_msg: "List all learned MAC addresses failed on the real stretch"
+
+    - name: Capture a learned MAC ext_id for follow-up tests (if any exist)
+      ansible.builtin.set_fact:
+        real_mac_ext_id: >-
+          {{ (result.response | first | default({})).ext_id | default('') }}
+
+    - name: Positive — get by ext_id when a learned MAC address exists
+      when: real_mac_ext_id | length > 0
+      block:
+        - name: Fetch learned MAC address by external ID
+          nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+            layer2_stretch_ext_id: "{{ real_layer2_stretch_ext_id }}"
+            ext_id: "{{ real_mac_ext_id }}"
+          register: result
+
+        - name: Verify get-by-ext_id response
+          ansible.builtin.assert:
+            that:
+              - result is defined
+              - result.changed == false
+              - result.failed == false
+              - result.response is defined
+              - result.ext_id == real_mac_ext_id
+              - result.layer2_stretch_ext_id == real_layer2_stretch_ext_id
+              - result.response.ext_id == real_mac_ext_id
+              - result.response.value is defined
+              - result.response.mac_type is defined
+            success_msg: "Fetch learned MAC address by ext_id succeeded"
+            fail_msg: "Fetch learned MAC address by ext_id failed"
+
+###############################################################################
+# Negative — API-level errors when the MAC ext_id is bogus. The API returns
+# 500 with the specific "MAC Address ... not found" error code.
+###############################################################################
+
+- name: Negative — get learned MAC address using a bogus ext_id
+  nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+    layer2_stretch_ext_id: "{{ fake_layer2_stretch_ext_id }}"
+    ext_id: "{{ fake_mac_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify get with bogus ext_id fails at the API layer
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - >-
+        'Api Exception raised while fetching learned MAC address info using ext_id and layer2_stretch_ext_id'
+        in result.msg
+      - result.status == 500
+      - result.error == "INTERNAL SERVER ERROR"
+    success_msg: "Get with bogus ext_id failed as expected"
+    fail_msg: "Get with bogus ext_id did not fail as expected"
