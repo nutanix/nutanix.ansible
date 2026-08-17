@@ -1,0 +1,11 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+[ERROR]: couldn't resolve module/action 'nutanix.ncp.ntnx_gateway_v2'. This often indicates a misspelling, missing collection, or incorrect module path.
+Origin: /tmp/codegen/b6996bc99dfa4d0da40c39066225013b/repo/examples/networking/Gateway/gateway_v2.yml:32:7
+
+30         gateway_name: "gateway_ansible_example"
+31
+32     - name: Create a remote BGP network gateway with all applicable fields
+         ^ column 7
+

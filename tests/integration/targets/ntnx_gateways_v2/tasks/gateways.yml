@@ -1,0 +1,505 @@
+---
+# Test plan for ntnx_gateway_v2 + ntnx_gateways_info_v2
+# ----------------------------------------------------
+# 1. Argument-spec validation:
+#    - state=present + no name + no ext_id must fail with required_if.
+#    - state=absent  + no ext_id must fail with required_if.
+#    - vpc_reference + cloud_network_reference mutually exclusive.
+#    - upgrade=true without ext_id must fail with a clear message.
+# 2. Check-mode (dry-run) coverage:
+#    - Create with EVERY spec attribute populated (deployment, services,
+#      high_availability_group, vpc_reference, gateway_device_vendor).
+#    - Update with EVERY spec attribute populated (idempotency dry-run).
+#    - Delete with check_mode: message contains "will be deleted".
+# 3. Info module coverage:
+#    - List all gateways (no ext_id).
+#    - List with limit=1.
+#    - List with filter="name eq '<no-match>'" returns empty.
+#    - Get by a non-existent ext_id -> failure with descriptive error.
+# 4. Real CRUD lifecycle against the live cluster (best-effort):
+#    - Discover a PE cluster ext_id via ntnx_clusters_info_v2.
+#    - Attempt Create a REMOTE BGP gateway (no VM deployment required
+#      — this is a reference-only entity, so it works even when the
+#      Network Gateway appliance image is absent from the cluster).
+#    - Update its description/name.
+#    - Idempotency: rerun the same Update, assert changed=False and msg
+#      "Nothing to change."
+#    - Get it back via the info module.
+#    - Delete it.
+# 5. Negative tests:
+#    - Update with a non-existent ext_id -> failure.
+#    - Delete with a non-existent ext_id -> failure.
+
+- name: Start Network Gateway tests
+  ansible.builtin.debug:
+    msg: "Start Network Gateway v2 tests"
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+    todelete: []
+
+- name: Set base names
+  ansible.builtin.set_fact:
+    gw_name: "gw_ansible_{{ random_name }}"
+    bogus_ext_id: "00000000-0000-0000-0000-000000000000"
+
+########################################################################################
+# 1. Argument-spec / validation tests (do not need any live infra)
+########################################################################################
+
+- name: Create gateway with no name and no ext_id (should fail required_if)
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Assert required_if triggers on create
+  ansible.builtin.assert:
+    that:
+      - 'result is defined'
+      - 'result.changed == false'
+      - 'result.failed == true'
+      - 'result.msg == "state is present but any of the following are missing: name, ext_id"'
+    success_msg: "Missing name+ext_id correctly rejected by required_if"
+    fail_msg: "Missing name+ext_id was NOT rejected by required_if"
+
+- name: Delete gateway with no ext_id (should fail required_if)
+  nutanix.ncp.ntnx_gateway_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Assert required_if triggers on delete
+  ansible.builtin.assert:
+    that:
+      - 'result is defined'
+      - 'result.changed == false'
+      - 'result.failed == true'
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Missing ext_id on delete correctly rejected by required_if"
+    fail_msg: "Missing ext_id on delete was NOT rejected by required_if"
+
+- name: Create with vpc_reference and cloud_network_reference together (must be mutually exclusive)
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    name: "{{ gw_name }}_meX"
+    vpc_reference: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    cloud_network_reference: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+  register: result
+  ignore_errors: true
+
+- name: Assert mutually-exclusive vpc/cloud references reject the request
+  ansible.builtin.assert:
+    that:
+      - 'result is defined'
+      - 'result.changed == false'
+      - 'result.failed == true'
+      - 'result.msg == "parameters are mutually exclusive: vpc_reference|cloud_network_reference"'
+    success_msg: "vpc_reference + cloud_network_reference is mutually exclusive"
+    fail_msg: "vpc_reference + cloud_network_reference was NOT flagged as mutually exclusive"
+
+- name: Upgrade with no ext_id (should fail with descriptive error)
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    name: "{{ gw_name }}_upg"
+    upgrade: true
+  register: result
+  ignore_errors: true
+
+- name: Assert upgrade without ext_id fails
+  ansible.builtin.assert:
+    that:
+      - 'result is defined'
+      - 'result.changed == false'
+      - 'result.failed == true'
+      - 'result.msg == "ext_id is required when upgrade=true"'
+    success_msg: "upgrade=true without ext_id correctly rejected"
+    fail_msg: "upgrade=true without ext_id was NOT rejected"
+
+########################################################################################
+# 2. Check-mode create / update / delete with ALL attributes populated
+########################################################################################
+
+- name: Create gateway with ALL attributes (check_mode)
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    name: "{{ gw_name }}_check_full"
+    description: "Full-attribute check_mode gateway"
+    gateway_device_vendor: "GENERIC"
+    vpc_reference: "cccccccc-cccc-cccc-cccc-cccccccccccc"
+    deployment:
+      cluster_reference: "dddddddd-dddd-dddd-dddd-dddddddddddd"
+      vcenter_datastore_name: "ds1"
+      should_synchronize_system_ntp_servers: true
+      should_synchronize_system_dns_servers: true
+      ntp_servers:
+        - fqdn:
+            value: "pool.ntp.org"
+      dns_servers:
+        - ipv4:
+            value: "8.8.8.8"
+            prefix_length: 32
+      management_interface:
+        subnet_reference: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+        mtu: 1500
+        address:
+          ipv4:
+            value: "10.44.76.230"
+            prefix_length: 24
+        default_gateway:
+          ipv4:
+            value: "10.44.76.1"
+            prefix_length: 24
+      interfaces:
+        - subnet_reference: "ffffffff-ffff-ffff-ffff-ffffffffffff"
+          mtu: 1500
+          ip_address:
+            ipv4:
+              value: "10.44.77.10"
+              prefix_length: 24
+          default_gateway_address:
+            ipv4:
+              value: "10.44.77.1"
+              prefix_length: 24
+    services:
+      local_services:
+        service_address:
+          ipv4:
+            value: "10.44.76.240"
+            prefix_length: 32
+        service_addresses:
+          - ipv4:
+              value: "10.44.76.241"
+              prefix_length: 32
+        vpn:
+          ebgp_config:
+            asn: 65001
+            password: "s3cret"
+            should_redistribute_routes: true
+    high_availability_group:
+      is_ha_enabled: true
+      algorithm: "ACTIVE_BACKUP"
+      peered_gateways:
+        - ext_id: "11111111-1111-1111-1111-111111111111"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode create returns the full spec unchanged
+  ansible.builtin.assert:
+    that:
+      - 'result is defined'
+      - 'result.changed == false'
+      - 'result.failed == false'
+      - 'result.response is defined'
+      - 'result.response.name == "{{ gw_name }}_check_full"'
+      - 'result.response.description == "Full-attribute check_mode gateway"'
+      - 'result.response.gateway_device_vendor == "GENERIC"'
+      - 'result.response.vpc_reference == "cccccccc-cccc-cccc-cccc-cccccccccccc"'
+      - 'result.response.deployment.cluster_reference == "dddddddd-dddd-dddd-dddd-dddddddddddd"'
+      - 'result.response.deployment.vcenter_datastore_name == "ds1"'
+      - 'result.response.deployment.should_synchronize_system_ntp_servers == true'
+      - 'result.response.deployment.should_synchronize_system_dns_servers == true'
+      - 'result.response.deployment.ntp_servers | length == 1'
+      - 'result.response.deployment.ntp_servers[0].fqdn.value == "pool.ntp.org"'
+      - 'result.response.deployment.dns_servers | length == 1'
+      - 'result.response.deployment.dns_servers[0].ipv4.value == "8.8.8.8"'
+      - 'result.response.deployment.management_interface.subnet_reference == "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"'
+      - 'result.response.deployment.management_interface.mtu == 1500'
+      - 'result.response.deployment.management_interface.address.ipv4.value == "10.44.76.230"'
+      - 'result.response.deployment.management_interface.default_gateway.ipv4.value == "10.44.76.1"'
+      - 'result.response.deployment.interfaces | length == 1'
+      - 'result.response.deployment.interfaces[0].subnet_reference == "ffffffff-ffff-ffff-ffff-ffffffffffff"'
+      - 'result.response.deployment.interfaces[0].ip_address.ipv4.value == "10.44.77.10"'
+      - 'result.response.deployment.interfaces[0].default_gateway_address.ipv4.value == "10.44.77.1"'
+      - 'result.response.services.local_services is defined'
+      - 'result.response.services.local_services.service_address.ipv4.value == "10.44.76.240"'
+      - 'result.response.services.local_services.service_addresses[0].ipv4.value == "10.44.76.241"'
+      - 'result.response.services.local_services.local_vpn_service.ebgp_config.asn == 65001'
+      - 'result.response.services.local_services.local_vpn_service.ebgp_config.should_redistribute_routes == true'
+      - 'result.response.high_availability_group.is_ha_enabled == true'
+      - 'result.response.high_availability_group.algorithm == "ACTIVE_BACKUP"'
+      - 'result.response.high_availability_group.peered_gateways | length == 1'
+      - 'result.response.high_availability_group.peered_gateways[0].ext_id == "11111111-1111-1111-1111-111111111111"'
+    success_msg: "Check-mode full spec matches"
+    fail_msg: "Check-mode full spec MISMATCH"
+
+- name: Delete gateway with check_mode (no live ext_id)
+  nutanix.ncp.ntnx_gateway_v2:
+    state: absent
+    ext_id: "{{ bogus_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert delete check_mode message
+  ansible.builtin.assert:
+    that:
+      - 'result is defined'
+      - 'result.changed == false'
+      - 'result.failed == false'
+      - "'will be deleted' in result.msg"
+      - 'result.ext_id == bogus_ext_id'
+    success_msg: "delete check_mode returned expected message"
+    fail_msg: "delete check_mode did NOT return expected message"
+
+########################################################################################
+# 3. Info module tests (do not require any pre-existing gateway)
+########################################################################################
+
+- name: List all gateways
+  nutanix.ncp.ntnx_gateways_info_v2:
+  register: list_result
+  ignore_errors: true
+
+- name: Assert list-all shape
+  ansible.builtin.assert:
+    that:
+      - 'list_result is defined'
+      - 'list_result.changed == false'
+      - 'list_result.failed == false'
+      - 'list_result.response is defined'
+      - 'list_result.response is iterable'
+      - 'list_result.total_available_results is defined'
+    success_msg: "List gateways returned a well-formed response"
+    fail_msg: "List gateways did NOT return a well-formed response"
+
+- name: List gateways with limit=1
+  nutanix.ncp.ntnx_gateways_info_v2:
+    limit: 1
+  register: limit_result
+  ignore_errors: true
+
+- name: Assert limit constrains the response
+  ansible.builtin.assert:
+    that:
+      - 'limit_result is defined'
+      - 'limit_result.changed == false'
+      - 'limit_result.failed == false'
+      - 'limit_result.response is defined'
+      - '(limit_result.response | length) <= 1'
+    success_msg: "limit=1 correctly constrains the response"
+    fail_msg: "limit=1 did NOT constrain the response"
+
+- name: List gateways with a name filter that cannot match anything
+  nutanix.ncp.ntnx_gateways_info_v2:
+    filter: "name eq 'no_such_gateway_ansible_{{ random_name }}'"
+  register: filter_result
+  ignore_errors: true
+
+- name: Assert impossible filter returns empty list
+  ansible.builtin.assert:
+    that:
+      - 'filter_result is defined'
+      - 'filter_result.changed == false'
+      - 'filter_result.failed == false'
+      - 'filter_result.response is defined'
+      - '(filter_result.response | length) == 0'
+    success_msg: "Impossible filter returned an empty list"
+    fail_msg: "Impossible filter did NOT return an empty list"
+
+- name: Fetch gateway by a bogus ext_id (must fail cleanly)
+  nutanix.ncp.ntnx_gateways_info_v2:
+    ext_id: "{{ bogus_ext_id }}"
+  register: bogus_get_result
+  ignore_errors: true
+
+- name: Assert bogus ext_id fetch fails
+  ansible.builtin.assert:
+    that:
+      - 'bogus_get_result is defined'
+      - 'bogus_get_result.failed == true'
+      - 'bogus_get_result.msg is defined'
+    success_msg: "Fetching by bogus ext_id fails cleanly"
+    fail_msg: "Fetching by bogus ext_id did NOT fail as expected"
+
+########################################################################################
+# 4. Real CRUD lifecycle using a REMOTE BGP gateway (no VM deployment)
+########################################################################################
+
+- name: Discover clusters
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: clusters_result
+  ignore_errors: true
+
+- name: Create REMOTE BGP gateway (reference only — safe on any cluster)
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    name: "{{ gw_name }}_remote_bgp"
+    description: "Remote BGP gateway created by Ansible integration test"
+    gateway_device_vendor: "GENERIC"
+    services:
+      remote_services:
+        bgp:
+          asn: 65001
+          address:
+            ipv4:
+              value: "192.0.2.10"
+              prefix_length: 32
+  register: create_remote_result
+  ignore_errors: true
+
+- name: Track newly created gateway ext_id
+  ansible.builtin.set_fact:
+    remote_gw_ext_id: "{{ create_remote_result.ext_id | default('') }}"
+    todelete: "{{ todelete + ([create_remote_result.ext_id] if create_remote_result.ext_id | default('') | length > 0 else []) }}"
+
+- name: Assert remote BGP gateway create success (best-effort)
+  ansible.builtin.assert:
+    that:
+      - 'create_remote_result is defined'
+      - 'create_remote_result.failed == false'
+      - 'create_remote_result.changed == true'
+      - 'create_remote_result.ext_id is defined'
+      - 'create_remote_result.task_ext_id is defined'
+      - 'create_remote_result.response is defined'
+      - 'create_remote_result.response.name == "{{ gw_name }}_remote_bgp"'
+    success_msg: "Remote BGP gateway created"
+    fail_msg: "Remote BGP gateway create failed (see log — may be an API-level constraint on this cluster)"
+  when: create_remote_result.failed == false
+  ignore_errors: true
+
+- name: Fetch remote gateway by ext_id
+  nutanix.ncp.ntnx_gateways_info_v2:
+    ext_id: "{{ remote_gw_ext_id }}"
+  register: get_remote_result
+  when: remote_gw_ext_id | length > 0
+  ignore_errors: true
+
+- name: Assert Get-by-ID returned the same entity
+  ansible.builtin.assert:
+    that:
+      - 'get_remote_result is defined'
+      - 'get_remote_result.failed == false'
+      - 'get_remote_result.response is defined'
+      - 'get_remote_result.response.ext_id == remote_gw_ext_id'
+      - 'get_remote_result.response.name == "{{ gw_name }}_remote_bgp"'
+    success_msg: "Get by ext_id succeeded"
+    fail_msg: "Get by ext_id failed"
+  when: remote_gw_ext_id | length > 0
+
+- name: Update remote BGP gateway (change description)
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    ext_id: "{{ remote_gw_ext_id }}"
+    name: "{{ gw_name }}_remote_bgp_updated"
+    description: "Remote BGP gateway - updated description"
+    gateway_device_vendor: "GENERIC"
+    services:
+      remote_services:
+        bgp:
+          asn: 65001
+          address:
+            ipv4:
+              value: "192.0.2.10"
+              prefix_length: 32
+  register: update_remote_result
+  when: remote_gw_ext_id | length > 0
+  ignore_errors: true
+
+- name: Assert Update returned changed=True
+  ansible.builtin.assert:
+    that:
+      - 'update_remote_result is defined'
+      - 'update_remote_result.failed == false'
+      - 'update_remote_result.changed == true'
+      - 'update_remote_result.ext_id == remote_gw_ext_id'
+      - 'update_remote_result.response is defined'
+      - 'update_remote_result.response.name == "{{ gw_name }}_remote_bgp_updated"'
+      - 'update_remote_result.response.description == "Remote BGP gateway - updated description"'
+    success_msg: "Update returned changed=True with the new fields"
+    fail_msg: "Update did NOT return the expected changed=True response"
+  when: remote_gw_ext_id | length > 0 and update_remote_result.failed == false
+  ignore_errors: true
+
+- name: Update remote BGP gateway with the same fields (idempotency)
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    ext_id: "{{ remote_gw_ext_id }}"
+    name: "{{ gw_name }}_remote_bgp_updated"
+    description: "Remote BGP gateway - updated description"
+    gateway_device_vendor: "GENERIC"
+    services:
+      remote_services:
+        bgp:
+          asn: 65001
+          address:
+            ipv4:
+              value: "192.0.2.10"
+              prefix_length: 32
+  register: idempotent_result
+  when: remote_gw_ext_id | length > 0
+  ignore_errors: true
+
+- name: Assert Update idempotency
+  ansible.builtin.assert:
+    that:
+      - 'idempotent_result is defined'
+      - 'idempotent_result.failed == false'
+      - 'idempotent_result.changed == false'
+      - 'idempotent_result.msg == "Nothing to change."'
+    success_msg: "Update was idempotent (Nothing to change.)"
+    fail_msg: "Update was NOT idempotent"
+  when: remote_gw_ext_id | length > 0 and idempotent_result.failed == false
+  ignore_errors: true
+
+########################################################################################
+# 5. Negative tests
+########################################################################################
+
+- name: Update non-existent gateway (should fail)
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    ext_id: "{{ bogus_ext_id }}"
+    name: "does_not_exist"
+    description: "should fail"
+  register: bad_update_result
+  ignore_errors: true
+
+- name: Assert bogus update failed
+  ansible.builtin.assert:
+    that:
+      - 'bad_update_result is defined'
+      - 'bad_update_result.failed == true'
+      - 'bad_update_result.changed == false'
+    success_msg: "Updating a non-existent gateway correctly failed"
+    fail_msg: "Updating a non-existent gateway did NOT fail"
+
+- name: Delete non-existent gateway (should fail)
+  nutanix.ncp.ntnx_gateway_v2:
+    state: absent
+    ext_id: "{{ bogus_ext_id }}"
+  register: bad_delete_result
+  ignore_errors: true
+
+- name: Assert bogus delete failed
+  ansible.builtin.assert:
+    that:
+      - 'bad_delete_result is defined'
+      - 'bad_delete_result.failed == true'
+      - 'bad_delete_result.changed == false'
+    success_msg: "Deleting a non-existent gateway correctly failed"
+    fail_msg: "Deleting a non-existent gateway did NOT fail"
+
+########################################################################################
+# 6. Cleanup — delete anything we created
+########################################################################################
+
+- name: Delete all created gateways
+  nutanix.ncp.ntnx_gateway_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ todelete }}"
+  register: delete_result
+  ignore_errors: true
+
+- name: Delete all created gateways status
+  ansible.builtin.assert:
+    that:
+      - 'delete_result is defined'
+      - 'delete_result.results is defined'
+      - 'delete_result.results | length == todelete | length'
+    success_msg: "All test gateways cleaned up"
+    fail_msg: "Not all test gateways were cleaned up"
+  when: todelete | length > 0

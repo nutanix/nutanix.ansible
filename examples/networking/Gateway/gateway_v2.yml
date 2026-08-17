@@ -1,0 +1,96 @@
+---
+# Summary:
+# This playbook demonstrates the ntnx_gateway_v2 and ntnx_gateways_info_v2 modules.
+# 1. Create a remote BGP network gateway (a reference-only entity — does not
+#    deploy any VM, so this playbook is safe to run on any cluster).
+# 2. Get the gateway by ext_id.
+# 3. List all gateways / with filter / with limit.
+# 4. Update the gateway (name, description, vendor).
+# 5. Delete the gateway.
+#
+# A LOCAL gateway (VPN / VTEP / BGP) requires:
+#   - a PE cluster reference,
+#   - a management VLAN subnet with a static IP + default gateway,
+#   - the Network Gateway appliance image staged on the cluster.
+# For a working local-gateway example, populate the `local_deployment` /
+# `local_services` blocks in `create_gateway_local.yml` (not included here).
+
+- name: Network Gateway v2 playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        gateway_name: "gateway_ansible_example"
+
+    - name: Create a remote BGP network gateway with all applicable fields
+      nutanix.ncp.ntnx_gateway_v2:
+        state: present
+        name: "{{ gateway_name }}"
+        description: "Remote BGP gateway created by Ansible example playbook"
+        gateway_device_vendor: "GENERIC"
+        services:
+          remote_services:
+            bgp:
+              asn: 65001
+              address:
+                ipv4:
+                  value: "192.0.2.10"
+                  prefix_length: 32
+      register: create_result
+
+    - name: Show create response
+      ansible.builtin.debug:
+        var: create_result
+
+    - name: Set gateway ext_id
+      ansible.builtin.set_fact:
+        gateway_ext_id: "{{ create_result.ext_id }}"
+
+    - name: Fetch gateway using ext_id
+      nutanix.ncp.ntnx_gateways_info_v2:
+        ext_id: "{{ gateway_ext_id }}"
+      register: get_result
+
+    - name: List all gateways
+      nutanix.ncp.ntnx_gateways_info_v2:
+      register: list_result
+
+    - name: List gateways with a name filter
+      nutanix.ncp.ntnx_gateways_info_v2:
+        filter: "name eq '{{ gateway_name }}'"
+      register: filter_result
+
+    - name: List gateways with limit
+      nutanix.ncp.ntnx_gateways_info_v2:
+        limit: 1
+      register: limit_result
+
+    - name: Update the gateway name, description and vendor with all applicable fields
+      nutanix.ncp.ntnx_gateway_v2:
+        state: present
+        ext_id: "{{ gateway_ext_id }}"
+        name: "{{ gateway_name }}_updated"
+        description: "Updated remote BGP gateway description"
+        gateway_device_vendor: "GENERIC"
+        services:
+          remote_services:
+            bgp:
+              asn: 65001
+              address:
+                ipv4:
+                  value: "192.0.2.10"
+                  prefix_length: 32
+      register: update_result
+
+    - name: Delete the gateway
+      nutanix.ncp.ntnx_gateway_v2:
+        state: absent
+        ext_id: "{{ gateway_ext_id }}"
+      register: delete_result
