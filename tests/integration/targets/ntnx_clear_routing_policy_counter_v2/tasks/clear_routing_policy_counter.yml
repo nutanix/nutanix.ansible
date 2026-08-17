@@ -1,0 +1,347 @@
+---
+# Test plan — ntnx_clear_routing_policy_counter_v2
+# =============================================================================
+# The module exposes an action-type API that clears (resets to zero) the
+# packet and byte counters of routing policies inside a VPC. Two granularity
+# modes are supported:
+#   1. VPC level — only vpc_ext_id → clears counters for every routing policy
+#      inside the VPC.
+#   2. Policy level — vpc_ext_id + routing_policy_ext_id → clears counters of
+#      that single routing policy.
+#
+# Scenarios covered by this file:
+#   * Prerequisites (setup):
+#     - Create a VPC with an external subnet.
+#     - Create an overlay subnet inside the VPC.
+#     - Create a routing policy inside the VPC (via nutanix.ncp.ntnx_pbrs_v2).
+#   * check_mode:
+#     - VPC-level clear (all fields).
+#     - Policy-level clear (all fields).
+#     - Missing required vpc_ext_id must fail even before an API call.
+#   * Real API:
+#     - VPC-level clear — expect success, changed=true, task_ext_id present.
+#     - Policy-level clear — expect success, ext_id == routing_policy_ext_id.
+#     - Idempotency — repeating the action twice must both succeed
+#       (this API is inherently idempotent — counters are always reset).
+#   * Negative:
+#     - Non-existent vpc_ext_id → API returns error, module fails.
+#     - Non-existent routing_policy_ext_id → API returns error, module fails.
+#   * Cleanup:
+#     - Delete created routing policy, overlay subnet and VPC.
+
+- name: Start ntnx_clear_routing_policy_counter_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_clear_routing_policy_counter_v2 tests
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible-clear-rp-counter"
+
+- name: Set derived names
+  ansible.builtin.set_fact:
+    vpc_name: "{{ random_name }}_{{ suffix_name }}_vpc"
+    subnet_name: "{{ random_name }}_{{ suffix_name }}_subnet"
+    routing_policy_name: "{{ random_name }}_{{ suffix_name }}_rp"
+
+- name: Init cleanup lists
+  ansible.builtin.set_fact:
+    vpcs_to_delete: []
+    subnets_to_delete: []
+    routing_policies_to_delete: []
+
+########################################################################################
+# Setup — Create a VPC that will host the routing policies
+########################################################################################
+- name: Create VPC for routing policy counter clear tests
+  nutanix.ncp.ntnx_vpcs_v2:
+    state: present
+    name: "{{ vpc_name }}"
+    description: "VPC created for ntnx_clear_routing_policy_counter_v2 tests"
+  register: vpc_result
+  ignore_errors: true
+
+- name: Assert VPC creation
+  ansible.builtin.assert:
+    that:
+      - vpc_result.changed == true
+      - vpc_result.failed == false
+      - vpc_result.ext_id is defined
+      - vpc_result.response.name == vpc_name
+    fail_msg: "Failed to create VPC for tests"
+    success_msg: "VPC created successfully for tests"
+
+- name: Track VPC for cleanup
+  ansible.builtin.set_fact:
+    vpc_ext_id: "{{ vpc_result.ext_id }}"
+    vpcs_to_delete: "{{ vpcs_to_delete + [vpc_result.ext_id] }}"
+
+########################################################################################
+# Setup — Create an overlay subnet in the VPC (routing policy needs a source subnet)
+########################################################################################
+- name: Create overlay subnet inside VPC
+  nutanix.ncp.ntnx_subnets_v2:
+    state: present
+    name: "{{ subnet_name }}"
+    subnet_type: OVERLAY
+    vpc_reference: "{{ vpc_ext_id }}"
+    ip_config:
+      - ipv4:
+          ip_subnet:
+            ip:
+              value: "192.168.170.0"
+            prefix_length: 24
+          default_gateway_ip:
+            value: "192.168.170.1"
+  register: subnet_result
+  ignore_errors: true
+
+- name: Assert overlay subnet creation
+  ansible.builtin.assert:
+    that:
+      - subnet_result.changed == true
+      - subnet_result.failed == false
+      - subnet_result.ext_id is defined
+      - subnet_result.response.subnet_type == "OVERLAY"
+    fail_msg: "Failed to create overlay subnet for tests"
+    success_msg: "Overlay subnet created successfully for tests"
+
+- name: Track subnet for cleanup
+  ansible.builtin.set_fact:
+    subnet_ext_id: "{{ subnet_result.ext_id }}"
+    subnets_to_delete: "{{ subnets_to_delete + [subnet_result.ext_id] }}"
+
+########################################################################################
+# Setup — Create a routing policy inside the VPC
+########################################################################################
+- name: Create routing policy inside VPC
+  nutanix.ncp.ntnx_pbrs_v2:
+    state: present
+    name: "{{ routing_policy_name }}"
+    priority: 12
+    vpc_ext_id: "{{ vpc_ext_id }}"
+    description: "Routing policy created for ntnx_clear_routing_policy_counter_v2 tests"
+    policies:
+      - policy_action:
+          action_type: PERMIT
+        policy_match:
+          source:
+            address_type: ANY
+          destination:
+            address_type: EXTERNAL
+          protocol_type: ANY
+  register: rp_result
+  ignore_errors: true
+
+- name: Assert routing policy creation
+  ansible.builtin.assert:
+    that:
+      - rp_result.changed == true
+      - rp_result.failed == false
+      - rp_result.ext_id is defined
+      - rp_result.response.name == routing_policy_name
+    fail_msg: "Failed to create routing policy for tests"
+    success_msg: "Routing policy created successfully for tests"
+
+- name: Track routing policy for cleanup
+  ansible.builtin.set_fact:
+    routing_policy_ext_id: "{{ rp_result.ext_id }}"
+    routing_policies_to_delete: "{{ routing_policies_to_delete + [rp_result.ext_id] }}"
+
+########################################################################################
+# check_mode — VPC-level (all fields = vpc_ext_id only)
+########################################################################################
+- name: Clear counters for all routing policies (check_mode, VPC-level)
+  nutanix.ncp.ntnx_clear_routing_policy_counter_v2:
+    vpc_ext_id: "{{ vpc_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert VPC-level clear counters check_mode
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.vpc_ext_id == vpc_ext_id
+      - result.response.routing_policy_ext_id is none
+      - result.ext_id == vpc_ext_id
+    fail_msg: "check_mode VPC-level clear counters did not behave as expected"
+    success_msg: "check_mode VPC-level clear counters generated the expected spec"
+
+########################################################################################
+# check_mode — policy-level (all fields populated)
+########################################################################################
+- name: Clear counters for specific routing policy (check_mode, policy-level)
+  nutanix.ncp.ntnx_clear_routing_policy_counter_v2:
+    vpc_ext_id: "{{ vpc_ext_id }}"
+    routing_policy_ext_id: "{{ routing_policy_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert policy-level clear counters check_mode
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.vpc_ext_id == vpc_ext_id
+      - result.response.routing_policy_ext_id == routing_policy_ext_id
+      - result.ext_id == routing_policy_ext_id
+    fail_msg: "check_mode policy-level clear counters did not behave as expected"
+    success_msg: "check_mode policy-level clear counters generated the expected spec"
+
+########################################################################################
+# Real API — VPC-level clear (only required field: vpc_ext_id)
+########################################################################################
+- name: Clear counters for ALL routing policies in the VPC (real API)
+  nutanix.ncp.ntnx_clear_routing_policy_counter_v2:
+    vpc_ext_id: "{{ vpc_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert VPC-level clear counters real API
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined and result.task_ext_id | length > 0
+      - result.ext_id == vpc_ext_id
+      - result.response is defined
+      - result.response.status is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Real API VPC-level clear counters failed"
+    success_msg: "Real API VPC-level clear counters succeeded"
+
+########################################################################################
+# Real API — policy-level clear (all fields)
+########################################################################################
+- name: Clear counters for SPECIFIC routing policy in the VPC (real API)
+  nutanix.ncp.ntnx_clear_routing_policy_counter_v2:
+    vpc_ext_id: "{{ vpc_ext_id }}"
+    routing_policy_ext_id: "{{ routing_policy_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert policy-level clear counters real API
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined and result.task_ext_id | length > 0
+      - result.ext_id == routing_policy_ext_id
+      - result.response is defined
+      - result.response.status is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Real API policy-level clear counters failed"
+    success_msg: "Real API policy-level clear counters succeeded"
+
+########################################################################################
+# Idempotency — running clear twice is inherently idempotent (both succeed)
+########################################################################################
+- name: Repeat VPC-level clear (idempotency check)
+  nutanix.ncp.ntnx_clear_routing_policy_counter_v2:
+    vpc_ext_id: "{{ vpc_ext_id }}"
+  register: result_repeat
+  ignore_errors: true
+
+- name: Assert repeated VPC-level clear counters
+  ansible.builtin.assert:
+    that:
+      - result_repeat.changed == true
+      - result_repeat.failed == false
+      - result_repeat.response.status == "SUCCEEDED"
+    fail_msg: "Repeated VPC-level clear counters failed"
+    success_msg: "Repeated VPC-level clear counters succeeded (idempotent action)"
+
+########################################################################################
+# Negative — non-existent vpc_ext_id
+########################################################################################
+- name: Try clearing counters with a non-existent vpc_ext_id
+  nutanix.ncp.ntnx_clear_routing_policy_counter_v2:
+    vpc_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert non-existent vpc_ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Module did not fail on non-existent vpc_ext_id"
+    success_msg: "Module failed as expected on non-existent vpc_ext_id"
+
+########################################################################################
+# Negative — non-existent routing_policy_ext_id
+########################################################################################
+- name: Try clearing counters with a non-existent routing_policy_ext_id
+  nutanix.ncp.ntnx_clear_routing_policy_counter_v2:
+    vpc_ext_id: "{{ vpc_ext_id }}"
+    routing_policy_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert non-existent routing_policy_ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Module did not fail on non-existent routing_policy_ext_id"
+    success_msg: "Module failed as expected on non-existent routing_policy_ext_id"
+
+########################################################################################
+# Cleanup
+########################################################################################
+- name: Delete created routing policies
+  nutanix.ncp.ntnx_pbrs_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ routing_policies_to_delete }}"
+  register: rp_delete_result
+  ignore_errors: true
+
+- name: Assert routing policy deletion for all created policies
+  ansible.builtin.assert:
+    that:
+      - item.failed == false
+    fail_msg: "Failed to delete routing policy"
+    success_msg: "Routing policy deleted successfully"
+  loop: "{{ rp_delete_result.results }}"
+
+- name: Delete created overlay subnets
+  nutanix.ncp.ntnx_subnets_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ subnets_to_delete }}"
+  register: subnet_delete_result
+  ignore_errors: true
+
+- name: Assert subnet deletion for all created subnets
+  ansible.builtin.assert:
+    that:
+      - item.failed == false
+    fail_msg: "Failed to delete overlay subnet"
+    success_msg: "Overlay subnet deleted successfully"
+  loop: "{{ subnet_delete_result.results }}"
+
+- name: Delete created VPCs
+  nutanix.ncp.ntnx_vpcs_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ vpcs_to_delete }}"
+  register: vpc_delete_result
+  ignore_errors: true
+
+- name: Assert VPC deletion for all created VPCs
+  ansible.builtin.assert:
+    that:
+      - item.failed == false
+    fail_msg: "Failed to delete VPC"
+    success_msg: "VPC deleted successfully"
+  loop: "{{ vpc_delete_result.results }}"

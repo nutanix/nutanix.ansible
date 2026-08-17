@@ -1,0 +1,38 @@
+---
+# Summary:
+# This playbook demonstrates the usage of ntnx_clear_routing_policy_counter_v2.
+# 1. Clear counters for ALL routing policies inside a VPC (only vpc_ext_id).
+# 2. Clear counters for a SPECIFIC routing policy inside a VPC
+#    (vpc_ext_id + routing_policy_ext_id).
+#
+# The API resets packet/byte match counters to zero. It is an asynchronous
+# action; the module returns a task reference and waits for completion by
+# default (wait: true is the default).
+
+- name: Clear Routing Policy Counter playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        vpc_ext_id: "<vpc_ext_id>"
+        routing_policy_ext_id: "<routing_policy_ext_id>"
+
+    - name: Clear counters for ALL routing policies in the VPC
+      nutanix.ncp.ntnx_clear_routing_policy_counter_v2:
+        vpc_ext_id: "{{ vpc_ext_id }}"
+      register: result_all
+      ignore_errors: true
+
+    - name: Clear counters for a SPECIFIC routing policy in the VPC
+      nutanix.ncp.ntnx_clear_routing_policy_counter_v2:
+        vpc_ext_id: "{{ vpc_ext_id }}"
+        routing_policy_ext_id: "{{ routing_policy_ext_id }}"
+      register: result_specific
+      ignore_errors: true
