@@ -1,0 +1,161 @@
+---
+# Summary:
+# This playbook demonstrates the full lifecycle of a Layer2Stretch:
+# 1. Create a Layer2Stretch configuration (all fields)
+# 2. Update the Layer2Stretch (all fields)
+# 3. Get Layer2Stretch by ext_id
+# 4. List all Layer2Stretch configurations
+# 5. List Layer2Stretch configurations with filter
+# 6. List Layer2Stretch configurations with limit
+# 7. Delete the Layer2Stretch configuration
+
+- name: Layer2Stretch playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set stretch inputs
+      ansible.builtin.set_fact:
+        layer2_stretch_name: "layer2_stretch_ansible"
+        local_pc_cluster_uuid: "18553f0f-7ce0-4c33-a697-0eecfb27fc10"
+        local_subnet_uuid: "b0cce620-3654-8522-9876-a91e2c037862"
+        local_connection_uuid: "a4f3f04f-1222-8544-7896-28b62bcc3e3e"
+        remote_pc_cluster_uuid: "78e0d3ac-9e08-4d0c-8f1c-3d90ac2a55f0"
+        remote_subnet_uuid: "b7c94b93-2222-3333-4444-91e2c0378621"
+        remote_connection_uuid: "e7f3f04f-2222-3333-4444-28b62bcc3e3f"
+
+    - name: Create Layer2Stretch (VPN) with all fields
+      nutanix.ncp.ntnx_layer2_stretch_v2:
+        state: present
+        name: "{{ layer2_stretch_name }}"
+        description: "Layer2Stretch created by Ansible"
+        connection_type: "VPN"
+        mtu: 1500
+        local_site_params:
+          pc_cluster_reference: "{{ local_pc_cluster_uuid }}"
+          stretch_subnet_reference: "{{ local_subnet_uuid }}"
+          connection_reference: "{{ local_connection_uuid }}"
+          stretch_interface_ip_address:
+            ipv4:
+              value: "192.168.10.10"
+              prefix_length: 24
+          vpn_interface_ip_address:
+            ipv4:
+              value: "192.168.10.1"
+              prefix_length: 24
+          default_gateway_ip_address:
+            ipv4:
+              value: "192.168.10.254"
+              prefix_length: 24
+          high_availability_group:
+            is_ha_enabled: false
+            algorithm: "ACTIVE_BACKUP"
+        remote_site_params:
+          pc_cluster_reference: "{{ remote_pc_cluster_uuid }}"
+          stretch_subnet_reference: "{{ remote_subnet_uuid }}"
+          connection_reference: "{{ remote_connection_uuid }}"
+          stretch_interface_ip_address:
+            ipv4:
+              value: "192.168.20.10"
+              prefix_length: 24
+          vpn_interface_ip_address:
+            ipv4:
+              value: "192.168.20.1"
+              prefix_length: 24
+          default_gateway_ip_address:
+            ipv4:
+              value: "192.168.20.254"
+              prefix_length: 24
+          high_availability_group:
+            is_ha_enabled: false
+            algorithm: "ACTIVE_BACKUP"
+      register: create_result
+      ignore_errors: true
+
+    - name: Capture Layer2Stretch ext_id
+      ansible.builtin.set_fact:
+        layer2_stretch_ext_id: "{{ create_result.ext_id | default('') }}"
+
+    - name: Update Layer2Stretch with all fields
+      nutanix.ncp.ntnx_layer2_stretch_v2:
+        state: present
+        ext_id: "{{ layer2_stretch_ext_id }}"
+        name: "{{ layer2_stretch_name }}_updated"
+        description: "Layer2Stretch updated by Ansible"
+        connection_type: "VPN"
+        mtu: 8000
+        local_site_params:
+          pc_cluster_reference: "{{ local_pc_cluster_uuid }}"
+          stretch_subnet_reference: "{{ local_subnet_uuid }}"
+          connection_reference: "{{ local_connection_uuid }}"
+          stretch_interface_ip_address:
+            ipv4:
+              value: "192.168.10.11"
+              prefix_length: 24
+          vpn_interface_ip_address:
+            ipv4:
+              value: "192.168.10.1"
+              prefix_length: 24
+          default_gateway_ip_address:
+            ipv4:
+              value: "192.168.10.254"
+              prefix_length: 24
+          high_availability_group:
+            is_ha_enabled: true
+            algorithm: "ACTIVE_BACKUP"
+        remote_site_params:
+          pc_cluster_reference: "{{ remote_pc_cluster_uuid }}"
+          stretch_subnet_reference: "{{ remote_subnet_uuid }}"
+          connection_reference: "{{ remote_connection_uuid }}"
+          stretch_interface_ip_address:
+            ipv4:
+              value: "192.168.20.11"
+              prefix_length: 24
+          vpn_interface_ip_address:
+            ipv4:
+              value: "192.168.20.1"
+              prefix_length: 24
+          default_gateway_ip_address:
+            ipv4:
+              value: "192.168.20.254"
+              prefix_length: 24
+          high_availability_group:
+            is_ha_enabled: true
+            algorithm: "ACTIVE_BACKUP"
+      register: update_result
+      ignore_errors: true
+
+    - name: Get Layer2Stretch using ext_id
+      nutanix.ncp.ntnx_layer2_stretches_info_v2:
+        ext_id: "{{ layer2_stretch_ext_id }}"
+      register: get_result
+      ignore_errors: true
+
+    - name: List all Layer2Stretch configurations
+      nutanix.ncp.ntnx_layer2_stretches_info_v2:
+      register: list_all_result
+      ignore_errors: true
+
+    - name: List Layer2Stretch configurations with filter
+      nutanix.ncp.ntnx_layer2_stretches_info_v2:
+        filter: "name eq '{{ layer2_stretch_name }}_updated'"
+      register: list_filter_result
+      ignore_errors: true
+
+    - name: List Layer2Stretch configurations with limit
+      nutanix.ncp.ntnx_layer2_stretches_info_v2:
+        limit: 1
+      register: list_limit_result
+      ignore_errors: true
+
+    - name: Delete Layer2Stretch
+      nutanix.ncp.ntnx_layer2_stretch_v2:
+        state: absent
+        ext_id: "{{ layer2_stretch_ext_id }}"
+      register: delete_result
+      ignore_errors: true
