@@ -303,6 +303,16 @@ def strip_read_only_fields(spec, fields=None):
         return spec
 
     for field in fields:
-        if hasattr(spec, field):
+        if not hasattr(spec, field):
+            continue
+        try:
             delattr(spec, field)
+        except AttributeError:
+            # SDK model attributes are typically implemented as properties
+            # without deleters. Fall back to setting them to None so the
+            # generated payload omits the field.
+            try:
+                setattr(spec, field, None)
+            except AttributeError:
+                pass
     return spec

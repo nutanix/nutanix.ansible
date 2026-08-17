@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2026, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -11,147 +11,161 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_storage_containers_info_v2
-short_description: Retrieve information about Nutanix storage container from PC
-version_added: 2.0.0
+short_description: Retrieve information about Nutanix AllStorageContainer entities from PC
+version_added: 2.5.0
 description:
-    - This module retrieves information about Nutanix storage container from PC.
-    - Fetch particular storage container info using external ID
-    - Fetch multiple storage containers info with/without using filters, limit, etc.
-    - This module uses PC v4 APIs based SDKs
+  - This module allows you to fetch information about AllStorageContainer in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch details of the specific AllStorageContainer.
+  - If C(ext_id) is not provided, list multiple AllStorageContainer optionally filtered / paginated.
+  - This module uses PC v4 APIs based SDKs (ntnx_storage_py_client).
 notes:
-    - >-
-      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
-    - >-
-      B(Get storage container by ext_id) -
-      Required Roles: Backup Admin, Consumer, CSI System, Developer, Kubernetes Data Services System, NCM Connector, Operator, Prism Admin, Prism Viewer,
-      Project Admin, Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
-    - >-
-      B(List Storage Containers) -
-      Required Roles: Backup Admin, Consumer, CSI System, Developer, Kubernetes Data Services System, NCM Connector, Operator, Prism Admin, Prism Viewer,
-      Project Admin, Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
+  - >-
+    This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+  - >-
+    B(Get storage container by ext_id) -
+    Required Roles: Backup Admin, Consumer, Developer, Operator, Prism Admin, Prism Viewer,
+    Project Admin, Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
+  - >-
+    B(List Storage Containers) -
+    Required Roles: Backup Admin, Consumer, Developer, Operator, Prism Admin, Prism Viewer,
+    Project Admin, Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=storage)"
 options:
   ext_id:
     description:
-      - The external ID of the storage container.
-      - If not provided, multiple storage container info will be fetched.
+      - The external ID of the AllStorageContainer.
+      - If not provided, multiple AllStorageContainer will be fetched (with optional filter/limit/pagination).
     type: str
     required: false
 extends_documentation_fragment:
-      - nutanix.ncp.ntnx_credentials
-      - nutanix.ncp.ntnx_info_v2
-      - nutanix.ncp.ntnx_logger
-      - nutanix.ncp.ntnx_proxy_v2
+  - nutanix.ncp.ntnx_credentials
+  - nutanix.ncp.ntnx_info_v2
+  - nutanix.ncp.ntnx_logger
+  - nutanix.ncp.ntnx_proxy_v2
 author:
- - Alaa Bishtawi (@alaabishtawi)
- - George Ghawali (@george-ghawali)
+  - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
-- name: fetch storage container info using external ID
+- name: Fetch storage container using external ID
   nutanix.ncp.ntnx_storage_containers_info_v2:
-    nutanix_host: <pc_ip>
-    nutanix_username: <user>
-    nutanix_password: <pass>
-    ext_id: 00061de6-4a87-6b06-185b-ac1f6b6f97e2
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    ext_id: "57516342-7d8e-470f-91b8-ae310737ff8c"
   register: result
 
-- name: fetch all storage container info
+- name: Fetch all storage containers
   nutanix.ncp.ntnx_storage_containers_info_v2:
-    nutanix_host: <pc_ip>
-    nutanix_username: <user>
-    nutanix_password: <pass>
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
   register: result
 
-- name: fetch all storage container info with filter
+- name: Fetch storage containers with filter
   nutanix.ncp.ntnx_storage_containers_info_v2:
-    nutanix_host: <pc_ip>
-    nutanix_username: <user>
-    nutanix_password: <pass>
-    filter: "name eq 'storage_container_name'"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter: "name eq 'ansible_all_sc'"
+  register: result
+
+- name: Fetch first 3 storage containers
+  nutanix.ncp.ntnx_storage_containers_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    limit: 3
   register: result
 """
 
 RETURN = r"""
 response:
-    description:
-        - Response for fetching storage container info.
-        - Returns storage container info if ext_id is provided or list of multiple storage containers.
-    type: dict
-    returned: always
-    sample:
-     {
-                "affinity_host_ext_id": null,
-                "cache_deduplication": "OFF",
-                "cluster_ext_id": "0006197f-3d06-ce49-1fc3-ac1f6b6029c1",
-                "cluster_name": "auto-cluster-prod-f30accd2eec1",
-                "compression_delay_secs": 0,
-                "container_ext_id": "547c01c4-19c2-4293-8a9c-43441c18d0c7",
-                "erasure_code": "OFF",
-                "erasure_code_delay_secs": null,
-                "ext_id": null,
-                "has_higher_ec_fault_domain_preference": false,
-                "is_compression_enabled": false,
-                "is_encrypted": null,
-                "is_inline_ec_enabled": false,
-                "is_internal": false,
-                "is_marked_for_removal": false,
-                "is_nfs_whitelist_inherited": true,
-                "is_software_encryption_enabled": false,
-                "links": [
-                    {
-                        "href": "https://000.000.000.000:9440/api/clustermgmt/v4.0.b2/config/storage-containers/547c01c4-19c2-4293-8a9c-43441c18d0c7",
-                        "rel": "storage-container"
-                    },
-                    {
-                        "href": "https://000.000.000.000:9440/api/clustermgmt/v4.0.b2/stats/storage-containers/547c01c4-19c2-4293-8a9c-43441c18d0c7",
-                        "rel": "storage-container-stats"
-                    }
-                ],
-                "logical_advertised_capacity_bytes": null,
-                "logical_explicit_reserved_capacity_bytes": 0,
-                "logical_implicit_reserved_capacity_bytes": 0,
-                "max_capacity_bytes": 4365702025514,
-                "name": "SelfServiceContainer",
-                "nfs_whitelist_address": null,
-                "on_disk_dedup": "OFF",
-                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
-                "replication_factor": 1,
-                "storage_pool_ext_id": "487c142e-6c41-4b10-9585-4feac6bd3c68",
-                "tenant_id": null
-            }
+  description:
+    - The response from the Nutanix PC AllStorageContainer info v4 API.
+    - It can be a single AllStorageContainer if external ID is provided.
+    - List of multiple AllStorageContainer if external ID is not provided with optional filter or limit.
+  returned: always
+  type: dict
+  sample:
+    {
+      "advertised_capacity_bytes": null,
+      "affinity_host_ext_id": null,
+      "cache_deduplication": "OFF",
+      "cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2",
+      "cluster_name": "auto_cluster_prod_36acf9b012ca",
+      "compression_delay_secs": 0,
+      "container_ext_id": "08a07de0-78d4-4a94-9bfe-8162017726fd",
+      "erasure_code": "OFF",
+      "ext_id": null,
+      "has_higher_ec_fault_domain_preference": false,
+      "is_compression_enabled": false,
+      "is_encrypted": null,
+      "is_inline_ec_enabled": false,
+      "is_internal": false,
+      "is_marked_for_removal": false,
+      "is_nfs_whitelist_inherited": true,
+      "is_software_encryption_enabled": false,
+      "max_capacity_bytes": 4404802450302,
+      "name": "objectsm4fcfc2cab9c149024297e51c16b5d841",
+      "on_disk_dedup": "OFF",
+      "owner_ext_id": null,
+      "replication_factor": 1,
+      "storage_pool_ext_id": "df233a93-0480-4f15-a500-1269696fc4b2",
+      "tenant_id": null
+    }
+
+ext_id:
+  description:
+    - The external ID of the AllStorageContainer if provided in input.
+  returned: when a single AllStorageContainer is fetched
+  type: str
+  sample: "57516342-7d8e-470f-91b8-ae310737ff8c"
+
+total_available_results:
+  description:
+    - The total number of available AllStorageContainer entities in PC.
+  returned: when all AllStorageContainer are fetched
+  type: int
+  sample: 12
+
+changed:
+  description: This indicates whether the task resulted in any changes (always false for info).
+  returned: always
+  type: bool
+  sample: false
+
+failed:
+  description: This indicates whether the task failed.
+  returned: always
+  type: bool
+  sample: false
+
+error:
+  description: The error message if an error occurs.
+  returned: when an error occurs
+  type: str
+
 msg:
-  description: This indicates the message if any message occurred
+  description: This indicates the message if any message occurred.
   returned: When there is an error
   type: str
-  sample: "Api Exception raised while fetching storage containers info"
-error:
-    description: The error message if an error occurs.
-    type: str
-    returned: when an error occurs
-ext_id:
-    description:
-        - The external ID of the storage container if given in input.
-    type: str
-    returned: always
-    sample: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
-total_available_results:
-    description:
-        - The total number of available storage containers in PC.
-    type: int
-    returned: when all storage containers are fetched
-    sample: 125
+  sample: "Api Exception raised while fetching storage container info"
 """
 
 import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
-    get_storage_containers_api_instance,
-)
-from ..module_utils.v4.clusters_mgmt.helpers import get_storage_container  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
+from ..module_utils.v4.storage.api_client import (  # noqa: E402
+    get_storage_container_api_instance,
+)
+from ..module_utils.v4.storage.helpers import get_storage_container  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
@@ -162,33 +176,30 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
-
     module_args = dict(
         ext_id=dict(type="str"),
     )
-
     return module_args
 
 
-def get_storage_container_by_ext_id(module, result):
+def get_storage_container_by_ext_id(module, result, api_instance):
     ext_id = module.params.get("ext_id")
-    storage_containers = get_storage_containers_api_instance(module)
-    resp = get_storage_container(module, storage_containers, ext_id)
+    resp = get_storage_container(module, api_instance, ext_id)
     result["ext_id"] = ext_id
     result["response"] = strip_internal_attributes(resp.to_dict())
 
 
-def get_storage_containers(module, result):
-    storage_containers = get_storage_containers_api_instance(module)
+def get_storage_containers(module, result, api_instance):
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(module.params)
     if err:
         module.fail_json(
-            "Failed creating query parameters for fetching storage containers info"
+            msg="Failed generating query parameters for fetching storage containers info",
+            **result,
         )
     resp = None
     try:
-        resp = storage_containers.list_storage_containers(**kwargs)
+        resp = api_instance.get_all_storage_containers(**kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -198,11 +209,10 @@ def get_storage_containers(module, result):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-
-    if getattr(resp, "data", None):
-        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
-    else:
-        result["response"] = []
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        resp = []
+    result["response"] = resp
 
 
 def run_module():
@@ -215,10 +225,11 @@ def run_module():
 
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
+    api_instance = get_storage_container_api_instance(module)
     if module.params.get("ext_id"):
-        get_storage_container_by_ext_id(module, result)
+        get_storage_container_by_ext_id(module, result, api_instance)
     else:
-        get_storage_containers(module, result)
+        get_storage_containers(module, result, api_instance)
     module.exit_json(**result)
 
 

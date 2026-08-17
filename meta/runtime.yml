@@ -188,6 +188,7 @@ action_groups:
     - ntnx_storage_containers_stats_v2
     - ntnx_storage_containers_info_v2
     - ntnx_storage_containers_v2
+    - ntnx_all_storage_container_v2
     - ntnx_pc_unregistration_v2
     - ntnx_pc_backup_target_info_v2
     - ntnx_pc_backup_target_v2

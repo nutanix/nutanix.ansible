@@ -1,0 +1,82 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a storage container with all attributes (via ntnx_all_storage_container_v2)
+# 2. Fetch the created storage container using ext_id (via ntnx_storage_containers_info_v2)
+# 3. Update the storage container
+# 4. List all storage containers
+# 5. List storage containers with filter and limit
+# 6. Delete the storage container
+
+- name: All Storage Container playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        cluster_uuid: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+        storage_container_name: "ansible_all_sc_example"
+
+    - name: Create storage container with all attributes
+      nutanix.ncp.ntnx_all_storage_container_v2:
+        state: present
+        name: "{{ storage_container_name }}"
+        cluster_ext_id: "{{ cluster_uuid }}"
+        advertised_capacity_bytes: 107374182400
+        explicit_reserved_capacity_bytes: 0
+        replication_factor: 1
+        is_nfs_whitelist_inherited: true
+        erasure_code: "OFF"
+        is_inline_ec_enabled: false
+        has_higher_ec_fault_domain_preference: false
+        cache_deduplication: "OFF"
+        on_disk_dedup: "OFF"
+        is_compression_enabled: true
+        compression_delay_secs: 3600
+        is_internal: false
+        is_software_encryption_enabled: false
+      register: create_result
+
+    - name: Set storage container ext_id
+      ansible.builtin.set_fact:
+        storage_container_ext_id: "{{ create_result.ext_id }}"
+
+    - name: Fetch storage container using external ID
+      nutanix.ncp.ntnx_storage_containers_info_v2:
+        ext_id: "{{ storage_container_ext_id }}"
+      register: fetch_result
+
+    - name: Update storage container
+      nutanix.ncp.ntnx_all_storage_container_v2:
+        state: present
+        ext_id: "{{ storage_container_ext_id }}"
+        name: "{{ storage_container_name }}_updated"
+        advertised_capacity_bytes: 214748364800
+        is_compression_enabled: false
+      register: update_result
+
+    - name: List all storage containers
+      nutanix.ncp.ntnx_storage_containers_info_v2: {}
+      register: list_result
+
+    - name: List storage containers with filter
+      nutanix.ncp.ntnx_storage_containers_info_v2:
+        filter: "name eq '{{ storage_container_name }}_updated'"
+      register: filter_result
+
+    - name: List storage containers with limit
+      nutanix.ncp.ntnx_storage_containers_info_v2:
+        limit: 2
+      register: limit_result
+
+    - name: Delete storage container
+      nutanix.ncp.ntnx_all_storage_container_v2:
+        state: absent
+        ext_id: "{{ storage_container_ext_id }}"
+      register: delete_result
