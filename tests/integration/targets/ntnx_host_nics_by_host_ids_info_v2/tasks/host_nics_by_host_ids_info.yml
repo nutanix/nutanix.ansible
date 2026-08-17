@@ -1,0 +1,391 @@
+---
+# Test plan for ntnx_host_nics_by_host_ids_info_v2
+# ------------------------------------------------------------------------------
+# HostNicsByHostId is a *read-only* v4 datasource:
+#   - GET /api/clustermgmt/v4.2/config/clusters/{clusterExtId}/hosts/{hostExtId}/host-nics
+#     -> list all host NICs on the given host (list_host_nics_by_host_id)
+#   - GET /api/clustermgmt/v4.2/config/clusters/{clusterExtId}/hosts/{hostExtId}/host-nics/{extId}
+#     -> get a single host NIC by ext_id (get_host_nic_by_id)
+#
+# Because there is no Create / Update / Delete, the module is info-only.
+# Both endpoints REQUIRE cluster_ext_id and host_ext_id, so every test here
+# discovers a real cluster + host at runtime from the target cluster and then
+# exercises the module against real data.
+#
+# Coverage matrix:
+#   * prerequisites: pull a real cluster and host from the target PC
+#   * list all host NICs for the discovered host           -> assertions on
+#     count > 0, top-level fields, ext_id shape, name defined
+#   * per-NIC assertions on each element returned by list (loop)
+#   * list with limit=1                                     -> exactly 1 record
+#   * list with orderby=name asc                            -> sorted output
+#   * list with select=name                                 -> only requested field
+#   * list with $filter=name eq ...                         -> only matching NIC
+#   * get single NIC by ext_id                              -> full projection
+#     with cluster_ext_id / node_uuid consistency
+#   * negative: missing required cluster_ext_id             -> module fails
+#   * negative: missing required host_ext_id                -> module fails
+#   * negative: invalid ext_id (bad UUID)                   -> API error
+#   * negative: invalid cluster_ext_id                      -> API error
+#   * negative: ext_id + filter (mutually exclusive)        -> module fails
+#   * negative: ext_id + limit (mutually exclusive)         -> module fails
+#   * final: `changed == false` for every info call
+
+- name: Start ntnx_host_nics_by_host_ids_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_host_nics_by_host_ids_info_v2 tests
+
+########################################################################################
+# Prerequisites: discover a real cluster and host from the live PC.
+# The HostNicsByHostId endpoint is parented under cluster + host, so both are required.
+########################################################################################
+
+- name: List clusters and pick a PE (non-PC) cluster
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_info
+  ignore_errors: true
+
+- name: Verify a PE cluster was discovered
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.changed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+      - clusters_info.response[0].ext_id is defined
+    success_msg: "Discovered PE cluster successfully"
+    fail_msg: "Could not discover a PE cluster from the target PC"
+
+- name: Set cluster_ext_id for host NIC tests
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ clusters_info.response[0].ext_id }}"
+
+- name: List hosts on the discovered cluster
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: hosts_info
+  ignore_errors: true
+
+- name: Verify hosts were discovered
+  ansible.builtin.assert:
+    that:
+      - hosts_info is defined
+      - hosts_info.failed == false
+      - hosts_info.changed == false
+      - hosts_info.response is defined
+      - hosts_info.response | length > 0
+      - hosts_info.response[0].ext_id is defined
+    success_msg: "Discovered hosts on cluster successfully"
+    fail_msg: "Could not discover hosts on the cluster"
+
+- name: Set host_ext_id for host NIC tests
+  ansible.builtin.set_fact:
+    host_ext_id: "{{ hosts_info.response[0].ext_id }}"
+
+########################################################################################
+# List all host NICs for the discovered host (baseline)
+########################################################################################
+
+- name: List all host NICs for the given cluster and host
+  nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+  register: nics_list
+  ignore_errors: true
+
+- name: Verify list host NICs returns at least one NIC
+  ansible.builtin.assert:
+    that:
+      - nics_list is defined
+      - nics_list.changed == false
+      - nics_list.failed == false
+      - nics_list.response is defined
+      - nics_list.response | length > 0
+      - nics_list.total_available_results is defined
+      - nics_list.total_available_results >= (nics_list.response | length)
+      - nics_list.response[0].ext_id is defined
+      - nics_list.response[0].name is defined
+    success_msg: "List host NICs returned NICs successfully"
+    fail_msg: "List host NICs did not return the expected NICs"
+
+- name: Save first NIC for later single-fetch and filter tests
+  ansible.builtin.set_fact:
+    first_nic_ext_id: "{{ nics_list.response[0].ext_id }}"
+    first_nic_name: "{{ nics_list.response[0].name }}"
+
+- name: Verify every returned NIC has the required identifier fields
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.ext_id | length > 0
+      - item.name is defined
+      - item.name | length > 0
+    success_msg: "Host NIC element structure is valid"
+    fail_msg: "Host NIC element is missing required identifier fields"
+  loop: "{{ nics_list.response }}"
+  loop_control:
+    label: "{{ item.name | default(item.ext_id) }}"
+
+########################################################################################
+# Pagination: limit
+########################################################################################
+
+- name: List host NICs with limit=1
+  nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    limit: 1
+  register: nics_limit
+  ignore_errors: true
+
+- name: Verify limit=1 returns exactly one host NIC
+  ansible.builtin.assert:
+    that:
+      - nics_limit is defined
+      - nics_limit.changed == false
+      - nics_limit.failed == false
+      - nics_limit.response is defined
+      - nics_limit.response | length == 1
+      - nics_limit.response[0].ext_id is defined
+    success_msg: "Limit-based listing returned exactly one host NIC"
+    fail_msg: "Limit-based listing did not return exactly one host NIC"
+
+########################################################################################
+# Ordering: orderby=name asc
+########################################################################################
+
+- name: List host NICs ordered by name ascending
+  nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    orderby: "name asc"
+  register: nics_ordered
+  ignore_errors: true
+
+- name: Verify orderby returns a sorted host NIC list
+  ansible.builtin.assert:
+    that:
+      - nics_ordered is defined
+      - nics_ordered.changed == false
+      - nics_ordered.failed == false
+      - nics_ordered.response is defined
+      - nics_ordered.response | length >= 1
+      - >-
+        (nics_ordered.response | map(attribute='name') | list)
+        == (nics_ordered.response | map(attribute='name') | list | sort)
+    success_msg: "Host NICs are returned in ascending order by name"
+    fail_msg: "Host NICs are NOT returned in ascending order by name"
+
+########################################################################################
+# Field selection: select=name
+########################################################################################
+
+- name: List host NICs selecting only the name field
+  nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    select: "name"
+  register: nics_select
+  ignore_errors: true
+
+- name: Verify select returns entries with the requested field populated
+  ansible.builtin.assert:
+    that:
+      - nics_select is defined
+      - nics_select.changed == false
+      - nics_select.failed == false
+      - nics_select.response is defined
+      - nics_select.response | length >= 1
+      - nics_select.response[0].name is defined
+      - nics_select.response[0].name | length > 0
+    success_msg: "Select returned the requested field"
+    fail_msg: "Select did not return the requested field correctly"
+
+########################################################################################
+# Filtering: filter=name eq '<name>'
+########################################################################################
+
+- name: List host NICs filtered by the first NIC's name
+  nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    filter: "name eq '{{ first_nic_name }}'"
+  register: nics_filter
+  ignore_errors: true
+
+- name: Verify filter returned only matching host NICs
+  ansible.builtin.assert:
+    that:
+      - nics_filter is defined
+      - nics_filter.changed == false
+      - nics_filter.failed == false
+      - nics_filter.response is defined
+      - nics_filter.response | length >= 1
+      - nics_filter.response
+        | selectattr('name', 'equalto', first_nic_name)
+        | list
+        | length
+        == (nics_filter.response | length)
+    success_msg: "Filter returned only host NICs matching the requested name"
+    fail_msg: "Filter returned host NICs that did not match the requested name"
+
+########################################################################################
+# Get single host NIC by ext_id
+########################################################################################
+
+- name: Fetch single host NIC by ext_id
+  nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    ext_id: "{{ first_nic_ext_id }}"
+  register: nic_get
+  ignore_errors: true
+
+- name: Verify single host NIC fetch returned the expected NIC
+  ansible.builtin.assert:
+    that:
+      - nic_get is defined
+      - nic_get.changed == false
+      - nic_get.failed == false
+      - nic_get.ext_id is defined
+      - nic_get.ext_id == first_nic_ext_id
+      - nic_get.response is defined
+      - nic_get.response.ext_id == first_nic_ext_id
+      - nic_get.response.name == first_nic_name
+      - nic_get.response.node_uuid == host_ext_id
+    success_msg: "Fetch host NIC by ext_id returned the expected NIC"
+    fail_msg: "Fetch host NIC by ext_id did not return the expected NIC"
+
+########################################################################################
+# Negative tests
+########################################################################################
+
+- name: Attempt list without required cluster_ext_id
+  nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
+    host_ext_id: "{{ host_ext_id }}"
+  register: missing_cluster
+  ignore_errors: true
+
+- name: Verify missing cluster_ext_id fails module validation
+  ansible.builtin.assert:
+    that:
+      - missing_cluster is defined
+      - missing_cluster.failed == true
+      - missing_cluster.changed == false
+      - "'cluster_ext_id' in missing_cluster.msg"
+    success_msg: "Missing cluster_ext_id was rejected as expected"
+    fail_msg: "Missing cluster_ext_id was not rejected"
+
+- name: Attempt list without required host_ext_id
+  nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: missing_host
+  ignore_errors: true
+
+- name: Verify missing host_ext_id fails module validation
+  ansible.builtin.assert:
+    that:
+      - missing_host is defined
+      - missing_host.failed == true
+      - missing_host.changed == false
+      - "'host_ext_id' in missing_host.msg"
+    success_msg: "Missing host_ext_id was rejected as expected"
+    fail_msg: "Missing host_ext_id was not rejected"
+
+- name: Attempt list with ext_id and filter (mutually exclusive)
+  nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    ext_id: "{{ first_nic_ext_id }}"
+    filter: "name eq '{{ first_nic_name }}'"
+  register: excl_filter
+  ignore_errors: true
+
+- name: Verify ext_id + filter is rejected as mutually exclusive
+  ansible.builtin.assert:
+    that:
+      - excl_filter is defined
+      - excl_filter.failed == true
+      - excl_filter.changed == false
+      - "'mutually exclusive' in excl_filter.msg"
+    success_msg: "ext_id + filter was rejected as mutually exclusive"
+    fail_msg: "ext_id + filter was NOT rejected"
+
+- name: Attempt list with ext_id and limit (mutually exclusive)
+  nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    ext_id: "{{ first_nic_ext_id }}"
+    limit: 1
+  register: excl_limit
+  ignore_errors: true
+
+- name: Verify ext_id + limit is rejected as mutually exclusive
+  ansible.builtin.assert:
+    that:
+      - excl_limit is defined
+      - excl_limit.failed == true
+      - excl_limit.changed == false
+      - "'mutually exclusive' in excl_limit.msg"
+    success_msg: "ext_id + limit was rejected as mutually exclusive"
+    fail_msg: "ext_id + limit was NOT rejected"
+
+- name: Fetch host NIC with an invalid ext_id
+  nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_ext_id
+  ignore_errors: true
+
+- name: Verify invalid ext_id returns a descriptive API error
+  ansible.builtin.assert:
+    that:
+      - bad_ext_id is defined
+      - bad_ext_id.failed == true
+      - bad_ext_id.changed == false
+      - bad_ext_id.msg is defined
+      - "'Api Exception raised while fetching host NIC info using ext_id' in bad_ext_id.msg"
+    success_msg: "Invalid ext_id was rejected by the API as expected"
+    fail_msg: "Invalid ext_id was NOT rejected by the API"
+
+- name: List host NICs with an invalid cluster_ext_id
+  nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+    host_ext_id: "{{ host_ext_id }}"
+  register: bad_cluster
+  ignore_errors: true
+
+- name: Verify invalid cluster_ext_id returns a descriptive API error
+  ansible.builtin.assert:
+    that:
+      - bad_cluster is defined
+      - bad_cluster.failed == true
+      - bad_cluster.changed == false
+      - bad_cluster.msg is defined
+      - "'Api Exception raised while fetching host NICs info' in bad_cluster.msg"
+    success_msg: "Invalid cluster_ext_id was rejected by the API as expected"
+    fail_msg: "Invalid cluster_ext_id was NOT rejected by the API"
+
+########################################################################################
+# Idempotency of info module: every info call must be changed == false
+########################################################################################
+
+- name: Re-run the baseline list to confirm info calls are always idempotent
+  nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+  register: nics_list_second
+  ignore_errors: true
+
+- name: Verify repeated info call returns changed == false and same set of NICs
+  ansible.builtin.assert:
+    that:
+      - nics_list_second is defined
+      - nics_list_second.changed == false
+      - nics_list_second.failed == false
+      - nics_list_second.response | length == nics_list.response | length
+    success_msg: "Repeated info call is idempotent"
+    fail_msg: "Repeated info call is NOT idempotent"

@@ -51,6 +51,30 @@ def get_host(module, api_instance, ext_id, cluster_ext_id):
         )
 
 
+def get_host_nic(module, api_instance, ext_id, cluster_ext_id, host_ext_id):
+    """
+    This method will return host NIC info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClusterApi instance from sdk
+        ext_id (str): host NIC external ID
+        cluster_ext_id (str): cluster external ID
+        host_ext_id (str): host external ID
+    return:
+        host NIC info (object): host NIC info
+    """
+    try:
+        return api_instance.get_host_nic_by_id(
+            clusterExtId=cluster_ext_id, hostExtId=host_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching host NIC info using ext_id",
+        )
+
+
 def get_storage_container(module, api_instance, ext_id):
     """
     This method will return storage container info using external ID.
