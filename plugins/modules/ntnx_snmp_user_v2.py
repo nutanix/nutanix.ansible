@@ -49,7 +49,7 @@ options:
   auth_key:
     description:
       - SNMP user authentication key.
-      - Required for create operation.
+      - Required for create and update operations.
     type: str
   priv_type:
     description:
@@ -399,6 +399,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
+            ("state", "present", ("auth_key",)),
             ("state", "absent", ("ext_id",)),
         ],
     )

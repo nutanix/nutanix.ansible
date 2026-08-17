@@ -482,7 +482,7 @@
     username: "{{ snmp_username_all }}"
     auth_type: MD5
     auth_key: "{{ snmp_auth_key_updated }}"
-    priv_type: DES
+    priv_type: AES192
     priv_key: "{{ snmp_priv_key_updated }}"
   register: result
   ignore_errors: true
@@ -497,7 +497,7 @@
       - result.ext_id == to_delete_users[1]
       - result.response.username == snmp_username_all
       - result.response.auth_type == "MD5"
-      - result.response.priv_type == "DES"
+      - result.response.priv_type == "AES192"
       - result.task_ext_id is defined
     fail_msg: "Failed to verify update SNMP user with all attributes"
     success_msg: "Verify update SNMP user with all attributes succeeded"
@@ -513,7 +513,7 @@
     username: "{{ snmp_username_all }}"
     auth_type: MD5
     auth_key: "{{ snmp_auth_key_updated }}"
-    priv_type: DES
+    priv_type: AES192
     priv_key: "{{ snmp_priv_key_updated }}"
   register: idempotency_result
   ignore_errors: true
@@ -527,33 +527,6 @@
       - idempotency_result.msg == "Nothing to change."
     fail_msg: "Failed to verify SNMP user update idempotency"
     success_msg: "Verify SNMP user update idempotency succeeded"
-
-##################################################
-# SNMP User - Update with one attribute
-##################################################
-
-- name: Update SNMP user with one attribute
-  nutanix.ncp.ntnx_snmp_user_v2:
-    cluster_ext_id: "{{ cluster_ext_id }}"
-    ext_id: "{{ to_delete_users[1] }}"
-    auth_type: SHA
-  ignore_errors: true
-  register: result
-
-- name: Verify update SNMP user with one attribute
-  ansible.builtin.assert:
-    that:
-      - result.changed == true
-      - result.failed == false
-      - result.response is defined
-      - result.cluster_ext_id == "{{ cluster_ext_id }}"
-      - result.ext_id == to_delete_users[1]
-      - result.response.username == snmp_username_all
-      - result.response.auth_type == "SHA"
-      - result.response.priv_type == "DES"
-      - result.task_ext_id is defined
-    fail_msg: "Failed to verify update SNMP user with one attribute"
-    success_msg: "Verify update SNMP user with one attribute succeeded"
 
 ##################################################
 # SNMP Trap V2 - Check Mode Create
@@ -694,6 +667,33 @@
     success_msg: "Verify fetched SNMP V2 trap by ext_id succeeded"
 
 ##################################################
+# SNMP Trap - Update with one attribute
+##################################################
+
+- name: Update SNMP V2 trap with min attributes
+  nutanix.ncp.ntnx_snmp_trap_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ trap_v2_ext_id }}"
+    protocol: "{{ test_trap_protocol_v3 }}"
+  ignore_errors: true
+  register: result
+
+- name: Verify update SNMP V2 trap with min attributes
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.version == "V2"
+      - result.response.address.ipv4.value == trap_v2_ip
+      - result.response.community_string == "public"
+      - result.response.protocol == test_trap_protocol_v3
+      - result.response.port == trap_v2_port | int
+      - result.task_ext_id is defined
+    fail_msg: "Failed to update SNMP V2 trap with min attributes"
+    success_msg: "SNMP V2 trap updated with min attributes successfully"
+
+##################################################
 # SNMP Trap - Update V2
 ##################################################
 
@@ -707,7 +707,7 @@
         value: "{{ trap_v2_ip }}"
     version: V3
     port: "{{ trap_v3_port | int }}"
-    protocol: "{{ test_trap_protocol_v3 }}"
+    protocol: "{{ test_trap_protocol_v2 }}"
     username: "{{ snmp_username_min }}"
   register: result
   ignore_errors: true
@@ -721,7 +721,7 @@
       - result.ext_id == trap_v2_ext_id
       - result.task_ext_id is defined
       - result.response.version == "V3"
-      - result.response.protocol == test_trap_protocol_v3
+      - result.response.protocol == test_trap_protocol_v2
       - result.response.port == trap_v3_port | int
       - result.response.address.ipv4.value == trap_v2_ip
       - result.response.username == snmp_username_min
@@ -742,7 +742,7 @@
         value: "{{ trap_v2_ip }}"
     version: V3
     port: "{{ trap_v3_port | int }}"
-    protocol: "{{ test_trap_protocol_v3 }}"
+    protocol: "{{ test_trap_protocol_v2 }}"
     username: "{{ snmp_username_min }}"
   register: result
   ignore_errors: true
@@ -756,34 +756,6 @@
       - result.msg == "Nothing to change."
     fail_msg: "Failed to verify SNMP V2 trap idempotency"
     success_msg: "Verify SNMP V2 trap idempotency succeeded"
-
-##################################################
-# SNMP Trap - Update with one attribute
-##################################################
-
-- name: Update SNMP V2 trap with one attribute
-  nutanix.ncp.ntnx_snmp_trap_v2:
-    cluster_ext_id: "{{ cluster_ext_id }}"
-    ext_id: "{{ trap_v2_ext_id }}"
-    version: V2
-  ignore_errors: true
-  register: result
-
-- name: Verify update SNMP V2 trap with one attribute
-  ansible.builtin.assert:
-    that:
-      - result.changed == true
-      - result.failed == false
-      - result.response is defined
-      - result.ext_id == trap_v2_ext_id
-      - result.task_ext_id is defined
-      - result.response.version == "V2"
-      - result.response.protocol == test_trap_protocol_v2
-      - result.response.port == trap_v2_port | int
-      - result.response.address.ipv4.value == trap_v2_ip
-      - result.response.username == snmp_username_min
-    fail_msg: "Failed to update SNMP V2 trap with one attribute"
-    success_msg: "SNMP V2 trap updated with one attribute successfully"
 
 ##################################################
 # SNMP User - Delete Check Mode
@@ -827,7 +799,7 @@
       - result.changed == false
       - result.failed == false
       - result.ext_id == to_delete_traps[0]
-      - result.msg == "Snmp Trap with ext_id:" ~ to_delete_traps[0] ~ " will be deleted."
+      - result.msg == "SNMP Trap with ext_id:" ~ to_delete_traps[0] ~ " will be deleted."
     fail_msg: "Failed to verify SNMP trap delete check mode"
     success_msg: "Verify SNMP trap delete check mode succeeded"
 
@@ -847,7 +819,7 @@
     that:
       - result.changed == false
       - result.failed == true
-      - 'result.msg == "state is present but all of the following are missing: username, auth_type, auth_key"'
+      - 'result.msg == "state is present but all of the following are missing: auth_key"'
     fail_msg: "Create SNMP user without required params did not fail as expected"
     success_msg: "Create SNMP user without required params failed as expected"
 
@@ -942,7 +914,7 @@
     that:
       - result.changed == false
       - result.failed == true
-      - 'result.msg == "state is present but all of the following are missing: address, version"'
+      - 'result.msg == "Missing required parameter(s): version, address"'
     fail_msg: "Create SNMP trap without address and version did not fail as expected"
     success_msg: "Create SNMP trap without address and version failed as expected"
 
@@ -1035,7 +1007,7 @@
     that:
       - result.changed == false
       - result.failed == true
-      - 'result.msg == "state is present but all of the following are missing: address, version"'
+      - 'result.msg == "Missing required parameter(s): version, address"'
     fail_msg: "Update SNMP trap without required params did not fail as expected"
     success_msg: "Update SNMP trap without required params failed as expected"
 
@@ -1070,7 +1042,7 @@
     that:
       - result.changed == false
       - result.failed == true
-      - result.msg == "protocol and port are required when adding or removing SNMP transport"
+      - result.msg == "missing required arguments: port, protocol"
     fail_msg: "Update SNMP transport without protocol/port did not fail as expected"
     success_msg: "Update SNMP transport without protocol/port failed as expected"
 
@@ -1086,7 +1058,7 @@
     that:
       - result.changed == false
       - result.failed == true
-      - result.msg == "protocol and port are required when adding or removing SNMP transport"
+      - result.msg == "missing required arguments: port"
     fail_msg: "Update SNMP config with protocol but no port did not fail as expected"
     success_msg: "Update SNMP config with protocol but no port failed as expected"
 
