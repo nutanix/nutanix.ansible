@@ -206,9 +206,6 @@
   register: result
   ignore_errors: true
 
-- debug:
-    var: result
-
 - name: Set expected subnets
   ansible.builtin.set_fact:
     expected_subnets: ["{{ network.dhcp.uuid }}", "{{ overlay.uuid }}"]
@@ -251,9 +248,6 @@
 - name: Set project_user_references_sorted
   ansible.builtin.set_fact:
     project_user_references_sorted: "{{ project_user_reference_list|sort() }}"
-
-- debug:
-    var: result
 
 - name: Update Project Status
   ansible.builtin.assert:
