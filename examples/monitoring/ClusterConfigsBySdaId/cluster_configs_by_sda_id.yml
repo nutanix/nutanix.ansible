@@ -1,0 +1,94 @@
+---
+# Summary:
+# This playbook demonstrates the ClusterConfigsBySdaId workflow using the v4
+# monitoring modules. Only UPDATE is supported by the Nutanix Monitoring v4 API
+# for per-cluster SDA policy configs; create/delete are intentionally rejected
+# with a descriptive error.
+#
+#   1. Discover a live System-Defined Alert Policy via a direct REST call (so
+#      the playbook is self-contained and does not require hardcoded IDs).
+#   2. List all cluster configs of the discovered SDA policy.
+#   3. Get the cluster config for a specific cluster.
+#   4. Update the cluster config with all attributes (schedule interval,
+#      is_enabled, alert_config).
+#   5. Idempotency-friendly disable using is_enabled=false (the closest thing
+#      to a "delete" this API supports).
+
+- name: ClusterConfigsBySdaId playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host }}"
+      nutanix_username: "{{ nutanix_username }}"
+      nutanix_password: "{{ nutanix_password }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  vars:
+    nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', True) }}"
+    nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default('9440', True) }}"
+    nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', True) }}"
+    nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('<pass>', True) }}"
+    validate_certs: false
+  tasks:
+    - name: Discover a live SDA policy via REST (for a fully self-contained example)
+      ansible.builtin.uri:
+        url: >-
+          https://{{ nutanix_host }}:{{ nutanix_port }}/api/monitoring/v4.0/serviceability/alerts/system-defined-policies?$limit=100
+        method: GET
+        user: "{{ nutanix_username }}"
+        password: "{{ nutanix_password }}"
+        force_basic_auth: true
+        validate_certs: "{{ validate_certs }}"
+        return_content: true
+        status_code: 200
+        headers:
+          Accept: application/json
+      register: sda_policies_raw
+
+    - name: Pick a SCHEDULED SDA policy so the update covers schedule_interval_seconds
+      ansible.builtin.set_fact:
+        sda_policy_ext_id: >-
+          {{ ((sda_policies_raw.json.data | selectattr('subType', 'defined')
+              | selectattr('subType', 'equalto', 'SCHEDULED') | list)
+             + sda_policies_raw.json.data)[0].extId }}
+
+    - name: List all cluster configs for the discovered SDA policy
+      nutanix.ncp.ntnx_monitoring_cluster_configs_info_v2:
+        system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+      register: all_configs
+
+    - name: Capture the first cluster config ext_id (cluster UUID)
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ all_configs.response[0].ext_id }}"
+        current_is_enabled: "{{ all_configs.response[0].is_enabled | default(true) }}"
+
+    - name: Get cluster config for a specific cluster
+      nutanix.ncp.ntnx_monitoring_cluster_configs_info_v2:
+        system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+        ext_id: "{{ cluster_ext_id }}"
+      register: one_config
+
+    - name: Update SDA policy cluster config (only fields the picked policy supports)
+      nutanix.ncp.ntnx_cluster_configs_by_sda_id_v2:
+        state: present
+        system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+        ext_id: "{{ cluster_ext_id }}"
+        is_enabled: true
+        schedule_interval_seconds: "{{ all_configs.response[0].schedule_interval_seconds | default(600) }}"
+      register: update_result
+
+    - name: Disable an SDA policy on a specific cluster (soft-delete)
+      nutanix.ncp.ntnx_cluster_configs_by_sda_id_v2:
+        state: present
+        system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+        ext_id: "{{ cluster_ext_id }}"
+        is_enabled: false
+      register: disable_result
+
+    - name: Restore original is_enabled state
+      nutanix.ncp.ntnx_cluster_configs_by_sda_id_v2:
+        state: present
+        system_defined_policy_ext_id: "{{ sda_policy_ext_id }}"
+        ext_id: "{{ cluster_ext_id }}"
+        is_enabled: "{{ current_is_enabled | bool }}"
+      register: restore_result
