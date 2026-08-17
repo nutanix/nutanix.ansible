@@ -1,0 +1,115 @@
+---
+# Summary:
+# This playbook demonstrates end-to-end usage of the ntnx_files_fix_infected_file_v2
+# and ntnx_fix_infected_files_info_v2 modules for managing infected files on a
+# Nutanix Files server.
+#
+# The playbook will:
+#   1. List all infected files on a target file server (info module - list).
+#   2. Fetch a specific infected file by external ID (info module - get by id).
+#   3. Quarantine the infected file (create/fix action = QUARANTINE).
+#   4. Rescan the infected file (update/fix action = RESCAN).
+#   5. Delete the infected file entry from the file server.
+#
+# Variables required:
+#   file_server_ext_id: External ID of a File Server registered in Prism Central.
+#   infected_file_ext_id: External ID of an infected file that already exists on
+#                         that file server (usually detected via the configured
+#                         ICAP/AV partner server).
+#
+# Prerequisites (must exist BEFORE running this playbook):
+#   * A Nutanix Files server is deployed and reachable from Prism Central.
+#   * At least one antivirus (ICAP) partner server is configured on the file
+#     server and the file server has been marked as "scanned" so that infected
+#     entries can appear.
+#   * An infected file entry exists on the file server (e.g. an EICAR test file
+#     placed on an SMB / NFS share whose scan result was "infected").
+
+- name: FixInfectedFile - Nutanix Files infected files management
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('<user>', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('<pass>', true) }}"
+      validate_certs: false
+  tasks:
+    - name: Set required variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "9c1e537d-6777-4c22-5d41-ddd0c3337aa9"
+        infected_file_ext_id: "b6f6c9c7-6b0a-4d3e-a91d-2eaf2b3ec8b1"
+
+    #####################################################################
+    # 1. Info - list all infected files on the file server
+    #####################################################################
+    - name: List all infected files on the target file server
+      nutanix.ncp.ntnx_fix_infected_files_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: infected_files_list
+      ignore_errors: true
+
+    - name: Show list of infected files
+      ansible.builtin.debug:
+        var: infected_files_list
+
+    #####################################################################
+    # 2. Info - fetch a specific infected file by ext_id
+    #####################################################################
+    - name: Get a specific infected file by ext_id
+      nutanix.ncp.ntnx_fix_infected_files_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ infected_file_ext_id }}"
+      register: infected_file_single
+      ignore_errors: true
+
+    - name: Show the single infected file
+      ansible.builtin.debug:
+        var: infected_file_single
+
+    #####################################################################
+    # 3. Fix action - QUARANTINE an infected file
+    #####################################################################
+    - name: Quarantine an infected file
+      nutanix.ncp.ntnx_files_fix_infected_file_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ infected_file_ext_id }}"
+        action: QUARANTINE
+      register: quarantine_result
+      ignore_errors: true
+
+    - name: Show quarantine result
+      ansible.builtin.debug:
+        var: quarantine_result
+
+    #####################################################################
+    # 4. Fix action - RESCAN an infected file
+    #####################################################################
+    - name: Rescan an infected file
+      nutanix.ncp.ntnx_files_fix_infected_file_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ infected_file_ext_id }}"
+        action: RESCAN
+      register: rescan_result
+      ignore_errors: true
+
+    - name: Show rescan result
+      ansible.builtin.debug:
+        var: rescan_result
+
+    #####################################################################
+    # 5. Delete - remove the infected file entry
+    #####################################################################
+    - name: Delete infected file entry
+      nutanix.ncp.ntnx_files_fix_infected_file_v2:
+        state: absent
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ infected_file_ext_id }}"
+      register: delete_result
+      ignore_errors: true
+
+    - name: Show delete result
+      ansible.builtin.debug:
+        var: delete_result

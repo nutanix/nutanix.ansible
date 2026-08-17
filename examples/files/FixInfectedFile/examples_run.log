@@ -1,0 +1,147 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [FixInfectedFile - Nutanix Files infected files management] ***************
+
+TASK [Set required variables] **************************************************
+ok: [localhost] => {"ansible_facts": {"file_server_ext_id": "9c1e537d-6777-4c22-5d41-ddd0c3337aa9", "infected_file_ext_id": "b6f6c9c7-6b0a-4d3e-a91d-2eaf2b3ec8b1"}, "changed": false}
+
+TASK [List all infected files on the target file server] ***********************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching infected files info
+Origin: /tmp/codegen/fb0caf98e24043ba9826454559d0dec3/repo/examples/files/FixInfectedFile/fix_infected_files.yml:46:7
+
+44     # 1. Info - list all infected files on the file server
+45     #####################################################################
+46     - name: List all infected files on the target file server
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching infected files info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Show list of infected files] *********************************************
+ok: [localhost] => {
+    "infected_files_list": {
+        "changed": false,
+        "error": "SERVICE UNAVAILABLE",
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Api Exception raised while fetching infected files info",
+        "response": {
+            "message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"
+        },
+        "status": 503
+    }
+}
+
+TASK [Get a specific infected file by ext_id] **********************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching infected file info using ext_id 'b6f6c9c7-6b0a-4d3e-a91d-2eaf2b3ec8b1' on file server '9c1e537d-6777-4c22-5d41-ddd0c3337aa9'
+Origin: /tmp/codegen/fb0caf98e24043ba9826454559d0dec3/repo/examples/files/FixInfectedFile/fix_infected_files.yml:59:7
+
+57     # 2. Info - fetch a specific infected file by ext_id
+58     #####################################################################
+59     - name: Get a specific infected file by ext_id
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching infected file info using ext_id 'b6f6c9c7-6b0a-4d3e-a91d-2eaf2b3ec8b1' on file server '9c1e537d-6777-4c22-5d41-ddd0c3337aa9'", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Show the single infected file] *******************************************
+ok: [localhost] => {
+    "infected_file_single": {
+        "changed": false,
+        "error": "SERVICE UNAVAILABLE",
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Api Exception raised while fetching infected file info using ext_id 'b6f6c9c7-6b0a-4d3e-a91d-2eaf2b3ec8b1' on file server '9c1e537d-6777-4c22-5d41-ddd0c3337aa9'",
+        "response": {
+            "message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"
+        },
+        "status": 503
+    }
+}
+
+TASK [Quarantine an infected file] *********************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching infected file info using ext_id 'b6f6c9c7-6b0a-4d3e-a91d-2eaf2b3ec8b1' on file server '9c1e537d-6777-4c22-5d41-ddd0c3337aa9'
+Origin: /tmp/codegen/fb0caf98e24043ba9826454559d0dec3/repo/examples/files/FixInfectedFile/fix_infected_files.yml:73:7
+
+71     # 3. Fix action - QUARANTINE an infected file
+72     #####################################################################
+73     - name: Quarantine an infected file
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching infected file info using ext_id 'b6f6c9c7-6b0a-4d3e-a91d-2eaf2b3ec8b1' on file server '9c1e537d-6777-4c22-5d41-ddd0c3337aa9'", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Show quarantine result] **************************************************
+ok: [localhost] => {
+    "quarantine_result": {
+        "changed": false,
+        "error": "SERVICE UNAVAILABLE",
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Api Exception raised while fetching infected file info using ext_id 'b6f6c9c7-6b0a-4d3e-a91d-2eaf2b3ec8b1' on file server '9c1e537d-6777-4c22-5d41-ddd0c3337aa9'",
+        "response": {
+            "message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"
+        },
+        "status": 503
+    }
+}
+
+TASK [Rescan an infected file] *************************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching infected file info using ext_id 'b6f6c9c7-6b0a-4d3e-a91d-2eaf2b3ec8b1' on file server '9c1e537d-6777-4c22-5d41-ddd0c3337aa9'
+Origin: /tmp/codegen/fb0caf98e24043ba9826454559d0dec3/repo/examples/files/FixInfectedFile/fix_infected_files.yml:89:7
+
+87     # 4. Fix action - RESCAN an infected file
+88     #####################################################################
+89     - name: Rescan an infected file
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching infected file info using ext_id 'b6f6c9c7-6b0a-4d3e-a91d-2eaf2b3ec8b1' on file server '9c1e537d-6777-4c22-5d41-ddd0c3337aa9'", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Show rescan result] ******************************************************
+ok: [localhost] => {
+    "rescan_result": {
+        "changed": false,
+        "error": "SERVICE UNAVAILABLE",
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Api Exception raised while fetching infected file info using ext_id 'b6f6c9c7-6b0a-4d3e-a91d-2eaf2b3ec8b1' on file server '9c1e537d-6777-4c22-5d41-ddd0c3337aa9'",
+        "response": {
+            "message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"
+        },
+        "status": 503
+    }
+}
+
+TASK [Delete infected file entry] **********************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while deleting infected file 'b6f6c9c7-6b0a-4d3e-a91d-2eaf2b3ec8b1' on file server '9c1e537d-6777-4c22-5d41-ddd0c3337aa9'
+Origin: /tmp/codegen/fb0caf98e24043ba9826454559d0dec3/repo/examples/files/FixInfectedFile/fix_infected_files.yml:105:7
+
+103     # 5. Delete - remove the infected file entry
+104     #####################################################################
+105     - name: Delete infected file entry
+          ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while deleting infected file 'b6f6c9c7-6b0a-4d3e-a91d-2eaf2b3ec8b1' on file server '9c1e537d-6777-4c22-5d41-ddd0c3337aa9'", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Show delete result] ******************************************************
+ok: [localhost] => {
+    "delete_result": {
+        "changed": false,
+        "error": "SERVICE UNAVAILABLE",
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Api Exception raised while deleting infected file 'b6f6c9c7-6b0a-4d3e-a91d-2eaf2b3ec8b1' on file server '9c1e537d-6777-4c22-5d41-ddd0c3337aa9'",
+        "response": {
+            "message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"
+        },
+        "status": 503
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=11   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=5   
+
