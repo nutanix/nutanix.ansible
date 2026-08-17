@@ -1,0 +1,79 @@
+---
+# Summary:
+# This playbook demonstrates all supported operations on Nutanix Files DNS
+# records for a file server using the v4 DNS API:
+#   1. List all DNS records for a file server
+#   2. Get a specific DNS record by external ID
+#   3. Revise DNS records (ADD)
+#   4. Revise DNS records (REMOVE)
+#   5. Verify DNS records
+
+- name: Nutanix Files - DNS Records playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "ac5aff0c-6c68-4948-9088-b903e2be0ce7"
+        preferred_name_server: "dns.example.com"
+        dns_admin_username: "administrator@example.com"
+        dns_admin_password: "SuperSecret1"
+
+    - name: List all DNS records for the file server
+      nutanix.ncp.ntnx_files_dns_records_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: dns_records_result
+      ignore_errors: true
+
+    - name: Get a specific DNS record by external ID
+      nutanix.ncp.ntnx_files_dns_records_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ dns_records_result.response[0].ext_id }}"
+      when:
+        - dns_records_result.response is defined
+        - dns_records_result.response | length > 0
+      register: dns_record_by_id_result
+      ignore_errors: true
+
+    - name: Revise DNS records - Add DNS entries on the DNS server
+      nutanix.ncp.ntnx_dns_record_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        operation: revise
+        dns_action: ADD
+        preferred_name_server: "{{ preferred_name_server }}"
+        credential:
+          username: "{{ dns_admin_username }}"
+          password: "{{ dns_admin_password }}"
+      register: revise_add_result
+      ignore_errors: true
+
+    - name: Revise DNS records - Remove DNS entries from the DNS server
+      nutanix.ncp.ntnx_dns_record_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        operation: revise
+        dns_action: REMOVE
+        preferred_name_server: "{{ preferred_name_server }}"
+        credential:
+          username: "{{ dns_admin_username }}"
+          password: "{{ dns_admin_password }}"
+      register: revise_remove_result
+      ignore_errors: true
+
+    - name: Verify DNS records for the file server
+      nutanix.ncp.ntnx_dns_record_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        operation: verify
+        credential:
+          username: "{{ dns_admin_username }}"
+          password: "{{ dns_admin_password }}"
+      register: verify_result
+      ignore_errors: true
