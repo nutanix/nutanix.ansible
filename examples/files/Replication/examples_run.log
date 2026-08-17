@@ -1,0 +1,41 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Nutanix Files Replication playbook] **************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"primary_file_server_ext_id": "9c1e537d-6777-4c22-5d41-ddd0c3337aa9", "secondary_file_server_ext_id": "8c1e537d-6777-4c22-5d41-ddd0c3337aa8"}, "changed": false}
+
+TASK [Resume replication after a planned failover with AD and DNS re-registration] ***
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while resuming replication", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Resume replication after an unplanned failover (reverse direction)] ******
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while resuming replication", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Get replication job details using external ID] ***************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching replication job info using ext_id: 6f6c5e75-bd80-4d5a-9d3f-7a1f7f9a4d90", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List all replication jobs] ***********************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching replication jobs info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List replication jobs filtered by policy external ID] ********************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching replication jobs info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List replication jobs with limit and ordering by start time] *************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching replication jobs info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List replication jobs selecting a subset of fields] **********************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching replication jobs info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=7   
+
