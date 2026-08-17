@@ -1,0 +1,57 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [VPN Appliances by VPN Connection Id playbook] ****************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"vpn_connection_ext_id": "2e40ff57-20aa-4d2b-b179-298db969c20d"}, "changed": false}
+
+TASK [List all supported third-party VPN appliances for the VPN connection] ****
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching VPN appliances info
+Origin: /tmp/codegen/3d779631bc1c4af8b668e6898e77bc45/repo/examples/networking/VpnAppliancesByVpnConnectionId/vpn_appliances_by_vpn_connection_id_v2.yml:34:7
+
+32         vpn_connection_ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+33
+34     - name: List all supported third-party VPN appliances for the VPN connection
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VPN appliances info", "response": {"$objectType": "networking.v4.config.GetVpnConnectionApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to list VPN vendor configs by VPN connection 2e40ff57-20aa-4d2b-b179-298db969c20d as a referenced resource was not found - Application error kNotFound raised: VpnConnection 2e40ff57-20aa-4d2b-b179-298db969c20d not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/vpn-connections/2e40ff57-20aa-4d2b-b179-298db969c20d/vpn-vendor-configs", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+TASK [Save the first appliance ext_id for the follow up tasks] *****************
+ok: [localhost] => {"ansible_facts": {"appliance_ext_id": ""}, "changed": false}
+
+TASK [List VPN appliances filtered by name prefix] *****************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching VPN appliances info
+Origin: /tmp/codegen/3d779631bc1c4af8b668e6898e77bc45/repo/examples/networking/VpnAppliancesByVpnConnectionId/vpn_appliances_by_vpn_connection_id_v2.yml:48:7
+
+46         - list_all_result.response | length > 0
+47
+48     - name: List VPN appliances filtered by name prefix
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VPN appliances info", "response": {"$objectType": "networking.v4.config.GetVpnConnectionApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to list VPN vendor configs by VPN connection 2e40ff57-20aa-4d2b-b179-298db969c20d as a referenced resource was not found - Application error kNotFound raised: VpnConnection 2e40ff57-20aa-4d2b-b179-298db969c20d not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/vpn-connections/2e40ff57-20aa-4d2b-b179-298db969c20d/vpn-vendor-configs", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+TASK [List VPN appliances with limit and orderby] ******************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching VPN appliances info
+Origin: /tmp/codegen/3d779631bc1c4af8b668e6898e77bc45/repo/examples/networking/VpnAppliancesByVpnConnectionId/vpn_appliances_by_vpn_connection_id_v2.yml:55:7
+
+53       ignore_errors: true
+54
+55     - name: List VPN appliances with limit and orderby
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VPN appliances info", "response": {"$objectType": "networking.v4.config.GetVpnConnectionApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to list VPN vendor configs by VPN connection 2e40ff57-20aa-4d2b-b179-298db969c20d as a referenced resource was not found - Application error kNotFound raised: VpnConnection 2e40ff57-20aa-4d2b-b179-298db969c20d not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/vpn-connections/2e40ff57-20aa-4d2b-b179-298db969c20d/vpn-vendor-configs", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+TASK [Fetch a specific third-party VPN appliance configuration (info module)] ***
+skipping: [localhost] => {"changed": false, "false_condition": "appliance_ext_id | default('') | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [Download third-party VPN appliance configuration] ************************
+skipping: [localhost] => {"changed": false, "false_condition": "appliance_ext_id | default('') | length > 0", "skip_reason": "Conditional result was False"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=0    unreachable=0    failed=0    skipped=2    rescued=0    ignored=3   
+
