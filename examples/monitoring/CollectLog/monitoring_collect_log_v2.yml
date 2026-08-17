@@ -1,0 +1,77 @@
+---
+# Summary:
+# This playbook will do:
+# 1. List all available log-collection tags for a Prism Element cluster.
+# 2. Fetch a single log-collection tag by its external ID.
+# 3. Trigger a log-collection action (create) on the cluster with a
+#    LOCAL upload destination and a small time window and ALL supported
+#    attributes populated.
+# 4. Trigger a log-collection action again (update-shaped invocation)
+#    with slightly different attributes to demonstrate that CollectLog
+#    is an action (each invocation reports changed=true).
+# NOTE: "delete" (state=absent) is unsupported for CollectLog since it is
+# a fire-and-forget action; only state=present is accepted by the module.
+
+- name: CollectLog v4 playbook
+  hosts: localhost
+  gather_facts: true
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.44.76.28"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        # PE cluster registered with the target Prism Central.
+        cluster_uuid: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+        start_time: "{{ '%Y-%m-%dT%H:%M:%SZ' | strftime((ansible_date_time.epoch | int) - 900) }}"
+        end_time: "{{ '%Y-%m-%dT%H:%M:%SZ' | strftime((ansible_date_time.epoch | int)) }}"
+
+    - name: List all log-collection tags on the cluster
+      nutanix.ncp.ntnx_collect_logs_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        limit: 5
+      register: tags_result
+
+    - name: Fetch a single log-collection tag by ext_id
+      nutanix.ncp.ntnx_collect_logs_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        ext_id: "{{ tags_result.response[0].ext_id }}"
+      register: tag_result
+
+    - name: Trigger a log collection (create — LOCAL upload, all attributes)
+      nutanix.ncp.ntnx_monitoring_collect_log_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_uuid }}"
+        start_time: "{{ start_time }}"
+        end_time: "{{ end_time }}"
+        include_tags:
+          - "{{ tags_result.response[0].ext_id }}"
+        exclude_tags: []
+        should_anonymize: false
+        should_collect_from_disabled_node: false
+        description: "Log collection triggered by Ansible (create)"
+        archive_opts:
+          archive_name: "ansible_create_bundle"
+          upload_params:
+            local:
+              path: "/home/nutanix/data/logbay/bundles"
+      register: create_result
+
+    - name: Trigger a log collection (update-shaped invocation)
+      nutanix.ncp.ntnx_monitoring_collect_log_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_uuid }}"
+        start_time: "{{ start_time }}"
+        end_time: "{{ end_time }}"
+        include_tags:
+          - "{{ tags_result.response[0].ext_id }}"
+        should_anonymize: true
+        description: "Log collection triggered by Ansible (update)"
+        archive_opts:
+          archive_name: "ansible_update_bundle"
+          upload_params:
+            local: {}
+      register: update_result
