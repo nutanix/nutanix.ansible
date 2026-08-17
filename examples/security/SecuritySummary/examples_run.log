@@ -1,0 +1,377 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [SecuritySummary example playbook run] ************************************
+
+TASK [Trigger a refresh of security summaries] *********************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": null, "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "completed_time": "2026-07-20T15:50:03.000316+00:00", "completion_details": null, "created_time": "2026-07-20T15:49:41.741238+00:00", "entities_affected": [{"ext_id": "00000000-0000-0000-0000-000000000000", "name": "STIG report", "rel": "security:report:stigs"}, {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "Vulnerability report", "rel": "security:report:vulnerabilities"}, {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "System user password stats", "rel": "security:report:summaries"}], "error_messages": null, "ext_id": "ZXJnb24=:f37660b7-b58c-4c8d-4f72-2db3d81f1c41", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-20T15:50:03.000315+00:00", "legacy_error_message": null, "number_of_entities_affected": 3, "number_of_subtasks": 4, "operation": "Refresh", "operation_description": "Security dashboard refresh scan", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-20T15:49:41.754491+00:00", "status": "SUCCEEDED", "sub_steps": [{"name": "Executing scan main task"}, {"name": "Starting Refresh Scan task"}, {"name": "Triggered STIG scan tasks on all supported clusters"}, {"name": "Vulnerability scan finished updating parent task"}, {"name": "Password Manager Fanout finished updating parent task"}, {"name": "Publish Password Manager Stats finished updating parent task"}, {"name": "STIG scan completed successfully on 1 clusters, failed on 0 clusters"}], "sub_tasks": [{"ext_id": "ZXJnb24=:28478055-2027-460b-52c3-04a73475fdce", "href": "https://10.44.76.28:9440/api/prism/v4.3/config/tasks/ZXJnb24=:28478055-2027-460b-52c3-04a73475fdce", "rel": "subtask"}, {"ext_id": "ZXJnb24=:77730c9c-642a-481f-487b-3f3e07089957", "href": "https://10.44.76.28:9440/api/prism/v4.3/config/tasks/ZXJnb24=:77730c9c-642a-481f-487b-3f3e07089957", "rel": "subtask"}, {"ext_id": "ZXJnb24=:82220504-eec4-44bf-5a3a-268964d51001", "href": "https://10.44.76.28:9440/api/prism/v4.3/config/tasks/ZXJnb24=:82220504-eec4-44bf-5a3a-268964d51001", "rel": "subtask"}, {"ext_id": "ZXJnb24=:914b3bf0-8f1b-42d0-70db-aad2e50ee34f", "href": "https://10.44.76.28:9440/api/prism/v4.3/config/tasks/ZXJnb24=:914b3bf0-8f1b-42d0-70db-aad2e50ee34f", "rel": "subtask"}], "warnings": null}, "task_ext_id": "ZXJnb24=:f37660b7-b58c-4c8d-4f72-2db3d81f1c41"}
+
+TASK [Print refresh result] ****************************************************
+ok: [localhost] => {
+    "refresh_result": {
+        "changed": true,
+        "error": null,
+        "ext_id": null,
+        "failed": false,
+        "response": {
+            "app_name": null,
+            "batch_summary": null,
+            "cluster_ext_ids": [
+                "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+            ],
+            "completed_time": "2026-07-20T15:50:03.000316+00:00",
+            "completion_details": null,
+            "created_time": "2026-07-20T15:49:41.741238+00:00",
+            "entities_affected": [
+                {
+                    "ext_id": "00000000-0000-0000-0000-000000000000",
+                    "name": "STIG report",
+                    "rel": "security:report:stigs"
+                },
+                {
+                    "ext_id": "00000000-0000-0000-0000-000000000000",
+                    "name": "Vulnerability report",
+                    "rel": "security:report:vulnerabilities"
+                },
+                {
+                    "ext_id": "00000000-0000-0000-0000-000000000000",
+                    "name": "System user password stats",
+                    "rel": "security:report:summaries"
+                }
+            ],
+            "error_messages": null,
+            "ext_id": "ZXJnb24=:f37660b7-b58c-4c8d-4f72-2db3d81f1c41",
+            "is_background_task": false,
+            "is_cancelable": false,
+            "last_updated_time": "2026-07-20T15:50:03.000315+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 3,
+            "number_of_subtasks": 4,
+            "operation": "Refresh",
+            "operation_description": "Security dashboard refresh scan",
+            "owned_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "name": "admin"
+            },
+            "parent_task": null,
+            "progress_percentage": 100,
+            "projectExtId": "00000000-0000-0000-0000-000000000000",
+            "resource_links": null,
+            "root_task": null,
+            "started_time": "2026-07-20T15:49:41.754491+00:00",
+            "status": "SUCCEEDED",
+            "sub_steps": [
+                {
+                    "name": "Executing scan main task"
+                },
+                {
+                    "name": "Starting Refresh Scan task"
+                },
+                {
+                    "name": "Triggered STIG scan tasks on all supported clusters"
+                },
+                {
+                    "name": "Vulnerability scan finished updating parent task"
+                },
+                {
+                    "name": "Password Manager Fanout finished updating parent task"
+                },
+                {
+                    "name": "Publish Password Manager Stats finished updating parent task"
+                },
+                {
+                    "name": "STIG scan completed successfully on 1 clusters, failed on 0 clusters"
+                }
+            ],
+            "sub_tasks": [
+                {
+                    "ext_id": "ZXJnb24=:28478055-2027-460b-52c3-04a73475fdce",
+                    "href": "https://10.44.76.28:9440/api/prism/v4.3/config/tasks/ZXJnb24=:28478055-2027-460b-52c3-04a73475fdce",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:77730c9c-642a-481f-487b-3f3e07089957",
+                    "href": "https://10.44.76.28:9440/api/prism/v4.3/config/tasks/ZXJnb24=:77730c9c-642a-481f-487b-3f3e07089957",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:82220504-eec4-44bf-5a3a-268964d51001",
+                    "href": "https://10.44.76.28:9440/api/prism/v4.3/config/tasks/ZXJnb24=:82220504-eec4-44bf-5a3a-268964d51001",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:914b3bf0-8f1b-42d0-70db-aad2e50ee34f",
+                    "href": "https://10.44.76.28:9440/api/prism/v4.3/config/tasks/ZXJnb24=:914b3bf0-8f1b-42d0-70db-aad2e50ee34f",
+                    "rel": "subtask"
+                }
+            ],
+            "warnings": null
+        },
+        "task_ext_id": "ZXJnb24=:f37660b7-b58c-4c8d-4f72-2db3d81f1c41"
+    }
+}
+
+TASK [List all security summaries] *********************************************
+ok: [localhost] => {"changed": false, "error": null, "response": [{"cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "last_refresh_time": "2026-07-20T15:50:03.010575+00:00", "links": null, "password_summary": {"current_issue_count": 1, "trends": [{"count": 1, "timestamp": "2026-07-20T00:00:00+00:00"}, {"count": 1, "timestamp": "2026-07-19T00:00:00+00:00"}, {"count": 1, "timestamp": "2026-07-18T00:00:00+00:00"}]}, "security_config_summary": {"current_issue_count": 4, "is_cluster_lockdown_enabled": false, "is_consent_banner_enabled": false, "is_log_forwarding_enabled": false, "is_secure_boot_enabled": false, "trends": null}, "stig_summary": {"current_issue_count": 61, "failed_count": 61, "not_applicable_count": 12, "passed_count": 32, "trends": [{"count": 61, "timestamp": "2026-07-20T00:00:00+00:00"}, {"count": 61, "timestamp": "2026-07-19T00:00:00+00:00"}, {"count": 61, "timestamp": "2026-07-18T00:00:00+00:00"}]}, "tenant_id": null, "trend_type": "DAY", "vulnerabilities_summary": {"current_issue_count": 0, "trends": [{"count": 0, "timestamp": "2026-07-20T00:00:00+00:00"}, {"count": 0, "timestamp": "2026-07-19T00:00:00+00:00"}, {"count": 0, "timestamp": "2026-07-18T00:00:00+00:00"}], "vulnerability_details": [{"cve_ids": null, "installed_version": "7.6", "software_type": "AOS"}, {"cve_ids": null, "installed_version": "11.2", "software_type": "AHV"}]}}, {"cluster_ext_id": "cae459ec-08db-475e-a5e5-151e390c9484", "ext_id": "cae459ec-08db-475e-a5e5-151e390c9484", "last_refresh_time": "2026-07-20T15:50:03.010575+00:00", "links": null, "password_summary": {"current_issue_count": 2, "trends": [{"count": 2, "timestamp": "2026-07-20T00:00:00+00:00"}, {"count": 2, "timestamp": "2026-07-19T00:00:00+00:00"}, {"count": 2, "timestamp": "2026-07-18T00:00:00+00:00"}]}, "security_config_summary": null, "stig_summary": null, "tenant_id": null, "trend_type": "DAY", "vulnerabilities_summary": {"current_issue_count": 0, "trends": [{"count": 0, "timestamp": "2026-07-19T15:50:07.481005+00:00"}, {"count": 0, "timestamp": "2026-07-18T15:50:07.481005+00:00"}, {"count": 0, "timestamp": "2026-07-17T15:50:07.481005+00:00"}], "vulnerability_details": [{"cve_ids": null, "installed_version": "7.6", "software_type": "PC"}]}}], "total_available_results": 2}
+
+TASK [Print list result] *******************************************************
+ok: [localhost] => {
+    "list_result": {
+        "changed": false,
+        "error": null,
+        "failed": false,
+        "response": [
+            {
+                "cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2",
+                "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2",
+                "last_refresh_time": "2026-07-20T15:50:03.010575+00:00",
+                "links": null,
+                "password_summary": {
+                    "current_issue_count": 1,
+                    "trends": [
+                        {
+                            "count": 1,
+                            "timestamp": "2026-07-20T00:00:00+00:00"
+                        },
+                        {
+                            "count": 1,
+                            "timestamp": "2026-07-19T00:00:00+00:00"
+                        },
+                        {
+                            "count": 1,
+                            "timestamp": "2026-07-18T00:00:00+00:00"
+                        }
+                    ]
+                },
+                "security_config_summary": {
+                    "current_issue_count": 4,
+                    "is_cluster_lockdown_enabled": false,
+                    "is_consent_banner_enabled": false,
+                    "is_log_forwarding_enabled": false,
+                    "is_secure_boot_enabled": false,
+                    "trends": null
+                },
+                "stig_summary": {
+                    "current_issue_count": 61,
+                    "failed_count": 61,
+                    "not_applicable_count": 12,
+                    "passed_count": 32,
+                    "trends": [
+                        {
+                            "count": 61,
+                            "timestamp": "2026-07-20T00:00:00+00:00"
+                        },
+                        {
+                            "count": 61,
+                            "timestamp": "2026-07-19T00:00:00+00:00"
+                        },
+                        {
+                            "count": 61,
+                            "timestamp": "2026-07-18T00:00:00+00:00"
+                        }
+                    ]
+                },
+                "tenant_id": null,
+                "trend_type": "DAY",
+                "vulnerabilities_summary": {
+                    "current_issue_count": 0,
+                    "trends": [
+                        {
+                            "count": 0,
+                            "timestamp": "2026-07-20T00:00:00+00:00"
+                        },
+                        {
+                            "count": 0,
+                            "timestamp": "2026-07-19T00:00:00+00:00"
+                        },
+                        {
+                            "count": 0,
+                            "timestamp": "2026-07-18T00:00:00+00:00"
+                        }
+                    ],
+                    "vulnerability_details": [
+                        {
+                            "cve_ids": null,
+                            "installed_version": "7.6",
+                            "software_type": "AOS"
+                        },
+                        {
+                            "cve_ids": null,
+                            "installed_version": "11.2",
+                            "software_type": "AHV"
+                        }
+                    ]
+                }
+            },
+            {
+                "cluster_ext_id": "cae459ec-08db-475e-a5e5-151e390c9484",
+                "ext_id": "cae459ec-08db-475e-a5e5-151e390c9484",
+                "last_refresh_time": "2026-07-20T15:50:03.010575+00:00",
+                "links": null,
+                "password_summary": {
+                    "current_issue_count": 2,
+                    "trends": [
+                        {
+                            "count": 2,
+                            "timestamp": "2026-07-20T00:00:00+00:00"
+                        },
+                        {
+                            "count": 2,
+                            "timestamp": "2026-07-19T00:00:00+00:00"
+                        },
+                        {
+                            "count": 2,
+                            "timestamp": "2026-07-18T00:00:00+00:00"
+                        }
+                    ]
+                },
+                "security_config_summary": null,
+                "stig_summary": null,
+                "tenant_id": null,
+                "trend_type": "DAY",
+                "vulnerabilities_summary": {
+                    "current_issue_count": 0,
+                    "trends": [
+                        {
+                            "count": 0,
+                            "timestamp": "2026-07-19T15:50:07.481005+00:00"
+                        },
+                        {
+                            "count": 0,
+                            "timestamp": "2026-07-18T15:50:07.481005+00:00"
+                        },
+                        {
+                            "count": 0,
+                            "timestamp": "2026-07-17T15:50:07.481005+00:00"
+                        }
+                    ],
+                    "vulnerability_details": [
+                        {
+                            "cve_ids": null,
+                            "installed_version": "7.6",
+                            "software_type": "PC"
+                        }
+                    ]
+                }
+            }
+        ],
+        "total_available_results": 2
+    }
+}
+
+TASK [List security summaries with filter (trendType eq DAY)] ******************
+ok: [localhost] => {"changed": false, "error": null, "response": [], "total_available_results": 0}
+
+TASK [Print filter result] *****************************************************
+ok: [localhost] => {
+    "filter_result": {
+        "changed": false,
+        "error": null,
+        "failed": false,
+        "response": [],
+        "total_available_results": 0
+    }
+}
+
+TASK [List security summaries with a limit] ************************************
+ok: [localhost] => {"changed": false, "error": null, "response": [{"cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "last_refresh_time": "2026-07-20T15:50:03.010575+00:00", "links": null, "password_summary": {"current_issue_count": 1, "trends": [{"count": 1, "timestamp": "2026-07-20T00:00:00+00:00"}, {"count": 1, "timestamp": "2026-07-19T00:00:00+00:00"}, {"count": 1, "timestamp": "2026-07-18T00:00:00+00:00"}]}, "security_config_summary": {"current_issue_count": 4, "is_cluster_lockdown_enabled": false, "is_consent_banner_enabled": false, "is_log_forwarding_enabled": false, "is_secure_boot_enabled": false, "trends": null}, "stig_summary": {"current_issue_count": 61, "failed_count": 61, "not_applicable_count": 12, "passed_count": 32, "trends": [{"count": 61, "timestamp": "2026-07-20T00:00:00+00:00"}, {"count": 61, "timestamp": "2026-07-19T00:00:00+00:00"}, {"count": 61, "timestamp": "2026-07-18T00:00:00+00:00"}]}, "tenant_id": null, "trend_type": "DAY", "vulnerabilities_summary": {"current_issue_count": 0, "trends": [{"count": 0, "timestamp": "2026-07-20T00:00:00+00:00"}, {"count": 0, "timestamp": "2026-07-19T00:00:00+00:00"}, {"count": 0, "timestamp": "2026-07-18T00:00:00+00:00"}], "vulnerability_details": [{"cve_ids": null, "installed_version": "7.6", "software_type": "AOS"}, {"cve_ids": null, "installed_version": "11.2", "software_type": "AHV"}]}}], "total_available_results": 2}
+
+TASK [Print limit result] ******************************************************
+ok: [localhost] => {
+    "limit_result": {
+        "changed": false,
+        "error": null,
+        "failed": false,
+        "response": [
+            {
+                "cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2",
+                "ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2",
+                "last_refresh_time": "2026-07-20T15:50:03.010575+00:00",
+                "links": null,
+                "password_summary": {
+                    "current_issue_count": 1,
+                    "trends": [
+                        {
+                            "count": 1,
+                            "timestamp": "2026-07-20T00:00:00+00:00"
+                        },
+                        {
+                            "count": 1,
+                            "timestamp": "2026-07-19T00:00:00+00:00"
+                        },
+                        {
+                            "count": 1,
+                            "timestamp": "2026-07-18T00:00:00+00:00"
+                        }
+                    ]
+                },
+                "security_config_summary": {
+                    "current_issue_count": 4,
+                    "is_cluster_lockdown_enabled": false,
+                    "is_consent_banner_enabled": false,
+                    "is_log_forwarding_enabled": false,
+                    "is_secure_boot_enabled": false,
+                    "trends": null
+                },
+                "stig_summary": {
+                    "current_issue_count": 61,
+                    "failed_count": 61,
+                    "not_applicable_count": 12,
+                    "passed_count": 32,
+                    "trends": [
+                        {
+                            "count": 61,
+                            "timestamp": "2026-07-20T00:00:00+00:00"
+                        },
+                        {
+                            "count": 61,
+                            "timestamp": "2026-07-19T00:00:00+00:00"
+                        },
+                        {
+                            "count": 61,
+                            "timestamp": "2026-07-18T00:00:00+00:00"
+                        }
+                    ]
+                },
+                "tenant_id": null,
+                "trend_type": "DAY",
+                "vulnerabilities_summary": {
+                    "current_issue_count": 0,
+                    "trends": [
+                        {
+                            "count": 0,
+                            "timestamp": "2026-07-20T00:00:00+00:00"
+                        },
+                        {
+                            "count": 0,
+                            "timestamp": "2026-07-19T00:00:00+00:00"
+                        },
+                        {
+                            "count": 0,
+                            "timestamp": "2026-07-18T00:00:00+00:00"
+                        }
+                    ],
+                    "vulnerability_details": [
+                        {
+                            "cve_ids": null,
+                            "installed_version": "7.6",
+                            "software_type": "AOS"
+                        },
+                        {
+                            "cve_ids": null,
+                            "installed_version": "11.2",
+                            "software_type": "AHV"
+                        }
+                    ]
+                }
+            }
+        ],
+        "total_available_results": 2
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

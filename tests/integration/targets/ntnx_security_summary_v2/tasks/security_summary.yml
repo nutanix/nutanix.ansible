@@ -1,0 +1,187 @@
+---
+# Test plan for SecuritySummary action + info modules
+#
+# Scenarios covered:
+# 1. Refresh action check_mode: validates dry-run behavior, no API call.
+# 2. Refresh action real invocation (wait=true): triggers refresh, waits, verifies SUCCEEDED task.
+# 3. Info list (after refresh): fetches all security summaries, verifies structure of each entry.
+# 4. Info list with limit=1: verifies the limit query is honored.
+# 5. Info list with clusterExtId filter: verifies filter returns exactly the requested cluster.
+# 6. Info list with invalid filter: verifies negative path returns descriptive API error.
+# 7. Refresh with wait=false: verifies task reference is returned without waiting.
+#
+# Note: back-to-back refreshes are intentionally spaced apart because the API
+# returns an ErrorResponse when a scan is already running.
+
+- name: Start SecuritySummary tests
+  ansible.builtin.debug:
+    msg: Start SecuritySummary tests
+
+########################################################################################
+# 1. Refresh action - check_mode
+########################################################################################
+
+- name: Trigger refresh of security summaries in check_mode
+  nutanix.ncp.ntnx_security_summary_v2:
+    state: present
+  check_mode: true
+  register: refresh_check_mode
+  ignore_errors: true
+
+- name: Assert check_mode refresh did not modify anything
+  ansible.builtin.assert:
+    that:
+      - refresh_check_mode is defined
+      - refresh_check_mode.changed == false
+      - refresh_check_mode.failed == false
+      - refresh_check_mode.msg is defined
+      - "'Security summaries refresh will be triggered.' in refresh_check_mode.msg"
+    success_msg: "check_mode refresh returned expected preview"
+    fail_msg: "check_mode refresh did not behave as expected"
+
+########################################################################################
+# 2. Refresh action - real invocation with wait=true (default)
+########################################################################################
+
+- name: Trigger refresh of security summaries (wait=true default)
+  nutanix.ncp.ntnx_security_summary_v2:
+    state: present
+  register: refresh_result
+  ignore_errors: true
+
+- name: Assert refresh completed successfully
+  ansible.builtin.assert:
+    that:
+      - refresh_result is defined
+      - refresh_result.changed == true
+      - refresh_result.failed == false
+      - refresh_result.task_ext_id is defined
+      - refresh_result.task_ext_id | length > 0
+      - refresh_result.response is defined
+      - refresh_result.response.status == "SUCCEEDED"
+    success_msg: "Security summaries refresh triggered and completed successfully"
+    fail_msg: "Security summaries refresh did not complete successfully"
+
+########################################################################################
+# 3. Info - list all security summaries (after refresh completes)
+########################################################################################
+
+- name: List all security summaries
+  nutanix.ncp.ntnx_security_summaries_info_v2:
+  register: list_result
+  ignore_errors: true
+
+- name: Assert list of security summaries fetched
+  ansible.builtin.assert:
+    that:
+      - list_result is defined
+      - list_result.changed == false
+      - list_result.failed == false
+      - list_result.response is defined
+      - list_result.total_available_results is defined
+    success_msg: "Security summaries list fetched successfully"
+    fail_msg: "Failed to fetch list of security summaries"
+
+- name: Assert each entry has expected top-level attributes
+  ansible.builtin.assert:
+    that:
+      - item.cluster_ext_id is defined
+      - item.ext_id is defined
+    success_msg: "Security summary entry has expected structure"
+    fail_msg: "Security summary entry is missing expected keys"
+  loop: "{{ list_result.response }}"
+  when: list_result.response | length > 0
+
+########################################################################################
+# 4. Info - list security summaries with limit=1
+########################################################################################
+
+- name: List security summaries with limit=1
+  nutanix.ncp.ntnx_security_summaries_info_v2:
+    limit: 1
+  register: limit_result
+  ignore_errors: true
+
+- name: Assert limit is honored
+  ansible.builtin.assert:
+    that:
+      - limit_result is defined
+      - limit_result.changed == false
+      - limit_result.failed == false
+      - limit_result.response is defined
+      - limit_result.response | length <= 1
+    success_msg: "Security summaries fetched with limit=1"
+    fail_msg: "Limit was not honored"
+
+########################################################################################
+# 5. Info - list with clusterExtId filter (uses cluster from limit_result to avoid empty list)
+########################################################################################
+
+- name: Set cluster_ext_id from limit result for filter test
+  ansible.builtin.set_fact:
+    filter_cluster_ext_id: "{{ limit_result.response[0].cluster_ext_id }}"
+  when: limit_result.response | length > 0
+
+- name: List security summaries with clusterExtId filter
+  nutanix.ncp.ntnx_security_summaries_info_v2:
+    filter: "clusterExtId eq '{{ filter_cluster_ext_id }}'"
+  register: filter_result
+  ignore_errors: true
+  when: filter_cluster_ext_id is defined
+
+- name: Assert filter query returned only the requested cluster
+  ansible.builtin.assert:
+    that:
+      - filter_result is defined
+      - filter_result.changed == false
+      - filter_result.failed == false
+      - filter_result.response is defined
+      - filter_result.response | length >= 1
+      - filter_result.response[0].cluster_ext_id == filter_cluster_ext_id
+    success_msg: "Security summaries fetched with clusterExtId filter"
+    fail_msg: "Filter query failed"
+  when: filter_cluster_ext_id is defined
+
+########################################################################################
+# 6. Negative - invalid filter should surface API error
+########################################################################################
+
+- name: List security summaries with invalid filter
+  nutanix.ncp.ntnx_security_summaries_info_v2:
+    filter: "nonExistentField eq 'bogus'"
+  register: invalid_filter_result
+  ignore_errors: true
+
+- name: Assert invalid filter is handled with a descriptive error
+  ansible.builtin.assert:
+    that:
+      - invalid_filter_result is defined
+      - invalid_filter_result.failed == true
+      - invalid_filter_result.msg is defined
+      - "'Api Exception raised while fetching security summaries info' in invalid_filter_result.msg"
+    success_msg: "Invalid filter returned a descriptive error"
+    fail_msg: "Invalid filter did not fail as expected"
+
+########################################################################################
+# 7. Refresh action - wait=false, only task reference is returned
+########################################################################################
+
+- name: Trigger refresh of security summaries with wait=false
+  nutanix.ncp.ntnx_security_summary_v2:
+    state: present
+    wait: false
+  register: refresh_no_wait
+  ignore_errors: true
+
+- name: Assert wait=false refresh returns task reference immediately
+  ansible.builtin.assert:
+    that:
+      - refresh_no_wait is defined
+      - refresh_no_wait.changed == true
+      - refresh_no_wait.failed == false
+      - refresh_no_wait.task_ext_id is defined
+      - refresh_no_wait.task_ext_id | length > 0
+      - refresh_no_wait.response is defined
+      - refresh_no_wait.response.ext_id == refresh_no_wait.task_ext_id
+    success_msg: "wait=false refresh returned task reference as expected"
+    fail_msg: "wait=false refresh did not return a task reference"
