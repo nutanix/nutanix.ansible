@@ -1,0 +1,718 @@
+---
+# Test plan for ntnx_vpn_connection_v2 and ntnx_vpn_connections_info_v2:
+#   Check mode:
+#     * check_mode create (all attributes) validates the built spec.
+#     * check_mode update (all attributes) validates the built spec.
+#     * check_mode delete emits "will be deleted" message.
+#   CRUD lifecycle:
+#     * Create with minimum required fields (name + local_gateway_reference).
+#     * Create with the full attribute set including ipsec_config, dpd_config,
+#       qos_config, remote_gateway_reference, local_gateway_role and dynamic
+#       route priority.
+#     * Update the second connection (change name, description, DPD op, QoS
+#       limits, algorithms).
+#     * Idempotency: repeat the update with the same params and expect
+#       skipped + "Nothing to change." message.
+#   Info module:
+#     * Fetch by ext_id, list all, list with filter, list with limit.
+#     * Fetch with a bogus ext_id returns failed.
+#   Negative / spec validation:
+#     * Missing name (create) surfaces required_if failure.
+#     * Missing local_gateway_reference (create) surfaces
+#       validate_required_params failure.
+#     * Delete without ext_id surfaces required_if failure.
+#     * Delete with a bogus ext_id returns failed.
+#     * Invalid enum value for local_gateway_role is rejected by Ansible.
+#     * Invalid enum value for ipsec_config.ike_encryption_algorithm is
+#       rejected by Ansible.
+#   Cleanup:
+#     * Delete every VPN connection created during the run.
+
+- name: Start VPN Connections tests
+  ansible.builtin.debug:
+    msg: Start VPN Connections tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+    todelete: []
+
+- name: Set names for VPN connection
+  ansible.builtin.set_fact:
+    vpn_name: "vpn_{{ suffix_name }}_{{ random_name }}"
+
+- name: Set gateway references (must exist on the target PC)
+  ansible.builtin.set_fact:
+    local_gateway_ext_id: "{{ local_bgp_gateway.ext_id | default('1e04b1ef-6e2d-4cf1-8a67-8a5a70bb0a12') }}"
+    remote_gateway_ext_id: "{{ remote_bgp_gateway.ext_id | default('b8c2ce0a-3a51-4c66-8f42-5ea1a3f9c6c4') }}"
+
+########################################################################################
+# Create VPN Connection - check mode with all attributes
+########################################################################################
+
+- name: Generate spec for creating VPN connection using check mode with all attributes
+  nutanix.ncp.ntnx_vpn_connection_v2:
+    name: "check_mode_vpn_full"
+    description: "VPN connection created in check mode with all attributes"
+    local_gateway_reference: "{{ local_gateway_ext_id }}"
+    remote_gateway_reference: "{{ remote_gateway_ext_id }}"
+    local_gateway_role: "INITIATOR"
+    dynamic_route_priority: 500
+    ipsec_config:
+      pre_shared_key: "CheckModeSharedKey!"
+      local_vti_ip:
+        ipv4:
+          value: "169.254.10.1"
+          prefix_length: 30
+      remote_vti_ip:
+        ipv4:
+          value: "169.254.10.2"
+          prefix_length: 30
+      local_authentication_id: "local-id"
+      remote_authentication_id: "remote-id"
+      ike_lifetime_secs: 28800
+      ipsec_lifetime_secs: 3600
+      esp_pfs_dh_group_number: 14
+      ike_encryption_algorithm: "AES256"
+      ike_authentication_algorithm: "SHA256"
+      ipsec_encryption_algorithm: "AES256"
+      ipsec_authentication_algorithm: "SHA256"
+    dpd_config:
+      operation: "RESTART"
+      interval_secs: 30
+      timeout_secs: 120
+    qos_config:
+      ingress_limit_mbps: 100
+      egress_limit_mbps: 100
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating VPN connection using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_vpn_full"
+      - result.response.description == "VPN connection created in check mode with all attributes"
+      - result.response.local_gateway_reference == local_gateway_ext_id
+      - result.response.remote_gateway_reference == remote_gateway_ext_id
+      - result.response.local_gateway_role == "INITIATOR"
+      - result.response.dynamic_route_priority == 500
+      - result.response.ipsec_config.local_authentication_id == "local-id"
+      - result.response.ipsec_config.remote_authentication_id == "remote-id"
+      - result.response.ipsec_config.ike_lifetime_secs == 28800
+      - result.response.ipsec_config.ipsec_lifetime_secs == 3600
+      - result.response.ipsec_config.esp_pfs_dh_group_number == 14
+      - result.response.ipsec_config.ike_encryption_algorithm == "AES256"
+      - result.response.ipsec_config.ike_authentication_algorithm == "SHA256"
+      - result.response.ipsec_config.ipsec_encryption_algorithm == "AES256"
+      - result.response.ipsec_config.ipsec_authentication_algorithm == "SHA256"
+      - result.response.ipsec_config.local_vti_ip.ipv4.value == "169.254.10.1"
+      - result.response.ipsec_config.local_vti_ip.ipv4.prefix_length == 30
+      - result.response.ipsec_config.remote_vti_ip.ipv4.value == "169.254.10.2"
+      - result.response.ipsec_config.remote_vti_ip.ipv4.prefix_length == 30
+      - result.response.dpd_config.operation == "RESTART"
+      - result.response.dpd_config.interval_secs == 30
+      - result.response.dpd_config.timeout_secs == 120
+      - result.response.qos_config.ingress_limit_mbps == 100
+      - result.response.qos_config.egress_limit_mbps == 100
+    success_msg: "Spec for creating VPN connection using check mode with all attributes is generated successfully"
+    fail_msg: "Spec for creating VPN connection using check mode with all attributes is NOT generated successfully"
+
+########################################################################################
+# Create VPN Connection - minimum required attributes
+########################################################################################
+
+- name: Create VPN connection with minimum required attributes
+  nutanix.ncp.ntnx_vpn_connection_v2:
+    name: "{{ vpn_name }}_min"
+    local_gateway_reference: "{{ local_gateway_ext_id }}"
+    remote_gateway_reference: "{{ remote_gateway_ext_id }}"
+    local_gateway_role: "INITIATOR"
+    ipsec_config:
+      pre_shared_key: "MinSharedKey!"
+  register: result
+  ignore_errors: true
+
+- name: Create VPN connection with minimum required attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == vpn_name ~ "_min"
+      - result.response.local_gateway_reference == local_gateway_ext_id
+      - result.response.remote_gateway_reference == remote_gateway_ext_id
+      - result.response.local_gateway_role == "INITIATOR"
+    success_msg: "VPN connection with minimum required attributes created successfully"
+    fail_msg: "VPN connection with minimum required attributes creation failed"
+
+- name: Add VPN connection to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+########################################################################################
+# Create VPN Connection - all attributes
+########################################################################################
+
+- name: Create VPN connection with all attributes
+  nutanix.ncp.ntnx_vpn_connection_v2:
+    name: "{{ vpn_name }}_all"
+    description: "VPN connection created by Ansible integration tests with all attributes"
+    local_gateway_reference: "{{ local_gateway_ext_id }}"
+    remote_gateway_reference: "{{ remote_gateway_ext_id }}"
+    local_gateway_role: "INITIATOR"
+    dynamic_route_priority: 500
+    ipsec_config:
+      pre_shared_key: "AnsibleSharedKey!"
+      local_vti_ip:
+        ipv4:
+          value: "169.254.20.1"
+          prefix_length: 30
+      remote_vti_ip:
+        ipv4:
+          value: "169.254.20.2"
+          prefix_length: 30
+      local_authentication_id: "ans-local-id"
+      remote_authentication_id: "ans-remote-id"
+      ike_lifetime_secs: 28800
+      ipsec_lifetime_secs: 3600
+      esp_pfs_dh_group_number: 14
+      ike_encryption_algorithm: "AES256"
+      ike_authentication_algorithm: "SHA256"
+      ipsec_encryption_algorithm: "AES256"
+      ipsec_authentication_algorithm: "SHA256"
+    dpd_config:
+      operation: "RESTART"
+      interval_secs: 30
+      timeout_secs: 120
+    qos_config:
+      ingress_limit_mbps: 100
+      egress_limit_mbps: 100
+  register: result
+  ignore_errors: true
+
+- name: Create VPN connection with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == vpn_name ~ "_all"
+      - result.response.description == "VPN connection created by Ansible integration tests with all attributes"
+      - result.response.local_gateway_reference == local_gateway_ext_id
+      - result.response.remote_gateway_reference == remote_gateway_ext_id
+      - result.response.local_gateway_role == "INITIATOR"
+      - result.response.dynamic_route_priority == 500
+      - result.response.ipsec_config.ike_encryption_algorithm == "AES256"
+      - result.response.ipsec_config.ipsec_encryption_algorithm == "AES256"
+      - result.response.dpd_config.operation == "RESTART"
+      - result.response.qos_config.ingress_limit_mbps == 100
+    success_msg: "VPN connection with all attributes created successfully"
+    fail_msg: "VPN connection with all attributes creation failed"
+
+- name: Add VPN connection to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+########################################################################################
+# Create VPN Connection - negative tests
+########################################################################################
+
+- name: Create VPN connection with missing name
+  nutanix.ncp.ntnx_vpn_connection_v2:
+    local_gateway_reference: "{{ local_gateway_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Create VPN connection with missing name status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "state is present but any of the following are missing: name, ext_id"
+    success_msg: "Create VPN connection with missing name failed as expected"
+    fail_msg: "Create VPN connection with missing name did not fail as expected"
+
+- name: Create VPN connection with missing local_gateway_reference
+  nutanix.ncp.ntnx_vpn_connection_v2:
+    name: "test_vpn_missing_local_gw"
+    remote_gateway_reference: "{{ remote_gateway_ext_id }}"
+    local_gateway_role: "INITIATOR"
+    ipsec_config:
+      pre_shared_key: "AnyKey!"
+  register: result
+  ignore_errors: true
+
+- name: Create VPN connection with missing local_gateway_reference status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): local_gateway_reference"
+    success_msg: "Create VPN connection with missing local_gateway_reference failed as expected"
+    fail_msg: "Create VPN connection with missing local_gateway_reference did not fail as expected"
+
+- name: Create VPN connection with missing remote_gateway_reference
+  nutanix.ncp.ntnx_vpn_connection_v2:
+    name: "test_vpn_missing_remote_gw"
+    local_gateway_reference: "{{ local_gateway_ext_id }}"
+    local_gateway_role: "INITIATOR"
+    ipsec_config:
+      pre_shared_key: "AnyKey!"
+  register: result
+  ignore_errors: true
+
+- name: Create VPN connection with missing remote_gateway_reference status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): remote_gateway_reference"
+    success_msg: "Create VPN connection with missing remote_gateway_reference failed as expected"
+    fail_msg: "Create VPN connection with missing remote_gateway_reference did not fail as expected"
+
+- name: Create VPN connection with missing local_gateway_role
+  nutanix.ncp.ntnx_vpn_connection_v2:
+    name: "test_vpn_missing_role"
+    local_gateway_reference: "{{ local_gateway_ext_id }}"
+    remote_gateway_reference: "{{ remote_gateway_ext_id }}"
+    ipsec_config:
+      pre_shared_key: "AnyKey!"
+  register: result
+  ignore_errors: true
+
+- name: Create VPN connection with missing local_gateway_role status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): local_gateway_role"
+    success_msg: "Create VPN connection with missing local_gateway_role failed as expected"
+    fail_msg: "Create VPN connection with missing local_gateway_role did not fail as expected"
+
+- name: Create VPN connection with missing ipsec_config
+  nutanix.ncp.ntnx_vpn_connection_v2:
+    name: "test_vpn_missing_ipsec"
+    local_gateway_reference: "{{ local_gateway_ext_id }}"
+    remote_gateway_reference: "{{ remote_gateway_ext_id }}"
+    local_gateway_role: "INITIATOR"
+  register: result
+  ignore_errors: true
+
+- name: Create VPN connection with missing ipsec_config status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): ipsec_config"
+    success_msg: "Create VPN connection with missing ipsec_config failed as expected"
+    fail_msg: "Create VPN connection with missing ipsec_config did not fail as expected"
+
+- name: Create VPN connection with invalid local_gateway_role
+  nutanix.ncp.ntnx_vpn_connection_v2:
+    name: "test_vpn_invalid_role"
+    local_gateway_reference: "{{ local_gateway_ext_id }}"
+    local_gateway_role: "INVALID_ROLE"
+  register: result
+  ignore_errors: true
+
+- name: Create VPN connection with invalid local_gateway_role status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of local_gateway_role must be one of' in result.msg"
+    success_msg: "Create VPN connection with invalid local_gateway_role failed as expected"
+    fail_msg: "Create VPN connection with invalid local_gateway_role did not fail as expected"
+
+- name: Create VPN connection with invalid ike_encryption_algorithm
+  nutanix.ncp.ntnx_vpn_connection_v2:
+    name: "test_vpn_invalid_algo"
+    local_gateway_reference: "{{ local_gateway_ext_id }}"
+    ipsec_config:
+      pre_shared_key: "AnyKey!"
+      ike_encryption_algorithm: "NOT_A_REAL_ALGO"
+  register: result
+  ignore_errors: true
+
+- name: Create VPN connection with invalid ike_encryption_algorithm status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of ike_encryption_algorithm must be one of' in result.msg"
+    success_msg: "Create VPN connection with invalid ike_encryption_algorithm failed as expected"
+    fail_msg: "Create VPN connection with invalid ike_encryption_algorithm did not fail as expected"
+
+########################################################################################
+# Update VPN Connection - check mode with all attributes
+########################################################################################
+
+- name: Generate spec for updating VPN connection using check mode with all attributes
+  nutanix.ncp.ntnx_vpn_connection_v2:
+    ext_id: "{{ todelete[1] }}"
+    name: "{{ vpn_name }}_updated"
+    description: "Updated description for VPN connection with all attributes"
+    local_gateway_reference: "{{ local_gateway_ext_id }}"
+    remote_gateway_reference: "{{ remote_gateway_ext_id }}"
+    local_gateway_role: "INITIATOR"
+    dynamic_route_priority: 450
+    ipsec_config:
+      pre_shared_key: "UpdatedSharedKey!"
+      local_vti_ip:
+        ipv4:
+          value: "169.254.30.1"
+          prefix_length: 30
+      remote_vti_ip:
+        ipv4:
+          value: "169.254.30.2"
+          prefix_length: 30
+      local_authentication_id: "upd-local-id"
+      remote_authentication_id: "upd-remote-id"
+      ike_lifetime_secs: 14400
+      ipsec_lifetime_secs: 1800
+      esp_pfs_dh_group_number: 14
+      ike_encryption_algorithm: "AES128"
+      ike_authentication_algorithm: "SHA512"
+      ipsec_encryption_algorithm: "AES128"
+      ipsec_authentication_algorithm: "SHA512"
+    dpd_config:
+      operation: "HOLD"
+      interval_secs: 60
+      timeout_secs: 240
+    qos_config:
+      ingress_limit_mbps: 200
+      egress_limit_mbps: 200
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for updating VPN connection using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == vpn_name ~ "_updated"
+      - result.response.description == "Updated description for VPN connection with all attributes"
+      - result.response.local_gateway_role == "INITIATOR"
+      - result.response.dynamic_route_priority == 450
+      - result.response.ipsec_config.ike_encryption_algorithm == "AES128"
+      - result.response.ipsec_config.ike_authentication_algorithm == "SHA512"
+      - result.response.dpd_config.operation == "HOLD"
+      - result.response.qos_config.ingress_limit_mbps == 200
+      - result.response.qos_config.egress_limit_mbps == 200
+    success_msg: "Spec for updating VPN connection using check mode is generated successfully"
+    fail_msg: "Spec for updating VPN connection using check mode is not generated successfully"
+
+########################################################################################
+# Update VPN Connection - real
+########################################################################################
+
+- name: Update VPN connection with all attributes
+  nutanix.ncp.ntnx_vpn_connection_v2:
+    ext_id: "{{ todelete[1] }}"
+    name: "{{ vpn_name }}_updated"
+    description: "Updated description for VPN connection with all attributes"
+    local_gateway_reference: "{{ local_gateway_ext_id }}"
+    remote_gateway_reference: "{{ remote_gateway_ext_id }}"
+    local_gateway_role: "INITIATOR"
+    dynamic_route_priority: 450
+    ipsec_config:
+      pre_shared_key: "AnsibleSharedKey!"
+      local_vti_ip:
+        ipv4:
+          value: "169.254.20.1"
+          prefix_length: 30
+      remote_vti_ip:
+        ipv4:
+          value: "169.254.20.2"
+          prefix_length: 30
+      local_authentication_id: "ans-local-id"
+      remote_authentication_id: "ans-remote-id"
+      ike_lifetime_secs: 14400
+      ipsec_lifetime_secs: 1800
+      esp_pfs_dh_group_number: 14
+      ike_encryption_algorithm: "AES128"
+      ike_authentication_algorithm: "SHA512"
+      ipsec_encryption_algorithm: "AES128"
+      ipsec_authentication_algorithm: "SHA512"
+    dpd_config:
+      operation: "HOLD"
+      interval_secs: 60
+      timeout_secs: 240
+    qos_config:
+      ingress_limit_mbps: 200
+      egress_limit_mbps: 200
+  register: result
+  ignore_errors: true
+
+- name: Update VPN connection with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == vpn_name ~ "_updated"
+      - result.response.description == "Updated description for VPN connection with all attributes"
+      - result.response.dynamic_route_priority == 450
+      - result.response.ipsec_config.ike_encryption_algorithm == "AES128"
+      - result.response.ipsec_config.ike_authentication_algorithm == "SHA512"
+      - result.response.ipsec_config.ipsec_encryption_algorithm == "AES128"
+      - result.response.ipsec_config.ipsec_authentication_algorithm == "SHA512"
+      - result.response.dpd_config.operation == "HOLD"
+      - result.response.qos_config.ingress_limit_mbps == 200
+      - result.response.qos_config.egress_limit_mbps == 200
+    success_msg: "Update VPN connection with all attributes passed"
+    fail_msg: "Update VPN connection with all attributes failed"
+
+- name: Update VPN connection with same values (idempotency test)
+  nutanix.ncp.ntnx_vpn_connection_v2:
+    ext_id: "{{ todelete[1] }}"
+    name: "{{ vpn_name }}_updated"
+    description: "Updated description for VPN connection with all attributes"
+    local_gateway_reference: "{{ local_gateway_ext_id }}"
+    remote_gateway_reference: "{{ remote_gateway_ext_id }}"
+    local_gateway_role: "INITIATOR"
+    dynamic_route_priority: 450
+    ipsec_config:
+      pre_shared_key: "AnsibleSharedKey!"
+      local_vti_ip:
+        ipv4:
+          value: "169.254.20.1"
+          prefix_length: 30
+      remote_vti_ip:
+        ipv4:
+          value: "169.254.20.2"
+          prefix_length: 30
+      local_authentication_id: "ans-local-id"
+      remote_authentication_id: "ans-remote-id"
+      ike_lifetime_secs: 14400
+      ipsec_lifetime_secs: 1800
+      esp_pfs_dh_group_number: 14
+      ike_encryption_algorithm: "AES128"
+      ike_authentication_algorithm: "SHA512"
+      ipsec_encryption_algorithm: "AES128"
+      ipsec_authentication_algorithm: "SHA512"
+    dpd_config:
+      operation: "HOLD"
+      interval_secs: 60
+      timeout_secs: 240
+    qos_config:
+      ingress_limit_mbps: 200
+      egress_limit_mbps: 200
+  register: result
+  ignore_errors: true
+
+- name: Update VPN connection with same values to test idempotency status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+    success_msg: "Update VPN connection with same values to test idempotency passed"
+    fail_msg: "Update VPN connection with same values to test idempotency failed"
+
+- name: Update VPN connection with wrong external ID
+  nutanix.ncp.ntnx_vpn_connection_v2:
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+    name: "test_wrong_ext_id"
+    local_gateway_reference: "{{ local_gateway_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Update VPN connection with wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Update VPN connection with wrong external ID failed as expected"
+    fail_msg: "Update VPN connection with wrong external ID did not fail as expected"
+
+########################################################################################
+# Info Module Tests - Get Single VPN Connection
+########################################################################################
+
+- name: Fetch VPN connection using external ID
+  nutanix.ncp.ntnx_vpn_connections_info_v2:
+    ext_id: "{{ todelete[1] }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch VPN connection using external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == vpn_name ~ "_updated"
+      - result.response.description == "Updated description for VPN connection with all attributes"
+      - result.response.local_gateway_role == "INITIATOR"
+      - result.response.dynamic_route_priority == 450
+      - result.response.dpd_config.operation == "HOLD"
+      - result.response.qos_config.ingress_limit_mbps == 200
+    success_msg: "Fetch VPN connection using external ID passed"
+    fail_msg: "Fetch VPN connection using external ID failed"
+
+- name: Fetch VPN connection using wrong external ID
+  nutanix.ncp.ntnx_vpn_connections_info_v2:
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+  register: result
+  ignore_errors: true
+
+- name: Fetch VPN connection using wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Fetch VPN connection using wrong external ID failed as expected"
+    fail_msg: "Fetch VPN connection using wrong external ID did not fail as expected"
+
+########################################################################################
+# Info Module Tests - List VPN Connections
+########################################################################################
+
+- name: List all VPN connections
+  nutanix.ncp.ntnx_vpn_connections_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all VPN connections status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 2
+    success_msg: "List all VPN connections passed"
+    fail_msg: "List all VPN connections failed"
+
+- name: List VPN connections with filter
+  nutanix.ncp.ntnx_vpn_connections_info_v2:
+    filter: "name eq '{{ vpn_name }}_updated'"
+  register: result
+  ignore_errors: true
+
+- name: List VPN connections with filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == vpn_name ~ "_updated"
+    success_msg: "List VPN connections with filter passed"
+    fail_msg: "List VPN connections with filter failed"
+
+- name: List VPN connections with limit
+  nutanix.ncp.ntnx_vpn_connections_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List VPN connections with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    success_msg: "List VPN connections with limit passed"
+    fail_msg: "List VPN connections with limit failed"
+
+########################################################################################
+# Delete VPN Connection Tests
+########################################################################################
+
+- name: Delete VPN connection with check mode
+  nutanix.ncp.ntnx_vpn_connection_v2:
+    ext_id: "{{ todelete[0] }}"
+    state: absent
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Delete VPN connection with check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    success_msg: "Delete VPN connection with check mode passed"
+    fail_msg: "Delete VPN connection with check mode failed"
+
+- name: Delete all created VPN connections
+  nutanix.ncp.ntnx_vpn_connection_v2:
+    ext_id: "{{ item }}"
+    state: absent
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.results | length == todelete | length
+      - result.msg == "All items completed"
+    fail_msg: "Unable to delete all VPN connections"
+    success_msg: "All VPN connections are deleted successfully"
+
+- name: Delete VPN connection with wrong external ID
+  nutanix.ncp.ntnx_vpn_connection_v2:
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Delete VPN connection with wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Delete VPN connection with wrong external ID failed as expected"
+    fail_msg: "Delete VPN connection with wrong external ID did not fail as expected"
+
+- name: Delete VPN connection with missing external ID
+  nutanix.ncp.ntnx_vpn_connection_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Delete VPN connection with missing external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete VPN connection with missing external ID failed as expected"
+    fail_msg: "Delete VPN connection with missing external ID did not fail as expected"

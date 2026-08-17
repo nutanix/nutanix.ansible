@@ -1,0 +1,41 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [VPN Connections playbook] ************************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"local_gateway_ext_id": "1e04b1ef-6e2d-4cf1-8a67-8a5a70bb0a12", "remote_gateway_ext_id": "b8c2ce0a-3a51-4c66-8f42-5ea1a3f9c6c4", "vpn_connection_name": "vpn_connection_ansible"}, "changed": false}
+
+TASK [Create VPN connection] ***************************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while creating VPN connection", "response": {"$objectType": "networking.v4.config.GetVpnConnectionApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to create VPN connection vpn_connection_ansible as a referenced resource was not found - Application error kNotFound raised: VpnGateway 1e04b1ef-6e2d-4cf1-8a67-8a5a70bb0a12 not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/vpn-connections", "rel": "self"}], "totalAvailableResults": 0}}, "status": 500}
+...ignoring
+
+TASK [Set VPN connection ext_id] ***********************************************
+ok: [localhost] => {"ansible_facts": {"vpn_connection_ext_id": ""}, "changed": false}
+
+TASK [Update VPN connection] ***************************************************
+An exception occurred during task execution. To see the full traceback, use -vvv. The error was: ValueError: Invalid value for `ext_id`, must be a follow pattern or equal to `/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/`
+fatal: [localhost]: FAILED! => {"changed": false, "module_stderr": "Traceback (most recent call last):\n  File \"/home/george.ghawali/.ansible/tmp/ansible-tmp-1784616005.3862054-759312-172649018583570/AnsiballZ_ntnx_vpn_connection_v2.py\", line 107, in <module>\n    _ansiballz_main()\n  File \"/home/george.ghawali/.ansible/tmp/ansible-tmp-1784616005.3862054-759312-172649018583570/AnsiballZ_ntnx_vpn_connection_v2.py\", line 99, in _ansiballz_main\n    invoke_module(zipped_mod, temp_path, ANSIBALLZ_PARAMS)\n  File \"/home/george.ghawali/.ansible/tmp/ansible-tmp-1784616005.3862054-759312-172649018583570/AnsiballZ_ntnx_vpn_connection_v2.py\", line 47, in invoke_module\n    runpy.run_module(mod_name='ansible_collections.nutanix.ncp.plugins.modules.ntnx_vpn_connection_v2', init_globals=dict(_module_fqn='ansible_collections.nutanix.ncp.plugins.modules.ntnx_vpn_connection_v2', _modlib_path=modlib_path),\n  File \"<frozen runpy>\", line 226, in run_module\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/tmp/ansible_nutanix.ncp.ntnx_vpn_connection_v2_payload_4b7turep/ansible_nutanix.ncp.ntnx_vpn_connection_v2_payload.zip/ansible_collections/nutanix/ncp/plugins/modules/ntnx_vpn_connection_v2.py\", line 831, in <module>\n  File \"/tmp/ansible_nutanix.ncp.ntnx_vpn_connection_v2_payload_4b7turep/ansible_nutanix.ncp.ntnx_vpn_connection_v2_payload.zip/ansible_collections/nutanix/ncp/plugins/modules/ntnx_vpn_connection_v2.py\", line 827, in main\n  File \"/tmp/ansible_nutanix.ncp.ntnx_vpn_connection_v2_payload_4b7turep/ansible_nutanix.ncp.ntnx_vpn_connection_v2_payload.zip/ansible_collections/nutanix/ncp/plugins/modules/ntnx_vpn_connection_v2.py\", line 820, in run_module\n  File \"/tmp/ansible_nutanix.ncp.ntnx_vpn_connection_v2_payload_4b7turep/ansible_nutanix.ncp.ntnx_vpn_connection_v2_payload.zip/ansible_collections/nutanix/ncp/plugins/modules/ntnx_vpn_connection_v2.py\", line 664, in create_vpn_connection\n  File \"/tmp/ansible_nutanix.ncp.ntnx_vpn_connection_v2_payload_4b7turep/ansible_nutanix.ncp.ntnx_vpn_connection_v2_payload.zip/ansible_collections/nutanix/ncp/plugins/module_utils/v4/spec_generator.py\", line 102, in generate_spec\n  File \"/tmp/ansible_test_root/ansible_collections/nutanix/ncp/tests/output/.tmp/delegation/python3.12/lib64/python3.12/site-packages/ntnx_networking_py_client/models/common/v1/response/ExternalizableAbstractModel.py\", line 98, in ext_id\n    raise ValueError(r\"Invalid value for `ext_id`, must be a follow pattern or equal to `/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/`\")  # noqa: E501\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nValueError: Invalid value for `ext_id`, must be a follow pattern or equal to `/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$/`\n", "module_stdout": "", "msg": "MODULE FAILURE\nSee stdout/stderr for the exact error", "rc": 1}
+...ignoring
+
+TASK [Get VPN connection using ext_id] *****************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List all VPN connections] ************************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List VPN connections with filter] ****************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List VPN connections with limit] *****************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Delete VPN connection] ***************************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "METHOD NOT ALLOWED", "msg": "Api Exception raised while deleting VPN connection", "response": {"error": "Method Not Allowed", "message": "Method 'DELETE' is not supported.", "path": "/api/networking/v4.3/config/vpn-connections", "status": 405, "timestamp": "2026-07-21T06:40:09.993856448Z"}, "status": 405}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=9    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=3   
+
