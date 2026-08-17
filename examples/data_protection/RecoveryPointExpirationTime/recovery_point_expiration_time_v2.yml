@@ -1,0 +1,116 @@
+---
+# Summary:
+# This playbook demonstrates the ntnx_recovery_point_expiration_time_v2
+# action module. It provisions a small, dedicated seed VM and a top-level
+# recovery point for that VM, then uses the new action module to:
+#   1. Set the expiration time of the recovery point.
+#   2. Extend the expiration time of the same recovery point.
+# It also demonstrates a graceful error case using an invalid recovery
+# point external ID. Finally, the playbook cleans up the seed recovery
+# point and VM.
+
+- name: RecoveryPointExpirationTime action module playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host }}"
+      nutanix_username: "{{ nutanix_username }}"
+      nutanix_password: "{{ nutanix_password }}"
+      validate_certs: false
+
+  tasks:
+    - name: Compute names and expiration timestamps for this run
+      ansible.builtin.set_fact:
+        random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] }}"
+        initial_expiration_time: '{{ lookup(''pipe'', ''date -u -d "+1 month" +%Y-%m-%dT%H:%M:%S%:z'') }}'
+        updated_expiration_time: '{{ lookup(''pipe'', ''date -u -d "+2 months" +%Y-%m-%dT%H:%M:%S%:z'') }}'
+        extended_expiration_time: '{{ lookup(''pipe'', ''date -u -d "+3 months" +%Y-%m-%dT%H:%M:%S%:z'') }}'
+
+    - name: Set derived entity names
+      ansible.builtin.set_fact:
+        seed_vm_name: "ansible_rp_exp_vm_{{ random_suffix }}"
+        seed_recovery_point_name: "ansible_rp_exp_rp_{{ random_suffix }}"
+
+    - name: Discover an AOS cluster to host the seed VM
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: clusters_result
+
+    - name: Fail if no AOS cluster is available
+      ansible.builtin.fail:
+        msg: "No AOS cluster was found on the target Prism Central; cannot run this example."
+      when: (clusters_result.response | default([])) | length == 0
+
+    - name: Capture seed cluster external ID
+      ansible.builtin.set_fact:
+        seed_cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+    - name: Create a seed VM
+      nutanix.ncp.ntnx_vms_v2:
+        name: "{{ seed_vm_name }}"
+        description: "Seed VM for the recovery point expiration time example"
+        cluster:
+          ext_id: "{{ seed_cluster_ext_id }}"
+      register: seed_vm_result
+
+    - name: Capture seed VM external ID
+      ansible.builtin.set_fact:
+        seed_vm_ext_id: "{{ seed_vm_result.ext_id }}"
+
+    - name: Create a seed recovery point wrapping the VM
+      nutanix.ncp.ntnx_recovery_points_v2:
+        name: "{{ seed_recovery_point_name }}"
+        expiration_time: "{{ initial_expiration_time }}"
+        recovery_point_type: "CRASH_CONSISTENT"
+        vm_recovery_points:
+          - vm_ext_id: "{{ seed_vm_ext_id }}"
+      register: seed_rp_result
+      until: seed_rp_result.failed == false
+      retries: 6
+      delay: 20
+
+    - name: Capture seed recovery point external ID
+      ansible.builtin.set_fact:
+        recovery_point_ext_id: "{{ seed_rp_result.ext_id }}"
+
+    ################################################################
+    # Example 1: Set the expiration time of a recovery point
+    ################################################################
+    - name: Update expiration time of the recovery point
+      nutanix.ncp.ntnx_recovery_point_expiration_time_v2:
+        ext_id: "{{ recovery_point_ext_id }}"
+        expiration_time: "{{ updated_expiration_time }}"
+      register: set_expiration_result
+
+    ################################################################
+    # Example 2: Extend the expiration time of the same recovery point
+    ################################################################
+    - name: Extend expiration time of the recovery point
+      nutanix.ncp.ntnx_recovery_point_expiration_time_v2:
+        ext_id: "{{ recovery_point_ext_id }}"
+        expiration_time: "{{ extended_expiration_time }}"
+      register: extend_expiration_result
+
+    ################################################################
+    # Example 3: Handle an invalid recovery point external ID
+    ################################################################
+    - name: Attempt to set expiration on a non-existent recovery point
+      nutanix.ncp.ntnx_recovery_point_expiration_time_v2:
+        ext_id: "00000000-0000-0000-0000-000000000000"
+        expiration_time: "{{ updated_expiration_time }}"
+      register: invalid_rp_result
+      ignore_errors: true
+
+    ################################################################
+    # Cleanup
+    ################################################################
+    - name: Delete the seed recovery point
+      nutanix.ncp.ntnx_recovery_points_v2:
+        ext_id: "{{ recovery_point_ext_id }}"
+        state: absent
+
+    - name: Delete the seed VM
+      nutanix.ncp.ntnx_vms_v2:
+        ext_id: "{{ seed_vm_ext_id }}"
+        state: absent
