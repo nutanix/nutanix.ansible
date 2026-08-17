@@ -48,6 +48,7 @@ class Tasks:
         NETWORK_FUNCTION = "Networking:config:network-function"
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
         ENTITY_GROUP = "microseg:config:entity-group"
+        RECOVERY_PLAN_JOB = "dataprotection:config:recovery-plan-job"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
@@ -56,3 +57,4 @@ class Tasks:
         VM_EXT_IDS = "vmExtIds"
         VG_EXT_IDS = "volumeGroupExtIds"
         PROTECTION_POLICY = "protectionPolicyExtId"
+        RECOVERY_PLAN_JOB = "recoveryPlanJobExtId"
