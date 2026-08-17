@@ -1,0 +1,360 @@
+---
+# Integration tests for:
+#   - ntnx_vpn_appliance_for_vpn_connection_v2 (download vendor config)
+#   - ntnx_vpn_appliance_for_vpn_connections_info_v2 (list / get info)
+#
+# The Nutanix networking v4 API endpoint
+#   /networking/v4.3/config/vpn-connections/{vpnConnectionExtId}/vpn-vendor-configs[/{extId}]
+# is READ-ONLY: there is no create/update/delete API for a third-party VPN
+# appliance configuration. Therefore the test plan focuses on read-path
+# coverage, error handling, argument-spec validation, and check_mode.
+#
+# Test plan:
+#   1. Argument-spec validation (missing required, unsupported state).
+#   2. check_mode dry-run for the download module.
+#   3. Negative test: bad vpn_connection_ext_id -> module fails with descriptive error.
+#   4. Live list-all against the target VPN connection (skipped if no
+#      vpn_connection_ext_id is provided in integration_config.yml).
+#   5. Live list with filter (name eq 'Cisco ASA').
+#   6. Live list with limit / page.
+#   7. Live get-by-id via the info module (uses first appliance from list).
+#   8. Live download of appliance config via ntnx_vpn_appliance_for_vpn_connection_v2.
+#   9. Info module argument-spec: mutually exclusive ext_id + filter.
+#  10. Info module argument-spec: missing vpn_connection_ext_id.
+
+- name: Start VPN Appliance for VPN Connection tests
+  ansible.builtin.debug:
+    msg: Start VPN Appliance for VPN Connection tests
+
+- name: Set VPN connection ext_id under test
+  ansible.builtin.set_fact:
+    vpn_connection_ext_id_under_test: "{{ vpn_connection_ext_id | default('') }}"
+
+################################################################################
+# 1. Argument-spec validation — missing required params
+################################################################################
+
+- name: Missing vpn_connection_ext_id in download module
+  nutanix.ncp.ntnx_vpn_appliance_for_vpn_connection_v2:
+    ext_id: "b2037b0e-af4c-38f7-8c12-6ed629be12af"
+  register: missing_parent_result
+  ignore_errors: true
+
+- name: Assert missing vpn_connection_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - missing_parent_result is defined
+      - missing_parent_result.failed == true
+      - missing_parent_result.changed == false
+      - "'vpn_connection_ext_id' in missing_parent_result.msg"
+    success_msg: "Download module correctly rejected request missing vpn_connection_ext_id"
+    fail_msg: "Download module did not fail on missing vpn_connection_ext_id"
+
+- name: Missing ext_id in download module
+  nutanix.ncp.ntnx_vpn_appliance_for_vpn_connection_v2:
+    vpn_connection_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: missing_extid_result
+  ignore_errors: true
+
+- name: Assert missing ext_id fails
+  ansible.builtin.assert:
+    that:
+      - missing_extid_result is defined
+      - missing_extid_result.failed == true
+      - missing_extid_result.changed == false
+      - "'ext_id' in missing_extid_result.msg"
+    success_msg: "Download module correctly rejected request missing ext_id"
+    fail_msg: "Download module did not fail on missing ext_id"
+
+- name: Invalid state value (absent) is rejected
+  nutanix.ncp.ntnx_vpn_appliance_for_vpn_connection_v2:
+    state: absent
+    vpn_connection_ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: invalid_state_result
+  ignore_errors: true
+
+- name: Assert invalid state is rejected by argument spec
+  ansible.builtin.assert:
+    that:
+      - invalid_state_result is defined
+      - invalid_state_result.failed == true
+      - invalid_state_result.changed == false
+      - "'absent' in invalid_state_result.msg or 'state' in invalid_state_result.msg"
+    success_msg: "Download module correctly rejected state=absent (only present is supported)"
+    fail_msg: "Download module did not reject state=absent"
+
+################################################################################
+# 2. check_mode dry-run — download module
+################################################################################
+
+- name: Run download module in check_mode (dry-run) with all attributes
+  nutanix.ncp.ntnx_vpn_appliance_for_vpn_connection_v2:
+    state: present
+    vpn_connection_ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "11111111-1111-1111-1111-111111111111"
+  check_mode: true
+  register: check_mode_download_result
+  ignore_errors: true
+
+- name: Assert download check_mode returns preview without invoking API
+  ansible.builtin.assert:
+    that:
+      - check_mode_download_result is defined
+      - check_mode_download_result.failed == false
+      - check_mode_download_result.changed == false
+      - check_mode_download_result.response is defined
+      - check_mode_download_result.response.vpn_connection_ext_id == "00000000-0000-0000-0000-000000000000"
+      - check_mode_download_result.response.ext_id == "11111111-1111-1111-1111-111111111111"
+      - check_mode_download_result.response.configuration is none
+      - check_mode_download_result.ext_id == "11111111-1111-1111-1111-111111111111"
+    success_msg: "Download module returned expected check_mode preview"
+    fail_msg: "Download module check_mode preview was incorrect"
+
+################################################################################
+# 3. Negative — bogus vpn_connection_ext_id triggers a descriptive API error
+################################################################################
+
+- name: Attempt to list appliances for a non-existent VPN connection
+  nutanix.ncp.ntnx_vpn_appliance_for_vpn_connections_info_v2:
+    vpn_connection_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_parent_list_result
+  ignore_errors: true
+
+- name: Assert list against non-existent VPN connection fails cleanly
+  ansible.builtin.assert:
+    that:
+      - bad_parent_list_result is defined
+      - bad_parent_list_result.failed == true
+      - bad_parent_list_result.changed == false
+      - bad_parent_list_result.msg is defined
+    success_msg: "Info module surfaced a descriptive error for a bogus VPN connection ext_id"
+    fail_msg: "Info module did not report a failure for a bogus VPN connection ext_id"
+
+- name: Attempt to download config for a non-existent VPN connection
+  nutanix.ncp.ntnx_vpn_appliance_for_vpn_connection_v2:
+    state: present
+    vpn_connection_ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "11111111-1111-1111-1111-111111111111"
+  register: bad_parent_download_result
+  ignore_errors: true
+
+- name: Assert download against non-existent VPN connection fails cleanly
+  ansible.builtin.assert:
+    that:
+      - bad_parent_download_result is defined
+      - bad_parent_download_result.failed == true
+      - bad_parent_download_result.changed == false
+      - bad_parent_download_result.msg is defined
+    success_msg: "Download module surfaced a descriptive error for a bogus VPN connection ext_id"
+    fail_msg: "Download module did not report a failure for a bogus VPN connection ext_id"
+
+################################################################################
+# 4. Info module argument-spec — mutually exclusive ext_id + filter
+################################################################################
+
+- name: Ext_id and filter are mutually exclusive on the info module
+  nutanix.ncp.ntnx_vpn_appliance_for_vpn_connections_info_v2:
+    vpn_connection_ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "11111111-1111-1111-1111-111111111111"
+    filter: "name eq 'Cisco ASA'"
+  register: info_mutex_result
+  ignore_errors: true
+
+- name: Assert mutually exclusive validation error
+  ansible.builtin.assert:
+    that:
+      - info_mutex_result is defined
+      - info_mutex_result.failed == true
+      - info_mutex_result.changed == false
+      - "'mutually exclusive' in (info_mutex_result.msg | lower) or 'parameters are mutually exclusive' in (info_mutex_result.msg | lower)"
+    success_msg: "Info module rejected mutually exclusive ext_id + filter"
+    fail_msg: "Info module did not reject mutually exclusive ext_id + filter"
+
+- name: Missing vpn_connection_ext_id in info module
+  nutanix.ncp.ntnx_vpn_appliance_for_vpn_connections_info_v2:
+    ext_id: "11111111-1111-1111-1111-111111111111"
+  register: info_missing_parent_result
+  ignore_errors: true
+
+- name: Assert info module rejects missing vpn_connection_ext_id
+  ansible.builtin.assert:
+    that:
+      - info_missing_parent_result is defined
+      - info_missing_parent_result.failed == true
+      - info_missing_parent_result.changed == false
+      - "'vpn_connection_ext_id' in info_missing_parent_result.msg"
+    success_msg: "Info module rejected request missing vpn_connection_ext_id"
+    fail_msg: "Info module did not reject request missing vpn_connection_ext_id"
+
+################################################################################
+# 5-8. Live path — only when a real VPN connection ext_id is provided
+################################################################################
+
+- name: Live tests against a real VPN connection
+  when: vpn_connection_ext_id_under_test | length > 0
+  block:
+
+    - name: List all third-party VPN appliances for the VPN connection
+      nutanix.ncp.ntnx_vpn_appliance_for_vpn_connections_info_v2:
+        vpn_connection_ext_id: "{{ vpn_connection_ext_id_under_test }}"
+      register: list_all_result
+      ignore_errors: true
+
+    - name: Assert list-all returned appliances
+      ansible.builtin.assert:
+        that:
+          - list_all_result is defined
+          - list_all_result.failed == false
+          - list_all_result.changed == false
+          - list_all_result.response is defined
+          - list_all_result.response is iterable
+          - list_all_result.vpn_connection_ext_id == vpn_connection_ext_id_under_test
+          - list_all_result.total_available_results is defined
+        success_msg: "list-all returned appliances for the VPN connection"
+        fail_msg: "list-all did not return appliances for the VPN connection"
+
+    - name: Assert every listed appliance has the expected shape
+      ansible.builtin.assert:
+        that:
+          - item.ext_id is defined
+          - item.name is defined
+          - item.version is defined
+        success_msg: "Appliance {{ item.name | default('unnamed') }} has the expected shape"
+        fail_msg: "Appliance entry {{ item }} is missing required fields"
+      loop: "{{ list_all_result.response | default([]) }}"
+      loop_control:
+        label: "{{ item.name | default(item.ext_id) }}"
+
+    - name: Capture first appliance ext_id
+      ansible.builtin.set_fact:
+        first_appliance_ext_id: "{{ list_all_result.response[0].ext_id }}"
+        first_appliance_name: "{{ list_all_result.response[0].name }}"
+      when: list_all_result.response | default([]) | length > 0
+
+    - name: List third-party VPN appliances filtered by name
+      nutanix.ncp.ntnx_vpn_appliance_for_vpn_connections_info_v2:
+        vpn_connection_ext_id: "{{ vpn_connection_ext_id_under_test }}"
+        filter: "name eq '{{ first_appliance_name }}'"
+      register: list_filter_result
+      when: first_appliance_name is defined
+      ignore_errors: true
+
+    - name: Assert filtered list is non-empty and matches
+      ansible.builtin.assert:
+        that:
+          - list_filter_result is defined
+          - list_filter_result.failed == false
+          - list_filter_result.changed == false
+          - list_filter_result.response is defined
+          - list_filter_result.response | length >= 1
+          - list_filter_result.response[0].name == first_appliance_name
+        success_msg: "Filtered list returned only appliances named '{{ first_appliance_name }}'"
+        fail_msg: "Filtered list did not return the expected appliances"
+      when: first_appliance_name is defined
+
+    - name: List third-party VPN appliances with limit=1
+      nutanix.ncp.ntnx_vpn_appliance_for_vpn_connections_info_v2:
+        vpn_connection_ext_id: "{{ vpn_connection_ext_id_under_test }}"
+        limit: 1
+      register: list_limit_result
+      ignore_errors: true
+
+    - name: Assert limit=1 returns at most one appliance
+      ansible.builtin.assert:
+        that:
+          - list_limit_result is defined
+          - list_limit_result.failed == false
+          - list_limit_result.changed == false
+          - list_limit_result.response is defined
+          - (list_limit_result.response | length) <= 1
+        success_msg: "limit=1 respected"
+        fail_msg: "limit=1 was not respected"
+
+    - name: Fetch third-party VPN appliance configuration via info module (get-by-id)
+      nutanix.ncp.ntnx_vpn_appliance_for_vpn_connections_info_v2:
+        vpn_connection_ext_id: "{{ vpn_connection_ext_id_under_test }}"
+        ext_id: "{{ first_appliance_ext_id }}"
+      register: info_get_by_id_result
+      when: first_appliance_ext_id is defined
+      ignore_errors: true
+
+    - name: Assert info get-by-id returns a configuration payload
+      ansible.builtin.assert:
+        that:
+          - info_get_by_id_result is defined
+          - info_get_by_id_result.failed == false
+          - info_get_by_id_result.changed == false
+          - info_get_by_id_result.response is defined
+          - info_get_by_id_result.response.ext_id == first_appliance_ext_id
+          - info_get_by_id_result.response.vpn_connection_ext_id == vpn_connection_ext_id_under_test
+          - info_get_by_id_result.response.configuration is defined
+          - info_get_by_id_result.response.configuration | length > 0
+          - info_get_by_id_result.ext_id == first_appliance_ext_id
+        success_msg: "Info get-by-id returned a non-empty configuration payload"
+        fail_msg: "Info get-by-id did not return a configuration payload"
+      when: first_appliance_ext_id is defined
+
+    - name: Download third-party VPN appliance configuration via download module
+      nutanix.ncp.ntnx_vpn_appliance_for_vpn_connection_v2:
+        state: present
+        vpn_connection_ext_id: "{{ vpn_connection_ext_id_under_test }}"
+        ext_id: "{{ first_appliance_ext_id }}"
+      register: download_result
+      when: first_appliance_ext_id is defined
+      ignore_errors: true
+
+    - name: Assert download module returns configuration text
+      ansible.builtin.assert:
+        that:
+          - download_result is defined
+          - download_result.failed == false
+          - download_result.changed == false
+          - download_result.response is defined
+          - download_result.response.ext_id == first_appliance_ext_id
+          - download_result.response.vpn_connection_ext_id == vpn_connection_ext_id_under_test
+          - download_result.response.configuration is defined
+          - download_result.response.configuration | length > 0
+          - download_result.ext_id == first_appliance_ext_id
+        success_msg: "Download module returned a non-empty configuration payload"
+        fail_msg: "Download module did not return a configuration payload"
+      when: first_appliance_ext_id is defined
+
+    - name: Info and download modules return identical configuration text
+      ansible.builtin.assert:
+        that:
+          - download_result.response.configuration == info_get_by_id_result.response.configuration
+        success_msg: "Info and download modules return byte-identical config text"
+        fail_msg: "Info and download modules disagreed on config text"
+      when:
+        - first_appliance_ext_id is defined
+        - download_result is defined
+        - info_get_by_id_result is defined
+        - download_result.response is defined
+        - info_get_by_id_result.response is defined
+
+    - name: Get-by-id for a bogus appliance ext_id fails cleanly
+      nutanix.ncp.ntnx_vpn_appliance_for_vpn_connections_info_v2:
+        vpn_connection_ext_id: "{{ vpn_connection_ext_id_under_test }}"
+        ext_id: "00000000-0000-0000-0000-000000000000"
+      register: bad_appliance_result
+      ignore_errors: true
+
+    - name: Assert bogus appliance ext_id returns descriptive error
+      ansible.builtin.assert:
+        that:
+          - bad_appliance_result is defined
+          - bad_appliance_result.failed == true
+          - bad_appliance_result.changed == false
+          - bad_appliance_result.msg is defined
+        success_msg: "Info module returned a descriptive error for a bogus appliance ext_id"
+        fail_msg: "Info module did not report a failure for a bogus appliance ext_id"
+
+- name: Skipped live tests notice
+  ansible.builtin.debug:
+    msg: >-
+      Skipped live-cluster tests for VpnApplianceForVpnConnection because no
+      'vpn_connection_ext_id' variable was provided in
+      integration_config.yml. Provide one to exercise the full read-path
+      (list, filter, limit, get-by-id, download).
+  when: vpn_connection_ext_id_under_test | length == 0
