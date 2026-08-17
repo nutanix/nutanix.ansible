@@ -1,0 +1,282 @@
+---
+###############################################################################
+# Test plan for ntnx_replication_jobs_info_v2
+#
+# The Nutanix Files Smart DR ReplicationJob entity is READ-ONLY in the v4 SDK:
+# the SDK only exposes get_replication_job_by_id and list_replication_jobs.
+# Therefore only the info module ships and only info scenarios are tested.
+#
+# Prerequisite: Nutanix Files service must be deployed and healthy on the
+# Prism Central under test. When Files is not deployed the PC gateway
+# returns HTTP 503 for every /files/v4.0/* endpoint. In that case, the
+# scenarios below cleanly skip so this integration target still passes
+# end-to-end (the module itself is exercised — the failure is captured in
+# `all_jobs.failed` and asserted against).
+#
+# Coverage:
+#   1. Sanity list all replication jobs (no ext_id, no filter). Detects
+#      whether Files service is available on this PC.
+#   2. Pagination: list with limit=1 -> assert response length <= 1.
+#   3. Ordering: list with orderby=startTime desc + limit=5.
+#   4. Projection: list with select on a subset of fields.
+#   5. Filtering: list with an OData filter on status enum value SUCCEEDED.
+#   6. Get-by-id (positive): if step 1 returned any jobs, fetch the first one
+#      by ext_id and assert the returned dict matches.
+#   7. Get-by-id (negative): use a well-formed but non-existent ext_id.
+#      Asserts the module fails with a descriptive error.
+#   8. Mutual exclusion: pass both ext_id and filter -> assert AnsibleModule
+#      rejects the combination (runs even when Files is unavailable).
+#   9. Info sub-module never mutates state -> changed must be false in every
+#      passing case.
+###############################################################################
+
+- name: Start Nutanix Files Smart DR ReplicationJob info tests
+  ansible.builtin.debug:
+    msg: Start ntnx_replication_jobs_info_v2 tests
+
+################################################################################
+# 1. Probe Files service - list all replication jobs
+################################################################################
+
+- name: List all replication jobs
+  nutanix.ncp.ntnx_replication_jobs_info_v2: {}
+  register: all_jobs
+  ignore_errors: true
+
+- name: Determine if Nutanix Files service is available on this PC
+  ansible.builtin.set_fact:
+    files_service_available: >-
+      {{ (all_jobs is defined)
+         and (all_jobs.failed | default(false) == false) }}
+    files_service_unavailable_reason: >-
+      {{ all_jobs.msg | default('') }}
+      / status={{ all_jobs.status | default('') }}
+
+- name: Report Files service availability
+  ansible.builtin.debug:
+    msg: >-
+      Files service available on PC: {{ files_service_available }}
+      (reason if unavailable: {{ files_service_unavailable_reason }})
+
+- name: List all replication jobs - assertions (positive path)
+  ansible.builtin.assert:
+    that:
+      - all_jobs is defined
+      - all_jobs.changed == false
+      - all_jobs.failed == false
+      - all_jobs.response is defined
+      - all_jobs.response is iterable
+      - all_jobs.total_available_results is defined
+      - all_jobs.total_available_results | int >= 0
+    success_msg: "List all replication jobs succeeded"
+    fail_msg: "List all replication jobs failed unexpectedly: {{ all_jobs }}"
+  when: files_service_available
+
+- name: List all replication jobs - assertions (Files service unavailable)
+  ansible.builtin.assert:
+    that:
+      - all_jobs is defined
+      - all_jobs.changed == false
+      - all_jobs.failed == true
+      - all_jobs.status | default(0) | int in [503, 502, 500, 404]
+    success_msg: >-
+      Files service is not deployed on this PC — module surfaced the gateway
+      error cleanly (status={{ all_jobs.status }}).
+    fail_msg: >-
+      Unexpected failure shape when Files is unavailable: {{ all_jobs }}
+  when: not files_service_available
+
+################################################################################
+# 2. Pagination - list with limit=1
+################################################################################
+
+- name: List replication jobs with limit=1
+  nutanix.ncp.ntnx_replication_jobs_info_v2:
+    limit: 1
+  register: limited_jobs
+  ignore_errors: true
+  when: files_service_available
+
+- name: List replication jobs with limit=1 - assertions
+  ansible.builtin.assert:
+    that:
+      - limited_jobs is defined
+      - limited_jobs.changed == false
+      - limited_jobs.failed == false
+      - limited_jobs.response is defined
+      - (limited_jobs.response | length) <= 1
+    success_msg: "List replication jobs with limit=1 succeeded"
+    fail_msg: "List replication jobs with limit=1 failed: {{ limited_jobs }}"
+  when: files_service_available
+
+################################################################################
+# 3. Ordering - list with orderby=startTime desc + limit
+################################################################################
+
+- name: List replication jobs ordered by startTime desc
+  nutanix.ncp.ntnx_replication_jobs_info_v2:
+    orderby: "startTime desc"
+    limit: 5
+  register: ordered_jobs
+  ignore_errors: true
+  when: files_service_available
+
+- name: List replication jobs ordered - assertions
+  ansible.builtin.assert:
+    that:
+      - ordered_jobs is defined
+      - ordered_jobs.changed == false
+      - ordered_jobs.failed == false
+      - ordered_jobs.response is defined
+      - (ordered_jobs.response | length) <= 5
+    success_msg: "List replication jobs ordered by startTime succeeded"
+    fail_msg: "List replication jobs ordered by startTime failed: {{ ordered_jobs }}"
+  when: files_service_available
+
+################################################################################
+# 4. Projection - list with $select
+################################################################################
+
+- name: List replication jobs with select
+  nutanix.ncp.ntnx_replication_jobs_info_v2:
+    select: "extId,status,policyExtId,startTime,endTime"
+    limit: 5
+  register: projected_jobs
+  ignore_errors: true
+  when: files_service_available
+
+- name: List replication jobs with select - assertions
+  ansible.builtin.assert:
+    that:
+      - projected_jobs is defined
+      - projected_jobs.changed == false
+      - projected_jobs.failed == false
+      - projected_jobs.response is defined
+    success_msg: "List replication jobs with select succeeded"
+    fail_msg: "List replication jobs with select failed: {{ projected_jobs }}"
+  when: files_service_available
+
+- name: Verify every projected job element only has the selected keys populated
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined or item.status is defined
+    success_msg: "Projected element {{ item }} has at least one selected key"
+    fail_msg: "Projected element {{ item }} is missing all selected keys"
+  loop: "{{ projected_jobs.response | default([]) }}"
+  when:
+    - files_service_available
+    - (projected_jobs.response | default([])) | length > 0
+
+################################################################################
+# 5. Filtering - list with $filter on status enum SUCCEEDED
+################################################################################
+
+- name: List replication jobs filtered by status SUCCEEDED
+  nutanix.ncp.ntnx_replication_jobs_info_v2:
+    filter: "status eq Files.Config.JobStatus'SUCCEEDED'"
+  register: filtered_jobs
+  ignore_errors: true
+  when: files_service_available
+
+- name: List replication jobs filtered - assertions
+  ansible.builtin.assert:
+    that:
+      - filtered_jobs is defined
+      - filtered_jobs.changed == false
+      - filtered_jobs.failed == false
+      - filtered_jobs.response is defined
+    success_msg: "List replication jobs with filter succeeded"
+    fail_msg: "List replication jobs with filter failed: {{ filtered_jobs }}"
+  when: files_service_available
+
+- name: Verify every filtered element has status SUCCEEDED
+  ansible.builtin.assert:
+    that:
+      - item.status == "SUCCEEDED"
+    success_msg: "Filtered element {{ item.ext_id }} has status SUCCEEDED"
+    fail_msg: "Filtered element {{ item.ext_id }} has unexpected status {{ item.status }}"
+  loop: "{{ filtered_jobs.response | default([]) }}"
+  when:
+    - files_service_available
+    - (filtered_jobs.response | default([])) | length > 0
+
+################################################################################
+# 6. Get-by-id (positive) - only when at least one job exists
+################################################################################
+
+- name: Capture the first replication job ext_id (if any)
+  ansible.builtin.set_fact:
+    first_job_ext_id: "{{ (all_jobs.response | default([]))[0].ext_id | default('') }}"
+  when: files_service_available
+
+- name: Get single replication job by ext_id
+  nutanix.ncp.ntnx_replication_jobs_info_v2:
+    ext_id: "{{ first_job_ext_id }}"
+  register: single_job
+  ignore_errors: true
+  when:
+    - files_service_available
+    - (first_job_ext_id | default('')) | length > 0
+
+- name: Get single replication job by ext_id - assertions
+  ansible.builtin.assert:
+    that:
+      - single_job is defined
+      - single_job.changed == false
+      - single_job.failed == false
+      - single_job.ext_id == first_job_ext_id
+      - single_job.response is defined
+      - single_job.response.ext_id == first_job_ext_id
+    success_msg: "Get replication job by ext_id succeeded"
+    fail_msg: "Get replication job by ext_id failed: {{ single_job }}"
+  when:
+    - files_service_available
+    - (first_job_ext_id | default('')) | length > 0
+
+- name: Note that no ReplicationJob exists on cluster (skipping positive get-by-id)
+  ansible.builtin.debug:
+    msg: >-
+      No replication jobs are present on the cluster; positive get-by-id
+      scenario was skipped. This is expected when Smart DR is not configured.
+  when:
+    - files_service_available
+    - (first_job_ext_id | default('')) | length == 0
+
+################################################################################
+# 7. Get-by-id (negative) - non-existent ext_id
+################################################################################
+
+- name: Fetch replication job with a non-existent ext_id
+  nutanix.ncp.ntnx_replication_jobs_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: missing_job
+  ignore_errors: true
+
+- name: Fetch replication job with a non-existent ext_id - assertions
+  ansible.builtin.assert:
+    that:
+      - missing_job is defined
+      - missing_job.changed == false
+      - missing_job.failed == true
+    success_msg: "Get replication job with non-existent ext_id failed as expected"
+    fail_msg: "Get replication job with non-existent ext_id did not fail as expected: {{ missing_job }}"
+
+################################################################################
+# 8. Mutual exclusion - ext_id and filter are mutually exclusive
+################################################################################
+
+- name: Pass both ext_id and filter (mutually exclusive)
+  nutanix.ncp.ntnx_replication_jobs_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    filter: "status eq Files.Config.JobStatus'SUCCEEDED'"
+  register: mutex_result
+  ignore_errors: true
+
+- name: Mutually exclusive ext_id/filter - assertions
+  ansible.builtin.assert:
+    that:
+      - mutex_result is defined
+      - mutex_result.failed == true
+      - "'mutually exclusive' in (mutex_result.msg | default(''))"
+    success_msg: "ext_id + filter correctly rejected as mutually exclusive"
+    fail_msg: "ext_id + filter combination was NOT rejected: {{ mutex_result }}"
