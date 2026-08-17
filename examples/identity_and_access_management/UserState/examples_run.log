@@ -1,0 +1,29 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [UserState action playbook] ***********************************************
+
+TASK [Generate a random suffix for the demo user] ******************************
+ok: [localhost] => {"ansible_facts": {"random_suffix": "UMoewTSpAO"}, "changed": false}
+
+TASK [Set demo user variables] *************************************************
+ok: [localhost] => {"ansible_facts": {"demo_username": "user_state_demo_UMoewTSpAO"}, "changed": false}
+
+TASK [Create a local user to be state-flipped] *********************************
+[WARNING]: Module did not set no_log for is_force_reset_password_enabled
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "f3477968-7ad8-51e2-9ed5-a223a2956e51", "response": {"additional_attributes": null, "buckets_access_keys": null, "created_by": "00000000-0000-0000-0000-000000000000", "created_time": "2026-07-21T06:45:23.968584+00:00", "creation_type": "USERDEFINED", "default_landing_page_path": null, "description": "", "display_name": "state_demo_user", "email_id": "user_state_demo_UMoewTSpAO@example.com", "ext_id": "f3477968-7ad8-51e2-9ed5-a223a2956e51", "first_name": "state_demo", "hasObjectKeys": false, "idp_id": "d607d664-cc19-559f-a95c-4e8b4b7f6606", "is_force_reset_password_enabled": false, "last_login_time": "2026-07-21T06:45:23.896808+00:00", "last_name": "user", "last_updated_by": "00000000-0000-0000-0000-000000000000", "last_updated_time": "2026-07-21T06:45:23.968584+00:00", "links": null, "locale": "en-US", "middle_initial": "", "password": null, "region": "en-US", "status": "ACTIVE", "tenant_id": "59d5de78-a964-5746-8c6e-677c4c7a79df", "user_type": "LOCAL", "username": "user_state_demo_umoewtspao"}}
+
+TASK [Deactivate the user] *****************************************************
+changed: [localhost] => {"changed": true, "ext_id": "f3477968-7ad8-51e2-9ed5-a223a2956e51", "response": {"message": "User State update successful."}, "task_ext_id": null}
+
+TASK [Re-activate the user] ****************************************************
+changed: [localhost] => {"changed": true, "ext_id": "f3477968-7ad8-51e2-9ed5-a223a2956e51", "response": {"message": "User State update successful."}, "task_ext_id": null}
+
+TASK [Clean up the demo user (v3 delete API)] **********************************
+changed: [localhost] => {"changed": true, "error": null, "response": {"api_version": "3.1", "cluster_reference": {"kind": "cluster", "uuid": "cae459ec-08db-475e-a5e5-151e390c9484"}, "completion_time": "2026-07-21T06:45:26Z", "completion_time_usecs": 1784616326772860, "creation_time": "2026-07-21T06:45:26Z", "creation_time_usecs": 1784616326545161, "entity_reference_list": [{"kind": "abac_user_capability", "uuid": "f3477968-7ad8-51e2-9ed5-a223a2956e51"}], "last_update_time": "2026-07-21T06:45:26Z", "logical_timestamp": 2, "operation_type": "delete_user_intentful", "percentage_complete": 100, "progress_message": "delete_user", "start_time": "2026-07-21T06:45:26Z", "start_time_usecs": 1784616326698266, "status": "SUCCEEDED", "subtask_reference_list": [], "uuid": "a1009808-1888-4ebc-beca-86ad54e6216d"}, "user_uuid": null, "uuid": "f3477968-7ad8-51e2-9ed5-a223a2956e51"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
