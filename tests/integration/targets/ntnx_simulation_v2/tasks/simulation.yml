@@ -1,0 +1,566 @@
+---
+########################################################################################
+# Test plan for AIOps VM Simulation modules
+#
+# Simulation models a hypothetical VM workload (vCPU/RAM/HDD/SSD) reused across
+# What-If capacity planning scenarios. The v4 APIs are synchronous.
+#
+# Coverage:
+# 1. check_mode: create/update with all attributes, delete with ext_id.
+# 2. CRUD: minimal create, full create, get by ext_id, meaningful update, idempotent
+#    update, delete.
+# 3. Info: list all + total_available_results, list with filter, list with limit,
+#    fetch with wrong ext_id, mutually exclusive ext_id+filter.
+# 4. Negative: missing required fields (create), delete missing ext_id, delete a
+#    non-existent ext_id, create-idempotency (skipped when name already exists).
+########################################################################################
+
+- name: Start Simulation tests
+  ansible.builtin.debug:
+    msg: Start AIOps VM Simulation tests
+
+- name: Generate random suffix to avoid parallel test collisions
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=true, upper=false, special=false, length=10)[0] }}"
+    todelete: []
+
+- name: Set unique simulation names
+  ansible.builtin.set_fact:
+    sim_name_min: "ansible_sim_min_{{ random_suffix }}"
+    sim_name_full: "ansible_sim_full_{{ random_suffix }}"
+    sim_name_update: "ansible_sim_upd_{{ random_suffix }}"
+
+########################################################################################
+# Purge any leftover simulations from prior runs to guarantee a clean baseline.
+########################################################################################
+
+- name: List all existing simulations for baseline cleanup
+  nutanix.ncp.ntnx_simulations_info_v2: {}
+  register: baseline_list
+  ignore_errors: true
+
+- name: Delete any leftover simulations from earlier ansible runs
+  nutanix.ncp.ntnx_simulation_v2:
+    state: absent
+    ext_id: "{{ item.ext_id }}"
+  register: baseline_purge
+  loop: "{{ baseline_list.response | default([]) | selectattr('name', 'defined') |
+            selectattr('name', 'match', '^ansible_sim_') | list }}"
+  when: baseline_list.response is defined
+  ignore_errors: true
+
+########################################################################################
+# 1a. check_mode — Create with ALL attributes
+########################################################################################
+
+- name: Create simulation using check mode with all attributes
+  nutanix.ncp.ntnx_simulation_v2:
+    state: present
+    name: "check_mode_sim_full"
+    simulation_spec:
+      vcpu_count: 6
+      ram_gb: 12.0
+      hdd_gb: 150.0
+      ssd_gb: 250.0
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode create with all attributes generates spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_sim_full"
+      - result.response.simulation_spec.vcpu_count == 6
+      - result.response.simulation_spec.ram_gb == 12.0
+      - result.response.simulation_spec.hdd_gb == 150.0
+      - result.response.simulation_spec.ssd_gb == 250.0
+    success_msg: "Check mode create with all attributes passed"
+    fail_msg: "Check mode create with all attributes failed"
+
+########################################################################################
+# 2a. Create minimal simulation (only required fields)
+########################################################################################
+
+- name: Create simulation with minimum attributes
+  nutanix.ncp.ntnx_simulation_v2:
+    state: present
+    name: "{{ sim_name_min }}"
+    simulation_spec:
+      vcpu_count: 2
+      ram_gb: 4.0
+      hdd_gb: 50.0
+      ssd_gb: 100.0
+  register: result
+  ignore_errors: true
+
+- name: Assert minimal simulation creation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response is defined
+      - result.response.name == sim_name_min
+      - result.response.simulation_spec.vcpu_count == 2
+      - result.response.simulation_spec.ram_gb == 4.0
+      - result.response.simulation_spec.hdd_gb == 50.0
+      - result.response.simulation_spec.ssd_gb == 100.0
+    success_msg: "Minimal simulation created successfully"
+    fail_msg: "Minimal simulation creation failed"
+
+- name: Track minimal simulation ext_id for cleanup
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+########################################################################################
+# 2b. Create simulation with ALL fields populated
+########################################################################################
+
+- name: Create simulation with all attributes
+  nutanix.ncp.ntnx_simulation_v2:
+    state: present
+    name: "{{ sim_name_full }}"
+    simulation_spec:
+      vcpu_count: 8
+      ram_gb: 16.0
+      hdd_gb: 200.0
+      ssd_gb: 400.0
+  register: result
+  ignore_errors: true
+
+- name: Assert full simulation creation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response is defined
+      - result.response.name == sim_name_full
+      - result.response.simulation_spec.vcpu_count == 8
+      - result.response.simulation_spec.ram_gb == 16.0
+      - result.response.simulation_spec.hdd_gb == 200.0
+      - result.response.simulation_spec.ssd_gb == 400.0
+    success_msg: "Full simulation created successfully"
+    fail_msg: "Full simulation creation failed"
+
+- name: Track full simulation ext_id for cleanup
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+    full_sim_ext_id: "{{ result.ext_id }}"
+
+########################################################################################
+# 4a. Negative — create with missing name
+########################################################################################
+
+- name: Create simulation with missing name (should fail)
+  nutanix.ncp.ntnx_simulation_v2:
+    state: present
+    simulation_spec:
+      vcpu_count: 2
+      ram_gb: 4.0
+      hdd_gb: 50.0
+      ssd_gb: 100.0
+  register: result
+  ignore_errors: true
+
+- name: Assert create with missing name fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): name"
+    success_msg: "Create with missing name failed as expected"
+    fail_msg: "Create with missing name did not fail as expected"
+
+########################################################################################
+# 4b. Negative — create with missing simulation_spec
+########################################################################################
+
+- name: Create simulation with missing simulation_spec (should fail)
+  nutanix.ncp.ntnx_simulation_v2:
+    state: present
+    name: "should_not_be_created_{{ random_suffix }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert create with missing simulation_spec fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): simulation_spec"
+    success_msg: "Create with missing simulation_spec failed as expected"
+    fail_msg: "Create with missing simulation_spec did not fail as expected"
+
+########################################################################################
+# 4e. Create idempotency — creating with same name is a no-op
+########################################################################################
+
+- name: Create simulation with an existing name (idempotency)
+  nutanix.ncp.ntnx_simulation_v2:
+    state: present
+    name: "{{ sim_name_full }}"
+    simulation_spec:
+      vcpu_count: 8
+      ram_gb: 16.0
+      hdd_gb: 200.0
+      ssd_gb: 400.0
+  register: result
+  ignore_errors: true
+
+- name: Assert duplicate-name create is skipped
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.ext_id == full_sim_ext_id
+      - result.msg == "Simulation with name '" + sim_name_full + "' already exists. Skipping creation."
+    success_msg: "Create idempotency by name skipped as expected"
+    fail_msg: "Create idempotency by name did not skip as expected"
+
+########################################################################################
+# 3a. Info module — get by ext_id
+########################################################################################
+
+- name: Fetch simulation using ext_id
+  nutanix.ncp.ntnx_simulations_info_v2:
+    ext_id: "{{ full_sim_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert fetch by ext_id
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == full_sim_ext_id
+      - result.response is defined
+      - result.response.name == sim_name_full
+      - result.response.simulation_spec.vcpu_count == 8
+      - result.response.simulation_spec.ram_gb == 16.0
+      - result.response.simulation_spec.hdd_gb == 200.0
+      - result.response.simulation_spec.ssd_gb == 400.0
+    success_msg: "Fetch simulation by ext_id passed"
+    fail_msg: "Fetch simulation by ext_id failed"
+
+########################################################################################
+# 3b. Info module — list all
+########################################################################################
+
+- name: List all simulations
+  nutanix.ncp.ntnx_simulations_info_v2: {}
+  register: list_all_result
+  ignore_errors: true
+
+- name: Assert list-all returns at least the two created simulations
+  ansible.builtin.assert:
+    that:
+      - list_all_result is defined
+      - list_all_result.changed == false
+      - list_all_result.failed == false
+      - list_all_result.response is defined
+      - list_all_result.response | length >= 2
+      - list_all_result.total_available_results is defined
+      - list_all_result.total_available_results >= 2
+    success_msg: "List-all simulations passed"
+    fail_msg: "List-all simulations failed"
+
+- name: Assert both created simulation names are present in list-all
+  ansible.builtin.assert:
+    that:
+      - sim_name_min in (list_all_result.response | map(attribute='name') | list)
+      - sim_name_full in (list_all_result.response | map(attribute='name') | list)
+    success_msg: "Both simulations appear in the list"
+    fail_msg: "Created simulations not found in list-all"
+
+########################################################################################
+# 3c. Info module — list with filter
+########################################################################################
+
+- name: List simulations with name filter
+  nutanix.ncp.ntnx_simulations_info_v2:
+    filter: "name eq '{{ sim_name_full }}'"
+  register: filter_result
+  ignore_errors: true
+
+- name: Assert filter returns only the matching simulation
+  ansible.builtin.assert:
+    that:
+      - filter_result is defined
+      - filter_result.changed == false
+      - filter_result.failed == false
+      - filter_result.response is defined
+      - filter_result.response | length == 1
+      - filter_result.response[0].name == sim_name_full
+      - filter_result.response[0].simulation_spec.vcpu_count == 8
+    success_msg: "List with filter passed"
+    fail_msg: "List with filter failed"
+
+########################################################################################
+# 3d. Info module — list with limit
+########################################################################################
+
+- name: List simulations with limit=1
+  nutanix.ncp.ntnx_simulations_info_v2:
+    limit: 1
+  register: limit_result
+  ignore_errors: true
+
+- name: Assert limit=1 returns at most one simulation
+  ansible.builtin.assert:
+    that:
+      - limit_result is defined
+      - limit_result.changed == false
+      - limit_result.failed == false
+      - limit_result.response is defined
+      - limit_result.response | length == 1
+    success_msg: "List with limit passed"
+    fail_msg: "List with limit failed"
+
+########################################################################################
+# 3e. Info module — mutually exclusive ext_id + filter
+########################################################################################
+
+- name: Fetch with both ext_id and filter (should fail)
+  nutanix.ncp.ntnx_simulations_info_v2:
+    ext_id: "{{ full_sim_ext_id }}"
+    filter: "name eq '{{ sim_name_full }}'"
+  register: result
+  ignore_errors: true
+
+- name: Assert mutually exclusive ext_id + filter fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.msg == "parameters are mutually exclusive: ext_id|filter"
+    success_msg: "Mutually exclusive ext_id and filter rejected as expected"
+    fail_msg: "Mutually exclusive ext_id and filter was not rejected"
+
+########################################################################################
+# 3f. Info module — fetch with wrong ext_id (not-found)
+########################################################################################
+
+- name: Fetch simulation with a bogus ext_id (should fail)
+  nutanix.ncp.ntnx_simulations_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert not-found ext_id fetch fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching simulation info using ext_id"
+    success_msg: "Fetch with wrong ext_id failed as expected"
+    fail_msg: "Fetch with wrong ext_id did not fail as expected"
+
+########################################################################################
+# 1b. check_mode — Update with ALL attributes
+########################################################################################
+
+- name: Update simulation using check mode with all attributes
+  nutanix.ncp.ntnx_simulation_v2:
+    state: present
+    ext_id: "{{ full_sim_ext_id }}"
+    name: "check_mode_updated_name"
+    simulation_spec:
+      vcpu_count: 12
+      ram_gb: 24.0
+      hdd_gb: 300.0
+      ssd_gb: 500.0
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode update generates spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_updated_name"
+      - result.response.simulation_spec.vcpu_count == 12
+      - result.response.simulation_spec.ram_gb == 24.0
+      - result.response.simulation_spec.hdd_gb == 300.0
+      - result.response.simulation_spec.ssd_gb == 500.0
+    success_msg: "Check mode update with all attributes passed"
+    fail_msg: "Check mode update with all attributes failed"
+
+########################################################################################
+# 2d. Update — real state transition
+########################################################################################
+
+- name: Update simulation with all attributes
+  nutanix.ncp.ntnx_simulation_v2:
+    state: present
+    ext_id: "{{ full_sim_ext_id }}"
+    name: "{{ sim_name_update }}"
+    simulation_spec:
+      vcpu_count: 16
+      ram_gb: 32.0
+      hdd_gb: 500.0
+      ssd_gb: 1000.0
+  register: result
+  ignore_errors: true
+
+- name: Assert simulation update
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == full_sim_ext_id
+      - result.response is defined
+      - result.response.name == sim_name_update
+      - result.response.simulation_spec.vcpu_count == 16
+      - result.response.simulation_spec.ram_gb == 32.0
+      - result.response.simulation_spec.hdd_gb == 500.0
+      - result.response.simulation_spec.ssd_gb == 1000.0
+    success_msg: "Simulation update passed"
+    fail_msg: "Simulation update failed"
+
+########################################################################################
+# 2e. Update idempotency — repeat the same update, expect skipped
+########################################################################################
+
+- name: Update simulation with identical values (idempotency)
+  nutanix.ncp.ntnx_simulation_v2:
+    state: present
+    ext_id: "{{ full_sim_ext_id }}"
+    name: "{{ sim_name_update }}"
+    simulation_spec:
+      vcpu_count: 16
+      ram_gb: 32.0
+      hdd_gb: 500.0
+      ssd_gb: 1000.0
+  register: result
+  ignore_errors: true
+
+- name: Assert update idempotency is a no-op
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+      - result.response is defined
+      - result.response.name == sim_name_update
+    success_msg: "Update idempotency passed"
+    fail_msg: "Update idempotency failed"
+
+########################################################################################
+# 1c. check_mode — Delete
+########################################################################################
+
+- name: Delete simulation with check mode
+  nutanix.ncp.ntnx_simulation_v2:
+    state: absent
+    ext_id: "{{ todelete[0] }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode delete
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Simulation with ext_id:" + todelete[0] + " will be deleted."
+    success_msg: "Delete with check mode passed"
+    fail_msg: "Delete with check mode failed"
+
+########################################################################################
+# 2f. Delete — real deletion of created simulations
+########################################################################################
+
+- name: Delete all created simulations
+  nutanix.ncp.ntnx_simulation_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: delete_result
+  loop: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Assert deletions succeeded
+  ansible.builtin.assert:
+    that:
+      - delete_result is defined
+      - delete_result.results | length == todelete | length
+      - delete_result.results | selectattr('failed', 'equalto', true) | list | length == 0
+      - delete_result.results | selectattr('changed', 'equalto', true) | list | length == todelete | length
+    success_msg: "All created simulations were deleted"
+    fail_msg: "One or more simulations failed to delete"
+
+- name: Assert each delete response individually
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response is defined
+      - item.response.status == "SUCCEEDED"
+      - item.ext_id == todelete[ansible_loop.index0]
+    success_msg: "Delete assertion passed for {{ item.ext_id }}"
+    fail_msg: "Delete assertion failed for {{ item.ext_id }}"
+  loop: "{{ delete_result.results }}"
+  loop_control:
+    extended: true
+
+########################################################################################
+# 4c. Negative — delete without ext_id
+########################################################################################
+
+- name: Delete simulation without ext_id (should fail)
+  nutanix.ncp.ntnx_simulation_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Assert delete without ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete without ext_id failed as expected"
+    fail_msg: "Delete without ext_id did not fail as expected"
+
+########################################################################################
+# 4d. Negative — delete non-existent ext_id
+########################################################################################
+
+- name: Delete simulation with a bogus ext_id (should fail)
+  nutanix.ncp.ntnx_simulation_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert delete with wrong ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while deleting simulation"
+    success_msg: "Delete with wrong ext_id failed as expected"
+    fail_msg: "Delete with wrong ext_id did not fail as expected"
+
+- name: End Simulation tests
+  ansible.builtin.debug:
+    msg: End AIOps VM Simulation tests
