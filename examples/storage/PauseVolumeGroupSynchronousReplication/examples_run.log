@@ -1,0 +1,35 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Pause synchronous replication of a Volume Group] *************************
+
+TASK [Set input variables] *****************************************************
+ok: [localhost] => {"ansible_facts": {"vg_ext_id": "94f36661-3188-3ab6-8adb-d84dbbce2f6b"}, "changed": false}
+
+TASK [Pause synchronous replication for the Volume Group] **********************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching Volume Group info using ext_id: 94f36661-3188-3ab6-8adb-d84dbbce2f6b", "response": {"error": "Not Found", "message": "No static resource storage/v4.0.a4/config/volume-groups/94f36661-3188-3ab6-8adb-d84dbbce2f6b.", "path": "/api/storage/v4.0.a4/config/volume-groups/94f36661-3188-3ab6-8adb-d84dbbce2f6b", "status": 404, "timestamp": "2026-07-20T16:02:45.316256550Z"}, "status": 404}
+...ignoring
+
+TASK [Print pause result] ******************************************************
+ok: [localhost] => {
+    "pause_result": {
+        "changed": false,
+        "error": "NOT FOUND",
+        "failed": true,
+        "msg": "Api Exception raised while fetching Volume Group info using ext_id: 94f36661-3188-3ab6-8adb-d84dbbce2f6b",
+        "response": {
+            "error": "Not Found",
+            "message": "No static resource storage/v4.0.a4/config/volume-groups/94f36661-3188-3ab6-8adb-d84dbbce2f6b.",
+            "path": "/api/storage/v4.0.a4/config/volume-groups/94f36661-3188-3ab6-8adb-d84dbbce2f6b",
+            "status": 404,
+            "timestamp": "2026-07-20T16:02:45.316256550Z"
+        },
+        "status": 404
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+

@@ -1,0 +1,33 @@
+---
+# Summary:
+# This playbook demonstrates how to pause the synchronous replication of a
+# protected Volume Group in Nutanix Prism Central using the storage v4 API.
+#
+# The Volume Group referenced by ``vg_ext_id`` must already be protected by a
+# Protection Policy that has a Synchronous Replication (0-RPO) schedule
+# configured; otherwise the API call will fail with
+# ``kDRConfigStretchParamsNotFound``.
+
+- name: Pause synchronous replication of a Volume Group
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set input variables
+      ansible.builtin.set_fact:
+        vg_ext_id: "94f36661-3188-3ab6-8adb-d84dbbce2f6b"
+
+    - name: Pause synchronous replication for the Volume Group
+      nutanix.ncp.ntnx_volume_group_synchronous_replication_v2:
+        ext_id: "{{ vg_ext_id }}"
+      register: pause_result
+      ignore_errors: true
+
+    - name: Print pause result
+      ansible.builtin.debug:
+        var: pause_result
