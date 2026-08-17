@@ -1,0 +1,224 @@
+Running ntnx_volume_disk_v2 integration test role
+[WARNING]: Found variable using reserved name: port
+
+PLAY [testhost] ****************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Start Volume Disk v2 tests] ************************
+ok: [testhost] => {
+    "msg": "Starting integration tests for ntnx_volume_disk_v2 / ntnx_volume_disks_info_v2"
+}
+
+TASK [ntnx_volume_disk_v2 : Probe availability of the storage v4 namespace on the target Prism Central] ***
+ok: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Record whether the storage v4 namespace is available] ***
+ok: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Warn when storage v4 namespace is not deployed on the target PC] ***
+ok: [testhost] => {
+    "msg": "NOTE: The target Prism Central (10.44.76.28) does NOT expose /api/storage/v4.0.a4/ (probe returned HTTP 404). Only argument-spec / negative tests will run against the module; real Create/Update/Delete operations require the storage v4 namespace which is the endpoint the SDK targets. Upgrade the PC to enable full coverage."
+}
+
+TASK [ntnx_volume_disk_v2 : Negative — Delete without ext_id must be rejected by required_if] ***
+fatal: [testhost]: FAILED! => {"changed": false, "msg": "state is absent but all of the following are missing: ext_id"}
+...ignoring
+
+TASK [ntnx_volume_disk_v2 : Verify Delete without ext_id was rejected] *********
+ok: [testhost] => {
+    "changed": false,
+    "msg": "Delete without ext_id was rejected as expected"
+}
+
+TASK [ntnx_volume_disk_v2 : Negative — omit volume_group_ext_id (required) must be rejected] ***
+fatal: [testhost]: FAILED! => {"changed": false, "msg": "missing required arguments: volume_group_ext_id"}
+...ignoring
+
+TASK [ntnx_volume_disk_v2 : Verify missing volume_group_ext_id is rejected] ****
+ok: [testhost] => {
+    "changed": false,
+    "msg": "Missing volume_group_ext_id was rejected"
+}
+
+TASK [ntnx_volume_disk_v2 : Negative — invalid entity_type enum must be rejected by choices] ***
+fatal: [testhost]: FAILED! => {"changed": false, "msg": "value of entity_type must be one of: STORAGE_CONTAINER, VOLUME_DISK, VM_DISK, DISK_RECOVERY_POINT, got: NOT_A_VALID_ENUM found in disk_data_source_reference"}
+...ignoring
+
+TASK [ntnx_volume_disk_v2 : Verify invalid entity_type enum is rejected] *******
+ok: [testhost] => {
+    "changed": false,
+    "msg": "Invalid enum value was rejected"
+}
+
+TASK [ntnx_volume_disk_v2 : Negative — info module also requires volume_group_ext_id] ***
+fatal: [testhost]: FAILED! => {"changed": false, "msg": "missing required arguments: volume_group_ext_id"}
+...ignoring
+
+TASK [ntnx_volume_disk_v2 : Verify info module rejects missing volume_group_ext_id] ***
+ok: [testhost] => {
+    "changed": false,
+    "msg": "Info module rejected missing volume_group_ext_id"
+}
+
+TASK [ntnx_volume_disk_v2 : Negative — info module rejects ext_id + filter (mutually exclusive)] ***
+fatal: [testhost]: FAILED! => {"changed": false, "msg": "parameters are mutually exclusive: ext_id|filter"}
+...ignoring
+
+TASK [ntnx_volume_disk_v2 : Verify info module rejects ext_id + filter combo] ***
+ok: [testhost] => {
+    "changed": false,
+    "msg": "Info module rejected ext_id + filter as expected"
+}
+
+TASK [ntnx_volume_disk_v2 : Start Volume Disk lifecycle tests (storage API is reachable)] ***
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Generate random suffix for resource names] *********
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Set Volume Group name] *****************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Discover a Prism Element cluster (skip Prism Central)] ***
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Assert we found a PE cluster] **********************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Capture PE cluster ext_id] *************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Discover a storage container on the PE cluster] ****
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Assert we found a storage container] ***************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Capture storage container ext_id] ******************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Create Volume Group for Volume Disk tests] *********
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Verify Volume Group was created] *******************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Set Volume Group ext_id] ***************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Create Volume Disk in check mode (all attributes)] ***
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Verify Create check_mode spec] *********************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Create Volume Disk with minimum required attributes] ***
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Verify minimum Create] *****************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Capture minimum-disk ext_id] ***********************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Create Volume Disk with ALL attributes] ************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Verify full Create] ********************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Capture full-disk ext_id] **************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Create Volume Disk by cloning from another VOLUME_DISK] ***
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Verify clone Create] *******************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Capture clone-disk ext_id] *************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : List all Volume Disks under the Volume Group] ******
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Verify list-all] ***********************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : List Volume Disks with limit=1] ********************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Verify list-limit] *********************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Get Volume Disk by ext_id] *************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Verify get-by-id] **********************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : List Volume Disks filtered by storageContainerId] ***
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Verify list-filter] ********************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Update Volume Disk in check mode (all attributes)] ***
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Verify Update check_mode] **************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Update Volume Disk description and flash mode] *****
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Verify Update] *************************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Run the same Update again to prove idempotency] ****
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Verify idempotency] ********************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Update with invalid ext_id — API must return an error] ***
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Verify invalid-ext_id update fails cleanly] ********
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Delete Volume Disk in check mode] ******************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Verify Delete check_mode] **************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Delete the minimum-attribute Volume Disk] **********
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Verify Delete minimum-disk] ************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Delete the clone Volume Disk] **********************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Verify Delete clone] *******************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Delete the full-attribute Volume Disk] *************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Verify Delete full-disk] ***************************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Delete the Volume Group used for tests] ************
+skipping: [testhost]
+
+TASK [ntnx_volume_disk_v2 : Verify Volume Group cleanup] ***********************
+skipping: [testhost]
+
+PLAY RECAP *********************************************************************
+testhost                   : ok=15   changed=0    unreachable=0    failed=0    skipped=49   rescued=0    ignored=5   
+

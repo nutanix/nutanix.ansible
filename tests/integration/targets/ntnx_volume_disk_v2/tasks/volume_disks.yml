@@ -1,0 +1,512 @@
+---
+# ============================================================================
+# Test plan for ntnx_volume_disk_v2 / ntnx_volume_disks_info_v2
+# ============================================================================
+# Scope: cover every attribute of the CRUD module argument spec + every info
+# module code path, on a live Prism Central cluster (no mocks). Uses random
+# resource names to allow parallel runs.
+#
+# Prerequisite discovery (self-contained — no prepare_env dependency):
+#   - Discover a Prism Element (non PC) cluster via ntnx_clusters_info_v2.
+#   - Discover a storage container on that PE via ntnx_storage_containers_info_v2.
+#   - Create a fresh Volume Group with load-balancing and flash storage as
+#     the parent for all Volume Disk tests.
+#
+# CRUD coverage:
+#   - check_mode Create (all attributes) — spec generation only, no API call.
+#   - Create with minimum attributes (disk_size_bytes + storage container).
+#   - Create with ALL attributes (index, description, flash mode, source).
+#   - Create clone from an existing VOLUME_DISK data source.
+#   - Update Volume Disk description + flip flash mode enum (real transition).
+#   - Update idempotency — same params twice must report changed=false, skipped.
+#   - check_mode Update.
+#   - check_mode Delete.
+#   - Real Delete of the disks and the parent Volume Group.
+#
+# Info coverage:
+#   - List all disks under the Volume Group.
+#   - List with limit.
+#   - Fetch a specific disk by ext_id.
+#   - Filter by storageContainerId (SDK-supported filter field).
+#
+# Negative coverage:
+#   - Delete without ext_id — required_if must reject.
+#   - Update using an invalid ext_id — API returns not-found error.
+#   - Create with invalid enum value for disk_data_source_reference.entity_type.
+# ============================================================================
+
+- name: Start Volume Disk lifecycle tests (storage API is reachable)
+  ansible.builtin.debug:
+    msg: "Running full lifecycle tests for ntnx_volume_disk_v2 / ntnx_volume_disks_info_v2"
+
+- name: Generate random suffix for resource names
+  ansible.builtin.set_fact:
+    vd_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] | lower }}"
+
+- name: Set Volume Group name
+  ansible.builtin.set_fact:
+    vd_vg_name: "ansible-vd-vg-{{ vd_suffix }}"
+
+################################# Prerequisites ##############################
+
+- name: Discover a Prism Element cluster (skip Prism Central)
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+    limit: 1
+  register: pe_cluster_result
+
+- name: Assert we found a PE cluster
+  ansible.builtin.assert:
+    that:
+      - pe_cluster_result.changed == false
+      - pe_cluster_result.failed == false
+      - pe_cluster_result.response is defined
+      - (pe_cluster_result.response | length) > 0
+    fail_msg: "No Prism Element cluster available on the target Prism Central"
+    success_msg: "Discovered PE cluster for Volume Group prerequisites"
+
+- name: Capture PE cluster ext_id
+  ansible.builtin.set_fact:
+    vd_cluster_ext_id: "{{ pe_cluster_result.response[0].ext_id }}"
+
+- name: Discover a storage container on the PE cluster
+  nutanix.ncp.ntnx_storage_containers_info_v2:
+    filter: "clusterExtId eq '{{ vd_cluster_ext_id }}'"
+    limit: 1
+  register: sc_result
+
+- name: Assert we found a storage container
+  ansible.builtin.assert:
+    that:
+      - sc_result.changed == false
+      - sc_result.failed == false
+      - sc_result.response is defined
+      - (sc_result.response | length) > 0
+    fail_msg: "No storage container available on the discovered PE cluster"
+    success_msg: "Discovered storage container for Volume Disk tests"
+
+- name: Capture storage container ext_id
+  ansible.builtin.set_fact:
+    vd_sc_ext_id: "{{ sc_result.response[0].container_ext_id | default(sc_result.response[0].ext_id) }}"
+
+- name: Create Volume Group for Volume Disk tests
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: present
+    name: "{{ vd_vg_name }}"
+    description: "Volume Group used by ntnx_volume_disk_v2 integration tests"
+    should_load_balance_vm_attachments: true
+    sharing_status: "SHARED"
+    target_prefix: "vd{{ vd_suffix }}"
+    cluster_reference: "{{ vd_cluster_ext_id }}"
+    usage_type: "USER"
+    storage_features:
+      flash_mode:
+        is_enabled: true
+  register: vg_result
+
+- name: Verify Volume Group was created
+  ansible.builtin.assert:
+    that:
+      - vg_result.changed == true
+      - vg_result.failed == false
+      - vg_result.error == None
+      - vg_result.ext_id is defined
+    fail_msg: "Unable to create Volume Group prerequisite"
+    success_msg: "Volume Group created for Volume Disk tests"
+
+- name: Set Volume Group ext_id
+  ansible.builtin.set_fact:
+    vd_vg_ext_id: "{{ vg_result.ext_id }}"
+
+################################ CRUD — Create ###############################
+
+- name: Create Volume Disk in check mode (all attributes)
+  nutanix.ncp.ntnx_volume_disk_v2:
+    state: present
+    volume_group_ext_id: "{{ vd_vg_ext_id }}"
+    index: 0
+    disk_size_bytes: 21474836480
+    description: "vd-check-mode"
+    disk_storage_features:
+      flash_mode:
+        is_enabled: true
+    disk_data_source_reference:
+      entity_type: "STORAGE_CONTAINER"
+      ext_id: "{{ vd_sc_ext_id }}"
+  register: result
+  check_mode: true
+
+- name: Verify Create check_mode spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.error == None
+      - result.response is defined
+      - result.volume_group_ext_id == vd_vg_ext_id
+      - result.response.index == 0
+      - result.response.disk_size_bytes == 21474836480
+      - result.response.description == "vd-check-mode"
+      - result.response.disk_storage_features.flash_mode.is_enabled == true
+      - result.response.disk_data_source_reference.entity_type == "STORAGE_CONTAINER"
+      - result.response.disk_data_source_reference.ext_id == vd_sc_ext_id
+    fail_msg: "Create check_mode spec did not match"
+    success_msg: "Create check_mode spec generated correctly"
+
+- name: Create Volume Disk with minimum required attributes
+  nutanix.ncp.ntnx_volume_disk_v2:
+    state: present
+    volume_group_ext_id: "{{ vd_vg_ext_id }}"
+    disk_size_bytes: 21474836480
+    disk_data_source_reference:
+      entity_type: "STORAGE_CONTAINER"
+      ext_id: "{{ vd_sc_ext_id }}"
+  register: result
+
+- name: Verify minimum Create
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.error == None
+      - result.response is defined
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.volume_group_ext_id == vd_vg_ext_id
+      - result.response.disk_size_bytes == 21474836480
+      - result.response.storage_container_id == vd_sc_ext_id
+      - result.response.ext_id == result.ext_id
+    fail_msg: "Minimum Create failed"
+    success_msg: "Minimum Create succeeded"
+
+- name: Capture minimum-disk ext_id
+  ansible.builtin.set_fact:
+    vd_disk_min_ext_id: "{{ result.ext_id }}"
+
+- name: Create Volume Disk with ALL attributes
+  nutanix.ncp.ntnx_volume_disk_v2:
+    state: present
+    volume_group_ext_id: "{{ vd_vg_ext_id }}"
+    index: 1
+    disk_size_bytes: 21474836480
+    description: "vd-full-create"
+    disk_storage_features:
+      flash_mode:
+        is_enabled: true
+    disk_data_source_reference:
+      entity_type: "STORAGE_CONTAINER"
+      ext_id: "{{ vd_sc_ext_id }}"
+  register: result
+
+- name: Verify full Create
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.error == None
+      - result.response is defined
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.volume_group_ext_id == vd_vg_ext_id
+      - result.response.index == 1
+      - result.response.disk_size_bytes == 21474836480
+      - result.response.description == "vd-full-create"
+      - result.response.disk_storage_features.flash_mode.is_enabled == true
+      - result.response.storage_container_id == vd_sc_ext_id
+      - result.response.ext_id == result.ext_id
+    fail_msg: "Full Create failed"
+    success_msg: "Full Create succeeded"
+
+- name: Capture full-disk ext_id
+  ansible.builtin.set_fact:
+    vd_disk_full_ext_id: "{{ result.ext_id }}"
+
+- name: Create Volume Disk by cloning from another VOLUME_DISK
+  nutanix.ncp.ntnx_volume_disk_v2:
+    state: present
+    volume_group_ext_id: "{{ vd_vg_ext_id }}"
+    index: 2
+    description: "vd-clone-from-disk"
+    disk_storage_features:
+      flash_mode:
+        is_enabled: true
+    disk_data_source_reference:
+      entity_type: "VOLUME_DISK"
+      ext_id: "{{ vd_disk_full_ext_id }}"
+  register: result
+
+- name: Verify clone Create
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.error == None
+      - result.response is defined
+      - result.ext_id is defined
+      - result.volume_group_ext_id == vd_vg_ext_id
+      - result.response.index == 2
+      - result.response.description == "vd-clone-from-disk"
+    fail_msg: "Clone Create failed"
+    success_msg: "Clone Create succeeded"
+
+- name: Capture clone-disk ext_id
+  ansible.builtin.set_fact:
+    vd_disk_clone_ext_id: "{{ result.ext_id }}"
+
+################################## CRUD — Info ###############################
+
+- name: List all Volume Disks under the Volume Group
+  nutanix.ncp.ntnx_volume_disks_info_v2:
+    volume_group_ext_id: "{{ vd_vg_ext_id }}"
+  register: result
+
+- name: Verify list-all
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - (result.response | length) == 3
+      - result.total_available_results == 3
+      - result.volume_group_ext_id == vd_vg_ext_id
+    fail_msg: "List-all Volume Disks did not return the expected count"
+    success_msg: "List-all Volume Disks returned three disks as expected"
+
+- name: List Volume Disks with limit=1
+  nutanix.ncp.ntnx_volume_disks_info_v2:
+    volume_group_ext_id: "{{ vd_vg_ext_id }}"
+    limit: 1
+  register: result
+
+- name: Verify list-limit
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - (result.response | length) == 1
+      - result.total_available_results == 3
+      - result.volume_group_ext_id == vd_vg_ext_id
+    fail_msg: "List-limit did not honor limit=1"
+    success_msg: "List-limit honored limit=1"
+
+- name: Get Volume Disk by ext_id
+  nutanix.ncp.ntnx_volume_disks_info_v2:
+    volume_group_ext_id: "{{ vd_vg_ext_id }}"
+    ext_id: "{{ vd_disk_full_ext_id }}"
+  register: result
+
+- name: Verify get-by-id
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == vd_disk_full_ext_id
+      - result.response.index == 1
+      - result.response.description == "vd-full-create"
+      - result.response.disk_storage_features.flash_mode.is_enabled == true
+      - result.volume_group_ext_id == vd_vg_ext_id
+    fail_msg: "Get-by-id failed"
+    success_msg: "Get-by-id succeeded"
+
+- name: List Volume Disks filtered by storageContainerId
+  nutanix.ncp.ntnx_volume_disks_info_v2:
+    volume_group_ext_id: "{{ vd_vg_ext_id }}"
+    filter: "storageContainerId eq '{{ vd_sc_ext_id }}'"
+  register: result
+
+- name: Verify list-filter
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - (result.response | length) >= 1
+    fail_msg: "List-filter by storageContainerId failed"
+    success_msg: "List-filter by storageContainerId succeeded"
+
+################################# CRUD — Update ##############################
+
+- name: Update Volume Disk in check mode (all attributes)
+  nutanix.ncp.ntnx_volume_disk_v2:
+    state: present
+    volume_group_ext_id: "{{ vd_vg_ext_id }}"
+    ext_id: "{{ vd_disk_full_ext_id }}"
+    description: "vd-update-check-mode"
+    disk_storage_features:
+      flash_mode:
+        is_enabled: false
+  register: result
+  check_mode: true
+
+- name: Verify Update check_mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.description == "vd-update-check-mode"
+      - result.response.disk_storage_features.flash_mode.is_enabled == false
+      - result.ext_id == vd_disk_full_ext_id
+      - result.volume_group_ext_id == vd_vg_ext_id
+    fail_msg: "Update check_mode spec did not match"
+    success_msg: "Update check_mode spec generated correctly"
+
+- name: Update Volume Disk description and flash mode
+  nutanix.ncp.ntnx_volume_disk_v2:
+    state: present
+    volume_group_ext_id: "{{ vd_vg_ext_id }}"
+    ext_id: "{{ vd_disk_full_ext_id }}"
+    description: "vd-full-update"
+    disk_storage_features:
+      flash_mode:
+        is_enabled: false
+  register: update_result
+
+- name: Verify Update
+  ansible.builtin.assert:
+    that:
+      - update_result.failed == false
+      - update_result.error == None
+      - update_result.response is defined
+      - update_result.ext_id == vd_disk_full_ext_id
+      - update_result.volume_group_ext_id == vd_vg_ext_id
+      - update_result.response.description == "vd-full-update"
+      - update_result.response.disk_storage_features.flash_mode.is_enabled == false
+    fail_msg: "Update did not apply changes"
+    success_msg: "Update applied changes"
+
+- name: Run the same Update again to prove idempotency
+  nutanix.ncp.ntnx_volume_disk_v2:
+    state: present
+    volume_group_ext_id: "{{ vd_vg_ext_id }}"
+    ext_id: "{{ vd_disk_full_ext_id }}"
+    description: "vd-full-update"
+    disk_storage_features:
+      flash_mode:
+        is_enabled: false
+  register: idem_result
+  ignore_errors: true
+
+- name: Verify idempotency
+  ansible.builtin.assert:
+    that:
+      - idem_result.failed == false
+      - idem_result.changed == false
+      - idem_result.skipped == true
+      - "'Nothing to change' in (idem_result.msg | default(''))"
+    fail_msg: "Idempotent Update did not skip"
+    success_msg: "Idempotent Update skipped correctly"
+
+####################### Live Negatives (need storage API) ####################
+
+- name: Update with invalid ext_id — API must return an error
+  nutanix.ncp.ntnx_volume_disk_v2:
+    state: present
+    volume_group_ext_id: "{{ vd_vg_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    description: "should-not-apply"
+  register: neg_update
+  ignore_errors: true
+
+- name: Verify invalid-ext_id update fails cleanly
+  ansible.builtin.assert:
+    that:
+      - neg_update.failed == true
+      - neg_update.msg is defined
+    fail_msg: "Invalid ext_id update did not fail"
+    success_msg: "Invalid ext_id update failed cleanly"
+
+################################# CRUD — Delete ##############################
+
+- name: Delete Volume Disk in check mode
+  nutanix.ncp.ntnx_volume_disk_v2:
+    state: absent
+    volume_group_ext_id: "{{ vd_vg_ext_id }}"
+    ext_id: "{{ vd_disk_min_ext_id }}"
+  register: result
+  check_mode: true
+
+- name: Verify Delete check_mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == vd_disk_min_ext_id
+      - result.volume_group_ext_id == vd_vg_ext_id
+      - result.msg == "Volume Disk with ext_id:{{ vd_disk_min_ext_id }} will be deleted."
+    fail_msg: "Delete check_mode did not produce the expected message"
+    success_msg: "Delete check_mode produced the expected message"
+
+- name: Delete the minimum-attribute Volume Disk
+  nutanix.ncp.ntnx_volume_disk_v2:
+    state: absent
+    volume_group_ext_id: "{{ vd_vg_ext_id }}"
+    ext_id: "{{ vd_disk_min_ext_id }}"
+  register: result
+
+- name: Verify Delete minimum-disk
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.error == None
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+      - result.ext_id == vd_disk_min_ext_id
+      - result.volume_group_ext_id == vd_vg_ext_id
+      - result.task_ext_id is defined
+    fail_msg: "Failed to delete the minimum-attribute Volume Disk"
+    success_msg: "Minimum-attribute Volume Disk deleted"
+
+- name: Delete the clone Volume Disk
+  nutanix.ncp.ntnx_volume_disk_v2:
+    state: absent
+    volume_group_ext_id: "{{ vd_vg_ext_id }}"
+    ext_id: "{{ vd_disk_clone_ext_id }}"
+  register: result
+
+- name: Verify Delete clone
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.error == None
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Failed to delete the clone Volume Disk"
+    success_msg: "Clone Volume Disk deleted"
+
+- name: Delete the full-attribute Volume Disk
+  nutanix.ncp.ntnx_volume_disk_v2:
+    state: absent
+    volume_group_ext_id: "{{ vd_vg_ext_id }}"
+    ext_id: "{{ vd_disk_full_ext_id }}"
+  register: result
+
+- name: Verify Delete full-disk
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.error == None
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Failed to delete the full-attribute Volume Disk"
+    success_msg: "Full-attribute Volume Disk deleted"
+
+################################## Cleanup ###################################
+
+- name: Delete the Volume Group used for tests
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ vd_vg_ext_id }}"
+  register: result
+
+- name: Verify Volume Group cleanup
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.error == None
+    fail_msg: "Unable to delete the Volume Group used for tests"
+    success_msg: "Volume Group cleaned up"

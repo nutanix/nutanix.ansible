@@ -1,0 +1,20 @@
+# NOTE: The example playbook was executed against the live Prism Central at
+# 10.44.76.28. The example FAILS on this cluster because the SDK
+# `ntnx_storage_py_client` targets the `/api/storage/v4.0.a4/` namespace,
+# which is NOT yet deployed on this PC build (only `.a2` and `.a3` are
+# available). Once the target PC is upgraded to a build that exposes the
+# `.a4` storage namespace, this playbook runs end-to-end. See PR body for
+# the environment mismatch discussion.
+#
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+
+PLAY [Volume Disk v4 playbook] *************************************************
+
+TASK [Create Volume Disk with all attributes] **********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while creating Volume Disk", "response": {"error": "Not Found", "message": "No static resource storage/v4.0.a4/config/volume-groups/94f36661-3188-3ab6-8adb-d84dbbce2f6b/disks.", "path": "/api/storage/v4.0.a4/config/volume-groups/94f36661-3188-3ab6-8adb-d84dbbce2f6b/disks", "status": 404, "timestamp": "2026-07-20T16:12:13.003746179Z"}, "status": 404}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=0    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0   
+
