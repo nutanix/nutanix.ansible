@@ -1,0 +1,38 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Approval Policies (Security Policy v2) playbook] *************************
+
+TASK [Set variables for the run] ***********************************************
+ok: [localhost] => {"ansible_facts": {"approval_policy_name": "ansible-approval-policy", "approver_user_ext_id": "00000000-0000-0000-0000-000000000000", "protection_policy_ext_id": "11111111-1111-1111-1111-111111111111"}, "changed": false}
+
+TASK [Create an approval policy with all supported attributes] *****************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "PRECONDITION FAILED", "msg": "Api Exception raised while creating approval policy", "response": {"$dataItemDiscriminator": "security.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<security.v4.error.AppMessage>", "$objectType": "security.v4.error.ErrorResponse", "error": [{"$objectType": "security.v4.error.AppMessage", "argumentsMap": {"operation": "`CreateApprovalPolicy`"}, "code": "SEC-80002", "errorGroup": "SECURE_POLICIES_API_ERROR", "locale": "en-US", "message": "Cannot perform operation `CreateApprovalPolicy` because policy engine is not enabled", "severity": "ERROR"}]}}, "status": 412}
+...ignoring
+
+TASK [Capture the ext_id of the newly created approval policy] *****************
+ok: [localhost] => {"ansible_facts": {"approval_policy_ext_id": ""}, "changed": false}
+
+TASK [Get the approval policy using ext_id (only when create succeeded)] *******
+skipping: [localhost] => {"changed": false, "false_condition": "approval_policy_ext_id | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [List all approval policies] **********************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "PRECONDITION FAILED", "msg": "Api Exception raised while fetching approval policies info", "response": {"$dataItemDiscriminator": "security.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<security.v4.error.AppMessage>", "$objectType": "security.v4.error.ErrorResponse", "error": [{"$objectType": "security.v4.error.AppMessage", "argumentsMap": {"operation": "`ListApprovalPolicies`"}, "code": "SEC-80002", "errorGroup": "SECURE_POLICIES_API_ERROR", "locale": "en-US", "message": "Cannot perform operation `ListApprovalPolicies` because policy engine is not enabled", "severity": "ERROR"}]}}, "status": 412}
+...ignoring
+
+TASK [List approval policies with an OData filter on name] *********************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "PRECONDITION FAILED", "msg": "Api Exception raised while fetching approval policies info", "response": {"$dataItemDiscriminator": "security.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<security.v4.error.AppMessage>", "$objectType": "security.v4.error.ErrorResponse", "error": [{"$objectType": "security.v4.error.AppMessage", "argumentsMap": {"operation": "`ListApprovalPolicies`"}, "code": "SEC-80002", "errorGroup": "SECURE_POLICIES_API_ERROR", "locale": "en-US", "message": "Cannot perform operation `ListApprovalPolicies` because policy engine is not enabled", "severity": "ERROR"}]}}, "status": 412}
+...ignoring
+
+TASK [Update the approval policy with all supported attributes] ****************
+skipping: [localhost] => {"changed": false, "false_condition": "approval_policy_ext_id | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [Attempt to delete the approval policy (unsupported by SDK)] **************
+fatal: [localhost]: FAILED! => {"changed": false, "ext_id": "11111111-1111-1111-1111-111111111111", "msg": "Delete is not supported for Approval Policy by the current ntnx_security_py_client SDK. Skipping delete for ext_id: 11111111-1111-1111-1111-111111111111", "response": null, "task_ext_id": null}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=2    rescued=0    ignored=4   
+

@@ -106,3 +106,15 @@ def get_kms_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_security_py_client.KeyManagementServersApi(client)
+
+
+def get_approval_policies_api_instance(module):
+    """
+    This method will return ApprovalPoliciesApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Approval Policies api instance
+    """
+    client = get_api_client(module)
+    return ntnx_security_py_client.ApprovalPoliciesApi(client)
