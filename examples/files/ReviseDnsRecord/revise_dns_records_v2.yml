@@ -1,0 +1,73 @@
+---
+# Summary:
+# This playbook demonstrates how to:
+# 1. List all DNS records for a Nutanix Files file server
+# 2. Fetch a specific DNS record by ext_id
+# 3. Revise (ADD) DNS records for a file server on the DNS server
+# 4. Revise (REMOVE) DNS records for a file server on the DNS server
+
+- name: ReviseDnsRecord playbook (Nutanix Files v4)
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "b1c9c4a2-1cbb-4c9d-8f92-2f01f76fed44"
+        preferred_name_server: "10.44.76.10"
+        dns_admin_username: "administrator@example.com"
+        dns_admin_password: "SuperSecret123"
+
+    - name: List all DNS records for the file server
+      nutanix.ncp.ntnx_revise_dns_records_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: dns_records_list
+      ignore_errors: true
+
+    - name: Capture a DNS record ext_id (first entry) for get-by-ID example
+      ansible.builtin.set_fact:
+        dns_record_ext_id: "{{ dns_records_list.response[0].ext_id }}"
+      when:
+        - dns_records_list is defined
+        - dns_records_list.failed | default(false) == false
+        - dns_records_list.response is defined
+        - dns_records_list.response is iterable
+        - dns_records_list.response is not mapping
+        - (dns_records_list.response | length) > 0
+
+    - name: Get a specific DNS record for the file server by ext_id
+      nutanix.ncp.ntnx_revise_dns_records_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ dns_record_ext_id }}"
+      register: dns_record_get
+      ignore_errors: true
+      when: dns_record_ext_id is defined
+
+    - name: Revise DNS records - ADD records on the DNS server
+      nutanix.ncp.ntnx_revise_dns_record_v2:
+        state: present
+        ext_id: "{{ file_server_ext_id }}"
+        preferred_name_server: "{{ preferred_name_server }}"
+        action: ADD
+        credential:
+          username: "{{ dns_admin_username }}"
+          password: "{{ dns_admin_password }}"
+      register: revise_add_result
+      ignore_errors: true
+
+    - name: Revise DNS records - REMOVE records from the DNS server
+      nutanix.ncp.ntnx_revise_dns_record_v2:
+        state: present
+        ext_id: "{{ file_server_ext_id }}"
+        preferred_name_server: "{{ preferred_name_server }}"
+        action: REMOVE
+        credential:
+          username: "{{ dns_admin_username }}"
+          password: "{{ dns_admin_password }}"
+      register: revise_remove_result
+      ignore_errors: true

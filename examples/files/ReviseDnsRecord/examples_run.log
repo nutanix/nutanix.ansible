@@ -1,0 +1,31 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [ReviseDnsRecord playbook (Nutanix Files v4)] *****************************
+
+TASK [Set variables] ***********************************************************
+ok: [localhost] => {"ansible_facts": {"dns_admin_password": "SuperSecret123", "dns_admin_username": "administrator@example.com", "file_server_ext_id": "b1c9c4a2-1cbb-4c9d-8f92-2f01f76fed44", "preferred_name_server": "10.44.76.10"}, "changed": false}
+
+TASK [List all DNS records for the file server] ********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching DNS records for file server", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Capture a DNS record ext_id (first entry) for get-by-ID example] *********
+skipping: [localhost] => {"changed": false, "false_condition": "dns_records_list.failed | default(false) == false", "skip_reason": "Conditional result was False"}
+
+TASK [Get a specific DNS record for the file server by ext_id] *****************
+skipping: [localhost] => {"changed": false, "false_condition": "dns_record_ext_id is defined", "skip_reason": "Conditional result was False"}
+
+TASK [Revise DNS records - ADD records on the DNS server] **********************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching file server info using ext_id", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Revise DNS records - REMOVE records from the DNS server] *****************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching file server info using ext_id", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0    skipped=2    rescued=0    ignored=3   
+
