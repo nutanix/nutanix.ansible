@@ -1,0 +1,144 @@
+---
+# Summary:
+# This playbook demonstrates the full lifecycle of a PCIe device attached to a
+# Nutanix AHV VM using the v4 API-backed modules:
+#   1. Create (attach) a PCIe device on the VM
+#   2. Get the PCIe device using ext_id
+#   3. List all PCIe devices attached to the VM
+#   4. List PCIe devices with pagination
+#   5. Delete (detach) the PCIe device from the VM
+#
+# Prerequisites:
+#   * A Prism Central endpoint reachable via the credentials set in
+#     module_defaults (or NUTANIX_HOST/NUTANIX_USERNAME/NUTANIX_PASSWORD env
+#     vars if you prefer to keep secrets out of the playbook).
+#   * At least one AHV cluster registered on the Prism Central which exposes at
+#     least one physical PCIe device in state HOST_USED (see the
+#     `clustermgmt/v4.0/ahv/config/pcie-devices` REST API for discovery).
+#   * The user has the required IAM roles listed in the module notes
+#     (`Virtual Machine Admin` or equivalent).
+#
+# The playbook auto-discovers the target cluster and a physical PCIe device via
+# a lightweight `ansible.builtin.uri` pre-flight so it can be run end-to-end on
+# any Prism Central without hand-editing UUIDs. The scratch VM created here is
+# fully removed at the end of the run.
+
+- name: Nutanix VM PCIe device playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('<user>', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('<pass>', true) }}"
+      validate_certs: false
+  vars:
+    pc_ip: "{{ lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+    pc_user: "{{ lookup('env', 'NUTANIX_USERNAME') | default('<user>', true) }}"
+    pc_pass: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('<pass>', true) }}"
+
+  tasks:
+
+    # --------------------------------------------------------------------- #
+    # Pre-flight: discover a real cluster and a real PCIe device on the PC. #
+    # --------------------------------------------------------------------- #
+    - name: Fetch clusters from Prism Central
+      nutanix.ncp.ntnx_clusters_info_v2:
+      register: clusters_result
+
+    - name: Pick the first non-PC (AHV) cluster
+      ansible.builtin.set_fact:
+        target_cluster_ext_id: >-
+          {{ (clusters_result.response
+              | selectattr('config.cluster_function', 'defined')
+              | rejectattr('config.cluster_function', 'search', 'PRISM_CENTRAL')
+              | list | first).ext_id }}
+
+    - name: Fetch cluster-level PCIe devices (clustermgmt v4 REST)
+      ansible.builtin.uri:
+        url: "https://{{ pc_ip }}:9440/api/clustermgmt/v4.0/ahv/config/pcie-devices?$limit=50"
+        method: GET
+        force_basic_auth: true
+        user: "{{ pc_user }}"
+        password: "{{ pc_pass }}"
+        validate_certs: false
+        return_content: true
+        status_code: [200]
+        headers:
+          Accept: application/json
+      register: cluster_pcie_result
+
+    - name: Pick a physical PCIe device belonging to the target cluster
+      ansible.builtin.set_fact:
+        physical_pcie_ext_id: >-
+          {{ (cluster_pcie_result.json.data
+              | selectattr('clusterExtId', 'equalto', target_cluster_ext_id)
+              | list | first).extId }}
+
+    # --------------------------------------------------------------------- #
+    # Create a scratch VM to host the PCIe device.                          #
+    # --------------------------------------------------------------------- #
+    - name: Create a scratch VM to host the PCIe device
+      nutanix.ncp.ntnx_vms_v2:
+        state: present
+        name: "ansible_pcie_example_vm"
+        description: "Scratch VM used by the PcieDevice example playbook"
+        cluster:
+          ext_id: "{{ target_cluster_ext_id }}"
+        num_sockets: 1
+        num_cores_per_socket: 1
+        num_threads_per_core: 1
+        memory_size_bytes: 1073741824
+      register: create_vm_result
+
+    - name: Capture the scratch VM ext_id
+      ansible.builtin.set_fact:
+        vm_ext_id: "{{ create_vm_result.ext_id }}"
+
+    # --------------------------------------------------------------------- #
+    # PCIe device lifecycle on the scratch VM.                              #
+    # --------------------------------------------------------------------- #
+    - name: Attach a PCIe device to the VM
+      nutanix.ncp.ntnx_vm_pcie_device_v2:
+        state: present
+        vm_ext_id: "{{ vm_ext_id }}"
+        backing_info:
+          device_ext_id: "{{ physical_pcie_ext_id }}"
+      register: create_result
+
+    - name: Capture the attached PCIe device ext_id
+      ansible.builtin.set_fact:
+        attached_pcie_ext_id: "{{ create_result.ext_id }}"
+
+    - name: Get the PCIe device using ext_id
+      nutanix.ncp.ntnx_vm_pcie_devices_info_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        ext_id: "{{ attached_pcie_ext_id }}"
+      register: get_result
+
+    - name: List all PCIe devices attached to the VM
+      nutanix.ncp.ntnx_vm_pcie_devices_info_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+      register: list_result
+
+    - name: List PCIe devices with pagination (limit=1)
+      nutanix.ncp.ntnx_vm_pcie_devices_info_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        limit: 1
+      register: page_result
+
+    - name: Detach the PCIe device from the VM
+      nutanix.ncp.ntnx_vm_pcie_device_v2:
+        state: absent
+        vm_ext_id: "{{ vm_ext_id }}"
+        ext_id: "{{ attached_pcie_ext_id }}"
+      register: delete_result
+
+    # --------------------------------------------------------------------- #
+    # Cleanup: remove the scratch VM.                                       #
+    # --------------------------------------------------------------------- #
+    - name: Remove the scratch VM
+      nutanix.ncp.ntnx_vms_v2:
+        state: absent
+        ext_id: "{{ vm_ext_id }}"
+      when: vm_ext_id is defined

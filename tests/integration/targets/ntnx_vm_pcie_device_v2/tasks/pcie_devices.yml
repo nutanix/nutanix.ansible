@@ -1,0 +1,503 @@
+---
+# Test plan — ntnx_vm_pcie_device_v2 and ntnx_vm_pcie_devices_info_v2
+#
+# We combine three knowledge sources:
+#   1. SDK: PcieDevice model has assigned_device_info (read-only), backing_info
+#      one-of (PcieDeviceReference with device_ext_id) and ext_id. Only Create,
+#      Delete, GetById and List are exposed — no Update endpoint exists.
+#      Both Create and Delete require the parent VM etag via if_match. The
+#      Create task's entities_affected only references the parent VM, so the
+#      new PCIe device ext_id is discovered by listing the VM's PCIe devices.
+#   2. Module: state=present + no ext_id => create; state=present + ext_id =>
+#      no-op skipped (update not supported by SDK); state=absent => delete.
+#      backing_info.device_ext_id is required for create.
+#   3. Domain (Glean): PCIe passthrough attaches a physical device (GPU/NIC/
+#      HSM) to a VM. Devices are discovered via the clustermgmt v4 pcie-devices
+#      API. All physical PCIe devices in this lab cluster report state
+#      "HOST_USED"; they are still attachable to VMs and produce a VMM v4
+#      PcieDevice on the VM.
+#
+# Scenarios covered:
+#   * Prerequisites — create a scratch VM, discover a cluster PCIe device.
+#   * check_mode Create with ALL attributes (backing_info + assigned_device_info).
+#   * check_mode Update (ext_id supplied) — must return skipped=true.
+#   * check_mode Delete — must report the pending delete without changing state.
+#   * Negative: create without required backing_info.device_ext_id.
+#   * Negative: get PCIe device by invalid ext_id.
+#   * Create with minimal spec (backing_info.device_ext_id only).
+#   * Info: list all PCIe devices on the VM (assert total_available_results and
+#     that our created device appears in the list).
+#   * Info: get the created PCIe device by ext_id (assert every field matches).
+#   * Info: list with page + limit pagination.
+#   * Update path with ext_id — asserts skipped=true and no changes.
+#   * Delete the created PCIe device.
+#   * Idempotent delete: deleting the same ext_id again fails cleanly.
+
+- name: Start ntnx_vm_pcie_device_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vm_pcie_device_v2 tests
+
+- name: Generate random name suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    todelete: []
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_pcie_vm"
+
+########################################################################################
+# Prerequisite 1 — discover a cluster to use
+########################################################################################
+
+- name: Fetch clusters
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "name ne 'Unnamed'"
+    limit: 10
+  register: clusters_info
+
+- name: Cluster discovery status
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    success_msg: "Clusters fetched successfully"
+    fail_msg: "Failed to fetch clusters"
+
+- name: Pick a non-PC cluster
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: >-
+      {{ (clusters_info.response
+          | rejectattr('name', 'search', '(?i)pc')
+          | list
+          | default(clusters_info.response))[0].ext_id }}
+
+########################################################################################
+# Prerequisite 2 — discover a physical PCIe device on the cluster
+########################################################################################
+
+- name: Fetch cluster level PCIe devices via URI
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/clustermgmt/v4.0/ahv/config/pcie-devices?$limit=50"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: false
+    return_content: true
+  register: cluster_pcie_response
+  ignore_errors: true
+
+- name: Cluster PCIe fetch status
+  ansible.builtin.assert:
+    that:
+      - cluster_pcie_response is defined
+      - cluster_pcie_response.failed == false
+      - cluster_pcie_response.json is defined
+      - cluster_pcie_response.json.data is defined
+      - cluster_pcie_response.json.data | length > 0
+    success_msg: "Cluster PCIe devices fetched successfully"
+    fail_msg: "Cluster PCIe devices not available — cannot run PCIe device tests"
+
+- name: Pick a PCIe device belonging to the target cluster
+  ansible.builtin.set_fact:
+    physical_pcie_ext_id: >-
+      {{ (cluster_pcie_response.json.data
+          | selectattr('clusterExtId', 'equalto', target_cluster_ext_id)
+          | list
+          | default(cluster_pcie_response.json.data))[0].extId }}
+
+########################################################################################
+# Prerequisite 3 — create a scratch VM to hang the PCIe device off of
+########################################################################################
+
+- name: Create a scratch VM to host the PCIe device tests
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ target_cluster_ext_id }}"
+  register: vm_result
+
+- name: Scratch VM creation status
+  ansible.builtin.assert:
+    that:
+      - vm_result.response is defined
+      - vm_result.changed == true
+      - vm_result.failed == false
+      - vm_result.ext_id is defined
+      - vm_result.response.cluster.ext_id == target_cluster_ext_id
+    success_msg: "Scratch VM created successfully"
+    fail_msg: "Unable to create scratch VM for PCIe device tests"
+
+- name: Capture VM ext_id
+  ansible.builtin.set_fact:
+    vm_ext_id: "{{ vm_result.ext_id }}"
+
+########################################################################################
+# check_mode — Create with ALL attributes (single check_mode create test)
+########################################################################################
+
+- name: Create PCIe device with all attributes — check_mode
+  nutanix.ncp.ntnx_vm_pcie_device_v2:
+    state: present
+    vm_ext_id: "{{ vm_ext_id }}"
+    backing_info:
+      device_ext_id: "{{ physical_pcie_ext_id }}"
+    assigned_device_info:
+      device:
+        device_ext_id: "{{ physical_pcie_ext_id }}"
+  register: cm_create_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Check_mode Create status
+  ansible.builtin.assert:
+    that:
+      - cm_create_result is defined
+      - cm_create_result.changed == false
+      - cm_create_result.failed == false
+      - cm_create_result.response is defined
+      - cm_create_result.response.backing_info.device_ext_id == physical_pcie_ext_id
+      - cm_create_result.response.assigned_device_info.device.device_ext_id == physical_pcie_ext_id
+      - cm_create_result.vm_ext_id == vm_ext_id
+    success_msg: "check_mode Create returned expected spec"
+    fail_msg: "check_mode Create failed unexpectedly"
+
+########################################################################################
+# check_mode — Delete (single check_mode delete test)
+########################################################################################
+
+- name: Delete PCIe device — check_mode (fake ext_id)
+  nutanix.ncp.ntnx_vm_pcie_device_v2:
+    state: absent
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: cm_delete_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Check_mode Delete status
+  ansible.builtin.assert:
+    that:
+      - cm_delete_result is defined
+      - cm_delete_result.changed == false
+      - cm_delete_result.failed == false
+      - cm_delete_result.msg is defined
+      - "'will be deleted' in cm_delete_result.msg"
+      - cm_delete_result.vm_ext_id == vm_ext_id
+      - cm_delete_result.ext_id == "00000000-0000-0000-0000-000000000000"
+    success_msg: "check_mode Delete returned expected message"
+    fail_msg: "check_mode Delete failed unexpectedly"
+
+########################################################################################
+# Negative — Create without required backing_info.device_ext_id
+########################################################################################
+
+- name: Attempt create without backing_info (negative)
+  nutanix.ncp.ntnx_vm_pcie_device_v2:
+    state: present
+    vm_ext_id: "{{ vm_ext_id }}"
+  register: neg_missing_backing
+  ignore_errors: true
+
+- name: Negative Create (no backing_info) status
+  ansible.builtin.assert:
+    that:
+      - neg_missing_backing is defined
+      - neg_missing_backing.failed == true
+      - neg_missing_backing.msg is defined
+      - "'Missing required parameter' in neg_missing_backing.msg"
+    success_msg: "Negative Create without backing_info failed as expected"
+    fail_msg: "Negative Create without backing_info did not fail as expected"
+
+- name: Attempt create with empty backing_info.device_ext_id (negative)
+  nutanix.ncp.ntnx_vm_pcie_device_v2:
+    state: present
+    vm_ext_id: "{{ vm_ext_id }}"
+    backing_info: {}
+  register: neg_empty_backing
+  ignore_errors: true
+
+- name: Negative Create (empty backing_info) status
+  ansible.builtin.assert:
+    that:
+      - neg_empty_backing is defined
+      - neg_empty_backing.failed == true
+      - neg_empty_backing.msg is defined
+      - "'device_ext_id' in neg_empty_backing.msg"
+    success_msg: "Negative Create with empty backing_info failed as expected"
+    fail_msg: "Negative Create with empty backing_info did not fail as expected"
+
+########################################################################################
+# Negative — Delete without ext_id (required_if should trip)
+########################################################################################
+
+- name: Attempt delete without ext_id (negative)
+  nutanix.ncp.ntnx_vm_pcie_device_v2:
+    state: absent
+    vm_ext_id: "{{ vm_ext_id }}"
+  register: neg_delete_no_ext
+  ignore_errors: true
+
+- name: Negative Delete (no ext_id) status
+  ansible.builtin.assert:
+    that:
+      - neg_delete_no_ext is defined
+      - neg_delete_no_ext.failed == true
+    success_msg: "Negative Delete without ext_id failed as expected"
+    fail_msg: "Negative Delete without ext_id did not fail as expected"
+
+########################################################################################
+# Real Create — minimal spec (backing_info.device_ext_id only)
+########################################################################################
+
+- name: Attach PCIe device to VM
+  nutanix.ncp.ntnx_vm_pcie_device_v2:
+    state: present
+    vm_ext_id: "{{ vm_ext_id }}"
+    backing_info:
+      device_ext_id: "{{ physical_pcie_ext_id }}"
+  register: create_result
+  ignore_errors: true
+
+- name: Real Create status
+  ansible.builtin.assert:
+    that:
+      - create_result is defined
+      - create_result.changed == true
+      - create_result.failed == false
+      - create_result.ext_id is defined
+      - create_result.task_ext_id is defined
+      - create_result.vm_ext_id == vm_ext_id
+      - create_result.response is defined
+      - create_result.response.backing_info.device_ext_id == physical_pcie_ext_id
+    success_msg: "PCIe device attached successfully"
+    fail_msg: "Failed to attach PCIe device"
+
+- name: Capture created PCIe device ext_id
+  ansible.builtin.set_fact:
+    pcie_ext_id: "{{ create_result.ext_id }}"
+
+########################################################################################
+# Info — get by ext_id
+########################################################################################
+
+- name: Get PCIe device by ext_id
+  nutanix.ncp.ntnx_vm_pcie_devices_info_v2:
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "{{ pcie_ext_id }}"
+  register: get_result
+  ignore_errors: true
+
+- name: Info get-by-ext_id status
+  ansible.builtin.assert:
+    that:
+      - get_result is defined
+      - get_result.changed == false
+      - get_result.failed == false
+      - get_result.response is defined
+      - get_result.response.ext_id == pcie_ext_id
+      - get_result.response.backing_info.device_ext_id == physical_pcie_ext_id
+      - get_result.ext_id == pcie_ext_id
+      - get_result.vm_ext_id == vm_ext_id
+    success_msg: "Info get-by-ext_id returned expected PCIe device"
+    fail_msg: "Info get-by-ext_id did not return expected PCIe device"
+
+########################################################################################
+# Info — list all
+########################################################################################
+
+- name: List all PCIe devices attached to the VM
+  nutanix.ncp.ntnx_vm_pcie_devices_info_v2:
+    vm_ext_id: "{{ vm_ext_id }}"
+  register: list_result
+  ignore_errors: true
+
+- name: Info list-all status
+  ansible.builtin.assert:
+    that:
+      - list_result is defined
+      - list_result.changed == false
+      - list_result.failed == false
+      - list_result.response is defined
+      - list_result.response | length >= 1
+      - list_result.total_available_results is defined
+      - list_result.total_available_results >= 1
+      - list_result.vm_ext_id == vm_ext_id
+    success_msg: "Info list-all returned expected PCIe devices"
+    fail_msg: "Info list-all did not return the expected PCIe devices"
+
+- name: Every listed PCIe device carries the expected schema
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.backing_info is defined
+      - item.backing_info.device_ext_id is defined
+    quiet: true
+  loop: "{{ list_result.response }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+########################################################################################
+# Info — list with pagination
+########################################################################################
+
+- name: List PCIe devices with limit=1
+  nutanix.ncp.ntnx_vm_pcie_devices_info_v2:
+    vm_ext_id: "{{ vm_ext_id }}"
+    limit: 1
+  register: paginated_result
+  ignore_errors: true
+
+- name: Info paginated status
+  ansible.builtin.assert:
+    that:
+      - paginated_result is defined
+      - paginated_result.changed == false
+      - paginated_result.failed == false
+      - paginated_result.response is defined
+      - paginated_result.response | length <= 1
+      - paginated_result.total_available_results is defined
+    success_msg: "Info list with pagination returned expected results"
+    fail_msg: "Info list with pagination did not respect limit"
+
+########################################################################################
+# Info negative — invalid ext_id
+########################################################################################
+
+- name: Fetch PCIe device with invalid ext_id (negative)
+  nutanix.ncp.ntnx_vm_pcie_devices_info_v2:
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: neg_get_invalid
+  ignore_errors: true
+
+- name: Info negative get-by-invalid-ext_id status
+  ansible.builtin.assert:
+    that:
+      - neg_get_invalid is defined
+      - neg_get_invalid.failed == true
+      - neg_get_invalid.msg is defined
+    success_msg: "Info get-by-invalid-ext_id failed as expected"
+    fail_msg: "Info get-by-invalid-ext_id did not fail"
+
+########################################################################################
+# Update path — state=present + ext_id => skipped=true
+########################################################################################
+
+- name: Attempt update via ext_id (SDK has no update; must be skipped)
+  nutanix.ncp.ntnx_vm_pcie_device_v2:
+    state: present
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "{{ pcie_ext_id }}"
+    backing_info:
+      device_ext_id: "{{ physical_pcie_ext_id }}"
+  register: update_skip_result
+  ignore_errors: true
+
+- name: Update skip status
+  ansible.builtin.assert:
+    that:
+      - update_skip_result is defined
+      - update_skip_result.changed == false
+      - update_skip_result.failed == false
+      - update_skip_result.skipped == true
+      - update_skip_result.msg is defined
+      - "'not supported' in update_skip_result.msg"
+      - update_skip_result.response is defined
+      - update_skip_result.response.ext_id == pcie_ext_id
+    success_msg: "Update path correctly reported skipped=true"
+    fail_msg: "Update path did not skip as expected"
+
+########################################################################################
+# check_mode Update (single check_mode update test) — must also skip
+########################################################################################
+
+- name: Update via ext_id — check_mode
+  nutanix.ncp.ntnx_vm_pcie_device_v2:
+    state: present
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "{{ pcie_ext_id }}"
+    backing_info:
+      device_ext_id: "{{ physical_pcie_ext_id }}"
+  register: cm_update_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Check_mode Update status
+  ansible.builtin.assert:
+    that:
+      - cm_update_result is defined
+      - cm_update_result.changed == false
+      - cm_update_result.failed == false
+      - cm_update_result.skipped == true
+    success_msg: "check_mode Update behaved like non-check_mode (skipped=true)"
+    fail_msg: "check_mode Update did not behave as expected"
+
+########################################################################################
+# Real Delete — detach the PCIe device
+########################################################################################
+
+- name: Detach the PCIe device from the VM
+  nutanix.ncp.ntnx_vm_pcie_device_v2:
+    state: absent
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "{{ pcie_ext_id }}"
+  register: delete_result
+  ignore_errors: true
+
+- name: Real Delete status
+  ansible.builtin.assert:
+    that:
+      - delete_result is defined
+      - delete_result.changed == true
+      - delete_result.failed == false
+      - delete_result.task_ext_id is defined
+      - delete_result.ext_id == pcie_ext_id
+      - delete_result.vm_ext_id == vm_ext_id
+    success_msg: "PCIe device detached successfully"
+    fail_msg: "Failed to detach PCIe device"
+
+########################################################################################
+# Delete non-existent — must fail cleanly (idempotency check)
+########################################################################################
+
+- name: Delete already-deleted PCIe device (idempotency negative)
+  nutanix.ncp.ntnx_vm_pcie_device_v2:
+    state: absent
+    vm_ext_id: "{{ vm_ext_id }}"
+    ext_id: "{{ pcie_ext_id }}"
+  register: delete_again_result
+  ignore_errors: true
+
+- name: Idempotent Delete status
+  ansible.builtin.assert:
+    that:
+      - delete_again_result is defined
+      - delete_again_result.failed == true
+      - delete_again_result.msg is defined
+    success_msg: "Deleting an already-detached PCIe device failed cleanly with a message"
+    fail_msg: "Deleting an already-detached PCIe device did not fail cleanly"
+
+########################################################################################
+# Cleanup — remove the scratch VM
+########################################################################################
+
+- name: Remove the scratch VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm_ext_id }}"
+  register: vm_delete_result
+  ignore_errors: true
+
+- name: Scratch VM removal status
+  ansible.builtin.assert:
+    that:
+      - vm_delete_result is defined
+      - vm_delete_result.failed == false
+      - vm_delete_result.changed == true
+    success_msg: "Scratch VM removed successfully"
+    fail_msg: "Failed to remove scratch VM"

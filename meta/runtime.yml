@@ -248,3 +248,5 @@ action_groups:
     - ntnx_virtual_switches_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_vm_pcie_device_v2
+    - ntnx_vm_pcie_devices_info_v2

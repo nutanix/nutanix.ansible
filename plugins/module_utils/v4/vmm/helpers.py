@@ -191,3 +191,25 @@ def get_ova(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching OVA info using ext_id",
         )
+
+
+def get_pcie_device(module, api_instance, ext_id, vm_ext_id):
+    """
+    Get PCIe device by ext_id.
+
+    Args:
+        module: Ansible module
+        api_instance: VmApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of the PCIe device
+        vm_ext_id: ext_id of the parent VM
+    Returns:
+        pcie_device (obj): PcieDevice info object
+    """
+    try:
+        return api_instance.get_pcie_device_by_id(vmExtId=vm_ext_id, extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM PCIe device info using ext_id",
+        )
