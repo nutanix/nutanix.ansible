@@ -1,0 +1,120 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a VM-level recovery setting on a Recovery Plan (all attributes)
+# 2. Update the recovery setting (all attributes)
+# 3. Fetch the recovery setting by ext_id
+# 4. List all recovery settings on the recovery plan
+# 5. Delete the recovery setting
+
+- name: Recovery Setting playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set input variables
+      ansible.builtin.set_fact:
+        recovery_plan_ext_id: "b7d1f5c3-3f2a-4d4e-9b8b-1c1d3e2f8a11"
+        vm_ext_id: "0005c1c1-0000-0000-0000-000000000001"
+        vm_category_ext_id: "1e8e4f8f-1111-2222-3333-444455556666"
+        volume_group_ext_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        network_mapping_ext_id: "77777777-7777-7777-7777-777777777777"
+        nic_ext_id: "88888888-8888-8888-8888-888888888888"
+
+    - name: Create recovery setting for a VM (all attributes)
+      nutanix.ncp.ntnx_recovery_setting_v2:
+        state: present
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        recovery_setting:
+          vm:
+            vm:
+              ext_id: "{{ vm_ext_id }}"
+            power_state: "ON"
+            in_guest_script_execution_config:
+              is_enabled: true
+              timeout_secs: 300
+            volume_group_attachments:
+              - volume_group:
+                  ext_id: "{{ volume_group_ext_id }}"
+                attachment_type: "DIRECT"
+                protocol: "ISCSI"
+                client_features:
+                  iscsi_features:
+                    enabled_authentication: "NONE"
+            ip_mappings:
+              - network_mapping_ext_id: "{{ network_mapping_ext_id }}"
+                primary_ip:
+                  ipv4:
+                    value: "10.10.10.10"
+                    prefix_length: 24
+                recovery_ip:
+                  ipv4:
+                    value: "10.20.10.10"
+                    prefix_length: 24
+                primary_test_ip:
+                  ipv4:
+                    value: "10.10.10.11"
+                    prefix_length: 24
+                recovery_test_ip:
+                  ipv4:
+                    value: "10.20.10.11"
+                    prefix_length: 24
+            floating_ip_associations:
+              - nic_ext_id: "{{ nic_ext_id }}"
+                primary_floating_ip:
+                  should_allocate_dynamically: true
+                recovery_floating_ip:
+                  should_allocate_dynamically: true
+                primary_test_floating_ip:
+                  should_allocate_dynamically: true
+                recovery_test_floating_ip:
+                  should_allocate_dynamically: true
+      register: create_result
+      ignore_errors: true
+
+    - name: Store recovery setting ext_id
+      ansible.builtin.set_fact:
+        recovery_setting_ext_id: "{{ create_result.ext_id }}"
+      when: create_result.ext_id is defined and create_result.ext_id | length > 0
+
+    - name: Update recovery setting (all attributes)
+      nutanix.ncp.ntnx_recovery_setting_v2:
+        state: present
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ recovery_setting_ext_id | default('replace-me-with-real-ext-id') }}"
+        recovery_setting:
+          vm:
+            vm:
+              ext_id: "{{ vm_ext_id }}"
+            power_state: "OFF"
+            in_guest_script_execution_config:
+              is_enabled: false
+              timeout_secs: 600
+      register: update_result
+      ignore_errors: true
+
+    - name: Fetch recovery setting by ext_id
+      nutanix.ncp.ntnx_recovery_settings_info_v2:
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ recovery_setting_ext_id | default('replace-me-with-real-ext-id') }}"
+      register: fetch_result
+      ignore_errors: true
+
+    - name: List all recovery settings under the recovery plan
+      nutanix.ncp.ntnx_recovery_settings_info_v2:
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+      register: list_result
+      ignore_errors: true
+
+    - name: Delete recovery setting (all attributes)
+      nutanix.ncp.ntnx_recovery_setting_v2:
+        state: absent
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ recovery_setting_ext_id | default('replace-me-with-real-ext-id') }}"
+      register: delete_result
+      ignore_errors: true

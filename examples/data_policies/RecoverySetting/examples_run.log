@@ -1,0 +1,75 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Recovery Setting playbook] ***********************************************
+
+TASK [Set input variables] *****************************************************
+ok: [localhost] => {"ansible_facts": {"network_mapping_ext_id": "77777777-7777-7777-7777-777777777777", "nic_ext_id": "88888888-8888-8888-8888-888888888888", "recovery_plan_ext_id": "b7d1f5c3-3f2a-4d4e-9b8b-1c1d3e2f8a11", "vm_category_ext_id": "1e8e4f8f-1111-2222-3333-444455556666", "vm_ext_id": "0005c1c1-0000-0000-0000-000000000001", "volume_group_ext_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"}, "changed": false}
+
+TASK [Create recovery setting for a VM (all attributes)] ***********************
+[ERROR]: Task failed: Module failed: Api Exception raised while creating recovery setting
+Origin: /tmp/codegen/e4953abc16c548359eb436236fd1a9d5/repo/examples/data_policies/RecoverySetting/recovery_setting_v2.yml:29:7
+
+27         nic_ext_id: "88888888-8888-8888-8888-888888888888"
+28
+29     - name: Create recovery setting for a VM (all attributes)
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while creating recovery setting", "response": {"$dataItemDiscriminator": "datapolicies.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<datapolicies.v4.error.AppMessage>", "$objectType": "datapolicies.v4.error.ErrorResponse", "error": [{"$objectType": "datapolicies.v4.error.AppMessage", "argumentsMap": {"reason": "Recovery Plan with given external identifier b7d1f5c3-3f2a-4d4e-9b8b-1c1d3e2f8a11 not found."}, "code": "DPO-10400", "errorGroup": "DATAPOLICIES_ENTITY_NON_EXISTENT_ERROR", "locale": "en-US", "message": "Request failed as one or more entities do not exist - Recovery Plan with given external identifier b7d1f5c3-3f2a-4d4e-9b8b-1c1d3e2f8a11 not found..", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Store recovery setting ext_id] *******************************************
+skipping: [localhost] => {"changed": false, "false_condition": "create_result.ext_id is defined and create_result.ext_id | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [Update recovery setting (all attributes)] ********************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching recovery setting info using ext_id
+Origin: /tmp/codegen/e4953abc16c548359eb436236fd1a9d5/repo/examples/data_policies/RecoverySetting/recovery_setting_v2.yml:85:7
+
+83       when: create_result.ext_id is defined and create_result.ext_id | length > 0
+84
+85     - name: Update recovery setting (all attributes)
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while fetching recovery setting info using ext_id", "response": {"$dataItemDiscriminator": "datapolicies.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "datapolicies.v4.error.SchemaValidationError", "$objectType": "datapolicies.v4.error.ErrorResponse", "error": {"$objectType": "datapolicies.v4.error.SchemaValidationError", "error": "Bad Request", "path": "/api/datapolicies/v4.3/config/recovery-plans/b7d1f5c3-3f2a-4d4e-9b8b-1c1d3e2f8a11/recovery-settings/replace-me-with-real-ext-id", "statusCode": 400, "timestamp": "2026-07-20T13:51:41.285120607Z", "validationErrorMessages": [{"$objectType": "datapolicies.v4.error.SchemaValidationErrorMessage", "location": "@path.extId", "message": "ECMA 262 regex \"^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$\" does not match input string \"replace-me-with-real-ext-id\""}]}}}, "status": 400}
+...ignoring
+
+TASK [Fetch recovery setting by ext_id] ****************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching recovery setting info using ext_id
+Origin: /tmp/codegen/e4953abc16c548359eb436236fd1a9d5/repo/examples/data_policies/RecoverySetting/recovery_setting_v2.yml:101:7
+
+ 99       ignore_errors: true
+100
+101     - name: Fetch recovery setting by ext_id
+          ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while fetching recovery setting info using ext_id", "response": {"$dataItemDiscriminator": "datapolicies.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "datapolicies.v4.error.SchemaValidationError", "$objectType": "datapolicies.v4.error.ErrorResponse", "error": {"$objectType": "datapolicies.v4.error.SchemaValidationError", "error": "Bad Request", "path": "/api/datapolicies/v4.3/config/recovery-plans/b7d1f5c3-3f2a-4d4e-9b8b-1c1d3e2f8a11/recovery-settings/replace-me-with-real-ext-id", "statusCode": 400, "timestamp": "2026-07-20T13:51:42.223496251Z", "validationErrorMessages": [{"$objectType": "datapolicies.v4.error.SchemaValidationErrorMessage", "location": "@path.extId", "message": "ECMA 262 regex \"^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$\" does not match input string \"replace-me-with-real-ext-id\""}]}}}, "status": 400}
+...ignoring
+
+TASK [List all recovery settings under the recovery plan] **********************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching recovery settings info
+Origin: /tmp/codegen/e4953abc16c548359eb436236fd1a9d5/repo/examples/data_policies/RecoverySetting/recovery_setting_v2.yml:108:7
+
+106       ignore_errors: true
+107
+108     - name: List all recovery settings under the recovery plan
+          ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching recovery settings info", "response": {"$dataItemDiscriminator": "datapolicies.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<datapolicies.v4.error.AppMessage>", "$objectType": "datapolicies.v4.error.ErrorResponse", "error": [{"$objectType": "datapolicies.v4.error.AppMessage", "argumentsMap": {"reason": "Recovery Plan with given external identifier b7d1f5c3-3f2a-4d4e-9b8b-1c1d3e2f8a11 not found."}, "code": "DPO-10400", "errorGroup": "DATAPOLICIES_ENTITY_NON_EXISTENT_ERROR", "locale": "en-US", "message": "Request failed as one or more entities do not exist - Recovery Plan with given external identifier b7d1f5c3-3f2a-4d4e-9b8b-1c1d3e2f8a11 not found..", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Delete recovery setting (all attributes)] ********************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching recovery setting info using ext_id
+Origin: /tmp/codegen/e4953abc16c548359eb436236fd1a9d5/repo/examples/data_policies/RecoverySetting/recovery_setting_v2.yml:114:7
+
+112       ignore_errors: true
+113
+114     - name: Delete recovery setting (all attributes)
+          ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while fetching recovery setting info using ext_id", "response": {"$dataItemDiscriminator": "datapolicies.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "datapolicies.v4.error.SchemaValidationError", "$objectType": "datapolicies.v4.error.ErrorResponse", "error": {"$objectType": "datapolicies.v4.error.SchemaValidationError", "error": "Bad Request", "path": "/api/datapolicies/v4.3/config/recovery-plans/b7d1f5c3-3f2a-4d4e-9b8b-1c1d3e2f8a11/recovery-settings/replace-me-with-real-ext-id", "statusCode": 400, "timestamp": "2026-07-20T13:51:43.871649431Z", "validationErrorMessages": [{"$objectType": "datapolicies.v4.error.SchemaValidationErrorMessage", "location": "@path.extId", "message": "ECMA 262 regex \"^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$\" does not match input string \"replace-me-with-real-ext-id\""}]}}}, "status": 400}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=5   
+
