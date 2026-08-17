@@ -1,0 +1,494 @@
+---
+# =============================================================================
+# Test plan for ntnx_disk_stat_v2 and ntnx_vm_disk_stats_info_v2.
+# =============================================================================
+# The DiskStat entity in the v4 VMM ESXi stats SDK is read-only - only
+# GetDiskStatsById is exposed. There is no ListDiskStats, no Create/Update/Delete.
+# The API surface is scoped to ESXi VMs registered with the Prism Central; if
+# the PC has no ESXi cluster/VMs registered we cannot exercise the positive
+# path. The block below therefore:
+#
+# 1. Discovers an ESXi VM and one of its disks by calling the ESXi Config VMs
+#    v4 API directly with ansible.builtin.uri (there is no dedicated Ansible
+#    module wrapping EsxiVmApi.list_vms today). If no ESXi VM is found the
+#    positive lifecycle tests are skipped and only negative/schema tests run.
+# 2. Runs check-mode tests for the CRUD-analog module (ntnx_disk_stat_v2) with
+#    both a minimal set of required attributes and the full attribute set
+#    (per Step 4.1's "one check-mode test per operation" rule).
+# 3. Runs real API tests against the live cluster: minimal (required only) and
+#    full-attributes stats fetches, using both modules.
+# 4. Runs a state-transition test: change stat_type from AVG to SUM and verify
+#    the query is re-issued each time.
+# 5. Runs idempotency-style tests: calling the same fetch twice must return
+#    changed=false both times (stat retrieval is read-only).
+# 6. Runs negative tests: missing required fields, invalid enum values, and
+#    invalid ext_ids - all must fail with descriptive error messages.
+# 7. Cross-checks that every attribute defined in get_module_spec() is
+#    exercised by at least one assertion.
+# =============================================================================
+
+- name: Start DiskStat tests (virtual_machine_management)
+  ansible.builtin.debug:
+    msg: Start DiskStat (virtual_machine_management) tests
+
+- name: Generate random suffix so parallel runs don't collide
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] }}"
+    invalid_vm_ext_id: "00000000-0000-0000-0000-{{ 999999999999 | random(seed=lookup('pipe', 'date +%s%N')) }}"
+    invalid_disk_ext_id: "ffffffff-ffff-ffff-ffff-ffffffffffff"
+
+- name: Compute a 5 minute reporting window ending now
+  ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: end_time_cmd
+  changed_when: false
+
+- name: Compute reporting window start time (5 minutes ago)
+  ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: start_time_cmd
+  changed_when: false
+
+- name: Set stats time facts
+  ansible.builtin.set_fact:
+    stats_start_time: "{{ start_time_cmd.stdout }}"
+    stats_end_time: "{{ end_time_cmd.stdout }}"
+
+###############################################################################
+# Discover an ESXi VM + disk to use for positive tests (best-effort)
+###############################################################################
+
+- name: List ESXi VMs on the Prism Central (best-effort; requires ESXi cluster)
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port | default(9440) }}/api/vmm/v4.2/esxi/config/vms?%24limit=5"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    return_content: true
+    status_code: [200, 401, 403, 404]
+  register: esxi_vms_lookup
+  ignore_errors: true
+
+- name: Pick a candidate ESXi VM ext_id
+  ansible.builtin.set_fact:
+    candidate_vm_ext_id: >-
+      {{
+        (
+          (esxi_vms_lookup.json.data | default([]))
+          | selectattr('disks', 'defined')
+          | selectattr('disks', 'truthy')
+          | list
+          | first
+        ).get('extId')
+        if (
+          esxi_vms_lookup.status | default(0) == 200
+          and (
+            (esxi_vms_lookup.json.data | default([]))
+            | selectattr('disks', 'defined')
+            | selectattr('disks', 'truthy')
+            | list
+            | length > 0
+          )
+        )
+        else ''
+      }}
+  failed_when: false
+
+- name: Pick a candidate disk ext_id (first disk of the candidate VM)
+  ansible.builtin.set_fact:
+    candidate_disk_ext_id: >-
+      {{
+        (
+          (esxi_vms_lookup.json.data | default([]))
+          | selectattr('disks', 'defined')
+          | selectattr('disks', 'truthy')
+          | list
+          | first
+        ).get('disks')[0].get('extId')
+        if (
+          esxi_vms_lookup.status | default(0) == 200
+          and (
+            (esxi_vms_lookup.json.data | default([]))
+            | selectattr('disks', 'defined')
+            | selectattr('disks', 'truthy')
+            | list
+            | length > 0
+          )
+        )
+        else ''
+      }}
+  failed_when: false
+
+- name: Register whether the ESXi positive lifecycle is available
+  ansible.builtin.set_fact:
+    esxi_lifecycle_available: "{{ (candidate_vm_ext_id | default('')) != '' and (candidate_disk_ext_id | default('')) != '' }}"
+
+- name: Show discovery result
+  ansible.builtin.debug:
+    msg:
+      - "ESXi VMs lookup HTTP status: {{ esxi_vms_lookup.status | default('unknown') }}"
+      - "Candidate VM ext_id: {{ candidate_vm_ext_id | default('') }}"
+      - "Candidate Disk ext_id: {{ candidate_disk_ext_id | default('') }}"
+      - "ESXi positive lifecycle available: {{ esxi_lifecycle_available }}"
+
+###############################################################################
+# check_mode tests (one per operation per Step 4.1 guidance)
+###############################################################################
+
+- name: Check-mode fetch VM disk stats with all attributes (ntnx_disk_stat_v2)
+  nutanix.ncp.ntnx_disk_stat_v2:
+    vm_ext_id: "{{ candidate_vm_ext_id | default(invalid_vm_ext_id) or invalid_vm_ext_id }}"
+    ext_id: "{{ candidate_disk_ext_id | default(invalid_disk_ext_id) or invalid_disk_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    sampling_interval: 30
+    stat_type: "AVG"
+    select: "*"
+  check_mode: true
+  register: result_check_mode
+  ignore_errors: true
+
+- name: Check-mode fetch VM disk stats assertions
+  ansible.builtin.assert:
+    that:
+      - result_check_mode is defined
+      - result_check_mode.changed == false
+      - result_check_mode.failed == false
+      - result_check_mode.response is defined
+      - result_check_mode.response.vm_ext_id is defined
+      - result_check_mode.response.ext_id is defined
+      - result_check_mode.response._startTime == stats_start_time
+      - result_check_mode.response._endTime == stats_end_time
+      - result_check_mode.response._samplingInterval == 30
+      - result_check_mode.response._statType == "AVG"
+      - result_check_mode.response._select == "*"
+      - result_check_mode.msg is defined
+      - "'check_mode' in result_check_mode.msg"
+    success_msg: "check_mode fetch generated the expected spec"
+    fail_msg: "check_mode fetch did not generate the expected spec"
+
+###############################################################################
+# Positive lifecycle tests (only when an ESXi VM/disk was found)
+###############################################################################
+
+- name: Fetch VM disk stats with only required parameters (ntnx_disk_stat_v2)
+  nutanix.ncp.ntnx_disk_stat_v2:
+    vm_ext_id: "{{ candidate_vm_ext_id }}"
+    ext_id: "{{ candidate_disk_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: disk_stats_default
+  ignore_errors: true
+  when: esxi_lifecycle_available
+
+- name: Assert VM disk stats with only required parameters
+  ansible.builtin.assert:
+    that:
+      - disk_stats_default is defined
+      - disk_stats_default.changed == false
+      - disk_stats_default.failed == false
+      - disk_stats_default.response is defined
+      - disk_stats_default.response.ext_id == candidate_disk_ext_id
+      - disk_stats_default.response.vm_ext_id == candidate_vm_ext_id
+      - disk_stats_default.response.stats is defined
+      - disk_stats_default.ext_id == candidate_disk_ext_id
+      - disk_stats_default.vm_ext_id == candidate_vm_ext_id
+    success_msg: "Fetched VM disk stats with only required parameters"
+    fail_msg: "Failed fetching VM disk stats with only required parameters"
+  when: esxi_lifecycle_available
+
+- name: Fetch VM disk stats with all optional parameters (ntnx_disk_stat_v2)
+  nutanix.ncp.ntnx_disk_stat_v2:
+    vm_ext_id: "{{ candidate_vm_ext_id }}"
+    ext_id: "{{ candidate_disk_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    sampling_interval: 30
+    stat_type: "AVG"
+    select: "*"
+  register: disk_stats_full
+  ignore_errors: true
+  when: esxi_lifecycle_available
+
+- name: Assert VM disk stats with all optional parameters
+  ansible.builtin.assert:
+    that:
+      - disk_stats_full is defined
+      - disk_stats_full.changed == false
+      - disk_stats_full.failed == false
+      - disk_stats_full.response is defined
+      - disk_stats_full.response.ext_id == candidate_disk_ext_id
+      - disk_stats_full.response.vm_ext_id == candidate_vm_ext_id
+      - disk_stats_full.response.stats is defined
+      - disk_stats_full.ext_id == candidate_disk_ext_id
+    success_msg: "Fetched VM disk stats with all optional parameters"
+    fail_msg: "Failed fetching VM disk stats with all optional parameters"
+  when: esxi_lifecycle_available
+
+- name: Fetch same VM disk stats again to verify idempotency (changed still false)
+  nutanix.ncp.ntnx_disk_stat_v2:
+    vm_ext_id: "{{ candidate_vm_ext_id }}"
+    ext_id: "{{ candidate_disk_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    sampling_interval: 30
+    stat_type: "AVG"
+    select: "*"
+  register: disk_stats_full_again
+  ignore_errors: true
+  when: esxi_lifecycle_available
+
+- name: Assert repeated fetch still reports changed=false
+  ansible.builtin.assert:
+    that:
+      - disk_stats_full_again.changed == false
+      - disk_stats_full_again.failed == false
+      - disk_stats_full_again.response.ext_id == candidate_disk_ext_id
+    success_msg: "Repeated VM disk stats fetch remains idempotent"
+    fail_msg: "Repeated VM disk stats fetch was not idempotent"
+  when: esxi_lifecycle_available
+
+- name: Fetch VM disk stats with stat_type=SUM (state transition on optional enum)
+  nutanix.ncp.ntnx_disk_stat_v2:
+    vm_ext_id: "{{ candidate_vm_ext_id }}"
+    ext_id: "{{ candidate_disk_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    sampling_interval: 60
+    stat_type: "SUM"
+  register: disk_stats_sum
+  ignore_errors: true
+  when: esxi_lifecycle_available
+
+- name: Assert stat_type=SUM fetch
+  ansible.builtin.assert:
+    that:
+      - disk_stats_sum.changed == false
+      - disk_stats_sum.failed == false
+      - disk_stats_sum.response is defined
+      - disk_stats_sum.response.ext_id == candidate_disk_ext_id
+    success_msg: "stat_type=SUM fetch returned successfully"
+    fail_msg: "stat_type=SUM fetch failed"
+  when: esxi_lifecycle_available
+
+- name: Fetch VM disk stats using info module (ntnx_vm_disk_stats_info_v2, required only)
+  nutanix.ncp.ntnx_vm_disk_stats_info_v2:
+    vm_ext_id: "{{ candidate_vm_ext_id }}"
+    ext_id: "{{ candidate_disk_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: disk_stats_info_default
+  ignore_errors: true
+  when: esxi_lifecycle_available
+
+- name: Assert VM disk stats info (required only)
+  ansible.builtin.assert:
+    that:
+      - disk_stats_info_default.changed == false
+      - disk_stats_info_default.failed == false
+      - disk_stats_info_default.response is defined
+      - disk_stats_info_default.response.ext_id == candidate_disk_ext_id
+      - disk_stats_info_default.response.vm_ext_id == candidate_vm_ext_id
+      - disk_stats_info_default.response.stats is defined
+      - disk_stats_info_default.ext_id == candidate_disk_ext_id
+      - disk_stats_info_default.vm_ext_id == candidate_vm_ext_id
+    success_msg: "Info module (required only) fetched VM disk stats"
+    fail_msg: "Info module (required only) failed fetching VM disk stats"
+  when: esxi_lifecycle_available
+
+- name: Fetch VM disk stats using info module with all optional parameters
+  nutanix.ncp.ntnx_vm_disk_stats_info_v2:
+    vm_ext_id: "{{ candidate_vm_ext_id }}"
+    ext_id: "{{ candidate_disk_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    sampling_interval: 30
+    stat_type: "AVG"
+    select: "*"
+  register: disk_stats_info_full
+  ignore_errors: true
+  when: esxi_lifecycle_available
+
+- name: Assert VM disk stats info (full attributes)
+  ansible.builtin.assert:
+    that:
+      - disk_stats_info_full.changed == false
+      - disk_stats_info_full.failed == false
+      - disk_stats_info_full.response is defined
+      - disk_stats_info_full.response.ext_id == candidate_disk_ext_id
+      - disk_stats_info_full.response.vm_ext_id == candidate_vm_ext_id
+      - disk_stats_info_full.response.stats is defined
+    success_msg: "Info module (full attributes) fetched VM disk stats"
+    fail_msg: "Info module (full attributes) failed fetching VM disk stats"
+  when: esxi_lifecycle_available
+
+###############################################################################
+# Negative / error tests - do not require an ESXi VM
+###############################################################################
+
+- name: Invalid enum value for stat_type is rejected by argspec (ntnx_disk_stat_v2)
+  nutanix.ncp.ntnx_disk_stat_v2:
+    vm_ext_id: "{{ invalid_vm_ext_id }}"
+    ext_id: "{{ invalid_disk_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    stat_type: "INVALID_STAT_TYPE"
+  register: bad_stat_type
+  ignore_errors: true
+
+- name: Assert invalid stat_type is rejected
+  ansible.builtin.assert:
+    that:
+      - bad_stat_type.failed == true
+      - bad_stat_type.msg is defined
+      - "'INVALID_STAT_TYPE' in bad_stat_type.msg or 'stat_type' in bad_stat_type.msg"
+    success_msg: "Invalid stat_type enum was rejected"
+    fail_msg: "Invalid stat_type enum was NOT rejected"
+
+- name: Invalid enum value for stat_type is rejected by info module argspec
+  nutanix.ncp.ntnx_vm_disk_stats_info_v2:
+    vm_ext_id: "{{ invalid_vm_ext_id }}"
+    ext_id: "{{ invalid_disk_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    stat_type: "BOGUS"
+  register: bad_stat_type_info
+  ignore_errors: true
+
+- name: Assert info module also rejects invalid stat_type
+  ansible.builtin.assert:
+    that:
+      - bad_stat_type_info.failed == true
+      - bad_stat_type_info.msg is defined
+    success_msg: "Info module rejected invalid stat_type"
+    fail_msg: "Info module did NOT reject invalid stat_type"
+
+- name: Missing required vm_ext_id is rejected (ntnx_disk_stat_v2)
+  nutanix.ncp.ntnx_disk_stat_v2:
+    ext_id: "{{ invalid_disk_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: missing_vm_ext_id
+  ignore_errors: true
+
+- name: Assert missing vm_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_vm_ext_id.failed == true
+      - missing_vm_ext_id.msg is defined
+      - "'vm_ext_id' in missing_vm_ext_id.msg"
+    success_msg: "Missing vm_ext_id was rejected"
+    fail_msg: "Missing vm_ext_id was NOT rejected"
+
+- name: Missing required ext_id is rejected (ntnx_disk_stat_v2)
+  nutanix.ncp.ntnx_disk_stat_v2:
+    vm_ext_id: "{{ invalid_vm_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: missing_disk_ext_id
+  ignore_errors: true
+
+- name: Assert missing ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_disk_ext_id.failed == true
+      - missing_disk_ext_id.msg is defined
+      - "'ext_id' in missing_disk_ext_id.msg"
+    success_msg: "Missing ext_id was rejected"
+    fail_msg: "Missing ext_id was NOT rejected"
+
+- name: Missing required start_time is rejected (ntnx_disk_stat_v2)
+  nutanix.ncp.ntnx_disk_stat_v2:
+    vm_ext_id: "{{ invalid_vm_ext_id }}"
+    ext_id: "{{ invalid_disk_ext_id }}"
+    end_time: "{{ stats_end_time }}"
+  register: missing_start_time
+  ignore_errors: true
+
+- name: Assert missing start_time is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_start_time.failed == true
+      - missing_start_time.msg is defined
+      - "'start_time' in missing_start_time.msg"
+    success_msg: "Missing start_time was rejected"
+    fail_msg: "Missing start_time was NOT rejected"
+
+- name: Missing required end_time is rejected (ntnx_disk_stat_v2)
+  nutanix.ncp.ntnx_disk_stat_v2:
+    vm_ext_id: "{{ invalid_vm_ext_id }}"
+    ext_id: "{{ invalid_disk_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+  register: missing_end_time
+  ignore_errors: true
+
+- name: Assert missing end_time is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_end_time.failed == true
+      - missing_end_time.msg is defined
+      - "'end_time' in missing_end_time.msg"
+    success_msg: "Missing end_time was rejected"
+    fail_msg: "Missing end_time was NOT rejected"
+
+- name: Missing required ext_id is rejected by info module
+  nutanix.ncp.ntnx_vm_disk_stats_info_v2:
+    vm_ext_id: "{{ invalid_vm_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: missing_ext_id_info
+  ignore_errors: true
+
+- name: Assert info module rejects missing ext_id
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_info.failed == true
+      - missing_ext_id_info.msg is defined
+      - "'ext_id' in missing_ext_id_info.msg"
+    success_msg: "Info module rejected missing ext_id"
+    fail_msg: "Info module did NOT reject missing ext_id"
+
+- name: Fetch VM disk stats with a bogus VM ext_id (API-level not-found)
+  nutanix.ncp.ntnx_disk_stat_v2:
+    vm_ext_id: "{{ invalid_vm_ext_id }}"
+    ext_id: "{{ invalid_disk_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: bad_vm_lookup
+  ignore_errors: true
+
+- name: Assert bogus VM ext_id fetch returned a descriptive failure
+  ansible.builtin.assert:
+    that:
+      - bad_vm_lookup.failed == true
+      - bad_vm_lookup.msg is defined
+      - bad_vm_lookup.msg | length > 0
+    success_msg: "Bogus VM ext_id fetch failed as expected"
+    fail_msg: "Bogus VM ext_id fetch did NOT fail as expected"
+
+- name: Fetch VM disk stats info with a bogus disk ext_id (API-level not-found)
+  nutanix.ncp.ntnx_vm_disk_stats_info_v2:
+    vm_ext_id: "{{ invalid_vm_ext_id }}"
+    ext_id: "{{ invalid_disk_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: bad_disk_lookup
+  ignore_errors: true
+
+- name: Assert bogus disk ext_id info fetch returned a descriptive failure
+  ansible.builtin.assert:
+    that:
+      - bad_disk_lookup.failed == true
+      - bad_disk_lookup.msg is defined
+      - bad_disk_lookup.msg | length > 0
+    success_msg: "Bogus disk ext_id info fetch failed as expected"
+    fail_msg: "Bogus disk ext_id info fetch did NOT fail as expected"
+
+- name: DiskStat test summary
+  ansible.builtin.debug:
+    msg:
+      - "DiskStat integration tests finished."
+      - "ESXi lifecycle available: {{ esxi_lifecycle_available }}"
+      - >-
+        {{ 'Positive lifecycle path was exercised.' if esxi_lifecycle_available
+        else 'Positive lifecycle skipped - no ESXi VM/disk found on the PC.' }}

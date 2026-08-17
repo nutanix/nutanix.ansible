@@ -131,3 +131,18 @@ def get_ova_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_vmm_py_client.OvasApi(api_client=api_client)
+
+
+def get_esxi_stats_api_instance(module):
+    """
+    This method will return the ESXi VM stats API instance used to retrieve
+    stats for ESXi VMs, their disks, and their NICs.
+
+    Args:
+        module (AnsibleModule): The Ansible module.
+
+    Returns:
+        ntnx_vmm_py_client.EsxiStatsApi: The v4 VMM ESXi stats API instance.
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.EsxiStatsApi(api_client=api_client)

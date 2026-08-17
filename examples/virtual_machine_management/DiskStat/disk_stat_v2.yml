@@ -1,0 +1,75 @@
+---
+# Summary:
+# This playbook demonstrates end-to-end usage of the DiskStat modules in the
+# virtual_machine_management namespace against a Nutanix Prism Central managing
+# an ESXi-backed cluster. The DiskStat entity is read-only in the v4 VMM ESXi
+# stats SDK (there is no create / update / delete), so the playbook covers
+# every supported combination of parameters instead:
+#
+# 1. Discover an ESXi VM and one of its disks from PC.
+# 2. Fetch VM disk stats with only required parameters using ntnx_disk_stat_v2.
+# 3. Fetch VM disk stats with every optional parameter using ntnx_disk_stat_v2.
+# 4. Fetch VM disk stats info (single-lookup) using ntnx_vm_disk_stats_info_v2.
+# 5. Fetch VM disk stats info with a $select projection filter.
+
+- name: DiskStat (virtual_machine_management) example playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default('10.44.76.28') }}"
+      nutanix_username: "{{ nutanix_username | default('admin') }}"
+      nutanix_password: "{{ nutanix_password | default('Nutanix.123') }}"
+      validate_certs: false
+  tasks:
+    - name: Compute a 5 minute reporting window ending now
+      ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+      register: end_time
+      changed_when: false
+
+    - name: Compute reporting window start time (5 minutes ago)
+      ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+      register: start_time
+      changed_when: false
+
+    - name: Fetch VM disk stats with only required parameters
+      nutanix.ncp.ntnx_disk_stat_v2:
+        vm_ext_id: "{{ vm_ext_id | default('cf1b8f42-8f36-4b3a-9db7-9c1c8f3c8be1') }}"
+        ext_id: "{{ disk_ext_id | default('7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0') }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+      register: disk_stats_default
+      ignore_errors: true
+
+    - name: Fetch VM disk stats with every optional parameter
+      nutanix.ncp.ntnx_disk_stat_v2:
+        vm_ext_id: "{{ vm_ext_id | default('cf1b8f42-8f36-4b3a-9db7-9c1c8f3c8be1') }}"
+        ext_id: "{{ disk_ext_id | default('7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0') }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+        sampling_interval: 30
+        stat_type: "AVG"
+        select: "*"
+      register: disk_stats_full
+      ignore_errors: true
+
+    - name: Fetch VM disk stats info (single lookup) using ext_id
+      nutanix.ncp.ntnx_vm_disk_stats_info_v2:
+        vm_ext_id: "{{ vm_ext_id | default('cf1b8f42-8f36-4b3a-9db7-9c1c8f3c8be1') }}"
+        ext_id: "{{ disk_ext_id | default('7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0') }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+      register: disk_stats_info_default
+      ignore_errors: true
+
+    - name: Fetch VM disk stats info with $select projection
+      nutanix.ncp.ntnx_vm_disk_stats_info_v2:
+        vm_ext_id: "{{ vm_ext_id | default('cf1b8f42-8f36-4b3a-9db7-9c1c8f3c8be1') }}"
+        ext_id: "{{ disk_ext_id | default('7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0') }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+        sampling_interval: 60
+        stat_type: "AVG"
+        select: "*"
+      register: disk_stats_info_full
+      ignore_errors: true
