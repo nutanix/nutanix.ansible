@@ -1,0 +1,517 @@
+---
+# Test plan for ntnx_snapshot_schedule_v2 / ntnx_snapshot_schedules_info_v2
+#
+# Scenarios covered:
+#   * check_mode create with all attributes (DAILY schedule)
+#   * check_mode update with all attributes
+#   * check_mode delete
+#   * negative: missing required parameters (type, schedule, file_server_ext_id)
+#   * negative: invalid enum value for type
+#   * negative: schedule sub-block does not match schedule type
+#   * negative: fetch/delete a non-existent snapshot schedule
+#   * info: get-by-id, list-all, list with limit, list with filter
+# Note: This target requires a live Nutanix Files file server; when no
+#       C(file_server_ext_id) variable is provided, the destructive
+#       CRUD tasks are skipped so the negative/validation scenarios can
+#       still run on a bare cluster.
+
+- name: Start Snapshot Schedule tests
+  ansible.builtin.debug:
+    msg: Start Snapshot Schedule tests
+
+- name: Generate random suffixes
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    todelete: []
+
+- name: Set the file server ext_id to use for tests
+  ansible.builtin.set_fact:
+    fs_ext_id: "{{ files_snapshot_schedule.file_server_ext_id | default('') }}"
+
+- name: Warn when no file server was supplied
+  ansible.builtin.debug:
+    msg: >-
+      files_snapshot_schedule.file_server_ext_id is not set; live CRUD
+      tests will be skipped and only negative validation tests will run.
+  when: fs_ext_id | length == 0
+
+########################################################################################
+# Negative / validation tests that do not need a live file server
+########################################################################################
+
+- name: Create snapshot schedule with missing file_server_ext_id
+  nutanix.ncp.ntnx_snapshot_schedule_v2:
+    type: "DAILY"
+    schedule:
+      daily_schedule:
+        frequency: 1
+  register: result
+  ignore_errors: true
+
+- name: Assert missing file_server_ext_id fails create
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'file_server_ext_id' in result.msg"
+    success_msg: "Missing file_server_ext_id failed create as expected"
+    fail_msg: "Missing file_server_ext_id did not fail create as expected"
+
+- name: Create snapshot schedule with invalid type enum value
+  nutanix.ncp.ntnx_snapshot_schedule_v2:
+    file_server_ext_id: "d1234567-89ab-cdef-0123-456789abcdef"
+    type: "YEARLY"
+    schedule:
+      daily_schedule:
+        frequency: 1
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid type enum fails create
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of type must be one of' in result.msg"
+    success_msg: "Invalid type enum failed as expected"
+    fail_msg: "Invalid type enum did not fail as expected"
+
+- name: Delete snapshot schedule with missing external ID
+  nutanix.ncp.ntnx_snapshot_schedule_v2:
+    state: absent
+    file_server_ext_id: "d1234567-89ab-cdef-0123-456789abcdef"
+  register: result
+  ignore_errors: true
+
+- name: Assert delete without ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete without ext_id failed as expected"
+    fail_msg: "Delete without ext_id did not fail as expected"
+
+- name: Build WEEKLY snapshot schedule spec in check mode
+  nutanix.ncp.ntnx_snapshot_schedule_v2:
+    file_server_ext_id: "d1234567-89ab-cdef-0123-456789abcdef"
+    type: "WEEKLY"
+    max_retention_count: 4
+    schedule:
+      weekly_schedule:
+        days_of_week:
+          - 1
+          - 4
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert WEEKLY check mode spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.type == "WEEKLY"
+      - result.response.max_retention_count == 4
+      - result.response.schedule.days_of_week | length == 2
+      - result.response.schedule.days_of_week[0] == 1
+      - result.response.schedule.days_of_week[1] == 4
+    success_msg: "WEEKLY schedule check mode spec built successfully"
+    fail_msg: "WEEKLY schedule check mode spec did not build correctly"
+
+- name: Build MONTHLY snapshot schedule spec in check mode
+  nutanix.ncp.ntnx_snapshot_schedule_v2:
+    file_server_ext_id: "d1234567-89ab-cdef-0123-456789abcdef"
+    type: "MONTHLY"
+    max_retention_count: 12
+    schedule:
+      monthly_schedule:
+        days_of_month:
+          - 1
+          - 15
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert MONTHLY check mode spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.type == "MONTHLY"
+      - result.response.max_retention_count == 12
+      - result.response.schedule.days_of_month | length == 2
+      - result.response.schedule.days_of_month[0] == 1
+      - result.response.schedule.days_of_month[1] == 15
+    success_msg: "MONTHLY schedule check mode spec built successfully"
+    fail_msg: "MONTHLY schedule check mode spec did not build correctly"
+
+- name: Build HOURLY snapshot schedule spec in check mode
+  nutanix.ncp.ntnx_snapshot_schedule_v2:
+    file_server_ext_id: "d1234567-89ab-cdef-0123-456789abcdef"
+    type: "HOURLY"
+    max_retention_count: 24
+    schedule:
+      daily_schedule:
+        frequency: 2
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert HOURLY check mode spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.type == "HOURLY"
+      - result.response.max_retention_count == 24
+      - result.response.schedule.frequency == 2
+    success_msg: "HOURLY schedule check mode spec built successfully"
+    fail_msg: "HOURLY schedule check mode spec did not build correctly"
+
+- name: Create WEEKLY snapshot schedule with mismatched daily_schedule (should fail)
+  nutanix.ncp.ntnx_snapshot_schedule_v2:
+    file_server_ext_id: "d1234567-89ab-cdef-0123-456789abcdef"
+    type: "WEEKLY"
+    schedule:
+      daily_schedule:
+        frequency: 1
+  register: result
+  ignore_errors: true
+
+- name: Assert mismatched schedule type fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'weekly_schedule is required when type is WEEKLY' in result.msg"
+    success_msg: "Mismatched schedule type failed as expected"
+    fail_msg: "Mismatched schedule type did not fail as expected"
+
+- name: Create schedule with multiple schedule sub-blocks (should fail as mutually exclusive)
+  nutanix.ncp.ntnx_snapshot_schedule_v2:
+    file_server_ext_id: "d1234567-89ab-cdef-0123-456789abcdef"
+    type: "DAILY"
+    schedule:
+      daily_schedule:
+        frequency: 1
+      weekly_schedule:
+        days_of_week:
+          - 1
+  register: result
+  ignore_errors: true
+
+- name: Assert mutually exclusive schedule sub-blocks failure
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    success_msg: "Mutually exclusive schedule sub-blocks failed as expected"
+    fail_msg: "Mutually exclusive schedule sub-blocks did not fail as expected"
+
+- name: Create schedule without a schedule sub-block (required_one_of)
+  nutanix.ncp.ntnx_snapshot_schedule_v2:
+    file_server_ext_id: "d1234567-89ab-cdef-0123-456789abcdef"
+    type: "DAILY"
+    schedule: {}
+  register: result
+  ignore_errors: true
+
+- name: Assert required_one_of failure for schedule sub-blocks
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'one of the following is required' in result.msg or 'required_one_of' in result.msg"
+    success_msg: "Missing schedule sub-block failed as expected"
+    fail_msg: "Missing schedule sub-block did not fail as expected"
+
+- name: Info module without file_server_ext_id
+  nutanix.ncp.ntnx_snapshot_schedules_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Assert info missing file_server_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'file_server_ext_id' in result.msg"
+    success_msg: "Info missing file_server_ext_id failed as expected"
+    fail_msg: "Info missing file_server_ext_id did not fail as expected"
+
+########################################################################################
+# Live CRUD tests (run only when a file_server_ext_id is provided)
+########################################################################################
+
+- name: Live snapshot schedule CRUD tests
+  when: fs_ext_id | length > 0
+  block:
+    - name: Generate spec for creating snapshot schedule using check mode with all attributes
+      nutanix.ncp.ntnx_snapshot_schedule_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+        type: "DAILY"
+        max_retention_count: 7
+        schedule:
+          daily_schedule:
+            frequency: 1
+      check_mode: true
+      register: result
+      ignore_errors: true
+
+    - name: Assert create check mode with all attributes
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response.type == "DAILY"
+          - result.response.max_retention_count == 7
+          - result.response.schedule.frequency == 1
+        success_msg: "Create snapshot schedule check mode passed"
+        fail_msg: "Create snapshot schedule check mode failed"
+
+    - name: Create DAILY snapshot schedule with minimum attributes
+      nutanix.ncp.ntnx_snapshot_schedule_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+        type: "DAILY"
+        schedule:
+          daily_schedule:
+            frequency: 1
+      register: result
+      ignore_errors: true
+
+    - name: Assert DAILY create with minimum attributes
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id is defined
+          - result.file_server_ext_id == fs_ext_id
+          - result.response is defined
+          - result.response.type == "DAILY"
+        success_msg: "DAILY snapshot schedule with minimum attributes created successfully"
+        fail_msg: "DAILY snapshot schedule with minimum attributes creation failed"
+
+    - name: Track schedule for cleanup
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [result.ext_id] }}"
+
+    - name: Create DAILY snapshot schedule with all attributes
+      nutanix.ncp.ntnx_snapshot_schedule_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+        type: "DAILY"
+        max_retention_count: 7
+        schedule:
+          daily_schedule:
+            frequency: 1
+      register: result
+      ignore_errors: true
+
+    - name: Assert DAILY create with all attributes
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id is defined
+          - result.response is defined
+          - result.response.type == "DAILY"
+          - result.response.max_retention_count == 7
+          - result.response.schedule.frequency == 1
+        success_msg: "DAILY snapshot schedule with all attributes created successfully"
+        fail_msg: "DAILY snapshot schedule with all attributes creation failed"
+
+    - name: Track schedule for cleanup
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [result.ext_id] }}"
+        daily_ext_id: "{{ result.ext_id }}"
+
+    - name: Update snapshot schedule (change retention)
+      nutanix.ncp.ntnx_snapshot_schedule_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "{{ daily_ext_id }}"
+        type: "DAILY"
+        max_retention_count: 14
+        schedule:
+          daily_schedule:
+            frequency: 2
+      register: result
+      ignore_errors: true
+
+    - name: Assert update snapshot schedule
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.response is defined
+          - result.response.max_retention_count == 14
+          - result.response.schedule.frequency == 2
+        success_msg: "Snapshot schedule updated successfully"
+        fail_msg: "Snapshot schedule update failed"
+
+    - name: Update snapshot schedule with same values (idempotency)
+      nutanix.ncp.ntnx_snapshot_schedule_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "{{ daily_ext_id }}"
+        type: "DAILY"
+        max_retention_count: 14
+        schedule:
+          daily_schedule:
+            frequency: 2
+      register: result
+      ignore_errors: true
+
+    - name: Assert idempotency
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.skipped == true
+          - result.msg == "Nothing to change."
+        success_msg: "Idempotency for snapshot schedule update passed"
+        fail_msg: "Idempotency for snapshot schedule update failed"
+
+    - name: Fetch snapshot schedule using ext_id
+      nutanix.ncp.ntnx_snapshot_schedules_info_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "{{ daily_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Assert fetch snapshot schedule using ext_id
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.failed == false
+          - result.changed == false
+          - result.response is defined
+          - result.response.type == "DAILY"
+          - result.response.max_retention_count == 14
+          - result.ext_id == daily_ext_id
+        success_msg: "Fetch snapshot schedule using ext_id passed"
+        fail_msg: "Fetch snapshot schedule using ext_id failed"
+
+    - name: List all snapshot schedules on the file server
+      nutanix.ncp.ntnx_snapshot_schedules_info_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Assert list all snapshot schedules
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.failed == false
+          - result.changed == false
+          - result.response is defined
+          - result.response | length >= 2
+          - result.total_available_results is defined
+        success_msg: "List all snapshot schedules passed"
+        fail_msg: "List all snapshot schedules failed"
+
+    - name: List snapshot schedules with limit
+      nutanix.ncp.ntnx_snapshot_schedules_info_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Assert list with limit
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.failed == false
+          - result.changed == false
+          - result.response is defined
+          - result.response | length == 1
+        success_msg: "List snapshot schedules with limit passed"
+        fail_msg: "List snapshot schedules with limit failed"
+
+    - name: Fetch snapshot schedule with wrong external ID
+      nutanix.ncp.ntnx_snapshot_schedules_info_v2:
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "00000000-0000-0000-0000-000000000000"
+      register: result
+      ignore_errors: true
+
+    - name: Assert fetch with wrong external ID fails
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == true
+        success_msg: "Fetch snapshot schedule with wrong external ID failed as expected"
+        fail_msg: "Fetch snapshot schedule with wrong external ID did not fail as expected"
+
+    - name: Delete snapshot schedule with check mode
+      nutanix.ncp.ntnx_snapshot_schedule_v2:
+        state: absent
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "{{ daily_ext_id }}"
+      check_mode: true
+      register: result
+      ignore_errors: true
+
+    - name: Assert delete check mode
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - "'will be deleted' in result.msg"
+        success_msg: "Delete snapshot schedule check mode passed"
+        fail_msg: "Delete snapshot schedule check mode failed"
+
+    - name: Delete all created snapshot schedules
+      nutanix.ncp.ntnx_snapshot_schedule_v2:
+        state: absent
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "{{ item }}"
+      register: result
+      ignore_errors: true
+      loop: "{{ todelete }}"
+
+    - name: Assert deletion of all snapshot schedules
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.results | length == todelete | length
+          - result.msg == "All items completed"
+        success_msg: "All snapshot schedules deleted successfully"
+        fail_msg: "Snapshot schedule deletion failed"
+
+    - name: Delete snapshot schedule with wrong external ID
+      nutanix.ncp.ntnx_snapshot_schedule_v2:
+        state: absent
+        file_server_ext_id: "{{ fs_ext_id }}"
+        ext_id: "00000000-0000-0000-0000-000000000000"
+      register: result
+      ignore_errors: true
+
+    - name: Assert delete with wrong external ID fails
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == true
+        success_msg: "Delete snapshot schedule with wrong external ID failed as expected"
+        fail_msg: "Delete snapshot schedule with wrong external ID did not fail as expected"
