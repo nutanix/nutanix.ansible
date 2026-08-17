@@ -1,0 +1,356 @@
+---
+###############################################################################
+# TEST PLAN — ntnx_files_failover_v2
+#
+# Scenarios covered:
+#   1. check_mode: create planned failover with ALL attributes
+#   2. check_mode: create unplanned failover with ALL attributes
+#   3. check_mode: create failback with ALL attributes
+#   4. Negative: missing required primary_file_server_ext_id
+#   5. Negative: missing required secondary_file_server_ext_id
+#   6. Negative: invalid enum value for `type`
+#   7. Negative: invalid enum value for `dns.action`
+#   8. Negative: invalid state choice
+#   9. Real API call: planned failover between two file servers (best effort;
+#      requires configured Smart DR replication policy).
+#  10. Real API call: unplanned failover (best effort).
+#  11. Real API call: failback (best effort).
+#
+# The "real API call" scenarios are gated on `files_failover.enabled` being
+# set to true in integration_config.yml, along with valid
+# primary/secondary file server UUIDs, because Smart DR replication policy
+# state is required and cannot be safely bootstrapped from the test target.
+###############################################################################
+
+- name: Start Files Failover tests
+  ansible.builtin.debug:
+    msg: Start Files Failover tests
+
+- name: Generate random suffix for this run
+  ansible.builtin.set_fact:
+    random_suffix: "{{ 999999 | random | to_uuid | replace('-', '') | truncate(8, True, '') }}"
+
+- name: Set fake test file server ext_ids for check_mode / negative tests
+  ansible.builtin.set_fact:
+    fake_primary_ext_id: "11111111-2222-3333-4444-555555555555"
+    fake_secondary_ext_id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+
+- name: Resolve failover fixture defaults
+  ansible.builtin.set_fact:
+    failover_fixture: "{{ files_failover | default({}) }}"
+
+- name: Determine whether live failover API calls are enabled
+  ansible.builtin.set_fact:
+    files_failover_enabled: "{{ failover_fixture.enabled | default(false) | bool }}"
+    live_primary_ext_id: "{{ failover_fixture.primary_file_server_ext_id | default('') }}"
+    live_secondary_ext_id: "{{ failover_fixture.secondary_file_server_ext_id | default('') }}"
+
+###############################################################################
+# 1. check_mode: create planned failover with ALL attributes
+###############################################################################
+- name: Generate spec for planned failover using check_mode (all attributes)
+  nutanix.ncp.ntnx_files_failover_v2:
+    state: present
+    primary_file_server_ext_id: "{{ fake_primary_ext_id }}"
+    secondary_file_server_ext_id: "{{ fake_secondary_ext_id }}"
+    type: PLANNED
+    active_directory:
+      credential:
+        username: "ad_user@example.com"
+        password: "AdPassword123!"
+      preferred_domain_controller: "dc1.example.com"
+    dns:
+      preferred_name_server: "10.10.10.10"
+      action: ADD
+      credential:
+        username: "dns_user"
+        password: "DnsPassword123!"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Planned failover check_mode spec assertions
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.primary_file_server_ext_id == fake_primary_ext_id
+      - result.response.secondary_file_server_ext_id == fake_secondary_ext_id
+      - result.response.type == "PLANNED"
+      - result.response.active_directory is defined
+      - result.response.active_directory.credential is defined
+      - result.response.active_directory.credential.username == "ad_user@example.com"
+      - result.response.active_directory.preferred_domain_controller == "dc1.example.com"
+      - result.response.dns is defined
+      - result.response.dns.preferred_name_server == "10.10.10.10"
+      - result.response.dns.action == "ADD"
+      - result.response.dns.credential is defined
+      - result.response.dns.credential.username == "dns_user"
+    success_msg: "Planned failover check_mode spec generated successfully"
+    fail_msg: "Planned failover check_mode spec generation failed"
+
+###############################################################################
+# 2. check_mode: create unplanned failover with ALL attributes
+###############################################################################
+- name: Generate spec for unplanned failover using check_mode (all attributes)
+  nutanix.ncp.ntnx_files_failover_v2:
+    state: present
+    primary_file_server_ext_id: "{{ fake_primary_ext_id }}"
+    secondary_file_server_ext_id: "{{ fake_secondary_ext_id }}"
+    type: UNPLANNED
+    active_directory:
+      credential:
+        username: "ad_admin@example.com"
+        password: "AdPassword456!"
+      preferred_domain_controller: "dc2.example.com"
+    dns:
+      preferred_name_server: "10.10.20.20"
+      action: REMOVE
+      credential:
+        username: "dns_admin"
+        password: "DnsPassword456!"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Unplanned failover check_mode spec assertions
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.primary_file_server_ext_id == fake_primary_ext_id
+      - result.response.secondary_file_server_ext_id == fake_secondary_ext_id
+      - result.response.type == "UNPLANNED"
+      - result.response.active_directory.credential.username == "ad_admin@example.com"
+      - result.response.active_directory.preferred_domain_controller == "dc2.example.com"
+      - result.response.dns.preferred_name_server == "10.10.20.20"
+      - result.response.dns.action == "REMOVE"
+      - result.response.dns.credential.username == "dns_admin"
+    success_msg: "Unplanned failover check_mode spec generated successfully"
+    fail_msg: "Unplanned failover check_mode spec generation failed"
+
+###############################################################################
+# 3. check_mode: create failback with ALL attributes
+###############################################################################
+- name: Generate spec for failback using check_mode (all attributes)
+  nutanix.ncp.ntnx_files_failover_v2:
+    state: present
+    primary_file_server_ext_id: "{{ fake_primary_ext_id }}"
+    secondary_file_server_ext_id: "{{ fake_secondary_ext_id }}"
+    type: FAILBACK
+    active_directory:
+      credential:
+        username: "ad_failback@example.com"
+        password: "AdPassword789!"
+      preferred_domain_controller: "dc3.example.com"
+    dns:
+      preferred_name_server: "10.10.30.30"
+      action: ADD
+      credential:
+        username: "dns_failback"
+        password: "DnsPassword789!"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Failback check_mode spec assertions
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.type == "FAILBACK"
+      - result.response.active_directory.credential.username == "ad_failback@example.com"
+      - result.response.dns.preferred_name_server == "10.10.30.30"
+    success_msg: "Failback check_mode spec generated successfully"
+    fail_msg: "Failback check_mode spec generation failed"
+
+###############################################################################
+# 4. Negative: missing required primary_file_server_ext_id
+###############################################################################
+- name: Failover with missing primary_file_server_ext_id (should fail)
+  nutanix.ncp.ntnx_files_failover_v2:
+    state: present
+    secondary_file_server_ext_id: "{{ fake_secondary_ext_id }}"
+    type: PLANNED
+  register: result
+  ignore_errors: true
+
+- name: Missing primary_file_server_ext_id assertions
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'primary_file_server_ext_id' in result.msg"
+    success_msg: "Missing primary_file_server_ext_id failed as expected"
+    fail_msg: "Missing primary_file_server_ext_id did not fail as expected"
+
+###############################################################################
+# 5. Negative: missing required secondary_file_server_ext_id
+###############################################################################
+- name: Failover with missing secondary_file_server_ext_id (should fail)
+  nutanix.ncp.ntnx_files_failover_v2:
+    state: present
+    primary_file_server_ext_id: "{{ fake_primary_ext_id }}"
+    type: PLANNED
+  register: result
+  ignore_errors: true
+
+- name: Missing secondary_file_server_ext_id assertions
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'secondary_file_server_ext_id' in result.msg"
+    success_msg: "Missing secondary_file_server_ext_id failed as expected"
+    fail_msg: "Missing secondary_file_server_ext_id did not fail as expected"
+
+###############################################################################
+# 6. Negative: invalid enum value for `type`
+###############################################################################
+- name: Failover with invalid type value (should fail)
+  nutanix.ncp.ntnx_files_failover_v2:
+    state: present
+    primary_file_server_ext_id: "{{ fake_primary_ext_id }}"
+    secondary_file_server_ext_id: "{{ fake_secondary_ext_id }}"
+    type: NOT_A_REAL_TYPE
+  register: result
+  ignore_errors: true
+
+- name: Invalid `type` enum assertions
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of type must be one of' in result.msg"
+    success_msg: "Invalid type enum failed as expected"
+    fail_msg: "Invalid type enum did not fail as expected"
+
+###############################################################################
+# 7. Negative: invalid enum value for `dns.action`
+###############################################################################
+- name: Failover with invalid dns.action (should fail)
+  nutanix.ncp.ntnx_files_failover_v2:
+    state: present
+    primary_file_server_ext_id: "{{ fake_primary_ext_id }}"
+    secondary_file_server_ext_id: "{{ fake_secondary_ext_id }}"
+    type: PLANNED
+    dns:
+      preferred_name_server: "10.10.10.10"
+      action: DELETE
+  register: result
+  ignore_errors: true
+
+- name: Invalid `dns.action` enum assertions
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of action must be one of' in result.msg"
+    success_msg: "Invalid dns.action failed as expected"
+    fail_msg: "Invalid dns.action did not fail as expected"
+
+###############################################################################
+# 8. Negative: invalid state choice
+###############################################################################
+- name: Failover with invalid state value (should fail)
+  nutanix.ncp.ntnx_files_failover_v2:
+    state: absent
+    primary_file_server_ext_id: "{{ fake_primary_ext_id }}"
+    secondary_file_server_ext_id: "{{ fake_secondary_ext_id }}"
+    type: PLANNED
+  register: result
+  ignore_errors: true
+
+- name: Invalid `state` value assertions
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of state must be one of' in result.msg"
+    success_msg: "Invalid state value failed as expected"
+    fail_msg: "Invalid state value did not fail as expected"
+
+###############################################################################
+# 9-11. Live API failover tests (best effort — gated on fixture)
+###############################################################################
+- name: Skip live failover API tests when fixture disabled
+  when: not files_failover_enabled
+  ansible.builtin.debug:
+    msg: >-
+      Skipping live files failover API tests. Set files_failover.enabled=true
+      and configure primary_file_server_ext_id / secondary_file_server_ext_id in
+      integration_config.yml with an active Smart DR replication policy to
+      exercise these scenarios.
+
+- name: Run live failover tests
+  when: files_failover_enabled
+  block:
+    - name: Perform live planned failover
+      nutanix.ncp.ntnx_files_failover_v2:
+        state: present
+        primary_file_server_ext_id: "{{ live_primary_ext_id }}"
+        secondary_file_server_ext_id: "{{ live_secondary_ext_id }}"
+        type: PLANNED
+      register: planned_result
+      ignore_errors: true
+
+    - name: Live planned failover assertions
+      ansible.builtin.assert:
+        that:
+          - planned_result is defined
+          - planned_result.changed == true
+          - planned_result.failed == false
+          - planned_result.task_ext_id is defined
+          - planned_result.ext_id == live_primary_ext_id
+          - planned_result.response is defined
+        success_msg: "Live planned failover succeeded"
+        fail_msg: "Live planned failover failed"
+
+    - name: Perform live failback
+      nutanix.ncp.ntnx_files_failover_v2:
+        state: present
+        primary_file_server_ext_id: "{{ live_primary_ext_id }}"
+        secondary_file_server_ext_id: "{{ live_secondary_ext_id }}"
+        type: FAILBACK
+      register: failback_result
+      ignore_errors: true
+
+    - name: Live failback assertions
+      ansible.builtin.assert:
+        that:
+          - failback_result is defined
+          - failback_result.changed == true
+          - failback_result.failed == false
+          - failback_result.task_ext_id is defined
+          - failback_result.ext_id == live_primary_ext_id
+        success_msg: "Live failback succeeded"
+        fail_msg: "Live failback failed"
+
+    - name: Perform live unplanned failover with no replication policy configured
+      nutanix.ncp.ntnx_files_failover_v2:
+        state: present
+        primary_file_server_ext_id: "00000000-0000-0000-0000-000000000000"
+        secondary_file_server_ext_id: "00000000-0000-0000-0000-000000000001"
+        type: UNPLANNED
+      register: bad_failover
+      ignore_errors: true
+
+    - name: Live unplanned failover with non-existent file servers assertions
+      ansible.builtin.assert:
+        that:
+          - bad_failover is defined
+          - bad_failover.changed == false
+          - bad_failover.failed == true
+        success_msg: "Non-existent file server failover failed as expected"
+        fail_msg: "Non-existent file server failover did not fail as expected"

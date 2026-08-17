@@ -1,0 +1,78 @@
+---
+# Summary:
+# This playbook will demonstrate performing a data replication failover between
+# two Nutanix File Servers using the v4 Files API.
+#
+# It covers:
+# 1. Planned failover (with all supported attributes)
+# 2. Unplanned failover (with DNS updates and AD credentials)
+# 3. Failback to the original file server
+
+- name: Files Failover playbook
+  hosts: localhost
+  gather_facts: false
+  vars:
+    ip: "<pc_ip>"
+    username: "<user>"
+    password: "<pass>"
+    validate_certs: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs }}"
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        primary_file_server_ext_id: "9c1e537d-6777-4c22-5d41-ddd0c3337aa9"
+        secondary_file_server_ext_id: "5b2e4e93-2222-3333-7777-a015d302eec2"
+
+    - name: Perform a planned data replication failover
+      nutanix.ncp.ntnx_files_failover_v2:
+        state: present
+        primary_file_server_ext_id: "{{ primary_file_server_ext_id }}"
+        secondary_file_server_ext_id: "{{ secondary_file_server_ext_id }}"
+        type: PLANNED
+        active_directory:
+          credential:
+            username: "ad_user@example.com"
+            password: "AdPassword123!"
+          preferred_domain_controller: "dc1.example.com"
+        dns:
+          preferred_name_server: "10.10.10.10"
+          action: ADD
+          credential:
+            username: "dns_user"
+            password: "DnsPassword123!"
+      register: result
+      ignore_errors: true
+
+    - name: Perform an unplanned failover between file servers
+      nutanix.ncp.ntnx_files_failover_v2:
+        state: present
+        primary_file_server_ext_id: "{{ primary_file_server_ext_id }}"
+        secondary_file_server_ext_id: "{{ secondary_file_server_ext_id }}"
+        type: UNPLANNED
+        active_directory:
+          credential:
+            username: "ad_user@example.com"
+            password: "AdPassword123!"
+          preferred_domain_controller: "dc1.example.com"
+        dns:
+          preferred_name_server: "10.10.10.10"
+          action: REMOVE
+          credential:
+            username: "dns_user"
+            password: "DnsPassword123!"
+      register: result
+      ignore_errors: true
+
+    - name: Perform a failback to the original file server
+      nutanix.ncp.ntnx_files_failover_v2:
+        state: present
+        primary_file_server_ext_id: "{{ primary_file_server_ext_id }}"
+        secondary_file_server_ext_id: "{{ secondary_file_server_ext_id }}"
+        type: FAILBACK
+      register: result
+      ignore_errors: true
