@@ -118,6 +118,50 @@ options:
         required: false
         type: list
         elements: str
+    directory_reference_list:
+        description:
+            - list of directory service references to be added in project
+            - required when role mappings include openldap users
+        required: false
+        type: list
+        elements: dict
+        suboptions:
+            kind:
+                description:
+                    - reference kind
+                type: str
+                required: false
+                default: directory_service
+            uuid:
+                description:
+                    - directory service UUID
+                type: str
+                required: true
+    enable_directory_and_identity_provider_shortlist:
+        description:
+            - enable shortlist for directory services and identity providers
+        required: false
+        type: bool
+        default: true
+    identity_providers_reference_list:
+        description:
+            - list of identity provider references to be added in project
+            - required when role mappings include identity provider users
+        required: false
+        type: list
+        elements: dict
+        suboptions:
+            uuid:
+                description:
+                    - identity provider UUID
+                type: str
+                required: true
+            kind:
+                description:
+                    - reference kind
+                type: str
+                required: false
+                default: identity_provider
     collaboration:
         description:
             - to enable collaboration or not for users in projects
@@ -432,6 +476,27 @@ def get_module_spec():
             required=False,
         ),
         clusters=dict(type="list", elements="str", required=False),
+        directory_reference_list=dict(
+            type="list",
+            elements="dict",
+            options=dict(
+                kind=dict(type="str", required=False, default="directory_service"),
+                uuid=dict(type="str", required=True),
+            ),
+            required=False,
+        ),
+        enable_directory_and_identity_provider_shortlist=dict(
+            type="bool", required=False, default=True
+        ),
+        identity_providers_reference_list=dict(
+            type="list",
+            elements="dict",
+            options=dict(
+                uuid=dict(type="str", required=True),
+                kind=dict(type="str", required=False, default="identity_provider"),
+            ),
+            required=False,
+        ),
         users=dict(type="list", elements="str", required=False),
         external_user_groups=dict(type="list", elements="str", required=False),
         collaboration=dict(type="bool", required=False),
@@ -518,7 +583,11 @@ def check_role_mapping_idempotency(old_spec, update_spec):
         for acp in update_spec["spec"].get("access_control_policy_list", []):
 
             # Update should be done for this operations
-            if acp["operation"] == "DELETE" or acp["operation"] == "ADD":
+            operation = acp.get("operation")
+            if operation == "DELETE" or operation == "ADD":
+                return False
+            if not operation:
+                # direct ACP payload (without operation) is treated as non-idempotent
                 return False
 
             users = []
@@ -613,10 +682,19 @@ def check_project_idempotency(old_spec, update_spec):
     ) != update_spec["resources"].get("default_subnet_reference", {}).get("uuid"):
         return False
 
+    if old_spec["resources"].get(
+        "enable_directory_and_identity_provider_shortlist", True
+    ) != update_spec["resources"].get(
+        "enable_directory_and_identity_provider_shortlist", True
+    ):
+        return False
+
     ref_fields = [
         "vpc_reference_list",
         "accounts_reference_list",
         "cluster_reference_list",
+        "directory_reference_list",
+        "identity_providers_reference_list",
         "subnet_reference_list",
         "user_reference_list",
         "external_user_group_reference_list",
@@ -739,6 +817,33 @@ def run_module():
         ],
         required_together=[("role_mappings", "collaboration")],
     )
+
+    role_mappings = module.params.get("role_mappings") or []
+    requires_directory_reference = any(
+        (rm.get("user") or {}).get("directory_service_uuid")
+        for rm in role_mappings
+        if rm
+    )
+    requires_identity_provider_reference = any(
+        (rm.get("user") or {}).get("identity_provider_uuid")
+        for rm in role_mappings
+        if rm
+    )
+
+    if requires_directory_reference and not module.params.get(
+        "directory_reference_list"
+    ):
+        module.fail_json(
+            msg="Parameter directory_reference_list is required when role_mappings include user.directory_service_uuid"
+        )
+
+    if requires_identity_provider_reference and not module.params.get(
+        "identity_providers_reference_list"
+    ):
+        module.fail_json(
+            msg="Parameter identity_providers_reference_list is required when role_mappings include user.identity_provider_uuid"
+        )
+
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None, "project_uuid": None}
     if module.params["state"] == "present":
