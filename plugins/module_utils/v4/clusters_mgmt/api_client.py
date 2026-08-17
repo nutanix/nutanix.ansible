@@ -142,3 +142,15 @@ def get_ssl_certificates_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.SSLCertificateApi(client)
+
+
+def get_cvms_api_instance(module):
+    """
+    This method will return CVMs api instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        CvmsApi: CvmsApi instance for cluster CVM list, get and reconfigure operations
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.CvmsApi(client)

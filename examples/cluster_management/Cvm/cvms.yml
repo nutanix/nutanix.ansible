@@ -1,0 +1,81 @@
+---
+# Summary:
+# This playbook demonstrates working with CVMs (Controller VMs) of a Nutanix cluster
+# via the v4 Cluster Management APIs. It:
+# 1. Lists all clusters registered to PC and picks the first PE cluster to work with.
+# 2. Lists all CVMs of that cluster.
+# 3. Lists CVMs of the cluster with a filter, limit, orderby, and select.
+# 4. Fetches details of a single CVM using its external ID.
+# 5. Reconfigures the CVMs (num_vcpus and memory_size_bytes) — commented out by
+#    default because it takes the CVMs through a rolling restart; uncomment when
+#    running against a lab cluster you own.
+
+- name: CVMs (cluster_management) playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      validate_certs: false
+  tasks:
+    - name: List all clusters registered to PC (pick a PE cluster to work on)
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(f:f eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: clusters_result
+
+    - name: Set cluster ext_id
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+    - name: List all CVMs of the cluster
+      nutanix.ncp.ntnx_cluster_cvms_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: all_cvms
+
+    - name: Set first CVM ext_id
+      ansible.builtin.set_fact:
+        cvm_ext_id: "{{ all_cvms.response[0].ext_id }}"
+
+    - name: List CVMs of the cluster with limit
+      nutanix.ncp.ntnx_cluster_cvms_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        limit: 1
+      register: limited_cvms
+
+    - name: List CVMs of the cluster with orderby
+      nutanix.ncp.ntnx_cluster_cvms_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        orderby: "name desc"
+      register: ordered_cvms
+
+    - name: List CVMs of the cluster with select
+      nutanix.ncp.ntnx_cluster_cvms_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        select: "name,extId,numVcpus,memorySizeBytes"
+      register: selected_cvms
+
+    - name: List CVMs of the cluster with filter (by name prefix)
+      nutanix.ncp.ntnx_cluster_cvms_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        filter: "startswith(name, 'NTNX')"
+      register: filtered_cvms
+
+    - name: Get CVM using ext_id
+      nutanix.ncp.ntnx_cluster_cvms_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ cvm_ext_id }}"
+      register: cvm_single
+
+    # WARNING: Reconfiguring CVMs will cause a rolling restart of the CVMs
+    # and briefly interrupt cluster services. Only run this on a lab cluster
+    # you fully own. Uncomment to enable.
+    #
+    # - name: Reconfigure CVMs — vCPUs and memory
+    #   nutanix.ncp.ntnx_cvm_v2:
+    #     state: present
+    #     cluster_ext_id: "{{ cluster_ext_id }}"
+    #     num_vcpus: "{{ cvm_single.response.num_vcpus }}"
+    #     memory_size_bytes: "{{ cvm_single.response.memory_size_bytes }}"
+    #   register: reconfigure_result
