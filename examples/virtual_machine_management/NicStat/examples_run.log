@@ -1,0 +1,25 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [NicStat (VMM v4) playbook] ***********************************************
+
+TASK [Set stat window and identifiers] *****************************************
+ok: [localhost] => {"ansible_facts": {"nic_ext_id": "868f0ac7-5f6a-4f49-7003-788a8091841f", "vm_ext_id": "4d5a5911-43f3-4788-8455-a28c81633900", "window_end": "2025-12-31T12:41:56.955Z", "window_start": "2024-07-31T12:41:56.955Z"}, "changed": false}
+
+TASK [Fetch VM NIC stats with required attributes only] ************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VM NIC stats", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"vm_uuid": "4d5a5911-43f3-4788-8455-a28c81633900"}, "code": "VMM-30100", "errorGroup": "VM_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the VM with UUID '4d5a5911-43f3-4788-8455-a28c81633900', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Fetch VM NIC stats with ALL attributes] **********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VM NIC stats", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"vm_uuid": "4d5a5911-43f3-4788-8455-a28c81633900"}, "code": "VMM-30100", "errorGroup": "VM_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the VM with UUID '4d5a5911-43f3-4788-8455-a28c81633900', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Fetch VM NIC stats via the info module] **********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VM NIC stats info", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"vm_uuid": "4d5a5911-43f3-4788-8455-a28c81633900"}, "code": "VMM-30100", "errorGroup": "VM_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the VM with UUID '4d5a5911-43f3-4788-8455-a28c81633900', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=3   
+
