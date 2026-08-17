@@ -1,0 +1,77 @@
+---
+# Summary:
+# This playbook demonstrates the CrossClusterMigrateVm v4 module:
+# 1. Dry-run validate a cross-cluster migration for an AHV VM.
+# 2. Cold-migrate the VM to a target cluster in another availability zone.
+# 3. Live-migrate the VM back with NIC and storage container overrides.
+
+- name: CrossClusterMigrateVm playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        vm_ext_id: "ac5aff0c-6c68-4948-9088-b903e2be0ce7"
+        target_availability_zone_ext_id: "7d994cce-72d8-4993-833c-c44c3e642ae3"
+        target_cluster_ext_id: "000631e1-8c6f-c066-0110-89e97c4a7603"
+        target_subnet_ext_id: "9306c8d3-bb00-4b98-b354-ef2dfbd2c7ba"
+        source_storage_container_ext_id: "77c1d0c6-aa90-4fdd-a63d-1eca02cbaaed"
+        target_storage_container_ext_id: "5007f144-f2f9-48d7-a47f-9f8739d55045"
+
+    - name: Validate a cross-cluster migration in dry-run mode
+      nutanix.ncp.ntnx_vm_cross_cluster_migrate_v2:
+        ext_id: "{{ vm_ext_id }}"
+        target_availability_zone:
+          ext_id: "{{ target_availability_zone_ext_id }}"
+        target_cluster:
+          ext_id: "{{ target_cluster_ext_id }}"
+        is_live_migration: false
+        dry_run: true
+      register: dry_run_result
+      ignore_errors: true
+
+    - name: Cold-migrate an AHV VM to a target cluster in another availability zone
+      nutanix.ncp.ntnx_vm_cross_cluster_migrate_v2:
+        ext_id: "{{ vm_ext_id }}"
+        target_availability_zone:
+          ext_id: "{{ target_availability_zone_ext_id }}"
+        target_cluster:
+          ext_id: "{{ target_cluster_ext_id }}"
+        is_live_migration: false
+      register: cold_migrate_result
+      ignore_errors: true
+
+    - name: Live-migrate an AHV VM with NIC and storage container overrides
+      nutanix.ncp.ntnx_vm_cross_cluster_migrate_v2:
+        ext_id: "{{ vm_ext_id }}"
+        target_availability_zone:
+          ext_id: "{{ target_availability_zone_ext_id }}"
+        target_cluster:
+          ext_id: "{{ target_cluster_ext_id }}"
+        is_live_migration: true
+        overrides:
+          override_nic_list:
+            - nic_backing_info:
+                virtual_ethernet_nic:
+                  model: VIRTIO
+                  is_connected: true
+                  num_queues: 1
+              nic_network_info:
+                virtual_ethernet_nic_network_info:
+                  nic_type: NORMAL_NIC
+                  subnet:
+                    ext_id: "{{ target_subnet_ext_id }}"
+                  vlan_mode: ACCESS
+          storage_containers_mapping:
+            - source_storage_container:
+                ext_id: "{{ source_storage_container_ext_id }}"
+              target_storage_container:
+                ext_id: "{{ target_storage_container_ext_id }}"
+      register: live_migrate_result
+      ignore_errors: true

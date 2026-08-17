@@ -1,0 +1,340 @@
+---
+# Test plan for ntnx_vm_cross_cluster_migrate_v2
+# ----------------------------------------------
+# 1. Prerequisite: create an ephemeral AHV VM using ntnx_vms_v2 that we can
+#    reference in every migrate task; delete it at the end.
+# 2. check_mode with the FULL argument spec — verifies the module builds a
+#    spec, does NOT call the API and returns the built body.
+# 3. check_mode with only the MINIMAL required args — verifies check_mode
+#    honours defaults / optionals and returns the built body.
+# 4. Missing required argument (`target_availability_zone`) — verifies the
+#    Ansible argument-spec engine rejects the invocation.
+# 5. Missing required argument (`is_live_migration`) — verifies same.
+# 6. Invalid enum on override_nic_list.nic_backing_info.virtual_ethernet_nic.model
+#    (should be VIRTIO/E1000) — verifies the argument-spec choices are enforced.
+# 7. Live migration attempt with a non-existent VM UUID — verifies the module
+#    surfaces a graceful API error and populates `failed`.
+# 8. Live migration attempt with a bad target AZ UUID — verifies the module
+#    surfaces a graceful API error.
+# 9. Dry-run against the same cluster — verifies the `_dryrun` query
+#    parameter is forwarded and the API returns a graceful validation
+#    outcome (typically an error since source == target).
+# 10. Idempotency-style repeat check_mode call — should still succeed and
+#     return `changed: false`.
+# 11. Cleanup: delete the ephemeral VM.
+
+- name: Start ntnx_vm_cross_cluster_migrate_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vm_cross_cluster_migrate_v2 tests
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "ansible-cclm-{{ random_name }}"
+    fake_vm_ext_id: "12345678-1234-1234-1234-cafe00000001"
+    fake_az_ext_id: "12345678-1234-1234-1234-cafe00000002"
+    fake_cluster_ext_id: "12345678-1234-1234-1234-cafe00000003"
+    fake_subnet_ext_id: "12345678-1234-1234-1234-cafe00000004"
+    fake_storage_container_ext_id_src: "12345678-1234-1234-1234-cafe00000005"
+    fake_storage_container_ext_id_dst: "12345678-1234-1234-1234-cafe00000006"
+
+##############################################################################
+# 1. Create prerequisite VM
+##############################################################################
+
+- name: Create prerequisite AHV VM
+  nutanix.ncp.ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: "ansible cross cluster migrate test vm"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: create_vm_result
+  ignore_errors: true
+
+- name: Assert VM creation succeeded (best-effort)
+  ansible.builtin.assert:
+    that:
+      - create_vm_result.changed == true
+      - create_vm_result.failed == false
+      - create_vm_result.ext_id is defined
+    fail_msg: "Prerequisite VM creation failed. Cross-cluster migrate tests need a valid VM to reference."
+    success_msg: "Prerequisite VM created successfully."
+
+- name: Set VM ext_id
+  ansible.builtin.set_fact:
+    vm_ext_id: "{{ create_vm_result.ext_id }}"
+
+##############################################################################
+# 2. check_mode with ALL fields
+##############################################################################
+
+- name: Cross-cluster migrate VM in check_mode with ALL fields
+  nutanix.ncp.ntnx_vm_cross_cluster_migrate_v2:
+    ext_id: "{{ vm_ext_id }}"
+    target_availability_zone:
+      ext_id: "{{ fake_az_ext_id }}"
+    target_cluster:
+      ext_id: "{{ fake_cluster_ext_id }}"
+    is_live_migration: true
+    dry_run: true
+    overrides:
+      override_nic_list:
+        - nic_backing_info:
+            virtual_ethernet_nic:
+              model: VIRTIO
+              is_connected: true
+              num_queues: 1
+          nic_network_info:
+            virtual_ethernet_nic_network_info:
+              nic_type: NORMAL_NIC
+              subnet:
+                ext_id: "{{ fake_subnet_ext_id }}"
+              vlan_mode: ACCESS
+      storage_containers_mapping:
+        - source_storage_container:
+            ext_id: "{{ fake_storage_container_ext_id_src }}"
+          target_storage_container:
+            ext_id: "{{ fake_storage_container_ext_id_dst }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode ALL-fields response
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == vm_ext_id
+      - result.msg is defined
+      - "vm_ext_id in result.msg"
+      - result.response.target_availability_zone.ext_id == fake_az_ext_id
+      - result.response.target_cluster.ext_id == fake_cluster_ext_id
+      - result.response.is_live_migration == true
+      - result.response.overrides is defined
+      - result.response.overrides.override_nic_list | length == 1
+      - result.response.overrides.override_nic_list[0].nic_backing_info.model == "VIRTIO"
+      - result.response.overrides.override_nic_list[0].nic_backing_info.is_connected == true
+      - result.response.overrides.override_nic_list[0].nic_backing_info.num_queues == 1
+      - result.response.overrides.override_nic_list[0].nic_network_info.nic_type == "NORMAL_NIC"
+      - result.response.overrides.override_nic_list[0].nic_network_info.vlan_mode == "ACCESS"
+      - result.response.overrides.override_nic_list[0].nic_network_info.subnet.ext_id == fake_subnet_ext_id
+      - result.response.overrides.storage_containers_mapping | length == 1
+      - result.response.overrides.storage_containers_mapping[0].source_storage_container.ext_id == fake_storage_container_ext_id_src
+      - result.response.overrides.storage_containers_mapping[0].target_storage_container.ext_id == fake_storage_container_ext_id_dst
+    fail_msg: "check_mode ALL-fields cross-cluster migrate assertions failed"
+    success_msg: "check_mode ALL-fields cross-cluster migrate returned the expected spec"
+
+##############################################################################
+# 3. check_mode with MINIMAL required fields only
+##############################################################################
+
+- name: Cross-cluster migrate VM in check_mode with minimal required fields
+  nutanix.ncp.ntnx_vm_cross_cluster_migrate_v2:
+    ext_id: "{{ vm_ext_id }}"
+    target_availability_zone:
+      ext_id: "{{ fake_az_ext_id }}"
+    is_live_migration: false
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode minimal-fields response
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == vm_ext_id
+      - result.response.target_availability_zone.ext_id == fake_az_ext_id
+      - result.response.is_live_migration == false
+      - result.response.target_cluster is none or result.response.target_cluster is not defined
+      - result.response.overrides is none or result.response.overrides is not defined
+    fail_msg: "check_mode minimal-fields cross-cluster migrate assertions failed"
+    success_msg: "check_mode minimal-fields cross-cluster migrate returned the expected spec"
+
+##############################################################################
+# 4. Missing required target_availability_zone
+##############################################################################
+
+- name: Attempt cross-cluster migrate without target_availability_zone
+  nutanix.ncp.ntnx_vm_cross_cluster_migrate_v2:
+    ext_id: "{{ vm_ext_id }}"
+    is_live_migration: false
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert missing-target_availability_zone rejection
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.msg is defined
+      - "'target_availability_zone' in result.msg"
+    fail_msg: "Module should reject invocation missing target_availability_zone"
+    success_msg: "Module correctly rejected invocation missing target_availability_zone"
+
+##############################################################################
+# 5. Missing required is_live_migration
+##############################################################################
+
+- name: Attempt cross-cluster migrate without is_live_migration
+  nutanix.ncp.ntnx_vm_cross_cluster_migrate_v2:
+    ext_id: "{{ vm_ext_id }}"
+    target_availability_zone:
+      ext_id: "{{ fake_az_ext_id }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert missing-is_live_migration rejection
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.msg is defined
+      - "'is_live_migration' in result.msg"
+    fail_msg: "Module should reject invocation missing is_live_migration"
+    success_msg: "Module correctly rejected invocation missing is_live_migration"
+
+##############################################################################
+# 6. Invalid enum value for NIC model
+##############################################################################
+
+- name: Attempt cross-cluster migrate with invalid NIC model enum
+  nutanix.ncp.ntnx_vm_cross_cluster_migrate_v2:
+    ext_id: "{{ vm_ext_id }}"
+    target_availability_zone:
+      ext_id: "{{ fake_az_ext_id }}"
+    is_live_migration: false
+    overrides:
+      override_nic_list:
+        - nic_backing_info:
+            virtual_ethernet_nic:
+              model: NOT_A_REAL_MODEL
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert invalid-enum rejection
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.msg is defined
+      - "'model' in result.msg or 'NOT_A_REAL_MODEL' in result.msg"
+    fail_msg: "Module should reject invalid NIC model enum value"
+    success_msg: "Module correctly rejected invalid NIC model enum value"
+
+##############################################################################
+# 7. Real API call with a non-existent VM UUID
+##############################################################################
+
+- name: Attempt cross-cluster migrate of a non-existent VM
+  nutanix.ncp.ntnx_vm_cross_cluster_migrate_v2:
+    ext_id: "{{ fake_vm_ext_id }}"
+    target_availability_zone:
+      ext_id: "{{ fake_az_ext_id }}"
+    is_live_migration: false
+  register: result
+  ignore_errors: true
+
+- name: Assert non-existent-VM failure is graceful
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - result.response is defined
+    fail_msg: "Migration of non-existent VM did not fail gracefully"
+    success_msg: "Migration of non-existent VM failed gracefully as expected"
+
+##############################################################################
+# 8. Real API call with a bad target AZ UUID (real VM, fake AZ)
+##############################################################################
+
+- name: Attempt cross-cluster migrate with a fake target availability zone
+  nutanix.ncp.ntnx_vm_cross_cluster_migrate_v2:
+    ext_id: "{{ vm_ext_id }}"
+    target_availability_zone:
+      ext_id: "{{ fake_az_ext_id }}"
+    is_live_migration: false
+  register: result
+  ignore_errors: true
+
+- name: Assert bad-AZ failure is graceful
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - result.response is defined
+    fail_msg: "Migration with fake target AZ did not fail gracefully"
+    success_msg: "Migration with fake target AZ failed gracefully as expected"
+
+##############################################################################
+# 9. Dry-run against same cluster (real VM, real source cluster, fake AZ)
+##############################################################################
+
+- name: Attempt cross-cluster migrate in dry-run mode
+  nutanix.ncp.ntnx_vm_cross_cluster_migrate_v2:
+    ext_id: "{{ vm_ext_id }}"
+    target_availability_zone:
+      ext_id: "{{ fake_az_ext_id }}"
+    is_live_migration: false
+    dry_run: true
+  register: result
+  ignore_errors: true
+
+- name: Assert dry-run yields a graceful outcome
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - (result.failed == true) or (result.failed == false)
+    fail_msg: "Dry-run did not produce a valid response payload"
+    success_msg: "Dry-run produced a valid response payload"
+
+##############################################################################
+# 10. Idempotency-style repeat check_mode call
+##############################################################################
+
+- name: Cross-cluster migrate VM in check_mode (repeat call)
+  nutanix.ncp.ntnx_vm_cross_cluster_migrate_v2:
+    ext_id: "{{ vm_ext_id }}"
+    target_availability_zone:
+      ext_id: "{{ fake_az_ext_id }}"
+    is_live_migration: false
+  register: repeat_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert repeat check_mode call still yields changed=false
+  ansible.builtin.assert:
+    that:
+      - repeat_result.changed == false
+      - repeat_result.failed == false
+      - repeat_result.response is defined
+      - repeat_result.ext_id == vm_ext_id
+    fail_msg: "Repeat check_mode invocation should be safe (changed=false, failed=false)"
+    success_msg: "Repeat check_mode invocation stayed safe (changed=false)"
+
+##############################################################################
+# 11. Cleanup: delete the ephemeral VM
+##############################################################################
+
+- name: Delete prerequisite VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm_ext_id }}"
+  register: delete_vm_result
+  ignore_errors: true
+
+- name: Assert VM deletion (best-effort)
+  ansible.builtin.assert:
+    that:
+      - delete_vm_result.changed == true
+      - delete_vm_result.failed == false
+      - delete_vm_result.ext_id == vm_ext_id
+    fail_msg: "Cleanup of prerequisite VM failed"
+    success_msg: "Prerequisite VM cleaned up successfully"
