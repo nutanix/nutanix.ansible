@@ -1,0 +1,55 @@
+---
+# Summary:
+# This playbook demonstrates the CategoryAssociation modules for storage v4:
+# 1. Associate a category with an existing Volume Group.
+# 2. List all categories currently associated with the Volume Group.
+# 3. Fetch a single category association by ext_id.
+# 4. Disassociate the category from the Volume Group.
+#
+# Prerequisites (must exist on the target Prism Central before running):
+#   - A Volume Group whose ext_id is set as ``vg_ext_id`` below.
+#   - A Category whose ext_id is set as ``category_ext_id`` below.
+
+- name: Volume Group CategoryAssociation playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables for the playbook
+      ansible.builtin.set_fact:
+        vg_ext_id: "{{ vg_ext_id | default('68e4c68e-1acf-4c05-7792-e062119acb68') }}"
+        category_ext_id: "{{ category_ext_id | default('566b844b-d245-4894-a8b5-eeef1ec4b638') }}"
+
+    - name: Associate a category with the Volume Group
+      nutanix.ncp.ntnx_volume_group_category_v2:
+        state: present
+        ext_id: "{{ vg_ext_id }}"
+        categories:
+          - ext_id: "{{ category_ext_id }}"
+            entity_type: "CATEGORY"
+      register: associate_result
+
+    - name: List all categories associated with the Volume Group
+      nutanix.ncp.ntnx_category_associations_info_v2:
+        volume_group_ext_id: "{{ vg_ext_id }}"
+      register: list_result
+
+    - name: Fetch a specific category association for the Volume Group
+      nutanix.ncp.ntnx_category_associations_info_v2:
+        volume_group_ext_id: "{{ vg_ext_id }}"
+        ext_id: "{{ category_ext_id }}"
+      register: fetch_result
+
+    - name: Disassociate the category from the Volume Group
+      nutanix.ncp.ntnx_volume_group_category_v2:
+        state: absent
+        ext_id: "{{ vg_ext_id }}"
+        categories:
+          - ext_id: "{{ category_ext_id }}"
+            entity_type: "CATEGORY"
+      register: disassociate_result
