@@ -1,0 +1,78 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [AwsSubnet info playbook] *************************************************
+
+TASK [Set NC2A cluster ext_id] *************************************************
+ok: [localhost] => {"ansible_facts": {"nc2a_cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"}, "changed": false}
+
+TASK [List all AWS subnets on the NC2A cluster] ********************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching AWS subnets info
+Origin: /tmp/codegen/15a2aea43df5478cbd9bd17632515a00/repo/examples/networking/AwsSubnet/aws_subnets_info_v2.yml:41:7
+
+39         nc2a_cluster_ext_id: "{{ nc2a_cluster_ext_id | default('0006555e-4e63-4a5e-185b-ac1f6b6f97e2') }}"
+40
+41     - name: List all AWS subnets on the NC2A cluster
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while fetching AWS subnets info", "response": {"$objectType": "networking.v4.aws.config.ListAwsSubnetsApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-20002", "errorGroup": "DOWNSTREAM_SERVICE_ERROR", "locale": "en_US", "message": "Failed to reach network service on cluster 0006555e-4e63-4a5e-185b-ac1f6b6f97e2 due to an error.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "self", "rel": "https://10.44.76.28:9440/api/networking/v4.3/aws/config/subnets"}], "totalAvailableResults": 0}}, "status": 500}
+...ignoring
+
+TASK [List AWS subnets filtered by AWS VPC ID] *********************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching AWS subnets info
+Origin: /tmp/codegen/15a2aea43df5478cbd9bd17632515a00/repo/examples/networking/AwsSubnet/aws_subnets_info_v2.yml:47:7
+
+45       ignore_errors: true
+46
+47     - name: List AWS subnets filtered by AWS VPC ID
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while fetching AWS subnets info", "response": {"$objectType": "networking.v4.aws.config.ListAwsSubnetsApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-20004", "errorGroup": "CLUSTER_NOT_ACCESSIBLE", "locale": "en_US", "message": "Cluster 0006555e-4e63-4a5e-185b-ac1f6b6f97e2 is not accessible due to an error.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "self", "rel": "https://10.44.76.28:9440/api/networking/v4.3/aws/config/subnets?$filter=vpcId eq 'vpc-0abc123def4567890'"}], "totalAvailableResults": 0}}, "status": 400}
+...ignoring
+
+TASK [List AWS subnets with limit] *********************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching AWS subnets info
+Origin: /tmp/codegen/15a2aea43df5478cbd9bd17632515a00/repo/examples/networking/AwsSubnet/aws_subnets_info_v2.yml:54:7
+
+52       ignore_errors: true
+53
+54     - name: List AWS subnets with limit
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while fetching AWS subnets info", "response": {"$objectType": "networking.v4.aws.config.ListAwsSubnetsApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-20002", "errorGroup": "DOWNSTREAM_SERVICE_ERROR", "locale": "en_US", "message": "Failed to reach network service on cluster 0006555e-4e63-4a5e-185b-ac1f6b6f97e2 due to an error.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "self", "rel": "https://10.44.76.28:9440/api/networking/v4.3/aws/config/subnets?$limit=1"}], "totalAvailableResults": 0}}, "status": 500}
+...ignoring
+
+TASK [List AWS subnets ordered by CIDR] ****************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching AWS subnets info
+Origin: /tmp/codegen/15a2aea43df5478cbd9bd17632515a00/repo/examples/networking/AwsSubnet/aws_subnets_info_v2.yml:61:7
+
+59       ignore_errors: true
+60
+61     - name: List AWS subnets ordered by CIDR
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while fetching AWS subnets info", "response": {"$objectType": "networking.v4.aws.config.ListAwsSubnetsApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-20002", "errorGroup": "DOWNSTREAM_SERVICE_ERROR", "locale": "en_US", "message": "Failed to reach network service on cluster 0006555e-4e63-4a5e-185b-ac1f6b6f97e2 due to an error.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "self", "rel": "https://10.44.76.28:9440/api/networking/v4.3/aws/config/subnets?$orderby=cidr"}], "totalAvailableResults": 0}}, "status": 500}
+...ignoring
+
+TASK [List AWS subnets with page and select projection] ************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching AWS subnets info
+Origin: /tmp/codegen/15a2aea43df5478cbd9bd17632515a00/repo/examples/networking/AwsSubnet/aws_subnets_info_v2.yml:68:7
+
+66       ignore_errors: true
+67
+68     - name: List AWS subnets with page and select projection
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while fetching AWS subnets info", "response": {"$objectType": "networking.v4.aws.config.ListAwsSubnetsApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-20002", "errorGroup": "DOWNSTREAM_SERVICE_ERROR", "locale": "en_US", "message": "Failed to reach network service on cluster 0006555e-4e63-4a5e-185b-ac1f6b6f97e2 due to an error.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "self", "rel": "https://10.44.76.28:9440/api/networking/v4.3/aws/config/subnets?$limit=10&$page=0&$select=subnetId,cidr,availabilityZone,cloudType"}], "totalAvailableResults": 0}}, "status": 500}
+...ignoring
+
+TASK [Compute a candidate ext_id when list-all produced rows] ******************
+ok: [localhost] => {"ansible_facts": {"_first_aws_subnet_ext_id": "", "_list_all_ok": false}, "changed": false}
+
+TASK [Fetch a single AWS subnet by ext_id (only when list-all produced rows)] ***
+skipping: [localhost] => {"changed": false, "false_condition": "_first_aws_subnet_ext_id | length > 0", "skip_reason": "Conditional result was False"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=7    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=5   
+
