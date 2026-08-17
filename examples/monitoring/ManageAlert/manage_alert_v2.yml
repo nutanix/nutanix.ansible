@@ -1,0 +1,101 @@
+---
+# Summary:
+# This playbook demonstrates how to acknowledge or resolve alerts in Nutanix
+# Prism Central using the ManageAlert v4 action module.
+#
+# Steps:
+# 1. Pick an unresolved / unacknowledged alert from the live Prism Central
+#    (via a REST call so this playbook is fully self-contained).
+# 2. Acknowledge that alert with the ntnx_manage_alert_v2 module.
+# 3. Pick an unresolved alert and resolve it with the ntnx_manage_alert_v2 module.
+#
+# Note: the ManageAlert API is an action-only endpoint
+# (POST /api/monitoring/v4.0/serviceability/alerts/{extId}/$actions/manage-alert).
+# There is no create/update/delete counterpart, so this playbook only shows
+# the ACKNOWLEDGE and RESOLVE actions.
+
+- name: Manage Alert playbook
+  hosts: localhost
+  gather_facts: false
+  vars:
+    pc_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+    pc_user: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+    pc_pass: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+    alerts_list_url: >-
+      https://{{ pc_host }}:9440/api/monitoring/v4.0/serviceability/alerts?%24filter=isAcknowledged%20eq%20false%20and%20isResolved%20eq%20false&%24limit=1
+    unresolved_list_url: >-
+      https://{{ pc_host }}:9440/api/monitoring/v4.0/serviceability/alerts?%24filter=isResolved%20eq%20false&%24limit=1
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ pc_host }}"
+      nutanix_username: "{{ pc_user }}"
+      nutanix_password: "{{ pc_pass }}"
+      validate_certs: false
+  tasks:
+    - name: Discover an unacknowledged alert from Prism Central
+      ansible.builtin.uri:
+        url: "{{ alerts_list_url }}"
+        method: GET
+        user: "{{ pc_user }}"
+        password: "{{ pc_pass }}"
+        force_basic_auth: true
+        validate_certs: false
+        return_content: true
+        status_code: [200]
+      register: unack_alerts
+      ignore_errors: true
+
+    - name: Set unacknowledged alert ext_id
+      ansible.builtin.set_fact:
+        ack_alert_ext_id: >-
+          {{ unack_alerts.json.data[0].extId
+             if (unack_alerts is succeeded and unack_alerts.json.data | default([]) | length > 0)
+             else '' }}
+
+    - name: Acknowledge the alert
+      nutanix.ncp.ntnx_manage_alert_v2:
+        state: present
+        ext_id: "{{ ack_alert_ext_id }}"
+        action_type: "ACKNOWLEDGE"
+      register: ack_result
+      when: ack_alert_ext_id | length > 0
+      ignore_errors: true
+
+    - name: Show acknowledge result
+      ansible.builtin.debug:
+        var: ack_result
+      when: ack_alert_ext_id | length > 0
+
+    - name: Discover an unresolved alert from Prism Central
+      ansible.builtin.uri:
+        url: "{{ unresolved_list_url }}"
+        method: GET
+        user: "{{ pc_user }}"
+        password: "{{ pc_pass }}"
+        force_basic_auth: true
+        validate_certs: false
+        return_content: true
+        status_code: [200]
+      register: unresolved_alerts
+      ignore_errors: true
+
+    - name: Set unresolved alert ext_id
+      ansible.builtin.set_fact:
+        resolve_alert_ext_id: >-
+          {{ unresolved_alerts.json.data[0].extId
+             if (unresolved_alerts is succeeded and unresolved_alerts.json.data | default([]) | length > 0)
+             else '' }}
+
+    - name: Resolve the alert
+      nutanix.ncp.ntnx_manage_alert_v2:
+        state: present
+        ext_id: "{{ resolve_alert_ext_id }}"
+        action_type: "RESOLVE"
+      register: resolve_result
+      when: resolve_alert_ext_id | length > 0
+      ignore_errors: true
+
+    - name: Show resolve result
+      ansible.builtin.debug:
+        var: resolve_result
+      when: resolve_alert_ext_id | length > 0

@@ -178,6 +178,7 @@ action_groups:
     - ntnx_recovery_points_v2
     - ntnx_recovery_point_restore_v2
     - ntnx_vm_revert_v2
+    - ntnx_manage_alert_v2
     - ntnx_recovery_point_replicate_v2
     - ntnx_gpus_v2
     - ntnx_gpus_info_v2
