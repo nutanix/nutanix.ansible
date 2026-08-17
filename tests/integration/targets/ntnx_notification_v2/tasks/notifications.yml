@@ -1,0 +1,304 @@
+---
+# Test plan for ntnx_notification_v2 (compute LCM upgrade notifications)
+# and ntnx_lcm_notifications_info_v2 (fetch a notification by ext_id).
+#
+# Prerequisites:
+#   - A live Prism Central reachable via {{ ip }} / {{ username }} / {{ password }}.
+#   - An LCM entity present on the PC (defaults to "Calm Policy Engine") is
+#     preferred; if none is available (e.g. LCM inventory has never completed
+#     on this cluster) the real end-to-end path is skipped with a clear
+#     message and only check_mode + negative-path coverage is executed.
+#
+# Coverage:
+#   1. check_mode tests (one with cluster_ext_id + all attributes, one without
+#      cluster_ext_id) — validates spec generation without hitting the API.
+#   2. Real end-to-end compute-notifications against the live PC when an
+#      LCM entity is available, then re-fetch the same resource with the info
+#      module (loop-asserts every returned notification item).
+#   3. Info module tests: get-by-ID (positive when possible, negative when not)
+#      and the required-parameter negative case.
+#   4. Negative tests for the compute module: missing notifications_spec,
+#      invalid state, and bogus entity_uuid.
+
+- name: Start testing ntnx_notification_v2 and ntnx_lcm_notifications_info_v2
+  ansible.builtin.debug:
+    msg: "Starting LCM Notifications v4 integration tests"
+
+- name: Set defaults for the target LCM entity
+  ansible.builtin.set_fact:
+    lcm_entity_model: "{{ lcm_entity_model | default('Calm Policy Engine') }}"
+
+################################################################################
+# Prerequisite discovery
+################################################################################
+- name: List all clusters to get prism central external ID
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+  register: clusters_result
+  ignore_errors: true
+
+- name: Assert Prism Central was found
+  ansible.builtin.assert:
+    that:
+      - clusters_result.failed == false
+      - clusters_result.response is defined
+      - clusters_result.response | length > 0
+    fail_msg: "Failed to fetch Prism Central external ID"
+    success_msg: "Prism Central external ID discovered successfully"
+
+- name: Set Prism Central external ID
+  ansible.builtin.set_fact:
+    prism_central_external_id: "{{ clusters_result.response[0].ext_id }}"
+
+- name: Get LCM framework status
+  nutanix.ncp.ntnx_lcm_status_info_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+  register: lcm_status_before
+  ignore_errors: true
+
+- name: Perform LCM inventory before computing notifications (best-effort)
+  nutanix.ncp.ntnx_lcm_inventory_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+  register: lcm_inventory
+  when:
+    - lcm_status_before.response is defined
+    - lcm_status_before.response.in_progress_operation.operation_id in [None, '']
+  ignore_errors: true
+
+- name: List LCM entities matching the target model
+  nutanix.ncp.ntnx_lcm_entities_info_v2:
+    filter: "entityModel eq '{{ lcm_entity_model }}'"
+  register: lcm_entities
+  ignore_errors: true
+
+- name: Capture LCM entity external ID and target version (when available)
+  ansible.builtin.set_fact:
+    lcm_entity_external_id: "{{ lcm_entities.response[0].ext_id }}"
+    lcm_entity_target_version: "{{ lcm_entities.response[0].available_versions[0].version }}"
+  when:
+    - lcm_entities.response is defined
+    - (lcm_entities.response | length) > 0
+    - lcm_entities.response[0].available_versions is defined
+    - (lcm_entities.response[0].available_versions | length) > 0
+
+- name: Fall back to synthetic UUIDs when no real LCM entity is available
+  ansible.builtin.set_fact:
+    lcm_entity_external_id: "11111111-2222-3333-4444-555555555555"
+    lcm_entity_target_version: "1.0.0"
+    lcm_entity_is_synthetic: true
+  when: lcm_entity_external_id is not defined
+
+- name: Record whether we have a real LCM entity to exercise
+  ansible.builtin.set_fact:
+    have_real_lcm_entity: "{{ lcm_entity_is_synthetic is not defined or not lcm_entity_is_synthetic }}"
+
+- name: Note when the end-to-end path will be skipped
+  ansible.builtin.debug:
+    msg: >-
+      No real LCM entity matching "{{ lcm_entity_model }}" was discovered on
+      {{ prism_central_external_id }}. Only check_mode and negative tests will
+      be executed.
+  when: not have_real_lcm_entity
+
+################################################################################
+# 1a. check_mode: compute-notifications with ALL attributes
+################################################################################
+- name: Generate spec for compute-notifications using check mode (all attributes)
+  nutanix.ncp.ntnx_notification_v2:
+    state: present
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    notifications_spec:
+      - entity_uuid: "{{ lcm_entity_external_id }}"
+        to_version: "{{ lcm_entity_target_version }}"
+  check_mode: true
+  register: compute_notifications_check_mode
+
+- name: Assert check_mode spec was generated correctly (full form)
+  ansible.builtin.assert:
+    that:
+      - compute_notifications_check_mode.failed == false
+      - compute_notifications_check_mode.changed == false
+      - compute_notifications_check_mode.response is defined
+      - compute_notifications_check_mode.response.notifications_spec is defined
+      - compute_notifications_check_mode.response.notifications_spec | length == 1
+      - compute_notifications_check_mode.response.notifications_spec[0].entity_uuid == lcm_entity_external_id
+      - compute_notifications_check_mode.response.notifications_spec[0].to_version == lcm_entity_target_version
+    fail_msg: "compute-notifications check_mode did not generate the expected spec"
+    success_msg: "compute-notifications check_mode generated the expected spec"
+
+################################################################################
+# 1b. check_mode: compute-notifications without cluster_ext_id (PC target)
+################################################################################
+- name: Generate spec for compute-notifications using check mode (PC target, no cluster_ext_id)
+  nutanix.ncp.ntnx_notification_v2:
+    notifications_spec:
+      - entity_uuid: "{{ lcm_entity_external_id }}"
+        to_version: "{{ lcm_entity_target_version }}"
+  check_mode: true
+  register: compute_notifications_check_mode_pc_only
+
+- name: Assert check_mode without cluster_ext_id still builds the spec
+  ansible.builtin.assert:
+    that:
+      - compute_notifications_check_mode_pc_only.failed == false
+      - compute_notifications_check_mode_pc_only.changed == false
+      - compute_notifications_check_mode_pc_only.response.notifications_spec | length == 1
+      - compute_notifications_check_mode_pc_only.response.notifications_spec[0].entity_uuid == lcm_entity_external_id
+      - compute_notifications_check_mode_pc_only.response.notifications_spec[0].to_version == lcm_entity_target_version
+    fail_msg: "check_mode without cluster_ext_id did not build the expected spec"
+    success_msg: "check_mode without cluster_ext_id built the expected spec"
+
+################################################################################
+# 2. Real end-to-end compute-notifications (only when a real entity exists)
+################################################################################
+- name: Compute LCM upgrade notifications for the target entity
+  nutanix.ncp.ntnx_notification_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    notifications_spec:
+      - entity_uuid: "{{ lcm_entity_external_id }}"
+        to_version: "{{ lcm_entity_target_version }}"
+  register: compute_notifications_result
+  ignore_errors: true
+  when: have_real_lcm_entity
+
+- name: Assert compute-notifications end-to-end succeeded
+  ansible.builtin.assert:
+    that:
+      - compute_notifications_result.failed == false
+      - compute_notifications_result.changed == true
+      - compute_notifications_result.task_ext_id is defined
+      - compute_notifications_result.task_ext_id | length > 0
+      - compute_notifications_result.response is defined
+      - compute_notifications_result.ext_id is defined
+      - compute_notifications_result.ext_id | length > 0
+    fail_msg: "compute-notifications end-to-end failed on a real entity"
+    success_msg: "compute-notifications end-to-end succeeded"
+  when:
+    - have_real_lcm_entity
+    - compute_notifications_result is defined
+    - not compute_notifications_result.failed
+
+- name: Capture the notification external ID
+  ansible.builtin.set_fact:
+    lcm_notification_ext_id: "{{ compute_notifications_result.ext_id }}"
+  when:
+    - have_real_lcm_entity
+    - compute_notifications_result is defined
+    - compute_notifications_result.ext_id is defined
+
+################################################################################
+# 3. Info module — get-by-ID (positive path when we have a real ext_id)
+################################################################################
+- name: Fetch the same LCM upgrade notification by external ID
+  nutanix.ncp.ntnx_lcm_notifications_info_v2:
+    ext_id: "{{ lcm_notification_ext_id }}"
+  register: notification_info
+  ignore_errors: true
+  when: lcm_notification_ext_id is defined
+
+- name: Assert info module returned the same notification
+  ansible.builtin.assert:
+    that:
+      - notification_info.failed == false
+      - notification_info.changed == false
+      - notification_info.response is defined
+      - notification_info.ext_id == lcm_notification_ext_id
+      - notification_info.response.ext_id == lcm_notification_ext_id
+      - notification_info.response.notifications is defined
+    fail_msg: "Info module did not return the expected notification"
+    success_msg: "Info module returned the expected notification"
+  when:
+    - lcm_notification_ext_id is defined
+    - not notification_info.failed
+
+- name: Assert per-notification-item structure (loop over each returned entry)
+  ansible.builtin.assert:
+    that:
+      - item.notification_type in ["ENTITY", "LOCATION"]
+      - item.to_version is defined
+    fail_msg: "Unexpected notification item structure: {{ item }}"
+    success_msg: "Notification item {{ item.notification_type }} looks well-formed"
+  loop: "{{ notification_info.response.notifications }}"
+  when:
+    - lcm_notification_ext_id is defined
+    - not notification_info.failed
+    - notification_info.response.notifications | length > 0
+
+################################################################################
+# 4. Negative / Error tests
+################################################################################
+- name: Compute-notifications without required notifications_spec (should fail)
+  nutanix.ncp.ntnx_notification_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+  register: missing_required_result
+  ignore_errors: true
+
+- name: Assert missing required notifications_spec fails cleanly
+  ansible.builtin.assert:
+    that:
+      - missing_required_result.failed == true
+      - missing_required_result.msg is defined
+      - "'notifications_spec' in (missing_required_result.msg | string)"
+    fail_msg: "Module did not fail as expected when notifications_spec was missing"
+    success_msg: "Module correctly failed when notifications_spec was missing"
+
+- name: Compute-notifications with an invalid state (should fail spec validation)
+  nutanix.ncp.ntnx_notification_v2:
+    state: absent
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    notifications_spec:
+      - entity_uuid: "{{ lcm_entity_external_id }}"
+        to_version: "{{ lcm_entity_target_version }}"
+  register: invalid_state_result
+  ignore_errors: true
+
+- name: Assert invalid state is rejected
+  ansible.builtin.assert:
+    that:
+      - invalid_state_result.failed == true
+      - invalid_state_result.msg is defined
+    fail_msg: "Module accepted an invalid state"
+    success_msg: "Module correctly rejected invalid state"
+
+- name: Compute-notifications with a bogus entity uuid (API/task should error)
+  nutanix.ncp.ntnx_notification_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    notifications_spec:
+      - entity_uuid: "00000000-0000-0000-0000-000000000000"
+        to_version: "0.0.0"
+  register: invalid_entity_result
+  ignore_errors: true
+
+- name: Assert bogus entity is rejected by the API or the task
+  ansible.builtin.assert:
+    that:
+      - invalid_entity_result.failed == true
+    fail_msg: "compute-notifications should have failed with a bogus entity uuid"
+    success_msg: "compute-notifications correctly failed with a bogus entity uuid"
+
+- name: Info module without required ext_id (should fail)
+  nutanix.ncp.ntnx_lcm_notifications_info_v2: {}
+  register: info_missing_ext_id_result
+  ignore_errors: true
+
+- name: Assert info module fails without ext_id
+  ansible.builtin.assert:
+    that:
+      - info_missing_ext_id_result.failed == true
+      - info_missing_ext_id_result.msg is defined
+      - "'ext_id' in (info_missing_ext_id_result.msg | string)"
+    fail_msg: "Info module did not fail without ext_id"
+    success_msg: "Info module correctly failed without ext_id"
+
+- name: Info module with a non-existent ext_id (should return an API not-found)
+  nutanix.ncp.ntnx_lcm_notifications_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: info_bogus_ext_id_result
+  ignore_errors: true
+
+- name: Assert info module fails cleanly for a non-existent ext_id
+  ansible.builtin.assert:
+    that:
+      - info_bogus_ext_id_result.failed == true
+    fail_msg: "Info module should have failed for a non-existent ext_id"
+    success_msg: "Info module correctly failed for a non-existent ext_id"

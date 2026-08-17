@@ -66,3 +66,25 @@ def get_lcm_entity(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching entity info using external identifier of the entity",
         )
+
+
+def get_lcm_notification(module, api_instance, ext_id):
+    """
+    This method will fetch an LCM upgrade notification using its external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LCM notifications api instance
+        ext_id (str): External id of the LCM upgrade notification resource
+    Returns:
+        notification (object): LCM notification info
+    """
+    try:
+        return api_instance.get_notification_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM notification info using external identifier of the notification: {0}".format(
+                ext_id
+            ),
+        )
