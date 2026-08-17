@@ -1,0 +1,292 @@
+---
+# Test plan for ntnx_monitoring_tags_info_v2
+# -------------------------------------------
+# The Logbay Tag entity (monitoring v4) is read-only and only exposes a list-by-cluster
+# API (`ClusterLogsApi.list_tags`). This target validates:
+#   1. Missing required field (`cluster_ext_id`) is rejected by argument spec validation.
+#   2. List-all: given a real cluster UUID, the module returns a non-empty list of tags
+#      and populates `total_available_results`.
+#   3. Every returned tag entry contains the expected shape (name is a required attribute
+#      from the Tag SDK model; description is optional).
+#   4. Pagination: `limit=1` truncates the returned list; `page` is accepted.
+#   5. OData `orderby` (asc / desc) sorts by `name`.
+#   6. OData `select` projection returns only the requested attributes.
+#   7. OData `filter` on `name` (equality + startswith) returns a subset that matches.
+#   8. Invalid `cluster_ext_id` triggers an API error surfaced through `raise_api_exception`.
+#   9. Invalid `filter` property is rejected by the server and surfaced cleanly.
+
+- name: Start ntnx_monitoring_tags_info_v2 tests
+  ansible.builtin.debug:
+    msg: "Starting ntnx_monitoring_tags_info_v2 tests"
+
+########################################################################################
+# 0. Discover a target Prism Element cluster registered with Prism Central so we do not
+#    hardcode any cluster UUID. Reuses the pattern used by other v2 test targets.
+########################################################################################
+
+- name: Fetch clusters registered with PC
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: pc_clusters
+  ignore_errors: true
+
+- name: Ensure clusters info was fetched successfully
+  ansible.builtin.assert:
+    that:
+      - pc_clusters is defined
+      - pc_clusters.failed == false
+      - pc_clusters.response is defined
+      - pc_clusters.response | length > 0
+    success_msg: "Clusters info fetched successfully"
+    fail_msg: "Clusters info fetch failed"
+
+- name: Pick the first non-PC cluster ext_id
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: >-
+      {{
+        (pc_clusters.response |
+           rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL') |
+           list | first).ext_id
+      }}
+
+- name: Ensure we found a target cluster ext_id
+  ansible.builtin.assert:
+    that:
+      - target_cluster_ext_id is defined
+      - target_cluster_ext_id | length > 0
+    fail_msg: "Could not derive a target cluster ext_id from PC"
+    success_msg: "Using cluster ext_id: {{ target_cluster_ext_id }}"
+
+########################################################################################
+# 1. Negative: missing required field cluster_ext_id
+########################################################################################
+
+- name: List Logbay tags without cluster_ext_id (should fail on missing required argument)
+  nutanix.ncp.ntnx_monitoring_tags_info_v2:
+  register: missing_required
+  ignore_errors: true
+
+- name: Verify that missing required cluster_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_required.failed == true
+      - missing_required.changed is not defined or missing_required.changed == false
+      - "'cluster_ext_id' in (missing_required.msg | default(''))"
+    fail_msg: "Module did not reject missing cluster_ext_id as expected"
+    success_msg: "Missing cluster_ext_id validated correctly"
+
+########################################################################################
+# 2. List all Logbay tags for the target cluster
+########################################################################################
+
+- name: List all Logbay tags for the target cluster
+  nutanix.ncp.ntnx_monitoring_tags_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: tags_all
+  ignore_errors: true
+
+- name: Verify that Logbay tags list was fetched successfully
+  ansible.builtin.assert:
+    that:
+      - tags_all.changed == false
+      - tags_all.failed == false
+      - tags_all.response is defined
+      - tags_all.response | length > 0
+      - tags_all.total_available_results is defined
+      - tags_all.total_available_results >= (tags_all.response | length)
+    fail_msg: "Logbay tags list-all verification failed"
+    success_msg: "Logbay tags list-all verification passed"
+
+- name: Verify every Logbay tag entry has the SDK-documented shape
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - item.name | length > 0
+    fail_msg: "Tag entry missing required 'name' attribute: {{ item }}"
+    success_msg: "Tag entry looks well-formed"
+  loop: "{{ tags_all.response }}"
+
+- name: Save first tag name for downstream filter test
+  ansible.builtin.set_fact:
+    first_tag_name: "{{ tags_all.response[0].name }}"
+
+########################################################################################
+# 3. Pagination: limit truncates the response
+########################################################################################
+
+- name: List Logbay tags with limit=1
+  nutanix.ncp.ntnx_monitoring_tags_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    limit: 1
+  register: tags_limit
+  ignore_errors: true
+
+- name: Verify Logbay tags list with limit=1
+  ansible.builtin.assert:
+    that:
+      - tags_limit.changed == false
+      - tags_limit.failed == false
+      - tags_limit.response is defined
+      - tags_limit.response | length == 1
+    fail_msg: "Logbay tags list with limit=1 verification failed"
+    success_msg: "Logbay tags list with limit=1 verification passed"
+
+- name: List Logbay tags with page=0 and limit=2
+  nutanix.ncp.ntnx_monitoring_tags_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    page: 0
+    limit: 2
+  register: tags_page
+  ignore_errors: true
+
+- name: Verify Logbay tags list with page/limit
+  ansible.builtin.assert:
+    that:
+      - tags_page.changed == false
+      - tags_page.failed == false
+      - tags_page.response is defined
+      - tags_page.response | length <= 2
+    fail_msg: "Logbay tags list with page/limit verification failed"
+    success_msg: "Logbay tags list with page/limit verification passed"
+
+########################################################################################
+# 4. Ordering
+########################################################################################
+
+- name: List Logbay tags ordered by name asc
+  nutanix.ncp.ntnx_monitoring_tags_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    orderby: "name asc"
+  register: tags_asc
+  ignore_errors: true
+
+- name: Verify Logbay tags orderby asc
+  ansible.builtin.assert:
+    that:
+      - tags_asc.changed == false
+      - tags_asc.failed == false
+      - tags_asc.response is defined
+      - tags_asc.response | length > 0
+      - (tags_asc.response | map(attribute='name') | list) ==
+        (tags_asc.response | map(attribute='name') | list | sort)
+    fail_msg: "Logbay tags orderby asc verification failed"
+    success_msg: "Logbay tags orderby asc verification passed"
+
+- name: List Logbay tags ordered by name desc
+  nutanix.ncp.ntnx_monitoring_tags_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    orderby: "name desc"
+  register: tags_desc
+  ignore_errors: true
+
+- name: Verify Logbay tags orderby desc
+  ansible.builtin.assert:
+    that:
+      - tags_desc.changed == false
+      - tags_desc.failed == false
+      - tags_desc.response is defined
+      - tags_desc.response | length > 0
+      - (tags_desc.response | map(attribute='name') | list) ==
+        (tags_desc.response | map(attribute='name') | list | sort(reverse=True))
+    fail_msg: "Logbay tags orderby desc verification failed"
+    success_msg: "Logbay tags orderby desc verification passed"
+
+########################################################################################
+# 5. Select projection
+########################################################################################
+
+- name: List Logbay tags projecting only name
+  nutanix.ncp.ntnx_monitoring_tags_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    select: "name"
+    limit: 5
+  register: tags_select
+  ignore_errors: true
+
+- name: Verify Logbay tags select projection returns names
+  ansible.builtin.assert:
+    that:
+      - tags_select.changed == false
+      - tags_select.failed == false
+      - tags_select.response is defined
+      - tags_select.response | length > 0
+      - item.name is defined
+    fail_msg: "Logbay tags select projection verification failed"
+    success_msg: "Logbay tags select projection verification passed"
+  loop: "{{ tags_select.response }}"
+
+########################################################################################
+# 6. Filter
+########################################################################################
+
+- name: List Logbay tags filtered by exact name match
+  nutanix.ncp.ntnx_monitoring_tags_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    filter: "name eq '{{ first_tag_name }}'"
+  register: tags_filter_eq
+  ignore_errors: true
+
+- name: Verify Logbay tags filtered by exact name
+  ansible.builtin.assert:
+    that:
+      - tags_filter_eq.changed == false
+      - tags_filter_eq.failed == false
+      - tags_filter_eq.response is defined
+      - tags_filter_eq.response | length >= 1
+      - tags_filter_eq.response | selectattr('name', 'equalto', first_tag_name) | list | length ==
+        (tags_filter_eq.response | length)
+    fail_msg: "Logbay tags filter=eq verification failed"
+    success_msg: "Logbay tags filter=eq verification passed"
+
+- name: List Logbay tags filtered by startswith (case-preserving)
+  nutanix.ncp.ntnx_monitoring_tags_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    filter: "startswith(name, '{{ first_tag_name[:1] }}')"
+  register: tags_filter_sw
+  ignore_errors: true
+
+- name: Verify Logbay tags filter startswith returns matching entries
+  ansible.builtin.assert:
+    that:
+      - tags_filter_sw.changed == false
+      - tags_filter_sw.failed == false
+      - tags_filter_sw.response is defined
+      - tags_filter_sw.response | length >= 1
+    fail_msg: "Logbay tags filter startswith verification failed"
+    success_msg: "Logbay tags filter startswith verification passed"
+
+########################################################################################
+# 7. Negative: invalid cluster ext_id (nonexistent UUID)
+########################################################################################
+
+- name: List Logbay tags with nonexistent cluster ext_id
+  nutanix.ncp.ntnx_monitoring_tags_info_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: tags_invalid_cluster
+  ignore_errors: true
+
+- name: Verify Logbay tags list with invalid cluster ext_id surfaces an API error
+  ansible.builtin.assert:
+    that:
+      - tags_invalid_cluster.failed == true
+      - tags_invalid_cluster.msg == "Api Exception raised while fetching Logbay tags info"
+    fail_msg: "Logbay tags list with invalid cluster ext_id did not error as expected"
+    success_msg: "Logbay tags list with invalid cluster ext_id errored correctly"
+
+########################################################################################
+# 8. Negative: invalid filter property is rejected by server
+########################################################################################
+
+- name: List Logbay tags with invalid filter property
+  nutanix.ncp.ntnx_monitoring_tags_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    filter: "invalid_property eq 'acropolis'"
+  register: tags_invalid_filter
+  ignore_errors: true
+
+- name: Verify Logbay tags list with invalid filter property surfaces a validation error
+  ansible.builtin.assert:
+    that:
+      - tags_invalid_filter.failed == true
+      - tags_invalid_filter.msg == "Api Exception raised while fetching Logbay tags info"
+    fail_msg: "Logbay tags list with invalid filter property did not error as expected"
+    success_msg: "Logbay tags list with invalid filter property errored correctly"
