@@ -1,0 +1,20 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+[WARNING]: Found variable using reserved name: port
+Using /tmp/ansible.cfg as config file
+
+PLAY [GlobalReportSetting playbook] ********************************************
+
+TASK [Discover the admin user's ext_id] ****************************************
+ok: [localhost] => {"changed": false, "error": null, "response": [{"additional_attributes": null, "buckets_access_keys": null, "created_by": "00000000-0000-0000-0000-000000000000", "created_time": "2026-06-29T07:01:40.666580+00:00", "creation_type": null, "default_landing_page_path": null, "description": "", "display_name": "admin", "email_id": "", "ext_id": "00000000-0000-0000-0000-000000000000", "first_name": "admin", "hasObjectKeys": false, "idp_id": "d607d664-cc19-559f-a95c-4e8b4b7f6606", "is_force_reset_password_enabled": false, "last_login_time": "2026-07-21T07:39:25.068329+00:00", "last_name": "", "last_updated_by": "00000000-0000-0000-0000-000000000000", "last_updated_time": "2026-06-29T07:27:11.035361+00:00", "links": null, "locale": "en-US", "middle_initial": "", "password": null, "region": "en-US", "status": "ACTIVE", "tenant_id": "59d5de78-a964-5746-8c6e-677c4c7a79df", "user_type": "LOCAL", "username": "admin"}], "total_available_results": 1}
+
+TASK [Set the user_ext_id used by GlobalReportSetting] *************************
+ok: [localhost] => {"ansible_facts": {"admin_user_ext_id": "00000000-0000-0000-0000-000000000000"}, "changed": false}
+
+TASK [Get the current global report setting for the admin user] ****************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching global report setting for user ext_id", "response": {"message": "The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again."}, "status": 404}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=2    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0   
+

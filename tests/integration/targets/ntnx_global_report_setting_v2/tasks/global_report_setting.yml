@@ -1,0 +1,491 @@
+---
+############################################################
+# Test plan for ncm_operation_base_platform GlobalReportSetting v4 modules
+#
+# Modules under test:
+#   - ntnx_global_report_setting_v2       (CRUD; only Update supported by SDK)
+#   - ntnx_global_report_settings_info_v2 (Info; Get-by-user only)
+#
+# Coverage:
+#   1. Discover the admin user's ext_id (used as userExtId path parameter).
+#   2. Save the current setting so we can restore it at teardown.
+#   3. Info: get-by-user succeeds; missing user_ext_id fails required-param check.
+#   4. CRUD check_mode: exactly one check_mode update with ALL attributes.
+#   5. CRUD real update with minimum attributes (only name).
+#   6. CRUD real update with ALL attributes (retention, notification, customization).
+#   7. Info after full update to assert persisted state.
+#   8. State transition update (change retention scheme, add extra recipient, tweak HTML).
+#   9. Idempotency: re-run the same update and assert changed=false + skipped message.
+#   10. Negative: missing required `name`, missing required `user_ext_id`,
+#       invalid enum value in `recipient_formats`, unsupported `state=absent`.
+#   11. Restore the original setting.
+############################################################
+
+- name: Start GlobalReportSetting integration tests
+  ansible.builtin.debug:
+    msg: Start GlobalReportSetting integration tests
+
+- name: Generate random suffix to avoid collisions
+  ansible.builtin.set_fact:
+    grs_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+
+- name: Compute test-specific resource names
+  ansible.builtin.set_fact:
+    grs_full_name: "grs_full_{{ grs_suffix }}"
+    grs_min_name: "grs_min_{{ grs_suffix }}"
+    grs_transition_name: "grs_transition_{{ grs_suffix }}"
+
+########################################################################################
+# 1. Discover the admin user's ext_id
+########################################################################################
+
+- name: Discover the admin user's ext_id
+  nutanix.ncp.ntnx_users_info_v2:
+    filter: "username eq 'admin'"
+  register: users_lookup
+  ignore_errors: true
+
+- name: Assert admin user lookup succeeded
+  ansible.builtin.assert:
+    that:
+      - users_lookup is defined
+      - users_lookup.failed == false
+      - users_lookup.changed == false
+      - users_lookup.response is defined
+      - users_lookup.response | length > 0
+      - users_lookup.response[0].ext_id is defined
+    success_msg: "Discovered the admin user's ext_id."
+    fail_msg: "Failed to discover the admin user's ext_id."
+
+- name: Set admin_user_ext_id
+  ansible.builtin.set_fact:
+    admin_user_ext_id: "{{ users_lookup.response[0].ext_id }}"
+
+########################################################################################
+# 2. Snapshot the current global report setting so we can restore it
+########################################################################################
+
+- name: Fetch original global report setting (before test mutations)
+  nutanix.ncp.ntnx_global_report_settings_info_v2:
+    user_ext_id: "{{ admin_user_ext_id }}"
+  register: original_setting
+  ignore_errors: true
+
+- name: Assert original setting fetch succeeded
+  ansible.builtin.assert:
+    that:
+      - original_setting is defined
+      - original_setting.failed == false
+      - original_setting.changed == false
+      - original_setting.response is defined
+      - original_setting.response.name is defined
+      - original_setting.user_ext_id == admin_user_ext_id
+    success_msg: "Fetched original global report setting for restoration."
+    fail_msg: "Failed to fetch original global report setting."
+
+- name: Remember original name for restore step
+  ansible.builtin.set_fact:
+    original_name: "{{ original_setting.response.name }}"
+    original_retention: "{{ original_setting.response.retention_config | default(omit) }}"
+    original_notification: "{{ original_setting.response.notification_policy | default(omit) }}"
+    original_customization: "{{ original_setting.response.report_customization | default(omit) }}"
+
+########################################################################################
+# 3. Info module coverage
+########################################################################################
+
+- name: Info - fetch global report setting using user_ext_id
+  nutanix.ncp.ntnx_global_report_settings_info_v2:
+    user_ext_id: "{{ admin_user_ext_id }}"
+  register: info_by_user
+  ignore_errors: true
+
+- name: Info - assert single entity fetched by user_ext_id
+  ansible.builtin.assert:
+    that:
+      - info_by_user is defined
+      - info_by_user.failed == false
+      - info_by_user.changed == false
+      - info_by_user.response is defined
+      - info_by_user.response.name is defined
+      - info_by_user.user_ext_id == admin_user_ext_id
+    success_msg: "Info module returned the expected singleton setting."
+    fail_msg: "Info module did not return the expected singleton setting."
+
+- name: Info - required user_ext_id missing (negative)  # noqa: args
+  nutanix.ncp.ntnx_global_report_settings_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: info_missing_required
+  ignore_errors: true
+
+- name: Info - assert missing user_ext_id fails with clear message
+  ansible.builtin.assert:
+    that:
+      - info_missing_required is defined
+      - info_missing_required.failed == true
+      - info_missing_required.changed == false
+      - info_missing_required.msg is defined
+      - "'user_ext_id' in info_missing_required.msg"
+    success_msg: "Info module rejected request missing required user_ext_id."
+    fail_msg: "Info module accepted request missing required user_ext_id."
+
+- name: Info - invalid user_ext_id (negative)
+  nutanix.ncp.ntnx_global_report_settings_info_v2:
+    user_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: info_bad_user
+  ignore_errors: true
+
+- name: Info - assert invalid user_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - info_bad_user is defined
+      - info_bad_user.failed == true
+      - info_bad_user.changed == false
+    success_msg: "Info module rejected an invalid user_ext_id."
+    fail_msg: "Info module accepted an invalid user_ext_id."
+
+########################################################################################
+# 4. CRUD check_mode: exactly ONE check_mode update covering ALL attributes
+########################################################################################
+
+- name: CRUD - check_mode update with ALL attributes
+  nutanix.ncp.ntnx_global_report_setting_v2:
+    state: present
+    user_ext_id: "{{ admin_user_ext_id }}"
+    name: "{{ grs_full_name }}"
+    retention_config:
+      retention_count: 7
+    notification_policy:
+      recipients:
+        - email_address: "reports@example.com"
+          recipient_name: "Reports Owner"
+        - email_address: "ops@example.com"
+          recipient_name: "Ops"
+      recipient_formats:
+        - PDF
+        - CSV
+      email_subject: "Weekly report - check mode"
+      email_body: "Body sent in check mode."
+    report_customization:
+      header_html: "<h1>Header check</h1>"
+      footer_html: "<p>Footer check</p>"
+      css_style_sheet: "body { color: darkgray; }"
+  check_mode: true
+  register: check_mode_update
+  ignore_errors: true
+
+- name: CRUD - assert check_mode update generated the expected spec
+  ansible.builtin.assert:
+    that:
+      - check_mode_update is defined
+      - check_mode_update.failed == false
+      - check_mode_update.changed == false
+      - check_mode_update.response is defined
+      - check_mode_update.response.name == grs_full_name
+      - check_mode_update.response.retention_config.retention_count == 7
+      - check_mode_update.response.notification_policy.recipients | length == 2
+      - check_mode_update.response.notification_policy.recipients[0].email_address == "reports@example.com"
+      - check_mode_update.response.notification_policy.recipients[0].recipient_name == "Reports Owner"
+      - check_mode_update.response.notification_policy.recipients[1].email_address == "ops@example.com"
+      - check_mode_update.response.notification_policy.recipient_formats | length == 2
+      - "'PDF' in check_mode_update.response.notification_policy.recipient_formats"
+      - "'CSV' in check_mode_update.response.notification_policy.recipient_formats"
+      - check_mode_update.response.notification_policy.email_subject == "Weekly report - check mode"
+      - check_mode_update.response.notification_policy.email_body == "Body sent in check mode."
+      - check_mode_update.response.report_customization.header_html == "<h1>Header check</h1>"
+      - check_mode_update.response.report_customization.footer_html == "<p>Footer check</p>"
+      - check_mode_update.response.report_customization.css_style_sheet == "body { color: darkgray; }"
+      - check_mode_update.user_ext_id == admin_user_ext_id
+    success_msg: "check_mode update generated the expected spec."
+    fail_msg: "check_mode update did not generate the expected spec."
+
+########################################################################################
+# 5. CRUD real update with the minimum set of attributes
+########################################################################################
+
+- name: CRUD - update with minimum attributes (only name)
+  nutanix.ncp.ntnx_global_report_setting_v2:
+    state: present
+    user_ext_id: "{{ admin_user_ext_id }}"
+    name: "{{ grs_min_name }}"
+  register: min_update
+  ignore_errors: true
+
+- name: CRUD - assert minimum-attributes update succeeded
+  ansible.builtin.assert:
+    that:
+      - min_update is defined
+      - min_update.failed == false
+      - min_update.changed == true
+      - min_update.response is defined
+      - min_update.response.name == grs_min_name
+      - min_update.user_ext_id == admin_user_ext_id
+    success_msg: "Minimum-attributes update applied successfully."
+    fail_msg: "Minimum-attributes update failed."
+
+########################################################################################
+# 6. CRUD real update with ALL attributes
+########################################################################################
+
+- name: CRUD - update with ALL attributes
+  nutanix.ncp.ntnx_global_report_setting_v2:
+    state: present
+    user_ext_id: "{{ admin_user_ext_id }}"
+    name: "{{ grs_full_name }}"
+    retention_config:
+      retention_count: 5
+    notification_policy:
+      recipients:
+        - email_address: "reports@example.com"
+          recipient_name: "Reports Owner"
+      recipient_formats:
+        - PDF
+        - CSV
+      email_subject: "Weekly report"
+      email_body: "Please find the attached reports."
+    report_customization:
+      header_html: "<h1>Nutanix reports</h1>"
+      footer_html: "<p>Copyright Nutanix</p>"
+      css_style_sheet: "body { font-family: Arial; }"
+  register: full_update
+  ignore_errors: true
+
+- name: CRUD - assert full-attributes update succeeded
+  ansible.builtin.assert:
+    that:
+      - full_update is defined
+      - full_update.failed == false
+      - full_update.changed == true
+      - full_update.response is defined
+      - full_update.response.name == grs_full_name
+      - full_update.response.retention_config.retention_count == 5
+      - full_update.response.notification_policy.recipients | length == 1
+      - full_update.response.notification_policy.recipients[0].email_address == "reports@example.com"
+      - full_update.response.notification_policy.recipients[0].recipient_name == "Reports Owner"
+      - full_update.response.notification_policy.recipient_formats | length == 2
+      - "'PDF' in full_update.response.notification_policy.recipient_formats"
+      - "'CSV' in full_update.response.notification_policy.recipient_formats"
+      - full_update.response.notification_policy.email_subject == "Weekly report"
+      - full_update.response.notification_policy.email_body == "Please find the attached reports."
+      - full_update.response.report_customization.header_html == "<h1>Nutanix reports</h1>"
+      - full_update.response.report_customization.footer_html == "<p>Copyright Nutanix</p>"
+      - full_update.response.report_customization.css_style_sheet == "body { font-family: Arial; }"
+      - full_update.user_ext_id == admin_user_ext_id
+    success_msg: "Full-attributes update applied successfully."
+    fail_msg: "Full-attributes update failed."
+
+########################################################################################
+# 7. Info after update
+########################################################################################
+
+- name: Info - re-fetch after the full update
+  nutanix.ncp.ntnx_global_report_settings_info_v2:
+    user_ext_id: "{{ admin_user_ext_id }}"
+  register: after_full_update
+  ignore_errors: true
+
+- name: Info - assert the persisted setting matches the update payload
+  ansible.builtin.assert:
+    that:
+      - after_full_update is defined
+      - after_full_update.failed == false
+      - after_full_update.changed == false
+      - after_full_update.response.name == grs_full_name
+      - after_full_update.response.retention_config.retention_count == 5
+      - after_full_update.response.notification_policy.recipients | length == 1
+      - after_full_update.response.notification_policy.recipients[0].email_address == "reports@example.com"
+      - after_full_update.response.notification_policy.recipient_formats | length == 2
+      - "'PDF' in after_full_update.response.notification_policy.recipient_formats"
+      - "'CSV' in after_full_update.response.notification_policy.recipient_formats"
+      - after_full_update.response.notification_policy.email_subject == "Weekly report"
+      - after_full_update.response.report_customization.header_html == "<h1>Nutanix reports</h1>"
+      - after_full_update.response.report_customization.footer_html == "<p>Copyright Nutanix</p>"
+    success_msg: "Persisted global report setting matches the update payload."
+    fail_msg: "Persisted global report setting does not match the update payload."
+
+########################################################################################
+# 8. State transition update — change scalars, enum list, and add a recipient
+########################################################################################
+
+- name: CRUD - state transition update (change retention scheme, tweak content)
+  nutanix.ncp.ntnx_global_report_setting_v2:
+    state: present
+    user_ext_id: "{{ admin_user_ext_id }}"
+    name: "{{ grs_transition_name }}"
+    retention_config:
+      retention_period_seconds: 259200
+    notification_policy:
+      recipients:
+        - email_address: "reports@example.com"
+          recipient_name: "Reports Owner"
+        - email_address: "ops@example.com"
+          recipient_name: "Ops Team"
+      recipient_formats:
+        - PDF
+      email_subject: "Updated report subject"
+      email_body: "Updated report body."
+    report_customization:
+      header_html: "<h2>Updated header</h2>"
+      footer_html: "<p>Updated footer</p>"
+      css_style_sheet: "body { font-family: Helvetica; }"
+  register: transition_update
+  ignore_errors: true
+
+- name: CRUD - assert state transition update took effect
+  ansible.builtin.assert:
+    that:
+      - transition_update is defined
+      - transition_update.failed == false
+      - transition_update.changed == true
+      - transition_update.response.name == grs_transition_name
+      - transition_update.response.retention_config.retention_period_seconds == 259200
+      - transition_update.response.notification_policy.recipients | length == 2
+      - transition_update.response.notification_policy.recipients[1].email_address == "ops@example.com"
+      - transition_update.response.notification_policy.recipient_formats | length == 1
+      - transition_update.response.notification_policy.recipient_formats[0] == "PDF"
+      - transition_update.response.notification_policy.email_subject == "Updated report subject"
+      - transition_update.response.report_customization.header_html == "<h2>Updated header</h2>"
+    success_msg: "State transition update applied successfully."
+    fail_msg: "State transition update did not apply."
+
+########################################################################################
+# 9. Idempotency: re-run the same update, expect no changes
+########################################################################################
+
+- name: CRUD - idempotency (same payload as transition update)
+  nutanix.ncp.ntnx_global_report_setting_v2:
+    state: present
+    user_ext_id: "{{ admin_user_ext_id }}"
+    name: "{{ grs_transition_name }}"
+    retention_config:
+      retention_period_seconds: 259200
+    notification_policy:
+      recipients:
+        - email_address: "reports@example.com"
+          recipient_name: "Reports Owner"
+        - email_address: "ops@example.com"
+          recipient_name: "Ops Team"
+      recipient_formats:
+        - PDF
+      email_subject: "Updated report subject"
+      email_body: "Updated report body."
+    report_customization:
+      header_html: "<h2>Updated header</h2>"
+      footer_html: "<p>Updated footer</p>"
+      css_style_sheet: "body { font-family: Helvetica; }"
+  register: idempotent_update
+  ignore_errors: true
+
+- name: CRUD - assert idempotent update reports no change
+  ansible.builtin.assert:
+    that:
+      - idempotent_update is defined
+      - idempotent_update.failed == false
+      - idempotent_update.changed == false
+      - idempotent_update.skipped == true
+      - idempotent_update.msg is defined
+      - "'already matches' in idempotent_update.msg"
+    success_msg: "Idempotent update reported no change as expected."
+    fail_msg: "Idempotent update did not report skipped."
+
+########################################################################################
+# 10. Negative tests
+########################################################################################
+
+- name: CRUD - missing required `name` (negative)
+  nutanix.ncp.ntnx_global_report_setting_v2:
+    state: present
+    user_ext_id: "{{ admin_user_ext_id }}"
+  register: missing_name
+  ignore_errors: true
+
+- name: CRUD - assert missing name fails
+  ansible.builtin.assert:
+    that:
+      - missing_name is defined
+      - missing_name.failed == true
+      - missing_name.changed == false
+      - missing_name.msg is defined
+      - "'name' in missing_name.msg"
+    success_msg: "CRUD rejected update missing required name."
+    fail_msg: "CRUD accepted update missing required name."
+
+- name: CRUD - missing required `user_ext_id` (negative)  # noqa: args
+  nutanix.ncp.ntnx_global_report_setting_v2:
+    state: present
+    name: "grs_missing_user"
+  register: missing_user_ext_id
+  ignore_errors: true
+
+- name: CRUD - assert missing user_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - missing_user_ext_id is defined
+      - missing_user_ext_id.failed == true
+      - missing_user_ext_id.changed == false
+      - missing_user_ext_id.msg is defined
+      - "'user_ext_id' in missing_user_ext_id.msg"
+    success_msg: "CRUD rejected update missing required user_ext_id."
+    fail_msg: "CRUD accepted update missing required user_ext_id."
+
+- name: CRUD - invalid recipient_formats enum (negative)  # noqa: args
+  nutanix.ncp.ntnx_global_report_setting_v2:
+    state: present
+    user_ext_id: "{{ admin_user_ext_id }}"
+    name: "grs_bad_enum"
+    notification_policy:
+      recipients:
+        - email_address: "reports@example.com"
+      recipient_formats:
+        - INVALID
+  register: bad_enum
+  ignore_errors: true
+
+- name: CRUD - assert invalid enum is rejected
+  ansible.builtin.assert:
+    that:
+      - bad_enum is defined
+      - bad_enum.failed == true
+      - bad_enum.changed == false
+      - bad_enum.msg is defined
+      - "'INVALID' in (bad_enum.msg | string) or 'value of recipient_formats' in (bad_enum.msg | string) or 'is not one of' in (bad_enum.msg | string)"
+    success_msg: "CRUD rejected an invalid recipient_formats enum value."
+    fail_msg: "CRUD accepted an invalid recipient_formats enum value."
+
+- name: CRUD - unsupported state=absent (negative)
+  nutanix.ncp.ntnx_global_report_setting_v2:
+    state: absent
+    user_ext_id: "{{ admin_user_ext_id }}"
+  register: unsupported_absent
+  ignore_errors: true
+
+- name: CRUD - assert state=absent is rejected with a clear message
+  ansible.builtin.assert:
+    that:
+      - unsupported_absent is defined
+      - unsupported_absent.failed == true
+      - unsupported_absent.changed == false
+      - unsupported_absent.msg is defined
+      - "'not supported' in unsupported_absent.msg"
+    success_msg: "CRUD rejected unsupported state=absent with a clear message."
+    fail_msg: "CRUD accepted unsupported state=absent."
+
+########################################################################################
+# 11. Restore the original setting so subsequent test runs are stable
+########################################################################################
+
+- name: Restore original global report setting name
+  nutanix.ncp.ntnx_global_report_setting_v2:
+    state: present
+    user_ext_id: "{{ admin_user_ext_id }}"
+    name: "{{ original_name }}"
+  register: restore_result
+  ignore_errors: true
+
+- name: Assert restore step reported success
+  ansible.builtin.assert:
+    that:
+      - restore_result is defined
+      - restore_result.failed == false
+    success_msg: "Original global report setting was restored."
+    fail_msg: "Failed to restore the original global report setting."
