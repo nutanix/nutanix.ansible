@@ -106,3 +106,15 @@ def get_kms_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_security_py_client.KeyManagementServersApi(client)
+
+
+def get_credentials_api_instance(module):
+    """
+    This method will return Credentials Api instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Credentials api instance
+    """
+    client = get_api_client(module)
+    return ntnx_security_py_client.CredentialsApi(client)
