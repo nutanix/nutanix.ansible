@@ -1,0 +1,274 @@
+---
+# Test plan for ntnx_layer2_stretch_stats_info_v2
+#
+# Scope: this module is a read-only stats info module — the underlying v4 API
+# is /api/networking/v4.3/stats/layer2-stretches/{extId} which returns
+# time-series stats for a Layer2 Stretch identified by ext_id.
+#
+# There is no CRUD API in the SDK's stats surface (creation of a Layer2 Stretch
+# is a multi-step Flow Virtual Networking workflow that needs local + remote
+# gateways + VPN and is out of scope for a stats module's tests). To exercise
+# the happy paths we look up existing Layer2 Stretches on the target cluster
+# via ansible.builtin.uri.
+#
+# Scenarios covered:
+#   * Look up existing Layer2 Stretches on the cluster; register any ext_ids.
+#   * check_mode: fetch stats with all attributes — module does not support
+#     check_mode so this should fail predictably.
+#   * Happy path (only if a Layer2 Stretch exists on the cluster):
+#       - Fetch with only required attributes
+#       - Fetch with all attributes
+#       - Fetch with each valid stat_type enum value
+#   * Argument validation (module-level):
+#       - Missing required ext_id  -> failed
+#       - Missing required start_time -> failed
+#       - Missing required end_time -> failed
+#       - Invalid stat_type choice -> failed
+#   * Negative API path:
+#       - Non-existent ext_id -> API exception surfaced via failed + error/msg
+
+- name: "Generate a random suffix for this run"
+  ansible.builtin.set_fact:
+    l2_stretch_run_suffix: "{{ 999999 | random | string }}"
+
+- name: "Compute end time (now) in ISO-8601 with milliseconds"
+  ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: l2_stretch_end_time
+  changed_when: false
+
+- name: "Compute start time (5 minutes ago) in ISO-8601 with milliseconds"
+  ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: l2_stretch_start_time
+  changed_when: false
+
+- name: "List existing Layer2 Stretches on the cluster to use as prerequisite"
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port | default(9440) }}/api/networking/v4.3/config/layer2-stretches?$limit=1"
+    method: GET
+    force_basic_auth: true
+    url_username: "{{ username }}"
+    url_password: "{{ password }}"
+    validate_certs: "{{ validate_certs | default(false) }}"
+    status_code: [200, 204]
+    return_content: true
+    headers:
+      Accept: "application/json"
+  register: layer2_stretch_list
+  ignore_errors: true
+
+- name: "Register whether an existing Layer2 Stretch was found"
+  ansible.builtin.set_fact:
+    l2_stretch_ext_id: "{{ (layer2_stretch_list.json.data[0].extId
+                        | default(layer2_stretch_list.json.data[0].ext_id, true))
+                        if (layer2_stretch_list is defined
+                            and layer2_stretch_list.json is defined
+                            and (layer2_stretch_list.json.data | default([]) | length) > 0)
+                        else '' }}"
+
+- name: "Report whether an existing Layer2 Stretch was found"
+  ansible.builtin.debug:
+    msg: "Existing Layer2 Stretch ext_id: {{ l2_stretch_ext_id if l2_stretch_ext_id else 'NONE FOUND (happy-path tests will be skipped)' }}"
+
+################################################################################
+# check_mode — the module declares supports_check_mode=False; verify we get a
+# clear failure rather than silently passing.
+################################################################################
+
+- name: "Check_mode: fetch Layer2 Stretch stats with all attributes"
+  nutanix.ncp.ntnx_layer2_stretch_stats_info_v2:
+    ext_id: "{{ l2_stretch_ext_id if l2_stretch_ext_id else '00000000-0000-0000-0000-000000000000' }}"
+    start_time: "{{ l2_stretch_start_time.stdout }}"
+    end_time: "{{ l2_stretch_end_time.stdout }}"
+    sampling_interval: 30
+    stat_type: AVG
+    page: 0
+    limit: 50
+    select: "*"
+  check_mode: true
+  register: check_mode_result
+  ignore_errors: true
+
+- name: "Assert check_mode task did not report success (module does not support check mode)"
+  ansible.builtin.assert:
+    that:
+      - check_mode_result.changed == false
+      - check_mode_result.failed == true
+      - check_mode_result.msg is defined
+    fail_msg: "check_mode should not silently succeed for a stats info module"
+    success_msg: "check_mode correctly rejected (module does not support check_mode)"
+
+################################################################################
+# Argument-spec validation tests
+################################################################################
+
+- name: "Argument validation: missing required ext_id"
+  nutanix.ncp.ntnx_layer2_stretch_stats_info_v2:
+    start_time: "{{ l2_stretch_start_time.stdout }}"
+    end_time: "{{ l2_stretch_end_time.stdout }}"
+  register: missing_ext_id
+  ignore_errors: true
+
+- name: "Assert missing ext_id fails with descriptive error"
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id.failed == true
+      - missing_ext_id.changed == false
+      - "'ext_id' in (missing_ext_id.msg | default(''))"
+    fail_msg: "Missing ext_id should have failed validation"
+    success_msg: "Missing ext_id correctly rejected"
+
+- name: "Argument validation: missing required start_time"
+  nutanix.ncp.ntnx_layer2_stretch_stats_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    end_time: "{{ l2_stretch_end_time.stdout }}"
+  register: missing_start_time
+  ignore_errors: true
+
+- name: "Assert missing start_time fails with descriptive error"
+  ansible.builtin.assert:
+    that:
+      - missing_start_time.failed == true
+      - missing_start_time.changed == false
+      - "'start_time' in (missing_start_time.msg | default(''))"
+    fail_msg: "Missing start_time should have failed validation"
+    success_msg: "Missing start_time correctly rejected"
+
+- name: "Argument validation: missing required end_time"
+  nutanix.ncp.ntnx_layer2_stretch_stats_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ l2_stretch_start_time.stdout }}"
+  register: missing_end_time
+  ignore_errors: true
+
+- name: "Assert missing end_time fails with descriptive error"
+  ansible.builtin.assert:
+    that:
+      - missing_end_time.failed == true
+      - missing_end_time.changed == false
+      - "'end_time' in (missing_end_time.msg | default(''))"
+    fail_msg: "Missing end_time should have failed validation"
+    success_msg: "Missing end_time correctly rejected"
+
+- name: "Argument validation: invalid stat_type choice"
+  nutanix.ncp.ntnx_layer2_stretch_stats_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ l2_stretch_start_time.stdout }}"
+    end_time: "{{ l2_stretch_end_time.stdout }}"
+    stat_type: BOGUS_AGG
+  register: bad_stat_type
+  ignore_errors: true
+
+- name: "Assert invalid stat_type is rejected by choices validation"
+  ansible.builtin.assert:
+    that:
+      - bad_stat_type.failed == true
+      - bad_stat_type.changed == false
+      - "'stat_type' in (bad_stat_type.msg | default(''))
+         or 'value of stat_type must be one of' in (bad_stat_type.msg | default(''))"
+    fail_msg: "Invalid stat_type must be rejected by choices validation"
+    success_msg: "Invalid stat_type correctly rejected"
+
+################################################################################
+# Negative API test: non-existent ext_id must surface a clear API failure
+################################################################################
+
+- name: "Negative: fetch stats for a non-existent Layer2 Stretch ext_id"
+  nutanix.ncp.ntnx_layer2_stretch_stats_info_v2:
+    ext_id: "deadbeef-{{ l2_stretch_run_suffix | int | string }}-4dea-8dea-000000000000"
+    start_time: "{{ l2_stretch_start_time.stdout }}"
+    end_time: "{{ l2_stretch_end_time.stdout }}"
+  register: bad_ext_id
+  ignore_errors: true
+
+- name: "Assert non-existent ext_id triggers failure with error info"
+  ansible.builtin.assert:
+    that:
+      - bad_ext_id.failed == true
+      - bad_ext_id.changed == false
+    fail_msg: "Non-existent ext_id must trigger a failure"
+    success_msg: "Non-existent ext_id correctly triggers a failure"
+
+################################################################################
+# Happy-path tests (only run if we found an existing Layer2 Stretch)
+################################################################################
+
+- name: "Run happy-path Layer2 Stretch stats tests"
+  when: l2_stretch_ext_id | length > 0
+  block:
+    - name: "Fetch Layer2 Stretch stats with required attributes only"
+      nutanix.ncp.ntnx_layer2_stretch_stats_info_v2:
+        ext_id: "{{ l2_stretch_ext_id }}"
+        start_time: "{{ l2_stretch_start_time.stdout }}"
+        end_time: "{{ l2_stretch_end_time.stdout }}"
+      register: stats_required_only
+      ignore_errors: true
+
+    - name: "Assert Layer2 Stretch stats fetched successfully (required only)"
+      ansible.builtin.assert:
+        that:
+          - stats_required_only.changed == false
+          - stats_required_only.failed == false
+          - stats_required_only.ext_id == l2_stretch_ext_id
+          - stats_required_only.response is defined
+        fail_msg: "Failed fetching Layer2 Stretch stats with only required attributes"
+        success_msg: "Fetched Layer2 Stretch stats with only required attributes"
+
+    - name: "Fetch Layer2 Stretch stats with ALL attributes"
+      nutanix.ncp.ntnx_layer2_stretch_stats_info_v2:
+        ext_id: "{{ l2_stretch_ext_id }}"
+        start_time: "{{ l2_stretch_start_time.stdout }}"
+        end_time: "{{ l2_stretch_end_time.stdout }}"
+        sampling_interval: 30
+        stat_type: AVG
+        page: 0
+        limit: 50
+        select: "*"
+      register: stats_full
+      ignore_errors: true
+
+    - name: "Assert Layer2 Stretch stats fetched successfully (all attributes)"
+      ansible.builtin.assert:
+        that:
+          - stats_full.changed == false
+          - stats_full.failed == false
+          - stats_full.ext_id == l2_stretch_ext_id
+          - stats_full.response is defined
+        fail_msg: "Failed fetching Layer2 Stretch stats with all attributes"
+        success_msg: "Fetched Layer2 Stretch stats with all attributes"
+
+    - name: "Fetch Layer2 Stretch stats for every valid stat_type"
+      nutanix.ncp.ntnx_layer2_stretch_stats_info_v2:
+        ext_id: "{{ l2_stretch_ext_id }}"
+        start_time: "{{ l2_stretch_start_time.stdout }}"
+        end_time: "{{ l2_stretch_end_time.stdout }}"
+        sampling_interval: 30
+        stat_type: "{{ item }}"
+      loop:
+        - SUM
+        - MIN
+        - MAX
+        - AVG
+        - COUNT
+        - LAST
+      register: stats_all_types
+      ignore_errors: true
+
+    - name: "Assert each stat_type variant returned data cleanly"
+      ansible.builtin.assert:
+        that:
+          - item.changed == false
+          - item.failed == false
+          - item.ext_id == l2_stretch_ext_id
+          - item.response is defined
+        fail_msg: "Failed fetching Layer2 Stretch stats with stat_type={{ item.item }}"
+        success_msg: "Fetched Layer2 Stretch stats with stat_type={{ item.item }}"
+      loop: "{{ stats_all_types.results }}"
+      loop_control:
+        label: "stat_type={{ item.item }}"
+
+- name: "Skip happy-path assertions when no Layer2 Stretch exists on the cluster"
+  when: l2_stretch_ext_id | length == 0
+  ansible.builtin.debug:
+    msg: >-
+      No Layer2 Stretch was found on the target Prism Central; happy-path
+      stats tests were skipped. Only validation and negative tests ran.
