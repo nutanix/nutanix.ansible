@@ -131,3 +131,20 @@ def get_ova_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_vmm_py_client.OvasApi(api_client=api_client)
+
+
+def get_vm_host_affinity_policies_api_instance(module):
+    """
+    This method will return VmHostAffinityPolicies API instance which owns
+    both the parent VM-host affinity policy CRUD endpoints and the read-only
+    ``list_vm_host_affinity_policy_vm_compliance_states`` list endpoint used
+    by the VmHostAffinityPolicyVmComplianceState info module.
+
+    Args:
+        module: Ansible module object
+
+    Returns:
+        api_instance (obj): v4 VmHostAffinityPoliciesApi instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.VmHostAffinityPoliciesApi(api_client=api_client)

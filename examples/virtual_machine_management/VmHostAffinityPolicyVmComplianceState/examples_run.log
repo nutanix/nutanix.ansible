@@ -1,0 +1,40 @@
+# ============================================================================
+# examples_run.log for ntnx_vm_host_affinity_policy_vm_compliance_states_info_v2
+# ============================================================================
+# Command:
+#   ansible-playbook -i localhost, --connection=local \
+#     examples/virtual_machine_management/VmHostAffinityPolicyVmComplianceState/vm_host_affinity_policy_vm_compliance_states.yml \
+#     -e vm_host_affinity_policy_ext_id=2bee42ba-d853-4967-6149-7f0b69e211f4 -v
+#
+# Environment:
+#   NUTANIX_HOST=10.44.76.28
+#   NUTANIX_USERNAME=admin
+#   NUTANIX_PORT=9440
+#   Parent VM-host affinity policy ext_id (bootstrapped for this run,
+#   then torn down afterwards): 2bee42ba-d853-4967-6149-7f0b69e211f4
+#
+# NB: because the parent policy was freshly created for this example run,
+# no VMs had been placed against it yet, so the compliance state list is
+# empty ([]). That is the correct API behavior for a policy with no matched
+# VMs; the module still returns the response list, total_available_results
+# and vm_host_affinity_policy_ext_id fields, and changed is false.
+# ============================================================================
+No config file found; using defaults
+
+PLAY [VmHostAffinityPolicyVmComplianceState info playbook] *********************
+
+TASK [Setting variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"vm_host_affinity_policy_ext_id": "2bee42ba-d853-4967-6149-7f0b69e211f4"}, "changed": false}
+
+TASK [List all VM compliance states of a VM-host affinity policy] **************
+ok: [localhost] => {"ansible_facts": {"discovered_interpreter_python": "/usr/libexec/platform-python"}, "changed": false, "response": [], "total_available_results": 0, "vm_host_affinity_policy_ext_id": "2bee42ba-d853-4967-6149-7f0b69e211f4"}
+
+TASK [Paginate the VM compliance states of a VM-host affinity policy] **********
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0, "vm_host_affinity_policy_ext_id": "2bee42ba-d853-4967-6149-7f0b69e211f4"}
+
+TASK [Fetch a specific VM compliance state by ext_id] **************************
+skipping: [localhost] => {"changed": false, "false_condition": "(all_compliance_states.response | length) > 0", "skip_reason": "Conditional result was False"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+
