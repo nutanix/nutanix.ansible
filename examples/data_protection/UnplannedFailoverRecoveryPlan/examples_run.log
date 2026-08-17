@@ -1,0 +1,21 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [UnplannedFailoverRecoveryPlan playbook] **********************************
+
+TASK [Set variables for unplanned failover recovery plan] **********************
+ok: [localhost] => {"ansible_facts": {"recovery_plan_ext_id": "6f4ffcee-1dc4-4982-9401-aa1f65dd7177", "source_cluster_ext_id": "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2", "source_domain_manager_ext_id": "63bebabf-744c-48ff-a6d7-cb028707f972", "target_cluster_ext_id": "00062899-58d4-9d37-185b-ac1f6b6f97e2", "target_domain_manager_ext_id": "97da301d-0a8b-4334-94cd-16a83563218e"}, "changed": false}
+
+TASK [Trigger unplanned failover with minimum required fields] *****************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while triggering unplanned failover on recovery plan", "response": {"data": {"$objectType": "dataprotection.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "dataprotection.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "argumentsMap": {"reason": "Entity with external identifier 6f4ffcee-1dc4-4982-9401-aa1f65dd7177 does not exist"}, "code": "DP-10400", "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR", "locale": "en_US", "message": "The request failed as one or more entities do not exist - Entity with external identifier 6f4ffcee-1dc4-4982-9401-aa1f65dd7177 does not exist.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+TASK [Trigger unplanned failover with all supported attributes] ****************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while triggering unplanned failover on recovery plan", "response": {"data": {"$objectType": "dataprotection.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "dataprotection.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "argumentsMap": {"reason": "Entity with external identifier 6f4ffcee-1dc4-4982-9401-aa1f65dd7177 does not exist"}, "code": "DP-10400", "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR", "locale": "en_US", "message": "The request failed as one or more entities do not exist - Entity with external identifier 6f4ffcee-1dc4-4982-9401-aa1f65dd7177 does not exist.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+

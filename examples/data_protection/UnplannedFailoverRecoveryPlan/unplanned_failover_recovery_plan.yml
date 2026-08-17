@@ -1,0 +1,68 @@
+---
+# Summary
+# This playbook demonstrates how to trigger an unplanned failover on an
+# existing Nutanix Recovery Plan using the v4 Data Protection API.
+#
+# The playbook covers:
+#   1. Minimal action call (only required fields — ext_id + failover_directions).
+#   2. Full action call with every optional field of UnplannedFailoverSpec set.
+#
+# Requirements to run this playbook end-to-end:
+#   - A Recovery Plan already exists on Prism Central and its ext_id is known.
+#   - The source and target Prism Central instances (domain managers) are paired
+#     via an availability zone and can reach each other.
+#   - Recovery points for the protected entities have already been replicated to
+#     the target cluster.
+#   - The user has the disaster recovery admin permissions listed in the module
+#     documentation.
+
+- name: UnplannedFailoverRecoveryPlan playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+
+  tasks:
+    - name: Set variables for unplanned failover recovery plan
+      ansible.builtin.set_fact:
+        recovery_plan_ext_id: "6f4ffcee-1dc4-4982-9401-aa1f65dd7177"
+        source_domain_manager_ext_id: "63bebabf-744c-48ff-a6d7-cb028707f972"
+        source_cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
+        target_domain_manager_ext_id: "97da301d-0a8b-4334-94cd-16a83563218e"
+        target_cluster_ext_id: "00062899-58d4-9d37-185b-ac1f6b6f97e2"
+
+    - name: Trigger unplanned failover with minimum required fields
+      nutanix.ncp.ntnx_unplanned_failover_recovery_plan_v2:
+        ext_id: "{{ recovery_plan_ext_id }}"
+        name: "rpj_unplanned_failover_ansible_min"
+        failover_directions:
+          - source_domain_manager_ext_id: "{{ source_domain_manager_ext_id }}"
+            source_cluster:
+              ext_id: "{{ source_cluster_ext_id }}"
+            target_domain_manager_ext_id: "{{ target_domain_manager_ext_id }}"
+            target_cluster:
+              ext_id: "{{ target_cluster_ext_id }}"
+      register: minimal_result
+      ignore_errors: true
+
+    - name: Trigger unplanned failover with all supported attributes
+      nutanix.ncp.ntnx_unplanned_failover_recovery_plan_v2:
+        state: present
+        ext_id: "{{ recovery_plan_ext_id }}"
+        name: "rpj_unplanned_failover_ansible_full"
+        recovery_reference_time: "2024-01-02T03:04:05Z"
+        should_ignore_warnings: true
+        is_instant_restore: false
+        failover_directions:
+          - source_domain_manager_ext_id: "{{ source_domain_manager_ext_id }}"
+            source_cluster:
+              ext_id: "{{ source_cluster_ext_id }}"
+            target_domain_manager_ext_id: "{{ target_domain_manager_ext_id }}"
+            target_cluster:
+              ext_id: "{{ target_cluster_ext_id }}"
+      register: full_result
+      ignore_errors: true
