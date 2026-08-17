@@ -1,0 +1,306 @@
+---
+# Integration tests for the Report v2 modules
+# =============================================
+# ntnx_report_planned_capacity_v2 : triggers report generation for a
+#     capacity planning scenario (POST /aiops/v4.0/config/scenarios/{extId}/
+#     $actions/generate-report).
+# ntnx_reports_info_v2            : fetches the generated report for a
+#     capacity planning scenario (GET /aiops/v4.0/config/scenarios/
+#     {scenarioExtId}/reports).
+#
+# Test plan:
+#   Setup:
+#     - Attempt to create a capacity planning scenario using the underlying
+#       v4 REST API so the report modules have a scenario to work with. This
+#       mirrors the "reuse existing prerequisites" guidance — we cannot
+#       depend on an ntnx_scenario_v2 module because none exists yet.
+#     - When Prism Central Analytics is offline (feature disabled on the
+#       cluster) the scenario create task will not complete. In that case
+#       we skip the positive tests and still exercise the module argument
+#       spec via check_mode and the API error path via a bogus ext_id.
+#   Positive tests (run only when a scenario is available):
+#     - Real Generate Report call with the created scenario, asserts
+#       changed=true, task_ext_id/ext_id are populated and response is a
+#       dict whose entities_affected reference the scenario.
+#     - Fetch generated report using ntnx_reports_info_v2 and assert the
+#       response is populated and ext_id echoes the scenario.
+#   check_mode tests (always run):
+#     - ONE check_mode Generate Report call with all attributes populated;
+#       asserts no change is made and msg is populated.
+#   Negative tests (always run):
+#     - Generate report without ext_id → module validation error.
+#     - Generate report with an invalid ext_id → API error surfaced by the
+#       module.
+#     - Fetch report info without ext_id → module validation error.
+#     - Fetch report info with an invalid scenario ext_id → API error.
+#   Teardown:
+#     - Delete the scenario (if it was created) via the v4 REST API.
+
+- name: Start Report v2 tests
+  ansible.builtin.debug:
+    msg: Start Report v2 tests
+
+- name: Generate random suffix for scenario name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+    scenario_ready: false
+    scenario_ext_id: ""
+    invalid_ext_id: "00000000-0000-0000-0000-000000000000"
+
+- name: Compute API root
+  ansible.builtin.set_fact:
+    aiops_root: "https://{{ ip }}:{{ nutanix_port | default(9440) }}/api/aiops/v4.0/config"
+    request_id: "{{ 999999999999 | random | to_uuid }}"
+
+########################################################################################
+# check_mode: Generate report — ONE with all attributes (does NOT require Analytics)
+########################################################################################
+
+- name: Generate report check_mode with all attributes
+  nutanix.ncp.ntnx_report_planned_capacity_v2:
+    state: present
+    ext_id: "{{ invalid_ext_id }}"
+  check_mode: true
+  register: cm_generate
+  ignore_errors: true
+
+- name: Assert generate report check_mode result
+  ansible.builtin.assert:
+    that:
+      - cm_generate is defined
+      - cm_generate.changed == false
+      - cm_generate.failed == false
+      - cm_generate.ext_id == invalid_ext_id
+      - cm_generate.msg is defined
+      - "'Report will be generated' in cm_generate.msg"
+    success_msg: "Generate report check_mode returned the expected preview"
+    fail_msg: "Generate report check_mode did not return the expected preview"
+
+########################################################################################
+# Negative tests (module spec and API error surfacing — always safe to run)
+########################################################################################
+
+- name: Generate report without ext_id should fail
+  nutanix.ncp.ntnx_report_planned_capacity_v2:
+    state: present
+  register: neg_generate_no_extid
+  ignore_errors: true
+
+- name: Assert generate report without ext_id fails on missing param
+  ansible.builtin.assert:
+    that:
+      - neg_generate_no_extid is defined
+      - neg_generate_no_extid.failed == true
+      - "'ext_id' in (neg_generate_no_extid.msg | default(''))"
+    success_msg: "Missing ext_id correctly rejected by module spec"
+    fail_msg: "Missing ext_id was not correctly rejected"
+
+- name: Generate report with invalid ext_id should fail via API
+  nutanix.ncp.ntnx_report_planned_capacity_v2:
+    state: present
+    ext_id: "{{ invalid_ext_id }}"
+  register: neg_generate_bad_extid
+  ignore_errors: true
+
+- name: Assert generate report with invalid ext_id surfaces an API error
+  ansible.builtin.assert:
+    that:
+      - neg_generate_bad_extid is defined
+      - neg_generate_bad_extid.failed == true
+    success_msg: "Invalid scenario ext_id surfaces an API error"
+    fail_msg: "Invalid scenario ext_id did not surface an API error"
+
+- name: Fetch report info without ext_id should fail
+  nutanix.ncp.ntnx_reports_info_v2: {}
+  register: neg_info_no_extid
+  ignore_errors: true
+
+- name: Assert fetch report info without ext_id fails on missing param
+  ansible.builtin.assert:
+    that:
+      - neg_info_no_extid is defined
+      - neg_info_no_extid.failed == true
+      - "'ext_id' in (neg_info_no_extid.msg | default(''))"
+    success_msg: "Missing ext_id correctly rejected by info module spec"
+    fail_msg: "Missing ext_id was not correctly rejected by info module"
+
+- name: Fetch report info with invalid scenario ext_id should fail via API
+  nutanix.ncp.ntnx_reports_info_v2:
+    ext_id: "{{ invalid_ext_id }}"
+  register: neg_info_bad_extid
+  ignore_errors: true
+
+- name: Assert fetch report info with invalid scenario ext_id surfaces an API error
+  ansible.builtin.assert:
+    that:
+      - neg_info_bad_extid is defined
+      - neg_info_bad_extid.failed == true
+    success_msg: "Invalid scenario ext_id surfaces an API error on info module"
+    fail_msg: "Invalid scenario ext_id did not surface an API error on info module"
+
+########################################################################################
+# Setup: try to create a scenario via raw v4 REST call
+########################################################################################
+
+- name: Discover a cluster ext_id to build the scenario against
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ nutanix_port | default(9440) }}/api/clustermgmt/v4.0/config/clusters?%24limit=5"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs | default(false) }}"
+    return_content: true
+    status_code: 200
+  register: clusters_lookup
+  ignore_errors: true
+
+- name: Attempt to create a capacity planning scenario (setup) and run the positive tests
+  when:
+    - clusters_lookup is defined
+    - clusters_lookup is not failed
+    - (clusters_lookup.json.data | default([])) | length > 0
+  block:
+    - name: Pick the first non-PC cluster ext_id
+      ansible.builtin.set_fact:
+        scenario_cluster_ext_id: "{{ clusters_lookup.json.data[0].extId }}"
+        scenario_cluster_name: "{{ clusters_lookup.json.data[0].name }}"
+
+    - name: Create a capacity planning scenario (setup)
+      ansible.builtin.uri:
+        url: "{{ aiops_root }}/scenarios"
+        method: POST
+        user: "{{ username }}"
+        password: "{{ password }}"
+        force_basic_auth: true
+        validate_certs: "{{ validate_certs | default(false) }}"
+        headers:
+          NTNX-Request-Id: "{{ request_id }}"
+        body_format: json
+        body:
+          name: "ansible_report_scenario_{{ random_name }}"
+          clusterExtId: "{{ scenario_cluster_ext_id }}"
+          targetRunwayDays: 90
+          vendors:
+            - NUTANIX
+        return_content: true
+        status_code: [200, 202]
+      register: scenario_create
+      ignore_errors: true
+
+    - name: Capture scenario create task ext_id
+      ansible.builtin.set_fact:
+        scenario_task_ext_id: "{{ scenario_create.json.data.extId | default('') }}"
+
+    - name: Wait for scenario create task to finish (bounded so Analytics-offline clusters do not hang)
+      ansible.builtin.uri:
+        url: "https://{{ ip }}:{{ nutanix_port | default(9440) }}/api/prism/v4.0/config/tasks/{{ scenario_task_ext_id | urlencode }}"
+        method: GET
+        user: "{{ username }}"
+        password: "{{ password }}"
+        force_basic_auth: true
+        validate_certs: "{{ validate_certs | default(false) }}"
+        return_content: true
+        status_code: 200
+      register: scenario_task
+      until:
+        - scenario_task is defined
+        - scenario_task.failed == false
+        - scenario_task.json.data.status is defined
+        - scenario_task.json.data.status in ["SUCCEEDED", "FAILED", "CANCELED"]
+      retries: 12
+      delay: 10
+      ignore_errors: true
+      when: scenario_task_ext_id | length > 0
+
+    - name: Capture scenario ext_id if create succeeded
+      ansible.builtin.set_fact:
+        scenario_ready: "{{ scenario_task.json.data.status | default('') == 'SUCCEEDED' }}"
+        scenario_ext_id: >-
+          {{
+            (scenario_task.json.data.entitiesAffected[0].extId)
+            if (
+              scenario_task.json.data.status | default('') == 'SUCCEEDED'
+              and scenario_task.json.data.entitiesAffected | default([]) | length > 0
+            ) else ''
+          }}
+      when: scenario_task is defined and scenario_task.json is defined
+
+    - name: Log why the positive suite is being skipped (if applicable)
+      ansible.builtin.debug:
+        msg: >-
+          Scenario create task did not reach SUCCEEDED
+          (status={{ scenario_task.json.data.status | default('unknown') }}).
+          Positive tests will be skipped on this cluster.
+      when: not scenario_ready
+
+    ####################################################################################
+    # Positive tests (real API calls) — only when the scenario is ready
+    ####################################################################################
+
+    - name: Generate report for the created scenario
+      nutanix.ncp.ntnx_report_planned_capacity_v2:
+        state: present
+        ext_id: "{{ scenario_ext_id }}"
+      register: generate_result
+      ignore_errors: true
+      when: scenario_ready
+
+    - name: Assert generate report succeeded
+      ansible.builtin.assert:
+        that:
+          - generate_result is defined
+          - generate_result.failed == false
+          - generate_result.changed == true
+          - generate_result.ext_id == scenario_ext_id
+          - generate_result.task_ext_id is defined
+          - generate_result.task_ext_id | length > 0
+          - generate_result.response is defined
+          - generate_result.response.status is defined
+          - generate_result.response.entities_affected is defined
+          - generate_result.response.entities_affected | length > 0
+          - generate_result.response.entities_affected[0].ext_id == scenario_ext_id
+        success_msg: "Report generation task completed"
+        fail_msg: "Report generation task did not complete as expected"
+      when: scenario_ready
+
+    - name: Fetch generated report using ntnx_reports_info_v2
+      nutanix.ncp.ntnx_reports_info_v2:
+        ext_id: "{{ scenario_ext_id }}"
+      register: report_info
+      ignore_errors: true
+      when: scenario_ready
+
+    - name: Assert report info succeeded
+      ansible.builtin.assert:
+        that:
+          - report_info is defined
+          - report_info.failed == false
+          - report_info.changed == false
+          - report_info.ext_id == scenario_ext_id
+          - report_info.response is defined
+        success_msg: "Fetched generated report for the scenario"
+        fail_msg: "Failed to fetch generated report for the scenario"
+      when: scenario_ready
+
+  always:
+    - name: Delete the scenario if it was created
+      ansible.builtin.uri:
+        url: "{{ aiops_root }}/scenarios/{{ scenario_ext_id }}"
+        method: DELETE
+        user: "{{ username }}"
+        password: "{{ password }}"
+        force_basic_auth: true
+        validate_certs: "{{ validate_certs | default(false) }}"
+        headers:
+          NTNX-Request-Id: "{{ 999999999999 | random | to_uuid }}"
+        return_content: true
+        status_code: [200, 202, 204]
+      register: scenario_delete
+      ignore_errors: true
+      when: scenario_ext_id | length > 0
+
+    - name: Report scenario cleanup status
+      ansible.builtin.debug:
+        var: scenario_delete
+      when: scenario_ext_id | length > 0

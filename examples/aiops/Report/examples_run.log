@@ -1,0 +1,166 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Report v2 examples] ******************************************************
+
+TASK [Generate a report for a planned capacity scenario] ***********************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while generating report for capacity planning scenario", "response": {"$objectType": "aiops.v4.config.GenerateReportApiResponse", "$reserved": {"$fv": "v4.r2.b1"}, "data": {"$objectType": "aiops.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r2.b1"}, "error": [{"$objectType": "aiops.v4.error.AppMessage", "$reserved": {"$fv": "v4.r2.b1"}, "code": "AIO-60008", "locale": "en_US", "message": "Failed to perform the request because the provided external identifier 32459cae-43ca-4b6f-9bab-857895c1f867 is incorrect.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+TASK [Show generate report result] *********************************************
+ok: [localhost] => {
+    "generate_result": {
+        "changed": false,
+        "error": "NOT FOUND",
+        "failed": true,
+        "msg": "Api Exception raised while generating report for capacity planning scenario",
+        "response": {
+            "$objectType": "aiops.v4.config.GenerateReportApiResponse",
+            "$reserved": {
+                "$fv": "v4.r2.b1"
+            },
+            "data": {
+                "$objectType": "aiops.v4.error.ErrorResponse",
+                "$reserved": {
+                    "$fv": "v4.r2.b1"
+                },
+                "error": [
+                    {
+                        "$objectType": "aiops.v4.error.AppMessage",
+                        "$reserved": {
+                            "$fv": "v4.r2.b1"
+                        },
+                        "code": "AIO-60008",
+                        "locale": "en_US",
+                        "message": "Failed to perform the request because the provided external identifier 32459cae-43ca-4b6f-9bab-857895c1f867 is incorrect.",
+                        "severity": "ERROR"
+                    }
+                ]
+            },
+            "metadata": {
+                "$objectType": "common.v1.response.ApiResponseMetadata",
+                "$reserved": {
+                    "$fv": "v1.r0"
+                },
+                "flags": [
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "hasError",
+                        "value": true
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isPaginated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isTruncated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isExpandRestricted",
+                        "value": false
+                    }
+                ]
+            }
+        },
+        "status": 404
+    }
+}
+
+TASK [Fetch the generated report for a capacity planning scenario] *************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while fetching scenario report using scenario ext_id", "response": {"$dataItemDiscriminator": "aiops.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<aiops.v4.error.AppMessage>", "$objectType": "aiops.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r2.b1"}, "error": [{"$objectType": "aiops.v4.error.AppMessage", "$reserved": {"$fv": "v4.r2.b1"}, "code": "AIO-60020", "locale": "en_US", "message": "Failed to fetch the what-if scenario report with UUID 32459cae-43ca-4b6f-9bab-857895c1f867 because of Analytics service is not running.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 500}
+...ignoring
+
+TASK [Show fetched report] *****************************************************
+ok: [localhost] => {
+    "report_info": {
+        "changed": false,
+        "error": "INTERNAL SERVER ERROR",
+        "failed": true,
+        "msg": "Api Exception raised while fetching scenario report using scenario ext_id",
+        "response": {
+            "$dataItemDiscriminator": "aiops.v4.error.ErrorResponse",
+            "data": {
+                "$errorItemDiscriminator": "List<aiops.v4.error.AppMessage>",
+                "$objectType": "aiops.v4.error.ErrorResponse",
+                "$reserved": {
+                    "$fv": "v4.r2.b1"
+                },
+                "error": [
+                    {
+                        "$objectType": "aiops.v4.error.AppMessage",
+                        "$reserved": {
+                            "$fv": "v4.r2.b1"
+                        },
+                        "code": "AIO-60020",
+                        "locale": "en_US",
+                        "message": "Failed to fetch the what-if scenario report with UUID 32459cae-43ca-4b6f-9bab-857895c1f867 because of Analytics service is not running.",
+                        "severity": "ERROR"
+                    }
+                ]
+            },
+            "metadata": {
+                "$objectType": "common.v1.response.ApiResponseMetadata",
+                "$reserved": {
+                    "$fv": "v1.r0"
+                },
+                "flags": [
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "hasError",
+                        "value": true
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isPaginated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isTruncated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isExpandRestricted",
+                        "value": false
+                    }
+                ]
+            }
+        },
+        "status": 500
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+
