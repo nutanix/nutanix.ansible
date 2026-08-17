@@ -1,0 +1,31 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Recovery Plan Jobs v4 playbook] ******************************************
+
+TASK [List all Recovery Plan Jobs] *********************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List Recovery Plan Jobs with limit] **************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Capture first Recovery Plan Job ext_id for the read demos] ***************
+ok: [localhost] => {"ansible_facts": {"first_job_ext_id": ""}, "changed": false}
+
+TASK [Get a specific Recovery Plan Job using ext_id] ***************************
+skipping: [localhost] => {"changed": false, "false_condition": "first_job_ext_id | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [List execution steps of a Recovery Plan Job] *****************************
+skipping: [localhost] => {"changed": false, "false_condition": "first_job_ext_id | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [List validation errors of a Recovery Plan Job] ***************************
+skipping: [localhost] => {"changed": false, "false_condition": "first_job_ext_id | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [Delete a Recovery Plan Job] **********************************************
+skipping: [localhost] => {"changed": false, "false_condition": "delete_job_ext_id | length > 0", "skip_reason": "Conditional result was False"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=4    rescued=0    ignored=0   
+
