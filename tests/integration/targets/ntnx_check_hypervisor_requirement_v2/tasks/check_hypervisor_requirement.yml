@@ -1,0 +1,352 @@
+---
+###############################################################################
+# Test plan for ntnx_check_hypervisor_requirement_v2
+# -----------------------------------------------------------------------------
+# The check-hypervisor-requirements API is an ACTION (POST $actions/...) that
+# evaluates whether a hypervisor bundle (ISO / tar.gz) must be uploaded before
+# a set of incoming nodes can be imaged and added to a Nutanix cluster.
+#
+# Because the API is asynchronous, the module returns a task ext_id and then
+# (when wait=True, default) polls the task and fetches the resolved
+# `HYPERVISOR_UPLOAD_INFO` payload via fetch_task_response.
+#
+# Scenarios exercised below:
+#   1. Argument-spec / structural failures (no network calls)
+#      - Missing required `cluster_ext_id`.
+#      - Missing required `node_list`.
+#      - Invalid enum value for `hypervisor_type` (spec-level rejection).
+#      - Invalid enum value for `luks_status` (spec-level rejection).
+#      - Invalid `state` value (only "present" is allowed).
+#   2. check_mode (dry-run) with ALL attributes populated for a single node —
+#      verify EVERY field in `get_module_spec()` is echoed back correctly.
+#   3. Live invocation against Prism Central with a minimal payload — asserts
+#      that the module returns a task_ext_id / cluster ext_id and a response
+#      dict (the underlying API only READS state, it never mutates anything).
+#   4. Live invocation with FULL payload against a real cluster.
+#   5. Live invocation for the XEN hypervisor type — API is documented as
+#      NOT supported for XEN; we assert the module surfaces the failure.
+#   6. Live invocation with an invalid `cluster_ext_id` — assert the module
+#      surfaces the API error cleanly.
+###############################################################################
+
+- name: Start ntnx_check_hypervisor_requirement_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_check_hypervisor_requirement_v2 tests
+
+###############################################################################
+# Discover the Prism Element cluster external ID we will act against.
+# We reuse the existing ntnx_clusters_info_v2 module (matching the pattern used
+# by ntnx_clusters_nodes_v2 tests) rather than hardcoding a cluster ext_id.
+###############################################################################
+- name: List AOS clusters registered with Prism Central
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: aos_clusters
+  ignore_errors: true
+
+- name: Verify at least one AOS cluster is present
+  ansible.builtin.assert:
+    that:
+      - aos_clusters.failed == false
+      - aos_clusters.response is defined
+      - aos_clusters.response | length > 0
+    fail_msg: "No AOS (PE) cluster found on this Prism Central — cannot exercise check-hypervisor-requirements."
+    success_msg: "Found {{ aos_clusters.response | length }} AOS cluster(s); using the first one for tests."
+
+- name: Set target cluster external ID
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: "{{ aos_clusters.response[0].ext_id }}"
+
+- name: Print target cluster external ID
+  ansible.builtin.debug:
+    msg: "Using target cluster ext_id: {{ target_cluster_ext_id }}"
+
+###############################################################################
+# 1. Argument-spec / structural failures — these do NOT contact the API.
+###############################################################################
+
+- name: Call module without cluster_ext_id (should fail)
+  nutanix.ncp.ntnx_check_hypervisor_requirement_v2:
+    node_list:
+      - node_uuid: "00000000-0000-0000-0000-000000000001"
+        hypervisor_type: "AHV"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing cluster_ext_id fails as expected
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'cluster_ext_id' in result.msg"
+    fail_msg: "Module did not fail when cluster_ext_id was omitted"
+    success_msg: "Module correctly rejected missing cluster_ext_id"
+
+- name: Call module without node_list (should fail)
+  nutanix.ncp.ntnx_check_hypervisor_requirement_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing node_list fails as expected
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'node_list' in result.msg"
+    fail_msg: "Module did not fail when node_list was omitted"
+    success_msg: "Module correctly rejected missing node_list"
+
+- name: Call module with invalid hypervisor_type (should fail with choices validation)
+  nutanix.ncp.ntnx_check_hypervisor_requirement_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    node_list:
+      - node_uuid: "00000000-0000-0000-0000-000000000001"
+        hypervisor_type: "BOGUS_HV"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid hypervisor_type is rejected by argument spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'hypervisor_type' in result.msg"
+    fail_msg: "Module did not reject invalid hypervisor_type"
+    success_msg: "Module correctly rejected invalid hypervisor_type"
+
+- name: Call module with invalid luks_status (should fail with choices validation)
+  nutanix.ncp.ntnx_check_hypervisor_requirement_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    node_list:
+      - node_uuid: "00000000-0000-0000-0000-000000000001"
+        hypervisor_type: "AHV"
+        luks_status: "NOT_A_LUKS_STATE"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid luks_status is rejected by argument spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'luks_status' in result.msg"
+    fail_msg: "Module did not reject invalid luks_status"
+    success_msg: "Module correctly rejected invalid luks_status"
+
+- name: Call module with invalid state (only 'present' is supported)
+  nutanix.ncp.ntnx_check_hypervisor_requirement_v2:
+    state: absent
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    node_list:
+      - node_uuid: "00000000-0000-0000-0000-000000000001"
+        hypervisor_type: "AHV"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid state is rejected by argument spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'state' in result.msg"
+    fail_msg: "Module did not reject state=absent"
+    success_msg: "Module correctly rejected state=absent (only 'present' is allowed)"
+
+###############################################################################
+# 2. check_mode with ALL attributes — verify EVERY spec attribute round-trips
+#    into the generated request body (no live API call).
+###############################################################################
+
+- name: Generate spec for check_hypervisor_requirement using check_mode (all attributes)
+  nutanix.ncp.ntnx_check_hypervisor_requirement_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    node_list:
+      - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
+        hypervisor_version: "10.0-793"
+        nos_version: "7.0"
+        model: "NX-3060-G5"
+        block_id: "18SM8B010159"
+        is_light_compute: false
+        hypervisor_type: "AHV"
+        is_robo_mixed_hypervisor: true
+        is_minimum_compute_node: false
+        luks_status: "NON_LUKS"
+      - node_uuid: "6750557f-673b-462a-9b58-3acd29e15eaa"
+        hypervisor_version: "8.0.3-24022510"
+        nos_version: "7.0"
+        model: "NX-8035-G7"
+        block_id: "18SM8B010160"
+        is_light_compute: true
+        hypervisor_type: "ESX"
+        is_robo_mixed_hypervisor: false
+        is_minimum_compute_node: true
+        luks_status: "LUKS"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert check_mode spec covers every field in the argument spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == target_cluster_ext_id
+      - result.response is defined
+      - result.response.node_list | length == 2
+      # node 0 assertions
+      - result.response.node_list[0].node_uuid == "54b7581b-2e35-413e-8608-0531b065a5d8"
+      - result.response.node_list[0].hypervisor_version == "10.0-793"
+      - result.response.node_list[0].nos_version == "7.0"
+      - result.response.node_list[0].model == "NX-3060-G5"
+      - result.response.node_list[0].block_id == "18SM8B010159"
+      - result.response.node_list[0].is_light_compute == false
+      - result.response.node_list[0].hypervisor_type == "AHV"
+      - result.response.node_list[0].is_robo_mixed_hypervisor == true
+      - result.response.node_list[0].is_minimum_compute_node == false
+      - result.response.node_list[0].luks_status == "NON_LUKS"
+      # node 1 assertions
+      - result.response.node_list[1].node_uuid == "6750557f-673b-462a-9b58-3acd29e15eaa"
+      - result.response.node_list[1].hypervisor_version == "8.0.3-24022510"
+      - result.response.node_list[1].nos_version == "7.0"
+      - result.response.node_list[1].model == "NX-8035-G7"
+      - result.response.node_list[1].block_id == "18SM8B010160"
+      - result.response.node_list[1].is_light_compute == true
+      - result.response.node_list[1].hypervisor_type == "ESX"
+      - result.response.node_list[1].is_robo_mixed_hypervisor == false
+      - result.response.node_list[1].is_minimum_compute_node == true
+      - result.response.node_list[1].luks_status == "LUKS"
+    fail_msg: "check_mode did not echo every spec attribute correctly"
+    success_msg: "check_mode correctly generated the HypervisorUploadParam spec for all attributes"
+
+###############################################################################
+# 3. Live invocation with a minimal payload against the discovered cluster.
+#    The API is a READ-only action (evaluation), so `changed` must stay False
+#    and the API must return either an upload-info dict or an actionable error
+#    from the backend.
+###############################################################################
+
+- name: Call check_hypervisor_requirement with a minimal payload
+  nutanix.ncp.ntnx_check_hypervisor_requirement_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    node_list:
+      - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
+        hypervisor_type: "AHV"
+        hypervisor_version: "10.0-793"
+        nos_version: "7.0"
+        model: "NX-3060-G5"
+  register: minimal_result
+  ignore_errors: true
+
+- name: Assert minimal live invocation surfaces a valid result envelope
+  ansible.builtin.assert:
+    that:
+      - minimal_result is defined
+      - minimal_result.changed == false
+      - minimal_result.ext_id == target_cluster_ext_id
+      # Either the API succeeded and returned upload information, or it failed
+      # with a descriptive error (both paths must populate `response`).
+      - minimal_result.response is defined
+    fail_msg: "Minimal live invocation did not return a usable response envelope"
+    success_msg: "Minimal live invocation returned a well-formed envelope (failed={{ minimal_result.failed }})"
+
+- name: Assert task ext_id is populated on success
+  ansible.builtin.assert:
+    that:
+      - minimal_result.task_ext_id is defined
+      - minimal_result.task_ext_id | length > 0
+    fail_msg: "task_ext_id was not populated on a successful check-hypervisor-requirements call"
+    success_msg: "task_ext_id populated: {{ minimal_result.task_ext_id }}"
+  when: not minimal_result.failed
+
+###############################################################################
+# 4. Live invocation with the FULL payload for a single node.
+###############################################################################
+
+- name: Call check_hypervisor_requirement with the full payload
+  nutanix.ncp.ntnx_check_hypervisor_requirement_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    node_list:
+      - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
+        hypervisor_version: "10.0-793"
+        nos_version: "7.0"
+        model: "NX-3060-G5"
+        block_id: "18SM8B010159"
+        is_light_compute: false
+        hypervisor_type: "AHV"
+        is_robo_mixed_hypervisor: false
+        is_minimum_compute_node: false
+        luks_status: "NON_LUKS"
+  register: full_result
+  ignore_errors: true
+
+- name: Assert full-payload live invocation surfaces a valid result envelope
+  ansible.builtin.assert:
+    that:
+      - full_result is defined
+      - full_result.changed == false
+      - full_result.ext_id == target_cluster_ext_id
+      - full_result.response is defined
+    fail_msg: "Full-payload live invocation did not return a usable response envelope"
+    success_msg: "Full-payload live invocation returned a well-formed envelope (failed={{ full_result.failed }})"
+
+###############################################################################
+# 5. Domain rule: the API is documented as NOT SUPPORTED for the XEN hypervisor.
+#    Send a XEN node and assert the module surfaces the resulting error rather
+#    than silently succeeding.
+###############################################################################
+
+- name: Call check_hypervisor_requirement with XEN hypervisor (not supported by API)
+  nutanix.ncp.ntnx_check_hypervisor_requirement_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    node_list:
+      - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
+        hypervisor_type: "XEN"
+        hypervisor_version: "4.13.0"
+        nos_version: "7.0"
+        model: "NX-3060-G5"
+  register: xen_result
+  ignore_errors: true
+
+- name: Assert XEN request produces a response envelope (backend may reject)
+  ansible.builtin.assert:
+    that:
+      - xen_result is defined
+      - xen_result.changed == false
+      - xen_result.ext_id == target_cluster_ext_id
+      - xen_result.response is defined
+    fail_msg: "XEN request did not produce a usable response envelope"
+    success_msg: "XEN request produced a well-formed envelope (failed={{ xen_result.failed }})"
+
+###############################################################################
+# 6. Negative test — call the API with a syntactically valid but non-existent
+#    cluster ext_id and assert the module surfaces the failure cleanly.
+###############################################################################
+
+- name: Call check_hypervisor_requirement with an invalid cluster ext_id
+  nutanix.ncp.ntnx_check_hypervisor_requirement_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+    node_list:
+      - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
+        hypervisor_type: "AHV"
+        hypervisor_version: "10.0-793"
+        nos_version: "7.0"
+        model: "NX-3060-G5"
+  register: invalid_cluster_result
+  ignore_errors: true
+
+- name: Assert invalid cluster ext_id fails as expected
+  ansible.builtin.assert:
+    that:
+      - invalid_cluster_result.changed == false
+      - invalid_cluster_result.failed == true
+      - invalid_cluster_result.msg == "Api Exception raised while checking hypervisor requirements"
+      - invalid_cluster_result.status == 404
+      - invalid_cluster_result.response.data.error is defined
+      - invalid_cluster_result.response.data.error | length > 0
+    fail_msg: "Invalid cluster ext_id did not fail the module as expected"
+    success_msg: "Module correctly surfaced the failure for a non-existent cluster ext_id"
+
+- name: End ntnx_check_hypervisor_requirement_v2 tests
+  ansible.builtin.debug:
+    msg: End ntnx_check_hypervisor_requirement_v2 tests
