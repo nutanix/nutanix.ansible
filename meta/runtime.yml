@@ -248,3 +248,4 @@ action_groups:
     - ntnx_virtual_switches_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_learned_mac_address_for_layer2_stretches_info_v2
