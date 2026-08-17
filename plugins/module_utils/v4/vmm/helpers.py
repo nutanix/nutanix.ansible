@@ -69,6 +69,27 @@ def get_ngt_status(module, api_instance, vm_ext_id):
         )
 
 
+def get_esxi_ngt_status(module, api_instance, vm_ext_id):
+    """
+    Get Nutanix Guest Tools info for an ESXi-hosted VM by its ext_id.
+
+    Args:
+        module: Ansible module
+        api_instance: EsxiVmApi instance from ntnx_vmm_py_client sdk
+        vm_ext_id: ext_id of the VM
+    Returns:
+        ngt (obj): NutanixGuestTools SDK model object
+    """
+    try:
+        return api_instance.get_nutanix_guest_tools_by_id(extId=vm_ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Nutanix Guest Tools info for given ESXi VM",
+        )
+
+
 def get_disk(module, api_instance, ext_id, vm_ext_id):
     """
     Get Disk by ext_id

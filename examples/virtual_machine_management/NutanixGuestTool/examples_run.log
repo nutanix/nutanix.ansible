@@ -1,0 +1,243 @@
+No config file found; using defaults
+
+PLAY [NGT modules smoke run against live PC] ***********************************
+
+TASK [Set demonstration variables] *********************************************
+ok: [localhost] => {"ansible_facts": {"ngt_password": "ChangeMe.1", "ngt_username": "administrator", "vm_ext_id": "aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa"}, "changed": false}
+
+TASK [Info against a non-existent ESXi VM (expects 404)] ***********************
+fatal: [localhost]: FAILED! => {"ansible_facts": {"discovered_interpreter_python": "/usr/libexec/platform-python"}, "changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching Nutanix Guest Tools info for given ESXi VM", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"vm_uuid": "aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa"}, "code": "VMM-30100", "errorGroup": "VM_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the VM with UUID 'aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Show info result] ********************************************************
+ok: [localhost] => {
+    "info_result": {
+        "ansible_facts": {
+            "discovered_interpreter_python": "/usr/libexec/platform-python"
+        },
+        "changed": false,
+        "error": "NOT FOUND",
+        "failed": true,
+        "msg": "Api Exception raised while fetching Nutanix Guest Tools info for given ESXi VM",
+        "response": {
+            "$dataItemDiscriminator": "vmm.v4.error.ErrorResponse",
+            "data": {
+                "$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>",
+                "$objectType": "vmm.v4.error.ErrorResponse",
+                "error": [
+                    {
+                        "$objectType": "vmm.v4.error.AppMessage",
+                        "argumentsMap": {
+                            "vm_uuid": "aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa"
+                        },
+                        "code": "VMM-30100",
+                        "errorGroup": "VM_NOT_FOUND",
+                        "locale": "en-US",
+                        "message": "Failed to perform the operation on the VM with UUID 'aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa', because it is not found.",
+                        "severity": "ERROR"
+                    }
+                ]
+            }
+        },
+        "status": 404
+    }
+}
+
+TASK [Install NGT (real API attempt, expects 404)] *****************************
+fatal: [localhost]: FAILED! => {"ansible_facts": {"discovered_interpreter_python": "/usr/libexec/platform-python"}, "changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching Nutanix Guest Tools info for given ESXi VM", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"vm_uuid": "aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa"}, "code": "VMM-30100", "errorGroup": "VM_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the VM with UUID 'aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Show install result] *****************************************************
+ok: [localhost] => {
+    "install_result": {
+        "ansible_facts": {
+            "discovered_interpreter_python": "/usr/libexec/platform-python"
+        },
+        "changed": false,
+        "error": "NOT FOUND",
+        "failed": true,
+        "msg": "Api Exception raised while fetching Nutanix Guest Tools info for given ESXi VM",
+        "response": {
+            "$dataItemDiscriminator": "vmm.v4.error.ErrorResponse",
+            "data": {
+                "$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>",
+                "$objectType": "vmm.v4.error.ErrorResponse",
+                "error": [
+                    {
+                        "$objectType": "vmm.v4.error.AppMessage",
+                        "argumentsMap": {
+                            "vm_uuid": "aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa"
+                        },
+                        "code": "VMM-30100",
+                        "errorGroup": "VM_NOT_FOUND",
+                        "locale": "en-US",
+                        "message": "Failed to perform the operation on the VM with UUID 'aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa', because it is not found.",
+                        "severity": "ERROR"
+                    }
+                ]
+            }
+        },
+        "status": 404
+    }
+}
+
+TASK [Insert NGT ISO (real API attempt, expects 404)] **************************
+fatal: [localhost]: FAILED! => {"ansible_facts": {"discovered_interpreter_python": "/usr/libexec/platform-python"}, "changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching Nutanix Guest Tools info for given ESXi VM", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"vm_uuid": "aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa"}, "code": "VMM-30100", "errorGroup": "VM_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the VM with UUID 'aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Show insert result] ******************************************************
+ok: [localhost] => {
+    "insert_result": {
+        "ansible_facts": {
+            "discovered_interpreter_python": "/usr/libexec/platform-python"
+        },
+        "changed": false,
+        "error": "NOT FOUND",
+        "failed": true,
+        "msg": "Api Exception raised while fetching Nutanix Guest Tools info for given ESXi VM",
+        "response": {
+            "$dataItemDiscriminator": "vmm.v4.error.ErrorResponse",
+            "data": {
+                "$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>",
+                "$objectType": "vmm.v4.error.ErrorResponse",
+                "error": [
+                    {
+                        "$objectType": "vmm.v4.error.AppMessage",
+                        "argumentsMap": {
+                            "vm_uuid": "aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa"
+                        },
+                        "code": "VMM-30100",
+                        "errorGroup": "VM_NOT_FOUND",
+                        "locale": "en-US",
+                        "message": "Failed to perform the operation on the VM with UUID 'aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa', because it is not found.",
+                        "severity": "ERROR"
+                    }
+                ]
+            }
+        },
+        "status": 404
+    }
+}
+
+TASK [Upgrade NGT (real API attempt, expects 404)] *****************************
+fatal: [localhost]: FAILED! => {"ansible_facts": {"discovered_interpreter_python": "/usr/libexec/platform-python"}, "changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching Nutanix Guest Tools info for given ESXi VM", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"vm_uuid": "aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa"}, "code": "VMM-30100", "errorGroup": "VM_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the VM with UUID 'aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Show upgrade result] *****************************************************
+ok: [localhost] => {
+    "upgrade_result": {
+        "ansible_facts": {
+            "discovered_interpreter_python": "/usr/libexec/platform-python"
+        },
+        "changed": false,
+        "error": "NOT FOUND",
+        "failed": true,
+        "msg": "Api Exception raised while fetching Nutanix Guest Tools info for given ESXi VM",
+        "response": {
+            "$dataItemDiscriminator": "vmm.v4.error.ErrorResponse",
+            "data": {
+                "$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>",
+                "$objectType": "vmm.v4.error.ErrorResponse",
+                "error": [
+                    {
+                        "$objectType": "vmm.v4.error.AppMessage",
+                        "argumentsMap": {
+                            "vm_uuid": "aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa"
+                        },
+                        "code": "VMM-30100",
+                        "errorGroup": "VM_NOT_FOUND",
+                        "locale": "en-US",
+                        "message": "Failed to perform the operation on the VM with UUID 'aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa', because it is not found.",
+                        "severity": "ERROR"
+                    }
+                ]
+            }
+        },
+        "status": 404
+    }
+}
+
+TASK [Update NGT (real API attempt, expects 404)] ******************************
+fatal: [localhost]: FAILED! => {"ansible_facts": {"discovered_interpreter_python": "/usr/libexec/platform-python"}, "changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching Nutanix Guest Tools info for given ESXi VM", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"vm_uuid": "aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa"}, "code": "VMM-30100", "errorGroup": "VM_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the VM with UUID 'aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Show update result] ******************************************************
+ok: [localhost] => {
+    "update_result": {
+        "ansible_facts": {
+            "discovered_interpreter_python": "/usr/libexec/platform-python"
+        },
+        "changed": false,
+        "error": "NOT FOUND",
+        "failed": true,
+        "msg": "Api Exception raised while fetching Nutanix Guest Tools info for given ESXi VM",
+        "response": {
+            "$dataItemDiscriminator": "vmm.v4.error.ErrorResponse",
+            "data": {
+                "$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>",
+                "$objectType": "vmm.v4.error.ErrorResponse",
+                "error": [
+                    {
+                        "$objectType": "vmm.v4.error.AppMessage",
+                        "argumentsMap": {
+                            "vm_uuid": "aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa"
+                        },
+                        "code": "VMM-30100",
+                        "errorGroup": "VM_NOT_FOUND",
+                        "locale": "en-US",
+                        "message": "Failed to perform the operation on the VM with UUID 'aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa', because it is not found.",
+                        "severity": "ERROR"
+                    }
+                ]
+            }
+        },
+        "status": 404
+    }
+}
+
+TASK [Uninstall NGT (real API attempt, expects 404)] ***************************
+fatal: [localhost]: FAILED! => {"ansible_facts": {"discovered_interpreter_python": "/usr/libexec/platform-python"}, "changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching Nutanix Guest Tools info for given ESXi VM", "response": {"$dataItemDiscriminator": "vmm.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>", "$objectType": "vmm.v4.error.ErrorResponse", "error": [{"$objectType": "vmm.v4.error.AppMessage", "argumentsMap": {"vm_uuid": "aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa"}, "code": "VMM-30100", "errorGroup": "VM_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the VM with UUID 'aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa', because it is not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Show uninstall result] ***************************************************
+ok: [localhost] => {
+    "uninstall_result": {
+        "ansible_facts": {
+            "discovered_interpreter_python": "/usr/libexec/platform-python"
+        },
+        "changed": false,
+        "error": "NOT FOUND",
+        "failed": true,
+        "msg": "Api Exception raised while fetching Nutanix Guest Tools info for given ESXi VM",
+        "response": {
+            "$dataItemDiscriminator": "vmm.v4.error.ErrorResponse",
+            "data": {
+                "$errorItemDiscriminator": "List<vmm.v4.error.AppMessage>",
+                "$objectType": "vmm.v4.error.ErrorResponse",
+                "error": [
+                    {
+                        "$objectType": "vmm.v4.error.AppMessage",
+                        "argumentsMap": {
+                            "vm_uuid": "aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa"
+                        },
+                        "code": "VMM-30100",
+                        "errorGroup": "VM_NOT_FOUND",
+                        "locale": "en-US",
+                        "message": "Failed to perform the operation on the VM with UUID 'aaaaaaaa-0000-0000-0000-aaaaaaaaaaaa', because it is not found.",
+                        "severity": "ERROR"
+                    }
+                ]
+            }
+        },
+        "status": 404
+    }
+}
+
+TASK [Play recap] **************************************************************
+ok: [localhost] => {
+    "msg": "Cluster 10.44.76.28 has zero ESXi VMs; every call above therefore returned VM_NOT_FOUND (status=404) which is the correct behaviour of the underlying EsxiVmApi endpoints.\n"
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=14   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=6   
+

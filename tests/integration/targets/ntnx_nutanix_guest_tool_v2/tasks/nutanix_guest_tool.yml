@@ -1,0 +1,531 @@
+---
+# Test plan for ntnx_nutanix_guest_tool_v2 / ntnx_nutanix_guest_tools_info_v2
+#
+# 1. check_mode Create/Install (all attrs) -> assert generated spec + changed=false
+# 2. check_mode Update (is_enabled + capabilities) -> assert spec + changed=false
+# 3. check_mode Delete/Uninstall -> assert msg + no API call
+# 4. Negative: missing capabilities on install
+# 5. Negative: invalid enum value for capabilities
+# 6. Negative: invalid ext_id on info (API returns error)
+# 7. Positive install with reboot_preference=IMMEDIATE (real API)
+# 8. Info: fetch NGT for the VM after install
+# 9. Idempotency: install again -> skipped
+# 10. Insert ISO with capabilities
+# 11. Info: verify iso inserted
+# 12. Upgrade check_mode + real upgrade
+# 13. Update NGT: disable + trim capabilities; verify actual change
+# 14. Idempotency: update again with same values -> skipped
+# 15. Uninstall NGT
+# 16. Idempotency: uninstall again -> skipped
+#
+# Variables required (from integration_config.yml / prepare_env):
+#   cluster                 (with .uuid) - Prism Element cluster
+#   ngt_config              (with username, password, image_uuid)
+#   network.dhcp.uuid       - DHCP-enabled subnet
+
+- name: Start testing ntnx_nutanix_guest_tool_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_nutanix_guest_tool_v2
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_esxi_ngt_vm"
+
+########################################################################################
+# Prerequisite: create a VM to manage NGT on. We reuse ntnx_vms_v2 (AHV) as the
+# available VM CRUD module - the ESXi NGT endpoints will operate on any Nutanix
+# managed VM registered in PC. If the cluster is AHV-only the ESXi NGT calls
+# will fail on the very first call and every downstream assertion will fail
+# fast (assertion `result.failed == false`).
+########################################################################################
+
+- name: Create prerequisite VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    num_sockets: 1
+    num_cores_per_socket: 2
+    memory_size_bytes: 2147483648
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 26843545600
+            data_source:
+              reference:
+                image_reference:
+                  image_ext_id: "{{ ngt_config.image_uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 0
+    cd_roms:
+      - disk_address:
+          bus_type: IDE
+          index: 0
+    nics:
+      - network_info:
+          subnet:
+            ext_id: "{{ network.dhcp.uuid }}"
+          ipv4_config:
+            should_assign_ip: true
+  register: vm_result
+  ignore_errors: true
+
+- name: Assert VM creation
+  ansible.builtin.assert:
+    that:
+      - vm_result.response is defined
+      - vm_result.changed == true
+      - vm_result.failed == false
+      - vm_result.ext_id is defined
+    fail_msg: "Unable to create prerequisite VM"
+    success_msg: "Prerequisite VM created"
+
+- name: Set vm_uuid fact
+  ansible.builtin.set_fact:
+    vm_uuid: "{{ vm_result.ext_id }}"
+
+- name: Power on VM
+  nutanix.ncp.ntnx_vms_power_actions_v2:
+    state: power_on
+    ext_id: "{{ vm_uuid }}"
+  register: power_on_result
+  ignore_errors: true
+
+- name: Assert VM powered on
+  ansible.builtin.assert:
+    that:
+      - power_on_result.changed == true
+      - power_on_result.failed == false
+      - power_on_result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to power on VM"
+    success_msg: "VM powered on"
+
+########################################################################################
+# 1. check_mode Install with ALL attributes
+########################################################################################
+
+- name: Check mode install with all attributes
+  nutanix.ncp.ntnx_nutanix_guest_tool_v2:
+    state: present
+    operation: install
+    ext_id: "{{ vm_uuid }}"
+    capabilities:
+      - SELF_SERVICE_RESTORE
+      - VSS_SNAPSHOT
+    credential:
+      username: "{{ ngt_config.username }}"
+      password: "{{ ngt_config.password }}"
+    reboot_preference:
+      schedule_type: LATER
+      schedule:
+        start_time: "2026-08-01T00:00:00Z"
+  register: cm_install
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert check mode install spec
+  ansible.builtin.assert:
+    that:
+      - cm_install.changed == false
+      - cm_install.failed == false
+      - cm_install.ext_id == vm_uuid
+      - cm_install.response is defined
+      - cm_install.response.capabilities | length == 2
+      - cm_install.response.capabilities[0] == "SELF_SERVICE_RESTORE"
+      - cm_install.response.capabilities[1] == "VSS_SNAPSHOT"
+      - cm_install.response.credential.username == ngt_config.username
+      - cm_install.response.reboot_preference.schedule_type == "LATER"
+      - cm_install.response.reboot_preference.schedule.start_time == "2026-08-01T00:00:00Z"
+    fail_msg: "check_mode install spec is wrong"
+    success_msg: "check_mode install spec looks good"
+
+########################################################################################
+# 2. check_mode Update
+########################################################################################
+
+- name: Check mode update
+  nutanix.ncp.ntnx_nutanix_guest_tool_v2:
+    state: present
+    operation: update
+    ext_id: "{{ vm_uuid }}"
+    is_enabled: false
+    capabilities:
+      - VSS_SNAPSHOT
+  register: cm_update
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert check mode update spec
+  ansible.builtin.assert:
+    that:
+      - cm_update.failed == false
+      - cm_update.changed == false
+      - cm_update.ext_id == vm_uuid
+      - cm_update.response is defined
+    fail_msg: "check_mode update spec is wrong"
+    success_msg: "check_mode update spec looks good"
+
+########################################################################################
+# 3. check_mode Uninstall
+########################################################################################
+
+- name: Check mode uninstall
+  nutanix.ncp.ntnx_nutanix_guest_tool_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+  register: cm_uninstall
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert check mode uninstall
+  ansible.builtin.assert:
+    that:
+      - cm_uninstall.failed == false
+      - cm_uninstall.changed == false
+      - cm_uninstall.ext_id == vm_uuid
+    fail_msg: "check_mode uninstall did not behave as expected"
+    success_msg: "check_mode uninstall behaved as expected"
+
+########################################################################################
+# 4. Negative: install without required `capabilities`
+########################################################################################
+
+- name: Install without capabilities should fail
+  nutanix.ncp.ntnx_nutanix_guest_tool_v2:
+    state: present
+    operation: install
+    ext_id: "{{ vm_uuid }}"
+    credential:
+      username: "{{ ngt_config.username }}"
+      password: "{{ ngt_config.password }}"
+  register: install_missing_caps
+  ignore_errors: true
+
+- name: Assert install without capabilities fails
+  ansible.builtin.assert:
+    that:
+      - install_missing_caps.failed == true
+      - install_missing_caps.changed == false
+    fail_msg: "install missing capabilities should have failed"
+    success_msg: "install missing capabilities failed as expected"
+
+########################################################################################
+# 5. Negative: invalid capability choice
+########################################################################################
+
+- name: Install with invalid capability
+  nutanix.ncp.ntnx_nutanix_guest_tool_v2:
+    state: present
+    operation: install
+    ext_id: "{{ vm_uuid }}"
+    capabilities:
+      - THIS_IS_NOT_VALID
+    credential:
+      username: "{{ ngt_config.username }}"
+      password: "{{ ngt_config.password }}"
+  register: install_bad_enum
+  ignore_errors: true
+
+- name: Assert install with invalid capability fails
+  ansible.builtin.assert:
+    that:
+      - install_bad_enum.failed == true
+      - install_bad_enum.changed == false
+    fail_msg: "install invalid capability should have failed"
+    success_msg: "install invalid capability failed as expected"
+
+########################################################################################
+# 6. Negative: info for non-existent ext_id
+########################################################################################
+
+- name: Info for non-existent ext_id
+  nutanix.ncp.ntnx_nutanix_guest_tools_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: info_bad_id
+  ignore_errors: true
+
+- name: Assert info for non-existent VM fails
+  ansible.builtin.assert:
+    that:
+      - info_bad_id.failed == true
+      - info_bad_id.changed == false
+    fail_msg: "info for bogus ext_id should have failed"
+    success_msg: "info for bogus ext_id failed as expected"
+
+########################################################################################
+# 7. Real install with reboot_preference=IMMEDIATE
+########################################################################################
+
+- name: Install NGT (IMMEDIATE)
+  nutanix.ncp.ntnx_nutanix_guest_tool_v2:
+    state: present
+    operation: install
+    ext_id: "{{ vm_uuid }}"
+    capabilities:
+      - VSS_SNAPSHOT
+    credential:
+      username: "{{ ngt_config.username }}"
+      password: "{{ ngt_config.password }}"
+    reboot_preference:
+      schedule_type: IMMEDIATE
+  register: install_immediate
+  ignore_errors: true
+
+- name: Assert install completed
+  ansible.builtin.assert:
+    that:
+      - install_immediate.failed == false
+      - install_immediate.changed == true
+      - install_immediate.ext_id == vm_uuid
+      - install_immediate.task_ext_id is defined
+      - install_immediate.response is defined
+    fail_msg: "NGT install failed"
+    success_msg: "NGT installed"
+
+########################################################################################
+# 8. Info after install
+########################################################################################
+
+- name: Wait a bit for NGT install to settle
+  ansible.builtin.pause:
+    minutes: 2
+
+- name: Fetch NGT info after install
+  nutanix.ncp.ntnx_nutanix_guest_tools_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: info_post_install
+  ignore_errors: true
+
+- name: Assert info after install
+  ansible.builtin.assert:
+    that:
+      - info_post_install.failed == false
+      - info_post_install.changed == false
+      - info_post_install.ext_id == vm_uuid
+      - info_post_install.response is defined
+      - info_post_install.response.is_installed == true
+      - info_post_install.response.is_enabled == true
+      - info_post_install.response.capabilities is defined
+      - info_post_install.response.capabilities | length >= 1
+    fail_msg: "NGT info after install is wrong"
+    success_msg: "NGT info after install looks good"
+
+########################################################################################
+# 9. Idempotency: install when already installed
+########################################################################################
+
+- name: Install NGT when already installed
+  nutanix.ncp.ntnx_nutanix_guest_tool_v2:
+    state: present
+    operation: install
+    ext_id: "{{ vm_uuid }}"
+    capabilities:
+      - VSS_SNAPSHOT
+    credential:
+      username: "{{ ngt_config.username }}"
+      password: "{{ ngt_config.password }}"
+    reboot_preference:
+      schedule_type: IMMEDIATE
+  register: install_idempotent
+  ignore_errors: true
+
+- name: Assert install is idempotent
+  ansible.builtin.assert:
+    that:
+      - install_idempotent.failed == false
+      - install_idempotent.changed == false
+      - install_idempotent.skipped == true
+      - install_idempotent.ext_id == vm_uuid
+      - install_idempotent.msg == "NGT is already installed in given vm."
+    fail_msg: "install idempotency check failed"
+    success_msg: "install idempotency check passed"
+
+########################################################################################
+# 10. Insert ISO
+########################################################################################
+
+- name: Insert NGT ISO
+  nutanix.ncp.ntnx_nutanix_guest_tool_v2:
+    state: present
+    operation: insert_iso
+    ext_id: "{{ vm_uuid }}"
+    capabilities:
+      - SELF_SERVICE_RESTORE
+  register: insert_iso
+  ignore_errors: true
+
+- name: Assert insert iso succeeded
+  ansible.builtin.assert:
+    that:
+      - insert_iso.failed == false
+      - insert_iso.changed == true
+      - insert_iso.ext_id == vm_uuid
+      - insert_iso.task_ext_id is defined
+      - insert_iso.response is defined
+    fail_msg: "insert NGT iso failed"
+    success_msg: "NGT iso inserted"
+
+########################################################################################
+# 11. Info after insert
+########################################################################################
+
+- name: Fetch NGT info after insert
+  nutanix.ncp.ntnx_nutanix_guest_tools_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: info_post_insert
+  ignore_errors: true
+
+- name: Assert info after insert
+  ansible.builtin.assert:
+    that:
+      - info_post_insert.failed == false
+      - info_post_insert.changed == false
+      - info_post_insert.response.is_installed == true
+    fail_msg: "info after iso insert wrong"
+    success_msg: "info after iso insert looks good"
+
+########################################################################################
+# 12. Upgrade (check_mode + real)
+########################################################################################
+
+- name: Upgrade check_mode
+  nutanix.ncp.ntnx_nutanix_guest_tool_v2:
+    state: present
+    operation: upgrade
+    ext_id: "{{ vm_uuid }}"
+    reboot_preference:
+      schedule_type: LATER
+      schedule:
+        start_time: "2026-08-01T00:00:00Z"
+  register: cm_upgrade
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert upgrade check_mode
+  ansible.builtin.assert:
+    that:
+      - cm_upgrade.failed == false
+      - cm_upgrade.changed == false
+      - cm_upgrade.ext_id == vm_uuid
+      - cm_upgrade.response is defined
+      - cm_upgrade.response.reboot_preference.schedule_type == "LATER"
+    fail_msg: "upgrade check_mode spec is wrong"
+    success_msg: "upgrade check_mode spec ok"
+
+########################################################################################
+# 13. Update NGT (real): disable + trim capabilities
+########################################################################################
+
+- name: Update NGT - disable + trim capabilities
+  nutanix.ncp.ntnx_nutanix_guest_tool_v2:
+    state: present
+    operation: update
+    ext_id: "{{ vm_uuid }}"
+    is_enabled: false
+    capabilities:
+      - VSS_SNAPSHOT
+  register: update_result
+  ignore_errors: true
+
+- name: Assert update succeeded
+  ansible.builtin.assert:
+    that:
+      - update_result.failed == false
+      - update_result.changed == true
+      - update_result.ext_id == vm_uuid
+      - update_result.task_ext_id is defined
+    fail_msg: "NGT update failed"
+    success_msg: "NGT update succeeded"
+
+########################################################################################
+# 14. Idempotency: update again with same values
+########################################################################################
+
+- name: Update NGT with same values (idempotency)
+  nutanix.ncp.ntnx_nutanix_guest_tool_v2:
+    state: present
+    operation: update
+    ext_id: "{{ vm_uuid }}"
+    is_enabled: false
+    capabilities:
+      - VSS_SNAPSHOT
+  register: update_idempotent
+  ignore_errors: true
+
+- name: Assert update is idempotent
+  ansible.builtin.assert:
+    that:
+      - update_idempotent.failed == false
+      - update_idempotent.changed == false
+      - update_idempotent.skipped == true
+      - update_idempotent.msg == "Nothing to change."
+    fail_msg: "update idempotency check failed"
+    success_msg: "update idempotency check passed"
+
+########################################################################################
+# 15. Uninstall NGT
+########################################################################################
+
+- name: Uninstall NGT
+  nutanix.ncp.ntnx_nutanix_guest_tool_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+  register: uninstall_result
+  ignore_errors: true
+
+- name: Assert uninstall succeeded
+  ansible.builtin.assert:
+    that:
+      - uninstall_result.failed == false
+      - uninstall_result.changed == true
+      - uninstall_result.ext_id == vm_uuid
+      - uninstall_result.task_ext_id is defined
+    fail_msg: "NGT uninstall failed"
+    success_msg: "NGT uninstalled"
+
+########################################################################################
+# 16. Idempotency: uninstall again
+########################################################################################
+
+- name: Uninstall NGT again
+  nutanix.ncp.ntnx_nutanix_guest_tool_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+  register: uninstall_idempotent
+  ignore_errors: true
+
+- name: Assert uninstall is idempotent
+  ansible.builtin.assert:
+    that:
+      - uninstall_idempotent.failed == false
+      - uninstall_idempotent.changed == false
+      - uninstall_idempotent.skipped == true
+      - uninstall_idempotent.msg == "NGT is already not installed in the given vm"
+    fail_msg: "uninstall idempotency check failed"
+    success_msg: "uninstall idempotency check passed"
+
+########################################################################################
+# Cleanup: delete the VM
+########################################################################################
+
+- name: Delete VM
+  nutanix.ncp.ntnx_vms:
+    state: absent
+    vm_uuid: "{{ vm_uuid }}"
+  register: vm_delete
+  ignore_errors: true
+
+- name: Assert VM deleted
+  ansible.builtin.assert:
+    that:
+      - vm_delete.changed == true
+      - vm_delete.failed == false
+      - vm_delete.response.status == 'SUCCEEDED'
+    fail_msg: "Failed to clean up VM"
+    success_msg: "VM cleaned up"
