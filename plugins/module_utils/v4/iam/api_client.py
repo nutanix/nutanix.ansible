@@ -177,3 +177,19 @@ def get_entity_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_iam_py_client.EntitiesApi(api_client=api_client)
+
+
+def get_login_providers_api_instance(module):
+    """
+    This method will return LoginProvidersApi instance.
+    LoginProviders is a read-only IAM v4 resource that lists all
+    authentication back-ends (LOCAL, SAML, LDAP, CERT, SERVICE_ACCOUNT)
+    configured on a Prism Central. Used by the Prism Central login page
+    to enumerate available authentication options.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): Login providers api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_iam_py_client.LoginProvidersApi(api_client=api_client)
