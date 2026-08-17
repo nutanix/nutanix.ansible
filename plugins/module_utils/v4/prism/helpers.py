@@ -120,3 +120,30 @@ def get_pc_task(
             exception=e,
             msg="Api Exception raised while fetching pc task info using ext_id",
         )
+
+
+def get_registration(module, api_instance, domain_manager_ext_id, ext_id):
+    """
+    This method will return the details of a single registration for the
+    given domain manager (Prism Central) using the registration external ID.
+    Args:
+        module: Ansible module
+        api_instance: RegistrationApi instance from ntnx_prism_py_client sdk
+        domain_manager_ext_id (str): external ID of the domain manager (PC)
+        ext_id (str): external ID of the registration
+    return:
+        registration (object): registration object
+    """
+    try:
+        return api_instance.get_registration_by_id(
+            domainManagerExtId=domain_manager_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching registration with ext_id "
+                "{0} under domain manager {1}"
+            ).format(ext_id, domain_manager_ext_id),
+        )

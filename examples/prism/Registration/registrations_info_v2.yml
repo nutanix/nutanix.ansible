@@ -1,0 +1,74 @@
+---
+# Summary:
+# This playbook demonstrates fetching registration information from a
+# Nutanix Prism Central (domain manager) using the v4 Registration API.
+#
+# The v4 RegistrationApi is READ-ONLY. It exposes:
+#   GET /api/prism/v4.x/management/domain-managers/{domainManagerExtId}/registrations
+#   GET /api/prism/v4.x/management/domain-managers/{domainManagerExtId}/registrations/{extId}
+#
+# The Create side of a registration (registering a PE or a peer PC) is done
+# via the separate module `nutanix.ncp.ntnx_pc_registration_v2`. The
+# Unregister side is done via `nutanix.ncp.ntnx_pc_unregistration_v2`.
+#
+# This playbook exercises:
+# 1. Discover the local domain manager (Prism Central) ext_id.
+# 2. List all registrations under that domain manager.
+# 3. Get a single registration by ext_id.
+# 4. List registrations with paging + limit.
+# 5. List registrations with an OData $filter.
+
+- name: Registrations playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default('10.44.76.28') }}"
+      nutanix_username: "{{ nutanix_username | default('admin') }}"
+      nutanix_password: "{{ nutanix_password | default('Nutanix.123') }}"
+      validate_certs: false
+  tasks:
+
+    - name: Discover local domain manager ext_id
+      nutanix.ncp.ntnx_pc_config_info_v2: {}
+      register: pc_info
+
+    - name: Set domain_manager_ext_id from the first PC returned
+      ansible.builtin.set_fact:
+        domain_manager_ext_id: >-
+          {{ (pc_info.response[0].ext_id) if (pc_info.response is iterable
+             and (pc_info.response | length) > 0) else pc_info.response.ext_id }}
+
+    - name: List all registrations under the domain manager
+      nutanix.ncp.ntnx_registrations_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+      register: list_result
+
+    - name: Show number of registrations found
+      ansible.builtin.debug:
+        msg: "Found {{ list_result.total_available_results }} registrations."
+
+    - name: Capture the first registration's remote_cluster_ext_id
+      ansible.builtin.set_fact:
+        first_registration_ext_id: "{{ list_result.response[0].remote_cluster_ext_id }}"
+      when: list_result.response | default([]) | length > 0
+
+    - name: Get a single registration by ext_id
+      nutanix.ncp.ntnx_registrations_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        ext_id: "{{ first_registration_ext_id }}"
+      register: single_result
+      when: first_registration_ext_id is defined
+
+    - name: List registrations paged (page 0, limit 1)
+      nutanix.ncp.ntnx_registrations_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        page: 0
+        limit: 1
+      register: page_result
+
+    - name: List registrations sorted by remote cluster name descending
+      nutanix.ncp.ntnx_registrations_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        orderby: "remoteClusterDetails/name desc"
+      register: ordered_result

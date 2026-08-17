@@ -129,3 +129,18 @@ def get_categories_api_instance(module):
     """
     api_client = get_pc_api_client(module)
     return ntnx_prism_py_client.CategoriesApi(api_client=api_client)
+
+
+def get_registration_api_instance(module):
+    """
+    This method will return Registration api instance.
+    The v4 RegistrationApi exposes read-only endpoints under the Domain Manager
+    (Prism Central) that describe clusters registered with it — Prism Elements
+    (AOS), other Prism Centrals, and Witness VMs.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Registration api instance
+    """
+    api_client = get_pc_api_client(module)
+    return ntnx_prism_py_client.RegistrationApi(api_client=api_client)
