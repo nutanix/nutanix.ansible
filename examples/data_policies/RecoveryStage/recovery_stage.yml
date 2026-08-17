@@ -1,0 +1,94 @@
+---
+# Summary:
+# This playbook demonstrates how to manage Recovery stages inside a Nutanix Recovery Plan:
+# 1. Create a Recovery stage (with all attributes)
+# 2. Update a Recovery stage (with all attributes)
+# 3. List all Recovery stages of a Recovery Plan
+# 4. Get a Recovery stage using ext_id
+# 5. Delete a Recovery stage
+#
+# Prerequisites:
+# - A Recovery Plan must already exist. Set `recovery_plan_ext_id` below.
+# - The referenced VM external IDs (or category external IDs) must exist on the source PC.
+
+- name: Recovery Stage playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('ansible.builtin.env', 'NUTANIX_HOST', default='<pc_ip>') }}"
+      nutanix_username: "{{ lookup('ansible.builtin.env', 'NUTANIX_USERNAME', default='<user>') }}"
+      nutanix_password: "{{ lookup('ansible.builtin.env', 'NUTANIX_PASSWORD', default='<pass>') }}"
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        recovery_plan_ext_id: "e7ae4b0d-726d-410d-87c2-af46f8bea264"
+        vm_ext_id: "9e9c7f6a-4b28-4d5f-a1d9-1f1b3a92aa11"
+        vm_name: "webserver-vm"
+        category_ext_id: "bbc3555a-133b-5348-9764-bfff196e84e4"
+
+    - name: Create a Recovery stage with all attributes
+      nutanix.ncp.ntnx_recovery_stage_v2:
+        state: present
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        entity_type: "VM"
+        entities:
+          - ext_id: "{{ vm_ext_id }}"
+            name: "{{ vm_name }}"
+        category_ext_ids:
+          - "{{ category_ext_id }}"
+        priority: 1
+        post_actions:
+          - config:
+              delay_action:
+                delay_secs: 30
+      register: create_result
+      ignore_errors: true
+
+    - name: Save created Recovery stage ext_id
+      ansible.builtin.set_fact:
+        recovery_stage_ext_id: "{{ create_result.ext_id | default('') }}"
+
+    - name: Update the Recovery stage with all attributes
+      nutanix.ncp.ntnx_recovery_stage_v2:
+        state: present
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ recovery_stage_ext_id }}"
+        entity_type: "VM"
+        entities:
+          - ext_id: "{{ vm_ext_id }}"
+            name: "{{ vm_name }}"
+        category_ext_ids:
+          - "{{ category_ext_id }}"
+        priority: 2
+        post_actions:
+          - config:
+              delay_action:
+                delay_secs: 60
+      register: update_result
+      ignore_errors: true
+      when: recovery_stage_ext_id | length > 0
+
+    - name: List all Recovery stages of the Recovery Plan
+      nutanix.ncp.ntnx_recovery_stages_info_v2:
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+      register: list_result
+      ignore_errors: true
+
+    - name: Get a Recovery stage using ext_id
+      nutanix.ncp.ntnx_recovery_stages_info_v2:
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ recovery_stage_ext_id }}"
+      register: get_result
+      ignore_errors: true
+      when: recovery_stage_ext_id | length > 0
+
+    - name: Delete the Recovery stage
+      nutanix.ncp.ntnx_recovery_stage_v2:
+        state: absent
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ recovery_stage_ext_id }}"
+      register: delete_result
+      ignore_errors: true
+      when: recovery_stage_ext_id | length > 0
