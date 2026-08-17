@@ -48,6 +48,8 @@ class Tasks:
         NETWORK_FUNCTION = "Networking:config:network-function"
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
         ENTITY_GROUP = "microseg:config:entity-group"
+        MOUNT_TARGET_SNAPSHOT = "files:config:snapshot"
+        MOUNT_TARGET = "files:config:mount-target"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""

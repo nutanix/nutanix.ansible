@@ -1,0 +1,77 @@
+---
+# Examples for the Nutanix Files MountTargetSnapshot v4 modules:
+#   - nutanix.ncp.ntnx_files_mount_target_snapshot_v2      (create / restore / delete)
+#   - nutanix.ncp.ntnx_files_mount_target_snapshots_info_v2 (get / list)
+#
+# A mount target snapshot is a point-in-time copy of a mount target
+# (share/export) that belongs to a Nutanix Files file server.
+#
+# Update the connection details and the file_server_ext_id / mount_target_ext_id
+# variables below to match your environment before running this playbook.
+- name: Nutanix Files - MountTargetSnapshot examples
+  hosts: localhost
+  gather_facts: false
+  vars:
+    nutanix_host: "10.44.76.28"
+    nutanix_username: "admin"
+    nutanix_password: "Nutanix.123"
+    file_server_ext_id: "5f1b7b3e-1234-4c47-b5db-920460c4b668"
+    mount_target_ext_id: "9c1e537d-6777-4c22-5d41-ddd0c3337aa9"
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host }}"
+      nutanix_username: "{{ nutanix_username }}"
+      nutanix_password: "{{ nutanix_password }}"
+      validate_certs: false
+  tasks:
+    - name: Create mount target snapshot
+      nutanix.ncp.ntnx_files_mount_target_snapshot_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        name: "mount_target_snapshot_ansible"
+        type: "USER_SNAPSHOT"
+      register: created_snapshot
+
+    - name: Get mount target snapshot using ext_id
+      nutanix.ncp.ntnx_files_mount_target_snapshots_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        ext_id: "{{ created_snapshot.ext_id }}"
+      register: snapshot_details
+
+    - name: List all mount target snapshots
+      nutanix.ncp.ntnx_files_mount_target_snapshots_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+      register: all_snapshots
+
+    - name: List mount target snapshots with filter
+      nutanix.ncp.ntnx_files_mount_target_snapshots_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        filter: "name eq 'mount_target_snapshot_ansible'"
+      register: filtered_snapshots
+
+    - name: List mount target snapshots with limit
+      nutanix.ncp.ntnx_files_mount_target_snapshots_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        limit: 1
+      register: limited_snapshots
+
+    - name: Restore mount target from snapshot
+      nutanix.ncp.ntnx_files_mount_target_snapshot_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        ext_id: "{{ created_snapshot.ext_id }}"
+      register: restored_mount_target
+
+    - name: Delete mount target snapshot
+      nutanix.ncp.ntnx_files_mount_target_snapshot_v2:
+        state: absent
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        ext_id: "{{ created_snapshot.ext_id }}"
+      register: deleted_snapshot
