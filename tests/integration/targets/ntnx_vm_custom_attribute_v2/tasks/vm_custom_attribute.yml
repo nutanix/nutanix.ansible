@@ -1,0 +1,512 @@
+---
+# Test Plan for ntnx_vm_custom_attribute_v2
+#
+# This test file exercises the Add/Remove Custom Attributes actions of the
+# Nutanix V4 VMM APIs against a real Prism Central. Custom Attributes are
+# user-defined key/value strings (format "key:value") attached to a VM or a
+# VM disk (see FEAT-<PHONE_1>: Custom Attributes Support in V4 VM and VmDisk APIs).
+#
+# Coverage:
+#   1. Discover cluster (dynamically, no hardcoded UUIDs)
+#   2. Create a VM as a prerequisite (with an initial ephemeral disk so we can
+#      exercise disk-level custom attributes)
+#   3. check_mode: Add VM custom attributes  (1 test)
+#   4. check_mode: Add VM disk custom attributes (1 test)
+#   5. check_mode: Remove VM custom attributes (1 test)
+#   6. Real Add: minimum (single attribute) on the VM
+#   7. Real Add: full (multiple attributes) on the VM
+#   8. Idempotency: Add the same attributes again -> skipped, changed=false
+#   9. Real Add: on a VM disk
+#  10. Real Remove: partial removal from the VM
+#  11. Real Remove: idempotent removal (attribute not currently present)
+#  12. Real Remove: from the VM disk
+#  13. Negative: invalid VM ext_id -> API error surfaces cleanly
+#  14. Cleanup: delete the VM
+#
+# Notes on assertions:
+#   - Every task asserts `failed` and `changed` first, then payload/result
+#     specific fields.
+#   - custom_attributes returned by the module (on wait=true) reflect the CURRENT
+#     server-side state after the action.
+#   - Nothing-to-change paths must set `skipped: true` and `msg == "Nothing to change."`.
+
+- name: Start testing ntnx_vm_custom_attribute_v2 module
+  ansible.builtin.debug:
+    msg: "Start testing ntnx_vm_custom_attribute_v2 module"
+
+- name: Generate random suffix to avoid VM name collisions
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Compose test VM name
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_vm_custom_attr"
+
+#################################################################################
+# Discover a cluster on which to place the test VM
+#################################################################################
+
+- name: List all clusters in PC
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_result
+  ignore_errors: true
+
+- name: Pick a target cluster (first AOS cluster returned)
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: "{{ (clusters_result.response | selectattr('name', 'ne', 'Unnamed') | list)[0].ext_id }}"
+
+- name: Show target cluster
+  ansible.builtin.debug:
+    var: target_cluster_ext_id
+
+#################################################################################
+# Create a test VM as a prerequisite
+#################################################################################
+
+- name: Create a test VM to attach custom attributes to
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    description: "VM created for ntnx_vm_custom_attribute_v2 integration tests"
+    cluster:
+      ext_id: "{{ target_cluster_ext_id }}"
+  register: create_vm
+  ignore_errors: true
+
+- name: Assert VM creation succeeded
+  ansible.builtin.assert:
+    that:
+      - create_vm.failed == false
+      - create_vm.changed == true
+      - create_vm.ext_id is defined
+      - create_vm.response is defined
+    fail_msg: "Unable to create prerequisite VM"
+    success_msg: "Prerequisite VM created successfully"
+
+- name: Set VM ext_id
+  ansible.builtin.set_fact:
+    vm_uuid: "{{ create_vm.ext_id }}"
+
+#################################################################################
+# check_mode: Add VM custom attributes (dry run)
+#################################################################################
+
+- name: Check mode - Add VM custom attributes (ALL fields)
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "environment:production"
+      - "owner:engineering"
+      - "backup:daily"
+  register: check_add_vm
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert check_mode Add VM did not change anything
+  ansible.builtin.assert:
+    that:
+      - check_add_vm.failed == false
+      - check_add_vm.changed == false
+      - check_add_vm.response is defined
+      - check_add_vm.vm_ext_id == vm_uuid
+      - check_add_vm.ext_id == vm_uuid
+      - check_add_vm.response.custom_attributes is defined
+      - "'environment:production' in check_add_vm.response.custom_attributes"
+      - "'owner:engineering' in check_add_vm.response.custom_attributes"
+      - "'backup:daily' in check_add_vm.response.custom_attributes"
+    fail_msg: "check_mode Add VM custom attributes failed"
+    success_msg: "check_mode Add VM custom attributes passed"
+
+#################################################################################
+# Real Add: single attribute (minimum) on the VM
+#################################################################################
+
+- name: Add a single custom attribute to the VM
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "environment:production"
+  register: add_single
+  ignore_errors: true
+
+- name: Assert single custom attribute add succeeded
+  ansible.builtin.assert:
+    that:
+      - add_single.failed == false
+      - add_single.changed == true
+      - add_single.task_ext_id is defined
+      - add_single.vm_ext_id == vm_uuid
+      - add_single.ext_id == vm_uuid
+      - add_single.custom_attributes is defined
+      - "'environment:production' in add_single.custom_attributes"
+    fail_msg: "Add single custom attribute to VM failed"
+    success_msg: "Add single custom attribute to VM passed"
+
+#################################################################################
+# Real Add: multiple attributes (all fields) on the VM
+#################################################################################
+
+- name: Add multiple custom attributes to the VM
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "owner:engineering"
+      - "backup:daily"
+      - "criticality:high"
+  register: add_multi
+  ignore_errors: true
+
+- name: Assert multi custom attribute add succeeded
+  ansible.builtin.assert:
+    that:
+      - add_multi.failed == false
+      - add_multi.changed == true
+      - add_multi.task_ext_id is defined
+      - add_multi.vm_ext_id == vm_uuid
+      - add_multi.custom_attributes is defined
+      - "'environment:production' in add_multi.custom_attributes"
+      - "'owner:engineering' in add_multi.custom_attributes"
+      - "'backup:daily' in add_multi.custom_attributes"
+      - "'criticality:high' in add_multi.custom_attributes"
+    fail_msg: "Add multiple custom attributes to VM failed"
+    success_msg: "Add multiple custom attributes to VM passed"
+
+#################################################################################
+# Idempotency: Adding the SAME attributes again is a no-op
+#################################################################################
+
+- name: Re-add already-present custom attributes to the VM (idempotency)
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "environment:production"
+      - "owner:engineering"
+  register: add_idem
+  ignore_errors: true
+
+- name: Assert idempotent add is skipped
+  ansible.builtin.assert:
+    that:
+      - add_idem.failed == false
+      - add_idem.changed == false
+      - add_idem.skipped == true
+      - add_idem.msg == "Nothing to change."
+      - add_idem.vm_ext_id == vm_uuid
+    fail_msg: "Idempotency for Add VM custom attributes failed"
+    success_msg: "Idempotency for Add VM custom attributes passed"
+
+#################################################################################
+# Verify current attributes via ntnx_vms_info_v2
+#################################################################################
+
+- name: Fetch VM to verify current custom attributes
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: vm_after_adds
+  ignore_errors: true
+
+- name: Assert VM contains the added custom attributes
+  ansible.builtin.assert:
+    that:
+      - vm_after_adds.failed == false
+      - vm_after_adds.changed == false
+      - vm_after_adds.response is defined
+      - vm_after_adds.response.custom_attributes is defined
+      - "'environment:production' in vm_after_adds.response.custom_attributes"
+      - "'owner:engineering' in vm_after_adds.response.custom_attributes"
+      - "'backup:daily' in vm_after_adds.response.custom_attributes"
+      - "'criticality:high' in vm_after_adds.response.custom_attributes"
+    fail_msg: "VM info did not reflect added custom attributes"
+    success_msg: "VM info correctly reflects added custom attributes"
+
+#################################################################################
+# Attach a regular VM disk (backing_info.vm_disk) to exercise disk-level
+# custom attributes. Volume-Group backed disks and CD-ROMs are NOT eligible for
+# disk custom attributes (per FEAT-<PHONE_1>), so we create a plain VM disk.
+# We dynamically discover a storage container available on the cluster.
+#################################################################################
+
+- name: List storage containers on the target cluster
+  nutanix.ncp.ntnx_storage_containers_info_v2:
+    filter: "clusterExtId eq '{{ target_cluster_ext_id }}'"
+    limit: 1
+  register: sc_info
+  ignore_errors: true
+
+- name: Set storage container ext_id (if available)
+  ansible.builtin.set_fact:
+    sc_ext_id: "{{ sc_info.response[0].container_ext_id | default(sc_info.response[0].ext_id) }}"
+  when:
+    - sc_info.response is defined
+    - sc_info.response | length > 0
+
+- name: Create a VM disk to attach custom attributes to
+  nutanix.ncp.ntnx_vms_disks_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    backing_info:
+      vm_disk:
+        disk_size_bytes: 1073741824
+        storage_container:
+          ext_id: "{{ sc_ext_id }}"
+    disk_address:
+      bus_type: "SCSI"
+      index: 0
+  register: create_disk
+  ignore_errors: true
+  when: sc_ext_id is defined
+
+- name: Set disk_uuid when disk created
+  ansible.builtin.set_fact:
+    disk_uuid: "{{ create_disk.ext_id }}"
+  when:
+    - create_disk is defined
+    - create_disk.ext_id is defined
+
+#################################################################################
+# check_mode: Add VM disk custom attributes
+# (only if there's an eligible disk on the VM)
+#################################################################################
+
+- name: Check mode - Add VM disk custom attributes (ALL fields)
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    disk_ext_id: "{{ disk_uuid }}"
+    custom_attributes:
+      - "storageclass:premium"
+      - "encryption:aes256"
+  register: check_add_disk
+  ignore_errors: true
+  check_mode: true
+  when: disk_uuid is defined
+
+- name: Assert check_mode Add VM disk custom attributes did not change anything
+  ansible.builtin.assert:
+    that:
+      - check_add_disk.failed == false
+      - check_add_disk.changed == false
+      - check_add_disk.response is defined
+      - check_add_disk.vm_ext_id == vm_uuid
+      - check_add_disk.disk_ext_id == disk_uuid
+      - check_add_disk.ext_id == disk_uuid
+      - "'storageclass:premium' in check_add_disk.response.custom_attributes"
+      - "'encryption:aes256' in check_add_disk.response.custom_attributes"
+    fail_msg: "check_mode Add VM disk custom attributes failed"
+    success_msg: "check_mode Add VM disk custom attributes passed"
+  when: disk_uuid is defined
+
+#################################################################################
+# Real Add: on a VM disk
+#################################################################################
+
+- name: Add custom attributes to a VM disk
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    disk_ext_id: "{{ disk_uuid }}"
+    custom_attributes:
+      - "storageclass:premium"
+      - "encryption:aes256"
+  register: add_disk
+  ignore_errors: true
+  when: disk_uuid is defined
+
+- name: Assert add VM disk custom attributes succeeded
+  ansible.builtin.assert:
+    that:
+      - add_disk.failed == false
+      - add_disk.changed == true
+      - add_disk.task_ext_id is defined
+      - add_disk.vm_ext_id == vm_uuid
+      - add_disk.disk_ext_id == disk_uuid
+      - add_disk.ext_id == disk_uuid
+      - "'storageclass:premium' in add_disk.custom_attributes"
+      - "'encryption:aes256' in add_disk.custom_attributes"
+    fail_msg: "Add custom attributes to VM disk failed"
+    success_msg: "Add custom attributes to VM disk passed"
+  when: disk_uuid is defined
+
+#################################################################################
+# check_mode: Remove VM custom attributes
+#################################################################################
+
+- name: Check mode - Remove VM custom attributes
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "backup:daily"
+      - "criticality:high"
+  register: check_remove_vm
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert check_mode Remove VM did not change anything
+  ansible.builtin.assert:
+    that:
+      - check_remove_vm.failed == false
+      - check_remove_vm.changed == false
+      - check_remove_vm.response is defined
+      - check_remove_vm.response.custom_attributes is defined
+      - "'backup:daily' in check_remove_vm.response.custom_attributes"
+      - "'criticality:high' in check_remove_vm.response.custom_attributes"
+    fail_msg: "check_mode Remove VM custom attributes failed"
+    success_msg: "check_mode Remove VM custom attributes passed"
+
+#################################################################################
+# Real Remove: partial (some attributes present, some absent -> only present ones removed)
+#################################################################################
+
+- name: Remove some custom attributes from the VM (mixed present/absent)
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "backup:daily"
+      - "does_not_exist:foo"
+  register: remove_partial
+  ignore_errors: true
+
+- name: Assert partial remove succeeded (only present attribute is removed)
+  ansible.builtin.assert:
+    that:
+      - remove_partial.failed == false
+      - remove_partial.changed == true
+      - remove_partial.task_ext_id is defined
+      - remove_partial.vm_ext_id == vm_uuid
+      - remove_partial.custom_attributes is defined
+      - "'backup:daily' not in remove_partial.custom_attributes"
+      - "'environment:production' in remove_partial.custom_attributes"
+      - "'owner:engineering' in remove_partial.custom_attributes"
+      - "'criticality:high' in remove_partial.custom_attributes"
+    fail_msg: "Partial remove custom attributes from VM failed"
+    success_msg: "Partial remove custom attributes from VM passed"
+
+#################################################################################
+# Idempotency: remove attribute not currently on the VM -> skipped
+#################################################################################
+
+- name: Remove non-existent custom attribute from VM (idempotency)
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "backup:daily"
+      - "does_not_exist:foo"
+  register: remove_none
+  ignore_errors: true
+
+- name: Assert idempotent remove is skipped
+  ansible.builtin.assert:
+    that:
+      - remove_none.failed == false
+      - remove_none.changed == false
+      - remove_none.skipped == true
+      - remove_none.msg == "Nothing to change."
+      - remove_none.vm_ext_id == vm_uuid
+    fail_msg: "Idempotency for Remove VM custom attributes failed"
+    success_msg: "Idempotency for Remove VM custom attributes passed"
+
+#################################################################################
+# Real Remove: from the VM disk (cleanup)
+#################################################################################
+
+- name: Remove custom attributes from the VM disk
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    disk_ext_id: "{{ disk_uuid }}"
+    custom_attributes:
+      - "storageclass:premium"
+      - "encryption:aes256"
+  register: remove_disk
+  ignore_errors: true
+  when: disk_uuid is defined
+
+- name: Assert VM disk custom attributes removed
+  ansible.builtin.assert:
+    that:
+      - remove_disk.failed == false
+      - remove_disk.changed == true
+      - remove_disk.task_ext_id is defined
+      - remove_disk.vm_ext_id == vm_uuid
+      - remove_disk.disk_ext_id == disk_uuid
+      - remove_disk.ext_id == disk_uuid
+      - remove_disk.custom_attributes is defined
+      - "'storageclass:premium' not in remove_disk.custom_attributes"
+      - "'encryption:aes256' not in remove_disk.custom_attributes"
+    fail_msg: "Remove custom attributes from VM disk failed"
+    success_msg: "Remove custom attributes from VM disk passed"
+  when: disk_uuid is defined
+
+#################################################################################
+# Negative: invalid VM ext_id triggers a clean API error
+#################################################################################
+
+- name: Try to add custom attributes to a non-existent VM
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: present
+    vm_ext_id: "00000000-0000-0000-0000-000000000000"
+    custom_attributes:
+      - "environment:sandbox"
+  register: bad_vm
+  ignore_errors: true
+
+- name: Assert invalid VM ext_id fails gracefully
+  ansible.builtin.assert:
+    that:
+      - bad_vm.failed == true
+      - bad_vm.msg is defined
+    fail_msg: "Invalid VM ext_id did not fail as expected"
+    success_msg: "Invalid VM ext_id correctly reported an error"
+
+#################################################################################
+# check_mode: Remove all remaining VM custom attributes (dry run) — sanity
+#################################################################################
+
+- name: Check mode - Remove all remaining VM custom attributes
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "environment:production"
+      - "owner:engineering"
+      - "criticality:high"
+  register: check_remove_all
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert check_mode Remove-all did not fail
+  ansible.builtin.assert:
+    that:
+      - check_remove_all.failed == false
+      - check_remove_all.changed == false
+    fail_msg: "check_mode Remove-all VM custom attributes failed"
+    success_msg: "check_mode Remove-all VM custom attributes passed"
+
+#################################################################################
+# Cleanup: delete the test VM
+#################################################################################
+
+- name: Delete the test VM
+  nutanix.ncp.ntnx_vms:
+    state: absent
+    vm_uuid: "{{ vm_uuid }}"
+  register: delete_vm
+  ignore_errors: true
+
+- name: Assert VM deleted
+  ansible.builtin.assert:
+    that:
+      - delete_vm.failed == false
+      - delete_vm.changed == true
+      - delete_vm.response is defined
+      - delete_vm.response.status == 'SUCCEEDED'
+    fail_msg: "Failed to delete test VM"
+    success_msg: "Test VM deleted successfully"
