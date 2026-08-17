@@ -1,0 +1,87 @@
+---
+# Example playbook demonstrating how to manage the IAM Welcome Banner in
+# Nutanix Prism Central using the `ntnx_iam_welcome_banner_v2` and
+# `ntnx_iam_welcome_banner_info_v2` modules.
+#
+# The welcome banner is a singleton resource: it does not have an external ID
+# and cannot be created or truly deleted. The v4 API only supports GET and PUT.
+# For this reason the "update" flow always uses PUT (with optimistic
+# concurrency via the ETag/If-Match header) and the "delete" flow is
+# implemented as a reset back to the factory defaults (disabled + placeholder
+# content).
+#
+# Prerequisites:
+#   * Prism Central must be reachable at `nutanix_host`.
+#   * The account used to run this playbook must have `Super Admin` or
+#     `Prism Admin` roles to update the banner (`GET` is public).
+- name: IAM Welcome Banner example playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Fetch the current welcome banner configuration
+      nutanix.ncp.ntnx_iam_welcome_banner_info_v2:
+      register: welcome_banner_before
+
+    - name: Show the current welcome banner
+      ansible.builtin.debug:
+        var: welcome_banner_before.response
+
+    - name: Update the welcome banner (create-equivalent for this singleton)
+      nutanix.ncp.ntnx_iam_welcome_banner_v2:
+        state: present
+        content: >-
+          <p><b>Authorized access only.</b><br>
+          All activity on this Nutanix Prism Central instance is logged and
+          monitored. By clicking Accept you agree to the acceptable-use
+          policy of your organization.</p>
+        is_enabled: true
+      register: welcome_banner_updated
+
+    - name: Show the updated welcome banner
+      ansible.builtin.debug:
+        var: welcome_banner_updated
+
+    - name: Update the welcome banner content again (idempotency demo)
+      nutanix.ncp.ntnx_iam_welcome_banner_v2:
+        state: present
+        content: >-
+          <p><b>Authorized access only.</b><br>
+          All activity on this Nutanix Prism Central instance is logged and
+          monitored. By clicking Accept you agree to the acceptable-use
+          policy of your organization.</p>
+        is_enabled: true
+      register: welcome_banner_second_update
+
+    - name: Show the second update (should be skipped)
+      ansible.builtin.debug:
+        var: welcome_banner_second_update
+
+    - name: Change only the enablement flag (real update)
+      nutanix.ncp.ntnx_iam_welcome_banner_v2:
+        state: present
+        content: >-
+          <p><b>Authorized access only.</b><br>
+          All activity on this Nutanix Prism Central instance is logged and
+          monitored. By clicking Accept you agree to the acceptable-use
+          policy of your organization.</p>
+        is_enabled: false
+      register: welcome_banner_disabled
+
+    - name: Show the disabled welcome banner
+      ansible.builtin.debug:
+        var: welcome_banner_disabled
+
+    - name: Reset the welcome banner to defaults (delete-equivalent)
+      nutanix.ncp.ntnx_iam_welcome_banner_v2:
+        state: absent
+      register: welcome_banner_reset
+
+    - name: Show the reset welcome banner
+      ansible.builtin.debug:
+        var: welcome_banner_reset
