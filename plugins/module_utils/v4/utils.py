@@ -304,5 +304,11 @@ def strip_read_only_fields(spec, fields=None):
 
     for field in fields:
         if hasattr(spec, field):
-            delattr(spec, field)
+            try:
+                delattr(spec, field)
+            except AttributeError:
+                # v4 SDK models expose fields as properties without deleters;
+                # setting them to None removes them from the serialized request
+                # body (None values are omitted during serialization).
+                setattr(spec, field, None)
     return spec

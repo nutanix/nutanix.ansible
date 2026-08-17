@@ -1,0 +1,553 @@
+---
+# Test plan for Nutanix Files AntivirusServer (ntnx_files_antivirus_server_v2 /
+# ntnx_files_antivirus_servers_info_v2)
+#
+# An antivirus server configures the connection between a Nutanix Files file
+# server and an external ICAP scan appliance. It requires an existing file
+# server (fileServerExtId). The tests are organised in two groups:
+#
+# 1. Service-independent tests (always executed):
+#    - check_mode Create with ALL attributes (spec generation, no API call)
+#    - check_mode Delete (no API call before the check_mode short-circuit)
+#    - Negative / argument-validation tests:
+#         * missing file_server_ext_id (module required arg)
+#         * missing address AND port (validate_required_params in create)
+#         * address ipv4/ipv6/fqdn mutual exclusivity
+#         * state=absent with missing ext_id (required_if)
+#
+# 2. Live CRUD lifecycle tests (executed only when a file server is present on
+#    the cluster - gated on `file_server_ext_id`). These cover the real
+#    end-to-end workflow that a customer performs:
+#         * Create minimal (required fields only: address + port)
+#         * Create full (all fields, ipv4 address)
+#         * Create using an FQDN address
+#         * Create using an IPv6 address (expected to be rejected by the API)
+#         * Get by ext_id / List all / List with filter / List with limit
+#         * check_mode Update
+#         * Update (change scalar fields: description, partner_service_name)
+#         * Idempotent Update (second run reports "Nothing to change.")
+#         * Get / Update with a wrong ext_id (expected failure)
+#         * Delete (check_mode + real) and Delete with wrong ext_id
+#
+# Every field of get_module_spec() (description, address.ipv4/ipv6/fqdn, port,
+# partner_service_name, file_server_ext_id, ext_id) is exercised across the
+# check_mode and live tests.
+
+- name: Start Antivirus Server tests
+  ansible.builtin.debug:
+    msg: Start Antivirus Server tests
+
+- name: Generate random suffix and expected values
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    todelete: []
+
+- name: Set expected description strings
+  ansible.builtin.set_fact:
+    cm_description: "check_mode antivirus server {{ random_name }}"
+    full_description: "Antivirus server created by Ansible integration tests {{ random_name }}"
+    updated_description: "Antivirus server updated by Ansible integration tests {{ random_name }}"
+    dummy_file_server_ext_id: "18f78959-14a6-4c47-b5db-920460c4b668"
+    dummy_ext_id: "b1c2d3e4-14a6-4c47-b5db-920460c4b668"
+    wrong_ext_id: "00000000-0000-0000-0000-000000000000"
+
+########################################################################################
+# Discover an existing file server (prerequisite for the live CRUD tests)
+########################################################################################
+
+- name: Try to discover an existing file server on the cluster
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port | default(9440) }}/api/files/v4.0/config/file-servers?$limit=1"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs | default(false) }}"
+    timeout: 30
+    status_code: [200, 400, 404, 500, 503]
+  register: fs_list
+  ignore_errors: true
+
+- name: Set file_server_ext_id when a file server is available
+  ansible.builtin.set_fact:
+    file_server_ext_id: "{{ fs_list.json.data[0].extId }}"
+  when:
+    - fs_list is defined
+    - fs_list.json is defined
+    - fs_list.json.data is defined
+    - fs_list.json.data | length > 0
+
+- name: Report file server discovery result
+  ansible.builtin.debug:
+    msg: >-
+      {{ 'Using file server ' ~ file_server_ext_id ~ ' for live CRUD tests.'
+         if file_server_ext_id is defined
+         else 'No file server available - live CRUD tests will be skipped. Only check_mode and negative tests run.' }}
+
+########################################################################################
+# Service-independent tests (always executed)
+########################################################################################
+
+- name: Generate spec for creating antivirus server using check mode with all attributes
+  nutanix.ncp.ntnx_files_antivirus_server_v2:
+    state: present
+    file_server_ext_id: "{{ dummy_file_server_ext_id }}"
+    description: "{{ cm_description }}"
+    address:
+      ipv4:
+        value: "10.44.10.100"
+        prefix_length: 32
+    port: 1344
+    partner_service_name: "avscan"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating antivirus server using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.description == cm_description
+      - 'result.response.address.ipv4.value == "10.44.10.100"'
+      - result.response.address.ipv4.prefix_length == 32
+      - result.response.port == 1344
+      - 'result.response.partner_service_name == "avscan"'
+    success_msg: "Spec for creating antivirus server using check mode with all attributes generated successfully"
+    fail_msg: "Spec for creating antivirus server using check mode with all attributes generation failed"
+
+- name: Create antivirus server with missing file_server_ext_id
+  nutanix.ncp.ntnx_files_antivirus_server_v2:
+    state: present
+    description: "missing file server"
+    address:
+      ipv4:
+        value: "10.44.10.101"
+    port: 1344
+  register: result
+  ignore_errors: true
+
+- name: Create antivirus server with missing file_server_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'missing required arguments: file_server_ext_id' in result.msg"
+    success_msg: "Create antivirus server with missing file_server_ext_id failed as expected"
+    fail_msg: "Create antivirus server with missing file_server_ext_id did not fail as expected"
+
+- name: Create antivirus server with missing address and port
+  nutanix.ncp.ntnx_files_antivirus_server_v2:
+    state: present
+    file_server_ext_id: "{{ dummy_file_server_ext_id }}"
+    description: "missing address and port"
+  register: result
+  ignore_errors: true
+
+- name: Create antivirus server with missing address and port status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - '"Missing required parameter(s): address, port" in result.msg'
+    success_msg: "Create antivirus server with missing address and port failed as expected"
+    fail_msg: "Create antivirus server with missing address and port did not fail as expected"
+
+- name: Create antivirus server with both ipv4 and fqdn (mutually exclusive)
+  nutanix.ncp.ntnx_files_antivirus_server_v2:
+    state: present
+    file_server_ext_id: "{{ dummy_file_server_ext_id }}"
+    address:
+      ipv4:
+        value: "10.44.10.100"
+      fqdn:
+        value: "icap.example.com"
+    port: 1344
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Create antivirus server with both ipv4 and fqdn status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - '"parameters are mutually exclusive: ipv4|ipv6|fqdn found in address" in result.msg'
+    success_msg: "Create antivirus server with mutually exclusive address failed as expected"
+    fail_msg: "Create antivirus server with mutually exclusive address did not fail as expected"
+
+- name: Delete antivirus server with missing ext_id
+  nutanix.ncp.ntnx_files_antivirus_server_v2:
+    state: absent
+    file_server_ext_id: "{{ dummy_file_server_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete antivirus server with missing ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete antivirus server with missing ext_id failed as expected"
+    fail_msg: "Delete antivirus server with missing ext_id did not fail as expected"
+
+- name: Delete antivirus server using check mode
+  nutanix.ncp.ntnx_files_antivirus_server_v2:
+    state: absent
+    file_server_ext_id: "{{ dummy_file_server_ext_id }}"
+    ext_id: "{{ dummy_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Delete antivirus server using check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    success_msg: "Delete antivirus server using check mode passed"
+    fail_msg: "Delete antivirus server using check mode failed"
+
+########################################################################################
+# Live CRUD lifecycle tests (only when a file server is available)
+########################################################################################
+
+- name: Antivirus server live CRUD tests
+  when: file_server_ext_id is defined
+  block:
+    - name: Create antivirus server with minimum attributes (required only)
+      nutanix.ncp.ntnx_files_antivirus_server_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        address:
+          ipv4:
+            value: "10.44.10.110"
+        port: 1344
+      register: result
+      ignore_errors: true
+
+    - name: Create antivirus server with minimum attributes status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id is defined
+          - result.task_ext_id is defined
+          - result.response is defined
+          - 'result.response.address.ipv4.value == "10.44.10.110"'
+          - result.response.port == 1344
+        success_msg: "Antivirus server with minimum attributes created successfully"
+        fail_msg: "Antivirus server with minimum attributes creation failed"
+
+    - name: Add antivirus server to todelete list
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [result.ext_id] }}"
+
+    - name: Create antivirus server with all attributes
+      nutanix.ncp.ntnx_files_antivirus_server_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        description: "{{ full_description }}"
+        address:
+          ipv4:
+            value: "10.44.10.111"
+        port: 1345
+        partner_service_name: "avscan"
+      register: result
+      ignore_errors: true
+
+    - name: Create antivirus server with all attributes status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id is defined
+          - result.task_ext_id is defined
+          - result.response is defined
+          - result.response.description == full_description
+          - 'result.response.address.ipv4.value == "10.44.10.111"'
+          - result.response.port == 1345
+          - 'result.response.partner_service_name == "avscan"'
+        success_msg: "Antivirus server with all attributes created successfully"
+        fail_msg: "Antivirus server with all attributes creation failed"
+
+    - name: Set full antivirus server ext_id
+      ansible.builtin.set_fact:
+        av_ext_id: "{{ result.ext_id }}"
+        todelete: "{{ todelete + [result.ext_id] }}"
+
+    - name: Create antivirus server using an FQDN address
+      nutanix.ncp.ntnx_files_antivirus_server_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        description: "Antivirus server with fqdn address"
+        address:
+          fqdn:
+            value: "icap.example.com"
+        port: 1346
+      register: result
+      ignore_errors: true
+
+    - name: Create antivirus server using an FQDN address status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - 'result.response.address.fqdn.value == "icap.example.com"'
+          - result.response.port == 1346
+        success_msg: "Antivirus server using FQDN address created successfully"
+        fail_msg: "Antivirus server using FQDN address creation failed"
+
+    - name: Add fqdn antivirus server to todelete list
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [result.ext_id] }}"
+
+    - name: Create antivirus server using an IPv6 address (expected to be rejected)
+      nutanix.ncp.ntnx_files_antivirus_server_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        description: "Antivirus server with ipv6 address"
+        address:
+          ipv6:
+            value: "2001:db8::1"
+        port: 1347
+      register: result
+      ignore_errors: true
+
+    - name: Create antivirus server using an IPv6 address status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == true
+        success_msg: "Antivirus server using IPv6 address failed as expected (IPv6 not supported)"
+        fail_msg: "Antivirus server using IPv6 address did not fail as expected"
+
+    - name: Fetch antivirus server using external ID
+      nutanix.ncp.ntnx_files_antivirus_servers_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ av_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch antivirus server using external ID status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.ext_id == av_ext_id
+          - result.response is defined
+          - result.response.ext_id == av_ext_id
+          - 'result.response.address.ipv4.value == "10.44.10.111"'
+          - result.response.port == 1345
+          - 'result.response.partner_service_name == "avscan"'
+        success_msg: "Fetch antivirus server using external ID passed"
+        fail_msg: "Fetch antivirus server using external ID failed"
+
+    - name: List all antivirus servers
+      nutanix.ncp.ntnx_files_antivirus_servers_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all antivirus servers status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response | length >= 3
+          - result.total_available_results is defined
+        success_msg: "List all antivirus servers passed"
+        fail_msg: "List all antivirus servers failed"
+
+    - name: List antivirus servers with filter
+      nutanix.ncp.ntnx_files_antivirus_servers_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        filter: "port eq 1345"
+      register: result
+      ignore_errors: true
+
+    - name: List antivirus servers with filter status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response | length == 1
+          - result.response[0].port == 1345
+        success_msg: "List antivirus servers with filter passed"
+        fail_msg: "List antivirus servers with filter failed"
+
+    - name: List antivirus servers with limit
+      nutanix.ncp.ntnx_files_antivirus_servers_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: List antivirus servers with limit status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response | length == 1
+        success_msg: "List antivirus servers with limit passed"
+        fail_msg: "List antivirus servers with limit failed"
+
+    - name: Generate spec for updating antivirus server using check mode
+      nutanix.ncp.ntnx_files_antivirus_server_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ av_ext_id }}"
+        description: "Updated description check mode"
+        partner_service_name: "avscan-check"
+      check_mode: true
+      register: result
+      ignore_errors: true
+
+    - name: Generate spec for updating antivirus server using check mode status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.failed == false
+          - result.response is defined
+          - 'result.response.description == "Updated description check mode"'
+          - 'result.response.partner_service_name == "avscan-check"'
+        success_msg: "Spec for updating antivirus server using check mode generated successfully"
+        fail_msg: "Spec for updating antivirus server using check mode generation failed"
+
+    - name: Update antivirus server with all attributes
+      nutanix.ncp.ntnx_files_antivirus_server_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ av_ext_id }}"
+        description: "{{ updated_description }}"
+        partner_service_name: "avscan-updated"
+      register: result
+      ignore_errors: true
+
+    - name: Update antivirus server with all attributes status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.failed == false
+          - result.response is defined
+          - result.response.description == updated_description
+          - 'result.response.partner_service_name == "avscan-updated"'
+          - 'result.response.address.ipv4.value == "10.44.10.111"'
+          - result.response.port == 1345
+        success_msg: "Update antivirus server with all attributes passed"
+        fail_msg: "Update antivirus server with all attributes failed"
+
+    - name: Update antivirus server with same values (idempotency test)
+      nutanix.ncp.ntnx_files_antivirus_server_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ av_ext_id }}"
+        description: "{{ updated_description }}"
+        partner_service_name: "avscan-updated"
+      register: result
+      ignore_errors: true
+
+    - name: Update antivirus server with same values status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - 'result.msg == "Nothing to change."'
+        success_msg: "Update antivirus server idempotency test passed"
+        fail_msg: "Update antivirus server idempotency test failed"
+
+    - name: Fetch antivirus server using wrong external ID
+      nutanix.ncp.ntnx_files_antivirus_servers_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ wrong_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch antivirus server using wrong external ID status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == true
+        success_msg: "Fetch antivirus server using wrong external ID failed as expected"
+        fail_msg: "Fetch antivirus server using wrong external ID did not fail as expected"
+
+    - name: Update antivirus server using wrong external ID
+      nutanix.ncp.ntnx_files_antivirus_server_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ wrong_ext_id }}"
+        description: "wrong ext id"
+      register: result
+      ignore_errors: true
+
+    - name: Update antivirus server using wrong external ID status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == true
+        success_msg: "Update antivirus server using wrong external ID failed as expected"
+        fail_msg: "Update antivirus server using wrong external ID did not fail as expected"
+
+    - name: Delete all created antivirus servers
+      nutanix.ncp.ntnx_files_antivirus_server_v2:
+        state: absent
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ item }}"
+      register: result
+      ignore_errors: true
+      loop: "{{ todelete }}"
+
+    - name: Deletion status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == true
+          - result.results | length == todelete | length
+          - 'result.msg == "All items completed"'
+        success_msg: "All antivirus servers deleted successfully"
+        fail_msg: "Unable to delete all antivirus servers"
+
+    - name: Reset todelete list
+      ansible.builtin.set_fact:
+        todelete: []
+
+    - name: Delete antivirus server using wrong external ID
+      nutanix.ncp.ntnx_files_antivirus_server_v2:
+        state: absent
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ wrong_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete antivirus server using wrong external ID status
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == true
+        success_msg: "Delete antivirus server using wrong external ID failed as expected"
+        fail_msg: "Delete antivirus server using wrong external ID did not fail as expected"
