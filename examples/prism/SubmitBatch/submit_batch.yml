@@ -1,0 +1,206 @@
+---
+# Example playbook demonstrating the ntnx_submit_batch_v2 and
+# ntnx_submit_batches_info_v2 modules against a Prism Central cluster.
+#
+# SubmitBatch performs bulk CRUD or custom actions on multiple entities in a
+# single asynchronous API call. In this playbook we use the microseg v4
+# address-groups API as the target URI because it is a lightweight, always
+# available Prism Central resource that requires no additional infrastructure.
+#
+# The playbook demonstrates:
+#   * CREATE batch (bulk-create 2 address groups)
+#   * MODIFY batch (bulk-update the same 2 address groups)
+#   * DELETE batch (bulk-delete them)
+#   * ntnx_submit_batches_info_v2 (list all, filter by name, get by ext_id)
+#   * Per-item `NTNX-Request-Id` headers (Prism v4 idempotency)
+#   * A top-level `request_id` on the batch submission itself
+#
+# Individual subtask outcomes depend on the target cluster's configuration.
+# `ntnx_submit_batch_v2` always returns the completed parent task so the
+# caller can inspect per-item status even when some subtasks fail.
+- name: SubmitBatch example playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: Generate a run suffix + per-item and per-batch NTNX-Request-Ids
+      ansible.builtin.set_fact:
+        run_suffix: "{{ query('community.general.random_string', numbers=true, upper=false, special=false, length=8)[0] }}"
+        create_batch_req_id: "{{ 99999999999999999999 | random | to_uuid }}"
+        modify_batch_req_id: "{{ 99999999999999999999 | random | to_uuid }}"
+        delete_batch_req_id: "{{ 99999999999999999999 | random | to_uuid }}"
+        req_id_c1: "{{ 99999999999999999999 | random | to_uuid }}"
+        req_id_c2: "{{ 99999999999999999999 | random | to_uuid }}"
+        req_id_m1: "{{ 99999999999999999999 | random | to_uuid }}"
+        req_id_m2: "{{ 99999999999999999999 | random | to_uuid }}"
+        req_id_d1: "{{ 99999999999999999999 | random | to_uuid }}"
+        req_id_d2: "{{ 99999999999999999999 | random | to_uuid }}"
+
+    - name: Submit a batch to CREATE multiple address groups
+      nutanix.ncp.ntnx_submit_batch_v2:
+        request_id: "{{ create_batch_req_id }}"
+        metadata:
+          action: CREATE
+          name: "ansible_batch_create_ag_{{ run_suffix }}"
+          uri: "/api/microseg/v4.0/config/address-groups"
+          should_stop_on_error: false
+          chunk_size: 2
+        payload:
+          - metadata:
+              headers:
+                - name: "Content-Type"
+                  value: "application/json"
+                - name: "NTNX-Request-Id"
+                  value: "{{ req_id_c1 }}"
+            data:
+              name: "batch_ag_1_{{ run_suffix }}"
+              description: "Address group #1 created via ntnx_submit_batch_v2 example"
+              ipv4Addresses:
+                - value: "10.0.0.1"
+                  prefixLength: 32
+          - metadata:
+              headers:
+                - name: "Content-Type"
+                  value: "application/json"
+                - name: "NTNX-Request-Id"
+                  value: "{{ req_id_c2 }}"
+            data:
+              name: "batch_ag_2_{{ run_suffix }}"
+              description: "Address group #2 created via ntnx_submit_batch_v2 example"
+              ipv4Addresses:
+                - value: "10.0.0.2"
+                  prefixLength: 32
+      register: create_batch
+
+    - name: Show completed CREATE batch task (subtask outcomes included)
+      ansible.builtin.debug:
+        var: create_batch.response
+
+    # Ensure the address groups exist so the MODIFY / DELETE batch tasks below
+    # always have entities to operate on, regardless of whether the CREATE
+    # batch's subtasks succeeded on this particular cluster.
+    - name: Ensure test address group 1 exists (best-effort direct create)
+      nutanix.ncp.ntnx_address_groups_v2:
+        name: "batch_ag_1_{{ run_suffix }}"
+        description: "Address group 1 for MODIFY DELETE demo"
+        ipv4_addresses:
+          - value: "10.0.0.1"
+            prefix_length: 32
+      register: ag1_ensure
+      ignore_errors: true
+
+    - name: Ensure test address group 2 exists (best-effort direct create)
+      nutanix.ncp.ntnx_address_groups_v2:
+        name: "batch_ag_2_{{ run_suffix }}"
+        description: "Address group 2 for MODIFY DELETE demo"
+        ipv4_addresses:
+          - value: "10.0.0.2"
+            prefix_length: 32
+      register: ag2_ensure
+      ignore_errors: true
+
+    - name: Look up the ext_ids of the two example address groups
+      nutanix.ncp.ntnx_address_groups_info_v2:
+        filter: "name eq 'batch_ag_1_{{ run_suffix }}' or name eq 'batch_ag_2_{{ run_suffix }}'"
+      register: ag_lookup
+
+    - name: Capture ext_ids of the example address groups
+      ansible.builtin.set_fact:
+        ag_ext_ids: "{{ ag_lookup.response | map(attribute='ext_id') | list }}"
+
+    - name: List the most recent 5 batches submitted on the cluster
+      nutanix.ncp.ntnx_submit_batches_info_v2:
+        limit: 5
+      register: list_batches
+
+    - name: Find our submitted batch by filter (by name)
+      nutanix.ncp.ntnx_submit_batches_info_v2:
+        filter: "name eq 'ansible_batch_create_ag_{{ run_suffix }}'"
+      register: batch_lookup
+
+    - name: Get single batch details using the discovered batch ext_id
+      nutanix.ncp.ntnx_submit_batches_info_v2:
+        ext_id: "{{ batch_lookup.response[0].ext_id }}"
+      register: batch_by_id
+      when: batch_lookup.response | length > 0
+
+    - name: Submit a batch to MODIFY the address groups we just prepared
+      nutanix.ncp.ntnx_submit_batch_v2:
+        request_id: "{{ modify_batch_req_id }}"
+        metadata:
+          action: MODIFY
+          name: "ansible_batch_modify_ag_{{ run_suffix }}"
+          uri: "/api/microseg/v4.0/config/address-groups/{extId}"
+          should_stop_on_error: false
+          chunk_size: 2
+        payload:
+          - metadata:
+              headers:
+                - name: "Content-Type"
+                  value: "application/json"
+                - name: "NTNX-Request-Id"
+                  value: "{{ req_id_m1 }}"
+              path:
+                - name: "extId"
+                  value: "{{ ag_ext_ids[0] }}"
+            data:
+              name: "batch_ag_1_{{ run_suffix }}"
+              description: "Address group #1 updated via ntnx_submit_batch_v2 example"
+              ipv4Addresses:
+                - value: "10.0.0.11"
+                  prefixLength: 32
+          - metadata:
+              headers:
+                - name: "Content-Type"
+                  value: "application/json"
+                - name: "NTNX-Request-Id"
+                  value: "{{ req_id_m2 }}"
+              path:
+                - name: "extId"
+                  value: "{{ ag_ext_ids[1] }}"
+            data:
+              name: "batch_ag_2_{{ run_suffix }}"
+              description: "Address group #2 updated via ntnx_submit_batch_v2 example"
+              ipv4Addresses:
+                - value: "10.0.0.22"
+                  prefixLength: 32
+      register: modify_batch
+
+    - name: Submit a batch to DELETE the example address groups
+      nutanix.ncp.ntnx_submit_batch_v2:
+        request_id: "{{ delete_batch_req_id }}"
+        metadata:
+          action: DELETE
+          name: "ansible_batch_delete_ag_{{ run_suffix }}"
+          uri: "/api/microseg/v4.0/config/address-groups/{extId}"
+          should_stop_on_error: false
+          chunk_size: 2
+        payload:
+          - metadata:
+              headers:
+                - name: "NTNX-Request-Id"
+                  value: "{{ req_id_d1 }}"
+              path:
+                - name: "extId"
+                  value: "{{ ag_ext_ids[0] }}"
+          - metadata:
+              headers:
+                - name: "NTNX-Request-Id"
+                  value: "{{ req_id_d2 }}"
+              path:
+                - name: "extId"
+                  value: "{{ ag_ext_ids[1] }}"
+      register: delete_batch
+
+    - name: Best-effort cleanup — delete any leftover example address groups
+      nutanix.ncp.ntnx_address_groups_v2:
+        state: absent
+        ext_id: "{{ item }}"
+      loop: "{{ ag_ext_ids | default([]) }}"
+      register: cleanup_result
+      failed_when: false

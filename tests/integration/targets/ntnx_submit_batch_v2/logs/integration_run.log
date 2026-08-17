@@ -1,0 +1,291 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+[WARNING]: Found variable using reserved name: port
+
+PLAY [Run ntnx_submit_batch_v2 integration test] *******************************
+
+TASK [Include target main.yml] *************************************************
+included: /tmp/codegen/28b85128a27a4543826d5c509e2b3725/repo/tests/integration/targets/ntnx_submit_batch_v2/tasks/main.yml for localhost
+
+TASK [Start ntnx_submit_batch_v2 tests] ****************************************
+ok: [localhost] => {
+    "msg": "Start ntnx_submit_batch_v2 tests"
+}
+
+TASK [Generate random suffix + per-item NTNX-Request-Ids] **********************
+[WARNING]: Collection community.general does not support Ansible version 2.16.0
+ok: [localhost]
+
+TASK [Set batch / address-group names] *****************************************
+ok: [localhost]
+
+TASK [Generate CREATE batch spec via check_mode with all attributes] ***********
+ok: [localhost]
+
+TASK [Assert CREATE batch spec via check_mode] *********************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "CREATE batch check_mode spec generated correctly"
+}
+
+TASK [Submit batch to CREATE 2 address groups] *********************************
+changed: [localhost]
+
+TASK [Debug create_batch response] *********************************************
+ok: [localhost] => {
+    "create_batch": {
+        "changed": true,
+        "ext_id": "ZXJnb24=:0141dab3-29ae-4a78-6e02-a584b582c261",
+        "failed": false,
+        "response": {
+            "app_name": null,
+            "batch_summary": null,
+            "cluster_ext_ids": null,
+            "completed_time": "2026-07-20T15:48:34.414588+00:00",
+            "completion_details": [
+                {
+                    "name": "BatchId",
+                    "value": "02c14a11-b289-4f9c-4cf2-baf4e0f5fa2d"
+                }
+            ],
+            "created_time": "2026-07-20T15:48:24.237244+00:00",
+            "entities_affected": null,
+            "error_messages": [
+                {
+                    "arguments_map": {
+                        "message": "2"
+                    },
+                    "code": "BATCH-70010",
+                    "error_group": "PROCESS_BATCH_GENERIC_ERROR",
+                    "locale": "en_US",
+                    "message": "Batch task failed as 2 subtasks failed",
+                    "severity": "ERROR"
+                }
+            ],
+            "ext_id": "ZXJnb24=:0141dab3-29ae-4a78-6e02-a584b582c261",
+            "is_background_task": false,
+            "is_cancelable": false,
+            "last_updated_time": "2026-07-20T15:48:34.414587+00:00",
+            "legacy_error_message": null,
+            "number_of_entities_affected": 0,
+            "number_of_subtasks": 2,
+            "operation": "BATCH-CREATE",
+            "operation_description": "batch_create_ag_m0gooackms",
+            "owned_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "name": "admin"
+            },
+            "parent_task": null,
+            "progress_percentage": 100,
+            "projectExtId": "00000000-0000-0000-0000-000000000000",
+            "resource_links": null,
+            "root_task": null,
+            "started_time": "2026-07-20T15:48:24.256855+00:00",
+            "status": "FAILED",
+            "sub_steps": null,
+            "sub_tasks": [
+                {
+                    "ext_id": "ZXJnb24=:2ef05646-e0f8-48c5-469c-ef1d25fd0d29",
+                    "href": "https://10.44.76.28:9440/api/prism/v4.3/config/tasks/ZXJnb24=:2ef05646-e0f8-48c5-469c-ef1d25fd0d29",
+                    "rel": "subtask"
+                },
+                {
+                    "ext_id": "ZXJnb24=:e8088e8f-3d0c-4b61-6842-d8de6fd16c0c",
+                    "href": "https://10.44.76.28:9440/api/prism/v4.3/config/tasks/ZXJnb24=:e8088e8f-3d0c-4b61-6842-d8de6fd16c0c",
+                    "rel": "subtask"
+                }
+            ],
+            "warnings": null
+        },
+        "task_ext_id": "ZXJnb24=:0141dab3-29ae-4a78-6e02-a584b582c261"
+    }
+}
+
+TASK [Assert CREATE batch submission contract] *********************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Batch CREATE accepted and parent task terminated"
+}
+
+TASK [Re-submit CREATE batch with the SAME NTNX-Request-Id (idempotency)] ******
+changed: [localhost]
+
+TASK [Assert idempotent replay returns same parent task ext_id] ****************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "NTNX-Request-Id idempotency honored"
+}
+
+TASK [Ensure test address group 1 exists (best effort direct create)] **********
+changed: [localhost]
+
+TASK [Ensure test address group 2 exists (best effort direct create)] **********
+changed: [localhost]
+
+TASK [Look up the address groups by name to capture their ext_ids] *************
+ok: [localhost]
+
+TASK [Capture ext_ids of the two test address groups] **************************
+ok: [localhost]
+
+TASK [Assert both address groups exist and we captured 2 ext_ids] **************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Both address groups present; captured ext_ids for MODIFY/DELETE tests"
+}
+
+TASK [List all batches (limit 5)] **********************************************
+ok: [localhost]
+
+TASK [Assert list-all returned a list] *****************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "list-all batches returned a valid page"
+}
+
+TASK [List batches with limit=1] ***********************************************
+ok: [localhost]
+
+TASK [Assert limit=1 returns at most 1 batch] **********************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "limit=1 respected"
+}
+
+TASK [List batches with filter on our batch name] ******************************
+ok: [localhost]
+
+TASK [Assert filter returns our batch] *****************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Filter returned our named batch"
+}
+
+TASK [Extract the batch ext_id from the filter result] *************************
+ok: [localhost]
+
+TASK [Fetch a single batch by ext_id] ******************************************
+ok: [localhost]
+
+TASK [Assert get-by-id returns single batch] ***********************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "get-by-id batch returned correct entity"
+}
+
+TASK [Info — get batch by wrong ext_id (negative)] *****************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching batch info using ext_id", "response": {"$objectType": "prism.v4.operations.GetBatchApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "prism.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "prism.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "BATCH-70002", "errorGroup": "BATCH_UNKNOWN_ENTITY_ERROR", "locale": "en_US", "message": "Failed to get the batch entity 00000000-0000-0000-0000-000000000000 as the requested extId is invalid."}]}}, "status": 404}
+...ignoring
+
+TASK [Assert wrong ext_id fails gracefully] ************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Info by wrong ext_id fails as expected"
+}
+
+TASK [Info — mutually exclusive ext_id + filter (negative)] ********************
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "parameters are mutually exclusive: ext_id|filter"}
+...ignoring
+
+TASK [Assert ext_id + filter conflict rejected] ********************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "ext_id + filter conflict rejected as expected"
+}
+
+TASK [Generate MODIFY batch spec via check_mode] *******************************
+ok: [localhost]
+
+TASK [Assert MODIFY batch check_mode spec] *************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "MODIFY batch check_mode spec correct"
+}
+
+TASK [Submit batch to MODIFY both address groups] ******************************
+changed: [localhost]
+
+TASK [Assert MODIFY batch submission contract] *********************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "MODIFY batch accepted and parent task terminated"
+}
+
+TASK [Submit batch with invalid action enum (negative)] ************************
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "value of action must be one of: CREATE, MODIFY, DELETE, ACTION, got: NOT_A_REAL_ACTION found in metadata"}
+...ignoring
+
+TASK [Assert invalid action enum rejected] *************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "invalid action enum rejected"
+}
+
+TASK [Submit batch missing required metadata (negative)] ***********************
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "missing required arguments: metadata"}
+...ignoring
+
+TASK [Assert missing metadata rejected] ****************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "missing metadata rejected"
+}
+
+TASK [Submit batch missing required payload (negative)] ************************
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "missing required arguments: payload"}
+...ignoring
+
+TASK [Assert missing payload rejected] *****************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "missing payload rejected"
+}
+
+TASK [Submit batch missing required metadata.action (negative)] ****************
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "missing required arguments: action found in metadata"}
+...ignoring
+
+TASK [Assert missing metadata.action rejected] *********************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "missing metadata.action rejected"
+}
+
+TASK [Submit batch to a bogus URI (negative behavioral)] ***********************
+An exception occurred during task execution. To see the full traceback, use -vvv. The error was: ValueError: Invalid value for `uri`, must be a follow pattern or equal to `/^\/api\/[a-z\\\\-]{2,16}\/v[0-9]+.[0-9]+.[a-z,0-9]+\/.*$/`
+fatal: [localhost]: FAILED! => {"changed": false, "module_stderr": "Traceback (most recent call last):\n  File \"/home/abhinav.bansal1/.ansible/tmp/ansible-tmp-1784562540.5019062-2363638-184164163583481/AnsiballZ_ntnx_submit_batch_v2.py\", line 107, in <module>\n    _ansiballz_main()\n  File \"/home/abhinav.bansal1/.ansible/tmp/ansible-tmp-1784562540.5019062-2363638-184164163583481/AnsiballZ_ntnx_submit_batch_v2.py\", line 99, in _ansiballz_main\n    invoke_module(zipped_mod, temp_path, ANSIBALLZ_PARAMS)\n  File \"/home/abhinav.bansal1/.ansible/tmp/ansible-tmp-1784562540.5019062-2363638-184164163583481/AnsiballZ_ntnx_submit_batch_v2.py\", line 47, in invoke_module\n    runpy.run_module(mod_name='ansible_collections.nutanix.ncp.plugins.modules.ntnx_submit_batch_v2', init_globals=dict(_module_fqn='ansible_collections.nutanix.ncp.plugins.modules.ntnx_submit_batch_v2', _modlib_path=modlib_path),\n  File \"<frozen runpy>\", line 226, in run_module\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/tmp/ansible_nutanix.ncp.ntnx_submit_batch_v2_payload_3yuq7erw/ansible_nutanix.ncp.ntnx_submit_batch_v2_payload.zip/ansible_collections/nutanix/ncp/plugins/modules/ntnx_submit_batch_v2.py\", line 497, in <module>\n  File \"/tmp/ansible_nutanix.ncp.ntnx_submit_batch_v2_payload_3yuq7erw/ansible_nutanix.ncp.ntnx_submit_batch_v2_payload.zip/ansible_collections/nutanix/ncp/plugins/modules/ntnx_submit_batch_v2.py\", line 493, in main\n  File \"/tmp/ansible_nutanix.ncp.ntnx_submit_batch_v2_payload_3yuq7erw/ansible_nutanix.ncp.ntnx_submit_batch_v2_payload.zip/ansible_collections/nutanix/ncp/plugins/modules/ntnx_submit_batch_v2.py\", line 488, in run_module\n  File \"/tmp/ansible_nutanix.ncp.ntnx_submit_batch_v2_payload_3yuq7erw/ansible_nutanix.ncp.ntnx_submit_batch_v2_payload.zip/ansible_collections/nutanix/ncp/plugins/modules/ntnx_submit_batch_v2.py\", line 429, in submit_batch\n  File \"/tmp/ansible_nutanix.ncp.ntnx_submit_batch_v2_payload_3yuq7erw/ansible_nutanix.ncp.ntnx_submit_batch_v2_payload.zip/ansible_collections/nutanix/ncp/plugins/module_utils/v4/spec_generator.py\", line 80, in generate_spec\n  File \"/tmp/ansible_nutanix.ncp.ntnx_submit_batch_v2_payload_3yuq7erw/ansible_nutanix.ncp.ntnx_submit_batch_v2_payload.zip/ansible_collections/nutanix/ncp/plugins/module_utils/v4/spec_generator.py\", line 102, in generate_spec\n  File \"/home/abhinav.bansal1/.local/lib/python3.12/site-packages/ntnx_prism_py_client/models/prism/v4/operations/BatchSpecMetadata.py\", line 186, in uri\n    raise ValueError(r\"Invalid value for `uri`, must be a follow pattern or equal to `/^\\/api\\/[a-z\\\\\\\\-]{2,16}\\/v[0-9]+.[0-9]+.[a-z,0-9]+\\/.*$/`\")  # noqa: E501\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nValueError: Invalid value for `uri`, must be a follow pattern or equal to `/^\\/api\\/[a-z\\\\\\\\-]{2,16}\\/v[0-9]+.[0-9]+.[a-z,0-9]+\\/.*$/`\n", "module_stdout": "", "msg": "MODULE FAILURE\nSee stdout/stderr for the exact error", "rc": 1}
+...ignoring
+
+TASK [Assert bogus-URI batch handled predictably (either up-front reject or subtask fail)] ***
+ok: [localhost] => {
+    "changed": false,
+    "msg": "Bogus URI batch handled predictably"
+}
+
+TASK [Generate DELETE batch spec via check_mode] *******************************
+ok: [localhost]
+
+TASK [Assert DELETE batch check_mode spec] *************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "DELETE batch check_mode spec correct"
+}
+
+TASK [Submit batch to DELETE both address groups] ******************************
+changed: [localhost]
+
+TASK [Assert DELETE batch submission contract] *********************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "DELETE batch accepted and parent task terminated"
+}
+
+TASK [Best-effort cleanup — delete any residual address groups directly] *******
+failed: [localhost] (item=ee1b7319-3d00-46df-91c8-cea51968efea) => {"ansible_loop_var": "item", "changed": false, "error": "FORBIDDEN", "item": "ee1b7319-3d00-46df-91c8-cea51968efea", "msg": "Api Exception raised while fetching address group info using ext_id", "response": {"$objectType": "microseg.v4.config.GetAddressGroupApiResponse", "$reserved": {"$fv": "v4.r3"}, "data": {"$objectType": "microseg.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r3"}, "error": [{"$objectType": "microseg.v4.error.AppMessage", "$reserved": {"$fv": "v4.r3"}, "code": "MIC-10013", "locale": "en_US", "message": "Failed to perform operation because requested entity does not exist or is unauthorized.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://127.0.0.1/api/microseg/v4/config/address-groups/ee1b7319-3d00-46df-91c8-cea51968efea", "rel": "self"}], "totalAvailableResults": 0}}, "status": 403}
+failed: [localhost] (item=4f156256-be13-4b29-b212-dd4a638bd320) => {"ansible_loop_var": "item", "changed": false, "error": "FORBIDDEN", "item": "4f156256-be13-4b29-b212-dd4a638bd320", "msg": "Api Exception raised while fetching address group info using ext_id", "response": {"$objectType": "microseg.v4.config.GetAddressGroupApiResponse", "$reserved": {"$fv": "v4.r3"}, "data": {"$objectType": "microseg.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r3"}, "error": [{"$objectType": "microseg.v4.error.AppMessage", "$reserved": {"$fv": "v4.r3"}, "code": "MIC-10013", "locale": "en_US", "message": "Failed to perform operation because requested entity does not exist or is unauthorized.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://127.0.0.1/api/microseg/v4/config/address-groups/4f156256-be13-4b29-b212-dd4a638bd320", "rel": "self"}], "totalAvailableResults": 0}}, "status": 403}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=48   changed=6    unreachable=0    failed=0    skipped=0    rescued=0    ignored=8   
+

@@ -120,3 +120,23 @@ def get_pc_task(
             exception=e,
             msg="Api Exception raised while fetching pc task info using ext_id",
         )
+
+
+def get_batch(module, api_instance, ext_id):
+    """
+    This method will return batch info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: BatchesApi instance from ntnx_prism_py_client sdk
+        ext_id (str): batch external ID
+    return:
+        batch_info (object): batch info
+    """
+    try:
+        return api_instance.get_batch_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching batch info using ext_id",
+        )

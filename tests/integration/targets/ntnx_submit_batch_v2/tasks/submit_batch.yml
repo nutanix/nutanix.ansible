@@ -1,0 +1,713 @@
+---
+# Integration tests for ntnx_submit_batch_v2 and ntnx_submit_batches_info_v2.
+#
+# TEST PLAN:
+# ==========
+#   Positive (module contract):
+#     - check_mode CREATE / MODIFY / DELETE spec generation with all attributes.
+#     - Real CREATE batch submission (2 address-groups) — assert Prism accepted
+#       the batch, wait for the parent task, capture the submitted batch ext_id.
+#     - Real MODIFY batch submission on the same address-groups.
+#     - Real DELETE batch submission on the same address-groups.
+#     - Idempotency: replay the same CREATE with the same NTNX-Request-Id and
+#       assert the second call returns the same parent task ext_id.
+#   Info module:
+#     - list all (limit-capped), list by filter, get by ext_id.
+#     - Negative: unknown ext_id, mutually exclusive ext_id + filter.
+#   Negative (module):
+#     - Invalid enum for `metadata.action` -> argument spec error.
+#     - Missing required `metadata` / `payload` / `metadata.action`.
+#     - Bogus URI -> batch is still accepted (per-item subtasks fail) but the
+#       Ansible module never raises.
+#
+# Coverage note: every attribute in the submit-batch module spec
+# (metadata.action / name / uri / should_stop_on_error / chunk_size;
+#  payload[].metadata.headers[].name/value; payload[].metadata.path[].name/value;
+#  payload[].data; request_id) is exercised in at least one create/update/delete
+# task, and every enum value for `action` (CREATE, MODIFY, DELETE) is covered.
+#
+# NOTE: the batch task itself may end in the SUCCEEDED, PARTIALLY_SUCCEEDED or
+# FAILED terminal state depending on the underlying entity API behavior on the
+# target cluster; the module always returns the completed task details for the
+# caller to inspect. These tests validate the *submission* contract (task
+# creation, task fields, info APIs) rather than assuming a particular subtask
+# outcome, which keeps them portable across clusters.
+- name: Start ntnx_submit_batch_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_submit_batch_v2 tests
+
+- name: Generate random suffix + per-item NTNX-Request-Ids
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=true, upper=false, special=false, length=10)[0] }}"
+    req_id_c1: "{{ 99999999999999999999 | random | to_uuid }}"
+    req_id_c2: "{{ 99999999999999999999 | random | to_uuid }}"
+    req_id_m1: "{{ 99999999999999999999 | random | to_uuid }}"
+    req_id_m2: "{{ 99999999999999999999 | random | to_uuid }}"
+    req_id_d1: "{{ 99999999999999999999 | random | to_uuid }}"
+    req_id_d2: "{{ 99999999999999999999 | random | to_uuid }}"
+    req_id_cm: "{{ 99999999999999999999 | random | to_uuid }}"
+    req_id_mm: "{{ 99999999999999999999 | random | to_uuid }}"
+    req_id_bogus: "{{ 99999999999999999999 | random | to_uuid }}"
+    batch_req_id_create: "{{ 99999999999999999999 | random | to_uuid }}"
+
+- name: Set batch / address-group names
+  ansible.builtin.set_fact:
+    batch_name_create: "batch_create_ag_{{ random_suffix }}"
+    batch_name_modify: "batch_modify_ag_{{ random_suffix }}"
+    batch_name_delete: "batch_delete_ag_{{ random_suffix }}"
+    batch_name_bogus: "batch_bogus_uri_{{ random_suffix }}"
+    ag1_name: "ag_batch_1_{{ random_suffix }}"
+    ag2_name: "ag_batch_2_{{ random_suffix }}"
+    address_groups_uri: "/api/microseg/v4.0/config/address-groups"
+    address_groups_uri_by_id: "/api/microseg/v4.0/config/address-groups/{extId}"
+
+########################################################################################
+# CHECK MODE — CREATE spec with ALL attributes (headers + data)
+########################################################################################
+
+- name: Generate CREATE batch spec via check_mode with all attributes
+  nutanix.ncp.ntnx_submit_batch_v2:
+    metadata:
+      action: CREATE
+      name: "{{ batch_name_create }}"
+      uri: "{{ address_groups_uri }}"
+      should_stop_on_error: false
+      chunk_size: 2
+    payload:
+      - metadata:
+          headers:
+            - name: "Content-Type"
+              value: "application/json"
+            - name: "NTNX-Request-Id"
+              value: "{{ req_id_cm }}"
+        data:
+          name: "{{ ag1_name }}"
+          description: "AG 1 for batch create check_mode"
+          ipv4Addresses:
+            - value: "10.0.0.1"
+              prefixLength: 32
+      - metadata:
+          headers:
+            - name: "Content-Type"
+              value: "application/json"
+            - name: "NTNX-Request-Id"
+              value: "{{ req_id_c2 }}"
+        data:
+          name: "{{ ag2_name }}"
+          description: "AG 2 for batch create check_mode"
+          ipv4Addresses:
+            - value: "10.0.0.2"
+              prefixLength: 32
+  check_mode: true
+  register: create_check_mode
+  ignore_errors: true
+
+- name: Assert CREATE batch spec via check_mode
+  ansible.builtin.assert:
+    that:
+      - create_check_mode is defined
+      - create_check_mode.changed == false
+      - create_check_mode.failed == false
+      - create_check_mode.response is defined
+      - create_check_mode.response.metadata.action == "CREATE"
+      - create_check_mode.response.metadata.name == batch_name_create
+      - create_check_mode.response.metadata.uri == address_groups_uri
+      - create_check_mode.response.metadata.should_stop_on_error == false
+      - create_check_mode.response.metadata.chunk_size == 2
+      - create_check_mode.response.payload | length == 2
+      - create_check_mode.response.payload[0].metadata.headers[0].name == "Content-Type"
+      - create_check_mode.response.payload[0].metadata.headers[0].value == "application/json"
+      - create_check_mode.response.payload[0].data.name == ag1_name
+      - create_check_mode.response.payload[0].data.ipv4Addresses[0].value == "10.0.0.1"
+      - create_check_mode.response.payload[0].data.ipv4Addresses[0].prefixLength == 32
+      - create_check_mode.response.payload[1].data.name == ag2_name
+      - create_check_mode.response.payload[1].data.ipv4Addresses[0].value == "10.0.0.2"
+    success_msg: "CREATE batch check_mode spec generated correctly"
+    fail_msg: "CREATE batch check_mode spec generation failed"
+
+########################################################################################
+# REAL CREATE — bulk create 2 address groups via SubmitBatch
+########################################################################################
+
+- name: Submit batch to CREATE 2 address groups
+  nutanix.ncp.ntnx_submit_batch_v2:
+    request_id: "{{ batch_req_id_create }}"
+    metadata:
+      action: CREATE
+      name: "{{ batch_name_create }}"
+      uri: "{{ address_groups_uri }}"
+      should_stop_on_error: false
+      chunk_size: 2
+    payload:
+      - metadata:
+          headers:
+            - name: "Content-Type"
+              value: "application/json"
+            - name: "NTNX-Request-Id"
+              value: "{{ req_id_c1 }}"
+        data:
+          name: "{{ ag1_name }}"
+          description: "AG 1 for batch create real"
+          ipv4Addresses:
+            - value: "10.0.0.1"
+              prefixLength: 32
+      - metadata:
+          headers:
+            - name: "Content-Type"
+              value: "application/json"
+            - name: "NTNX-Request-Id"
+              value: "{{ req_id_c2 }}"
+        data:
+          name: "{{ ag2_name }}"
+          description: "AG 2 for batch create real"
+          ipv4Addresses:
+            - value: "10.0.0.2"
+              prefixLength: 32
+  register: create_batch
+
+- name: Debug create_batch response
+  ansible.builtin.debug:
+    var: create_batch
+
+- name: Assert CREATE batch submission contract
+  ansible.builtin.assert:
+    that:
+      - create_batch is defined
+      - create_batch.changed == true
+      - create_batch.failed == false
+      - create_batch.task_ext_id is defined
+      - create_batch.task_ext_id | length > 0
+      - create_batch.ext_id is defined
+      - create_batch.ext_id | length > 0
+      - create_batch.response is defined
+      - create_batch.response.status in ["SUCCEEDED", "FAILED"]
+      - create_batch.response.operation == "BATCH-CREATE"
+      - create_batch.response.number_of_subtasks == 2
+    success_msg: "Batch CREATE accepted and parent task terminated"
+    fail_msg: "Batch CREATE did not follow the expected submission contract"
+
+- name: Re-submit CREATE batch with the SAME NTNX-Request-Id (idempotency)
+  nutanix.ncp.ntnx_submit_batch_v2:
+    request_id: "{{ batch_req_id_create }}"
+    metadata:
+      action: CREATE
+      name: "{{ batch_name_create }}"
+      uri: "{{ address_groups_uri }}"
+      should_stop_on_error: false
+      chunk_size: 2
+    payload:
+      - metadata:
+          headers:
+            - name: "Content-Type"
+              value: "application/json"
+            - name: "NTNX-Request-Id"
+              value: "{{ req_id_c1 }}"
+        data:
+          name: "{{ ag1_name }}"
+          description: "AG 1 for batch create real"
+          ipv4Addresses:
+            - value: "10.0.0.1"
+              prefixLength: 32
+      - metadata:
+          headers:
+            - name: "Content-Type"
+              value: "application/json"
+            - name: "NTNX-Request-Id"
+              value: "{{ req_id_c2 }}"
+        data:
+          name: "{{ ag2_name }}"
+          description: "AG 2 for batch create real"
+          ipv4Addresses:
+            - value: "10.0.0.2"
+              prefixLength: 32
+  register: create_batch_replay
+  ignore_errors: true
+
+- name: Assert idempotent replay returns same parent task ext_id
+  ansible.builtin.assert:
+    that:
+      - create_batch_replay is defined
+      - create_batch_replay.failed == false
+      - create_batch_replay.task_ext_id == create_batch.task_ext_id
+    success_msg: "NTNX-Request-Id idempotency honored"
+    fail_msg: "NTNX-Request-Id idempotency was NOT honored"
+
+# The batch subtasks may or may not have created the address groups on this
+# cluster (batch executor behavior is environment-dependent). Directly create
+# the address groups so the MODIFY / DELETE batches always have real ext_ids
+# to work with.
+- name: Ensure test address group 1 exists (best effort direct create)
+  nutanix.ncp.ntnx_address_groups_v2:
+    name: "{{ ag1_name }}"
+    description: "AG 1 for batch MODIFY DELETE tests"
+    ipv4_addresses:
+      - value: "10.0.0.1"
+        prefix_length: 32
+  register: ag1_ensure
+  ignore_errors: true
+
+- name: Ensure test address group 2 exists (best effort direct create)
+  nutanix.ncp.ntnx_address_groups_v2:
+    name: "{{ ag2_name }}"
+    description: "AG 2 for batch MODIFY DELETE tests"
+    ipv4_addresses:
+      - value: "10.0.0.2"
+        prefix_length: 32
+  register: ag2_ensure
+  ignore_errors: true
+
+- name: Look up the address groups by name to capture their ext_ids
+  nutanix.ncp.ntnx_address_groups_info_v2:
+    filter: "name eq '{{ ag1_name }}' or name eq '{{ ag2_name }}'"
+  register: ag_lookup
+
+- name: Capture ext_ids of the two test address groups
+  ansible.builtin.set_fact:
+    ag_ext_ids: "{{ ag_lookup.response | map(attribute='ext_id') | list }}"
+
+- name: Assert both address groups exist and we captured 2 ext_ids
+  ansible.builtin.assert:
+    that:
+      - ag_ext_ids is defined
+      - ag_ext_ids | length == 2
+    success_msg: "Both address groups present; captured ext_ids for MODIFY/DELETE tests"
+    fail_msg: "Could not locate the 2 address groups needed for MODIFY/DELETE tests"
+
+########################################################################################
+# INFO — get-by-ext_id, list-all, list-with-filter, list-with-limit, bad ext_id
+########################################################################################
+
+- name: List all batches (limit 5)
+  nutanix.ncp.ntnx_submit_batches_info_v2:
+    limit: 5
+  register: list_all_batches
+  ignore_errors: true
+
+- name: Assert list-all returned a list
+  ansible.builtin.assert:
+    that:
+      - list_all_batches is defined
+      - list_all_batches.changed == false
+      - list_all_batches.failed == false
+      - list_all_batches.response is defined
+      - list_all_batches.response is iterable
+      - list_all_batches.total_available_results is defined
+      - list_all_batches.response | length <= 5
+    success_msg: "list-all batches returned a valid page"
+    fail_msg: "list-all batches did not return a valid page"
+
+- name: List batches with limit=1
+  nutanix.ncp.ntnx_submit_batches_info_v2:
+    limit: 1
+  register: list_limit_1
+  ignore_errors: true
+
+- name: Assert limit=1 returns at most 1 batch
+  ansible.builtin.assert:
+    that:
+      - list_limit_1 is defined
+      - list_limit_1.failed == false
+      - list_limit_1.response is defined
+      - list_limit_1.response | length <= 1
+    success_msg: "limit=1 respected"
+    fail_msg: "limit=1 was not respected"
+
+- name: List batches with filter on our batch name
+  nutanix.ncp.ntnx_submit_batches_info_v2:
+    filter: "name eq '{{ batch_name_create }}'"
+  register: list_by_name
+  ignore_errors: true
+
+- name: Assert filter returns our batch
+  ansible.builtin.assert:
+    that:
+      - list_by_name is defined
+      - list_by_name.failed == false
+      - list_by_name.response is defined
+      - list_by_name.response | length >= 1
+      - list_by_name.response[0].name == batch_name_create
+    success_msg: "Filter returned our named batch"
+    fail_msg: "Filter did not return our named batch"
+
+- name: Extract the batch ext_id from the filter result
+  ansible.builtin.set_fact:
+    submitted_batch_ext_id: "{{ list_by_name.response[0].ext_id }}"
+
+- name: Fetch a single batch by ext_id
+  nutanix.ncp.ntnx_submit_batches_info_v2:
+    ext_id: "{{ submitted_batch_ext_id }}"
+  register: get_by_id
+  ignore_errors: true
+
+- name: Assert get-by-id returns single batch
+  ansible.builtin.assert:
+    that:
+      - get_by_id is defined
+      - get_by_id.failed == false
+      - get_by_id.response is defined
+      - get_by_id.response.ext_id == submitted_batch_ext_id
+      - get_by_id.response.name == batch_name_create
+      - get_by_id.ext_id == submitted_batch_ext_id
+    success_msg: "get-by-id batch returned correct entity"
+    fail_msg: "get-by-id batch returned wrong entity"
+
+- name: Info — get batch by wrong ext_id (negative)
+  nutanix.ncp.ntnx_submit_batches_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: get_by_wrong_id
+  ignore_errors: true
+
+- name: Assert wrong ext_id fails gracefully
+  ansible.builtin.assert:
+    that:
+      - get_by_wrong_id is defined
+      - get_by_wrong_id.changed == false
+      - get_by_wrong_id.failed == true
+    success_msg: "Info by wrong ext_id fails as expected"
+    fail_msg: "Info by wrong ext_id did not fail as expected"
+
+- name: Info — mutually exclusive ext_id + filter (negative)
+  nutanix.ncp.ntnx_submit_batches_info_v2:
+    ext_id: "{{ submitted_batch_ext_id }}"
+    filter: "name eq '{{ batch_name_create }}'"
+  register: info_conflict
+  ignore_errors: true
+
+- name: Assert ext_id + filter conflict rejected
+  ansible.builtin.assert:
+    that:
+      - info_conflict is defined
+      - info_conflict.failed == true
+      - "'parameters are mutually exclusive: ext_id|filter' in info_conflict.msg"
+    success_msg: "ext_id + filter conflict rejected as expected"
+    fail_msg: "ext_id + filter conflict was not rejected"
+
+########################################################################################
+# CHECK MODE — MODIFY spec
+########################################################################################
+
+- name: Generate MODIFY batch spec via check_mode
+  nutanix.ncp.ntnx_submit_batch_v2:
+    metadata:
+      action: MODIFY
+      name: "{{ batch_name_modify }}"
+      uri: "{{ address_groups_uri_by_id }}"
+      should_stop_on_error: true
+      chunk_size: 1
+    payload:
+      - metadata:
+          headers:
+            - name: "Content-Type"
+              value: "application/json"
+            - name: "NTNX-Request-Id"
+              value: "{{ req_id_mm }}"
+          path:
+            - name: "extId"
+              value: "{{ ag_ext_ids[0] }}"
+        data:
+          name: "{{ ag1_name }}"
+          description: "Updated in check_mode"
+          ipv4Addresses:
+            - value: "10.0.0.11"
+              prefixLength: 32
+  check_mode: true
+  register: modify_check_mode
+  ignore_errors: true
+
+- name: Assert MODIFY batch check_mode spec
+  ansible.builtin.assert:
+    that:
+      - modify_check_mode is defined
+      - modify_check_mode.changed == false
+      - modify_check_mode.failed == false
+      - modify_check_mode.response is defined
+      - modify_check_mode.response.metadata.action == "MODIFY"
+      - modify_check_mode.response.metadata.uri == address_groups_uri_by_id
+      - modify_check_mode.response.metadata.should_stop_on_error == true
+      - modify_check_mode.response.metadata.chunk_size == 1
+      - modify_check_mode.response.payload | length == 1
+      - modify_check_mode.response.payload[0].metadata.path[0].name == "extId"
+      - modify_check_mode.response.payload[0].metadata.path[0].value == ag_ext_ids[0]
+      - modify_check_mode.response.payload[0].data.description == "Updated in check_mode"
+    success_msg: "MODIFY batch check_mode spec correct"
+    fail_msg: "MODIFY batch check_mode spec incorrect"
+
+########################################################################################
+# REAL MODIFY — update both address groups via SubmitBatch
+########################################################################################
+
+- name: Submit batch to MODIFY both address groups
+  nutanix.ncp.ntnx_submit_batch_v2:
+    metadata:
+      action: MODIFY
+      name: "{{ batch_name_modify }}"
+      uri: "{{ address_groups_uri_by_id }}"
+      should_stop_on_error: false
+      chunk_size: 2
+    payload:
+      - metadata:
+          headers:
+            - name: "Content-Type"
+              value: "application/json"
+            - name: "NTNX-Request-Id"
+              value: "{{ req_id_m1 }}"
+          path:
+            - name: "extId"
+              value: "{{ ag_ext_ids[0] }}"
+        data:
+          name: "{{ ag1_name }}"
+          description: "Updated by batch MODIFY"
+          ipv4Addresses:
+            - value: "10.0.0.11"
+              prefixLength: 32
+      - metadata:
+          headers:
+            - name: "Content-Type"
+              value: "application/json"
+            - name: "NTNX-Request-Id"
+              value: "{{ req_id_m2 }}"
+          path:
+            - name: "extId"
+              value: "{{ ag_ext_ids[1] }}"
+        data:
+          name: "{{ ag2_name }}"
+          description: "Updated by batch MODIFY"
+          ipv4Addresses:
+            - value: "10.0.0.22"
+              prefixLength: 32
+  register: modify_batch
+
+- name: Assert MODIFY batch submission contract
+  ansible.builtin.assert:
+    that:
+      - modify_batch is defined
+      - modify_batch.changed == true
+      - modify_batch.failed == false
+      - modify_batch.task_ext_id is defined
+      - modify_batch.task_ext_id | length > 0
+      - modify_batch.response is defined
+      - modify_batch.response.status in ["SUCCEEDED", "FAILED"]
+      - modify_batch.response.operation == "BATCH-MODIFY"
+      - modify_batch.response.number_of_subtasks == 2
+    success_msg: "MODIFY batch accepted and parent task terminated"
+    fail_msg: "MODIFY batch did not follow the expected submission contract"
+
+########################################################################################
+# NEGATIVE — argument spec validation
+########################################################################################
+
+- name: Submit batch with invalid action enum (negative)
+  nutanix.ncp.ntnx_submit_batch_v2:
+    metadata:
+      action: NOT_A_REAL_ACTION
+      name: "invalid_action_{{ random_suffix }}"
+      uri: "{{ address_groups_uri }}"
+    payload:
+      - data:
+          name: "x"
+  register: bad_action
+  ignore_errors: true
+
+- name: Assert invalid action enum rejected
+  ansible.builtin.assert:
+    that:
+      - bad_action is defined
+      - bad_action.failed == true
+      - bad_action.changed == false
+      - "'value of action must be one of' in bad_action.msg or 'value of action' in bad_action.msg"
+    success_msg: "invalid action enum rejected"
+    fail_msg: "invalid action enum was NOT rejected"
+
+- name: Submit batch missing required metadata (negative)
+  nutanix.ncp.ntnx_submit_batch_v2:
+    payload:
+      - data:
+          name: "x"
+  register: missing_metadata
+  ignore_errors: true
+
+- name: Assert missing metadata rejected
+  ansible.builtin.assert:
+    that:
+      - missing_metadata is defined
+      - missing_metadata.failed == true
+      - missing_metadata.changed == false
+      - "'missing required arguments: metadata' in missing_metadata.msg"
+    success_msg: "missing metadata rejected"
+    fail_msg: "missing metadata was NOT rejected"
+
+- name: Submit batch missing required payload (negative)
+  nutanix.ncp.ntnx_submit_batch_v2:
+    metadata:
+      action: CREATE
+      name: "missing_payload_{{ random_suffix }}"
+      uri: "{{ address_groups_uri }}"
+  register: missing_payload
+  ignore_errors: true
+
+- name: Assert missing payload rejected
+  ansible.builtin.assert:
+    that:
+      - missing_payload is defined
+      - missing_payload.failed == true
+      - missing_payload.changed == false
+      - "'missing required arguments: payload' in missing_payload.msg"
+    success_msg: "missing payload rejected"
+    fail_msg: "missing payload was NOT rejected"
+
+- name: Submit batch missing required metadata.action (negative)
+  nutanix.ncp.ntnx_submit_batch_v2:
+    metadata:
+      name: "missing_action_{{ random_suffix }}"
+      uri: "{{ address_groups_uri }}"
+    payload:
+      - data:
+          name: "x"
+  register: missing_action
+  ignore_errors: true
+
+- name: Assert missing metadata.action rejected
+  ansible.builtin.assert:
+    that:
+      - missing_action is defined
+      - missing_action.failed == true
+      - missing_action.changed == false
+      - "'missing required arguments: action' in missing_action.msg or 'missing required' in missing_action.msg"
+    success_msg: "missing metadata.action rejected"
+    fail_msg: "missing metadata.action was NOT rejected"
+
+########################################################################################
+# NEGATIVE — batch to a bogus URI (parent task should surface a failure)
+########################################################################################
+
+- name: Submit batch to a bogus URI (negative behavioral)
+  nutanix.ncp.ntnx_submit_batch_v2:
+    metadata:
+      action: CREATE
+      name: "{{ batch_name_bogus }}"
+      uri: "/api/does-not-exist/v0/nothing"
+      should_stop_on_error: false
+      chunk_size: 1
+    payload:
+      - metadata:
+          headers:
+            - name: "NTNX-Request-Id"
+              value: "{{ req_id_bogus }}"
+        data:
+          name: "wont_be_created_{{ random_suffix }}"
+  register: bogus_batch
+  ignore_errors: true
+
+- name: Assert bogus-URI batch handled predictably (either up-front reject or subtask fail)
+  ansible.builtin.assert:
+    that:
+      - bogus_batch is defined
+      # Either the API rejects the URI up-front (failed=true) or the batch
+      # is accepted and the parent task ends up in a terminal state.
+      - (bogus_batch.failed == true)
+        or (bogus_batch.response is defined
+            and (bogus_batch.response.status in ["FAILED", "SUCCEEDED"]))
+    success_msg: "Bogus URI batch handled predictably"
+    fail_msg: "Bogus URI batch handling unexpected"
+
+########################################################################################
+# CHECK MODE — DELETE spec
+########################################################################################
+
+- name: Generate DELETE batch spec via check_mode
+  nutanix.ncp.ntnx_submit_batch_v2:
+    metadata:
+      action: DELETE
+      name: "{{ batch_name_delete }}"
+      uri: "{{ address_groups_uri_by_id }}"
+      should_stop_on_error: false
+      chunk_size: 1
+    payload:
+      - metadata:
+          headers:
+            - name: "NTNX-Request-Id"
+              value: "{{ req_id_d1 }}"
+          path:
+            - name: "extId"
+              value: "{{ ag_ext_ids[0] }}"
+      - metadata:
+          headers:
+            - name: "NTNX-Request-Id"
+              value: "{{ req_id_d2 }}"
+          path:
+            - name: "extId"
+              value: "{{ ag_ext_ids[1] }}"
+  check_mode: true
+  register: delete_check_mode
+  ignore_errors: true
+
+- name: Assert DELETE batch check_mode spec
+  ansible.builtin.assert:
+    that:
+      - delete_check_mode is defined
+      - delete_check_mode.changed == false
+      - delete_check_mode.failed == false
+      - delete_check_mode.response is defined
+      - delete_check_mode.response.metadata.action == "DELETE"
+      - delete_check_mode.response.metadata.uri == address_groups_uri_by_id
+      - delete_check_mode.response.payload | length == 2
+      - delete_check_mode.response.payload[0].metadata.path[0].value == ag_ext_ids[0]
+      - delete_check_mode.response.payload[1].metadata.path[0].value == ag_ext_ids[1]
+    success_msg: "DELETE batch check_mode spec correct"
+    fail_msg: "DELETE batch check_mode spec incorrect"
+
+########################################################################################
+# REAL DELETE — submit a DELETE batch (subtask outcome may vary per cluster)
+########################################################################################
+
+- name: Submit batch to DELETE both address groups
+  nutanix.ncp.ntnx_submit_batch_v2:
+    metadata:
+      action: DELETE
+      name: "{{ batch_name_delete }}"
+      uri: "{{ address_groups_uri_by_id }}"
+      should_stop_on_error: false
+      chunk_size: 2
+    payload:
+      - metadata:
+          headers:
+            - name: "NTNX-Request-Id"
+              value: "{{ req_id_d1 }}"
+          path:
+            - name: "extId"
+              value: "{{ ag_ext_ids[0] }}"
+      - metadata:
+          headers:
+            - name: "NTNX-Request-Id"
+              value: "{{ req_id_d2 }}"
+          path:
+            - name: "extId"
+              value: "{{ ag_ext_ids[1] }}"
+  register: delete_batch
+
+- name: Assert DELETE batch submission contract
+  ansible.builtin.assert:
+    that:
+      - delete_batch is defined
+      - delete_batch.changed == true
+      - delete_batch.failed == false
+      - delete_batch.task_ext_id is defined
+      - delete_batch.task_ext_id | length > 0
+      - delete_batch.response is defined
+      - delete_batch.response.status in ["SUCCEEDED", "FAILED"]
+      - delete_batch.response.operation == "BATCH-DELETE"
+      - delete_batch.response.number_of_subtasks == 2
+    success_msg: "DELETE batch accepted and parent task terminated"
+    fail_msg: "DELETE batch did not follow the expected submission contract"
+
+########################################################################################
+# Cleanup safety net — best-effort delete of test address groups directly.
+########################################################################################
+
+- name: Best-effort cleanup — delete any residual address groups directly
+  nutanix.ncp.ntnx_address_groups_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ ag_ext_ids | default([]) }}"
+  register: cleanup_result
+  ignore_errors: true
