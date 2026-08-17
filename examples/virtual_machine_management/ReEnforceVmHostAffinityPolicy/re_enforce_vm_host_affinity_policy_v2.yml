@@ -1,0 +1,186 @@
+---
+# Summary:
+# This playbook demonstrates the ntnx_re_enforce_vm_host_affinity_policy_v2
+# action module. It performs the following steps end-to-end against a live
+# Prism Central endpoint:
+#   1. Create prerequisite host + VM categories through the categories module.
+#   2. Create a VM-Host Affinity Policy through the v4 REST API (no dedicated
+#      ansible module exists for the CRUD side in this collection yet).
+#   3. Re-enforce the freshly-created VM-Host Affinity Policy using the new
+#      v2 action module.
+#   4. Clean up the policy and categories.
+#
+# The demonstrated operation is the re-enforce action; the surrounding tasks
+# only exist to make the example self-contained.
+
+- name: Re-enforce VM-Host Affinity Policy playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  vars:
+    random_suffix: "{{ lookup('password', '/dev/null length=8 chars=ascii_lowercase') }}"
+    host_cat_key: "hac_host_{{ random_suffix }}"
+    vm_cat_key: "hac_vm_{{ random_suffix }}"
+    policy_name: "vha_policy_{{ random_suffix }}"
+    base_url: "https://{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}:9440/api/vmm/v4.2/ahv/policies/vm-host-affinity-policies"
+  tasks:
+    - name: Create host category value
+      nutanix.ncp.ntnx_categories_v2:
+        key: "{{ host_cat_key }}"
+        value: "host1"
+        description: "Host category for re-enforce example"
+        state: present
+      register: host_category
+      ignore_errors: true
+
+    - name: Create VM category value
+      nutanix.ncp.ntnx_categories_v2:
+        key: "{{ vm_cat_key }}"
+        value: "vm1"
+        description: "VM category for re-enforce example"
+        state: present
+      register: vm_category
+      ignore_errors: true
+
+    - name: Generate request id for policy creation
+      ansible.builtin.set_fact:
+        create_request_id: "{{ 99999999999999999999 | random | to_uuid }}"
+
+    - name: Create VM-Host Affinity Policy via v4 REST
+      ansible.builtin.uri:
+        url: "{{ base_url }}"
+        method: POST
+        user: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+        password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+        force_basic_auth: true
+        validate_certs: false
+        body_format: json
+        headers:
+          Content-Type: "application/json"
+          Accept: "application/json"
+          NTNX-Request-Id: "{{ create_request_id }}"
+        body:
+          name: "{{ policy_name }}"
+          description: "Example policy for re-enforce"
+          vmCategories:
+            - extId: "{{ vm_category.ext_id }}"
+          hostCategories:
+            - extId: "{{ host_category.ext_id }}"
+        status_code: [200, 201, 202]
+        return_content: true
+      register: policy_create
+      ignore_errors: true
+
+    - name: Set task ext_id from create response
+      ansible.builtin.set_fact:
+        create_task_ext_id: "{{ policy_create.json.data.extId }}"
+      when:
+        - policy_create is defined
+        - not (policy_create.failed | default(false))
+        - policy_create.json is defined
+        - policy_create.json.data.extId is defined
+
+    - name: Poll the create task until it is SUCCEEDED
+      ansible.builtin.uri:
+        url: "https://{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}:9440/api/prism/v4.0.b1/config/tasks/{{ create_task_ext_id }}"
+        method: GET
+        user: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+        password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+        force_basic_auth: true
+        validate_certs: false
+        headers:
+          Accept: "application/json"
+        return_content: true
+      register: create_task_status
+      until: (create_task_status.json.data.status | default('')) in ['SUCCEEDED', 'FAILED']
+      retries: 30
+      delay: 5
+      when: create_task_ext_id is defined
+
+    - name: Set policy ext_id from task entities_affected
+      ansible.builtin.set_fact:
+        policy_ext_id: >-
+          {{ (create_task_status.json.data.entitiesAffected |
+              selectattr('rel', 'match', '.*vm-host-affinity-policy.*') |
+              list | first).extId }}
+      when:
+        - create_task_status is defined
+        - create_task_status.json is defined
+        - (create_task_status.json.data.status | default('')) == 'SUCCEEDED'
+
+    - name: Re-enforce the VM-Host Affinity Policy
+      nutanix.ncp.ntnx_re_enforce_vm_host_affinity_policy_v2:
+        state: present
+        ext_id: "{{ policy_ext_id }}"
+      register: re_enforce_result
+      ignore_errors: true
+      when: policy_ext_id is defined
+
+    - name: Show the re-enforce result
+      ansible.builtin.debug:
+        var: re_enforce_result
+
+    - name: Fetch policy etag before delete
+      ansible.builtin.uri:
+        url: "{{ base_url }}/{{ policy_ext_id }}"
+        method: GET
+        user: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+        password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+        force_basic_auth: true
+        validate_certs: false
+        headers:
+          Accept: "application/json"
+        return_content: true
+      register: policy_get
+      failed_when: false
+      when: policy_ext_id is defined
+
+    - name: Generate request id for policy delete
+      ansible.builtin.set_fact:
+        delete_request_id: "{{ 99999999999999999999 | random | to_uuid }}"
+
+    - name: Clean up VM-Host Affinity Policy
+      ansible.builtin.uri:
+        url: "{{ base_url }}/{{ policy_ext_id }}"
+        method: DELETE
+        user: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+        password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+        force_basic_auth: true
+        validate_certs: false
+        headers:
+          If-Match: "{{ policy_get.etag | default('') }}"
+          NTNX-Request-Id: "{{ delete_request_id }}"
+        status_code: [200, 202, 204]
+      failed_when: false
+      when:
+        - policy_ext_id is defined
+        - policy_get is defined
+        - policy_get.etag is defined
+
+    - name: Wait a few seconds for policy delete to propagate
+      ansible.builtin.pause:
+        seconds: 5
+      when: policy_ext_id is defined
+
+    - name: Clean up VM category
+      nutanix.ncp.ntnx_categories_v2:
+        ext_id: "{{ vm_category.ext_id }}"
+        state: absent
+      failed_when: false
+      when:
+        - vm_category is defined
+        - vm_category.ext_id is defined
+
+    - name: Clean up host category
+      nutanix.ncp.ntnx_categories_v2:
+        ext_id: "{{ host_category.ext_id }}"
+        state: absent
+      failed_when: false
+      when:
+        - host_category is defined
+        - host_category.ext_id is defined
