@@ -170,3 +170,23 @@ def get_virtual_switch(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching virtual switch info using ext_id",
         )
+
+
+def get_ipfix_exporter(module, api_instance, ext_id):
+    """
+    This method will return IPFIX exporter info using its ext_id.
+    Args:
+        module: Ansible module
+        api_instance: IPFIXExportersApi instance from ntnx_networking_py_client sdk
+        ext_id (str): IPFIX exporter external ID
+    return:
+        info (object): IPFIX exporter info
+    """
+    try:
+        return api_instance.get_ipfix_exporter_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching IPFIX exporter info using ext_id",
+        )
