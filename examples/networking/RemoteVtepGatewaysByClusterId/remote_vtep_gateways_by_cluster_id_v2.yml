@@ -1,0 +1,79 @@
+---
+# Summary:
+# This playbook demonstrates every operation supported by the
+# Nutanix Prism Central v4 networking `RemoteVtepGatewaysByClusterId`
+# read-only discovery endpoint.
+#
+# The underlying SDK exposes only:
+#   * get_remote_vtep_gateway_for_cluster_by_id  (single-entity fetch)
+#   * list_remote_vtep_gateways_by_cluster_id    (list, with filter / limit / page / orderby)
+#
+# There are NO create / update / delete APIs for this entity — it is a
+# discovery surface used to select a peer VTEP gateway on a remote cluster
+# for Layer 2 subnet extension (L2 stretch) workflows.
+#
+# Steps:
+# 1. List every remote VTEP gateway discovered on a Prism Element cluster.
+# 2. List remote VTEP gateways filtered by name.
+# 3. List remote VTEP gateways with pagination (page + limit).
+# 4. List remote VTEP gateways sorted by name.
+# 5. Fetch a specific remote VTEP gateway by its external ID.
+#    (both cluster_ext_id + ext_id are mandatory URI params on the API).
+
+- name: Remote VTEP Gateways By Cluster ID playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_uuid: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
+        remote_vtep_gateway_ext_id: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
+        remote_vtep_gateway_name: "remote-vtep-gw-ansible"
+
+    - name: List all remote VTEP gateways discovered on the Prism Element cluster
+      nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: List remote VTEP gateways filtered by name
+      nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        filter: "name eq '{{ remote_vtep_gateway_name }}'"
+      register: result
+      ignore_errors: true
+
+    - name: List remote VTEP gateways with pagination
+      nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        page: 0
+        limit: 10
+      register: result
+      ignore_errors: true
+
+    - name: List remote VTEP gateways sorted by name descending
+      nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        orderby: "name desc"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch a specific remote VTEP gateway using external ID via info module
+      nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        ext_id: "{{ remote_vtep_gateway_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch a specific remote VTEP gateway using external ID (dedicated get-by-id module)
+      nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_id_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        ext_id: "{{ remote_vtep_gateway_ext_id }}"
+      register: result
+      ignore_errors: true

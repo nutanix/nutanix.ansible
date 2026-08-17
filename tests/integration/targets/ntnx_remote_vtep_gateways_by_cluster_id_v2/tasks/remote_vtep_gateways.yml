@@ -1,0 +1,461 @@
+---
+###############################################################################
+# Test plan — RemoteVtepGatewaysByClusterId (read-only discovery endpoint)
+###############################################################################
+# The SDK exposes only get_remote_vtep_gateway_for_cluster_by_id and
+# list_remote_vtep_gateways_by_cluster_id. There is no create / update / delete
+# API for this entity — VTEP gateways are provisioned elsewhere (e.g. via the
+# Network Gateway Appliance) and this endpoint is used to *discover* them.
+#
+# Scenarios covered:
+#   1. Discover a Prism Element cluster to use.
+#   2. Module 2 (info): list all remote VTEP gateways for the cluster; either
+#      succeeds with a (possibly empty) list, OR fails cleanly with the API's
+#      NETWORKING-* error when the cluster's remote-entity discovery service
+#      is unavailable.
+#   3. Module 2 (info): argument-spec / mutually-exclusive negative tests.
+#   4. Module 2 (info): list with limit, page, orderby (all optional query params).
+#   5. Module 2 (info): filter with no match returns empty (when backend is up).
+#   6. Module 2 (info): get by invalid ext_id → fails cleanly with API exception.
+#   7. Module 1 (get-by-id): argument-spec / missing-param negative tests.
+#   8. Module 1 (get-by-id): invalid ext_id → fails cleanly with API exception.
+#   9. If the cluster has at least one discovered remote VTEP gateway, exercise
+#      the happy path for BOTH modules against a real ext_id, plus filter-by-name.
+###############################################################################
+
+- name: Start Remote VTEP Gateways By Cluster ID tests
+  ansible.builtin.debug:
+    msg: Start Remote VTEP Gateways By Cluster ID tests
+
+###############################################################################
+# Discover a Prism Element cluster external ID from Prism Central
+###############################################################################
+
+- name: Set cluster ext_id from prepare_env (if provided)
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ cluster.uuid | default('') }}"
+
+- name: Fetch clusters registered with Prism Central (fallback discovery)
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(f:f eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_info
+  ignore_errors: true
+  when: cluster_ext_id | length == 0
+
+- name: Pick a Prism Element cluster ext_id from the fallback discovery
+  ansible.builtin.set_fact:
+    cluster_ext_id: >-
+      {{ (clusters_info.response
+          | selectattr('ext_id', 'ne', None)
+          | list
+          | first).ext_id }}
+  when:
+    - cluster_ext_id | length == 0
+    - clusters_info is defined
+    - clusters_info.response is defined
+    - clusters_info.response | length > 0
+
+- name: Assert we resolved a Prism Element cluster ext_id
+  ansible.builtin.assert:
+    that:
+      - cluster_ext_id is defined
+      - cluster_ext_id | length > 0
+    success_msg: "Resolved Prism Element cluster ext_id: {{ cluster_ext_id }}"
+    fail_msg: "Unable to resolve a Prism Element cluster ext_id to run tests against"
+
+###############################################################################
+# Module 2 (info): list all remote VTEP gateways for the cluster
+###############################################################################
+
+- name: List all remote VTEP gateways discovered on the cluster
+  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: list_all_result
+  ignore_errors: true
+
+- name: Determine whether the backend discovery service is available
+  ansible.builtin.set_fact:
+    backend_up: "{{ list_all_result is defined and list_all_result.failed == false }}"
+
+- name: Assert list-all module behavior is consistent
+  ansible.builtin.assert:
+    that:
+      - list_all_result is defined
+      - list_all_result.changed == false
+    success_msg: "list-all module returned a consistent result"
+    fail_msg: "list-all module returned an unexpected result"
+
+- name: Assert list-all response shape when backend is up
+  ansible.builtin.assert:
+    that:
+      - list_all_result.failed == false
+      - list_all_result.response is defined
+      - list_all_result.response is iterable
+      - list_all_result.total_available_results is defined
+      - list_all_result.cluster_ext_id == cluster_ext_id
+    success_msg: >-
+      Listed remote VTEP gateways for cluster {{ cluster_ext_id }};
+      count: {{ list_all_result.response | length }}
+    fail_msg: "list-all did not return the expected shape (backend was up)"
+  when: backend_up | bool
+
+- name: Assert list-all cleanly surfaces the backend error when service is down
+  ansible.builtin.assert:
+    that:
+      - list_all_result.failed == true
+      - list_all_result.msg == "Api Exception raised while fetching remote VTEP gateways info"
+    success_msg: >-
+      list-all correctly surfaced the backend error from the cluster's
+      remote entity service (NETWORKING-*): {{ list_all_result.msg }}
+    fail_msg: "list-all did not surface the backend error correctly"
+  when: not (backend_up | bool)
+
+- name: Assert every returned gateway has expected read-only fields (only if backend up)
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.ext_id | length > 0
+      - item.name is defined
+    success_msg: "Remote VTEP gateway {{ item.ext_id }} has the expected keys"
+    fail_msg: "Remote VTEP gateway payload is missing expected keys: {{ item }}"
+  loop: >-
+    {{ list_all_result.response
+       if (backend_up | bool
+           and (list_all_result.response | default(none)) is not none
+           and (list_all_result.response | default(none)) is not mapping
+           and (list_all_result.response | default([])) is iterable)
+       else [] }}
+  loop_control:
+    label: "{{ item.ext_id | default('<no ext_id>') }}"
+  when: backend_up | bool
+
+###############################################################################
+# Module 2 (info): argument-spec / negative tests
+###############################################################################
+
+- name: List remote VTEP gateways with missing cluster_ext_id (should fail)
+  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Assert missing cluster_ext_id fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'cluster_ext_id' in result.msg"
+    success_msg: "Missing cluster_ext_id was rejected as expected"
+    fail_msg: "Missing cluster_ext_id was NOT rejected as expected"
+
+- name: List remote VTEP gateways with mutually exclusive ext_id + filter (should fail)
+  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
+    filter: "name eq 'anything'"
+  register: result
+  ignore_errors: true
+
+- name: Assert mutually exclusive ext_id+filter fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    success_msg: "Mutually exclusive ext_id + filter was rejected as expected"
+    fail_msg: "Mutually exclusive ext_id + filter was NOT rejected as expected"
+
+- name: List remote VTEP gateways with mutually exclusive ext_id + limit (should fail)
+  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Assert mutually exclusive ext_id+limit fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    success_msg: "Mutually exclusive ext_id + limit was rejected as expected"
+    fail_msg: "Mutually exclusive ext_id + limit was NOT rejected as expected"
+
+- name: List remote VTEP gateways with limit=1
+  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    limit: 1
+  register: limit_result
+  ignore_errors: true
+
+- name: Assert list-with-limit response shape when backend is up
+  ansible.builtin.assert:
+    that:
+      - limit_result is defined
+      - limit_result.changed == false
+      - limit_result.failed == false
+      - limit_result.response is defined
+      - (limit_result.response | length) <= 1
+    success_msg: >-
+      list-with-limit=1 returned {{ limit_result.response | length }} item(s) as expected
+    fail_msg: "list-with-limit=1 did NOT respect the limit"
+  when: backend_up | bool
+
+- name: Assert list-with-limit surfaces backend error when service is down
+  ansible.builtin.assert:
+    that:
+      - limit_result is defined
+      - limit_result.changed == false
+      - limit_result.failed == true
+      - limit_result.msg == "Api Exception raised while fetching remote VTEP gateways info"
+    success_msg: "list-with-limit=1 correctly surfaced the backend error"
+    fail_msg: "list-with-limit=1 did NOT surface the backend error correctly"
+  when: not (backend_up | bool)
+
+- name: List remote VTEP gateways using pagination (page + limit)
+  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    page: 0
+    limit: 5
+  register: page_result
+  ignore_errors: true
+
+- name: Assert list-with-page succeeded when backend is up
+  ansible.builtin.assert:
+    that:
+      - page_result is defined
+      - page_result.changed == false
+      - page_result.failed == false
+      - page_result.response is defined
+      - (page_result.response | length) <= 5
+    success_msg: "List with page+limit succeeded ({{ page_result.response | length }} items)"
+    fail_msg: "List with page+limit failed"
+  when: backend_up | bool
+
+- name: Assert list-with-page surfaces backend error when service is down
+  ansible.builtin.assert:
+    that:
+      - page_result is defined
+      - page_result.changed == false
+      - page_result.failed == true
+      - page_result.msg == "Api Exception raised while fetching remote VTEP gateways info"
+    success_msg: "list-with-page correctly surfaced the backend error"
+    fail_msg: "list-with-page did NOT surface the backend error correctly"
+  when: not (backend_up | bool)
+
+- name: List remote VTEP gateways ordered by name ascending
+  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    orderby: "name"
+  register: order_result
+  ignore_errors: true
+
+- name: Assert list-with-orderby module returns a consistent result
+  ansible.builtin.assert:
+    that:
+      - order_result is defined
+      - order_result.changed == false
+      - (order_result.failed == false) or (order_result.msg == "Api Exception raised while fetching remote VTEP gateways info")
+    success_msg: "List with orderby returned a consistent result"
+    fail_msg: "List with orderby returned an unexpected result"
+
+- name: List remote VTEP gateways with a filter that intentionally matches nothing
+  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    filter: "name eq 'this-vtep-gateway-should-never-exist-ansible'"
+  register: empty_filter_result
+  ignore_errors: true
+
+- name: Assert filter with no match returns empty list (backend up)
+  ansible.builtin.assert:
+    that:
+      - empty_filter_result is defined
+      - empty_filter_result.changed == false
+      - empty_filter_result.failed == false
+      - empty_filter_result.response is defined
+      - empty_filter_result.response | length == 0
+    success_msg: "Filter with no match returned empty list as expected"
+    fail_msg: "Filter with no match did NOT return an empty list"
+  when: backend_up | bool
+
+- name: Assert filter-with-no-match surfaces backend error when service is down
+  ansible.builtin.assert:
+    that:
+      - empty_filter_result is defined
+      - empty_filter_result.changed == false
+      - empty_filter_result.failed == true
+      - empty_filter_result.msg == "Api Exception raised while fetching remote VTEP gateways info"
+    success_msg: "Filter-with-no-match correctly surfaced the backend error"
+    fail_msg: "Filter-with-no-match did NOT surface the backend error correctly"
+  when: not (backend_up | bool)
+
+- name: Fetch a remote VTEP gateway via info module with an invalid ext_id (should fail)
+  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert info get-by-id with invalid ext_id fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - >-
+        result.msg == "Api Exception raised while fetching remote VTEP gateway
+        info using cluster ext_id and ext_id"
+    success_msg: "Info get-by-id with invalid ext_id failed as expected"
+    fail_msg: "Info get-by-id with invalid ext_id did NOT fail as expected"
+
+###############################################################################
+# Module 1 (get-by-id): negative tests
+###############################################################################
+
+- name: Get-by-id with missing cluster_ext_id (should fail)
+  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_id_v2:
+    ext_id: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
+  register: result
+  ignore_errors: true
+
+- name: Assert get-by-id missing cluster_ext_id fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'cluster_ext_id' in result.msg"
+    success_msg: "Missing cluster_ext_id was rejected as expected"
+    fail_msg: "Missing cluster_ext_id was NOT rejected as expected"
+
+- name: Get-by-id with missing ext_id (should fail)
+  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_id_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert get-by-id missing ext_id fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    success_msg: "Missing ext_id was rejected as expected"
+    fail_msg: "Missing ext_id was NOT rejected as expected"
+
+- name: Get-by-id with invalid ext_id (should fail with API exception)
+  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_id_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert get-by-id with invalid ext_id fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - >-
+        result.msg == "Api Exception raised while fetching remote VTEP gateway
+        info using cluster ext_id and ext_id"
+    success_msg: "Get-by-id with invalid ext_id failed as expected"
+    fail_msg: "Get-by-id with invalid ext_id did NOT fail as expected"
+
+###############################################################################
+# Happy-path get-by-id tests — only run if the backend is up AND any gateway
+# was actually discovered on the cluster.
+###############################################################################
+
+- name: Capture first discovered gateway (if any)
+  ansible.builtin.set_fact:
+    have_remote_vtep_gateway: >-
+      {{ (backend_up | bool)
+         and ((list_all_result.response | default([])) | length > 0) }}
+    remote_vtep_gateway_sample: >-
+      {{ (list_all_result.response | default([]) | first) if
+          ((backend_up | bool) and
+           ((list_all_result.response | default([])) | length > 0))
+          else {} }}
+
+- name: Fetch a remote VTEP gateway using the dedicated get-by-id module (happy path)
+  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_id_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ remote_vtep_gateway_sample.ext_id }}"
+  register: result
+  ignore_errors: true
+  when: have_remote_vtep_gateway | bool
+
+- name: Assert get-by-id happy path returned the same entity
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == remote_vtep_gateway_sample.ext_id
+      - result.cluster_ext_id == cluster_ext_id
+      - result.response is defined
+      - result.response.ext_id == remote_vtep_gateway_sample.ext_id
+      - result.response.name == remote_vtep_gateway_sample.name
+    success_msg: "Get-by-id happy path returned the expected remote VTEP gateway"
+    fail_msg: "Get-by-id happy path did NOT return the expected remote VTEP gateway"
+  when: have_remote_vtep_gateway | bool
+
+- name: Fetch the same remote VTEP gateway via the info module (happy path)
+  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ remote_vtep_gateway_sample.ext_id }}"
+  register: result
+  ignore_errors: true
+  when: have_remote_vtep_gateway | bool
+
+- name: Assert info get-by-id happy path returned the same entity
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == remote_vtep_gateway_sample.ext_id
+      - result.cluster_ext_id == cluster_ext_id
+      - result.response is defined
+      - result.response.ext_id == remote_vtep_gateway_sample.ext_id
+      - result.response.name == remote_vtep_gateway_sample.name
+    success_msg: "Info get-by-id happy path returned the expected remote VTEP gateway"
+    fail_msg: "Info get-by-id happy path did NOT return the expected remote VTEP gateway"
+  when: have_remote_vtep_gateway | bool
+
+- name: List remote VTEP gateways filtered by the discovered gateway name
+  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    filter: "name eq '{{ remote_vtep_gateway_sample.name }}'"
+  register: result
+  ignore_errors: true
+  when: have_remote_vtep_gateway | bool
+
+- name: Assert filter-by-name returned at least the sampled gateway
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 1
+      - >-
+        (result.response
+          | selectattr('ext_id', 'equalto', remote_vtep_gateway_sample.ext_id)
+          | list | length) >= 1
+    success_msg: "Filter-by-name returned the sampled gateway as expected"
+    fail_msg: "Filter-by-name did NOT return the sampled gateway"
+  when: have_remote_vtep_gateway | bool
+
+- name: Skip note when no remote VTEP gateways were discovered
+  ansible.builtin.debug:
+    msg: >-
+      No remote VTEP gateways available for happy-path tests
+      (backend_up={{ backend_up }}, count={{ (list_all_result.response | default([])) | length }}).
+      Happy-path get-by-id and filter-by-name assertions were skipped.
+  when: not (have_remote_vtep_gateway | bool)
