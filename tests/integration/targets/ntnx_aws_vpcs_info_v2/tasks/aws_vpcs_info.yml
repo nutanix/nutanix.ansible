@@ -1,0 +1,228 @@
+---
+# Integration test plan for ntnx_aws_vpcs_info_v2 (AwsVpc)
+#
+# AwsVpc is a READ-ONLY entity in the v4 networking SDK. Only ListAwsVpcs
+# (GET /api/networking/v4.3/aws/config/vpcs) is exposed by the SDK; the API
+# is only meaningful when the target Prism Element cluster is an NC2A
+# (Nutanix Cloud Clusters on AWS) deployment. On non-NC2A clusters, the API
+# returns HTTP 500 with the error code C(NETWORKING-20002)
+# ("Failed to reach network service on cluster ...").
+#
+# Scenarios covered:
+# 1. Discover a target Prism Element cluster on the connected PC — provides a
+#    real cluster_ext_id.
+# 2. Positive path (if NC2A): list AWS VPCs and validate the response shape.
+# 3. Positive path (if NC2A and >= 1 AwsVpc): fetch by ext_id.
+# 4. Negative — non-NC2A cluster: the module must fail with the API exception
+#    envelope populated by the SDK (Api Exception raised while fetching AWS
+#    VPCs info) — this proves the module's error handling is correct.
+# 5. Negative — bogus ext_id (only when list succeeds): descriptive
+#    "not found" message from client-side filter.
+# 6. Negative — missing required cluster_ext_id: Ansible argument validation.
+# 7. Negative — syntactically invalid cluster_ext_id: API exception.
+# 8. Negative — unknown parameter: Ansible argument validation.
+
+- name: Start AwsVpc info tests
+  ansible.builtin.debug:
+    msg: Start AwsVpc info tests
+
+########################################################################################
+# Discover a target Prism Element cluster on the connected Prism Central
+########################################################################################
+
+- name: Fetch clusters registered to the PC
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: clusters_info
+  ignore_errors: true
+
+- name: Assert clusters were fetched
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    success_msg: "Clusters fetched successfully"
+    fail_msg: "No clusters returned from PC — cannot exercise AwsVpc info module"
+
+- name: Pick the first non-PC (AOS) cluster as the AwsVpc test target
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: >-
+      {{
+        (
+          clusters_info.response
+          | selectattr('config.cluster_function', 'defined')
+          | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+          | list
+          | first
+        ).ext_id
+      }}
+
+- name: Show target cluster
+  ansible.builtin.debug:
+    var: target_cluster_ext_id
+
+########################################################################################
+# List AWS VPCs for the target cluster — success on NC2A, API error otherwise
+########################################################################################
+
+- name: List all AWS VPCs on the target cluster
+  nutanix.ncp.ntnx_aws_vpcs_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: list_result
+  ignore_errors: true
+
+- name: Show list result envelope
+  ansible.builtin.debug:
+    msg: >-
+      list_result.failed={{ list_result.failed | default(true) }},
+      total_available_results={{ list_result.total_available_results | default('n/a') }}
+
+- name: Assert list AWS VPCs response shape (NC2A cluster path)
+  ansible.builtin.assert:
+    that:
+      - list_result.changed == false
+      - list_result.response is defined
+      - list_result.response is iterable
+      - list_result.total_available_results is defined
+      - list_result.total_available_results >= 0
+    success_msg: "List AWS VPCs returned a valid response envelope"
+    fail_msg: "List AWS VPCs returned an unexpected response envelope"
+  when: not (list_result.failed | default(true) | bool)
+
+- name: Assert list AWS VPCs correctly surfaces API exception on non-NC2A cluster
+  ansible.builtin.assert:
+    that:
+      - list_result.failed | default(false) | bool == true
+      - list_result.changed == false
+      - "'Api Exception raised while fetching AWS VPCs info' in (list_result.msg | default(''))"
+    success_msg: "List AWS VPCs correctly surfaces the SDK ApiException on a non-NC2A cluster"
+    fail_msg: "List AWS VPCs did not surface the expected SDK ApiException on a non-NC2A cluster"
+  when: (list_result.failed | default(true) | bool)
+
+- name: Assert every listed AWS VPC has the expected AwsVpc SDK fields
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.vpc_id is defined
+    success_msg: "AwsVpc entry {{ item.ext_id }} exposes expected fields"
+    fail_msg: "AwsVpc entry does not expose the expected fields"
+  loop: "{{ (list_result.response | default([])) if (list_result.response is iterable and list_result.response is not string and list_result.response is not mapping) else [] }}"
+  when: not (list_result.failed | default(true) | bool)
+
+########################################################################################
+# Positive — client-side get-by-ext_id (only when we actually have >= 1 AwsVpc)
+########################################################################################
+
+- name: Fetch a specific AWS VPC by external ID
+  nutanix.ncp.ntnx_aws_vpcs_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "{{ list_result.response[0].ext_id }}"
+  register: get_by_id_result
+  when:
+    - not (list_result.failed | default(true) | bool)
+    - list_result.response is iterable
+    - list_result.response is not string
+    - list_result.response is not mapping
+    - (list_result.response | default([])) | length > 0
+  ignore_errors: true
+
+- name: Assert fetch by ext_id returned the matching AwsVpc
+  ansible.builtin.assert:
+    that:
+      - get_by_id_result.changed == false
+      - get_by_id_result.failed == false
+      - get_by_id_result.ext_id == list_result.response[0].ext_id
+      - get_by_id_result.response is defined
+      - get_by_id_result.response.ext_id == list_result.response[0].ext_id
+    success_msg: "Fetch AWS VPC by ext_id returned the correct entry"
+    fail_msg: "Fetch AWS VPC by ext_id did not return the expected entry"
+  when:
+    - get_by_id_result is defined
+    - get_by_id_result.skipped | default(false) | bool == false
+
+########################################################################################
+# Negative — bogus ext_id (only when the list API is functional)
+########################################################################################
+
+- name: Fetch AWS VPC using a bogus ext_id
+  nutanix.ncp.ntnx_aws_vpcs_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "vpc-ffffffffffffffff0"
+  register: bogus_ext_id_result
+  ignore_errors: true
+  when: not (list_result.failed | default(true) | bool)
+
+- name: Assert bogus ext_id fails with descriptive not-found message
+  ansible.builtin.assert:
+    that:
+      - bogus_ext_id_result.changed == false
+      - bogus_ext_id_result.failed == true
+      - "'not found' in (bogus_ext_id_result.msg | default(''))"
+      - "'vpc-ffffffffffffffff0' in (bogus_ext_id_result.msg | default(''))"
+    success_msg: "Bogus ext_id was correctly rejected as not found"
+    fail_msg: "Bogus ext_id did not fail with the expected not-found message"
+  when:
+    - bogus_ext_id_result is defined
+    - bogus_ext_id_result.skipped | default(false) | bool == false
+
+########################################################################################
+# Negative — cluster_ext_id is required (Ansible argument validation)
+########################################################################################
+
+- name: List AWS VPCs without required cluster_ext_id
+  nutanix.ncp.ntnx_aws_vpcs_info_v2: {}
+  register: missing_cluster_result
+  ignore_errors: true
+
+- name: Assert missing cluster_ext_id fails Ansible argument validation
+  ansible.builtin.assert:
+    that:
+      - missing_cluster_result is defined
+      - missing_cluster_result.failed == true
+      - "'cluster_ext_id' in (missing_cluster_result.msg | default(''))"
+    success_msg: "Missing cluster_ext_id was correctly rejected"
+    fail_msg: "Missing cluster_ext_id was not correctly rejected"
+
+########################################################################################
+# Negative — syntactically invalid cluster_ext_id (server-side rejection)
+########################################################################################
+
+- name: List AWS VPCs with a syntactically invalid cluster_ext_id
+  nutanix.ncp.ntnx_aws_vpcs_info_v2:
+    cluster_ext_id: "not-a-real-cluster"
+  register: invalid_cluster_result
+  ignore_errors: true
+
+- name: Assert invalid cluster_ext_id fails via API exception
+  ansible.builtin.assert:
+    that:
+      - invalid_cluster_result is defined
+      - invalid_cluster_result.failed == true
+      - "'Api Exception raised while fetching AWS VPCs info' in (invalid_cluster_result.msg | default(''))"
+    success_msg: "Invalid cluster_ext_id was correctly rejected by the API"
+    fail_msg: "Invalid cluster_ext_id was not rejected by the API as expected"
+
+########################################################################################
+# Negative — unknown parameter must fail argument validation
+########################################################################################
+
+- name: Call AwsVpc info module with an unknown parameter
+  nutanix.ncp.ntnx_aws_vpcs_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    bogus_param: "should-be-rejected"
+  register: unknown_param_result
+  ignore_errors: true
+
+- name: Assert unknown parameter is rejected
+  ansible.builtin.assert:
+    that:
+      - unknown_param_result is defined
+      - unknown_param_result.failed == true
+      - "'bogus_param' in (unknown_param_result.msg | default(''))"
+    success_msg: "Unknown parameter was correctly rejected"
+    fail_msg: "Unknown parameter was not rejected"
+
+- name: End AwsVpc info tests
+  ansible.builtin.debug:
+    msg: End AwsVpc info tests
