@@ -1,0 +1,117 @@
+---
+# Summary:
+# This playbook demonstrates the full Approval Policy workflow using the
+# nutanix.ncp v4 Ansible modules:
+# 1. Discover an IAM user to be used as an approver (from the live PC).
+# 2. Create an Approval Policy with all supported fields populated.
+# 3. Update the Approval Policy (name/description + expiry change).
+# 4. Associate secured policies with the Approval Policy (associate action).
+# 5. Fetch the Approval Policy by ext_id.
+# 6. List Approval Policies with filter and orderby.
+# 7. List all Approval Policies.
+#
+# Delete is intentionally not shown because the Approval Policies v4 API
+# does not currently expose a delete endpoint.
+
+- name: Approval Policy playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        policy_name: "ansible_approval_policy_example"
+        policy_name_updated: "ansible_approval_policy_example_updated"
+
+    - name: Fetch existing IAM users to use as approvers
+      nutanix.ncp.ntnx_users_info_v2:
+      register: users_result
+
+    - name: Set approver users variable (need at least 3 approvers per group)
+      ansible.builtin.set_fact:
+        approver_users: "{{ users_result.response[0:3] }}"
+
+    - name: Create Approval Policy with a single approver group
+      nutanix.ncp.ntnx_approval_policy_v2:
+        state: present
+        name: "{{ policy_name }}"
+        description: "Approval policy created by Ansible example playbook"
+        approver_groups:
+          - name: "primary_approvers"
+            expiry_hours: 48
+            approvers:
+              - ext_id: "{{ approver_users[0].ext_id }}"
+                username: "{{ approver_users[0].username }}"
+                user_type: "{{ approver_users[0].user_type }}"
+              - ext_id: "{{ approver_users[1].ext_id }}"
+                username: "{{ approver_users[1].username }}"
+                user_type: "{{ approver_users[1].user_type }}"
+              - ext_id: "{{ approver_users[2].ext_id }}"
+                username: "{{ approver_users[2].username }}"
+                user_type: "{{ approver_users[2].user_type }}"
+      register: create_result
+
+    - name: Set approval policy external ID
+      ansible.builtin.set_fact:
+        approval_policy_ext_id: "{{ create_result.ext_id }}"
+
+    - name: Update Approval Policy (rename + tighter expiry)
+      nutanix.ncp.ntnx_approval_policy_v2:
+        state: present
+        ext_id: "{{ approval_policy_ext_id }}"
+        name: "{{ policy_name_updated }}"
+        description: "Approval policy updated by Ansible example playbook"
+        approver_groups:
+          - name: "primary_approvers"
+            expiry_hours: 24
+            approvers:
+              - ext_id: "{{ approver_users[0].ext_id }}"
+                username: "{{ approver_users[0].username }}"
+                user_type: "{{ approver_users[0].user_type }}"
+              - ext_id: "{{ approver_users[1].ext_id }}"
+                username: "{{ approver_users[1].username }}"
+                user_type: "{{ approver_users[1].user_type }}"
+              - ext_id: "{{ approver_users[2].ext_id }}"
+                username: "{{ approver_users[2].username }}"
+                user_type: "{{ approver_users[2].user_type }}"
+      register: update_result
+
+    - name: List protection policies to pick one for association
+      nutanix.ncp.ntnx_protection_policies_info_v2:
+        limit: 1
+      register: protection_policies_result
+      ignore_errors: true
+
+    - name: Associate secured policies with the Approval Policy
+      nutanix.ncp.ntnx_approval_policy_v2:
+        state: present
+        ext_id: "{{ approval_policy_ext_id }}"
+        associate_policies: true
+        secured_policies:
+          - policy_ext_id: "{{ protection_policies_result.response[0].ext_id }}"
+            policy_type: "PROTECTION_POLICY"
+      register: associate_result
+      when:
+        - protection_policies_result is defined
+        - protection_policies_result.response is defined
+        - (protection_policies_result.response | length) > 0
+
+    - name: Fetch Approval Policy using ext_id
+      nutanix.ncp.ntnx_approval_policies_info_v2:
+        ext_id: "{{ approval_policy_ext_id }}"
+      register: fetch_result
+
+    - name: List Approval Policies filtered by name
+      nutanix.ncp.ntnx_approval_policies_info_v2:
+        filter: "name eq '{{ policy_name_updated }}'"
+      register: filter_result
+
+    - name: List all Approval Policies (ordered by name asc)
+      nutanix.ncp.ntnx_approval_policies_info_v2:
+        orderby: "name asc"
+      register: list_result

@@ -24,3 +24,23 @@ def get_kms_by_ext_id(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching Key Management Server info using external ID",
         )
+
+
+def get_approval_policy(module, api_instance, ext_id):
+    """
+    This method will return Approval Policy info using its external ID.
+    Args:
+        module: Ansible module
+        api_instance: ApprovalPoliciesApi instance from ntnx_security_py_client sdk
+        ext_id (str): Approval Policy external ID
+    return:
+        info (object): Approval Policy info
+    """
+    try:
+        return api_instance.get_approval_policy_by_ext_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Approval Policy info using ext_id",
+        )
