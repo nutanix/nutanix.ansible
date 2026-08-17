@@ -186,9 +186,9 @@
         uuid: "{{ open_ldap_uuid }}"
     subnets:
       - name: "{{ network.dhcp.name }}"
-      - uuid: "{{ static.uuid }}"
+      - name: "{{ overlay.name }}"
     default_subnet:
-      name: "{{ static.name }}"
+      name: "{{ overlay.name }}"
     collaboration: true
     role_mappings:
       - role:
@@ -203,13 +203,15 @@
           name: "{{acp.role.name}}"
         user_group:
           uuid: "{{user_groups[0]}}"
-
   register: result
   ignore_errors: true
 
+- debug:
+    var: result
+
 - name: Set expected subnets
   ansible.builtin.set_fact:
-    expected_subnets: ["{{ network.dhcp.uuid }}", "{{ static.uuid }}"]
+    expected_subnets: ["{{ network.dhcp.uuid }}", "{{ overlay.uuid }}"]
 - name: Set acp_users
   ansible.builtin.set_fact:
     response_acp: "{{result.response.status.access_control_policy_list_status[0].access_control_policy_status.resources}}"
@@ -250,7 +252,10 @@
   ansible.builtin.set_fact:
     project_user_references_sorted: "{{ project_user_reference_list|sort() }}"
 
-- name: Creation Status
+- debug:
+    var: result
+
+- name: Update Project Status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -263,7 +268,7 @@
       - result.response.status.project_status.resources.user_reference_list[0].uuid in expected_users
       - result.response.status.project_status.resources.user_reference_list[1].uuid in expected_users
       - result.response.status.project_status.resources.external_user_group_reference_list[0].uuid == "{{user_groups[0]}}"
-      - result.response.status.project_status.resources.default_subnet_reference.uuid == "{{ static.uuid }}"
+      - result.response.status.project_status.resources.default_subnet_reference.uuid == "{{ overlay.uuid }}"
       - result.response.status.project_status.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
       - result.response.status.project_status.resources.vpc_reference_list[0].uuid == "{{ vpc.uuid }}"
       - result.response.status.project_status.resources.account_reference_list[0].uuid == "{{ accounts[0].uuid }}"
@@ -286,9 +291,9 @@
         uuid: "{{ open_ldap_uuid }}"
     subnets:
       - name: "{{ network.dhcp.name }}"
-      - uuid: "{{ static.uuid }}"
+      - name: "{{ overlay.name }}"
     default_subnet:
-      name: "{{ static.name }}"
+      name: "{{ overlay.name }}"
     collaboration: true
     role_mappings:
       - role:
@@ -306,7 +311,7 @@
   register: result
   ignore_errors: true
 
-- name: Creation Status
+- name: Update Project Status
   ansible.builtin.assert:
     that:
       - result.changed == false
