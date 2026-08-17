@@ -1,0 +1,67 @@
+---
+# Summary:
+# This playbook will do:
+# 1. List all Data Stores currently mounted on a cluster (info module)
+# 2. Mount a Data Store (creating an NFS Data Store from a Storage Container on selected hosts)
+# 3. Fetch the newly mounted Data Store via the info module using the Storage Container ext_id
+# 4. Unmount (delete) the Data Store from the selected hosts
+#
+# Requirements:
+# - A Prism Element cluster registered to Prism Central.
+# - An existing Storage Container to mount as a Data Store.
+# - At least one host (node) UUID on which to mount the NFS Data Store.
+
+- name: DataStore playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default('10.44.76.28') }}"
+      nutanix_username: "{{ nutanix_username | default('admin') }}"
+      nutanix_password: "{{ nutanix_password | default('Nutanix.123') }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables (edit for your environment)
+      ansible.builtin.set_fact:
+        cluster_ext_id: "0006197f-3d06-ce49-1fc3-ac1f6b6029c1"
+        storage_container_ext_id: "57516342-7d8e-470f-91b8-ae310737ff8c"
+        storage_container_name: "ansible_storage_container"
+        datastore_name: "ansible_ds"
+        node_ext_id: "f28e7475-f835-42ef-ac35-ecbc48d5421e"
+
+    - name: List all Data Stores on the cluster
+      nutanix.ncp.ntnx_data_stores_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: list_result
+      ignore_errors: true
+
+    - name: Mount a Data Store on selected nodes
+      nutanix.ncp.ntnx_data_store_v2:
+        state: present
+        ext_id: "{{ storage_container_ext_id }}"
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        datastore_name: "{{ datastore_name }}"
+        container_name: "{{ storage_container_name }}"
+        node_ext_ids:
+          - "{{ node_ext_id }}"
+        read_only: false
+        target_path: "/vmfs/volumes/{{ datastore_name }}"
+      register: mount_result
+      ignore_errors: true
+
+    - name: Fetch the newly mounted Data Store by Storage Container ext_id
+      nutanix.ncp.ntnx_data_stores_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ storage_container_ext_id }}"
+      register: get_result
+      ignore_errors: true
+
+    - name: Unmount the Data Store
+      nutanix.ncp.ntnx_data_store_v2:
+        state: absent
+        ext_id: "{{ storage_container_ext_id }}"
+        datastore_name: "{{ datastore_name }}"
+        node_ext_ids:
+          - "{{ node_ext_id }}"
+      register: unmount_result
+      ignore_errors: true
