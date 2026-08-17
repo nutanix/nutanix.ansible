@@ -1,0 +1,32 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Entity Sync Policy playbook] *********************************************
+
+TASK [List all entity sync policies] *******************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Show number of entity sync policies discovered] **************************
+ok: [localhost] => {
+    "msg": "Discovered 0 entity sync policies."
+}
+
+TASK [List entity sync policies filtered by entityType SECURITY_POLICY] ********
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List first entity sync policy only] **************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Capture the first entity sync policy ext_id] *****************************
+skipping: [localhost] => {"changed": false, "false_condition": "all_policies.response | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [Fetch entity sync policy details by external ID] *************************
+skipping: [localhost] => {"changed": false, "false_condition": "first_policy_ext_id is defined", "skip_reason": "Conditional result was False"}
+
+TASK [Sync entity sync policy to the remote domain manager] ********************
+skipping: [localhost] => {"changed": false, "false_condition": "first_policy_ext_id is defined", "skip_reason": "Conditional result was False"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=0   
+
