@@ -1,0 +1,137 @@
+---
+# Summary:
+# This playbook demonstrates managing Recovery Plan Network Mappings using
+# nutanix.ncp.ntnx_network_mapping_v2 and nutanix.ncp.ntnx_network_mappings_info_v2.
+# It performs the following operations:
+# 1. Create a network mapping (with all supported attributes)
+# 2. Fetch the created network mapping by ext_id
+# 3. List all network mappings for a recovery plan
+# 4. Update the network mapping (with all supported attributes)
+# 5. Delete the network mapping
+
+- name: Recovery Plan Network Mapping playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        recovery_plan_ext_id: "b0e1a7b2-8c31-4a41-9f2c-3f2f0f76de11"
+        primary_subnet_ext_id: "5a6f8f2c-3f2b-4a1c-9c14-2d17b3e6b555"
+        recovery_subnet_ext_id: "6b7e9d3c-4a1f-5b12-8e15-3d17b3e6c666"
+        primary_test_subnet_ext_id: "7c8f1e4d-5b12-6c23-9d16-4e17b3e6d777"
+        recovery_test_subnet_ext_id: "8d9e2f5e-6c23-7d34-9e17-5f17b3e6e888"
+        updated_recovery_subnet_ext_id: "9e1a3d6f-7d34-8e45-af18-6f17b3e6f999"
+
+    - name: Create network mapping with all attributes
+      nutanix.ncp.ntnx_network_mapping_v2:
+        state: present
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        primary_network:
+          subnet_ext_id: "{{ primary_subnet_ext_id }}"
+          ip_config:
+            ipv4:
+              default_gateway_ip: "10.10.0.1"
+              prefix_length: 24
+              network_ip_address: "10.10.0.0"
+              domain_name_servers:
+                - "8.8.8.8"
+              domain_search_suffixes:
+                - "example.com"
+              ip_pool:
+                start_ip:
+                  value: "10.10.0.10"
+                  prefix_length: 32
+                end_ip:
+                  value: "10.10.0.100"
+                  prefix_length: 32
+        recovery_network:
+          subnet_ext_id: "{{ recovery_subnet_ext_id }}"
+          ip_config:
+            ipv4:
+              default_gateway_ip: "10.20.0.1"
+              prefix_length: 24
+              network_ip_address: "10.20.0.0"
+              ip_pool:
+                start_ip:
+                  value: "10.20.0.10"
+                end_ip:
+                  value: "10.20.0.100"
+        primary_test_network:
+          subnet_ext_id: "{{ primary_test_subnet_ext_id }}"
+        recovery_test_network:
+          subnet_ext_id: "{{ recovery_test_subnet_ext_id }}"
+        is_ip_mapping_enabled: true
+      register: created_nm
+
+    - name: Set network mapping ext_id
+      ansible.builtin.set_fact:
+        network_mapping_ext_id: "{{ created_nm.ext_id }}"
+
+    - name: Fetch created network mapping by ext_id
+      nutanix.ncp.ntnx_network_mappings_info_v2:
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ network_mapping_ext_id }}"
+      register: nm_by_id
+
+    - name: List all network mappings for the recovery plan
+      nutanix.ncp.ntnx_network_mappings_info_v2:
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+      register: nm_list
+
+    - name: List network mappings with limit
+      nutanix.ncp.ntnx_network_mappings_info_v2:
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        limit: 1
+      register: nm_limited
+
+    - name: Update network mapping with all attributes
+      nutanix.ncp.ntnx_network_mapping_v2:
+        state: present
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ network_mapping_ext_id }}"
+        primary_network:
+          subnet_ext_id: "{{ primary_subnet_ext_id }}"
+          ip_config:
+            ipv4:
+              default_gateway_ip: "10.10.0.1"
+              prefix_length: 24
+              network_ip_address: "10.10.0.0"
+              domain_name_servers:
+                - "8.8.4.4"
+              domain_search_suffixes:
+                - "corp.example.com"
+              ip_pool:
+                start_ip:
+                  value: "10.10.0.50"
+                end_ip:
+                  value: "10.10.0.200"
+        recovery_network:
+          subnet_ext_id: "{{ updated_recovery_subnet_ext_id }}"
+          ip_config:
+            ipv4:
+              default_gateway_ip: "10.30.0.1"
+              prefix_length: 24
+              ip_pool:
+                start_ip:
+                  value: "10.30.0.50"
+                end_ip:
+                  value: "10.30.0.200"
+        primary_test_network:
+          subnet_ext_id: "{{ primary_test_subnet_ext_id }}"
+        recovery_test_network:
+          subnet_ext_id: "{{ recovery_test_subnet_ext_id }}"
+        is_ip_mapping_enabled: false
+      register: updated_nm
+
+    - name: Delete network mapping
+      nutanix.ncp.ntnx_network_mapping_v2:
+        state: absent
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ network_mapping_ext_id }}"
+      register: deleted_nm
