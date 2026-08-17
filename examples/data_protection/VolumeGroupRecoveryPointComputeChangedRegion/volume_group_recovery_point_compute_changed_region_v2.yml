@@ -1,0 +1,74 @@
+---
+# Summary:
+# This playbook demonstrates the
+# ntnx_volume_group_recovery_point_compute_changed_region_v2 module.
+#
+# The compute-changed-regions action returns the changed regions of a disk
+# recovery point that is part of a Volume Group recovery point. It supports:
+#   1. A full scan (no reference disk recovery point) - useful to identify
+#      REGULAR vs ZEROED regions during an initial full backup.
+#   2. A scan restricted to a byte range (offset + length) with optional
+#      block-size alignment.
+#   3. An incremental diff against a reference disk recovery point owned by
+#      another Volume Group recovery point (three reference IDs are required
+#      together for this workflow).
+#
+# Prerequisites (must exist on the cluster before running the playbook):
+#   * A Volume Group with at least one disk
+#   * A recovery point that contains a Volume Group recovery point for that
+#     Volume Group, with at least one disk recovery point
+#   * For the incremental scenario, a second Volume Group recovery point of
+#     the same Volume Group whose disk recovery point can be used as reference
+
+- name: Volume Group Recovery Point - Compute Changed Regions playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+
+  tasks:
+    - name: Setting variables (replace with real IDs discovered on the cluster)
+      ansible.builtin.set_fact:
+        recovery_point_ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
+        volume_group_recovery_point_ext_id: "522670d7-e92d-45c5-9139-76ccff6813c2"
+        disk_recovery_point_ext_id: "21d467f0-ccef-4733-91cc-f04db58a92eb"
+        reference_recovery_point_ext_id: "6ec8e20d-5662-404f-a475-4ac569521f82"
+        reference_volume_group_recovery_point_ext_id: "b387359d-fa5c-4d58-9eb2-3af1a4976319"
+        reference_disk_recovery_point_ext_id: "91aedb3c-39c9-4750-b553-6e8360d7c1ff"
+
+    - name: Compute changed regions - full scan (no reference)
+      nutanix.ncp.ntnx_volume_group_recovery_point_compute_changed_region_v2:
+        recovery_point_ext_id: "{{ recovery_point_ext_id }}"
+        volume_group_recovery_point_ext_id: "{{ volume_group_recovery_point_ext_id }}"
+        ext_id: "{{ disk_recovery_point_ext_id }}"
+      register: full_scan_result
+      ignore_errors: true
+
+    - name: Compute changed regions - windowed scan (offset + length + block size)
+      nutanix.ncp.ntnx_volume_group_recovery_point_compute_changed_region_v2:
+        recovery_point_ext_id: "{{ recovery_point_ext_id }}"
+        volume_group_recovery_point_ext_id: "{{ volume_group_recovery_point_ext_id }}"
+        ext_id: "{{ disk_recovery_point_ext_id }}"
+        offset: 0
+        length: 1048576
+        block_size_byte: 65536
+      register: windowed_scan_result
+      ignore_errors: true
+
+    - name: Compute changed regions - incremental diff vs a reference disk recovery point
+      nutanix.ncp.ntnx_volume_group_recovery_point_compute_changed_region_v2:
+        recovery_point_ext_id: "{{ recovery_point_ext_id }}"
+        volume_group_recovery_point_ext_id: "{{ volume_group_recovery_point_ext_id }}"
+        ext_id: "{{ disk_recovery_point_ext_id }}"
+        offset: 0
+        length: 1048576
+        block_size_byte: 65536
+        reference_recovery_point_ext_id: "{{ reference_recovery_point_ext_id }}"
+        reference_volume_group_recovery_point_ext_id: "{{ reference_volume_group_recovery_point_ext_id }}"
+        reference_disk_recovery_point_ext_id: "{{ reference_disk_recovery_point_ext_id }}"
+      register: incremental_scan_result
+      ignore_errors: true
