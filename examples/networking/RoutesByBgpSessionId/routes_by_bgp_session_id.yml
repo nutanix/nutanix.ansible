@@ -1,0 +1,96 @@
+---
+# Summary:
+# This playbook demonstrates how to fetch and list BGP routes learned or advertised
+# over a BGP session (Routes by BGP Session ID) in Nutanix Prism Central via the
+# networking v4 API.
+#
+# BGP routes are a READ-ONLY collection surfaced by the BGP gateway serving the
+# referenced BGP session. The Nutanix networking v4 SDK exposes only the following
+# two operations for BGP routes, so this playbook only demonstrates read paths:
+#   * list_routes_by_bgp_session_id (list, supports filter / limit / page / orderby)
+#   * get_route_for_bgp_session_by_id (get single route by ext_id)
+#
+# Prerequisites (must exist in Prism Central before running this playbook):
+#   * A local BGP gateway (Flow Gateway BGP)
+#   * A remote BGP gateway (external peer)
+#   * A BGP session between them, with its ext_id set as bgp_session_ext_id below
+#   * At least one advertised or received route on that BGP session (optional; the
+#     playbook also handles the empty-list case)
+#
+# What this playbook does:
+# 1. List all BGP routes for a given BGP session
+# 2. Fetch a single BGP route by ext_id for a given BGP session
+# 3. Fetch a single BGP route by ext_id using the alias CRUD-shaped module
+# 4. List BGP routes for a BGP session with pagination (page, limit)
+# 5. List BGP routes for a BGP session with an orderby clause
+# 6. List BGP routes for a BGP session filtered to only ADVERTISED routes
+- name: BGP Routes by BGP Session ID playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(ip) | default('<pc_ip>') }}"
+      nutanix_username: "{{ nutanix_username | default(username) | default('<user>') }}"
+      nutanix_password: "{{ nutanix_password | default(password) | default('<pass>') }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        # Replace with a real BGP session ext_id from your Prism Central.
+        bgp_session_ext_id: "8a3cf052-1234-4222-8d60-143a33c77e9f"
+
+    - name: List all BGP routes for the BGP session
+      nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+        bgp_session_ext_id: "{{ bgp_session_ext_id }}"
+      register: bgp_routes_list
+      ignore_errors: true
+
+    - name: Set BGP route ext_id from the first returned route (if any)
+      ansible.builtin.set_fact:
+        bgp_route_ext_id: "{{ bgp_routes_list.response[0].ext_id }}"
+      when:
+        - bgp_routes_list is defined
+        - bgp_routes_list.failed is defined
+        - not bgp_routes_list.failed
+        - bgp_routes_list.response is defined
+        - bgp_routes_list.response is iterable
+        - bgp_routes_list.response | length > 0
+
+    - name: Fetch a specific BGP route by ext_id (info module)
+      nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+        bgp_session_ext_id: "{{ bgp_session_ext_id }}"
+        ext_id: "{{ bgp_route_ext_id }}"
+      register: bgp_route_get
+      ignore_errors: true
+      when: bgp_route_ext_id is defined
+
+    - name: Fetch a specific BGP route by ext_id (CRUD-shaped module)
+      nutanix.ncp.ntnx_routes_by_bgp_session_id_v2:
+        state: present
+        bgp_session_ext_id: "{{ bgp_session_ext_id }}"
+        ext_id: "{{ bgp_route_ext_id }}"
+      register: bgp_route_get_crud
+      ignore_errors: true
+      when: bgp_route_ext_id is defined
+
+    - name: List BGP routes for the BGP session with pagination
+      nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+        bgp_session_ext_id: "{{ bgp_session_ext_id }}"
+        page: 0
+        limit: 10
+      register: bgp_routes_paginated
+      ignore_errors: true
+
+    - name: List BGP routes for the BGP session sorted by name ascending
+      nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+        bgp_session_ext_id: "{{ bgp_session_ext_id }}"
+        orderby: "name asc"
+      register: bgp_routes_ordered
+      ignore_errors: true
+
+    - name: List BGP routes for the BGP session filtered to ADVERTISED routes only
+      nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+        bgp_session_ext_id: "{{ bgp_session_ext_id }}"
+        filter: "bgpRouteType eq Nutanix.Networking.Config.BgpRouteType'ADVERTISED'"
+      register: bgp_routes_advertised
+      ignore_errors: true

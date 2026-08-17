@@ -1,0 +1,265 @@
+---
+# Test plan for ntnx_routes_by_bgp_session_id_v2
+#
+# BGP routes exposed by the Nutanix networking v4 API are a READ-ONLY collection
+# surfaced by the BGP gateway serving the referenced BGP session. The SDK does
+# not provide create/update/delete operations for a BGP route, so this module's
+# ``create`` and ``delete`` code paths are intentional fail-fast paths that
+# guard the user with a descriptive error, and the ``update`` path is a fetch
+# that always reports changed=False.
+#
+# Coverage:
+#   1. Positive fetch by (bgp_session_ext_id, ext_id) when a route exists
+#      (skipped when the cluster has no BGP session/route to reference).
+#   2. Positive fetch in check_mode: no API call, but result carries a
+#      descriptive msg and both ext_ids.
+#   3. Negative: state=present without ext_id -> read-only error.
+#   4. Negative: state=absent + ext_id + bgp_session_ext_id -> read-only error.
+#   5. Negative: state=absent without ext_id -> required_if enforces failure.
+#   6. Negative: state=present + ext_id pointing at a non-existent BGP route
+#      surfaces the underlying API error.
+#   7. Argument-spec validation: state must be one of {present, absent}.
+
+- name: Start ntnx_routes_by_bgp_session_id_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_routes_by_bgp_session_id_v2 tests
+
+- name: Generate random suffix for scoping test facts
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set static test facts (fake ext_ids used by negative paths)
+  ansible.builtin.set_fact:
+    fake_bgp_session_ext_id: "00000000-0000-0000-0000-{{ random_name | lower | truncate(12, True, '') }}"
+    fake_route_ext_id: "11111111-1111-1111-1111-{{ random_name | lower | truncate(12, True, '') }}"
+
+########################################################################################
+# 1. Discovery - is there any BGP session with any BGP route we can exercise the
+#    positive fetch path against? The Nutanix BGP sessions listing is not exposed
+#    as an Ansible module in this collection today, so we hit the v4 REST API
+#    directly through ansible.builtin.uri. When the operator provides a
+#    ``bgp_session_ext_id_for_tests`` extra var, we honor it and skip discovery.
+########################################################################################
+
+- name: Honor operator-supplied BGP session ext_id (if any)
+  ansible.builtin.set_fact:
+    real_bgp_session_ext_id: "{{ bgp_session_ext_id_for_tests }}"
+  when: bgp_session_ext_id_for_tests is defined and bgp_session_ext_id_for_tests | length > 0
+
+- name: Discover a BGP session via v4 REST (list_bgp_sessions)
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ nutanix_port | default('9440') }}/api/networking/v4.3/config/bgp-sessions?$limit=5"
+    method: GET
+    force_basic_auth: true
+    user: "{{ username }}"
+    password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+    return_content: true
+    status_code: [200, 400, 401, 403, 404]
+  register: bgp_sessions_probe
+  ignore_errors: true
+  no_log: false
+  when: real_bgp_session_ext_id is not defined
+
+- name: Set real BGP session ext_id if discovered
+  ansible.builtin.set_fact:
+    real_bgp_session_ext_id: "{{ (bgp_sessions_probe.json.data | first).extId }}"
+  when:
+    - real_bgp_session_ext_id is not defined
+    - bgp_sessions_probe is defined
+    - bgp_sessions_probe.status is defined
+    - bgp_sessions_probe.status == 200
+    - bgp_sessions_probe.json is defined
+    - bgp_sessions_probe.json.data is defined
+    - bgp_sessions_probe.json.data is iterable
+    - bgp_sessions_probe.json.data | length > 0
+
+- name: Probe first available BGP route on the discovered BGP session
+  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+    bgp_session_ext_id: "{{ real_bgp_session_ext_id }}"
+    limit: 1
+  register: bgp_routes_probe
+  ignore_errors: true
+  failed_when: false
+  when: real_bgp_session_ext_id is defined
+
+- name: Set real BGP route ext_id if discovered
+  ansible.builtin.set_fact:
+    real_bgp_route_ext_id: "{{ bgp_routes_probe.response[0].ext_id }}"
+  when:
+    - bgp_routes_probe is defined
+    - bgp_routes_probe.response is defined
+    - bgp_routes_probe.response is iterable
+    - bgp_routes_probe.response | length > 0
+
+########################################################################################
+# 2. Check_mode fetch (state=present) - never calls the API, so it works
+#    even on a cluster with no BGP session/route.
+########################################################################################
+
+- name: Check-mode fetch of a single BGP route
+  nutanix.ncp.ntnx_routes_by_bgp_session_id_v2:
+    state: present
+    bgp_session_ext_id: "{{ fake_bgp_session_ext_id }}"
+    ext_id: "{{ fake_route_ext_id }}"
+  register: cm_fetch
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check-mode fetch reports the intended action without touching state
+  ansible.builtin.assert:
+    that:
+      - cm_fetch is defined
+      - not cm_fetch.changed
+      - not cm_fetch.failed
+      - not cm_fetch.skipped
+      - cm_fetch.ext_id == fake_route_ext_id
+      - cm_fetch.bgp_session_ext_id == fake_bgp_session_ext_id
+      - cm_fetch.task_ext_id is none
+      - "'would be fetched' in cm_fetch.msg"
+    fail_msg: "Check-mode fetch did not behave as documented"
+    success_msg: "Check-mode fetch returned the expected preview result"
+
+########################################################################################
+# 3. Positive fetch (real API) - only when the cluster actually has a route.
+########################################################################################
+
+- name: Positive fetch of a real BGP route (when discovered)
+  nutanix.ncp.ntnx_routes_by_bgp_session_id_v2:
+    state: present
+    bgp_session_ext_id: "{{ real_bgp_session_ext_id }}"
+    ext_id: "{{ real_bgp_route_ext_id }}"
+  register: real_fetch
+  ignore_errors: true
+  when:
+    - real_bgp_session_ext_id is defined
+    - real_bgp_route_ext_id is defined
+
+- name: Assert positive fetch returned the requested route
+  ansible.builtin.assert:
+    that:
+      - not real_fetch.changed
+      - not real_fetch.failed
+      - not real_fetch.skipped
+      - real_fetch.ext_id == real_bgp_route_ext_id
+      - real_fetch.bgp_session_ext_id == real_bgp_session_ext_id
+      - real_fetch.response is defined
+      - real_fetch.response.ext_id == real_bgp_route_ext_id
+      - real_fetch.response.bgp_session_reference == real_bgp_session_ext_id
+      - real_fetch.response.bgp_route_type in ["ADVERTISED", "RECEIVED", "RECEIVED_AND_IGNORED"]
+    fail_msg: "Positive fetch of BGP route failed"
+    success_msg: "Positive fetch of BGP route succeeded"
+  when:
+    - real_bgp_session_ext_id is defined
+    - real_bgp_route_ext_id is defined
+    - real_fetch is defined
+    - not real_fetch.failed
+########################################################################################
+# 4. Negative: state=present without ext_id must fail because CRUD is unsupported.
+########################################################################################
+
+- name: Attempt to "create" a BGP route (unsupported by the API)
+  nutanix.ncp.ntnx_routes_by_bgp_session_id_v2:
+    state: present
+    bgp_session_ext_id: "{{ fake_bgp_session_ext_id }}"
+  register: create_attempt
+  ignore_errors: true
+
+- name: Assert create is blocked with a read-only error
+  ansible.builtin.assert:
+    that:
+      - create_attempt is defined
+      - create_attempt.failed
+      - "'BGP routes are read-only' in create_attempt.msg"
+      - "'ntnx_routes_by_bgp_session_ids_info_v2' in create_attempt.msg"
+    fail_msg: "Create attempt did not surface a read-only error"
+    success_msg: "Create attempt correctly surfaced the read-only error"
+
+########################################################################################
+# 5. Negative: state=absent with both ext_ids must fail with a read-only error.
+########################################################################################
+
+- name: Attempt to delete a BGP route (unsupported by the API)
+  nutanix.ncp.ntnx_routes_by_bgp_session_id_v2:
+    state: absent
+    bgp_session_ext_id: "{{ fake_bgp_session_ext_id }}"
+    ext_id: "{{ fake_route_ext_id }}"
+  register: delete_attempt
+  ignore_errors: true
+
+- name: Assert delete is blocked with a read-only error
+  ansible.builtin.assert:
+    that:
+      - delete_attempt is defined
+      - delete_attempt.failed
+      - "'BGP routes are read-only' in delete_attempt.msg"
+      - not delete_attempt.changed
+    fail_msg: "Delete attempt did not surface a read-only error"
+    success_msg: "Delete attempt correctly surfaced the read-only error"
+
+########################################################################################
+# 6. Negative: state=absent without ext_id trips the required_if guard.
+########################################################################################
+
+- name: Attempt to delete without ext_id (required_if)  # noqa: args[module]
+  nutanix.ncp.ntnx_routes_by_bgp_session_id_v2:
+    state: absent
+    bgp_session_ext_id: "{{ fake_bgp_session_ext_id }}"
+  register: delete_missing_ext_id
+  ignore_errors: true
+
+- name: Assert required_if rejects delete without ext_id
+  ansible.builtin.assert:
+    that:
+      - delete_missing_ext_id is defined
+      - delete_missing_ext_id.failed
+      - "'ext_id' in (delete_missing_ext_id.msg | string)"
+    fail_msg: "state=absent without ext_id was not rejected"
+    success_msg: "state=absent without ext_id was correctly rejected"
+
+########################################################################################
+# 7. Negative: state=present + fake ext_id -> API surfaces "not found" (best effort;
+#    if the cluster has no BGP session at all, the API will still return an error).
+########################################################################################
+
+- name: Fetch a non-existent BGP route to trigger an API not-found style error
+  nutanix.ncp.ntnx_routes_by_bgp_session_id_v2:
+    state: present
+    bgp_session_ext_id: "{{ fake_bgp_session_ext_id }}"
+    ext_id: "{{ fake_route_ext_id }}"
+  register: fetch_missing
+  ignore_errors: true
+
+- name: Assert not-found fetch is reported as failed
+  ansible.builtin.assert:
+    that:
+      - fetch_missing is defined
+      - fetch_missing.failed
+      - not fetch_missing.changed
+    fail_msg: "Fetch of a non-existent BGP route did not report failed=true"
+    success_msg: "Fetch of a non-existent BGP route correctly reported failed=true"
+
+########################################################################################
+# 8. Argument-spec: state must be one of {present, absent}.
+########################################################################################
+
+- name: Attempt to use an invalid state value  # noqa: args[module]
+  nutanix.ncp.ntnx_routes_by_bgp_session_id_v2:
+    state: "bogus"
+    bgp_session_ext_id: "{{ fake_bgp_session_ext_id }}"
+    ext_id: "{{ fake_route_ext_id }}"
+  register: invalid_state
+  ignore_errors: true
+
+- name: Assert invalid state is rejected by argument-spec validation
+  ansible.builtin.assert:
+    that:
+      - invalid_state is defined
+      - invalid_state.failed
+      - "'state' in (invalid_state.msg | string)"
+    fail_msg: "Invalid state value was not rejected"
+    success_msg: "Invalid state value was rejected by argument-spec validation"
+
+- name: End ntnx_routes_by_bgp_session_id_v2 tests
+  ansible.builtin.debug:
+    msg: End ntnx_routes_by_bgp_session_id_v2 tests

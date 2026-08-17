@@ -170,3 +170,35 @@ def get_virtual_switch(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching virtual switch info using ext_id",
         )
+
+
+def get_bgp_route(module, api_instance, ext_id, bgp_session_ext_id):
+    """
+    This method will return a BGP route info using route external ID
+    and the parent BGP session external ID.
+
+    The Nutanix networking v4 BGP routes API is read-only: routes are
+    learned or advertised by the BGP gateway serving the referenced BGP
+    session and cannot be created, updated, or deleted through the API.
+
+    Args:
+        module: Ansible module
+        api_instance: BgpRoutesApi instance from ntnx_networking_py_client sdk
+        ext_id (str): BGP route external ID
+        bgp_session_ext_id (str): BGP session external ID
+    return:
+        info (object): BGP route info
+    """
+    try:
+        return api_instance.get_route_for_bgp_session_by_id(
+            extId=ext_id, bgpSessionExtId=bgp_session_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching BGP route info using ext_id "
+                "and bgp_session_ext_id"
+            ),
+        )

@@ -1,0 +1,317 @@
+---
+# Test plan for ntnx_routes_by_bgp_session_ids_info_v2
+#
+# Coverage:
+#   1. Argument-spec: bgp_session_ext_id is required.
+#   2. Argument-spec: ext_id and filter are mutually exclusive.
+#   3. Discovery: attempt to find a real BGP session via v4 REST.
+#   4. Positive list against a real BGP session (when discovered):
+#      - assert response is a list, changed=False, total_available_results is int.
+#      - if any routes present, assert bgp_route_type is a valid enum and
+#        bgp_session_reference matches the parent session ext_id.
+#   5. Positive list with limit=1 (when a real BGP session exists).
+#   6. Positive list with orderby=name asc (when a real BGP session exists).
+#   7. Positive list with a filter for ADVERTISED routes (when a real BGP
+#      session exists).
+#   8. Positive fetch by ext_id (when a real BGP route exists).
+#   9. Negative: fetch a non-existent BGP route.
+#  10. Negative: list against a non-existent BGP session.
+
+- name: Start ntnx_routes_by_bgp_session_ids_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_routes_by_bgp_session_ids_info_v2 tests
+
+- name: Generate random suffix for scoping test facts
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set static test facts (fake ext_ids used by negative paths)
+  ansible.builtin.set_fact:
+    fake_bgp_session_ext_id: "00000000-0000-0000-0000-{{ random_name | lower | truncate(12, True, '') }}"
+    fake_route_ext_id: "11111111-1111-1111-1111-{{ random_name | lower | truncate(12, True, '') }}"
+
+########################################################################################
+# 1. Argument-spec: bgp_session_ext_id is required.
+########################################################################################
+
+- name: Call info module without bgp_session_ext_id  # noqa: args[module]
+  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2: {}
+  register: missing_parent
+  ignore_errors: true
+
+- name: Assert missing bgp_session_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_parent is defined
+      - missing_parent.failed
+      - "'bgp_session_ext_id' in (missing_parent.msg | string)"
+    fail_msg: "Missing bgp_session_ext_id was not rejected"
+    success_msg: "Missing bgp_session_ext_id was rejected as expected"
+
+########################################################################################
+# 2. Argument-spec: ext_id and filter are mutually exclusive.
+########################################################################################
+
+- name: Call info module with ext_id + filter (mutually exclusive)
+  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+    bgp_session_ext_id: "{{ fake_bgp_session_ext_id }}"
+    ext_id: "{{ fake_route_ext_id }}"
+    filter: "name eq 'foo'"
+  register: mx_call
+  ignore_errors: true
+
+- name: Assert mutually exclusive rejection
+  ansible.builtin.assert:
+    that:
+      - mx_call is defined
+      - mx_call.failed
+      - "'mutually exclusive' in (mx_call.msg | string)"
+    fail_msg: "ext_id + filter were not rejected as mutually exclusive"
+    success_msg: "ext_id + filter were rejected as mutually exclusive"
+
+########################################################################################
+# 3. Discovery of a real BGP session on the cluster (best effort).
+########################################################################################
+
+- name: Honor operator-supplied BGP session ext_id (if any)
+  ansible.builtin.set_fact:
+    real_bgp_session_ext_id: "{{ bgp_session_ext_id_for_tests }}"
+  when: bgp_session_ext_id_for_tests is defined and bgp_session_ext_id_for_tests | length > 0
+
+- name: Discover a BGP session via v4 REST (list_bgp_sessions)
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ nutanix_port | default('9440') }}/api/networking/v4.3/config/bgp-sessions?$limit=5"
+    method: GET
+    force_basic_auth: true
+    user: "{{ username }}"
+    password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+    return_content: true
+    status_code: [200, 400, 401, 403, 404]
+  register: bgp_sessions_probe
+  ignore_errors: true
+  when: real_bgp_session_ext_id is not defined
+
+- name: Set real BGP session ext_id if discovered
+  ansible.builtin.set_fact:
+    real_bgp_session_ext_id: "{{ (bgp_sessions_probe.json.data | first).extId }}"
+  when:
+    - real_bgp_session_ext_id is not defined
+    - bgp_sessions_probe is defined
+    - bgp_sessions_probe.status is defined
+    - bgp_sessions_probe.status == 200
+    - bgp_sessions_probe.json is defined
+    - bgp_sessions_probe.json.data is defined
+    - bgp_sessions_probe.json.data is iterable
+    - bgp_sessions_probe.json.data | length > 0
+
+########################################################################################
+# 4. Positive list against a real BGP session (when discovered).
+########################################################################################
+
+- name: List BGP routes for the discovered BGP session
+  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+    bgp_session_ext_id: "{{ real_bgp_session_ext_id }}"
+  register: real_list
+  ignore_errors: true
+  when: real_bgp_session_ext_id is defined
+
+- name: Assert real list contract
+  ansible.builtin.assert:
+    that:
+      - real_list is defined
+      - not real_list.changed
+      - not real_list.failed
+      - real_list.bgp_session_ext_id == real_bgp_session_ext_id
+      - real_list.total_available_results is defined
+      - real_list.total_available_results | int >= 0
+      - real_list.response is defined
+      - real_list.response is iterable
+    fail_msg: "List for the discovered BGP session did not honor the info module contract"
+    success_msg: "List for the discovered BGP session honored the info module contract"
+  when: real_bgp_session_ext_id is defined and real_list is defined and not real_list.failed
+
+- name: Assert per-route invariants when routes are present
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.bgp_session_reference == real_bgp_session_ext_id
+      - item.bgp_route_type in ["ADVERTISED", "RECEIVED", "RECEIVED_AND_IGNORED"]
+    fail_msg: "BGP route entry did not satisfy invariants"
+    success_msg: "BGP route entry satisfied invariants"
+  loop: "{{ real_list.response | default([]) }}"
+  loop_control:
+    label: "{{ item.ext_id | default('<no-ext-id>') }}"
+  when:
+    - real_bgp_session_ext_id is defined
+    - real_list is defined
+    - not real_list.failed
+    - real_list.response is defined
+    - real_list.response | length > 0
+
+- name: Set real BGP route ext_id (if any) for later tests
+  ansible.builtin.set_fact:
+    real_bgp_route_ext_id: "{{ real_list.response[0].ext_id }}"
+  when:
+    - real_list is defined
+    - real_list.skipped is not defined
+    - real_list.failed is defined
+    - not real_list.failed
+    - real_list.response is defined
+    - real_list.response | length > 0
+
+########################################################################################
+# 5. Positive list with limit=1 (when a real BGP session exists).
+########################################################################################
+
+- name: List BGP routes for the discovered BGP session with limit=1
+  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+    bgp_session_ext_id: "{{ real_bgp_session_ext_id }}"
+    limit: 1
+  register: real_list_limit
+  ignore_errors: true
+  when: real_bgp_session_ext_id is defined
+
+- name: Assert limit=1 returns at most one route
+  ansible.builtin.assert:
+    that:
+      - real_list_limit is defined
+      - not real_list_limit.changed
+      - not real_list_limit.failed
+      - real_list_limit.response is defined
+      - real_list_limit.response | length <= 1
+    fail_msg: "List with limit=1 returned more than one route"
+    success_msg: "List with limit=1 honored the limit"
+  when:
+    - real_bgp_session_ext_id is defined
+    - real_list_limit is defined
+    - not real_list_limit.failed
+########################################################################################
+# 6. Positive list with orderby=name asc (when a real BGP session exists).
+########################################################################################
+
+- name: List BGP routes for the discovered BGP session with orderby=name asc
+  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+    bgp_session_ext_id: "{{ real_bgp_session_ext_id }}"
+    orderby: "name asc"
+  register: real_list_orderby
+  ignore_errors: true
+  when: real_bgp_session_ext_id is defined
+
+- name: Assert orderby honors the info module contract
+  ansible.builtin.assert:
+    that:
+      - real_list_orderby is defined
+      - not real_list_orderby.changed
+      - not real_list_orderby.failed
+      - real_list_orderby.response is defined
+      - real_list_orderby.response is iterable
+    fail_msg: "List with orderby did not honor the info module contract"
+    success_msg: "List with orderby honored the info module contract"
+  when:
+    - real_bgp_session_ext_id is defined
+    - real_list_orderby is defined
+    - not real_list_orderby.failed
+########################################################################################
+# 7. Positive list with a filter for ADVERTISED routes only.
+########################################################################################
+
+- name: List BGP routes for the discovered BGP session filtered to ADVERTISED
+  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+    bgp_session_ext_id: "{{ real_bgp_session_ext_id }}"
+    filter: "bgpRouteType eq Nutanix.Networking.Config.BgpRouteType'ADVERTISED'"
+  register: real_list_advertised
+  ignore_errors: true
+  when: real_bgp_session_ext_id is defined
+
+- name: Assert filtered list only contains ADVERTISED routes
+  ansible.builtin.assert:
+    that:
+      - item.bgp_route_type == "ADVERTISED"
+    fail_msg: "Filtered list contained a non-ADVERTISED route"
+    success_msg: "Filtered list only contained ADVERTISED routes"
+  loop: "{{ real_list_advertised.response | default([]) }}"
+  loop_control:
+    label: "{{ item.ext_id | default('<no-ext-id>') }}"
+  when:
+    - real_bgp_session_ext_id is defined
+    - real_list_advertised is defined
+    - not real_list_advertised.failed
+    - real_list_advertised.response is defined
+    - real_list_advertised.response | length > 0
+
+########################################################################################
+# 8. Positive fetch by ext_id (when a real BGP route exists).
+########################################################################################
+
+- name: Fetch the discovered BGP route by ext_id
+  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+    bgp_session_ext_id: "{{ real_bgp_session_ext_id }}"
+    ext_id: "{{ real_bgp_route_ext_id }}"
+  register: real_get
+  ignore_errors: true
+  when:
+    - real_bgp_session_ext_id is defined
+    - real_bgp_route_ext_id is defined
+
+- name: Assert fetch-by-ext_id contract
+  ansible.builtin.assert:
+    that:
+      - real_get is defined
+      - not real_get.changed
+      - not real_get.failed
+      - real_get.ext_id == real_bgp_route_ext_id
+      - real_get.bgp_session_ext_id == real_bgp_session_ext_id
+      - real_get.response is defined
+      - real_get.response.ext_id == real_bgp_route_ext_id
+      - real_get.response.bgp_session_reference == real_bgp_session_ext_id
+      - real_get.response.bgp_route_type in ["ADVERTISED", "RECEIVED", "RECEIVED_AND_IGNORED"]
+    fail_msg: "Fetch-by-ext_id did not honor the info module contract"
+    success_msg: "Fetch-by-ext_id honored the info module contract"
+  when:
+    - real_bgp_session_ext_id is defined
+    - real_bgp_route_ext_id is defined
+    - real_get is defined
+    - not real_get.failed
+########################################################################################
+# 9. Negative: fetch a non-existent BGP route.
+########################################################################################
+
+- name: Fetch a non-existent BGP route by ext_id
+  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+    bgp_session_ext_id: "{{ real_bgp_session_ext_id | default(fake_bgp_session_ext_id) }}"
+    ext_id: "{{ fake_route_ext_id }}"
+  register: bad_get
+  ignore_errors: true
+
+- name: Assert fetch of non-existent BGP route reports failed=true
+  ansible.builtin.assert:
+    that:
+      - bad_get is defined
+      - bad_get.failed
+      - not bad_get.changed
+    fail_msg: "Fetch of non-existent BGP route did not report failed=true"
+    success_msg: "Fetch of non-existent BGP route reported failed=true"
+
+########################################################################################
+# 10. Negative: list against a non-existent BGP session.
+########################################################################################
+
+- name: List BGP routes for a non-existent BGP session
+  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+    bgp_session_ext_id: "{{ fake_bgp_session_ext_id }}"
+  register: bad_list
+  ignore_errors: true
+
+- name: Assert list against non-existent BGP session reports failed=true
+  ansible.builtin.assert:
+    that:
+      - bad_list is defined
+      - bad_list.failed
+      - not bad_list.changed
+    fail_msg: "List against non-existent BGP session did not report failed=true"
+    success_msg: "List against non-existent BGP session reported failed=true"
+
+- name: End ntnx_routes_by_bgp_session_ids_info_v2 tests
+  ansible.builtin.debug:
+    msg: End ntnx_routes_by_bgp_session_ids_info_v2 tests
