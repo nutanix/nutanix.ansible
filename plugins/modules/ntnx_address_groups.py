@@ -224,6 +224,7 @@ def run_module():
         " The v3 address group APIs are not supported when the Flow network security next-gen"
         " is enabled. Please use the v4 address group APIs instead"
         " i.e. ntnx_address_groups_v2 module.",
+        date="2027-12-31",
         collection_name="nutanix.ncp",
     )
     utils.remove_param_with_none_value(module.params)

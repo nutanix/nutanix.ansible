@@ -191,6 +191,7 @@ def run_module():
         " The v3 service group APIs are not supported when the Flow network security next-gen"
         " is enabled. Please use the v4 service group APIs instead"
         " i.e. ntnx_service_groups_info_v2 module.",
+        date="2027-12-31",
         collection_name="nutanix.ncp",
     )
     remove_param_with_none_value(module.params)
