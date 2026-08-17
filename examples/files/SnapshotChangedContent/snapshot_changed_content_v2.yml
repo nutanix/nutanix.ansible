@@ -1,0 +1,94 @@
+---
+# Summary:
+# This playbook demonstrates the Snapshot Changed Content workflow on a
+# Nutanix Files mount target:
+#   1. Trigger compute-snapshot-change for an incremental diff (both snapshots)
+#   2. Trigger compute-snapshot-change for a full backup style diff (no base)
+#   3. Fetch a single snapshot changed content bucket by ext_id
+#   4. Page through a snapshot changed content bucket using next_page_token
+#   5. List all snapshot changed content buckets for the mount target
+#   6. List with a filter on snapshotExtId
+#   7. List with a limit
+
+- name: Snapshot Changed Content v2 playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "d8a37c9e-2b6a-4a17-b76f-33d6f11f61aa"
+        mount_target_ext_id: "9c1e537d-6777-4c22-5d41-ddd0c3337aa9"
+        snapshot_ext_id: "48f78959-14a6-4c47-b5db-920460c4b668"
+        base_snapshot_ext_id: "6c2c2a6c-7bd5-4e73-b74e-9fbc51c4f2e6"
+
+    - name: Compute snapshot changed content (incremental with base snapshot)
+      nutanix.ncp.ntnx_snapshot_changed_content_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        snapshot_ext_id: "{{ snapshot_ext_id }}"
+        base_snapshot_ext_id: "{{ base_snapshot_ext_id }}"
+        should_show_relative_path: true
+        should_use_dfs_namespace: false
+      register: compute_result
+      ignore_errors: true
+
+    - name: Record produced bucket ext_id (if any)
+      ansible.builtin.set_fact:
+        snapshot_changed_content_ext_id: "{{ compute_result.ext_id }}"
+      when: compute_result is defined and compute_result.ext_id is defined and compute_result.ext_id
+
+    - name: Compute snapshot changed content (full-backup style, no base snapshot)
+      nutanix.ncp.ntnx_snapshot_changed_content_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        snapshot_ext_id: "{{ snapshot_ext_id }}"
+      register: compute_full_result
+      ignore_errors: true
+
+    - name: Get snapshot changed content by ext_id
+      nutanix.ncp.ntnx_snapshot_changed_contents_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        ext_id: "{{ snapshot_changed_content_ext_id | default('3f8fd0f2-2e91-4b1e-9d21-2b0d5c56b6b1') }}"
+      register: get_by_id_result
+      ignore_errors: true
+
+    - name: Fetch the next page of a bucket using next_page_token
+      nutanix.ncp.ntnx_snapshot_changed_contents_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        ext_id: "{{ snapshot_changed_content_ext_id | default('3f8fd0f2-2e91-4b1e-9d21-2b0d5c56b6b1') }}"
+        next_page_token: "eyJvZmZzZXQiOjMwMH0="
+      register: get_next_page_result
+      ignore_errors: true
+
+    - name: List all snapshot changed contents for the mount target
+      nutanix.ncp.ntnx_snapshot_changed_contents_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+      register: list_all_result
+      ignore_errors: true
+
+    - name: List snapshot changed contents filtered by snapshotExtId
+      nutanix.ncp.ntnx_snapshot_changed_contents_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        filter: "snapshotExtId eq '{{ snapshot_ext_id }}'"
+      register: list_filtered_result
+      ignore_errors: true
+
+    - name: List snapshot changed contents with a limit
+      nutanix.ncp.ntnx_snapshot_changed_contents_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        limit: 1
+      register: list_limited_result
+      ignore_errors: true

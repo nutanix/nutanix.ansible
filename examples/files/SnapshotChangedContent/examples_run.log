@@ -1,0 +1,45 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+running playbook inside collection nutanix.ncp
+
+PLAY [Snapshot Changed Content v2 playbook] ************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"base_snapshot_ext_id": "6c2c2a6c-7bd5-4e73-b74e-9fbc51c4f2e6", "file_server_ext_id": "d8a37c9e-2b6a-4a17-b76f-33d6f11f61aa", "mount_target_ext_id": "9c1e537d-6777-4c22-5d41-ddd0c3337aa9", "snapshot_ext_id": "48f78959-14a6-4c47-b5db-920460c4b668"}, "changed": false}
+
+TASK [Compute snapshot changed content (incremental with base snapshot)] *******
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while computing snapshot changed content", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Record produced bucket ext_id (if any)] **********************************
+skipping: [localhost] => {"changed": false, "false_condition": "compute_result is defined and compute_result.ext_id is defined and compute_result.ext_id", "skip_reason": "Conditional result was False"}
+
+TASK [Compute snapshot changed content (full-backup style, no base snapshot)] ***
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while computing snapshot changed content", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Get snapshot changed content by ext_id] **********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching snapshot changed content info using ext_id", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Fetch the next page of a bucket using next_page_token] *******************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching snapshot changed content info using ext_id", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List all snapshot changed contents for the mount target] *****************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching snapshot changed contents info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List snapshot changed contents filtered by snapshotExtId] ****************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching snapshot changed contents info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List snapshot changed contents with a limit] *****************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching snapshot changed contents info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=7   
+
