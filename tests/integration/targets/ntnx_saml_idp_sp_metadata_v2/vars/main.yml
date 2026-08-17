@@ -1,0 +1,4 @@
+---
+# Vars used by the SamlIdpSpMetadata integration target. This file is
+# intentionally minimal — the tests generate random names and rely on the
+# integration_config.yml for cluster credentials (ip/username/password).

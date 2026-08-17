@@ -157,6 +157,8 @@ action_groups:
     - ntnx_directory_services_info_v2
     - ntnx_saml_identity_providers_v2
     - ntnx_saml_identity_providers_info_v2
+    - ntnx_saml_idp_sp_metadata_v2
+    - ntnx_saml_idp_sp_metadata_info_v2
     - ntnx_user_groups_v2
     - ntnx_user_groups_info_v2
     - ntnx_users_v2

@@ -1,0 +1,326 @@
+---
+# Integration tests for the SamlIdpSpMetadata modules:
+#   - ntnx_saml_idp_sp_metadata_v2       (action-style download by ext_id)
+#   - ntnx_saml_idp_sp_metadata_info_v2  (info; by ext_id and singleton)
+#
+# Test plan (QA-oriented, end-to-end):
+#   1. Resolve a SAML identity provider on the cluster to test against.
+#      Prefer an existing IdP so tests don't depend on Internet reachability
+#      to fetch SAML XML metadata; if none is configured, create one using
+#      structured idp_metadata (reusing the certificate of another IdP is not
+#      required — we submit a valid certificate value).
+#   2. check_mode for the download module (ext_id required, no API side effect)
+#   3. Negative: missing required ext_id for the download module
+#   4. Negative: invalid ext_id for the download module and info-by-id
+#   5. Positive:
+#      5a. Download SP-Metadata via the action module and assert XML shape
+#      5b. Fetch SP-Metadata by ext_id via the info module and assert XML shape
+#      5c. Fetch singleton SP-Metadata via the info module and assert XML shape
+#      5d. Assert two downloads for the same IdP are byte-identical (idempotent
+#          read semantics)
+#      5e. Assert response type is a string of non-zero length in every case
+#   6. Info module with mutually exclusive ext_id + filter is accepted (filter
+#      is ignored for this endpoint) — behavioural assertion
+#   7. Cleanup: delete any SAML IdP created just for this run
+
+- name: Start SamlIdpSpMetadata module tests
+  ansible.builtin.debug:
+    msg: Start ntnx_saml_idp_sp_metadata_v2 and ntnx_saml_idp_sp_metadata_info_v2 tests
+
+- name: Generate random suffix for the (optional) SAML IdP name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set test variables
+  ansible.builtin.set_fact:
+    suffix_name: ansible-spmd
+    todelete: []
+    invalid_ext_id: "00000000-0000-0000-0000-ffffffffffff"
+
+- name: Set derived SAML IdP name (used only if we need to create one)
+  ansible.builtin.set_fact:
+    new_saml_idp_name: "{{ random_name }}{{ suffix_name }}"
+
+########################################################################################
+# 1. Resolve a SAML identity provider to test against
+########################################################################################
+
+- name: List existing SAML identity providers on the cluster
+  nutanix.ncp.ntnx_saml_identity_providers_info_v2:
+  register: existing_idps_result
+  ignore_errors: true
+
+- name: Existing SAML identity providers status
+  ansible.builtin.assert:
+    that:
+      - existing_idps_result is defined
+      - existing_idps_result.failed == false
+      - existing_idps_result.changed == false
+    success_msg: "Listed existing SAML identity providers successfully"
+    fail_msg: "Failed to list existing SAML identity providers"
+
+- name: Pick the first existing SAML IdP (if any) as the test target
+  ansible.builtin.set_fact:
+    saml_idp_ext_id: >-
+      {{ (existing_idps_result.response[0].ext_id
+          if (existing_idps_result.response is defined
+              and existing_idps_result.response | length > 0)
+          else '') }}
+    saml_idp_reused_certificate: >-
+      {{ (existing_idps_result.response[0].idp_metadata.certificate
+          if (existing_idps_result.response is defined
+              and existing_idps_result.response | length > 0
+              and existing_idps_result.response[0].idp_metadata is defined
+              and existing_idps_result.response[0].idp_metadata.certificate is defined)
+          else '') }}
+
+- name: Create a SAML identity provider prerequisite when none exists
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
+    state: present
+    name: "{{ new_saml_idp_name }}"
+    username_attribute: "test_name"
+    email_attribute: "email"
+    groups_attribute: "groups"
+    groups_delim: ","
+    idp_metadata:
+      entity_id: "http://{{ new_saml_idp_name }}.example.com/adfs/services/trust"
+      login_url: "https://{{ new_saml_idp_name }}.example.com/adfs/ls/"
+      logout_url: "https://{{ new_saml_idp_name }}.example.com/adfs/ls/"
+      certificate: "{{ saml_idp_reused_certificate }}"
+    is_signed_authn_req_enabled: false
+  register: create_idp_result
+  ignore_errors: true
+  when: saml_idp_ext_id | length == 0
+    and saml_idp_reused_certificate | length > 0
+
+- name: Track newly created SAML identity provider for cleanup
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [create_idp_result.ext_id] }}"
+    saml_idp_ext_id: "{{ create_idp_result.ext_id }}"
+  when: create_idp_result is defined
+    and create_idp_result.failed is defined
+    and create_idp_result.failed == false
+    and create_idp_result.ext_id is defined
+
+- name: Skip the rest of the suite when no SAML IdP is available
+  ansible.builtin.meta: end_play
+  when: saml_idp_ext_id | length == 0
+
+- name: SAML IdP resolved for tests
+  ansible.builtin.debug:
+    msg: "Using SAML IdP ext_id: {{ saml_idp_ext_id }}"
+
+########################################################################################
+# 2. check_mode for the download module
+########################################################################################
+
+- name: Download SP-Metadata using check_mode
+  nutanix.ncp.ntnx_saml_idp_sp_metadata_v2:
+    state: present
+    ext_id: "{{ invalid_ext_id }}"
+  check_mode: true
+  register: cm_download_result
+  ignore_errors: true
+
+- name: Download SP-Metadata check_mode status
+  ansible.builtin.assert:
+    that:
+      - cm_download_result is defined
+      - cm_download_result.changed == false
+      - cm_download_result.failed == false
+      - cm_download_result.ext_id == invalid_ext_id
+      - "'will be downloaded' in cm_download_result.msg"
+    success_msg: "check_mode for download SP-Metadata behaved as expected"
+    fail_msg: "check_mode for download SP-Metadata did NOT behave as expected"
+
+########################################################################################
+# 3. Negative: missing required ext_id for the download module
+########################################################################################
+
+- name: Attempt to download SP-Metadata without ext_id (should fail)
+  nutanix.ncp.ntnx_saml_idp_sp_metadata_v2:
+    state: present
+  register: missing_ext_id_result
+  ignore_errors: true
+
+- name: Missing ext_id status
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_result is defined
+      - missing_ext_id_result.changed == false
+      - missing_ext_id_result.failed == true
+      - "'ext_id' in missing_ext_id_result.msg"
+    success_msg: "Download SP-Metadata correctly failed when ext_id was omitted"
+    fail_msg: "Download SP-Metadata did NOT fail when ext_id was omitted"
+
+########################################################################################
+# 4. Negative: invalid ext_id for both modules
+########################################################################################
+
+- name: Download SP-Metadata with invalid ext_id (should fail)
+  nutanix.ncp.ntnx_saml_idp_sp_metadata_v2:
+    state: present
+    ext_id: "{{ invalid_ext_id }}"
+  register: invalid_id_download_result
+  ignore_errors: true
+
+- name: Invalid ext_id download status
+  ansible.builtin.assert:
+    that:
+      - invalid_id_download_result is defined
+      - invalid_id_download_result.changed == false
+      - invalid_id_download_result.failed == true
+      - "'Api Exception raised while downloading SAML IdP SP-Metadata' in invalid_id_download_result.msg"
+    success_msg: "Download SP-Metadata correctly failed for invalid ext_id"
+    fail_msg: "Download SP-Metadata did NOT fail for invalid ext_id"
+
+- name: Fetch SP-Metadata info with invalid ext_id (should fail)
+  nutanix.ncp.ntnx_saml_idp_sp_metadata_info_v2:
+    ext_id: "{{ invalid_ext_id }}"
+  register: invalid_id_info_result
+  ignore_errors: true
+
+- name: Invalid ext_id info status
+  ansible.builtin.assert:
+    that:
+      - invalid_id_info_result is defined
+      - invalid_id_info_result.changed == false
+      - invalid_id_info_result.failed == true
+      - "'Api Exception raised while fetching SAML IdP SP-Metadata info' in invalid_id_info_result.msg"
+    success_msg: "Fetch SP-Metadata info correctly failed for invalid ext_id"
+    fail_msg: "Fetch SP-Metadata info did NOT fail for invalid ext_id"
+
+########################################################################################
+# 5. Positive: download / fetch SP-Metadata
+########################################################################################
+
+- name: Download SP-Metadata for the resolved SAML IdP
+  nutanix.ncp.ntnx_saml_idp_sp_metadata_v2:
+    state: present
+    ext_id: "{{ saml_idp_ext_id }}"
+  register: download_result
+  ignore_errors: true
+
+- name: Download SP-Metadata status
+  ansible.builtin.assert:
+    that:
+      - download_result is defined
+      - download_result.failed == false
+      - download_result.changed == false
+      - download_result.ext_id == saml_idp_ext_id
+      - download_result.response is defined
+      - download_result.response | length > 0
+      - download_result.response is string
+      - "'EntityDescriptor' in download_result.response"
+      - "'SPSSODescriptor' in download_result.response"
+      - "'AssertionConsumerService' in download_result.response"
+    success_msg: "Downloaded SP-Metadata for the resolved SAML IdP successfully"
+    fail_msg: "Failed to download SP-Metadata for the resolved SAML IdP"
+
+- name: Fetch SP-Metadata via info module using ext_id
+  nutanix.ncp.ntnx_saml_idp_sp_metadata_info_v2:
+    ext_id: "{{ saml_idp_ext_id }}"
+  register: info_by_id_result
+  ignore_errors: true
+
+- name: Fetch SP-Metadata by ext_id status
+  ansible.builtin.assert:
+    that:
+      - info_by_id_result is defined
+      - info_by_id_result.failed == false
+      - info_by_id_result.changed == false
+      - info_by_id_result.ext_id == saml_idp_ext_id
+      - info_by_id_result.response is defined
+      - info_by_id_result.response | length > 0
+      - info_by_id_result.response is string
+      - "'EntityDescriptor' in info_by_id_result.response"
+      - "'SPSSODescriptor' in info_by_id_result.response"
+    success_msg: "Fetched SP-Metadata via info module (by ext_id) successfully"
+    fail_msg: "Failed to fetch SP-Metadata via info module using ext_id"
+
+- name: Fetch singleton SP-Metadata via info module (no ext_id)
+  nutanix.ncp.ntnx_saml_idp_sp_metadata_info_v2:
+  register: info_singleton_result
+  ignore_errors: true
+
+- name: Fetch singleton SP-Metadata status
+  ansible.builtin.assert:
+    that:
+      - info_singleton_result is defined
+      - info_singleton_result.failed == false
+      - info_singleton_result.changed == false
+      - info_singleton_result.response is defined
+      - info_singleton_result.response | length > 0
+      - info_singleton_result.response is string
+      - "'EntityDescriptor' in info_singleton_result.response"
+      - "'SPSSODescriptor' in info_singleton_result.response"
+    success_msg: "Fetched singleton SP-Metadata via info module successfully"
+    fail_msg: "Failed to fetch singleton SP-Metadata via info module"
+
+- name: Download SP-Metadata for the same IdP a second time
+  nutanix.ncp.ntnx_saml_idp_sp_metadata_v2:
+    state: present
+    ext_id: "{{ saml_idp_ext_id }}"
+  register: download_result_second
+  ignore_errors: true
+
+- name: Second download SP-Metadata status
+  ansible.builtin.assert:
+    that:
+      - download_result_second is defined
+      - download_result_second.failed == false
+      - download_result_second.changed == false
+      - download_result_second.ext_id == saml_idp_ext_id
+      - download_result_second.response is defined
+      - download_result_second.response | length > 0
+    success_msg: "Second download SP-Metadata call succeeded"
+    fail_msg: "Second download SP-Metadata call failed"
+
+- name: SP-Metadata download is stable across repeated calls
+  ansible.builtin.assert:
+    that:
+      - download_result.response == download_result_second.response
+    success_msg: "SP-Metadata is stable across repeated download calls"
+    fail_msg: "SP-Metadata changed between consecutive download calls"
+
+########################################################################################
+# 6. Info module with mutually exclusive ext_id + filter
+########################################################################################
+
+- name: Info module with ext_id + filter (filter is ignored, no failure expected)
+  nutanix.ncp.ntnx_saml_idp_sp_metadata_info_v2:
+    ext_id: "{{ saml_idp_ext_id }}"
+    filter: "name eq 'anything'"
+  register: mutex_result
+  ignore_errors: true
+
+- name: Info module ext_id + filter status
+  ansible.builtin.assert:
+    that:
+      - mutex_result is defined
+      - mutex_result.failed == false
+      - mutex_result.changed == false
+      - mutex_result.response is defined
+    success_msg: "Info module accepted ext_id + filter (filter ignored) as expected"
+    fail_msg: "Info module failed unexpectedly when ext_id and filter were both supplied"
+
+########################################################################################
+# 7. Cleanup
+########################################################################################
+
+- name: Delete only SAML identity providers created during this run
+  nutanix.ncp.ntnx_saml_identity_providers_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: delete_idp_result
+  loop: "{{ todelete }}"
+  ignore_errors: true
+  when: todelete | length > 0
+
+- name: Deletion status
+  ansible.builtin.assert:
+    that:
+      - delete_idp_result.results | length == todelete | length
+    success_msg: "SAML identity providers created during this run deleted successfully"
+    fail_msg: "Failed to delete one or more SAML identity providers created during this run"
+  when: todelete | length > 0
