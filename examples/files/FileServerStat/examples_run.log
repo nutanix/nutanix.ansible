@@ -1,0 +1,69 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Nutanix Files - FileServerStat example playbook] *************************
+
+TASK [Fetch File Server stats using the stat module] ***************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching file server stats for ext_id: 6ca5de7e-a9a8-4318-4a62-68b8d5833af7
+Origin: /tmp/codegen/99ced00bfb594a0c9e7e360af47debec/repo/examples/files/FileServerStat/file_server_stat.yml:37:7
+
+35
+36   tasks:
+37     - name: Fetch File Server stats using the stat module
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching file server stats for ext_id: 6ca5de7e-a9a8-4318-4a62-68b8d5833af7", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Fetch File Server stats with sampling_interval, stat_type, and select] ***
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching file server stats for ext_id: 6ca5de7e-a9a8-4318-4a62-68b8d5833af7
+Origin: /tmp/codegen/99ced00bfb594a0c9e7e360af47debec/repo/examples/files/FileServerStat/file_server_stat.yml:46:7
+
+44       # sample: <Need to add sample>
+45
+46     - name: Fetch File Server stats with sampling_interval, stat_type, and select
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching file server stats for ext_id: 6ca5de7e-a9a8-4318-4a62-68b8d5833af7", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Fetch File Server stats info via the info module] ************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching file server stats for ext_id: 6ca5de7e-a9a8-4318-4a62-68b8d5833af7
+Origin: /tmp/codegen/99ced00bfb594a0c9e7e360af47debec/repo/examples/files/FileServerStat/file_server_stat.yml:58:7
+
+56       # sample: <Need to add sample>
+57
+58     - name: Fetch File Server stats info via the info module
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching file server stats for ext_id: 6ca5de7e-a9a8-4318-4a62-68b8d5833af7", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Fetch Antivirus Server stats for the File Server] ************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching antivirus server stats for ext_id: 18f78959-14a6-4c47-b5db-920460c4b668
+Origin: /tmp/codegen/99ced00bfb594a0c9e7e360af47debec/repo/examples/files/FileServerStat/file_server_stat.yml:67:7
+
+65       # sample: <Need to add sample>
+66
+67     - name: Fetch Antivirus Server stats for the File Server
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching antivirus server stats for ext_id: 18f78959-14a6-4c47-b5db-920460c4b668", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Fetch Mount Target stats for the File Server] ****************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching mount target stats for ext_id: 9c1e537d-6777-4c22-5d41-ddd0c3337aa9
+Origin: /tmp/codegen/99ced00bfb594a0c9e7e360af47debec/repo/examples/files/FileServerStat/file_server_stat.yml:79:7
+
+77       # sample: <Need to add sample>
+78
+79     - name: Fetch Mount Target stats for the File Server
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching mount target stats for ext_id: 9c1e537d-6777-4c22-5d41-ddd0c3337aa9", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=5   
+

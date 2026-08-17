@@ -1,0 +1,306 @@
+---
+# =============================================================================
+# Integration tests for ntnx_file_server_stat_v2 and
+# ntnx_files_file_server_stats_info_v2.
+#
+# Test plan (Domain-Expert QA mindset):
+#
+# The Nutanix Files v4 stats APIs are read-only endpoints that require an
+# entity ext_id (File Server, Antivirus Server, or Mount Target). We therefore
+# cannot exercise a full create/update/delete lifecycle. Instead we cover:
+#
+#   1. Argument-spec validation for both modules
+#      - missing required params (ext_id / start_time / end_time)
+#      - invalid enum value for stat_type
+#      - mutually exclusive antivirus_server_ext_id vs mount_target_ext_id
+#
+#   2. Positive fetches (skipped if no File Server exists on the target PC):
+#      - fetch File Server stats with minimal params
+#      - fetch File Server stats with sampling_interval + stat_type + select
+#      - fetch same via the info module (default branch)
+#      - fetch antivirus server stats
+#      - fetch mount target stats
+#
+#   3. Negative fetches:
+#      - non-existent File Server ext_id returns an API error
+#      - non-existent Antivirus Server / Mount Target ext_id returns an error
+#
+# The playbook is idempotent: it only reads stats, it never mutates the
+# File Server, Antivirus Server, or Mount Target entities.
+# =============================================================================
+
+- name: Start ntnx_file_server_stat_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_file_server_stat_v2 tests
+
+- name: Compute time window for stats queries (last 1 hour)
+  ansible.builtin.set_fact:
+    fs_stat_end_time: "{{ ('%Y-%m-%dT%H:%M:%S.000Z' | strftime(ansible_date_time.epoch | int)) }}"
+    fs_stat_start_time: "{{ ('%Y-%m-%dT%H:%M:%S.000Z' | strftime((ansible_date_time.epoch | int) - 3600)) }}"
+
+- name: Show computed time window
+  ansible.builtin.debug:
+    msg: "Using window {{ fs_stat_start_time }} -> {{ fs_stat_end_time }}"
+
+# ---------------------------------------------------------------------------
+# 1. Argument-spec validation (does not require a live File Server)
+# ---------------------------------------------------------------------------
+
+- name: Negative - missing required ext_id for stat module
+  nutanix.ncp.ntnx_file_server_stat_v2:
+    start_time: "{{ fs_stat_start_time }}"
+    end_time: "{{ fs_stat_end_time }}"
+  register: missing_ext_id
+  ignore_errors: true
+
+- name: Assert missing ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id.failed == true
+      - missing_ext_id.changed == false
+      - "'ext_id' in missing_ext_id.msg"
+    fail_msg: "Expected missing ext_id to be rejected by the argument spec"
+    success_msg: "Missing ext_id correctly rejected"
+
+- name: Negative - missing start_time for stat module
+  nutanix.ncp.ntnx_file_server_stat_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    end_time: "{{ fs_stat_end_time }}"
+  register: missing_start
+  ignore_errors: true
+
+- name: Assert missing start_time is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_start.failed == true
+      - missing_start.changed == false
+      - "'start_time' in missing_start.msg"
+    fail_msg: "Expected missing start_time to be rejected by the argument spec"
+    success_msg: "Missing start_time correctly rejected"
+
+- name: Negative - missing end_time for stat module
+  nutanix.ncp.ntnx_file_server_stat_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ fs_stat_start_time }}"
+  register: missing_end
+  ignore_errors: true
+
+- name: Assert missing end_time is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_end.failed == true
+      - missing_end.changed == false
+      - "'end_time' in missing_end.msg"
+    fail_msg: "Expected missing end_time to be rejected by the argument spec"
+    success_msg: "Missing end_time correctly rejected"
+
+- name: Negative - invalid enum value for stat_type
+  nutanix.ncp.ntnx_file_server_stat_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ fs_stat_start_time }}"
+    end_time: "{{ fs_stat_end_time }}"
+    stat_type: "NOT_A_REAL_OPERATOR"
+  register: bad_stat_type
+  ignore_errors: true
+
+- name: Assert invalid stat_type is rejected
+  ansible.builtin.assert:
+    that:
+      - bad_stat_type.failed == true
+      - bad_stat_type.changed == false
+      - "'value of stat_type must be one of' in bad_stat_type.msg or 'not a valid value' in bad_stat_type.msg"
+    fail_msg: "Expected invalid stat_type enum value to be rejected"
+    success_msg: "Invalid stat_type correctly rejected"
+
+- name: Negative - mutually exclusive antivirus_server_ext_id + mount_target_ext_id (info module)
+  nutanix.ncp.ntnx_files_file_server_stats_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    antivirus_server_ext_id: "18f78959-14a6-4c47-b5db-920460c4b668"
+    mount_target_ext_id: "9c1e537d-6777-4c22-5d41-ddd0c3337aa9"
+    start_time: "{{ fs_stat_start_time }}"
+    end_time: "{{ fs_stat_end_time }}"
+  register: mutex
+  ignore_errors: true
+
+- name: Assert mutually exclusive params are rejected
+  ansible.builtin.assert:
+    that:
+      - mutex.failed == true
+      - mutex.changed == false
+      - "'mutually exclusive' in mutex.msg"
+    fail_msg: "Expected mutually exclusive antivirus/mount-target ext_ids to be rejected"
+    success_msg: "Mutually exclusive params correctly rejected"
+
+# ---------------------------------------------------------------------------
+# 2. Negative API-level fetch with a bogus ext_id
+# ---------------------------------------------------------------------------
+
+- name: Negative - fetch stats for a non-existent File Server ext_id
+  nutanix.ncp.ntnx_file_server_stat_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ fs_stat_start_time }}"
+    end_time: "{{ fs_stat_end_time }}"
+  register: bogus_fs
+  ignore_errors: true
+
+- name: Assert bogus File Server ext_id returns an API error
+  ansible.builtin.assert:
+    that:
+      - bogus_fs.failed == true
+      - bogus_fs.changed == false
+    fail_msg: "Expected bogus File Server ext_id to return an API error"
+    success_msg: "Bogus File Server ext_id correctly failed at the API layer"
+
+- name: Negative - fetch antivirus stats for a non-existent File Server
+  nutanix.ncp.ntnx_files_file_server_stats_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    antivirus_server_ext_id: "00000000-0000-0000-0000-000000000001"
+    start_time: "{{ fs_stat_start_time }}"
+    end_time: "{{ fs_stat_end_time }}"
+  register: bogus_av
+  ignore_errors: true
+
+- name: Assert bogus antivirus stats fetch fails
+  ansible.builtin.assert:
+    that:
+      - bogus_av.failed == true
+      - bogus_av.changed == false
+    fail_msg: "Expected bogus antivirus stats fetch to fail"
+    success_msg: "Bogus antivirus stats fetch correctly failed"
+
+- name: Negative - fetch mount target stats for a non-existent File Server
+  nutanix.ncp.ntnx_files_file_server_stats_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    mount_target_ext_id: "00000000-0000-0000-0000-000000000002"
+    start_time: "{{ fs_stat_start_time }}"
+    end_time: "{{ fs_stat_end_time }}"
+  register: bogus_mt
+  ignore_errors: true
+
+- name: Assert bogus mount target stats fetch fails
+  ansible.builtin.assert:
+    that:
+      - bogus_mt.failed == true
+      - bogus_mt.changed == false
+    fail_msg: "Expected bogus mount target stats fetch to fail"
+    success_msg: "Bogus mount target stats fetch correctly failed"
+
+# ---------------------------------------------------------------------------
+# 3. Positive fetches — only run when a real File Server ext_id is supplied.
+#
+# The tester must set `file_server_ext_id` (and optionally
+# `antivirus_server_ext_id` and `mount_target_ext_id`) in
+# tests/integration/integration_config.yml to exercise these tasks.
+# If not set, positive tests are gracefully skipped.
+# ---------------------------------------------------------------------------
+
+- name: Positive branch - fetch File Server stats with minimal params
+  when: (file_server_ext_id | default('')) | length > 0
+  block:
+    - name: Fetch File Server stats using the stat module (minimal)
+      nutanix.ncp.ntnx_file_server_stat_v2:
+        ext_id: "{{ file_server_ext_id }}"
+        start_time: "{{ fs_stat_start_time }}"
+        end_time: "{{ fs_stat_end_time }}"
+      register: fs_stats_minimal
+
+    - name: Assert File Server stats minimal fetch succeeded
+      ansible.builtin.assert:
+        that:
+          - fs_stats_minimal.failed == false
+          - fs_stats_minimal.changed == false
+          - fs_stats_minimal.response is defined
+          - fs_stats_minimal.response is mapping
+          - fs_stats_minimal.ext_id == file_server_ext_id
+        fail_msg: "Failed to fetch File Server stats"
+        success_msg: "File Server stats fetched successfully"
+
+    - name: Fetch File Server stats with all optional params (full)
+      nutanix.ncp.ntnx_file_server_stat_v2:
+        ext_id: "{{ file_server_ext_id }}"
+        start_time: "{{ fs_stat_start_time }}"
+        end_time: "{{ fs_stat_end_time }}"
+        sampling_interval: 300
+        stat_type: "AVG"
+        select: "averageIops,averageLatencyUs,averageThroughputBps"
+      register: fs_stats_full
+
+    - name: Assert File Server stats full fetch succeeded
+      ansible.builtin.assert:
+        that:
+          - fs_stats_full.failed == false
+          - fs_stats_full.changed == false
+          - fs_stats_full.response is defined
+          - fs_stats_full.response is mapping
+          - fs_stats_full.ext_id == file_server_ext_id
+        fail_msg: "Failed to fetch File Server stats with all params"
+        success_msg: "File Server stats with all params fetched successfully"
+
+    - name: Fetch File Server stats via the info module (default branch)
+      nutanix.ncp.ntnx_files_file_server_stats_info_v2:
+        ext_id: "{{ file_server_ext_id }}"
+        start_time: "{{ fs_stat_start_time }}"
+        end_time: "{{ fs_stat_end_time }}"
+      register: fs_stats_info
+
+    - name: Assert File Server stats info fetch succeeded
+      ansible.builtin.assert:
+        that:
+          - fs_stats_info.failed == false
+          - fs_stats_info.changed == false
+          - fs_stats_info.response is defined
+          - fs_stats_info.response is mapping
+          - fs_stats_info.ext_id == file_server_ext_id
+        fail_msg: "Failed to fetch File Server stats via info module"
+        success_msg: "File Server stats via info module fetched successfully"
+
+- name: Positive branch - fetch Antivirus Server stats
+  when: >
+    (file_server_ext_id | default('')) | length > 0 and
+    (antivirus_server_ext_id | default('')) | length > 0
+  block:
+    - name: Fetch Antivirus Server stats
+      nutanix.ncp.ntnx_files_file_server_stats_info_v2:
+        ext_id: "{{ file_server_ext_id }}"
+        antivirus_server_ext_id: "{{ antivirus_server_ext_id }}"
+        start_time: "{{ fs_stat_start_time }}"
+        end_time: "{{ fs_stat_end_time }}"
+        sampling_interval: 300
+        stat_type: "AVG"
+      register: av_stats
+
+    - name: Assert Antivirus Server stats fetch succeeded
+      ansible.builtin.assert:
+        that:
+          - av_stats.failed == false
+          - av_stats.changed == false
+          - av_stats.response is defined
+          - av_stats.response is mapping
+          - av_stats.ext_id == antivirus_server_ext_id
+        fail_msg: "Failed to fetch Antivirus Server stats"
+        success_msg: "Antivirus Server stats fetched successfully"
+
+- name: Positive branch - fetch Mount Target stats
+  when: >
+    (file_server_ext_id | default('')) | length > 0 and
+    (mount_target_ext_id | default('')) | length > 0
+  block:
+    - name: Fetch Mount Target stats
+      nutanix.ncp.ntnx_files_file_server_stats_info_v2:
+        ext_id: "{{ file_server_ext_id }}"
+        mount_target_ext_id: "{{ mount_target_ext_id }}"
+        start_time: "{{ fs_stat_start_time }}"
+        end_time: "{{ fs_stat_end_time }}"
+        select: "averageIops,averageLatencyUs,averageThroughputBps"
+      register: mt_stats
+
+    - name: Assert Mount Target stats fetch succeeded
+      ansible.builtin.assert:
+        that:
+          - mt_stats.failed == false
+          - mt_stats.changed == false
+          - mt_stats.response is defined
+          - mt_stats.response is mapping
+          - mt_stats.ext_id == mount_target_ext_id
+        fail_msg: "Failed to fetch Mount Target stats"
+        success_msg: "Mount Target stats fetched successfully"
