@@ -1,0 +1,94 @@
+---
+# Examples for managing Disk in Nutanix Prism Central using the v4 API.
+#
+# The play-level `module_defaults` block below sets the connection parameters
+# once for every task, so no task repeats `nutanix_host`, `nutanix_username`,
+# `nutanix_password`, or `validate_certs`.
+#
+# NOTE:
+#  - The play discovers a disk dynamically from the live inventory to keep the
+#    example runnable on any lab cluster. Override `disk_ext_id`,
+#    `disk_cluster_ext_id`, `disk_serial_number`, and `disk_delete_ext_id`
+#    via extra-vars when you want to target a specific drive.
+#  - Add-disk requires a physical drive whose serial number matches an
+#    unpartitioned or previously-removed disk visible to the target PE
+#    cluster. On a healthy cluster where every physical slot is already
+#    occupied, the add-disk API returns `DISK_RPC_ERROR` (see examples_run.log).
+#  - Remove-disk marks the disk for removal; the platform drains data off
+#    the drive before it is safely detachable. The example uses a synthetic
+#    ext_id so a real disk is never destructively touched.
+
+- name: Manage Disk in Nutanix Prism Central (v4 examples)
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default('10.44.76.28') }}"
+      nutanix_username: "{{ nutanix_username | default('admin') }}"
+      nutanix_password: "{{ nutanix_password | default('Nutanix.123') }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  vars:
+    disk_delete_ext_id: "00000000-0000-0000-0000-000000000000"
+
+  tasks:
+    - name: List all Disks in Prism Central
+      nutanix.ncp.ntnx_cluster_disks_info_v2:
+        limit: 10
+      register: disks_list
+      ignore_errors: true
+
+    - name: Show total number of disks
+      ansible.builtin.debug:
+        msg: "Prism Central reports {{ disks_list.total_available_results | default(0) }} disks."
+
+    - name: Resolve a real Disk ext_id / cluster ext_id / serial from inventory
+      ansible.builtin.set_fact:
+        disk_ext_id: "{{ disks_list.response[0].ext_id }}"
+        disk_cluster_ext_id: "{{ disks_list.response[0].cluster_ext_id }}"
+        disk_serial_number: "{{ disks_list.response[0].serial_number }}"
+      when:
+        - disks_list.response is defined
+        - disks_list.response | length > 0
+
+    - name: Fetch a single Disk by external ID
+      nutanix.ncp.ntnx_cluster_disks_info_v2:
+        ext_id: "{{ disk_ext_id }}"
+      register: disk_info
+      ignore_errors: true
+      when: disk_ext_id is defined
+
+    - name: Filter Disks by storage tier (SSD_SATA)
+      nutanix.ncp.ntnx_cluster_disks_info_v2:
+        filter: "storageTier eq Clustermgmt.Config.StorageTier'SSD_SATA'"
+      register: ssd_disks
+      ignore_errors: true
+
+    - name: Add a physical Disk to a cluster (full spec)
+      nutanix.ncp.ntnx_cluster_disk_v2:
+        state: present
+        cluster_ext_id: "{{ disk_cluster_ext_id }}"
+        serial_number: "{{ disk_serial_number }}"
+        disk_partition_info:
+          partition_type: "EXT4"
+          drive_replacement_option: "CAPACITY_UPGRADE"
+      register: add_disk_result
+      ignore_errors: true
+      when:
+        - disk_cluster_ext_id is defined
+        - disk_serial_number is defined
+
+    - name: Update Disk locator LED state (turn LED off)
+      nutanix.ncp.ntnx_cluster_disk_v2:
+        state: present
+        ext_id: "{{ disk_ext_id }}"
+        is_engaged: false
+      register: led_update_result
+      ignore_errors: true
+      when: disk_ext_id is defined
+
+    - name: Remove a Disk from its cluster
+      nutanix.ncp.ntnx_cluster_disk_v2:
+        state: absent
+        ext_id: "{{ disk_delete_ext_id }}"
+      register: delete_disk_result
+      ignore_errors: true

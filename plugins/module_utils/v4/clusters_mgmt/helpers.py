@@ -109,3 +109,25 @@ def get_cluster_profile(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching cluster profile info using ext_id",
         )
+
+
+def get_disk(module, api_instance, ext_id):
+    """
+    This method will return Disk info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: DisksApi instance from sdk
+        ext_id (str): Disk external ID
+    return:
+        Disk info (object): Disk info
+    """
+    try:
+        return api_instance.get_disk_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Disk info using ext_id: {0}".format(
+                ext_id
+            ),
+        )

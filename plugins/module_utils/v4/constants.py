@@ -39,6 +39,7 @@ class Tasks:
         RECOVERY_POINT = "dataprotection:config:recovery-point"
         VM_RECOVERY_POINT = "dataprotection:config:vm-recovery-point"
         STORAGE_CONTAINER = "clustermgmt:config:storage-containers"
+        DISK = "clustermgmt:config:disk"
         ROUTE = "networking:config:route"
         OBJECTS = "objects:config:object-store"
         OVA = "vmm:content:ova"
