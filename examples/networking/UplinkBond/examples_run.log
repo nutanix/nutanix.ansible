@@ -1,0 +1,154 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [UplinkBond info playbook] ************************************************
+
+TASK [List all uplink bonds] ***************************************************
+ok: [localhost] => {"changed": false, "response": [{"cluster_reference": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "ext_id": "b46b8d21-79ad-4cd2-a770-181a97e9e689", "host_nic_references": ["94b24cd7-f4ff-4164-ba7a-fc69e35f8b6c", "084af8fb-87f8-46e6-a2f4-cabeffc81850", "efc40201-750e-49b1-9e52-f64c05121b61", "8ae64a0e-bf81-4424-b57f-5cbc8e8f24ac"], "host_reference": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b", "lacp_status": "NIL", "links": null, "metadata": null, "name": "br0-up", "tenant_id": null, "type": "ACTIVE_BACKUP", "virtual_switch_info": {"name": "vs0", "reference": "22672efd-210f-41dc-9934-d3cb5908b727"}}], "total_available_results": 1}
+
+TASK [Show list result] ********************************************************
+ok: [localhost] => {
+    "uplink_bonds_list": {
+        "changed": false,
+        "failed": false,
+        "response": [
+            {
+                "cluster_reference": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2",
+                "ext_id": "b46b8d21-79ad-4cd2-a770-181a97e9e689",
+                "host_nic_references": [
+                    "94b24cd7-f4ff-4164-ba7a-fc69e35f8b6c",
+                    "084af8fb-87f8-46e6-a2f4-cabeffc81850",
+                    "efc40201-750e-49b1-9e52-f64c05121b61",
+                    "8ae64a0e-bf81-4424-b57f-5cbc8e8f24ac"
+                ],
+                "host_reference": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b",
+                "lacp_status": "NIL",
+                "links": null,
+                "metadata": null,
+                "name": "br0-up",
+                "tenant_id": null,
+                "type": "ACTIVE_BACKUP",
+                "virtual_switch_info": {
+                    "name": "vs0",
+                    "reference": "22672efd-210f-41dc-9934-d3cb5908b727"
+                }
+            }
+        ],
+        "total_available_results": 1
+    }
+}
+
+TASK [Fail if no uplink bonds are present] *************************************
+skipping: [localhost] => {"changed": false, "false_condition": "uplink_bonds_list.response | length == 0", "skip_reason": "Conditional result was False"}
+
+TASK [Capture first uplink bond ext_id] ****************************************
+ok: [localhost] => {"ansible_facts": {"uplink_bond_ext_id": "b46b8d21-79ad-4cd2-a770-181a97e9e689", "uplink_bond_name": "br0-up"}, "changed": false}
+
+TASK [Get uplink bond using ext_id] ********************************************
+ok: [localhost] => {"changed": false, "ext_id": "b46b8d21-79ad-4cd2-a770-181a97e9e689", "response": {"cluster_reference": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "ext_id": "b46b8d21-79ad-4cd2-a770-181a97e9e689", "host_nic_references": ["94b24cd7-f4ff-4164-ba7a-fc69e35f8b6c", "084af8fb-87f8-46e6-a2f4-cabeffc81850", "efc40201-750e-49b1-9e52-f64c05121b61", "8ae64a0e-bf81-4424-b57f-5cbc8e8f24ac"], "host_reference": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b", "lacp_status": "NIL", "links": null, "metadata": null, "name": "br0-up", "tenant_id": null, "type": "ACTIVE_BACKUP", "virtual_switch_info": {"name": "vs0", "reference": "22672efd-210f-41dc-9934-d3cb5908b727"}}}
+
+TASK [Show get-by-ext_id result] ***********************************************
+ok: [localhost] => {
+    "uplink_bond_get": {
+        "changed": false,
+        "ext_id": "b46b8d21-79ad-4cd2-a770-181a97e9e689",
+        "failed": false,
+        "response": {
+            "cluster_reference": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2",
+            "ext_id": "b46b8d21-79ad-4cd2-a770-181a97e9e689",
+            "host_nic_references": [
+                "94b24cd7-f4ff-4164-ba7a-fc69e35f8b6c",
+                "084af8fb-87f8-46e6-a2f4-cabeffc81850",
+                "efc40201-750e-49b1-9e52-f64c05121b61",
+                "8ae64a0e-bf81-4424-b57f-5cbc8e8f24ac"
+            ],
+            "host_reference": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b",
+            "lacp_status": "NIL",
+            "links": null,
+            "metadata": null,
+            "name": "br0-up",
+            "tenant_id": null,
+            "type": "ACTIVE_BACKUP",
+            "virtual_switch_info": {
+                "name": "vs0",
+                "reference": "22672efd-210f-41dc-9934-d3cb5908b727"
+            }
+        }
+    }
+}
+
+TASK [List uplink bonds with limit] ********************************************
+ok: [localhost] => {"changed": false, "response": [{"cluster_reference": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "ext_id": "b46b8d21-79ad-4cd2-a770-181a97e9e689", "host_nic_references": ["94b24cd7-f4ff-4164-ba7a-fc69e35f8b6c", "084af8fb-87f8-46e6-a2f4-cabeffc81850", "efc40201-750e-49b1-9e52-f64c05121b61", "8ae64a0e-bf81-4424-b57f-5cbc8e8f24ac"], "host_reference": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b", "lacp_status": "NIL", "links": null, "metadata": null, "name": "br0-up", "tenant_id": null, "type": "ACTIVE_BACKUP", "virtual_switch_info": {"name": "vs0", "reference": "22672efd-210f-41dc-9934-d3cb5908b727"}}], "total_available_results": 1}
+
+TASK [Show limit result] *******************************************************
+ok: [localhost] => {
+    "uplink_bonds_limit": {
+        "changed": false,
+        "failed": false,
+        "response": [
+            {
+                "cluster_reference": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2",
+                "ext_id": "b46b8d21-79ad-4cd2-a770-181a97e9e689",
+                "host_nic_references": [
+                    "94b24cd7-f4ff-4164-ba7a-fc69e35f8b6c",
+                    "084af8fb-87f8-46e6-a2f4-cabeffc81850",
+                    "efc40201-750e-49b1-9e52-f64c05121b61",
+                    "8ae64a0e-bf81-4424-b57f-5cbc8e8f24ac"
+                ],
+                "host_reference": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b",
+                "lacp_status": "NIL",
+                "links": null,
+                "metadata": null,
+                "name": "br0-up",
+                "tenant_id": null,
+                "type": "ACTIVE_BACKUP",
+                "virtual_switch_info": {
+                    "name": "vs0",
+                    "reference": "22672efd-210f-41dc-9934-d3cb5908b727"
+                }
+            }
+        ],
+        "total_available_results": 1
+    }
+}
+
+TASK [List uplink bonds sorted by name] ****************************************
+ok: [localhost] => {"changed": false, "response": [{"cluster_reference": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "ext_id": "b46b8d21-79ad-4cd2-a770-181a97e9e689", "host_nic_references": ["94b24cd7-f4ff-4164-ba7a-fc69e35f8b6c", "084af8fb-87f8-46e6-a2f4-cabeffc81850", "efc40201-750e-49b1-9e52-f64c05121b61", "8ae64a0e-bf81-4424-b57f-5cbc8e8f24ac"], "host_reference": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b", "lacp_status": "NIL", "links": null, "metadata": null, "name": "br0-up", "tenant_id": null, "type": "ACTIVE_BACKUP", "virtual_switch_info": {"name": "vs0", "reference": "22672efd-210f-41dc-9934-d3cb5908b727"}}], "total_available_results": 1}
+
+TASK [Show orderby result] *****************************************************
+ok: [localhost] => {
+    "uplink_bonds_orderby": {
+        "changed": false,
+        "failed": false,
+        "response": [
+            {
+                "cluster_reference": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2",
+                "ext_id": "b46b8d21-79ad-4cd2-a770-181a97e9e689",
+                "host_nic_references": [
+                    "94b24cd7-f4ff-4164-ba7a-fc69e35f8b6c",
+                    "084af8fb-87f8-46e6-a2f4-cabeffc81850",
+                    "efc40201-750e-49b1-9e52-f64c05121b61",
+                    "8ae64a0e-bf81-4424-b57f-5cbc8e8f24ac"
+                ],
+                "host_reference": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b",
+                "lacp_status": "NIL",
+                "links": null,
+                "metadata": null,
+                "name": "br0-up",
+                "tenant_id": null,
+                "type": "ACTIVE_BACKUP",
+                "virtual_switch_info": {
+                    "name": "vs0",
+                    "reference": "22672efd-210f-41dc-9934-d3cb5908b727"
+                }
+            }
+        ],
+        "total_available_results": 1
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=9    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+
