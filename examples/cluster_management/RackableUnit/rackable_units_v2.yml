@@ -1,0 +1,50 @@
+---
+# Summary:
+# This playbook demonstrates the read-only rackable-units info module
+# (nutanix.ncp.ntnx_rackable_units_info_v2) which wraps the two v4 endpoints:
+#   - GET /clustermgmt/v4.2/config/clusters/{clusterExtId}/rackable-units
+#   - GET /clustermgmt/v4.2/config/clusters/{clusterExtId}/rackable-units/{extId}
+#
+# Steps:
+#   1. Discover a Prism Element cluster registered to this Prism Central.
+#   2. List all rackable units (blocks/chassis) of that cluster.
+#   3. Fetch a single rackable unit using its external ID.
+#
+# RackableUnit does not support Create / Update / Delete — the v4 API only
+# exposes Get and List, so this collection ships only the info module.
+
+- name: Rackable Units info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Fetch Prism Element clusters (skip PC self-entry)
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: clusters_result
+
+    - name: Set Prism Element cluster ext_id from list
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+    - name: List all rackable units of the cluster
+      nutanix.ncp.ntnx_rackable_units_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: rackable_units_result
+
+    - name: Set first rackable unit ext_id
+      ansible.builtin.set_fact:
+        rackable_unit_ext_id: "{{ rackable_units_result.response[0].ext_id }}"
+      when: rackable_units_result.response | length > 0
+
+    - name: Fetch a specific rackable unit using its external ID
+      nutanix.ncp.ntnx_rackable_units_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ rackable_unit_ext_id }}"
+      register: rackable_unit_result
+      when: rackable_unit_ext_id is defined

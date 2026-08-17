@@ -1,0 +1,167 @@
+---
+###############################################################################
+# Test plan for nutanix.ncp.ntnx_rackable_units_info_v2
+#
+# RackableUnit is a read-only v4 entity (only GET and LIST supported).
+# The domain: a rackable unit is a physical block/chassis that houses 1-4
+# Nutanix nodes in a Prism Element cluster. It has a serial, model, and a list
+# of nodes registered under it.
+#
+# Scenarios covered:
+#   1. Discover a Prism Element cluster (AOS-only, non-PC) to test against.
+#   2. Positive: list all rackable units of that cluster; assert response
+#      shape, that all entries have ext_id/serial and non-empty nodes.
+#   3. Positive: fetch one rackable unit by ext_id; assert single-object
+#      response shape and that it matches an entry in the list output.
+#   4. Negative: missing required parameter cluster_ext_id → module fails.
+#   5. Negative: invalid cluster_ext_id → API error is surfaced.
+#   6. Negative: invalid rackable unit ext_id under a valid cluster → API
+#      error is surfaced.
+#   7. Idempotency-of-reads: two consecutive list calls return the same
+#      total_available_results.
+###############################################################################
+
+- name: Start Rackable Units info tests
+  ansible.builtin.debug:
+    msg: Start Rackable Units info tests
+
+- name: List AOS-only clusters (skip PC self-entry)
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(f:f eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_info
+  ignore_errors: true
+
+- name: Assert AOS cluster list was fetched
+  ansible.builtin.assert:
+    that:
+      - clusters_info.changed == false
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    fail_msg: "No AOS-only cluster registered to this Prism Central; cannot test rackable units."
+    success_msg: "AOS clusters fetched successfully."
+
+- name: Select the first AOS cluster
+  ansible.builtin.set_fact:
+    pe_cluster_ext_id: "{{ clusters_info.response[0].ext_id }}"
+
+- name: List rackable units for the selected cluster
+  nutanix.ncp.ntnx_rackable_units_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+  register: rackable_units_list
+  ignore_errors: true
+
+- name: Assert list response shape
+  ansible.builtin.assert:
+    that:
+      - rackable_units_list.changed == false
+      - rackable_units_list.failed == false
+      - rackable_units_list.response is defined
+      - rackable_units_list.response is iterable
+      - rackable_units_list.cluster_ext_id == pe_cluster_ext_id
+      - rackable_units_list.ext_id is none
+      - rackable_units_list.total_available_results is defined
+      - rackable_units_list.total_available_results | int >= 0
+    fail_msg: "Rackable units list call failed or returned an unexpected shape."
+    success_msg: "Rackable units list call returned an expected response shape."
+
+- name: Assert per-item shape when at least one rackable unit exists
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.serial is defined
+      - item.nodes is defined
+      - item.nodes | length > 0
+    fail_msg: "Rackable unit entry is missing required attributes."
+    success_msg: "Rackable unit entry has expected attributes."
+  loop: "{{ rackable_units_list.response }}"
+  loop_control:
+    label: "{{ item.ext_id | default('<no-ext-id>') }}"
+  when: rackable_units_list.response | length > 0
+
+- name: Select first rackable unit ext_id for the get-by-id call
+  ansible.builtin.set_fact:
+    ru_ext_id: "{{ rackable_units_list.response[0].ext_id }}"
+    ru_serial: "{{ rackable_units_list.response[0].serial }}"
+  when: rackable_units_list.response | length > 0
+
+- name: Get a single rackable unit using its external ID
+  nutanix.ncp.ntnx_rackable_units_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    ext_id: "{{ ru_ext_id }}"
+  register: rackable_unit_single
+  when: ru_ext_id is defined
+  ignore_errors: true
+
+- name: Assert single rackable unit response
+  ansible.builtin.assert:
+    that:
+      - rackable_unit_single.changed == false
+      - rackable_unit_single.failed == false
+      - rackable_unit_single.ext_id == ru_ext_id
+      - rackable_unit_single.cluster_ext_id == pe_cluster_ext_id
+      - rackable_unit_single.response is defined
+      - rackable_unit_single.response.ext_id == ru_ext_id
+      - rackable_unit_single.response.serial == ru_serial
+      - rackable_unit_single.response.nodes is defined
+      - rackable_unit_single.response.nodes | length > 0
+    fail_msg: "Get-by-id for rackable unit did not return the expected entity."
+    success_msg: "Get-by-id for rackable unit returned the expected entity."
+  when: ru_ext_id is defined
+
+- name: Negative — missing required cluster_ext_id parameter  # noqa: args[module]
+  nutanix.ncp.ntnx_rackable_units_info_v2: {}
+  register: missing_cluster_id_result
+  ignore_errors: true
+
+- name: Assert missing cluster_ext_id is rejected by module argument spec
+  ansible.builtin.assert:
+    that:
+      - missing_cluster_id_result.failed == true
+      - "'cluster_ext_id' in (missing_cluster_id_result.msg | default(''))"
+    fail_msg: "Module should have rejected the call because cluster_ext_id is required."
+    success_msg: "Module correctly rejected the call without cluster_ext_id."
+
+- name: Negative — invalid cluster_ext_id
+  nutanix.ncp.ntnx_rackable_units_info_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: invalid_cluster_result
+  ignore_errors: true
+
+- name: Assert invalid cluster_ext_id surfaces an API error
+  ansible.builtin.assert:
+    that:
+      - invalid_cluster_result.failed == true
+      - invalid_cluster_result.msg is defined
+    fail_msg: "Invalid cluster_ext_id should have produced an API error."
+    success_msg: "Invalid cluster_ext_id correctly produced an API error."
+
+- name: Negative — invalid rackable unit ext_id under a valid cluster
+  nutanix.ncp.ntnx_rackable_units_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: invalid_ru_result
+  ignore_errors: true
+
+- name: Assert invalid rackable unit ext_id surfaces an API error
+  ansible.builtin.assert:
+    that:
+      - invalid_ru_result.failed == true
+      - invalid_ru_result.msg is defined
+    fail_msg: "Invalid rackable unit ext_id should have produced an API error."
+    success_msg: "Invalid rackable unit ext_id correctly produced an API error."
+
+- name: Idempotent read — call list again and compare totals
+  nutanix.ncp.ntnx_rackable_units_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+  register: rackable_units_list_second
+  ignore_errors: true
+
+- name: Assert consecutive list calls return the same total_available_results
+  ansible.builtin.assert:
+    that:
+      - rackable_units_list_second.failed == false
+      - rackable_units_list_second.total_available_results == rackable_units_list.total_available_results
+      - rackable_units_list_second.response | length == rackable_units_list.response | length
+    fail_msg: "Consecutive list calls returned different totals — read is not stable."
+    success_msg: "Consecutive list calls are stable."
