@@ -1,0 +1,97 @@
+---
+# Summary:
+# This playbook demonstrates how to manage Nutanix AHV traffic mirror (port
+# mirror / SPAN) sessions using the v4 API modules. It shows:
+#   1. Create a traffic mirror session (all fields)
+#   2. Get a specific traffic mirror session by ext_id
+#   3. List all traffic mirror sessions
+#   4. List with a $filter query
+#   5. List with a $limit query
+#   6. Update the traffic mirror session (all fields)
+#   7. Delete the traffic mirror session
+
+- name: Traffic Mirror playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_uuid: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
+        host_uuid: "8300384a-56ee-4750-aeb8-3d1c42908bee"
+        source_vnic_uuid: "b1f8ce4b-6c8a-4d13-9c8f-8e2d1a1f8b3e"
+        destination_vnic_uuid: "5d2ac2b8-b60a-4de6-9345-6f34e79e7a19"
+        traffic_mirror_name: "tm_ansible_example"
+
+    - name: Create traffic mirror session with all attributes
+      nutanix.ncp.ntnx_traffic_mirror_v2:
+        state: present
+        name: "{{ traffic_mirror_name }}"
+        description: "Traffic mirror session created by Ansible example"
+        is_enabled: true
+        source_list:
+          - direction: BIDIRECTIONAL
+            nic_type: VIRTUAL_NIC
+            nic_uuid: "{{ source_vnic_uuid }}"
+        destination_list:
+          - nic_type: VIRTUAL_NIC
+            nic_uuid: "{{ destination_vnic_uuid }}"
+        cluster_reference_list:
+          - "{{ cluster_uuid }}"
+        host_reference_list:
+          - "{{ host_uuid }}"
+      register: create_result
+
+    - name: Save traffic mirror ext_id
+      ansible.builtin.set_fact:
+        traffic_mirror_ext_id: "{{ create_result.ext_id }}"
+
+    - name: Get a specific traffic mirror session by ext_id
+      nutanix.ncp.ntnx_traffic_mirrors_info_v2:
+        ext_id: "{{ traffic_mirror_ext_id }}"
+      register: get_result
+
+    - name: List all traffic mirror sessions
+      nutanix.ncp.ntnx_traffic_mirrors_info_v2:
+      register: list_result
+
+    - name: List traffic mirror sessions with filter
+      nutanix.ncp.ntnx_traffic_mirrors_info_v2:
+        filter: "name eq '{{ traffic_mirror_name }}'"
+      register: filter_result
+
+    - name: List traffic mirror sessions with limit
+      nutanix.ncp.ntnx_traffic_mirrors_info_v2:
+        limit: 1
+      register: limit_result
+
+    - name: Update traffic mirror session with all attributes
+      nutanix.ncp.ntnx_traffic_mirror_v2:
+        state: present
+        ext_id: "{{ traffic_mirror_ext_id }}"
+        name: "{{ traffic_mirror_name }}_updated"
+        description: "Updated by Ansible example"
+        is_enabled: false
+        source_list:
+          - direction: INGRESS
+            nic_type: VIRTUAL_NIC
+            nic_uuid: "{{ source_vnic_uuid }}"
+        destination_list:
+          - nic_type: VIRTUAL_NIC
+            nic_uuid: "{{ destination_vnic_uuid }}"
+        cluster_reference_list:
+          - "{{ cluster_uuid }}"
+        host_reference_list:
+          - "{{ host_uuid }}"
+      register: update_result
+
+    - name: Delete traffic mirror session
+      nutanix.ncp.ntnx_traffic_mirror_v2:
+        state: absent
+        ext_id: "{{ traffic_mirror_ext_id }}"
+      register: delete_result
