@@ -1,0 +1,18 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+running playbook inside collection nutanix.ncp
+
+PLAY [Recommendation playbook] *************************************************
+
+TASK [Set scenario variables] **************************************************
+ok: [localhost] => {"ansible_facts": {"scenario_ext_id": "ac5aff0c-6c68-4948-9088-b903e2be0ce7"}, "changed": false}
+
+TASK [Generate recommendation for a capacity planning scenario] ****************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while generating recommendation for capacity planning scenario", "response": {"$objectType": "aiops.v4.config.GenerateRecommendationApiResponse", "$reserved": {"$fv": "v4.r2.b1"}, "data": {"$objectType": "aiops.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r2.b1"}, "error": [{"$objectType": "aiops.v4.error.AppMessage", "$reserved": {"$fv": "v4.r2.b1"}, "code": "AIO-60008", "locale": "en_US", "message": "Failed to perform the request because the provided external identifier ac5aff0c-6c68-4948-9088-b903e2be0ce7 is incorrect.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+
