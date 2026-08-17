@@ -65,12 +65,6 @@ options:
       - The external id of the protection policy.
     type: str
     required: false
-  project_ext_id:
-    description:
-      - External ID (UUID) of the project that owns this protection policy.
-      - Update of this field is not supported.
-    type: str
-    required: false
   name:
     description:
       - The name of the protection policy.
@@ -284,7 +278,6 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     name: "linear-protection-policy-name"
     description: "linear-protection-policy-description"
-    project_ext_id: "12345678-1234-1234-1234-123456789012"
     replication_locations:
       - label: "ansible-label-linear-label1"
         domain_manager_ext_id: "00000000-0000-0000-0000-000000000000"
@@ -541,7 +534,6 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
-    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -656,7 +648,6 @@ def get_module_spec():
             required=True,
         ),
         ext_id=dict(type="str"),
-        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         replication_locations=dict(
@@ -760,8 +751,6 @@ def update_protection_policy(module, protection_policies, result):
         module.fail_json(
             msg="Failed generating update protection policy Spec", **result
         )
-
-    raise_unsupported_update_fields(module, old_spec, update_spec, ["project_ext_id"])
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())

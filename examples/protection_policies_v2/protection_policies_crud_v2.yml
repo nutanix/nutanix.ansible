@@ -39,7 +39,6 @@
         suffix_name: "ansible-category"
         todelete_categories: []
         todelete: []
-        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
         cluster:
           uuid: "00062db4-a450-e685-0fda-cdf9ca935bfd"
         cluster_availability_zone:
@@ -188,7 +187,6 @@
               sync_replication_auto_suspend_timeout_seconds: 300
         category_ids:
           - "{{ category_ext_id_2 }}"
-        project_ext_id: "{{ project_ext_id }}"
       register: result
 
     - name: Add auto retention protection policy external ID to todelete list

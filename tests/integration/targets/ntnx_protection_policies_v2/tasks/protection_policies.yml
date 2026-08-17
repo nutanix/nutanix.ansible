@@ -88,30 +88,6 @@
       - "{{random_name}}{{suffix_name}}value3"
       - "{{random_name}}{{suffix_name}}value4"
 
-########################################################################
-# Get the default project
-########################################################################
-
-- name: Get the default project
-  nutanix.ncp.ntnx_projects_info_v2:
-  register: default_project_result
-  ignore_errors: true
-
-- name: Status of fetching the default project
-  ansible.builtin.assert:
-    that:
-      - default_project_result.changed == false
-      - default_project_result.failed == false
-      - default_project_result.response is defined
-      - default_project_result.response | selectattr('is_default', 'equalto', true) | list | length > 0
-    fail_msg: "Unable to fetch the default project"
-    success_msg: "Default project fetched successfully"
-
-- name: Set default project fact
-  ansible.builtin.set_fact:
-    default_project:
-      uuid: "{{ (default_project_result.response | selectattr('is_default', 'equalto', true) | first).ext_id }}"
-
 ########################################################################################
 # Create cluster for promoting VG
 
@@ -376,7 +352,6 @@
   nutanix.ncp.ntnx_protection_policies_v2:
     name: "ansible-create-protection-policy-name"
     description: "ansible-create-protection-policy-description"
-    project_ext_id: "83083083-0000-0000-0000-000000000000"
     replication_locations:
       - label: "ansible-label-{{label1}}"
         domain_manager_ext_id: "{{domain_manager_ext_id}}"
@@ -476,7 +451,6 @@
       - result.response.replication_locations[0] != result.response.replication_locations[1]
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "00000000-0000-0000-0000-000000000000"
-      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
     success_msg: "Protection policy spec generated successfully"
     fail_msg: "Protection policy spec generation failed"
 
@@ -486,7 +460,6 @@
   nutanix.ncp.ntnx_protection_policies_v2:
     name: "ansible-name-linear-{{random_name}}"
     description: "ansible-description-linear-{{random_name}}"
-    project_ext_id: "{{ default_project.uuid }}"
     replication_locations:
       - label: "ansible-label-{{label1}}"
         domain_manager_ext_id: "{{domain_manager_ext_id}}"
@@ -584,7 +557,6 @@
       - result.response.replication_locations[0] != result.response.replication_locations[1]
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_1}}"
-      - result.response.project_ext_id == "{{ default_project.uuid }}"
     success_msg: "Protection policy created successfully"
     fail_msg: "Protection policy creation failed"
 
@@ -1998,25 +1970,6 @@
   loop: "{{ result.results }}"
   loop_control:
     index_var: vms_index
-
-########################################################################################
-
-- name: Verify update of project_ext_id is not supported
-  nutanix.ncp.ntnx_protection_policies_v2:
-    state: present
-    ext_id: "{{ todelete[0] }}"
-    project_ext_id: "00000000-0000-0000-0000-000000000001"
-  register: result
-  ignore_errors: true
-
-- name: Verify update of project_ext_id is blocked status
-  ansible.builtin.assert:
-    that:
-      - result.failed == true
-      - result.changed == false
-      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
-    fail_msg: "Update of project_ext_id should have been blocked"
-    success_msg: "Update of project_ext_id is correctly blocked"
 
 ########################################################################################
 
