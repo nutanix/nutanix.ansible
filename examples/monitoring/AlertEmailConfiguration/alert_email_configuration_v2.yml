@@ -1,0 +1,83 @@
+---
+# Summary:
+# This playbook demonstrates how to manage the singleton
+# AlertEmailConfiguration in Nutanix Prism Central using the v4 API modules.
+#
+# The AlertEmailConfiguration resource has only Get and Update APIs — there is
+# no Create or Delete. The playbook shows:
+#   1. Get the current alert email configuration.
+#   2. Update the alert email configuration with a full set of fields
+#      (enable email, digest schedule, global contact list, per-rule filters,
+#       email template, and remote tunnel/service center details).
+#   3. Get the alert email configuration again to verify the update.
+#   4. Restore the alert email configuration to a simple safe baseline
+#      (this is the "delete-equivalent" for a singleton entity).
+
+- name: Alert Email Configuration playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('ansible.builtin.env', 'NUTANIX_HOST', default='10.44.76.28') }}"
+      nutanix_username: "{{ lookup('ansible.builtin.env', 'NUTANIX_USERNAME', default='admin') }}"
+      nutanix_password: "{{ lookup('ansible.builtin.env', 'NUTANIX_PASSWORD', default='Nutanix.123') }}"
+      validate_certs: false
+  tasks:
+    - name: Get current alert email configuration
+      nutanix.ncp.ntnx_alert_email_configurations_info_v2:
+      register: initial_config
+      ignore_errors: true
+
+    - name: Snapshot original configuration for restore step
+      ansible.builtin.set_fact:
+        original_email_contact_list: "{{ initial_config.response.email_contact_list | default([], true) or [] }}"
+        original_default_nutanix_email: "{{ initial_config.response.default_nutanix_email | default(omit, true) }}"
+
+    - name: Update alert email configuration (full spec)
+      nutanix.ncp.ntnx_alert_email_configuration_v2:
+        state: present
+        is_enabled: true
+        default_nutanix_email: "nos-alerts@nutanix.com"
+        has_default_nutanix_email: false
+        is_email_digest_enabled: true
+        is_empty_alert_email_digest_skipped: true
+        email_contact_list:
+          - "sre-team@example.com"
+          - "platform-oncall@example.com"
+        alert_email_digest_send_time: "09:00"
+        alert_email_digest_send_timezone: "UTC"
+        email_template:
+          subject_prefix: "[Nutanix Alerts]"
+          body_suffix: "Please contact SRE if you have any questions."
+        email_config_rules:
+          - is_enabled: true
+            has_global_email_contact_list: true
+            impact_types:
+              - AVAILABILITY
+              - CAPACITY
+            severities:
+              - CRITICAL
+              - WARNING
+            match_phrases:
+              - "Storage"
+            recipients:
+              - "storage-oncall@example.com"
+      register: update_result
+      ignore_errors: true
+
+    - name: Get alert email configuration after update
+      nutanix.ncp.ntnx_alert_email_configurations_info_v2:
+      register: after_update
+      ignore_errors: true
+
+    - name: Restore alert email configuration to a safe baseline (delete-equivalent)
+      nutanix.ncp.ntnx_alert_email_configuration_v2:
+        state: present
+        is_enabled: false
+        is_email_digest_enabled: false
+        is_empty_alert_email_digest_skipped: true
+        email_contact_list: "{{ original_email_contact_list | default([], true) }}"
+        default_nutanix_email: "{{ original_default_nutanix_email | default(omit, true) }}"
+        email_config_rules: []
+      register: restore_result
+      ignore_errors: true
