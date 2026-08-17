@@ -1,0 +1,19 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [VmDiskCustomAttribute playbook] ******************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"disk_uuid": "8be43414-f58c-4e2c-5eb5-8aa7b6405370", "vm_uuid": "813e3bf4-3afb-4317-5c3c-84a41730103d"}, "changed": false}
+
+TASK [Add custom attributes to a VM disk] **************************************
+changed: [localhost] => {"changed": true, "ext_id": "8be43414-f58c-4e2c-5eb5-8aa7b6405370", "response": {"backing_info": {"data_source": null, "disk_ext_id": "8be43414-f58c-4e2c-5eb5-8aa7b6405370", "disk_size_bytes": 1073741824, "is_migration_in_progress": false, "serialId": "NFS_3_0_351_6f42c90c_9ed9_4b76_78c9_4f6fbfe91b2b", "storage_config": null, "storage_container": {"ext_id": "44481f83-d0a1-47b3-b9b8-32b5465c622e"}, "vm_disk_hydration_info": null}, "custom_attributes": ["environment:production", "tier:gold", "owner:ansible"], "disk_address": {"bus_type": "SCSI", "index": 1}, "ext_id": "8be43414-f58c-4e2c-5eb5-8aa7b6405370", "links": null, "tenant_id": null}, "task_ext_id": "ZXJnb24=:d5809928-ee76-5b74-82a6-ad4eca923b2a", "vm_ext_id": "813e3bf4-3afb-4317-5c3c-84a41730103d"}
+
+TASK [Remove custom attributes from a VM disk] *********************************
+changed: [localhost] => {"changed": true, "ext_id": "8be43414-f58c-4e2c-5eb5-8aa7b6405370", "response": {"backing_info": {"data_source": null, "disk_ext_id": "8be43414-f58c-4e2c-5eb5-8aa7b6405370", "disk_size_bytes": 1073741824, "is_migration_in_progress": false, "serialId": "NFS_3_0_351_6f42c90c_9ed9_4b76_78c9_4f6fbfe91b2b", "storage_config": null, "storage_container": {"ext_id": "44481f83-d0a1-47b3-b9b8-32b5465c622e"}, "vm_disk_hydration_info": null}, "custom_attributes": ["owner:ansible", "environment:production"], "disk_address": {"bus_type": "SCSI", "index": 1}, "ext_id": "8be43414-f58c-4e2c-5eb5-8aa7b6405370", "links": null, "tenant_id": null}, "task_ext_id": "ZXJnb24=:08684c65-933a-5b2a-8f4e-5fe561b21bc4", "vm_ext_id": "813e3bf4-3afb-4317-5c3c-84a41730103d"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
