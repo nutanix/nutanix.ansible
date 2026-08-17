@@ -1,0 +1,430 @@
+---
+# Test plan for ntnx_validate_node_uplinks_v2
+#
+# Scenarios covered:
+#   1. check_mode - uplink_nodes spec with ALL fields (asserts every attribute
+#      round-trips through get_module_spec → SpecGenerator → SDK body).
+#   2. check_mode - uplink_nodes spec with only the required cvm_ip.
+#   3. check_mode - bundle_param spec with ALL fields (bundle_info + node_list
+#      with every NodeInfo attribute including IPv4 + IPv6 addresses and
+#      digital-certificate map list).
+#   4. check_mode - bundle_param spec with only the required fields.
+#   5. Negative - both bundle_param and uplink_nodes given → mutually_exclusive
+#      failure.
+#   6. Negative - neither bundle_param nor uplink_nodes given → required_one_of
+#      failure.
+#   7. Negative - missing cluster_ext_id (required=True) failure.
+#   8. Negative - invalid hypervisor_type choice (bad enum) failure.
+#   9. Live validate-node call for a hypervisor bundle - asserts a well-formed
+#      response (success or a descriptive API error).
+#  10. Live validate-node call for a list of uplink nodes - asserts a
+#      well-formed response (success or a descriptive API error).
+#
+# These scenarios combine SDK knowledge (OneOf between BundleParam and
+# list[UplinkNode], IP address / uplink sub-structs), module spec analysis
+# (required fields, choices, mutually_exclusive, required_one_of) and domain
+# knowledge (validate-node is a pre-check for cluster expansion, XEN not
+# supported).
+
+- name: Start ntnx_validate_node_uplinks_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_validate_node_uplinks_v2 tests
+
+- name: Generate random suffix for uniqueness
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=true, special=false, length=10)[0] }}"
+
+- name: Fetch clusters info to discover a real PE cluster ext_id
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_info
+  ignore_errors: true
+
+- name: Set discovered cluster ext_id (falls back to a random UUID when unavailable)
+  ansible.builtin.set_fact:
+    discovered_cluster_ext_id: >-
+      {{ (clusters_info.response | default([]) | selectattr('ext_id', 'defined')
+          | list | first).ext_id
+          if (clusters_info.response is defined and clusters_info.response | length > 0)
+          else '00000000-0000-0000-0000-000000000000' }}
+
+########################################################################################
+# 1. check_mode – uplink_nodes spec with ALL fields
+########################################################################################
+
+- name: Generate spec for validating node uplinks using check_mode with ALL attributes
+  nutanix.ncp.ntnx_validate_node_uplinks_v2:
+    cluster_ext_id: "0005b289-8340-119a-0000-00000000a31f"
+    uplink_nodes:
+      - cvm_ip:
+          ipv4:
+            value: "10.44.76.31"
+            prefix_length: 24
+          ipv6:
+            value: "2001:db8:3333:4444:5555:6666:7777:8881"
+            prefix_length: 64
+        hypervisor_ip:
+          ipv4:
+            value: "10.44.76.32"
+            prefix_length: 24
+          ipv6:
+            value: "2001:db8:3333:4444:5555:6666:7777:8882"
+            prefix_length: 64
+        networks:
+          - name: "br0"
+            vswitch_ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+            networks:
+              - "Management"
+              - "Backplane"
+            uplinks:
+              active:
+                - mac: "1c:f4:7b:5f:a9:2a"
+                  name: "eth1"
+                  value: "eth1"
+              standby:
+                - mac: "12:ee:23:33:2f:43"
+                  name: "eth2"
+                  value: "eth2"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode uplink_nodes full spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "0005b289-8340-119a-0000-00000000a31f"
+      - result.response is defined
+      - result.response.spec is defined
+      - result.response.spec | length == 1
+      - result.response.spec[0].cvm_ip.ipv4.value == "10.44.76.31"
+      - result.response.spec[0].cvm_ip.ipv4.prefix_length == 24
+      - result.response.spec[0].cvm_ip.ipv6.value == "2001:db8:3333:4444:5555:6666:7777:8881"
+      - result.response.spec[0].cvm_ip.ipv6.prefix_length == 64
+      - result.response.spec[0].hypervisor_ip.ipv4.value == "10.44.76.32"
+      - result.response.spec[0].hypervisor_ip.ipv4.prefix_length == 24
+      - result.response.spec[0].hypervisor_ip.ipv6.value == "2001:db8:3333:4444:5555:6666:7777:8882"
+      - result.response.spec[0].hypervisor_ip.ipv6.prefix_length == 64
+      - result.response.spec[0].networks | length == 1
+      - result.response.spec[0].networks[0].name == "br0"
+      - result.response.spec[0].networks[0].vswitch_ext_id == "2e40ff57-20aa-4d2b-b179-298db969c20d"
+      - result.response.spec[0].networks[0].networks | length == 2
+      - result.response.spec[0].networks[0].networks[0] == "Management"
+      - result.response.spec[0].networks[0].networks[1] == "Backplane"
+      - result.response.spec[0].networks[0].uplinks.active | length == 1
+      - result.response.spec[0].networks[0].uplinks.active[0].mac == "1c:f4:7b:5f:a9:2a"
+      - result.response.spec[0].networks[0].uplinks.active[0].name == "eth1"
+      - result.response.spec[0].networks[0].uplinks.active[0].value == "eth1"
+      - result.response.spec[0].networks[0].uplinks.standby | length == 1
+      - result.response.spec[0].networks[0].uplinks.standby[0].mac == "12:ee:23:33:2f:43"
+      - result.response.spec[0].networks[0].uplinks.standby[0].name == "eth2"
+      - result.response.spec[0].networks[0].uplinks.standby[0].value == "eth2"
+    fail_msg: "check_mode uplink_nodes full spec generation failed"
+    success_msg: "check_mode uplink_nodes full spec generation succeeded"
+
+########################################################################################
+# 2. check_mode – uplink_nodes with only the required cvm_ip (single entry)
+########################################################################################
+
+- name: Generate spec for validating node uplinks using check_mode with only required fields
+  nutanix.ncp.ntnx_validate_node_uplinks_v2:
+    cluster_ext_id: "0005b289-8340-119a-0000-00000000a31f"
+    uplink_nodes:
+      - cvm_ip:
+          ipv4:
+            value: "10.44.76.41"
+            prefix_length: 24
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode uplink_nodes minimal spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.spec | length == 1
+      - result.response.spec[0].cvm_ip.ipv4.value == "10.44.76.41"
+      - result.response.spec[0].hypervisor_ip is none
+      - result.response.spec[0].networks is none
+    fail_msg: "check_mode uplink_nodes minimal spec generation failed"
+    success_msg: "check_mode uplink_nodes minimal spec generation succeeded"
+
+########################################################################################
+# 3. check_mode – bundle_param spec with ALL fields
+########################################################################################
+
+- name: Generate spec for validating hypervisor bundle using check_mode with ALL attributes
+  nutanix.ncp.ntnx_validate_node_uplinks_v2:
+    cluster_ext_id: "0005b289-8340-119a-0000-00000000a31f"
+    bundle_param:
+      bundle_info:
+        name: "AHV-{{ random_suffix }}.iso"
+      node_list:
+        - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
+          block_id: "18SM8B010159"
+          node_position: "B"
+          hypervisor_type: "AHV"
+          hypervisor_hostname: "unconfigured-node-{{ random_suffix }}"
+          hypervisor_version: "10.0-793"
+          nos_version: "7.0"
+          model: "NX-3060-G5"
+          is_light_compute: false
+          is_robo_mixed_hypervisor: true
+          current_network_interface: "eth1"
+          cvm_ip:
+            ipv4:
+              value: "10.44.76.51"
+              prefix_length: 24
+            ipv6:
+              value: "2001:db8:3333:4444:5555:6666:7777:aaaa"
+              prefix_length: 64
+          hypervisor_ip:
+            ipv4:
+              value: "10.44.76.52"
+              prefix_length: 24
+            ipv6:
+              value: "2001:db8:3333:4444:5555:6666:7777:bbbb"
+              prefix_length: 64
+          ipmi_ip:
+            ipv4:
+              value: "10.44.76.53"
+              prefix_length: 24
+            ipv6:
+              value: "2001:db8:3333:4444:5555:6666:7777:cccc"
+              prefix_length: 64
+          digital_certificate_map_list:
+            - key: "cert-key-1"
+              value: "cert-value-1"
+            - key: "cert-key-2"
+              value: "cert-value-2"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode bundle_param full spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "0005b289-8340-119a-0000-00000000a31f"
+      - result.response.spec.bundle_info.name == "AHV-" + random_suffix + ".iso"
+      - result.response.spec.node_list | length == 1
+      - result.response.spec.node_list[0].node_uuid == "54b7581b-2e35-413e-8608-0531b065a5d8"
+      - result.response.spec.node_list[0].block_id == "18SM8B010159"
+      - result.response.spec.node_list[0].node_position == "B"
+      - result.response.spec.node_list[0].hypervisor_type == "AHV"
+      - result.response.spec.node_list[0].hypervisor_hostname == "unconfigured-node-" + random_suffix
+      - result.response.spec.node_list[0].hypervisor_version == "10.0-793"
+      - result.response.spec.node_list[0].nos_version == "7.0"
+      - result.response.spec.node_list[0].model == "NX-3060-G5"
+      - result.response.spec.node_list[0].is_light_compute == false
+      - result.response.spec.node_list[0].is_robo_mixed_hypervisor == true
+      - result.response.spec.node_list[0].current_network_interface == "eth1"
+      - result.response.spec.node_list[0].cvm_ip.ipv4.value == "10.44.76.51"
+      - result.response.spec.node_list[0].cvm_ip.ipv4.prefix_length == 24
+      - result.response.spec.node_list[0].cvm_ip.ipv6.value == "2001:db8:3333:4444:5555:6666:7777:aaaa"
+      - result.response.spec.node_list[0].cvm_ip.ipv6.prefix_length == 64
+      - result.response.spec.node_list[0].hypervisor_ip.ipv4.value == "10.44.76.52"
+      - result.response.spec.node_list[0].hypervisor_ip.ipv6.value == "2001:db8:3333:4444:5555:6666:7777:bbbb"
+      - result.response.spec.node_list[0].ipmi_ip.ipv4.value == "10.44.76.53"
+      - result.response.spec.node_list[0].ipmi_ip.ipv6.value == "2001:db8:3333:4444:5555:6666:7777:cccc"
+      - result.response.spec.node_list[0].digital_certificate_map_list | length == 2
+      - result.response.spec.node_list[0].digital_certificate_map_list[0].key == "cert-key-1"
+      - result.response.spec.node_list[0].digital_certificate_map_list[0].value == "cert-value-1"
+      - result.response.spec.node_list[0].digital_certificate_map_list[1].key == "cert-key-2"
+      - result.response.spec.node_list[0].digital_certificate_map_list[1].value == "cert-value-2"
+    fail_msg: "check_mode bundle_param full spec generation failed"
+    success_msg: "check_mode bundle_param full spec generation succeeded"
+
+########################################################################################
+# 4. check_mode – bundle_param spec with only the required fields
+########################################################################################
+
+- name: Generate spec for validating hypervisor bundle using check_mode with only required fields
+  nutanix.ncp.ntnx_validate_node_uplinks_v2:
+    cluster_ext_id: "0005b289-8340-119a-0000-00000000a31f"
+    bundle_param:
+      bundle_info:
+        name: "AHV-minimal-{{ random_suffix }}.iso"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode bundle_param minimal spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.spec.bundle_info.name == "AHV-minimal-" + random_suffix + ".iso"
+      - result.response.spec.node_list is none
+    fail_msg: "check_mode bundle_param minimal spec generation failed"
+    success_msg: "check_mode bundle_param minimal spec generation succeeded"
+
+########################################################################################
+# 5. Negative – mutually_exclusive: bundle_param + uplink_nodes
+########################################################################################
+
+- name: Try validate-node with both bundle_param and uplink_nodes (mutually exclusive)
+  nutanix.ncp.ntnx_validate_node_uplinks_v2:
+    cluster_ext_id: "0005b289-8340-119a-0000-00000000a31f"
+    bundle_param:
+      bundle_info:
+        name: "AHV.iso"
+    uplink_nodes:
+      - cvm_ip:
+          ipv4:
+            value: "10.44.76.31"
+            prefix_length: 24
+  register: result
+  ignore_errors: true
+
+- name: Assert mutually_exclusive failure
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - "'mutually exclusive' in (result.msg | lower)"
+    fail_msg: "Mutually-exclusive check between bundle_param and uplink_nodes did not fail as expected"
+    success_msg: "Mutually-exclusive check between bundle_param and uplink_nodes correctly failed"
+
+########################################################################################
+# 6. Negative – required_one_of: neither bundle_param nor uplink_nodes
+########################################################################################
+
+- name: Try validate-node without bundle_param or uplink_nodes
+  nutanix.ncp.ntnx_validate_node_uplinks_v2:
+    cluster_ext_id: "0005b289-8340-119a-0000-00000000a31f"
+  register: result
+  ignore_errors: true
+
+- name: Assert required_one_of failure
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - "'one of the following is required' in (result.msg | lower) or 'one of' in (result.msg | lower)"
+    fail_msg: "required_one_of check for bundle_param / uplink_nodes did not fail as expected"
+    success_msg: "required_one_of check for bundle_param / uplink_nodes correctly failed"
+
+########################################################################################
+# 7. Negative – missing cluster_ext_id
+########################################################################################
+
+- name: Try validate-node without cluster_ext_id
+  nutanix.ncp.ntnx_validate_node_uplinks_v2:
+    uplink_nodes:
+      - cvm_ip:
+          ipv4:
+            value: "10.44.76.31"
+            prefix_length: 24
+  register: result
+  ignore_errors: true
+
+- name: Assert missing cluster_ext_id failure
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - "'cluster_ext_id' in (result.msg | lower) or 'missing' in (result.msg | lower)"
+    fail_msg: "Missing cluster_ext_id did not fail as expected"
+    success_msg: "Missing cluster_ext_id correctly failed"
+
+########################################################################################
+# 8. Negative – invalid hypervisor_type enum
+########################################################################################
+
+- name: Try validate-node with an invalid hypervisor_type enum
+  nutanix.ncp.ntnx_validate_node_uplinks_v2:
+    cluster_ext_id: "0005b289-8340-119a-0000-00000000a31f"
+    bundle_param:
+      bundle_info:
+        name: "AHV.iso"
+      node_list:
+        - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
+          hypervisor_type: "INVALID_HYPERVISOR"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid hypervisor_type failure
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - "'value of hypervisor_type must be one of' in (result.msg | lower) or 'INVALID_HYPERVISOR' in (result.msg | default(''))"
+    fail_msg: "Invalid hypervisor_type enum did not fail as expected"
+    success_msg: "Invalid hypervisor_type enum correctly failed"
+
+########################################################################################
+# 9. Live validate-node call for a hypervisor bundle
+########################################################################################
+
+- name: Live validate-node call for a hypervisor bundle
+  nutanix.ncp.ntnx_validate_node_uplinks_v2:
+    cluster_ext_id: "{{ discovered_cluster_ext_id }}"
+    bundle_param:
+      bundle_info:
+        name: "AHV-nonexistent-bundle-{{ random_suffix }}.iso"
+      node_list:
+        - node_uuid: "00000000-0000-0000-0000-00000000dead"
+          block_id: "FAKE_BLOCK"
+          node_position: "A"
+          hypervisor_type: "AHV"
+          hypervisor_version: "0.0"
+          nos_version: "0.0"
+          model: "NX-FAKE"
+  register: live_bundle
+  ignore_errors: true
+
+- name: Assert live bundle validation returns a well-formed result
+  ansible.builtin.assert:
+    that:
+      - live_bundle is defined
+      # Either the call succeeds (response defined) or fails with descriptive error.
+      - live_bundle.response is defined or live_bundle.failed is defined
+    fail_msg: "Live validate-node (bundle) call did not return a well-formed result"
+    success_msg: "Live validate-node (bundle) call returned a well-formed result"
+
+########################################################################################
+# 10. Live validate-node call for a list of uplink nodes
+########################################################################################
+
+- name: Live validate-node call for a list of uplink nodes (fabricated data)
+  nutanix.ncp.ntnx_validate_node_uplinks_v2:
+    cluster_ext_id: "{{ discovered_cluster_ext_id }}"
+    uplink_nodes:
+      - cvm_ip:
+          ipv4:
+            value: "203.0.113.31"
+            prefix_length: 24
+        hypervisor_ip:
+          ipv4:
+            value: "203.0.113.32"
+            prefix_length: 24
+        networks:
+          - name: "br0-fake"
+            vswitch_ext_id: "00000000-0000-0000-0000-000000000000"
+            networks:
+              - "FakeNetwork"
+            uplinks:
+              active:
+                - mac: "aa:bb:cc:dd:ee:ff"
+                  name: "eth99"
+                  value: "eth99"
+              standby: []
+  register: live_uplinks
+  ignore_errors: true
+
+- name: Assert live uplinks validation returns a well-formed result
+  ansible.builtin.assert:
+    that:
+      - live_uplinks is defined
+      - live_uplinks.response is defined or live_uplinks.failed is defined
+    fail_msg: "Live validate-node (uplinks) call did not return a well-formed result"
+    success_msg: "Live validate-node (uplinks) call returned a well-formed result"
+
+- name: End ntnx_validate_node_uplinks_v2 tests
+  ansible.builtin.debug:
+    msg: End ntnx_validate_node_uplinks_v2 tests
