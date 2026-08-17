@@ -1,0 +1,145 @@
+---
+# Summary:
+# This playbook demonstrates the full lifecycle of a Nutanix Volume Disk (v4 API):
+# 1. Create a Volume Group to host the disks
+# 2. Create a Volume Disk (with all attributes)
+# 3. Update the Volume Disk (with all mutable attributes)
+# 4. Fetch a specific Volume Disk by ext_id
+# 5. List all Volume Disks in the Volume Group
+# 6. List Volume Disks with limit
+# 7. Delete the Volume Disk
+# 8. Delete the Volume Group
+
+- name: Volume Disks playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ pc_ip | default('10.44.76.28') }}"
+      nutanix_username: "{{ pc_username | default('admin') }}"
+      nutanix_password: "{{ pc_password | default('Nutanix.123') }}"
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_uuid: "{{ cluster_uuid | default('') }}"
+        storage_container_uuid: "{{ storage_container_uuid | default('') }}"
+        vg_name: "ansible-vg-for-volume-disks"
+
+    - name: Discover a cluster if cluster_uuid was not provided
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(f:f eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: clusters_info
+      when: cluster_uuid | length == 0
+      ignore_errors: true
+
+    - name: Set cluster_uuid from discovery
+      ansible.builtin.set_fact:
+        cluster_uuid: "{{ clusters_info.response[0].ext_id }}"
+      when:
+        - cluster_uuid | length == 0
+        - clusters_info.response is defined
+        - clusters_info.response | length > 0
+
+    - name: Discover a storage container if not provided
+      nutanix.ncp.ntnx_storage_containers_info_v2:
+        filter: "clusterExtId eq '{{ cluster_uuid }}'"
+      register: sc_info
+      when: storage_container_uuid | length == 0
+      ignore_errors: true
+
+    - name: Set storage_container_uuid from discovery
+      ansible.builtin.set_fact:
+        storage_container_uuid: "{{ sc_info.response[0].container_ext_id }}"
+      when:
+        - storage_container_uuid | length == 0
+        - sc_info.response is defined
+        - sc_info.response | length > 0
+
+    - name: Create Volume Group to host the Volume Disks
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: present
+        name: "{{ vg_name }}"
+        description: "Volume Group for Volume Disk examples"
+        should_load_balance_vm_attachments: true
+        sharing_status: "SHARED"
+        target_prefix: "vgexvd"
+        cluster_reference: "{{ cluster_uuid }}"
+        usage_type: "USER"
+        storage_features:
+          flash_mode:
+            is_enabled: true
+      register: vg_result
+      ignore_errors: true
+
+    - name: Set VG ext_id
+      ansible.builtin.set_fact:
+        vg_ext_id: "{{ vg_result.ext_id }}"
+
+    - name: Create Volume Disk with all attributes
+      nutanix.ncp.ntnx_volume_groups_disks_v2:
+        state: present
+        volume_group_ext_id: "{{ vg_ext_id }}"
+        index: 1
+        disk_size_bytes: 21474836480
+        description: "ansible-created-disk"
+        disk_storage_features:
+          flash_mode:
+            is_enabled: true
+        disk_data_source_reference:
+          entity_type: "STORAGE_CONTAINER"
+          ext_id: "{{ storage_container_uuid }}"
+      register: disk_create_result
+      ignore_errors: true
+
+    - name: Set Volume Disk ext_id
+      ansible.builtin.set_fact:
+        disk_ext_id: "{{ disk_create_result.ext_id }}"
+
+    - name: Update Volume Disk with all mutable attributes
+      nutanix.ncp.ntnx_volume_groups_disks_v2:
+        state: present
+        volume_group_ext_id: "{{ vg_ext_id }}"
+        ext_id: "{{ disk_ext_id }}"
+        disk_size_bytes: 42949672960
+        description: "ansible-updated-disk"
+        disk_storage_features:
+          flash_mode:
+            is_enabled: false
+      register: disk_update_result
+      ignore_errors: true
+
+    - name: Fetch a specific Volume Disk using ext_id
+      nutanix.ncp.ntnx_volume_disks_info_v2:
+        volume_group_ext_id: "{{ vg_ext_id }}"
+        ext_id: "{{ disk_ext_id }}"
+      register: disk_info_result
+      ignore_errors: true
+
+    - name: List all Volume Disks in the Volume Group
+      nutanix.ncp.ntnx_volume_disks_info_v2:
+        volume_group_ext_id: "{{ vg_ext_id }}"
+      register: disks_list_result
+      ignore_errors: true
+
+    - name: List Volume Disks with limit
+      nutanix.ncp.ntnx_volume_disks_info_v2:
+        volume_group_ext_id: "{{ vg_ext_id }}"
+        limit: 1
+      register: disks_limit_result
+      ignore_errors: true
+
+    - name: Delete the Volume Disk
+      nutanix.ncp.ntnx_volume_groups_disks_v2:
+        state: absent
+        volume_group_ext_id: "{{ vg_ext_id }}"
+        ext_id: "{{ disk_ext_id }}"
+      register: disk_delete_result
+      ignore_errors: true
+
+    - name: Delete the Volume Group
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: absent
+        ext_id: "{{ vg_ext_id }}"
+      register: vg_delete_result
+      ignore_errors: true
