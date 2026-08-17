@@ -1,0 +1,63 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [HostNicToNicProfile playbook] ********************************************
+
+TASK [List all NIC Profiles] ***************************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Get NIC Profile using ext_id (before association)] ***********************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching NIC profile info using ext_id
+Origin: /tmp/codegen/b3ff46ee0ec74df3a786bebf5297b184/repo/examples/networking/HostNicToNicProfile/host_nic_to_nic_profile.yml:41:7
+
+39       #   total_available_results: 0
+40
+41     - name: Get NIC Profile using ext_id (before association)
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching NIC profile info using ext_id", "response": {"$objectType": "networking.v4.config.GetNicProfileApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to get Nic Profile 68e4c68e-1acf-4c05-7792-e062119acb68 as a referenced resource was not found - Nic Profile: 68e4c68e-1acf-4c05-7792-e062119acb68 not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/nic-profiles/68e4c68e-1acf-4c05-7792-e062119acb68", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+TASK [Associate Host NIC to NIC Profile] ***************************************
+[ERROR]: Task failed: Module failed: Task Failed
+Origin: /tmp/codegen/b3ff46ee0ec74df3a786bebf5297b184/repo/examples/networking/HostNicToNicProfile/host_nic_to_nic_profile.yml:59:7
+
+57       #     nic_family: MELLANOX_CX6
+58
+59     - name: Associate Host NIC to NIC Profile
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task Failed", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": null, "completed_time": "2026-07-20T13:46:10.921832+00:00", "completion_details": null, "created_time": "2026-07-20T13:46:10.847685+00:00", "entities_affected": [{"ext_id": "68e4c68e-1acf-4c05-7792-e062119acb68", "name": null, "rel": "networking:config:nic_profile"}], "error_messages": [{"arguments_map": {"errorMessage": "AtlasNicProfile 68e4c68e-1acf-4c05-7792-e062119acb68 not found", "operation": "Update NIC Profile Association"}, "code": "NETWORKING-10060", "error_group": "BACKEND_SERVICE_ERROR", "locale": "en_US", "message": "Failed to Update NIC Profile Association as a referenced resource was not found - AtlasNicProfile 68e4c68e-1acf-4c05-7792-e062119acb68 not found", "severity": "ERROR"}], "ext_id": "ZXJnb24=:b0cffced-1a62-41bb-8412-60fac510d6ca", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-20T13:46:10.921831+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 0, "operation": "kNicProfileUpdateAssociation", "operation_description": "NIC Profile Update Association", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-20T13:46:10.858133+00:00", "status": "FAILED", "sub_steps": null, "sub_tasks": null, "warnings": null}}
+...ignoring
+
+TASK [Get NIC Profile using ext_id (after association)] ************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching NIC profile info using ext_id
+Origin: /tmp/codegen/b3ff46ee0ec74df3a786bebf5297b184/repo/examples/networking/HostNicToNicProfile/host_nic_to_nic_profile.yml:77:7
+
+75       #         rel: networking:config:nic-profile
+76
+77     - name: Get NIC Profile using ext_id (after association)
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching NIC profile info using ext_id", "response": {"$objectType": "networking.v4.config.GetNicProfileApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to get Nic Profile 68e4c68e-1acf-4c05-7792-e062119acb68 as a referenced resource was not found - Nic Profile: 68e4c68e-1acf-4c05-7792-e062119acb68 not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/nic-profiles/68e4c68e-1acf-4c05-7792-e062119acb68", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+TASK [Disassociate Host NIC from NIC Profile] **********************************
+[ERROR]: Task failed: Module failed: Task Failed
+Origin: /tmp/codegen/b3ff46ee0ec74df3a786bebf5297b184/repo/examples/networking/HostNicToNicProfile/host_nic_to_nic_profile.yml:92:7
+
+90       #         num_v_fs: 8
+91
+92     - name: Disassociate Host NIC from NIC Profile
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task Failed", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": null, "completed_time": "2026-07-20T13:46:13.038242+00:00", "completion_details": null, "created_time": "2026-07-20T13:46:12.978791+00:00", "entities_affected": [{"ext_id": "68e4c68e-1acf-4c05-7792-e062119acb68", "name": null, "rel": "networking:config:nic_profile"}], "error_messages": [{"arguments_map": {"errorMessage": "AtlasNicProfile 68e4c68e-1acf-4c05-7792-e062119acb68 not found", "operation": "Update NIC Profile Association"}, "code": "NETWORKING-10060", "error_group": "BACKEND_SERVICE_ERROR", "locale": "en_US", "message": "Failed to Update NIC Profile Association as a referenced resource was not found - AtlasNicProfile 68e4c68e-1acf-4c05-7792-e062119acb68 not found", "severity": "ERROR"}], "ext_id": "ZXJnb24=:d8d19162-f915-4913-a521-e52369bd2c42", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-20T13:46:13.038241+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 0, "operation": "kNicProfileUpdateAssociation", "operation_description": "NIC Profile Update Association", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-20T13:46:12.991365+00:00", "status": "FAILED", "sub_steps": null, "sub_tasks": null, "warnings": null}}
+...ignoring
+
+TASK [List NIC Profiles with filter (after disassociation)] ********************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=4   
+

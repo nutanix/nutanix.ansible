@@ -1,0 +1,385 @@
+---
+# Test plan (why each block exists):
+#
+# HostNicToNicProfile is an action-type module that binds/unbinds a physical
+# Host NIC to a NIC Profile (SR-IOV / DP_OFFLOAD). The tests must exercise
+# both actions plus argument-spec validation. Because both actions target
+# real hardware (SmartNIC on an AHV host), we assert:
+#   * check_mode:      one for associate + one for disassociate, all
+#                      attributes populated. No API side effects, only spec.
+#   * argument spec:   missing required params, invalid `state`, extra
+#                      cross-checks (must-be-required behavior).
+#   * info module:     list all, list with filter, list with limit, get
+#                      by ext_id (both valid + invalid ext_id).
+#   * live actions:    associate + disassociate against a real NIC profile
+#                      when one is discovered on the cluster. If none is
+#                      found, live actions are skipped with a message.
+#
+# The tests do NOT create a NIC Profile: NIC Profile creation is a separate
+# scope (CreateNicProfile) and requires SmartNIC hardware + firmware
+# validation that is not always present on the target PC. Instead, we
+# discover an existing profile via the info module and fall back to
+# check_mode-only assertions when none exists — matching the pattern used by
+# other action modules (e.g. clusters_profile_association).
+
+- name: Start HostNicToNicProfile tests
+  ansible.builtin.debug:
+    msg: Start HostNicToNicProfile tests
+
+- name: Generate random names / ids
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+    suffix_name: "ansible"
+
+- name: Set fake ext_ids for negative / check_mode tests
+  ansible.builtin.set_fact:
+    fake_nic_profile_ext_id: "00000000-0000-0000-0000-000000000000"
+    fake_host_nic_ext_id: "11111111-1111-1111-1111-111111111111"
+
+# ############################################################################
+# Info module: List NIC Profiles (baseline)
+# ############################################################################
+
+- name: List all NIC Profiles (baseline)
+  nutanix.ncp.ntnx_host_nic_to_nic_profiles_info_v2:
+  register: nic_profiles_list
+  ignore_errors: true
+
+- name: Assert list of NIC Profiles returned a valid response
+  ansible.builtin.assert:
+    that:
+      - nic_profiles_list is defined
+      - nic_profiles_list.changed == false
+      - nic_profiles_list.failed == false
+      - nic_profiles_list.response is defined
+      - nic_profiles_list.total_available_results is defined
+      - nic_profiles_list.total_available_results is number
+    success_msg: "List NIC profiles baseline call succeeded"
+    fail_msg: "List NIC profiles baseline call did not return the expected shape"
+
+- name: Capture NIC profile picked for live tests (first entry, if any)
+  ansible.builtin.set_fact:
+    live_nic_profile_ext_id: "{{ (nic_profiles_list.response | default([]))[0].ext_id | default('') }}"
+    live_nic_profile_name: "{{ (nic_profiles_list.response | default([]))[0].name | default('') }}"
+
+- name: Determine if any Host NIC is already associated on the picked profile
+  ansible.builtin.set_fact:
+    live_host_nic_ref: >-
+      {{ ((nic_profiles_list.response | default([]))[0].host_nic_references | default([])) }}
+  when: live_nic_profile_ext_id | length > 0
+
+# ############################################################################
+# Info module: List with limit and filter
+# ############################################################################
+
+- name: List NIC Profiles with limit
+  nutanix.ncp.ntnx_host_nic_to_nic_profiles_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Assert List NIC Profiles with limit
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - (result.response | default([])) | length <= 1
+    success_msg: "List NIC profiles with limit works"
+    fail_msg: "List NIC profiles with limit returned more than the requested limit"
+
+- name: List NIC Profiles with filter (matches picked profile, if any)
+  nutanix.ncp.ntnx_host_nic_to_nic_profiles_info_v2:
+    filter: "name eq '{{ live_nic_profile_name }}'"
+  register: result
+  ignore_errors: true
+  when: live_nic_profile_name | length > 0
+
+- name: Assert List NIC Profiles with filter
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - (result.response | default([])) | length >= 1
+      - result.response[0].name == live_nic_profile_name
+    success_msg: "List NIC profiles with filter works"
+    fail_msg: "List NIC profiles with filter did not return the expected profile"
+  when: live_nic_profile_name | length > 0
+
+# ############################################################################
+# Info module: Get by ext_id (positive + negative)
+# ############################################################################
+
+- name: Get NIC Profile using valid ext_id
+  nutanix.ncp.ntnx_host_nic_to_nic_profiles_info_v2:
+    ext_id: "{{ live_nic_profile_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: live_nic_profile_ext_id | length > 0
+
+- name: Assert Get NIC Profile using valid ext_id
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == live_nic_profile_ext_id
+      - result.response is defined
+      - result.response.ext_id == live_nic_profile_ext_id
+    success_msg: "Get NIC profile by ext_id works"
+    fail_msg: "Get NIC profile by ext_id did not return the expected profile"
+  when: live_nic_profile_ext_id | length > 0
+
+- name: Get NIC Profile using invalid ext_id (should fail)
+  nutanix.ncp.ntnx_host_nic_to_nic_profiles_info_v2:
+    ext_id: "{{ fake_nic_profile_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Get NIC Profile using invalid ext_id fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Get NIC profile with invalid ext_id fails as expected"
+    fail_msg: "Get NIC profile with invalid ext_id did not fail"
+
+# ############################################################################
+# Info module: mutually_exclusive (ext_id + filter)
+# ############################################################################
+
+- name: Info module - provide ext_id and filter together (mutually exclusive)
+  nutanix.ncp.ntnx_host_nic_to_nic_profiles_info_v2:
+    ext_id: "{{ fake_nic_profile_ext_id }}"
+    filter: "name eq 'anything'"
+  register: result
+  ignore_errors: true
+
+- name: Assert mutually exclusive ext_id/filter fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'mutually exclusive' in result.msg"
+    success_msg: "Info module correctly rejects ext_id+filter combo"
+    fail_msg: "Info module allowed ext_id and filter simultaneously"
+
+# ############################################################################
+# Action module: argument-spec validation (negative tests)
+# ############################################################################
+
+- name: Associate action - missing ext_id (should fail argument validation)
+  nutanix.ncp.ntnx_associate_host_nic_to_nic_profile_v2:
+    host_nic_ext_id: "{{ fake_host_nic_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'ext_id' in result.msg"
+    success_msg: "Missing ext_id triggers argument validation"
+    fail_msg: "Missing ext_id did not trigger argument validation"
+
+- name: Associate action - missing host_nic_ext_id (should fail argument validation)
+  nutanix.ncp.ntnx_associate_host_nic_to_nic_profile_v2:
+    ext_id: "{{ fake_nic_profile_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing host_nic_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'host_nic_ext_id' in result.msg"
+    success_msg: "Missing host_nic_ext_id triggers argument validation"
+    fail_msg: "Missing host_nic_ext_id did not trigger argument validation"
+
+- name: Associate action - invalid state value (should fail choices validation)
+  nutanix.ncp.ntnx_associate_host_nic_to_nic_profile_v2:
+    state: pending
+    ext_id: "{{ fake_nic_profile_ext_id }}"
+    host_nic_ext_id: "{{ fake_host_nic_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid state fails choices validation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'state' in result.msg"
+    success_msg: "Invalid state value is rejected"
+    fail_msg: "Invalid state value was not rejected"
+
+# ############################################################################
+# Action module: check_mode (associate + disassociate)
+# ############################################################################
+
+- name: Associate in check_mode with ALL attributes
+  nutanix.ncp.ntnx_associate_host_nic_to_nic_profile_v2:
+    state: present
+    ext_id: "{{ fake_nic_profile_ext_id }}"
+    host_nic_ext_id: "{{ fake_host_nic_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert Associate check_mode returns spec without API side effects
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.host_nic_ext_id == fake_host_nic_ext_id
+      - result.ext_id == fake_nic_profile_ext_id
+    success_msg: "Associate check_mode returns the expected spec"
+    fail_msg: "Associate check_mode did not return the expected spec"
+
+- name: Disassociate in check_mode with ALL attributes
+  nutanix.ncp.ntnx_associate_host_nic_to_nic_profile_v2:
+    state: absent
+    ext_id: "{{ fake_nic_profile_ext_id }}"
+    host_nic_ext_id: "{{ fake_host_nic_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert Disassociate check_mode returns spec without API side effects
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.host_nic_ext_id == fake_host_nic_ext_id
+      - result.ext_id == fake_nic_profile_ext_id
+    success_msg: "Disassociate check_mode returns the expected spec"
+    fail_msg: "Disassociate check_mode did not return the expected spec"
+
+# ############################################################################
+# Action module: negative live calls (invalid ext_id) — no hardware required
+# ############################################################################
+
+- name: Associate against non-existent NIC Profile (should fail)
+  nutanix.ncp.ntnx_associate_host_nic_to_nic_profile_v2:
+    state: present
+    ext_id: "{{ fake_nic_profile_ext_id }}"
+    host_nic_ext_id: "{{ fake_host_nic_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Associate with non-existent NIC Profile fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Associate with non-existent NIC profile fails as expected"
+    fail_msg: "Associate with non-existent NIC profile did not fail"
+
+- name: Disassociate against non-existent NIC Profile (should fail)
+  nutanix.ncp.ntnx_associate_host_nic_to_nic_profile_v2:
+    state: absent
+    ext_id: "{{ fake_nic_profile_ext_id }}"
+    host_nic_ext_id: "{{ fake_host_nic_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Disassociate with non-existent NIC Profile fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Disassociate with non-existent NIC profile fails as expected"
+    fail_msg: "Disassociate with non-existent NIC profile did not fail"
+
+# ############################################################################
+# Action module: LIVE associate + disassociate (only when a profile exists)
+# ############################################################################
+
+- name: Fetch hosts on the cluster to discover a Host NIC ext_id
+  nutanix.ncp.ntnx_hosts_info_v2:
+  register: hosts_info
+  ignore_errors: true
+  when: live_nic_profile_ext_id | length > 0
+
+- name: Discover a candidate Host NIC ext_id
+  ansible.builtin.set_fact:
+    live_host_nic_candidate: >-
+      {{ (hosts_info.response | default([]) | map(attribute='host_nics') | select | list | flatten
+          | selectattr('ext_id', 'defined') | map(attribute='ext_id') | list | first) | default('') }}
+  when:
+    - live_nic_profile_ext_id | length > 0
+    - hosts_info is defined
+    - not (hosts_info.failed | bool)
+    - hosts_info.response is defined
+
+- name: Associate the discovered Host NIC with the discovered NIC Profile (live)
+  nutanix.ncp.ntnx_associate_host_nic_to_nic_profile_v2:
+    state: present
+    ext_id: "{{ live_nic_profile_ext_id }}"
+    host_nic_ext_id: "{{ live_host_nic_candidate }}"
+  register: live_associate_result
+  ignore_errors: true
+  when:
+    - live_nic_profile_ext_id | length > 0
+    - live_host_nic_candidate is defined
+    - live_host_nic_candidate | length > 0
+
+- name: Assert live associate result shape
+  ansible.builtin.assert:
+    that:
+      - live_associate_result is defined
+      - live_associate_result.ext_id == live_nic_profile_ext_id
+    success_msg: "Live associate returned a result for the correct NIC profile"
+    fail_msg: "Live associate response did not carry the correct NIC profile ext_id"
+  when:
+    - live_associate_result is defined
+    - live_associate_result.skipped is not defined
+
+- name: Disassociate the discovered Host NIC from the discovered NIC Profile (live)
+  nutanix.ncp.ntnx_associate_host_nic_to_nic_profile_v2:
+    state: absent
+    ext_id: "{{ live_nic_profile_ext_id }}"
+    host_nic_ext_id: "{{ live_host_nic_candidate }}"
+  register: live_disassociate_result
+  ignore_errors: true
+  when:
+    - live_nic_profile_ext_id | length > 0
+    - live_host_nic_candidate is defined
+    - live_host_nic_candidate | length > 0
+
+- name: Assert live disassociate result shape
+  ansible.builtin.assert:
+    that:
+      - live_disassociate_result is defined
+      - live_disassociate_result.ext_id == live_nic_profile_ext_id
+    success_msg: "Live disassociate returned a result for the correct NIC profile"
+    fail_msg: "Live disassociate response did not carry the correct NIC profile ext_id"
+  when:
+    - live_disassociate_result is defined
+    - live_disassociate_result.skipped is not defined
+
+- name: Note when live actions were not executed (no NIC profile / no Host NIC)
+  ansible.builtin.debug:
+    msg: >-
+      Skipping live associate/disassociate: no NIC Profile or Host NIC was
+      discovered on the target Prism Central. This is expected on clusters
+      without SmartNIC hardware.
+  when: (live_nic_profile_ext_id | length == 0) or (live_host_nic_candidate | default('') | length == 0)
+
+- name: End HostNicToNicProfile tests
+  ansible.builtin.debug:
+    msg: End HostNicToNicProfile tests
