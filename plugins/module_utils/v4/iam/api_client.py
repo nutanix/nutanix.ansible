@@ -177,3 +177,16 @@ def get_entity_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_iam_py_client.EntitiesApi(api_client=api_client)
+
+
+def get_registered_client_api_instance(module):
+    """
+    This method will return the registered clients api instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): Clients api instance used to interact with
+            /iam/v4.1.b2/authz/clients endpoints.
+    """
+    api_client = get_api_client(module)
+    return ntnx_iam_py_client.ClientsApi(api_client=api_client)

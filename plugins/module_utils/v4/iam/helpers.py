@@ -187,3 +187,24 @@ def get_entity(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching entity info using ext_id",
         )
+
+
+def get_registered_client(module, api_instance, ext_id):
+    """
+    This method will return registered client info using ext_id.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): ClientsApi instance from ntnx_iam_py_client
+        ext_id (str): External id of the registered client
+    Returns:
+        registered_client_info (object): Registered client info object as
+            returned by the SDK (data attribute of the GetClientApiResponse).
+    """
+    try:
+        return api_instance.get_registered_client_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching registered client info using ext_id",
+        )

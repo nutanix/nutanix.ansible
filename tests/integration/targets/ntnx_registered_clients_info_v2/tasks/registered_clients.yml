@@ -1,0 +1,220 @@
+---
+# ================================================================================
+# Test plan for ntnx_registered_clients_info_v2
+# ================================================================================
+# Coverage goals:
+#   1. Positive path: fetch a RegisteredClient by a valid ext_id discovered
+#      from the live cluster. Assert every field returned by the SDK Client
+#      model is present in the response.
+#   2. Idempotency: fetching the same ext_id twice must return identical
+#      data and never report changed=true.
+#   3. Negative — non-existent ext_id: The IAM v4 API returns error code
+#      IAM-20009 ("client <ext_id> not found"). Module must fail with the
+#      exact msg defined in the helper and surface the error payload.
+#   4. Negative — missing required ext_id: ext_id is required=True in the
+#      module spec. Ansible must refuse to run without it.
+#   5. Cross-check: derive the same RegisteredClient by name via the raw
+#      list endpoint (uri) and assert the module's get-by-id result matches.
+#   6. Ansible argument-spec: assert changed==false on every info call.
+# ================================================================================
+
+- name: Start ntnx_registered_clients_info_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_registered_clients_info_v2 tests
+
+########################################################################################################
+# Discover a real RegisteredClient ext_id from the live cluster.
+# The Python SDK only exposes get-by-id, so we use the raw v4 list endpoint
+# to find one. If listing is unsupported (offline / permission denied) we
+# stop the block gracefully with a debug message.
+########################################################################################################
+
+- name: List registered clients via raw v4 endpoint to discover a real ext_id
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port | default(9440) }}/api/iam/v4.1.b2/authz/clients?$limit=5"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs | default(false) }}"
+    return_content: true
+    status_code: [200, 401, 403, 404]
+  register: raw_clients_list
+  ignore_errors: true
+
+- name: Fail early if the list endpoint returned no data
+  ansible.builtin.assert:
+    that:
+      - raw_clients_list.status == 200
+      - raw_clients_list.json is defined
+      - raw_clients_list.json.data is defined
+      - raw_clients_list.json.data | length > 0
+    fail_msg: >-
+      Cannot bootstrap the RegisteredClient tests — the /authz/clients list
+      endpoint did not return any clients (status={{ raw_clients_list.status | default('?') }}).
+    success_msg: RegisteredClient list bootstrap succeeded
+
+- name: Cache the discovered ext_id and name
+  ansible.builtin.set_fact:
+    registered_client_ext_id: "{{ raw_clients_list.json.data[0].extId }}"
+    registered_client_name: "{{ raw_clients_list.json.data[0].name }}"
+    registered_client_display_name: "{{ raw_clients_list.json.data[0].displayName | default(omit) }}"
+
+- name: Debug — chosen RegisteredClient
+  ansible.builtin.debug:
+    msg: >-
+      Using RegisteredClient ext_id={{ registered_client_ext_id }}
+      name={{ registered_client_name }}
+
+########################################################################################################
+# 1. Positive path — fetch by valid ext_id
+########################################################################################################
+
+- name: Fetch registered client using a valid external ID
+  nutanix.ncp.ntnx_registered_clients_info_v2:
+    ext_id: "{{ registered_client_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert fetch by valid ext_id succeeded
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == registered_client_ext_id
+      - result.response.name == registered_client_name
+      - result.ext_id == registered_client_ext_id
+      # Every field of the SDK Client model must appear in the response.
+      - "'name' in result.response"
+      - "'description' in result.response"
+      - "'display_name' in result.response"
+      - "'created_time' in result.response"
+      - "'last_updated_time' in result.response"
+      - "'created_by' in result.response"
+      - "'deployment_list' in result.response"
+      - "'ext_id' in result.response"
+      - "'links' in result.response"
+      - "'tenant_id' in result.response"
+    fail_msg: Fetch registered client by valid ext_id failed
+    success_msg: Fetch registered client by valid ext_id passed
+
+########################################################################################################
+# 2. Idempotency — fetching twice must return identical data and changed=false
+########################################################################################################
+
+- name: Fetch registered client by ext_id (idempotency second call)
+  nutanix.ncp.ntnx_registered_clients_info_v2:
+    ext_id: "{{ registered_client_ext_id }}"
+  register: result_second
+  ignore_errors: true
+
+- name: Assert second fetch is idempotent (never reports changed=true)
+  ansible.builtin.assert:
+    that:
+      - result_second.changed == false
+      - result_second.failed == false
+      - result_second.response.ext_id == result.response.ext_id
+      - result_second.response.name == result.response.name
+      - result_second.response.created_time == result.response.created_time
+    fail_msg: RegisteredClient info module is NOT idempotent between two identical get-by-id calls
+    success_msg: RegisteredClient info module is idempotent — second get-by-id matched the first
+
+########################################################################################################
+# 3. Cross-check — value from raw list endpoint matches value from the module
+########################################################################################################
+
+- name: Assert module output matches the raw list endpoint entry
+  ansible.builtin.assert:
+    that:
+      - result.response.name == raw_clients_list.json.data[0].name
+      - result.response.ext_id == raw_clients_list.json.data[0].extId
+      - result.response.created_time is not none
+    fail_msg: Module response drifted from the raw /authz/clients list endpoint
+    success_msg: Module response matches the raw /authz/clients list endpoint entry
+
+########################################################################################################
+# 4. Negative — non-existent ext_id (IAM-20009 "client <ext_id> not found")
+########################################################################################################
+
+- name: Fetch registered client with a non-existent external ID
+  nutanix.ncp.ntnx_registered_clients_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result_missing
+  ignore_errors: true
+
+- name: Assert non-existent ext_id fails with the expected error message
+  ansible.builtin.assert:
+    that:
+      - result_missing.changed == false
+      - result_missing.failed == true
+      - result_missing.msg == "Api Exception raised while fetching registered client info using ext_id"
+      - result_missing.error is defined
+    fail_msg: Non-existent registered client did not fail with the expected error
+    success_msg: Non-existent registered client failed as expected (IAM-20009)
+
+########################################################################################################
+# 5. Negative — malformed ext_id (still routed to the SDK; should fail with the same msg)
+########################################################################################################
+
+- name: Fetch registered client with a malformed external ID
+  nutanix.ncp.ntnx_registered_clients_info_v2:
+    ext_id: "not-a-real-uuid"
+  register: result_malformed
+  ignore_errors: true
+
+- name: Assert malformed ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - result_malformed.changed == false
+      - result_malformed.failed == true
+      - result_malformed.msg == "Api Exception raised while fetching registered client info using ext_id"
+    fail_msg: Malformed ext_id did not fail with the expected error
+    success_msg: Malformed ext_id failed as expected
+
+########################################################################################################
+# 6. Negative — missing required ext_id parameter
+########################################################################################################
+
+- name: Invoke registered clients info without required ext_id  # noqa: args[module]
+  nutanix.ncp.ntnx_registered_clients_info_v2: {}
+  register: result_no_ext_id
+  ignore_errors: true
+
+- name: Assert Ansible rejects the call when ext_id is missing
+  ansible.builtin.assert:
+    that:
+      - result_no_ext_id.failed == true
+      - result_no_ext_id.changed == false
+      - "'missing required arguments' in (result_no_ext_id.msg | lower) or 'ext_id' in (result_no_ext_id.msg | lower)"
+    fail_msg: Module accepted the call without required ext_id
+    success_msg: Module correctly refused the call without ext_id
+
+########################################################################################################
+# 7. Optional — resolve a second RegisteredClient (if the cluster has more than one) and assert its
+#    ext_id / name are distinct from the first, proving get-by-id resolves the correct entity.
+########################################################################################################
+
+- name: Skip second-client check if the cluster only has one registered client
+  ansible.builtin.set_fact:
+    has_second_client: "{{ (raw_clients_list.json.data | length) > 1 }}"
+
+- name: Second RegisteredClient — verify get-by-id resolves a different entity
+  when: has_second_client
+  block:
+    - name: Fetch second registered client using ext_id
+      nutanix.ncp.ntnx_registered_clients_info_v2:
+        ext_id: "{{ raw_clients_list.json.data[1].extId }}"
+      register: result_second_client
+      ignore_errors: true
+
+    - name: Assert the second fetch resolves a distinct entity
+      ansible.builtin.assert:
+        that:
+          - result_second_client.changed == false
+          - result_second_client.failed == false
+          - result_second_client.response.ext_id == raw_clients_list.json.data[1].extId
+          - result_second_client.response.name == raw_clients_list.json.data[1].name
+          - result_second_client.response.ext_id != result.response.ext_id
+        fail_msg: Second RegisteredClient fetch did not resolve a distinct entity
+        success_msg: Second RegisteredClient fetch resolved a distinct entity
