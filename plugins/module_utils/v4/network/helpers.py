@@ -170,3 +170,34 @@ def get_virtual_switch(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching virtual switch info using ext_id",
         )
+
+
+def get_vnic_by_subnet_and_ext_id(module, subnets_api, subnet_ext_id, vnic_ext_id):
+    """
+    Look up a single virtual NIC (vNIC) attached to a subnet by its ext_id.
+
+    The Nutanix networking v4 SDK does not expose a `get_vnic_by_id`
+    endpoint; vNICs are always listed in the context of their parent
+    subnet. This helper wraps `list_vnics_by_subnet_id` and returns the
+    matching entry, or None when the vNIC is not present on the subnet.
+
+    Args:
+        module: Ansible module.
+        subnets_api: SubnetsApi instance from ntnx_networking_py_client sdk.
+        subnet_ext_id (str): UUID of the subnet the vNIC is attached to.
+        vnic_ext_id (str): UUID of the vNIC to fetch.
+    return:
+        vnic (object|None): The matching vNIC SDK object, or None if not found.
+    """
+    try:
+        resp = subnets_api.list_vnics_by_subnet_id(subnetExtId=subnet_ext_id)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching vnics by subnet ext_id",
+        )
+    for vnic in getattr(resp, "data", None) or []:
+        if getattr(vnic, "ext_id", None) == vnic_ext_id:
+            return vnic
+    return None

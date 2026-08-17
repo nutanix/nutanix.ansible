@@ -1,0 +1,55 @@
+---
+# Summary:
+# This playbook demonstrates the vNIC modules for Nutanix Prism Central v4:
+# 1. List all vNICs attached to a subnet
+# 2. Get a specific vNIC on a subnet using its ext_id
+# 3. Migrate a vNIC from its current subnet to another subnet
+#
+# Notes:
+# - The Nutanix Networking v4 API does not expose a direct GetVnicById endpoint.
+#   vNICs are always fetched in the context of their parent subnet.
+# - The migrate operation moves a vNIC between subnets (typically between the
+#   Acropolis legacy stack and the Atlas advanced VLAN / VPC stack).
+
+- name: Vnic playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        source_subnet_ext_id: "7131f3ca-47ce-4f1d-990c-fa17800bd94d"
+        destination_subnet_ext_id: "18f0ed6e-30c8-48be-9c8f-e7cb4153416a"
+        vnic_ext_id: "7147b563-7b80-4be5-96b5-d8ff63187a5c"
+        project_ext_id: "8f0ed6e-30c8-48be-9c8f-e7cb4153416a"
+
+    - name: List all vNICs on the source subnet
+      nutanix.ncp.ntnx_vnics_info_v2:
+        subnet_ext_id: "{{ source_subnet_ext_id }}"
+      register: list_result
+      ignore_errors: true
+
+    - name: Get a specific vNIC on the source subnet
+      nutanix.ncp.ntnx_vnics_info_v2:
+        subnet_ext_id: "{{ source_subnet_ext_id }}"
+        ext_id: "{{ vnic_ext_id }}"
+      register: get_result
+      ignore_errors: true
+
+    - name: Migrate vNIC to destination subnet with all fields
+      nutanix.ncp.ntnx_vnic_migrate_v2:
+        state: present
+        ext_id: "{{ vnic_ext_id }}"
+        network_uuid: "{{ destination_subnet_ext_id }}"
+        requested_ip_addresses:
+          - ipv4:
+              value: "10.51.144.137"
+              prefix_length: 32
+        project_ext_id: "{{ project_ext_id }}"
+      register: migrate_result
+      ignore_errors: true
