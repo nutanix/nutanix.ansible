@@ -1,0 +1,69 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [VCenter Server Extension playbook] ***************************************
+
+TASK [Set variables] ***********************************************************
+ok: [localhost] => {"ansible_facts": {"vcenter_extension_ext_id": "00061c8b-2f6e-4a1c-8b41-abc123abc123", "vcenter_password": "vcenter-admin-password", "vcenter_port": 443, "vcenter_username": "administrator@vsphere.local"}, "changed": false}
+
+TASK [List all vCenter Server extensions] **************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Get vCenter Server extension using ext_id] *******************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching vCenter extension info using ext_id
+Origin: /tmp/vcenter_examples_run.yml:35:7
+
+33       ignore_errors: true
+34
+35     - name: Get vCenter Server extension using ext_id
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching vCenter extension info using ext_id", "response": {"$dataItemDiscriminator": "clustermgmt.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<clustermgmt.v4.error.AppMessage>", "$objectType": "clustermgmt.v4.error.ErrorResponse", "error": [{"$objectType": "clustermgmt.v4.error.AppMessage", "argumentsMap": {"vcenter_extension_uuid": "00061c8b-2f6e-4a1c-8b41-abc123abc123"}, "code": "VCNT-20100", "errorGroup": "VCENTER_EXTENSION_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the vCenter Server extension with UUID '00061c8b-2f6e-4a1c-8b41-abc123abc123' because it is not found", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [List vCenter Server extensions with filter] ******************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List vCenter Server extensions with limit] *******************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Register vCenter Server extension] ***************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching vCenter extension info using ext_id
+Origin: /tmp/vcenter_examples_run.yml:53:7
+
+51       ignore_errors: true
+52
+53     - name: Register vCenter Server extension
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching vCenter extension info using ext_id", "response": {"$dataItemDiscriminator": "clustermgmt.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<clustermgmt.v4.error.AppMessage>", "$objectType": "clustermgmt.v4.error.ErrorResponse", "error": [{"$objectType": "clustermgmt.v4.error.AppMessage", "argumentsMap": {"vcenter_extension_uuid": "00061c8b-2f6e-4a1c-8b41-abc123abc123"}, "code": "VCNT-20100", "errorGroup": "VCENTER_EXTENSION_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the vCenter Server extension with UUID '00061c8b-2f6e-4a1c-8b41-abc123abc123' because it is not found", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Update registration for vCenter Server extension (re-register)] **********
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching vCenter extension info using ext_id
+Origin: /tmp/vcenter_examples_run.yml:63:7
+
+61       ignore_errors: true
+62
+63     - name: Update registration for vCenter Server extension (re-register)
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching vCenter extension info using ext_id", "response": {"$dataItemDiscriminator": "clustermgmt.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<clustermgmt.v4.error.AppMessage>", "$objectType": "clustermgmt.v4.error.ErrorResponse", "error": [{"$objectType": "clustermgmt.v4.error.AppMessage", "argumentsMap": {"vcenter_extension_uuid": "00061c8b-2f6e-4a1c-8b41-abc123abc123"}, "code": "VCNT-20100", "errorGroup": "VCENTER_EXTENSION_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the vCenter Server extension with UUID '00061c8b-2f6e-4a1c-8b41-abc123abc123' because it is not found", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Unregister vCenter Server extension] *************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching vCenter extension info using ext_id
+Origin: /tmp/vcenter_examples_run.yml:73:7
+
+71       ignore_errors: true
+72
+73     - name: Unregister vCenter Server extension
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching vCenter extension info using ext_id", "response": {"$dataItemDiscriminator": "clustermgmt.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<clustermgmt.v4.error.AppMessage>", "$objectType": "clustermgmt.v4.error.ErrorResponse", "error": [{"$objectType": "clustermgmt.v4.error.AppMessage", "argumentsMap": {"vcenter_extension_uuid": "00061c8b-2f6e-4a1c-8b41-abc123abc123"}, "code": "VCNT-20100", "errorGroup": "VCENTER_EXTENSION_NOT_FOUND", "locale": "en-US", "message": "Failed to perform the operation on the vCenter Server extension with UUID '00061c8b-2f6e-4a1c-8b41-abc123abc123' because it is not found", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=8    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=4   
+

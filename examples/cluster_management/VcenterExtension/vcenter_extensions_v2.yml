@@ -1,0 +1,81 @@
+---
+# Summary:
+# This playbook demonstrates end-to-end use of the vCenter Server extension
+# modules under the cluster_management namespace:
+#   1. List all vCenter Server extensions
+#   2. Get a specific vCenter Server extension using ext_id
+#   3. List vCenter Server extensions with a filter
+#   4. List vCenter Server extensions with a limit
+#   5. Register a vCenter Server extension (create)
+#   6. Update the registration (re-register) for a vCenter Server extension
+#   7. Unregister a vCenter Server extension (delete)
+
+- name: VCenter Server Extension playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        vcenter_extension_ext_id: "00061c8b-2f6e-4a1c-8b41-abc123abc123"
+        vcenter_username: "administrator@vsphere.local"
+        vcenter_password: "vcenter-admin-password"
+        vcenter_port: 443
+
+    - name: List all vCenter Server extensions
+      nutanix.ncp.ntnx_vcenter_extensions_info_v2:
+      register: list_result
+      ignore_errors: true
+
+    - name: Get vCenter Server extension using ext_id
+      nutanix.ncp.ntnx_vcenter_extensions_info_v2:
+        ext_id: "{{ vcenter_extension_ext_id }}"
+      register: get_result
+      ignore_errors: true
+
+    - name: List vCenter Server extensions with filter
+      nutanix.ncp.ntnx_vcenter_extensions_info_v2:
+        filter: "isRegistered eq true"
+      register: filter_result
+      ignore_errors: true
+
+    - name: List vCenter Server extensions with limit
+      nutanix.ncp.ntnx_vcenter_extensions_info_v2:
+        limit: 1
+      register: limit_result
+      ignore_errors: true
+
+    - name: Register vCenter Server extension
+      nutanix.ncp.ntnx_vcenter_extension_v2:
+        state: present
+        ext_id: "{{ vcenter_extension_ext_id }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        port: "{{ vcenter_port }}"
+      register: register_result
+      ignore_errors: true
+
+    - name: Update registration for vCenter Server extension (re-register)
+      nutanix.ncp.ntnx_vcenter_extension_v2:
+        state: present
+        ext_id: "{{ vcenter_extension_ext_id }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        port: "{{ vcenter_port }}"
+      register: update_result
+      ignore_errors: true
+
+    - name: Unregister vCenter Server extension
+      nutanix.ncp.ntnx_vcenter_extension_v2:
+        state: absent
+        ext_id: "{{ vcenter_extension_ext_id }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        port: "{{ vcenter_port }}"
+      register: unregister_result
+      ignore_errors: true
