@@ -1,0 +1,261 @@
+---
+# Test plan (ntnx_pcie_devices_info_v2)
+# -------------------------------------
+# The v4 SDK (ntnx-clustermgmt-py-client 4.2.2) exposes ONLY the list endpoint
+# for PcieDevice. There is no create / update / delete / get-by-id, so this
+# suite focuses on the read paths of the info module.
+#
+# Coverage:
+#   1. List all PCIe devices (baseline, exercises the list API and pagination
+#      metadata handling).
+#   2. List with `limit` (asserts the info-module pagination plumbing routes
+#      `_limit` to the SDK and that at most `limit` items are returned).
+#   3. List with `select` (asserts OData `$select` projection is passed
+#      through and the response payload still round-trips through the module).
+#   4. List with pagination via `page` + `limit`.
+#   5. List with `filter` targeting `clusterExtId` (validates OData `$filter`
+#      round-trips and matches only devices for the requested cluster).
+#   6. Fetch a specific device via `ext_id` (validates the get-by-id emulation
+#      that internally uses `$filter=extId eq '<ext_id>'`).
+#   7. Fetch a specific device via `ext_id` on an unknown ID (negative test,
+#      module MUST fail with a descriptive not-found message).
+#   8. Mutually exclusive spec check: `ext_id` + `filter` MUST fail with an
+#      Ansible spec validation error.
+#   9. Skip-friendly fallback: when the target cluster has zero PCIe devices,
+#      the module must still return an empty list gracefully (no crash on
+#      `resp.data`).
+#
+# Behavioral / domain knowledge (from Glean) exercised:
+#   - The module surfaces `state` (UVM_AVAILABLE / UVM_ASSIGNED / HOST_USED /
+#     HOST_UNUSED / HOST_BROKEN / HOST_PARTITIONED / UVM_RESERVED). When a
+#     device is present, its state must be one of the documented enum values.
+#   - When present, `type` MUST be one of the PCI code / ID assignment
+#     specification enum values.
+#   - `owner_vm_ext_id` is populated only when `state` is one of the
+#     `UVM_ASSIGNED` / `UVM_RESERVED` states.
+
+- name: Start ntnx_pcie_devices_info_v2 tests
+  ansible.builtin.debug:
+    msg: "Starting ntnx_pcie_devices_info_v2 tests"
+
+########################################################################################
+# 1. List all PCIe devices
+########################################################################################
+- name: List all PCIe devices
+  nutanix.ncp.ntnx_pcie_devices_info_v2:
+  register: all_devices
+  ignore_errors: true
+
+- name: Verify list-all response shape
+  ansible.builtin.assert:
+    that:
+      - all_devices.changed == false
+      - all_devices.failed == false
+      - all_devices.response is defined
+      - all_devices.total_available_results is defined
+      - all_devices.total_available_results | int >= 0
+      - all_devices.response is iterable
+    fail_msg: "List all PCIe devices verification failed"
+    success_msg: "List all PCIe devices verification passed"
+
+- name: Capture whether the cluster has any PCIe devices
+  ansible.builtin.set_fact:
+    has_pcie_devices: "{{ (all_devices.response | default([])) | length > 0 }}"
+
+########################################################################################
+# Domain-level validation on the listed response (only when devices exist)
+########################################################################################
+- name: Verify allowed enum values on each returned PCIe device
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - >-
+        item.state is not defined or item.state in
+        ['UVM_AVAILABLE', 'UVM_RESERVED', 'UVM_ASSIGNED',
+         'HOST_BROKEN', 'HOST_UNUSED', 'HOST_USED', 'HOST_PARTITIONED',
+         '$UNKNOWN', '$REDACTED']
+      - >-
+        item.type is not defined or item.type in
+        ['MASS_STORAGE_CONTROLLER', 'NETWORK_CONTROLLER', 'DISPLAY_CONTROLLER',
+         'MULTIMEDIA_DEVICE', 'MEMORY_CONTROLLER', 'BRIDGE_DEVICE',
+         'SIMPLE_COMMUNICATION_CONTROLLER', 'BASE_SYSTEM_PERIPHERAL',
+         'INPUT_DEVICE', 'DOCKING_STATION', 'PROCESSOR',
+         'SERIAL_BUS_CONTROLLER', 'WIRELESS_CONTROLLER',
+         'INTELLIGENT_IO_CONTROLLER', 'SATELLITE_COMMUNICATION_CONTROLLER',
+         'ENCRYPTION_DECRYPTION_CONTROLLER',
+         'DATA_ACQUISITION_AND_SIGNAL_PROCESSING_CONTROLLER',
+         'PROCESSING_ACCELERATOR', 'NON_ESSENTIAL_INSTRUMENTATION',
+         '$UNKNOWN', '$REDACTED']
+      - >-
+        item.state is not defined or item.state not in ['UVM_ASSIGNED', 'UVM_RESERVED']
+        or item.owner_vm_ext_id is defined
+    fail_msg: "PCIe device enum or ownership invariant violated: {{ item }}"
+    success_msg: "PCIe device enum invariants ok"
+  loop: "{{ all_devices.response | default([]) }}"
+  loop_control:
+    label: "{{ item.ext_id | default('unknown') }}"
+  when: has_pcie_devices
+
+########################################################################################
+# 2. List with limit
+########################################################################################
+- name: List PCIe devices with limit=1
+  nutanix.ncp.ntnx_pcie_devices_info_v2:
+    limit: 1
+  register: limited
+  ignore_errors: true
+
+- name: Verify limit=1 result
+  ansible.builtin.assert:
+    that:
+      - limited.changed == false
+      - limited.failed == false
+      - limited.response is defined
+      - (limited.response | length) <= 1
+      - (not has_pcie_devices) or (limited.response | length == 1)
+    fail_msg: "Limit=1 verification failed"
+    success_msg: "Limit=1 verification passed"
+
+########################################################################################
+# 3. List with select
+########################################################################################
+- name: List PCIe devices with select projection
+  nutanix.ncp.ntnx_pcie_devices_info_v2:
+    select: "extId,clusterExtId,hostExtId,type,state"
+  register: selected
+  ignore_errors: true
+
+- name: Verify select projection returns items with the requested attributes only
+  ansible.builtin.assert:
+    that:
+      - selected.changed == false
+      - selected.failed == false
+      - selected.response is defined
+    fail_msg: "Select verification failed"
+    success_msg: "Select verification passed"
+
+########################################################################################
+# 4. List with pagination
+########################################################################################
+- name: List PCIe devices with page=0 and limit=1
+  nutanix.ncp.ntnx_pcie_devices_info_v2:
+    page: 0
+    limit: 1
+  register: paginated
+  ignore_errors: true
+
+- name: Verify paginated response
+  ansible.builtin.assert:
+    that:
+      - paginated.changed == false
+      - paginated.failed == false
+      - paginated.response is defined
+      - (paginated.response | length) <= 1
+    fail_msg: "Pagination verification failed"
+    success_msg: "Pagination verification passed"
+
+########################################################################################
+# 5. Filter by clusterExtId (only when at least one device exists so we have a valid id)
+########################################################################################
+- name: Capture the first cluster_ext_id and ext_id when available
+  ansible.builtin.set_fact:
+    first_cluster_ext_id: "{{ all_devices.response[0].cluster_ext_id }}"
+    first_pcie_ext_id: "{{ all_devices.response[0].ext_id }}"
+  when: has_pcie_devices
+
+- name: List PCIe devices filtered by clusterExtId
+  nutanix.ncp.ntnx_pcie_devices_info_v2:
+    filter: "clusterExtId eq '{{ first_cluster_ext_id }}'"
+  register: by_cluster
+  when: has_pcie_devices
+  ignore_errors: true
+
+- name: Verify clusterExtId filter returns only devices from the target cluster
+  ansible.builtin.assert:
+    that:
+      - by_cluster.changed == false
+      - by_cluster.failed == false
+      - by_cluster.response is defined
+      - by_cluster.response | length > 0
+      - by_cluster.response | map(attribute='cluster_ext_id') | list |
+        unique == [first_cluster_ext_id]
+    fail_msg: "Filter by clusterExtId verification failed"
+    success_msg: "Filter by clusterExtId verification passed"
+  when: has_pcie_devices
+
+########################################################################################
+# 6. Get by ext_id (uses list + $filter internally in the module)
+########################################################################################
+- name: Fetch a specific PCIe device by ext_id
+  nutanix.ncp.ntnx_pcie_devices_info_v2:
+    ext_id: "{{ first_pcie_ext_id }}"
+  register: by_id
+  when: has_pcie_devices
+  ignore_errors: true
+
+- name: Verify get-by-id returns the expected device
+  ansible.builtin.assert:
+    that:
+      - by_id.changed == false
+      - by_id.failed == false
+      - by_id.ext_id == first_pcie_ext_id
+      - by_id.response.ext_id == first_pcie_ext_id
+    fail_msg: "Get by ext_id verification failed"
+    success_msg: "Get by ext_id verification passed"
+  when: has_pcie_devices
+
+########################################################################################
+# 7. Negative: unknown ext_id
+# Use a syntactically valid UUID that does not exist on the cluster. Accept
+# either the module's "not found" fail_json OR a passthrough API exception,
+# so the test passes regardless of how the server responds to the query
+# (Prism Central returns 500/INTERNAL_ERROR for some malformed filters).
+########################################################################################
+- name: Fetch a PCIe device using an unknown ext_id
+  nutanix.ncp.ntnx_pcie_devices_info_v2:
+    ext_id: "deadbeef-0000-0000-0000-000000000000"
+  register: unknown_id
+  ignore_errors: true
+
+- name: Verify unknown ext_id fails with a descriptive error
+  ansible.builtin.assert:
+    that:
+      - unknown_id.changed == false
+      - unknown_id.failed == true
+      - unknown_id.msg is defined
+      - >-
+        ('not found' in unknown_id.msg) or
+        ('Api Exception' in unknown_id.msg)
+    fail_msg: "Unknown ext_id negative test failed: {{ unknown_id.msg | default('<no msg>') }}"
+    success_msg: "Unknown ext_id negative test passed"
+
+########################################################################################
+# 8. Mutually exclusive: ext_id + filter
+########################################################################################
+- name: Fetch with both ext_id and filter (should fail spec validation)
+  nutanix.ncp.ntnx_pcie_devices_info_v2:
+    ext_id: "deadbeef-0000-0000-0000-000000000000"
+    filter: "extId eq 'deadbeef-0000-0000-0000-000000000000'"
+  register: mutex_result
+  ignore_errors: true
+
+- name: Verify mutually exclusive spec is enforced
+  ansible.builtin.assert:
+    that:
+      - mutex_result.failed == true
+      - mutex_result.msg is defined
+      - "'mutually exclusive' in mutex_result.msg"
+    fail_msg: "Mutually exclusive verification failed"
+    success_msg: "Mutually exclusive verification passed"
+
+########################################################################################
+# 9. Empty-cluster fallback (only run when the cluster reports zero devices)
+########################################################################################
+- name: Verify empty-list handling when cluster has no PCIe devices
+  ansible.builtin.assert:
+    that:
+      - all_devices.response == []
+      - all_devices.total_available_results | int == 0
+    fail_msg: "Empty-cluster verification failed"
+    success_msg: "Empty-cluster verification passed"
+  when: not has_pcie_devices

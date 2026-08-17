@@ -1,0 +1,62 @@
+---
+# Summary:
+# This playbook exercises the PcieDevice v4 info module in cluster_management:
+# 1. List all PCIe devices on Prism Central
+# 2. List first PCIe device only using limit (pagination)
+# 3. List PCIe devices projecting a subset of fields with select
+# 4. List PCIe devices filtered by cluster external ID
+# 5. Fetch a specific PCIe device using its external ID
+#
+# Notes:
+# - Requires View_Pcie_Device permission on the target Prism Central.
+# - The SDK v4.2 (ntnx-clustermgmt-py-client 4.2.2) only exposes the list
+#   endpoint for PcieDevice; there is no create / update / delete /
+#   get-by-id API. The info module emulates get-by-id by listing with an
+#   OData $filter=extId eq '<ext_id>' expression.
+
+- name: PCIe Devices playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: List all PCIe devices on the cluster
+      nutanix.ncp.ntnx_pcie_devices_info_v2:
+      register: pcie_devices_list
+      ignore_errors: true
+
+    - name: List first PCIe device only (limit=1)
+      nutanix.ncp.ntnx_pcie_devices_info_v2:
+        limit: 1
+      register: pcie_devices_limited
+      ignore_errors: true
+
+    - name: List PCIe devices with a subset of fields (select)
+      nutanix.ncp.ntnx_pcie_devices_info_v2:
+        select: "extId,clusterExtId,hostExtId,type,state"
+      register: pcie_devices_select
+      ignore_errors: true
+
+    - name: Set filter and target ext_id from the initial list (when available)
+      ansible.builtin.set_fact:
+        pcie_target_ext_id: "{{ (pcie_devices_list.response | default([]))[0].ext_id | default(omit) }}"
+        pcie_cluster_ext_id: "{{ (pcie_devices_list.response | default([]))[0].cluster_ext_id | default(omit) }}"
+      when: (pcie_devices_list.response | default([])) | length > 0
+
+    - name: List PCIe devices filtered by clusterExtId
+      nutanix.ncp.ntnx_pcie_devices_info_v2:
+        filter: "clusterExtId eq '{{ pcie_cluster_ext_id }}'"
+      register: pcie_devices_by_cluster
+      when: pcie_cluster_ext_id is defined
+      ignore_errors: true
+
+    - name: Fetch a specific PCIe device by ext_id
+      nutanix.ncp.ntnx_pcie_devices_info_v2:
+        ext_id: "{{ pcie_target_ext_id }}"
+      register: pcie_device_by_id
+      when: pcie_target_ext_id is defined
+      ignore_errors: true

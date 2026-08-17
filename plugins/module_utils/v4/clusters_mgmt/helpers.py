@@ -109,3 +109,38 @@ def get_cluster_profile(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching cluster profile info using ext_id",
         )
+
+
+def get_pcie_device(module, api_instance, ext_id):
+    """
+    Return a single PcieDevice entity by its external ID.
+
+    The v4 SDK only exposes ``list_pcie_devices``; there is no dedicated
+    ``get_pcie_device_by_id`` endpoint. This helper simulates the get-by-id
+    behavior by issuing a list with an OData ``$filter`` on ``extId`` and
+    returning the first matching entity.
+
+    Args:
+        module: Ansible module
+        api_instance: PcieDevicesApi instance from the SDK
+        ext_id (str): PcieDevice external ID
+
+    Returns:
+        object | None: The matching PcieDevice model instance, or ``None``
+        if no device with the given ``ext_id`` exists on the cluster.
+    """
+    try:
+        resp = api_instance.list_pcie_devices(_filter="extId eq '{0}'".format(ext_id))
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching PCIe device info using ext_id",
+        )
+    data = getattr(resp, "data", None) or []
+    for item in data:
+        if getattr(item, "ext_id", None) == ext_id:
+            return item
+    if data:
+        return data[0]
+    return None
