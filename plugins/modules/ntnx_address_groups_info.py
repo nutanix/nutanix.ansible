@@ -12,7 +12,11 @@ DOCUMENTATION = r"""
 module: ntnx_address_groups_info
 short_description: address groups info module
 version_added: 1.4.0
-description: 'Get address groups info'
+description:
+    - Get address groups info
+    - This module is deprecated and will stop working from the Prism Central 7.6 release.
+    - The v3 address group APIs are not supported when the Flow network security next-gen is enabled.
+    - Please use the v4 address group APIs instead i.e. M(nutanix.ncp.ntnx_address_groups_info_v2) module.
 options:
     kind:
       description:
@@ -139,6 +143,13 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         required_together=[("sort_order", "sort_attribute")],
+    )
+    module.deprecate(
+        "This module is deprecated and will stop working from the Prism Central 7.6 release."
+        " The v3 address group APIs are not supported when the Flow network security next-gen"
+        " is enabled. Please use the v4 address group APIs instead"
+        " i.e. ntnx_address_groups_info_v2 module.",
+        collection_name="nutanix.ncp",
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}

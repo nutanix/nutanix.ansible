@@ -12,7 +12,11 @@ DOCUMENTATION = r"""
 module: ntnx_address_groups
 short_description: module which supports address groups CRUD operations
 version_added: 1.4.0
-description: "Create, Update, Delete Nutanix address groups"
+description:
+    - Create, Update, Delete Nutanix address groups
+    - This module is deprecated and will stop working from the Prism Central 7.6 release.
+    - The v3 address group APIs are not supported when the Flow network security next-gen is enabled.
+    - Please use the v4 address group APIs instead i.e. M(nutanix.ncp.ntnx_address_groups_v2) module.
 options:
     state:
         description:
@@ -214,6 +218,13 @@ def run_module():
             ("state", "present", ("subnets", "address_group_uuid"), True),
             ("state", "absent", ("address_group_uuid",)),
         ],
+    )
+    module.deprecate(
+        "This module is deprecated and will stop working from the Prism Central 7.6 release."
+        " The v3 address group APIs are not supported when the Flow network security next-gen"
+        " is enabled. Please use the v4 address group APIs instead"
+        " i.e. ntnx_address_groups_v2 module.",
+        collection_name="nutanix.ncp",
     )
     utils.remove_param_with_none_value(module.params)
     result = {

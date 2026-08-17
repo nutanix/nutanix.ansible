@@ -12,7 +12,11 @@ DOCUMENTATION = r"""
 module: ntnx_service_groups
 short_description: service_groups module which suports service_groups CRUD operations
 version_added: 1.4.0
-description: 'Create, Update, Delete service_group'
+description:
+  - Create, Update, Delete service_group
+  - This module is deprecated and will stop working from the Prism Central 7.6 release.
+  - The v3 service group APIs are not supported when the Flow network security next-gen is enabled.
+  - Please use the v4 service group APIs instead i.e. M(nutanix.ncp.ntnx_service_groups_v2) module.
 options:
   state:
     description:
@@ -259,6 +263,13 @@ def run_module():
             ("state", "present", ("name", "service_group_uuid"), True),
             ("state", "absent", ("service_group_uuid",)),
         ],
+    )
+    module.deprecate(
+        "This module is deprecated and will stop working from the Prism Central 7.6 release."
+        " The v3 service group APIs are not supported when the Flow network security next-gen"
+        " is enabled. Please use the v4 service group APIs instead"
+        " i.e. ntnx_service_groups_v2 module.",
+        collection_name="nutanix.ncp",
     )
     remove_param_with_none_value(module.params)
     result = {
