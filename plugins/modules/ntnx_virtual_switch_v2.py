@@ -268,14 +268,6 @@ options:
         type: list
         elements: str
         required: false
-  shared_with_projects:
-    description:
-      - List of project external IDs to share the virtual switch with.
-      - Projects not in the list will be unshared during update.
-      - During create operations, this parameter requires C(wait) to be C(true) (default). If C(wait) is set to C(false), this parameter will be ignored.
-    required: false
-    type: list
-    elements: str
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -349,20 +341,6 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
-- name: Update virtual switch sharing with projects
-  nutanix.ncp.ntnx_virtual_switch_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    state: present
-    ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
-    shared_with_projects:
-      - "12345678-1234-1234-1234-123456789012"
-      - "87654321-4321-4321-4321-210987654321"
-  register: result
-  ignore_errors: true
-
 - name: Delete virtual switch
   nutanix.ncp.ntnx_virtual_switch_v2:
     nutanix_host: "{{ ip }}"
@@ -421,7 +399,6 @@ response:
       "mtu": 1500,
       "name": "virtual_switch_ansible",
       "owner_type": "PE",
-      "shared_with_projects": null,
       "tenant_id": null
     }
 
@@ -490,10 +467,8 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
-    get_task_ext_id_from_response,
     raise_api_exception,
     raise_unsupported_update_fields,
-    reconcile_sharing,
     strip_internal_attributes,
     validate_required_params,
 )
@@ -612,91 +587,11 @@ def get_module_spec():
             options=metadata_spec,
             obj=networking_sdk.Metadata,
         ),
-        shared_with_projects=dict(type="list", elements="str"),
     )
     return module_args
 
 
-def _get_etag_for_sharing(module, virtual_switch):
-    etag = get_etag(data=virtual_switch)
-    if not etag:
-        module.fail_json(
-            msg="Unable to fetch etag for virtual switch sharing operation"
-        )
-    return etag
-
-
-def _share_virtual_switch_with_project(
-    module, virtual_switches, ext_id, project_ext_id
-):
-    virtual_switch = get_virtual_switch(module, virtual_switches, ext_id)
-    etag = _get_etag_for_sharing(module, virtual_switch)
-    try:
-        project_ref = networking_sdk.ProjectReference()
-        project_ref.project_ext_id = project_ext_id
-        resp = virtual_switches.share_virtual_switch_by_id(
-            extId=ext_id, body=project_ref, if_match=etag
-        )
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while sharing virtual switch with project {0}".format(
-                project_ext_id
-            ),
-        )
-    task_ext_id = get_task_ext_id_from_response(resp)
-    wait_for_completion(module, task_ext_id)
-
-
-def _unshare_virtual_switch_from_project(
-    module, virtual_switches, ext_id, project_ext_id
-):
-    virtual_switch = get_virtual_switch(module, virtual_switches, ext_id)
-    etag = _get_etag_for_sharing(module, virtual_switch)
-    try:
-        project_ref = networking_sdk.ProjectReference()
-        project_ref.project_ext_id = project_ext_id
-        resp = virtual_switches.unshare_virtual_switch_by_id(
-            extId=ext_id, body=project_ref, if_match=etag
-        )
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while unsharing virtual switch from project {0}".format(
-                project_ext_id
-            ),
-        )
-    task_ext_id = get_task_ext_id_from_response(resp)
-    wait_for_completion(module, task_ext_id)
-
-
-def _reconcile_sharing(module, virtual_switches, ext_id, shared_with_projects):
-    """Drive the virtual switch's project sharing towards the desired state.
-
-    Delegates to the shared ``reconcile_sharing`` helper, which diffs once and
-    applies each share/unshare one by one; every call blocks on its task via
-    ``wait_for_completion``, so a single pass reaches the desired state.
-    """
-
-    def read_current(current_module, current_ext_id):
-        return get_virtual_switch(current_module, virtual_switches, current_ext_id)
-
-    return reconcile_sharing(
-        module=module,
-        api_instance=virtual_switches,
-        ext_id=ext_id,
-        read_fn=read_current,
-        share_fn=_share_virtual_switch_with_project,
-        unshare_fn=_unshare_virtual_switch_from_project,
-        shared_with_projects=shared_with_projects,
-        resource_label="virtual switch",
-    )
-
-
 def create_virtual_switch_from_existing_bridge(module, bridges_api, result):
-    shared_with_projects = module.params.pop("shared_with_projects", None)
     sg = SpecGenerator(module)
     default_spec = networking_sdk.Bridge()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -706,13 +601,7 @@ def create_virtual_switch_from_existing_bridge(module, bridges_api, result):
         module.fail_json(msg=msg, **result)
 
     if module.check_mode:
-        response = strip_internal_attributes(spec.to_dict())
-        # shared_with_projects is applied via a separate share API (not the
-        # migrate body), so it is popped before spec generation. Reflect the
-        # requested value here so check mode does not mislead about sharing.
-        if shared_with_projects is not None:
-            response["shared_with_projects"] = shared_with_projects
-        result["response"] = response
+        result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
     resp = None
@@ -738,10 +627,6 @@ def create_virtual_switch_from_existing_bridge(module, bridges_api, result):
         if ext_id:
             result["ext_id"] = ext_id
             virtual_switches_api = get_virtual_switches_api_instance(module)
-            if shared_with_projects:
-                _reconcile_sharing(
-                    module, virtual_switches_api, ext_id, shared_with_projects
-                )
             resp = get_virtual_switch(module, virtual_switches_api, ext_id)
             result["response"] = strip_internal_attributes(resp.to_dict())
         else:
@@ -757,7 +642,6 @@ def create_virtual_switch_from_existing_bridge(module, bridges_api, result):
 
 def create_virtual_switch(module, virtual_switches, result):
     validate_required_params(module, ["bond_mode", "clusters"])
-    shared_with_projects = module.params.pop("shared_with_projects", None)
     sg = SpecGenerator(module)
     default_spec = networking_sdk.VirtualSwitch()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -766,13 +650,7 @@ def create_virtual_switch(module, virtual_switches, result):
         module.fail_json(msg="Failed generating create virtual switch spec", **result)
 
     if module.check_mode:
-        response = strip_internal_attributes(spec.to_dict())
-        # shared_with_projects is applied via a separate share API (not the create
-        # body), so it is popped before spec generation. Reflect the requested
-        # value here so check mode does not mislead about the resulting sharing.
-        if shared_with_projects is not None:
-            response["shared_with_projects"] = shared_with_projects
-        result["response"] = response
+        result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
     resp = None
@@ -795,10 +673,6 @@ def create_virtual_switch(module, virtual_switches, result):
         )
         if ext_id:
             result["ext_id"] = ext_id
-            if shared_with_projects:
-                _reconcile_sharing(
-                    module, virtual_switches, ext_id, shared_with_projects
-                )
             resp = get_virtual_switch(module, virtual_switches, ext_id)
             result["response"] = strip_internal_attributes(resp.to_dict())
         else:
@@ -864,7 +738,6 @@ def update_virtual_switch(module, virtual_switches, result):
     ext_id = module.params.get("ext_id")
 
     result["ext_id"] = ext_id
-    shared_with_projects = module.params.pop("shared_with_projects", None)
     old_spec = get_virtual_switch(module, virtual_switches, ext_id)
     etag = get_etag(data=old_spec)
     if not etag:
@@ -881,55 +754,30 @@ def update_virtual_switch(module, virtual_switches, result):
     raise_unsupported_update_fields(module, old_spec, update_spec, ["project_ext_id"])
 
     if module.check_mode:
-        response = strip_internal_attributes(update_spec.to_dict())
-        # shared_with_projects is reconciled via a separate share API, so it is
-        # popped before spec generation and update_spec still carries the current
-        # value. Reflect the requested value so check mode shows the intended
-        # sharing rather than the existing one.
-        if shared_with_projects is not None:
-            response["shared_with_projects"] = shared_with_projects
-        result["response"] = response
+        result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
-    spec_changed = not check_for_idempotency(old_spec.to_dict(), update_spec.to_dict())
-
-    if not spec_changed and shared_with_projects is None:
-        result["skipped"] = True
-        module.exit_json(msg="Nothing to change.")
-
-    # Apply the spec update first (it uses the if_match etag fetched above);
-    # sharing is reconciled afterwards so its share/unshare tasks do not
-    # invalidate that etag mid-update.
-    if spec_changed:
-        _remove_read_only_attributes(update_spec)
-        resp = None
-        try:
-            resp = virtual_switches.update_virtual_switch_by_id(
-                extId=ext_id, body=update_spec, **kwargs
-            )
-        except Exception as e:
-            raise_api_exception(
-                module=module,
-                exception=e,
-                msg="Api Exception raised while updating virtual switch",
-            )
-        task_ext_id = resp.data.ext_id
-        result["task_ext_id"] = task_ext_id
-        result["response"] = strip_internal_attributes(resp.data.to_dict())
-        if task_ext_id and module.params.get("wait"):
-            wait_for_completion(module, task_ext_id)
-
-    sharing_changed = False
-    if shared_with_projects is not None:
-        sharing_changed = _reconcile_sharing(
-            module, virtual_switches, ext_id, shared_with_projects
-        )
-
-    if not spec_changed and not sharing_changed:
+    if check_for_idempotency(old_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
-    if module.params.get("wait") or sharing_changed:
+    _remove_read_only_attributes(update_spec)
+    resp = None
+    try:
+        resp = virtual_switches.update_virtual_switch_by_id(
+            extId=ext_id, body=update_spec, **kwargs
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while updating virtual switch",
+        )
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if task_ext_id and module.params.get("wait"):
+        wait_for_completion(module, task_ext_id)
         resp = get_virtual_switch(module, virtual_switches, ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
@@ -987,7 +835,6 @@ def run_module():
             "description",
             "cluster_reference",
             "metadata",
-            "shared_with_projects",
         }
         module_specific_params = set(get_module_spec().keys())
         extra_params = (
@@ -996,8 +843,8 @@ def run_module():
         if extra_params:
             module.fail_json(
                 msg="When 'existing_bridge_name' is provided, only 'name', "
-                "'description', 'cluster_reference', 'metadata' and "
-                "'shared_with_projects' are allowed. Invalid parameters: "
+                "'description', 'cluster_reference' and 'metadata' are "
+                "allowed. Invalid parameters: "
                 "{0}".format(", ".join(sorted(extra_params)))
             )
     result = {
