@@ -1,0 +1,646 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Image import playbook (virtual_machine_management / Image v4)] ***********
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"cluster_ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "pe_owned_image_ext_ids": ["b9120f28-1222-3333-4444-47f7d5066e91", "6b34522d-1231-8555-8888-1388aede0a06"]}, "changed": false}
+
+TASK [Import images from a registered Prism Element cluster] *******************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while importing images from Prism Element", "response": {"$objectType": "vmm.v4.content.ImportImageApiResponse", "$reserved": {"$fv": "v4.r3"}, "data": {"$objectType": "vmm.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r3"}, "error": [{"$objectType": "vmm.v4.error.AppMessage", "$reserved": {"$fv": "v4.r3"}, "code": "VMM-20004", "locale": "en_US", "message": "Failed to perform the operation on the entity as the provided input is invalid.", "severity": "ERROR"}]}}, "status": 400}
+...ignoring
+
+TASK [Show import result] ******************************************************
+ok: [localhost] => {
+    "import_result": {
+        "changed": false,
+        "error": "BAD REQUEST",
+        "failed": true,
+        "msg": "Api Exception raised while importing images from Prism Element",
+        "response": {
+            "$objectType": "vmm.v4.content.ImportImageApiResponse",
+            "$reserved": {
+                "$fv": "v4.r3"
+            },
+            "data": {
+                "$objectType": "vmm.v4.error.ErrorResponse",
+                "$reserved": {
+                    "$fv": "v4.r3"
+                },
+                "error": [
+                    {
+                        "$objectType": "vmm.v4.error.AppMessage",
+                        "$reserved": {
+                            "$fv": "v4.r3"
+                        },
+                        "code": "VMM-20004",
+                        "locale": "en_US",
+                        "message": "Failed to perform the operation on the entity as the provided input is invalid.",
+                        "severity": "ERROR"
+                    }
+                ]
+            }
+        },
+        "status": 400
+    }
+}
+
+TASK [Fetch a single image by external ID] *************************************
+skipping: [localhost] => {"changed": false, "false_condition": "import_result.ext_id is defined", "skip_reason": "Conditional result was False"}
+
+TASK [Show single image info] **************************************************
+ok: [localhost] => {
+    "image_info": {
+        "changed": false,
+        "false_condition": "import_result.ext_id is defined",
+        "skip_reason": "Conditional result was False",
+        "skipped": true
+    }
+}
+
+TASK [List all images visible to PC] *******************************************
+ok: [localhost] => {"changed": false, "error": null, "response": [{"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-06-29T12:09:42.590350+00:00", "description": null, "ext_id": "6894187e-0549-4816-8aa6-4aee85ac4dab", "isSharedWithAllProjects": true, "last_update_time": "2026-06-29T12:09:42.590350+00:00", "links": null, "name": "CentOS-7-cloudinit", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 8589934592, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-06-29T12:11:52.661835+00:00", "description": null, "ext_id": "7d8e2e7d-d9e4-4d53-be4b-0e93a271b6a2", "isSharedWithAllProjects": true, "last_update_time": "2026-06-29T12:11:52.661835+00:00", "links": null, "name": "Nutanix-VirtIO", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 48695296, "source": null, "tenant_id": null, "type": "ISO_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-06-29T12:12:10.223663+00:00", "description": null, "ext_id": "40774016-07ff-4180-9020-552b4159c44a", "isSharedWithAllProjects": true, "last_update_time": "2026-06-29T12:12:10.223663+00:00", "links": null, "name": "nutanix_rocky8", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 11645485056, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-06-29T12:13:24.069848+00:00", "description": null, "ext_id": "93b10509-758e-4b2d-b8f8-d87a2a8ed819", "isSharedWithAllProjects": true, "last_update_time": "2026-06-29T12:13:24.069848+00:00", "links": null, "name": "ubuntu-22.04-server-cloudimg-amd64.qcow2", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 2361393152, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-06-29T12:14:50.398984+00:00", "description": null, "ext_id": "714f40fc-97c9-461b-a694-a88c6abf3a89", "isSharedWithAllProjects": true, "last_update_time": "2026-06-29T12:14:50.398984+00:00", "links": null, "name": "Win10Uefi", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 38654705664, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-06-30T08:49:49.626850+00:00", "description": null, "ext_id": "ccf8eacf-d2cd-41b0-b89b-c7aa427ddef0", "isSharedWithAllProjects": true, "last_update_time": "2026-06-30T08:49:49.626850+00:00", "links": null, "name": "msp-registry-3.1.0.0-abd411", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 21474836480, "source": null, "tenant_id": null, "type": null}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-06-30T08:49:48.752238+00:00", "description": "Rocky upgrade patch", "ext_id": "d9558ed9-d8f3-419f-a1a6-dd893f631d7b", "isSharedWithAllProjects": true, "last_update_time": "2026-06-30T08:49:48.752238+00:00", "links": null, "name": "msp_goldimage_Rocky9.7-msp-ntnx-3.1.0.0-6ba8b9", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 17179869184, "source": null, "tenant_id": null, "type": null}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-07-02T11:06:09.743896+00:00", "description": "5.3.2", "ext_id": "9ba33498-2b99-4adb-90e6-23a93dc02180", "isSharedWithAllProjects": true, "last_update_time": "2026-07-02T11:06:15.514882+00:00", "links": null, "name": "predeployment_port_vm", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 64487424, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": ["66f4d0aa-4e77-5261-94c6-4dc19a857049"], "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-07-14T12:23:25.256144+00:00", "description": "image created from integration test", "ext_id": "df795b9c-7164-4360-a92d-792fb3ff42fc", "isSharedWithAllProjects": true, "last_update_time": "2026-07-14T12:23:25.256144+00:00", "links": null, "name": "BGIOzujVlsOu_disk_image_test", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 26843545600, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-07-20T02:33:45.024743+00:00", "description": null, "ext_id": "442f2eeb-479d-40d6-a11e-454eb05484a9", "isSharedWithAllProjects": true, "last_update_time": "2026-07-20T02:33:45.024743+00:00", "links": null, "name": "ubuntu-22.04-server-cloudimg-amd64.qcow2", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 2361393152, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-07-20T03:18:03.770003+00:00", "description": null, "ext_id": "bcd7ee4b-0029-4852-9a23-351c71ae1409", "isSharedWithAllProjects": true, "last_update_time": "2026-07-20T03:18:03.770003+00:00", "links": null, "name": "nkp-rocky-9.7-release-cis-1.35.2-20260626061237.qcow2", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 32212254720, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-07-20T17:56:10.646463+00:00", "description": "Image seeded by the ntnx_import_image_v2 integration test", "ext_id": "f331f44b-e86f-4816-a8a2-8b327e608b7c", "isSharedWithAllProjects": true, "last_update_time": "2026-07-20T17:56:10.646463+00:00", "links": null, "name": "import_image_ansible_ByTxMTQLtwHI", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 117440512, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-07-20T17:59:08.533991+00:00", "description": "Image used to exercise ntnx_file_image_v2", "ext_id": "089d72aa-db93-4cf0-96a3-2de40eec04e4", "isSharedWithAllProjects": true, "last_update_time": "2026-07-20T17:59:08.533991+00:00", "links": null, "name": "LSREhNdwLYTK_file_by_image_id_disk", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 117440512, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-07-20T17:59:27.074387+00:00", "description": "PE-only image seeded by ntnx_import_image_v2 integration test", "ext_id": "81253673-ea07-497f-b8da-1a1bc62ed33d", "isSharedWithAllProjects": true, "last_update_time": "2026-07-20T17:59:27.074387+00:00", "links": null, "name": "peonly_ansible_1_cjeWXuLQVdxI", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 117440512, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-07-20T18:00:14.337994+00:00", "description": "Image used to exercise ntnx_file_image_v2", "ext_id": "b2e64e8b-8ba2-4778-a942-7c6432b33c61", "isSharedWithAllProjects": true, "last_update_time": "2026-07-20T18:00:14.337994+00:00", "links": null, "name": "niwzzgajkvVB_file_by_image_id_disk", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 117440512, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-07-20T17:59:35.053087+00:00", "description": "PE-only image #2 seeded by ntnx_import_image_v2 integration test", "ext_id": "ca70a847-69f9-46e9-a6d0-25867497f3dd", "isSharedWithAllProjects": true, "last_update_time": "2026-07-20T17:59:35.053087+00:00", "links": null, "name": "peonly_ansible_2_cjeWXuLQVdxI", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 117440512, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-07-20T18:01:15.953816+00:00", "description": "Image used to exercise ntnx_file_image_v2", "ext_id": "55ac03d9-e272-4fb1-9068-e71851246fa8", "isSharedWithAllProjects": true, "last_update_time": "2026-07-20T18:01:15.953816+00:00", "links": null, "name": "ynJKaNmxmXcA_file_by_image_id_disk", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 117440512, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-07-20T18:02:39.903508+00:00", "description": "PE-only image seeded by ntnx_import_image_v2 integration test", "ext_id": "42baad51-20df-4627-8436-26392cdf5f1f", "isSharedWithAllProjects": true, "last_update_time": "2026-07-20T18:02:39.903508+00:00", "links": null, "name": "peonly_ansible_1_HDcxAydVubMg", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 117440512, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-07-20T18:06:27.447748+00:00", "description": "Image used to exercise ntnx_file_image_v2", "ext_id": "d1c18e4c-2178-4c1c-b06e-386b749a41d8", "isSharedWithAllProjects": true, "last_update_time": "2026-07-20T18:06:27.447748+00:00", "links": null, "name": "ppZNyKlMFKke_file_by_image_id_disk", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 117440512, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-07-21T08:52:06.485912+00:00", "description": "Temporary image created by ntnx_import_image_v2 integration test", "ext_id": "ec6d01b7-ca36-4567-90f0-33f332a9a1ab", "isSharedWithAllProjects": true, "last_update_time": "2026-07-21T08:52:06.485912+00:00", "links": null, "name": "ftOHglqZaKRn_image_test", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 2361393152, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}], "total_available_results": 20}
+
+TASK [Show list of all images] *************************************************
+ok: [localhost] => {
+    "all_images": {
+        "changed": false,
+        "error": null,
+        "failed": false,
+        "response": [
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-06-29T12:09:42.590350+00:00",
+                "description": null,
+                "ext_id": "6894187e-0549-4816-8aa6-4aee85ac4dab",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-06-29T12:09:42.590350+00:00",
+                "links": null,
+                "name": "CentOS-7-cloudinit",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 8589934592,
+                "source": null,
+                "tenant_id": null,
+                "type": "DISK_IMAGE"
+            },
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-06-29T12:11:52.661835+00:00",
+                "description": null,
+                "ext_id": "7d8e2e7d-d9e4-4d53-be4b-0e93a271b6a2",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-06-29T12:11:52.661835+00:00",
+                "links": null,
+                "name": "Nutanix-VirtIO",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 48695296,
+                "source": null,
+                "tenant_id": null,
+                "type": "ISO_IMAGE"
+            },
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-06-29T12:12:10.223663+00:00",
+                "description": null,
+                "ext_id": "40774016-07ff-4180-9020-552b4159c44a",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-06-29T12:12:10.223663+00:00",
+                "links": null,
+                "name": "nutanix_rocky8",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 11645485056,
+                "source": null,
+                "tenant_id": null,
+                "type": "DISK_IMAGE"
+            },
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-06-29T12:13:24.069848+00:00",
+                "description": null,
+                "ext_id": "93b10509-758e-4b2d-b8f8-d87a2a8ed819",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-06-29T12:13:24.069848+00:00",
+                "links": null,
+                "name": "ubuntu-22.04-server-cloudimg-amd64.qcow2",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 2361393152,
+                "source": null,
+                "tenant_id": null,
+                "type": "DISK_IMAGE"
+            },
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-06-29T12:14:50.398984+00:00",
+                "description": null,
+                "ext_id": "714f40fc-97c9-461b-a694-a88c6abf3a89",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-06-29T12:14:50.398984+00:00",
+                "links": null,
+                "name": "Win10Uefi",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 38654705664,
+                "source": null,
+                "tenant_id": null,
+                "type": "DISK_IMAGE"
+            },
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-06-30T08:49:49.626850+00:00",
+                "description": null,
+                "ext_id": "ccf8eacf-d2cd-41b0-b89b-c7aa427ddef0",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-06-30T08:49:49.626850+00:00",
+                "links": null,
+                "name": "msp-registry-3.1.0.0-abd411",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 21474836480,
+                "source": null,
+                "tenant_id": null,
+                "type": null
+            },
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-06-30T08:49:48.752238+00:00",
+                "description": "Rocky upgrade patch",
+                "ext_id": "d9558ed9-d8f3-419f-a1a6-dd893f631d7b",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-06-30T08:49:48.752238+00:00",
+                "links": null,
+                "name": "msp_goldimage_Rocky9.7-msp-ntnx-3.1.0.0-6ba8b9",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 17179869184,
+                "source": null,
+                "tenant_id": null,
+                "type": null
+            },
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-07-02T11:06:09.743896+00:00",
+                "description": "5.3.2",
+                "ext_id": "9ba33498-2b99-4adb-90e6-23a93dc02180",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-07-02T11:06:15.514882+00:00",
+                "links": null,
+                "name": "predeployment_port_vm",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 64487424,
+                "source": null,
+                "tenant_id": null,
+                "type": "DISK_IMAGE"
+            },
+            {
+                "category_ext_ids": [
+                    "66f4d0aa-4e77-5261-94c6-4dc19a857049"
+                ],
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-07-14T12:23:25.256144+00:00",
+                "description": "image created from integration test",
+                "ext_id": "df795b9c-7164-4360-a92d-792fb3ff42fc",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-07-14T12:23:25.256144+00:00",
+                "links": null,
+                "name": "BGIOzujVlsOu_disk_image_test",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 26843545600,
+                "source": null,
+                "tenant_id": null,
+                "type": "DISK_IMAGE"
+            },
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-07-20T02:33:45.024743+00:00",
+                "description": null,
+                "ext_id": "442f2eeb-479d-40d6-a11e-454eb05484a9",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-07-20T02:33:45.024743+00:00",
+                "links": null,
+                "name": "ubuntu-22.04-server-cloudimg-amd64.qcow2",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 2361393152,
+                "source": null,
+                "tenant_id": null,
+                "type": "DISK_IMAGE"
+            },
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-07-20T03:18:03.770003+00:00",
+                "description": null,
+                "ext_id": "bcd7ee4b-0029-4852-9a23-351c71ae1409",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-07-20T03:18:03.770003+00:00",
+                "links": null,
+                "name": "nkp-rocky-9.7-release-cis-1.35.2-20260626061237.qcow2",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 32212254720,
+                "source": null,
+                "tenant_id": null,
+                "type": "DISK_IMAGE"
+            },
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-07-20T17:56:10.646463+00:00",
+                "description": "Image seeded by the ntnx_import_image_v2 integration test",
+                "ext_id": "f331f44b-e86f-4816-a8a2-8b327e608b7c",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-07-20T17:56:10.646463+00:00",
+                "links": null,
+                "name": "import_image_ansible_ByTxMTQLtwHI",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 117440512,
+                "source": null,
+                "tenant_id": null,
+                "type": "DISK_IMAGE"
+            },
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-07-20T17:59:08.533991+00:00",
+                "description": "Image used to exercise ntnx_file_image_v2",
+                "ext_id": "089d72aa-db93-4cf0-96a3-2de40eec04e4",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-07-20T17:59:08.533991+00:00",
+                "links": null,
+                "name": "LSREhNdwLYTK_file_by_image_id_disk",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 117440512,
+                "source": null,
+                "tenant_id": null,
+                "type": "DISK_IMAGE"
+            },
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-07-20T17:59:27.074387+00:00",
+                "description": "PE-only image seeded by ntnx_import_image_v2 integration test",
+                "ext_id": "81253673-ea07-497f-b8da-1a1bc62ed33d",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-07-20T17:59:27.074387+00:00",
+                "links": null,
+                "name": "peonly_ansible_1_cjeWXuLQVdxI",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 117440512,
+                "source": null,
+                "tenant_id": null,
+                "type": "DISK_IMAGE"
+            },
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-07-20T18:00:14.337994+00:00",
+                "description": "Image used to exercise ntnx_file_image_v2",
+                "ext_id": "b2e64e8b-8ba2-4778-a942-7c6432b33c61",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-07-20T18:00:14.337994+00:00",
+                "links": null,
+                "name": "niwzzgajkvVB_file_by_image_id_disk",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 117440512,
+                "source": null,
+                "tenant_id": null,
+                "type": "DISK_IMAGE"
+            },
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-07-20T17:59:35.053087+00:00",
+                "description": "PE-only image #2 seeded by ntnx_import_image_v2 integration test",
+                "ext_id": "ca70a847-69f9-46e9-a6d0-25867497f3dd",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-07-20T17:59:35.053087+00:00",
+                "links": null,
+                "name": "peonly_ansible_2_cjeWXuLQVdxI",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 117440512,
+                "source": null,
+                "tenant_id": null,
+                "type": "DISK_IMAGE"
+            },
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-07-20T18:01:15.953816+00:00",
+                "description": "Image used to exercise ntnx_file_image_v2",
+                "ext_id": "55ac03d9-e272-4fb1-9068-e71851246fa8",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-07-20T18:01:15.953816+00:00",
+                "links": null,
+                "name": "ynJKaNmxmXcA_file_by_image_id_disk",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 117440512,
+                "source": null,
+                "tenant_id": null,
+                "type": "DISK_IMAGE"
+            },
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-07-20T18:02:39.903508+00:00",
+                "description": "PE-only image seeded by ntnx_import_image_v2 integration test",
+                "ext_id": "42baad51-20df-4627-8436-26392cdf5f1f",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-07-20T18:02:39.903508+00:00",
+                "links": null,
+                "name": "peonly_ansible_1_HDcxAydVubMg",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 117440512,
+                "source": null,
+                "tenant_id": null,
+                "type": "DISK_IMAGE"
+            },
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-07-20T18:06:27.447748+00:00",
+                "description": "Image used to exercise ntnx_file_image_v2",
+                "ext_id": "d1c18e4c-2178-4c1c-b06e-386b749a41d8",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-07-20T18:06:27.447748+00:00",
+                "links": null,
+                "name": "ppZNyKlMFKke_file_by_image_id_disk",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 117440512,
+                "source": null,
+                "tenant_id": null,
+                "type": "DISK_IMAGE"
+            },
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-07-21T08:52:06.485912+00:00",
+                "description": "Temporary image created by ntnx_import_image_v2 integration test",
+                "ext_id": "ec6d01b7-ca36-4567-90f0-33f332a9a1ab",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-07-21T08:52:06.485912+00:00",
+                "links": null,
+                "name": "ftOHglqZaKRn_image_test",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 2361393152,
+                "source": null,
+                "tenant_id": null,
+                "type": "DISK_IMAGE"
+            }
+        ],
+        "total_available_results": 20
+    }
+}
+
+TASK [List images filtered by OData filter (DISK_IMAGE only)] ******************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while fetching images info", "response": {"$objectType": "vmm.v4.content.ListImagesApiResponse", "$reserved": {"$fv": "v4.r3"}, "data": {"$objectType": "vmm.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r3"}, "error": [{"$objectType": "vmm.v4.error.AppMessage", "$reserved": {"$fv": "v4.r3"}, "code": "VMM-20506", "locale": "en_US", "message": "Failed to perform the operation as the OData parameters provided are invalid.", "severity": "ERROR"}]}}, "status": 400}
+...ignoring
+
+TASK [Show filtered images] ****************************************************
+ok: [localhost] => {
+    "filtered_images": {
+        "changed": false,
+        "error": "BAD REQUEST",
+        "failed": true,
+        "msg": "Api Exception raised while fetching images info",
+        "response": {
+            "$objectType": "vmm.v4.content.ListImagesApiResponse",
+            "$reserved": {
+                "$fv": "v4.r3"
+            },
+            "data": {
+                "$objectType": "vmm.v4.error.ErrorResponse",
+                "$reserved": {
+                    "$fv": "v4.r3"
+                },
+                "error": [
+                    {
+                        "$objectType": "vmm.v4.error.AppMessage",
+                        "$reserved": {
+                            "$fv": "v4.r3"
+                        },
+                        "code": "VMM-20506",
+                        "locale": "en_US",
+                        "message": "Failed to perform the operation as the OData parameters provided are invalid.",
+                        "severity": "ERROR"
+                    }
+                ]
+            }
+        },
+        "status": 400
+    }
+}
+
+TASK [List first 2 images only] ************************************************
+ok: [localhost] => {"changed": false, "error": null, "response": [{"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-06-29T12:09:42.590350+00:00", "description": null, "ext_id": "6894187e-0549-4816-8aa6-4aee85ac4dab", "isSharedWithAllProjects": true, "last_update_time": "2026-06-29T12:09:42.590350+00:00", "links": null, "name": "CentOS-7-cloudinit", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 8589934592, "source": null, "tenant_id": null, "type": "DISK_IMAGE"}, {"category_ext_ids": null, "checksum": null, "cluster_location_ext_ids": ["0006555e-4e63-4a5e-185b-ac1f6b6f97e2"], "create_time": "2026-06-29T12:11:52.661835+00:00", "description": null, "ext_id": "7d8e2e7d-d9e4-4d53-be4b-0e93a271b6a2", "isSharedWithAllProjects": true, "last_update_time": "2026-06-29T12:11:52.661835+00:00", "links": null, "name": "Nutanix-VirtIO", "owner_ext_id": "00000000-0000-0000-0000-000000000000", "owner_name": "admin", "placement_policy_status": null, "projectExtId": "00000000-0000-0000-0000-000000000000", "size_bytes": 48695296, "source": null, "tenant_id": null, "type": "ISO_IMAGE"}], "total_available_results": 20}
+
+TASK [Show limited images] *****************************************************
+ok: [localhost] => {
+    "limited_images": {
+        "changed": false,
+        "error": null,
+        "failed": false,
+        "response": [
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-06-29T12:09:42.590350+00:00",
+                "description": null,
+                "ext_id": "6894187e-0549-4816-8aa6-4aee85ac4dab",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-06-29T12:09:42.590350+00:00",
+                "links": null,
+                "name": "CentOS-7-cloudinit",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 8589934592,
+                "source": null,
+                "tenant_id": null,
+                "type": "DISK_IMAGE"
+            },
+            {
+                "category_ext_ids": null,
+                "checksum": null,
+                "cluster_location_ext_ids": [
+                    "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+                ],
+                "create_time": "2026-06-29T12:11:52.661835+00:00",
+                "description": null,
+                "ext_id": "7d8e2e7d-d9e4-4d53-be4b-0e93a271b6a2",
+                "isSharedWithAllProjects": true,
+                "last_update_time": "2026-06-29T12:11:52.661835+00:00",
+                "links": null,
+                "name": "Nutanix-VirtIO",
+                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+                "owner_name": "admin",
+                "placement_policy_status": null,
+                "projectExtId": "00000000-0000-0000-0000-000000000000",
+                "size_bytes": 48695296,
+                "source": null,
+                "tenant_id": null,
+                "type": "ISO_IMAGE"
+            }
+        ],
+        "total_available_results": 20
+    }
+}
+
+TASK [Update the imported image name and description] **************************
+skipping: [localhost] => {"changed": false, "false_condition": "import_result.ext_id is defined", "skip_reason": "Conditional result was False"}
+
+TASK [Show update result] ******************************************************
+ok: [localhost] => {
+    "update_result": {
+        "changed": false,
+        "false_condition": "import_result.ext_id is defined",
+        "skip_reason": "Conditional result was False",
+        "skipped": true
+    }
+}
+
+TASK [Delete the previously imported image] ************************************
+skipping: [localhost] => {"changed": false, "false_condition": "import_result.ext_id is defined", "skip_reason": "Conditional result was False"}
+
+TASK [Show delete result] ******************************************************
+ok: [localhost] => {
+    "delete_result": {
+        "changed": false,
+        "false_condition": "import_result.ext_id is defined",
+        "skip_reason": "Conditional result was False",
+        "skipped": true
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=12   changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=2   
+

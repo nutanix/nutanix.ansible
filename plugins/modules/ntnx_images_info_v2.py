@@ -9,15 +9,15 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
 module: ntnx_images_info_v2
-short_description: Fetch information about Nutanix images
-description:
-  - This module fetches information about Nutanix images.
-  - The module can fetch information about all images or a specific image.
-  - This module uses PC v4 APIs based SDKs
+short_description: Fetch information about Image in Nutanix Prism Central
 version_added: "2.0.0"
-author:
- - Pradeepsingh Bhati (@bhati-pradeep)
+description:
+  - This module allows you to fetch information about Image in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch details of the specific Image.
+  - If C(ext_id) is not provided, list multiple Image optionally filtered / paginated.
+  - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
@@ -43,6 +43,10 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_info_v2
   - nutanix.ncp.ntnx_logger
   - nutanix.ncp.ntnx_proxy_v2
+author:
+ - Pradeepsingh Bhati (@bhati-pradeep)
+ - George Ghawali (@george-ghawali)
+ - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
@@ -52,6 +56,8 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
+  register: result
+  ignore_errors: true
 
 - name: Fetch information about a specific image
   nutanix.ncp.ntnx_images_info_v2:
@@ -60,14 +66,29 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
+  register: result
+  ignore_errors: true
+
+- name: List images with filter
+  nutanix.ncp.ntnx_images_info_v2:
+    filter: "name eq 'my-image'"
+  register: result
+  ignore_errors: true
+
+- name: List images with limit
+  nutanix.ncp.ntnx_images_info_v2:
+    limit: 5
+  register: result
+  ignore_errors: true
 """
 
 
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC Images.
-    - it can be single image or list of image as per spec.
+    - The response from the Nutanix PC Image info v4 API.
+    - It can be a single Image if external ID is provided.
+    - List of multiple Image if external ID is not provided with optional filter or limit.
   type: dict
   returned: always
   sample: {
@@ -93,15 +114,36 @@ response:
             "tenant_id": null,
             "type": "DISK_IMAGE"
         }
+
+changed:
+  description: This indicates whether the task resulted in any changes. Always false for info modules.
+  returned: always
+  type: bool
+  sample: false
+
 error:
   description: The error message if an error occurs.
   type: str
   returned: when an error occurs
+
 msg:
     description: This indicates the message if any message occurred
     returned: When there is an error
     type: str
     sample: "Api Exception raised while fetching images info"
+
+failed:
+    description: This indicates whether the task failed
+    returned: always
+    type: bool
+    sample: false
+
+ext_id:
+    description: External ID of the image.
+    type: str
+    returned: when external ID is provided
+    sample: "172e0d73-74ee-4d05-95f2-1894d83d7e09"
+
 total_available_results:
     description:
         - The total number of available images in PC.
@@ -170,8 +212,10 @@ def get_images(module, result):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        resp = []
+    result["response"] = resp
 
 
 def run_module():

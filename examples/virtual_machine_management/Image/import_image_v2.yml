@@ -1,0 +1,128 @@
+---
+# Summary:
+# This playbook demonstrates the workflow for the Image entity in the
+# virtual_machine_management namespace via the PC v4.2 APIs:
+#
+# 1. Import one or more images that are locally owned by a registered
+#    Prism Element (PE) cluster into the Prism Central (PC) global image
+#    catalog (ntnx_import_image_v2).
+# 2. Fetch information about a specific image via its external ID
+#    (ntnx_images_info_v2).
+# 3. List all images visible to PC (ntnx_images_info_v2).
+# 4. List images with an OData $filter expression (ntnx_images_info_v2).
+# 5. List a limited number of images (ntnx_images_info_v2).
+# 6. Update the previously imported image (ntnx_images_v2 with the ext_id
+#    returned by the import task).
+# 7. Delete the previously imported image (ntnx_images_v2 with the same
+#    ext_id).
+#
+# Prerequisites:
+# - The referenced Prism Element cluster (cluster_ext_id) MUST be registered
+#   to the target Prism Central.
+# - The images identified by images_ext_ids MUST exist on that PE cluster
+#   and NOT already be owned by PC (otherwise the import will fail with
+#   HTTP 400 / VMM-20004).
+
+- name: Image import playbook (virtual_machine_management / Image v4)
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_ext_id: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+        pe_owned_image_ext_ids:
+          - "b9120f28-1222-3333-4444-47f7d5066e91"
+          - "6b34522d-1231-8555-8888-1388aede0a06"
+
+    - name: Import images from a registered Prism Element cluster
+      nutanix.ncp.ntnx_import_image_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        images_ext_ids: "{{ pe_owned_image_ext_ids }}"
+      register: import_result
+      ignore_errors: true
+
+    - name: Show import result
+      ansible.builtin.debug:
+        var: import_result
+
+    - name: Fetch a single image by external ID
+      nutanix.ncp.ntnx_images_info_v2:
+        ext_id: "{{ import_result.ext_id }}"
+      register: image_info
+      ignore_errors: true
+      when:
+        - import_result is defined
+        - import_result.ext_id is defined
+        - import_result.ext_id | length > 0
+
+    - name: Show single image info
+      ansible.builtin.debug:
+        var: image_info
+
+    - name: List all images visible to PC
+      nutanix.ncp.ntnx_images_info_v2:
+      register: all_images
+      ignore_errors: true
+
+    - name: Show list of all images
+      ansible.builtin.debug:
+        var: all_images
+
+    - name: List images filtered by OData filter (DISK_IMAGE only)
+      nutanix.ncp.ntnx_images_info_v2:
+        filter: "type eq Vmm.Config.ImageType'DISK_IMAGE'"
+      register: filtered_images
+      ignore_errors: true
+
+    - name: Show filtered images
+      ansible.builtin.debug:
+        var: filtered_images
+
+    - name: List first 2 images only
+      nutanix.ncp.ntnx_images_info_v2:
+        limit: 2
+      register: limited_images
+      ignore_errors: true
+
+    - name: Show limited images
+      ansible.builtin.debug:
+        var: limited_images
+
+    - name: Update the imported image name and description
+      nutanix.ncp.ntnx_images_v2:
+        state: present
+        ext_id: "{{ import_result.ext_id }}"
+        name: "imported_image_renamed_by_ansible"
+        description: "Renamed via ntnx_images_v2 after import"
+      register: update_result
+      ignore_errors: true
+      when:
+        - import_result is defined
+        - import_result.ext_id is defined
+        - import_result.ext_id | length > 0
+
+    - name: Show update result
+      ansible.builtin.debug:
+        var: update_result
+
+    - name: Delete the previously imported image
+      nutanix.ncp.ntnx_images_v2:
+        state: absent
+        ext_id: "{{ import_result.ext_id }}"
+      register: delete_result
+      ignore_errors: true
+      when:
+        - import_result is defined
+        - import_result.ext_id is defined
+        - import_result.ext_id | length > 0
+
+    - name: Show delete result
+      ansible.builtin.debug:
+        var: delete_result
