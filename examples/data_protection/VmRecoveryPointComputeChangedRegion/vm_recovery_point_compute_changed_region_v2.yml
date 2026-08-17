@@ -1,0 +1,176 @@
+---
+# Summary:
+# This playbook demonstrates the use of the
+# ntnx_vm_recovery_point_compute_changed_region_v2 action module.
+#
+# It will:
+# 1. Create a VM and attach a disk (so that recovery points contain disk
+#    recovery points to compute changed regions against).
+# 2. Take a first (base) recovery point.
+# 3. Take a second (target) recovery point.
+# 4. Compute the "full" changed regions of a disk recovery point (no
+#    reference), which surfaces the allocated (non-zero) regions.
+# 5. Compute the changed regions of the target disk recovery point vs the
+#    base disk recovery point (incremental / CBT metadata).
+# 6. Compute the changed regions with only offset / length window.
+# 7. Clean up all created resources.
+#
+# NOTE ON ROUTING:
+# The VmRecoveryPointComputeChangedRegions API is a *data plane* API and is
+# served by the Prism Element (PE) cluster that owns the recovery point.
+# A production backup client is expected to first call the recovery-point
+# discover-cluster API against Prism Central (PC) to obtain a JWT session
+# token and the PE endpoint hosting the recovery point, then invoke
+# compute-changed-regions against that PE. If this action is invoked
+# directly against PC, PC currently returns HTTP 501 ("NOT IMPLEMENTED").
+# The tasks below use ignore_errors so that in such an environment the
+# cleanup still runs. See examples_run.log for the real API interaction.
+
+- name: VM Recovery Point Compute Changed Regions playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_uuid: "00062899-4a29-0cf9-0000-000000022f54"
+        storage_container_uuid: "44481f83-d0a1-47b3-b9b8-32b5465c622e"
+        vm_name: "ansible_ccr_vm"
+        recovery_point_name_1: "ansible_ccr_rp_1"
+        recovery_point_name_2: "ansible_ccr_rp_2"
+        expiration_time: "2099-01-01T00:00:00+00:00"
+
+    - name: Create a VM to protect
+      nutanix.ncp.ntnx_vms_v2:
+        name: "{{ vm_name }}"
+        description: "VM created for compute changed regions example"
+        cluster:
+          ext_id: "{{ cluster_uuid }}"
+      register: vm_result
+
+    - name: Set VM external identifier
+      ansible.builtin.set_fact:
+        vm_ext_id: "{{ vm_result.ext_id }}"
+
+    - name: Attach a disk to the VM so recovery points include disk recovery points
+      nutanix.ncp.ntnx_vms_disks_v2:
+        state: present
+        vm_ext_id: "{{ vm_ext_id }}"
+        backing_info:
+          vm_disk:
+            disk_size_bytes: 1073741824
+            storage_container:
+              ext_id: "{{ storage_container_uuid }}"
+        disk_address:
+          bus_type: "SCSI"
+          index: 0
+      register: disk_result
+
+    - name: Create the FIRST (base) recovery point
+      nutanix.ncp.ntnx_recovery_points_v2:
+        name: "{{ recovery_point_name_1 }}"
+        expiration_time: "{{ expiration_time }}"
+        recovery_point_type: "CRASH_CONSISTENT"
+        vm_recovery_points:
+          - vm_ext_id: "{{ vm_ext_id }}"
+      register: rp_1
+
+    - name: Set base recovery point identifiers
+      ansible.builtin.set_fact:
+        base_recovery_point_ext_id: "{{ rp_1.response.ext_id }}"
+        base_vm_recovery_point_ext_id: "{{ rp_1.response.vm_recovery_points[0].ext_id }}"
+
+    - name: Fetch the base VM recovery point to obtain its disk recovery point ID
+      nutanix.ncp.ntnx_vm_recovery_point_info_v2:
+        recovery_point_ext_id: "{{ base_recovery_point_ext_id }}"
+        vm_recovery_point_ext_id: "{{ base_vm_recovery_point_ext_id }}"
+      register: base_vm_rp_info
+
+    - name: Set base disk recovery point identifier
+      ansible.builtin.set_fact:
+        base_disk_recovery_point_ext_id: >-
+          {{ base_vm_rp_info.response.disk_recovery_points[0].disk_recovery_point_ext_id }}
+
+    - name: Create the SECOND (target) recovery point
+      nutanix.ncp.ntnx_recovery_points_v2:
+        name: "{{ recovery_point_name_2 }}"
+        expiration_time: "{{ expiration_time }}"
+        recovery_point_type: "CRASH_CONSISTENT"
+        vm_recovery_points:
+          - vm_ext_id: "{{ vm_ext_id }}"
+      register: rp_2
+
+    - name: Set target recovery point identifiers
+      ansible.builtin.set_fact:
+        target_recovery_point_ext_id: "{{ rp_2.response.ext_id }}"
+        target_vm_recovery_point_ext_id: "{{ rp_2.response.vm_recovery_points[0].ext_id }}"
+
+    - name: Fetch the target VM recovery point to obtain its disk recovery point ID
+      nutanix.ncp.ntnx_vm_recovery_point_info_v2:
+        recovery_point_ext_id: "{{ target_recovery_point_ext_id }}"
+        vm_recovery_point_ext_id: "{{ target_vm_recovery_point_ext_id }}"
+      register: target_vm_rp_info
+
+    - name: Set target disk recovery point identifier
+      ansible.builtin.set_fact:
+        target_disk_recovery_point_ext_id: >-
+          {{ target_vm_rp_info.response.disk_recovery_points[0].disk_recovery_point_ext_id }}
+
+    - name: Compute changed regions of a disk recovery point (no reference)
+      nutanix.ncp.ntnx_vm_recovery_point_compute_changed_region_v2:
+        recovery_point_ext_id: "{{ target_recovery_point_ext_id }}"
+        vm_recovery_point_ext_id: "{{ target_vm_recovery_point_ext_id }}"
+        disk_recovery_point_ext_id: "{{ target_disk_recovery_point_ext_id }}"
+      register: full_regions
+      ignore_errors: true
+
+    - name: Compute changed regions of a disk recovery point using a reference (all fields)
+      nutanix.ncp.ntnx_vm_recovery_point_compute_changed_region_v2:
+        recovery_point_ext_id: "{{ target_recovery_point_ext_id }}"
+        vm_recovery_point_ext_id: "{{ target_vm_recovery_point_ext_id }}"
+        disk_recovery_point_ext_id: "{{ target_disk_recovery_point_ext_id }}"
+        offset: 0
+        length: 1073741824
+        block_size_byte: 262144
+        reference_recovery_point_ext_id: "{{ base_recovery_point_ext_id }}"
+        reference_vm_recovery_point_ext_id: "{{ base_vm_recovery_point_ext_id }}"
+        reference_disk_recovery_point_ext_id: "{{ base_disk_recovery_point_ext_id }}"
+      register: incremental_regions
+      ignore_errors: true
+
+    - name: Compute changed regions with only offset / length window
+      nutanix.ncp.ntnx_vm_recovery_point_compute_changed_region_v2:
+        recovery_point_ext_id: "{{ target_recovery_point_ext_id }}"
+        vm_recovery_point_ext_id: "{{ target_vm_recovery_point_ext_id }}"
+        disk_recovery_point_ext_id: "{{ target_disk_recovery_point_ext_id }}"
+        offset: 0
+        length: 1048576
+      register: window_regions
+      ignore_errors: true
+
+    - name: Delete second recovery point
+      nutanix.ncp.ntnx_recovery_points_v2:
+        state: absent
+        ext_id: "{{ target_recovery_point_ext_id }}"
+      register: rp_2_delete
+      ignore_errors: true
+
+    - name: Delete first recovery point
+      nutanix.ncp.ntnx_recovery_points_v2:
+        state: absent
+        ext_id: "{{ base_recovery_point_ext_id }}"
+      register: rp_1_delete
+      ignore_errors: true
+
+    - name: Delete VM
+      nutanix.ncp.ntnx_vms_v2:
+        state: absent
+        ext_id: "{{ vm_ext_id }}"
+      register: vm_delete
+      ignore_errors: true
