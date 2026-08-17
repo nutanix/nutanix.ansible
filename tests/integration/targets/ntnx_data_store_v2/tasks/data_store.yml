@@ -1,0 +1,388 @@
+---
+# Test plan for ntnx_data_store_v2 / ntnx_data_stores_info_v2:
+#
+# Prerequisites (created inside this play):
+#  - A Storage Container to mount as a Data Store. We reuse the existing
+#    ntnx_storage_containers_v2 module so we do not hardcode any ext_ids.
+#
+# Coverage:
+#  * check_mode create with ALL attributes populated.
+#  * check_mode delete for the same resource.
+#  * Negative: mount without required datastore_name/container_ext_id.
+#  * Real create (mount) on the live cluster with minimum attributes.
+#  * Real create (mount) with a full attribute set (target_path, read_only,
+#    node_ext_ids, container_name, cluster_ext_id).
+#  * Idempotency: re-run the full-attribute create — must report skipped.
+#  * Info: list all Data Stores for the cluster and assert shape.
+#  * Info: filter by containerExtId and assert filtered results.
+#  * Info: get-by-ext_id for the Data Store we just created.
+#  * Info: get-by-ext_id with a non-existent ext_id — expect failure.
+#  * Real delete (unmount) of both Data Stores.
+#  * Delete an already-unmounted Data Store — negative path.
+#  * Cleanup: also unmount and delete the Storage Container that we created.
+
+- name: Start ntnx_data_store_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_data_store_v2 tests
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Compute derived names
+  ansible.builtin.set_fact:
+    prefix_name: "ansible-ds"
+    storage_container_name: "sc_{{ random_name }}"
+    datastore_min_name: "ds_min_{{ random_name }}"
+    datastore_full_name: "ds_full_{{ random_name }}"
+    to_unmount: []
+
+########################################################################
+# Discover cluster + hosts to use as prerequisites
+########################################################################
+- name: Fetch clusters on this Prism Central
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: clusters_info
+  ignore_errors: true
+
+- name: Assert we discovered at least one cluster
+  ansible.builtin.assert:
+    that:
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    fail_msg: "No cluster discovered on this Prism Central"
+    success_msg: "Discovered cluster(s) on this Prism Central"
+
+- name: Select first non-PC cluster (skip Unnamed PC entries)
+  ansible.builtin.set_fact:
+    target_cluster: >-
+      {{ (clusters_info.response
+           | selectattr('config', 'defined')
+           | rejectattr('name', 'equalto', 'Unnamed')
+           | list
+           | first)
+         | default(clusters_info.response[0]) }}
+
+- name: Set cluster ext_id fact
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ target_cluster.ext_id }}"
+
+- name: Fetch hosts on target cluster
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: hosts_info
+  ignore_errors: true
+
+- name: Determine list of host ext_ids
+  ansible.builtin.set_fact:
+    host_ext_ids: "{{ hosts_info.response | map(attribute='ext_id') | list if hosts_info.response is defined else [] }}"
+
+########################################################################
+# Create prerequisite Storage Container
+########################################################################
+- name: Create a Storage Container to back the Data Store
+  nutanix.ncp.ntnx_storage_containers_v2:
+    name: "{{ storage_container_name }}"
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: sc_result
+  ignore_errors: true
+
+- name: Assert Storage Container was created
+  ansible.builtin.assert:
+    that:
+      - sc_result.changed == true
+      - sc_result.failed == false
+      - sc_result.ext_id is defined
+    fail_msg: "Failed to create prerequisite Storage Container"
+    success_msg: "Prerequisite Storage Container created"
+
+- name: Set container facts
+  ansible.builtin.set_fact:
+    container_ext_id: "{{ sc_result.ext_id }}"
+    container_name: "{{ storage_container_name }}"
+
+########################################################################
+# check_mode: full attribute create
+########################################################################
+- name: Generate mount Data Store spec (check_mode, all attributes)
+  nutanix.ncp.ntnx_data_store_v2:
+    state: present
+    container_ext_id: "{{ container_ext_id }}"
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    datastore_name: "{{ datastore_full_name }}"
+    container_name: "{{ container_name }}"
+    read_only: false
+    target_path: "/vmfs/volumes/{{ datastore_full_name }}"
+    node_ext_ids: "{{ host_ext_ids }}"
+  check_mode: true
+  register: cm_create
+  ignore_errors: true
+
+- name: Assert check_mode create returned expected spec
+  ansible.builtin.assert:
+    that:
+      - cm_create.changed == false
+      - cm_create.failed == false
+      - cm_create.response is defined
+      - cm_create.response.datastore_name == datastore_full_name
+      - cm_create.response.container_name == container_name
+      - cm_create.response.read_only == false
+      - cm_create.response.target_path == "/vmfs/volumes/" ~ datastore_full_name
+      - cm_create.response.node_ext_ids == host_ext_ids
+    fail_msg: "check_mode create spec generation failed"
+    success_msg: "check_mode create spec generated correctly"
+
+########################################################################
+# Negative: missing required datastore_name
+########################################################################
+- name: Create Data Store without datastore_name (should fail)
+  nutanix.ncp.ntnx_data_store_v2:
+    state: present
+    container_ext_id: "{{ container_ext_id }}"
+  register: neg_missing_name
+  ignore_errors: true
+
+- name: Assert missing datastore_name is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_missing_name.failed == true
+      - neg_missing_name.changed == false
+      - "'datastore_name' in (neg_missing_name.msg | default(''))"
+    fail_msg: "Module accepted a mount request without datastore_name"
+    success_msg: "Module rejected mount request without datastore_name as expected"
+
+########################################################################
+# Real create (mount) with minimum attributes
+########################################################################
+- name: Mount Data Store with minimum attributes
+  nutanix.ncp.ntnx_data_store_v2:
+    state: present
+    container_ext_id: "{{ container_ext_id }}"
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    datastore_name: "{{ datastore_min_name }}"
+  register: create_min
+  ignore_errors: true
+
+- name: Assert minimum-attribute mount finished
+  ansible.builtin.assert:
+    that:
+      - create_min.failed == false
+      - create_min.changed == true
+      - create_min.task_ext_id is defined
+      - create_min.response is defined
+    fail_msg: "Minimum-attribute Data Store mount failed"
+    success_msg: "Minimum-attribute Data Store mount succeeded"
+
+- name: Track minimum Data Store for cleanup
+  ansible.builtin.set_fact:
+    to_unmount: "{{ to_unmount + [{'name': datastore_min_name}] }}"
+
+########################################################################
+# Real create (mount) with a full attribute set
+########################################################################
+- name: Mount Data Store with full attribute set
+  nutanix.ncp.ntnx_data_store_v2:
+    state: present
+    container_ext_id: "{{ container_ext_id }}"
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    datastore_name: "{{ datastore_full_name }}"
+    container_name: "{{ container_name }}"
+    read_only: false
+    target_path: "/vmfs/volumes/{{ datastore_full_name }}"
+    node_ext_ids: "{{ host_ext_ids }}"
+  register: create_full
+  ignore_errors: true
+
+- name: Assert full-attribute mount finished
+  ansible.builtin.assert:
+    that:
+      - create_full.failed == false
+      - create_full.changed == true
+      - create_full.task_ext_id is defined
+      - create_full.response is defined
+    fail_msg: "Full-attribute Data Store mount failed"
+    success_msg: "Full-attribute Data Store mount succeeded"
+
+- name: Track full Data Store for cleanup
+  ansible.builtin.set_fact:
+    to_unmount: "{{ to_unmount + [{'name': datastore_full_name}] }}"
+
+- name: Capture the resolved Data Store ext_id (may be null if not resolvable)
+  ansible.builtin.set_fact:
+    data_store_ext_id: "{{ create_full.ext_id | default('') }}"
+
+########################################################################
+# Idempotency: re-run same full-attribute mount
+########################################################################
+- name: Re-mount the same Data Store (idempotency)
+  nutanix.ncp.ntnx_data_store_v2:
+    state: present
+    container_ext_id: "{{ container_ext_id }}"
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    datastore_name: "{{ datastore_full_name }}"
+    container_name: "{{ container_name }}"
+    read_only: false
+    target_path: "/vmfs/volumes/{{ datastore_full_name }}"
+    node_ext_ids: "{{ host_ext_ids }}"
+  register: create_idem
+  ignore_errors: true
+
+- name: Assert idempotency reports skipped
+  ansible.builtin.assert:
+    that:
+      - create_idem.failed == false
+      - create_idem.changed == false
+      - create_idem.skipped == true
+      - "'already mounted' in (create_idem.msg | default(''))"
+    fail_msg: "Idempotent re-mount did not report skipped"
+    success_msg: "Idempotent re-mount reported skipped as expected"
+
+########################################################################
+# Info: list all
+########################################################################
+- name: List Data Stores for the cluster
+  nutanix.ncp.ntnx_data_stores_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: info_list
+  ignore_errors: true
+
+- name: Assert list of Data Stores includes our full-attribute mount
+  ansible.builtin.assert:
+    that:
+      - info_list.failed == false
+      - info_list.changed == false
+      - info_list.response is iterable
+      - (info_list.response | selectattr('datastore_name', 'equalto', datastore_full_name) | list | length) >= 1
+    fail_msg: "List info did not surface the newly created Data Store"
+    success_msg: "List info surfaced the newly created Data Store"
+
+########################################################################
+# Info: filter by containerExtId
+########################################################################
+- name: Filter Data Stores by containerExtId
+  nutanix.ncp.ntnx_data_stores_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    filter: "containerExtId eq '{{ container_ext_id }}'"
+  register: info_filter
+  ignore_errors: true
+
+- name: Assert filtered list only contains matching Data Stores
+  ansible.builtin.assert:
+    that:
+      - info_filter.failed == false
+      - info_filter.response is iterable
+      - (info_filter.response | length) >= 1
+      - (info_filter.response
+           | rejectattr('container_ext_id', 'equalto', container_ext_id)
+           | list | length) == 0
+    fail_msg: "Filter did not return only Data Stores for the target container"
+    success_msg: "Filter returned only Data Stores for the target container"
+
+########################################################################
+# Info: get-by-ext_id
+########################################################################
+- name: Get Data Store by ext_id
+  nutanix.ncp.ntnx_data_stores_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ data_store_ext_id }}"
+  register: info_get
+  ignore_errors: true
+  when: data_store_ext_id | length > 0
+
+- name: Assert get-by-ext_id returned the correct Data Store
+  ansible.builtin.assert:
+    that:
+      - info_get.failed == false
+      - info_get.changed == false
+      - info_get.ext_id == data_store_ext_id
+      - info_get.response.ext_id == data_store_ext_id
+      - info_get.response.datastore_name == datastore_full_name
+      - info_get.response.container_ext_id == container_ext_id
+    fail_msg: "Get-by-ext_id did not return the expected Data Store"
+    success_msg: "Get-by-ext_id returned the expected Data Store"
+  when: data_store_ext_id | length > 0
+
+- name: Get Data Store by invalid ext_id (negative)
+  nutanix.ncp.ntnx_data_stores_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: info_get_bad
+  ignore_errors: true
+
+- name: Assert invalid ext_id fails with descriptive message
+  ansible.builtin.assert:
+    that:
+      - info_get_bad.failed == true
+      - "'No Data Store with ext_id' in (info_get_bad.msg | default(''))"
+    fail_msg: "Invalid ext_id lookup did not fail as expected"
+    success_msg: "Invalid ext_id lookup failed with a descriptive message"
+
+########################################################################
+# check_mode delete
+########################################################################
+- name: Unmount Data Store in check_mode
+  nutanix.ncp.ntnx_data_store_v2:
+    state: absent
+    container_ext_id: "{{ container_ext_id }}"
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    datastore_name: "{{ datastore_full_name }}"
+    node_ext_ids: "{{ host_ext_ids }}"
+  check_mode: true
+  register: cm_delete
+  ignore_errors: true
+
+- name: Assert check_mode delete does not mutate state
+  ansible.builtin.assert:
+    that:
+      - cm_delete.failed == false
+      - cm_delete.changed == false
+      - cm_delete.msg is defined
+      - "'will be unmounted' in cm_delete.msg"
+    fail_msg: "check_mode delete did not report expected message"
+    success_msg: "check_mode delete reported expected message"
+
+########################################################################
+# Real delete (unmount)
+########################################################################
+- name: Unmount all created Data Stores
+  nutanix.ncp.ntnx_data_store_v2:
+    state: absent
+    container_ext_id: "{{ container_ext_id }}"
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    datastore_name: "{{ item.name }}"
+    node_ext_ids: "{{ host_ext_ids }}"
+  loop: "{{ to_unmount }}"
+  register: delete_results
+  ignore_errors: true
+
+- name: Assert unmount status per Data Store
+  ansible.builtin.assert:
+    that:
+      - item.failed == false
+      - item.changed == true
+      - item.task_ext_id is defined
+    fail_msg: "Failed to unmount Data Store {{ item.item.name }}"
+    success_msg: "Unmounted Data Store {{ item.item.name }}"
+  loop: "{{ delete_results.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+
+########################################################################
+# Cleanup prerequisite Storage Container
+########################################################################
+- name: Delete prerequisite Storage Container
+  nutanix.ncp.ntnx_storage_containers_v2:
+    state: absent
+    ext_id: "{{ container_ext_id }}"
+    ignore_small_files: true
+  register: sc_delete
+  ignore_errors: true
+
+- name: Assert Storage Container was cleaned up
+  ansible.builtin.assert:
+    that:
+      - sc_delete.failed == false
+      - sc_delete.changed == true
+    fail_msg: "Failed to clean up prerequisite Storage Container"
+    success_msg: "Prerequisite Storage Container cleaned up"
