@@ -1,0 +1,97 @@
+---
+- name: Recovery Plan action operations (data_protection v4)
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username | default(omit) }}"
+      nutanix_password: "{{ password | default(omit) }}"
+      nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    # NOTE:
+    #   * Failover actions must be initiated on the TARGET/DESTINATION Prism Central,
+    #     otherwise the API returns an error.
+    #   * The Recovery Plan referenced by `ext_id` must already exist. This module
+    #     only performs action operations against an existing Recovery Plan.
+    #   * `recovery_plan_ext_id`, source/target PC/cluster IDs must be replaced with
+    #     real values from your environment.
+
+    - name: Validate a Recovery Plan
+      nutanix.ncp.ntnx_recovery_plan_v2:
+        ext_id: "{{ recovery_plan_ext_id }}"
+        action: VALIDATE
+        name: "recovery_plan_validate_job"
+        failover_directions:
+          - source_domain_manager_ext_id: "{{ source_pc_ext_id }}"
+            source_cluster:
+              ext_id: "{{ source_cluster_ext_id }}"
+            target_domain_manager_ext_id: "{{ target_pc_ext_id }}"
+            target_cluster:
+              ext_id: "{{ target_cluster_ext_id }}"
+      register: validate_result
+      ignore_errors: true
+
+    - name: Trigger a Test Failover of a Recovery Plan
+      nutanix.ncp.ntnx_recovery_plan_v2:
+        ext_id: "{{ recovery_plan_ext_id }}"
+        action: TEST_FAILOVER
+        name: "recovery_plan_test_failover_job"
+        should_ignore_warnings: true
+        is_instant_restore: false
+        failover_directions:
+          - source_domain_manager_ext_id: "{{ source_pc_ext_id }}"
+            source_cluster:
+              ext_id: "{{ source_cluster_ext_id }}"
+            target_domain_manager_ext_id: "{{ target_pc_ext_id }}"
+            target_cluster:
+              ext_id: "{{ target_cluster_ext_id }}"
+      register: test_failover_result
+      ignore_errors: true
+
+    - name: Trigger a Planned Failover of a Recovery Plan
+      nutanix.ncp.ntnx_recovery_plan_v2:
+        ext_id: "{{ recovery_plan_ext_id }}"
+        action: PLANNED_FAILOVER
+        name: "recovery_plan_planned_failover_job"
+        should_ignore_warnings: false
+        should_live_migrate_vms: true
+        post_failover_behaviour:
+          should_pause_protection: false
+        failover_directions:
+          - source_domain_manager_ext_id: "{{ source_pc_ext_id }}"
+            source_cluster:
+              ext_id: "{{ source_cluster_ext_id }}"
+            target_domain_manager_ext_id: "{{ target_pc_ext_id }}"
+            target_cluster:
+              ext_id: "{{ target_cluster_ext_id }}"
+      register: planned_failover_result
+      ignore_errors: true
+
+    - name: Trigger an Unplanned Failover of a Recovery Plan
+      nutanix.ncp.ntnx_recovery_plan_v2:
+        ext_id: "{{ recovery_plan_ext_id }}"
+        action: UNPLANNED_FAILOVER
+        name: "recovery_plan_unplanned_failover_job"
+        should_ignore_warnings: true
+        is_instant_restore: true
+        recovery_reference_time: "2024-01-02T03:04:05Z"
+        post_failover_behaviour:
+          should_pause_protection: true
+        failover_directions:
+          - source_domain_manager_ext_id: "{{ source_pc_ext_id }}"
+            source_cluster:
+              ext_id: "{{ source_cluster_ext_id }}"
+            target_domain_manager_ext_id: "{{ target_pc_ext_id }}"
+            target_cluster:
+              ext_id: "{{ target_cluster_ext_id }}"
+      register: unplanned_failover_result
+      ignore_errors: true
+
+    - name: Cleanup resources from the last Recovery Plan execution
+      nutanix.ncp.ntnx_recovery_plan_v2:
+        ext_id: "{{ recovery_plan_ext_id }}"
+        action: CLEANUP
+      register: cleanup_result
+      ignore_errors: true
