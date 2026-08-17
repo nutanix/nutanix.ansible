@@ -1,0 +1,139 @@
+---
+# Summary:
+# This playbook exercises the Nutanix Files MountTarget v4 modules end-to-end.
+#   1. List file servers (discover the parent file_server_ext_id).
+#   2. Create an SMB mount target with all supported attributes.
+#   3. Update the mount target (change description, size, previous-version settings).
+#   4. Fetch the mount target by ext_id.
+#   5. List all mount targets on the parent file server.
+#   6. List mount targets with a filter.
+#   7. List mount targets with a limit.
+#   8. Delete the mount target.
+
+- name: Nutanix Files MountTarget playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.44.76.28"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        mount_target_name: "ansible_mt_example"
+        mount_target_updated_desc: "Mount target updated by Ansible example"
+
+    - name: List file servers to discover file_server_ext_id
+      nutanix.ncp.ntnx_files_mount_targets_info_v2:
+        file_server_ext_id: "00000000-0000-0000-0000-000000000000"
+      register: fs_probe
+      ignore_errors: true
+
+    - name: Set file_server_ext_id fact (edit for your environment)
+      ansible.builtin.set_fact:
+        file_server_ext_id: "9c1e537d-6777-4c22-5d41-ddd0c3337aa9"
+
+    - name: Create an SMB mount target with all attributes
+      nutanix.ncp.ntnx_files_mount_target_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        name: "{{ mount_target_name }}"
+        description: "Mount target created by Ansible example"
+        type: "GENERAL"
+        protocol: "SMB"
+        secondary_protocol:
+          - "NFS"
+        max_size_gb: 100
+        is_compression_enabled: true
+        is_previous_version_enabled: true
+        is_long_name_enabled: true
+        is_snapshot_paused: false
+        workload_type: "DEFAULT"
+        blocked_file_extensions:
+          - "exe"
+          - "bat"
+        smb_properties:
+          is_access_based_enumeration_enabled: true
+          is_smb3_encryption_enabled: true
+          is_ca_enabled: false
+        nfs_properties:
+          authentication_type: "SYSTEM"
+          squash_type: "ROOT_SQUASH"
+          access_type: "READ_WRITE"
+          anonymous_identifier:
+            uid: -2
+            gid: -2
+          client_exceptions:
+            - access_type: "READ_ONLY"
+              squash_type: "NONE"
+              clients: "10.0.0.0/8"
+        multi_protocol_properties:
+          is_case_sensitive_namespace_enabled: false
+          is_symlink_creation_enabled: true
+          is_simultaneous_access_enabled: true
+        worm_spec:
+          worm_type: "DISABLED"
+          cooloff_interval_seconds: 3600
+          retention_period_seconds: 86400
+          is_compliance_enabled: false
+          is_legal_hold_enabled: false
+      register: created
+      # Sample: <Need to add sample>
+
+    - name: Update the mount target (all fields)
+      nutanix.ncp.ntnx_files_mount_target_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ created.ext_id }}"
+        name: "{{ mount_target_name }}"
+        description: "{{ mount_target_updated_desc }}"
+        max_size_gb: 200
+        is_compression_enabled: true
+        is_previous_version_enabled: true
+        is_long_name_enabled: true
+        is_snapshot_paused: true
+        blocked_file_extensions:
+          - "exe"
+        smb_properties:
+          is_access_based_enumeration_enabled: false
+          is_smb3_encryption_enabled: false
+          is_ca_enabled: true
+      register: updated
+      # Sample: <Need to add sample>
+
+    - name: Get mount target by ext_id
+      nutanix.ncp.ntnx_files_mount_targets_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ created.ext_id }}"
+      register: fetched
+      # Sample: <Need to add sample>
+
+    - name: List all mount targets on the file server
+      nutanix.ncp.ntnx_files_mount_targets_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: listed
+      # Sample: <Need to add sample>
+
+    - name: List mount targets with filter
+      nutanix.ncp.ntnx_files_mount_targets_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        filter: "name eq '{{ mount_target_name }}'"
+      register: filtered
+      # Sample: <Need to add sample>
+
+    - name: List mount targets with limit
+      nutanix.ncp.ntnx_files_mount_targets_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        limit: 1
+      register: limited
+      # Sample: <Need to add sample>
+
+    - name: Delete the mount target
+      nutanix.ncp.ntnx_files_mount_target_v2:
+        state: absent
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        ext_id: "{{ created.ext_id }}"
+      register: deleted
+      # Sample: <Need to add sample>
