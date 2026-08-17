@@ -53,7 +53,7 @@ options:
     type: str
   priv_type:
     description:
-      - Priv type.
+      - SNMP user encryption type.
     type: str
     choices: ['DES', 'AES', 'AES192', 'AES256']
   priv_key:
@@ -237,7 +237,7 @@ def get_module_spec():
     return module_args
 
 
-def create_snmp_user(module, result, snmp_users, snmp_config_api):
+def create_snmp_user(module, result, snmp_users):
     validate_required_params(module, ["username", "auth_type", "auth_key"])
     cluster_ext_id = module.params.get("cluster_ext_id")
     result["cluster_ext_id"] = cluster_ext_id
@@ -270,7 +270,7 @@ def create_snmp_user(module, result, snmp_users, snmp_config_api):
         wait_for_completion(module, task_ext_id)
         # Fetch full config, then locally filter down to the created user.
         # This avoids returning the whole config in result.response.
-        resp = get_snmp_config(module, snmp_config_api, cluster_ext_id)
+        resp = get_snmp_config(module, snmp_users, cluster_ext_id)
         config = strip_internal_attributes(resp.to_dict())
 
         username = module.params.get("username")
@@ -307,7 +307,7 @@ def check_snmp_user_idempotency(old_spec, update_spec):
     return True
 
 
-def update_snmp_user(module, result, snmp_users, snmp_config_api):
+def update_snmp_user(module, result, snmp_users):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
     cluster_ext_id = module.params.get("cluster_ext_id")
@@ -362,7 +362,7 @@ def update_snmp_user(module, result, snmp_users, snmp_config_api):
     result["changed"] = True
 
 
-def delete_snmp_user(module, result, snmp_users, snmp_config_api):
+def delete_snmp_user(module, result, snmp_users):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
     cluster_ext_id = module.params.get("cluster_ext_id")
@@ -399,7 +399,6 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
-            ("state", "present", ("username", "auth_type", "auth_key")),
             ("state", "absent", ("ext_id",)),
         ],
     )
@@ -422,11 +421,11 @@ def run_module():
     state = module.params["state"]
     if state == "present":
         if module.params.get("ext_id"):
-            update_snmp_user(module, result, api_instance, api_instance)
+            update_snmp_user(module, result, api_instance)
         else:
-            create_snmp_user(module, result, api_instance, api_instance)
+            create_snmp_user(module, result, api_instance)
     else:
-        delete_snmp_user(module, result, api_instance, api_instance)
+        delete_snmp_user(module, result, api_instance)
     module.exit_json(**result)
 
 

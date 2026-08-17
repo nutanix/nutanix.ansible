@@ -529,6 +529,33 @@
     success_msg: "Verify SNMP user update idempotency succeeded"
 
 ##################################################
+# SNMP User - Update with one attribute
+##################################################
+
+- name: Update SNMP user with one attribute
+  nutanix.ncp.ntnx_snmp_user_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ to_delete_users[1] }}"
+    auth_type: SHA
+  ignore_errors: true
+  register: result
+
+- name: Verify update SNMP user with one attribute
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.cluster_ext_id == "{{ cluster_ext_id }}"
+      - result.ext_id == to_delete_users[1]
+      - result.response.username == snmp_username_all
+      - result.response.auth_type == "SHA"
+      - result.response.priv_type == "DES"
+      - result.task_ext_id is defined
+    fail_msg: "Failed to verify update SNMP user with one attribute"
+    success_msg: "Verify update SNMP user with one attribute succeeded"
+
+##################################################
 # SNMP Trap V2 - Check Mode Create
 ##################################################
 
@@ -729,6 +756,34 @@
       - result.msg == "Nothing to change."
     fail_msg: "Failed to verify SNMP V2 trap idempotency"
     success_msg: "Verify SNMP V2 trap idempotency succeeded"
+
+##################################################
+# SNMP Trap - Update with one attribute
+##################################################
+
+- name: Update SNMP V2 trap with one attribute
+  nutanix.ncp.ntnx_snmp_trap_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ trap_v2_ext_id }}"
+    version: V2
+  ignore_errors: true
+  register: result
+
+- name: Verify update SNMP V2 trap with one attribute
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == trap_v2_ext_id
+      - result.task_ext_id is defined
+      - result.response.version == "V2"
+      - result.response.protocol == test_trap_protocol_v2
+      - result.response.port == trap_v2_port | int
+      - result.response.address.ipv4.value == trap_v2_ip
+      - result.response.username == snmp_username_min
+    fail_msg: "Failed to update SNMP V2 trap with one attribute"
+    success_msg: "SNMP V2 trap updated with one attribute successfully"
 
 ##################################################
 # SNMP User - Delete Check Mode

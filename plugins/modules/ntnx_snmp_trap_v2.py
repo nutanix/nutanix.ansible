@@ -38,7 +38,7 @@ options:
   address:
     description:
       - SNMP trap receiver address.
-      - Required for creating or updating SNMP trap.
+      - Required for creating SNMP trap.
     type: dict
     suboptions:
       ipv4:
@@ -97,7 +97,7 @@ options:
   version:
     description:
       - SNMP version for the trap.
-      - Required for creating or updating SNMP trap.
+      - Required for creating SNMP trap.
     type: str
     choices: ['V2', 'V3']
   reciever_name:
@@ -524,7 +524,6 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
-            ("state", "present", ("address", "version")),
             ("state", "absent", ("ext_id",)),
             ("version", "V3", ("username",)),
         ],
