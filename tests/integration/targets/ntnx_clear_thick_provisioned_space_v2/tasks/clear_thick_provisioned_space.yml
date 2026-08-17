@@ -1,0 +1,180 @@
+---
+# Variables required before running this playbook (declared in
+# prepare_env/vars/main.yml or the integration_config.yml):
+# - cluster.uuid  (Prism Element cluster UUID that will host the temporary
+#                  storage container prerequisite for these tests)
+#
+# Test plan:
+#   1. Idempotency / spec checks
+#        1.1  check_mode on ClearThickProvisionedSpace  (dry run — full spec)
+#        1.2  invalid ext_id                            (negative)
+#        1.3  missing ext_id                            (negative, argument spec)
+#   2. Real end-to-end
+#        2.1  create a fresh storage container as a prerequisite
+#        2.2  clear thick provisioned space with only the required ext_id
+#        2.3  clear thick provisioned space with x_cluster_id set (routing header)
+#   3. Cleanup
+#        3.1  delete the storage container created above
+
+- name: Start ntnx_clear_thick_provisioned_space_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_clear_thick_provisioned_space_v2 tests
+
+- name: Set random name for the temporary storage container
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set prefix name
+  ansible.builtin.set_fact:
+    prefix_name: ansible-ctps
+
+- name: Set storage container name
+  ansible.builtin.set_fact:
+    storage_container_name: "{{ prefix_name }}-{{ random_name }}"
+
+################################################################################
+# 1. Negative / spec-only checks (do not require a real storage container)
+################################################################################
+
+- name: Trigger clear thick provisioned space in check_mode with all attributes
+  nutanix.ncp.ntnx_clear_thick_provisioned_space_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    x_cluster_id: "00000000-0000-0000-0000-000000000002"
+  register: check_mode_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify check_mode did not perform any change
+  ansible.builtin.assert:
+    that:
+      - check_mode_result.changed == false
+      - check_mode_result.failed == false
+      - check_mode_result.ext_id == "00000000-0000-0000-0000-000000000001"
+      - check_mode_result.msg is defined
+      - "'Clear thick provisioned space will be triggered' in check_mode_result.msg"
+      - "'00000000-0000-0000-0000-000000000001' in check_mode_result.msg"
+    fail_msg: "check_mode did not behave as expected for ClearThickProvisionedSpace"
+    success_msg: "check_mode returned the expected message without hitting the API"
+
+- name: Attempt clear thick provisioned space without ext_id
+  nutanix.ncp.ntnx_clear_thick_provisioned_space_v2:
+    state: present
+  register: missing_ext_id_result
+  ignore_errors: true
+
+- name: Verify missing ext_id is rejected by the argument spec
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_result.failed == true
+      - missing_ext_id_result.changed == false
+      - missing_ext_id_result.msg is defined
+      - "'ext_id' in missing_ext_id_result.msg"
+    fail_msg: "Argument-spec validation did not reject missing ext_id"
+    success_msg: "Argument-spec validation correctly rejected missing ext_id"
+
+- name: Attempt clear thick provisioned space with a non-existent ext_id
+  nutanix.ncp.ntnx_clear_thick_provisioned_space_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: invalid_ext_id_result
+  ignore_errors: true
+
+- name: Verify invalid ext_id returns an API error (not silent success)
+  ansible.builtin.assert:
+    that:
+      - invalid_ext_id_result.changed == false
+      - invalid_ext_id_result.failed == true
+      - invalid_ext_id_result.msg is defined
+    fail_msg: "Module did not fail on non-existent storage container ext_id"
+    success_msg: "Module correctly surfaced the API error for an unknown ext_id"
+
+################################################################################
+# 2. Real end-to-end run against a freshly created storage container
+################################################################################
+
+- name: Create prerequisite storage container for clear thick provisioned space
+  nutanix.ncp.ntnx_storage_containers_v2:
+    state: present
+    name: "{{ storage_container_name }}"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    logical_advertised_capacity_bytes: 107374182400
+  register: create_container_result
+  ignore_errors: true
+
+- name: Verify prerequisite storage container was created
+  ansible.builtin.assert:
+    that:
+      - create_container_result.changed == true
+      - create_container_result.failed == false
+      - create_container_result.ext_id is defined
+      - create_container_result.response.name == storage_container_name
+    fail_msg: "Prerequisite storage container was not created; cannot proceed with clear thick provisioned space tests"
+    success_msg: "Prerequisite storage container created successfully"
+
+- name: Capture prerequisite storage container ext_id
+  ansible.builtin.set_fact:
+    ctps_container_ext_id: "{{ create_container_result.ext_id }}"
+
+- name: Clear thick provisioned space using only ext_id
+  nutanix.ncp.ntnx_clear_thick_provisioned_space_v2:
+    state: present
+    ext_id: "{{ ctps_container_ext_id }}"
+  register: clear_result
+  ignore_errors: true
+
+- name: Verify clear thick provisioned space succeeded
+  ansible.builtin.assert:
+    that:
+      - clear_result.changed == true
+      - clear_result.failed == false
+      - clear_result.ext_id == ctps_container_ext_id
+      - clear_result.task_ext_id is defined
+      - clear_result.response is defined
+      - clear_result.response.status == 'SUCCEEDED'
+      - clear_result.response.entities_affected is defined
+      - clear_result.response.entities_affected | length > 0
+      - clear_result.response.entities_affected[0].ext_id == ctps_container_ext_id
+      - clear_result.response.entities_affected[0].rel == "clustermgmt:config:storage-containers"
+    fail_msg: "ClearThickProvisionedSpace did not complete successfully"
+    success_msg: "ClearThickProvisionedSpace completed successfully on the storage container"
+
+- name: Clear thick provisioned space again with x_cluster_id header set
+  nutanix.ncp.ntnx_clear_thick_provisioned_space_v2:
+    state: present
+    ext_id: "{{ ctps_container_ext_id }}"
+    x_cluster_id: "{{ cluster.uuid }}"
+  register: clear_result_with_x_cluster
+  ignore_errors: true
+
+- name: Verify clear thick provisioned space works with x_cluster_id
+  ansible.builtin.assert:
+    that:
+      - clear_result_with_x_cluster.changed == true
+      - clear_result_with_x_cluster.failed == false
+      - clear_result_with_x_cluster.ext_id == ctps_container_ext_id
+      - clear_result_with_x_cluster.task_ext_id is defined
+      - clear_result_with_x_cluster.response.status == 'SUCCEEDED'
+    fail_msg: "ClearThickProvisionedSpace with x_cluster_id did not complete successfully"
+    success_msg: "ClearThickProvisionedSpace with x_cluster_id completed successfully"
+
+################################################################################
+# 3. Cleanup — remove the temporary storage container
+################################################################################
+
+- name: Delete the temporary storage container
+  nutanix.ncp.ntnx_storage_containers_v2:
+    state: absent
+    ext_id: "{{ ctps_container_ext_id }}"
+    ignore_small_files: true
+  register: delete_container_result
+  ignore_errors: true
+
+- name: Verify the temporary storage container was cleaned up
+  ansible.builtin.assert:
+    that:
+      - delete_container_result.changed == true
+      - delete_container_result.failed == false
+      - delete_container_result.ext_id == ctps_container_ext_id
+    fail_msg: "Failed to clean up the temporary storage container"
+    success_msg: "Temporary storage container cleaned up successfully"
