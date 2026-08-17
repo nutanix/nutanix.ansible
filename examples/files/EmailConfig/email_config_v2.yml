@@ -1,0 +1,48 @@
+---
+# Summary:
+# This playbook demonstrates the Nutanix Files EmailConfig v4 modules.
+#
+# The email configuration is a singleton per file server (identified by
+# file_server_ext_id) that defines the subject and content used by the quota
+# notification workflow. It only supports read (info) and update operations,
+# it cannot be created or deleted independently.
+#
+# This playbook will:
+# 1. Fetch the current email configuration of a file server.
+# 2. Update the email configuration of a file server (subject and content).
+# 3. Fetch the updated email configuration of the file server.
+
+- name: Nutanix Files EmailConfig playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.44.76.28"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        file_server_ext_id: "1f4f80e2-2b1f-4f9a-8d3c-1a2b3c4d5e6f"
+
+    - name: Fetch the current email configuration of a file server
+      nutanix.ncp.ntnx_files_email_configs_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update the email configuration of a file server
+      nutanix.ncp.ntnx_files_email_config_v2:
+        state: present
+        file_server_ext_id: "{{ file_server_ext_id }}"
+        subject: "Quota notification for your file server share"
+        content: "You have exceeded the storage quota configured for your share. Please free up space."
+      register: result
+      ignore_errors: true
+
+    - name: Fetch the updated email configuration of the file server
+      nutanix.ncp.ntnx_files_email_configs_info_v2:
+        file_server_ext_id: "{{ file_server_ext_id }}"
+      register: result
+      ignore_errors: true
