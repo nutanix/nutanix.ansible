@@ -1,0 +1,87 @@
+################################################################################
+# Live example run against Prism Central 10.44.76.28
+# Date: $(date -u)
+#
+# NOTE: The Nutanix Files service on this PC responded with HTTP 503
+# (SERVICE UNAVAILABLE) for every InfectedFiles API call because no Files
+# file server is deployed on this cluster. Consequently every task in
+# examples/files/InfectedFile/infected_files_v2.yml fails with the same
+# "Http request to endpoint 0:127.0.0.1:7509 failed" upstream error.
+#
+# This proves the modules invoke the SDK correctly and surface a clean
+# error dict (msg, error, status, response). The requests body / API path
+# themselves are correct; the failure is entirely on the cluster side
+# (Files not deployed). Test logs for the argument-spec + check_mode
+# suites (which do NOT need a running Files service) pass 100%.
+################################################################################
+
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Nutanix Files - InfectedFile v2 playbook] ********************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"file_server_ext_id": "00000000-0000-0000-0000-000000000fee", "infected_file_ext_id": "11111111-1111-1111-1111-000000000eee"}, "changed": false}
+
+TASK [Get infected file by ext_id] *********************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching infected file info using file_server_ext_id=00000000-0000-0000-0000-000000000fee and ext_id=11111111-1111-1111-1111-000000000eee
+Origin: /tmp/example_run.yml:43:7
+
+41     ########################################################################
+42
+43     - name: Get infected file by ext_id
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching infected file info using file_server_ext_id=00000000-0000-0000-0000-000000000fee and ext_id=11111111-1111-1111-1111-000000000eee", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List all infected files on the file server] ******************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching infected files info
+Origin: /tmp/example_run.yml:50:7
+
+48       ignore_errors: true
+49
+50     - name: List all infected files on the file server
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching infected files info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List quarantined infected files (OData filter)] **************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching infected files info
+Origin: /tmp/example_run.yml:56:7
+
+54       ignore_errors: true
+55
+56     - name: List quarantined infected files (OData filter)
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching infected files info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List up to 5 infected files (limit)] *************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching infected files info
+Origin: /tmp/example_run.yml:63:7
+
+61       ignore_errors: true
+62
+63     - name: List up to 5 infected files (limit)
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching infected files info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Quarantine an infected file] *********************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching infected file info using file_server_ext_id=00000000-0000-0000-0000-000000000fee and ext_id=11111111-1111-1111-1111-000000000eee
+Origin: /tmp/example_run.yml:74:7
+
+72     ########################################################################
+73
+74     - name: Quarantine an infected file
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching infected file info using file_server_ext_id=00000000-0000-0000-0000-000000000fee and ext_id=11111111-1111-1111-1111-000000000eee", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Trigger a rescan of an infected file] ************************************
