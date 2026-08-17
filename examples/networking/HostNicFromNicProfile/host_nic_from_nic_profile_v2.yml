@@ -1,0 +1,62 @@
+---
+# Summary:
+# This playbook demonstrates the Host NIC from NIC Profile action and info modules
+# It will do:
+# 1. Fetch the HostNicFromNicProfile info for a specific NIC Profile using ext_id
+# 2. List all HostNicFromNicProfile entries (all NIC Profiles) with optional filter / limit
+# 3. Disassociate a Host NIC from a NIC Profile
+#
+# NOTE:
+# - The associate operation (used to seed the profile before disassociation) is
+#   not part of this collection; run it out of band via the NIC Profile v4 API,
+#   Prism UI, or a Nutanix orchestration workflow before running the disassociate
+#   task below.
+# - Replace <pc_ip>, <user>, <pass>, <nic_profile_ext_id>, and <host_nic_ext_id>
+#   with values from your cluster before running.
+
+- name: HostNicFromNicProfile playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        nic_profile_ext_id: "<nic_profile_ext_id>"
+        host_nic_ext_id: "<host_nic_ext_id>"
+        nic_profile_name: "nic_profile_ansible"
+
+    - name: Get HostNicFromNicProfile info using NIC Profile ext_id
+      nutanix.ncp.ntnx_host_nic_from_nic_profiles_info_v2:
+        ext_id: "{{ nic_profile_ext_id }}"
+      register: get_info_result
+      ignore_errors: true
+
+    - name: List all HostNicFromNicProfile entries
+      nutanix.ncp.ntnx_host_nic_from_nic_profiles_info_v2:
+      register: list_info_result
+      ignore_errors: true
+
+    - name: List HostNicFromNicProfile filtered by NIC Profile name
+      nutanix.ncp.ntnx_host_nic_from_nic_profiles_info_v2:
+        filter: "name eq '{{ nic_profile_name }}'"
+      register: filter_info_result
+      ignore_errors: true
+
+    - name: List HostNicFromNicProfile with a limit
+      nutanix.ncp.ntnx_host_nic_from_nic_profiles_info_v2:
+        limit: 1
+      register: limit_info_result
+      ignore_errors: true
+
+    - name: Disassociate Host NIC from NIC Profile
+      nutanix.ncp.ntnx_disassociate_host_nic_from_nic_profile_v2:
+        state: present
+        ext_id: "{{ nic_profile_ext_id }}"
+        host_nic_ext_id: "{{ host_nic_ext_id }}"
+      register: disassociate_result
+      ignore_errors: true
