@@ -1,0 +1,61 @@
+---
+# Examples for the Nutanix Files MountTargetStat entity.
+#
+# MountTargetStat is a read-only statistics datasource. The v4 Files API only
+# exposes a single "get mount target statistics" operation, so there are no
+# create / update / delete operations for this entity. The examples below
+# therefore cover every supported operation: fetching a mount target's
+# statistics (minimal and with all optional attributes) using both the stats
+# module and the info module.
+#
+# Both modules require the parent file server external ID, the mount target
+# external ID and a reporting time window (start_time / end_time).
+- name: Nutanix Files MountTargetStat examples
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: 10.44.76.28
+      nutanix_username: admin
+      nutanix_password: Nutanix.123
+      validate_certs: false
+  tasks:
+    - name: Fetch mount target stats with minimal attributes
+      nutanix.ncp.ntnx_mount_target_stat_v2:
+        file_server_ext_id: 5f1e537d-6777-4c22-5d41-ddd0c3337aa9
+        ext_id: 9c1e537d-6777-4c22-5d41-ddd0c3337aa9
+        start_time: "2024-07-31T12:41:56.955Z"
+        end_time: "2025-07-31T12:41:56.955Z"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch mount target stats with all attributes
+      nutanix.ncp.ntnx_mount_target_stat_v2:
+        file_server_ext_id: 5f1e537d-6777-4c22-5d41-ddd0c3337aa9
+        ext_id: 9c1e537d-6777-4c22-5d41-ddd0c3337aa9
+        start_time: "2024-07-31T12:41:56.955Z"
+        end_time: "2025-07-31T12:41:56.955Z"
+        sampling_interval: 30
+        stat_type: AVG
+      register: result
+      ignore_errors: true
+
+    - name: Fetch mount target stats info with minimal attributes
+      nutanix.ncp.ntnx_files_mount_target_stats_info_v2:
+        file_server_ext_id: 5f1e537d-6777-4c22-5d41-ddd0c3337aa9
+        ext_id: 9c1e537d-6777-4c22-5d41-ddd0c3337aa9
+        start_time: "2024-07-31T12:41:56.955Z"
+        end_time: "2025-07-31T12:41:56.955Z"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch mount target stats info with all attributes
+      nutanix.ncp.ntnx_files_mount_target_stats_info_v2:
+        file_server_ext_id: 5f1e537d-6777-4c22-5d41-ddd0c3337aa9
+        ext_id: 9c1e537d-6777-4c22-5d41-ddd0c3337aa9
+        start_time: "2024-07-31T12:41:56.955Z"
+        end_time: "2025-07-31T12:41:56.955Z"
+        sampling_interval: 30
+        stat_type: AVG
+      register: result
+      ignore_errors: true

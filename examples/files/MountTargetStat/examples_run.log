@@ -1,0 +1,57 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Nutanix Files MountTargetStat examples] **********************************
+
+TASK [Fetch mount target stats with minimal attributes] ************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching mount target stats for mount target ext_id: 9c1e537d-6777-4c22-5d41-ddd0c3337aa9 on file server ext_id: 5f1e537d-6777-4c22-5d41-ddd0c3337aa9
+Origin: /tmp/codegen/552c12d829c44115aba95a8098921cd1/repo/examples/files/MountTargetStat/mount_target_stats_v2.yml:23:7
+
+21       validate_certs: false
+22   tasks:
+23     - name: Fetch mount target stats with minimal attributes
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching mount target stats for mount target ext_id: 9c1e537d-6777-4c22-5d41-ddd0c3337aa9 on file server ext_id: 5f1e537d-6777-4c22-5d41-ddd0c3337aa9", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Fetch mount target stats with all attributes] ****************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching mount target stats for mount target ext_id: 9c1e537d-6777-4c22-5d41-ddd0c3337aa9 on file server ext_id: 5f1e537d-6777-4c22-5d41-ddd0c3337aa9
+Origin: /tmp/codegen/552c12d829c44115aba95a8098921cd1/repo/examples/files/MountTargetStat/mount_target_stats_v2.yml:32:7
+
+30       ignore_errors: true
+31
+32     - name: Fetch mount target stats with all attributes
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching mount target stats for mount target ext_id: 9c1e537d-6777-4c22-5d41-ddd0c3337aa9 on file server ext_id: 5f1e537d-6777-4c22-5d41-ddd0c3337aa9", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Fetch mount target stats info with minimal attributes] *******************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching mount target stats for mount target ext_id: 9c1e537d-6777-4c22-5d41-ddd0c3337aa9 on file server ext_id: 5f1e537d-6777-4c22-5d41-ddd0c3337aa9
+Origin: /tmp/codegen/552c12d829c44115aba95a8098921cd1/repo/examples/files/MountTargetStat/mount_target_stats_v2.yml:43:7
+
+41       ignore_errors: true
+42
+43     - name: Fetch mount target stats info with minimal attributes
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching mount target stats for mount target ext_id: 9c1e537d-6777-4c22-5d41-ddd0c3337aa9 on file server ext_id: 5f1e537d-6777-4c22-5d41-ddd0c3337aa9", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Fetch mount target stats info with all attributes] ***********************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching mount target stats for mount target ext_id: 9c1e537d-6777-4c22-5d41-ddd0c3337aa9 on file server ext_id: 5f1e537d-6777-4c22-5d41-ddd0c3337aa9
+Origin: /tmp/codegen/552c12d829c44115aba95a8098921cd1/repo/examples/files/MountTargetStat/mount_target_stats_v2.yml:52:7
+
+50       ignore_errors: true
+51
+52     - name: Fetch mount target stats info with all attributes
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching mount target stats for mount target ext_id: 9c1e537d-6777-4c22-5d41-ddd0c3337aa9 on file server ext_id: 5f1e537d-6777-4c22-5d41-ddd0c3337aa9", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=4   
+
