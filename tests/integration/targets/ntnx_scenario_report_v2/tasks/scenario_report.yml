@@ -1,0 +1,307 @@
+---
+# Integration tests for the AIOps ScenarioReport modules.
+#
+# Test plan
+# =========
+# 1. Negative / spec-validation tests that never need a real scenario:
+#    - Missing required scenario_ext_id on the action module (must fail spec check).
+#    - Missing required scenario_ext_id on the info module (must fail spec check).
+#    - Invalid state on the action module (must fail spec check).
+#    - Invalid scenario_ext_id on the action module (must fail with API exception).
+#    - Invalid scenario_ext_id on the info module (must fail with API exception).
+#
+# 2. check_mode dry-run tests (never touch the API):
+#    - action module in check_mode returns a "would be triggered" message.
+#
+# 3. Live end-to-end tests when a capacity planning scenario is available on
+#    the target Prism Central. We first probe the /scenarios list endpoint via
+#    the ansible ``ansible.builtin.uri`` module (there is no v2 scenarios info
+#    module in this collection yet). If a scenario is present we:
+#       - trigger report generation (action module) and assert the task-level
+#         return fields.
+#       - fetch the generated report via the info module (no ``dest``) and
+#         verify the returned local path really exists and is a non-empty PDF.
+#       - fetch the report again with a ``dest`` and verify the copy landed at
+#         that exact path.
+#       - re-run the info module (idempotency for info modules: still no
+#         change, still returns a file).
+#    Whenever no scenario is available we log a skip note and continue so the
+#    negative + check-mode coverage still runs on any cluster.
+
+- name: Start Nutanix AIOps ScenarioReport tests
+  ansible.builtin.debug:
+    msg: Start Nutanix AIOps ScenarioReport tests
+
+- name: Generate random suffix for unique artifacts
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=true, special=false, upper=false, length=10)[0] }}"
+
+- name: Set expected local paths for the downloaded reports
+  ansible.builtin.set_fact:
+    report_dest_dir: "/tmp/ntnx_scenario_report_{{ random_suffix }}"
+    report_dest_path: "/tmp/ntnx_scenario_report_{{ random_suffix }}/report.pdf"
+    invalid_scenario_ext_id: "00000000-0000-0000-0000-000000000000"
+
+# =====================================================================
+# Section 1 - spec-validation negatives (do not require live cluster)
+# =====================================================================
+
+- name: Generate report with missing scenario_ext_id (must fail spec validation)
+  nutanix.ncp.ntnx_scenario_report_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Assert generate report with missing scenario_ext_id failed as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'missing required arguments: scenario_ext_id' in result.msg"
+    success_msg: "Missing scenario_ext_id was rejected by spec validation as expected"
+    fail_msg: "Missing scenario_ext_id was NOT rejected by spec validation"
+
+- name: Generate report with invalid state value (must fail spec validation)
+  nutanix.ncp.ntnx_scenario_report_v2:
+    scenario_ext_id: "{{ invalid_scenario_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Assert generate report with invalid state failed as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of state must be one of: present' in result.msg"
+    success_msg: "Invalid state value was rejected by spec validation as expected"
+    fail_msg: "Invalid state value was NOT rejected by spec validation"
+
+- name: Fetch report with missing scenario_ext_id (must fail spec validation)
+  nutanix.ncp.ntnx_scenario_reports_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Assert fetch report with missing scenario_ext_id failed as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'missing required arguments: scenario_ext_id' in result.msg"
+    success_msg: "Missing scenario_ext_id was rejected on the info module as expected"
+    fail_msg: "Missing scenario_ext_id was NOT rejected on the info module"
+
+# =====================================================================
+# Section 2 - check_mode dry-run
+# =====================================================================
+
+- name: Generate scenario report in check_mode (must NOT call the API)
+  nutanix.ncp.ntnx_scenario_report_v2:
+    scenario_ext_id: "{{ invalid_scenario_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode dry-run returned an informational message
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == invalid_scenario_ext_id
+      - result.task_ext_id is none
+      - "'would be triggered' in result.msg"
+    success_msg: "check_mode dry-run for generate-report behaved as expected"
+    fail_msg: "check_mode dry-run for generate-report did NOT behave as expected"
+
+# =====================================================================
+# Section 3 - negatives that hit the live API (bad scenario ext_id)
+# =====================================================================
+
+- name: Generate report with a non-existent scenario ext_id (should fail via API)
+  nutanix.ncp.ntnx_scenario_report_v2:
+    scenario_ext_id: "{{ invalid_scenario_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert generate report with a non-existent scenario ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Generate report with a non-existent scenario ext_id failed as expected"
+    fail_msg: "Generate report with a non-existent scenario ext_id did NOT fail as expected"
+
+- name: Fetch report with a non-existent scenario ext_id (should fail via API)
+  nutanix.ncp.ntnx_scenario_reports_info_v2:
+    scenario_ext_id: "{{ invalid_scenario_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert fetch report with a non-existent scenario ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Fetch report with a non-existent scenario ext_id failed as expected"
+    fail_msg: "Fetch report with a non-existent scenario ext_id did NOT fail as expected"
+
+# =====================================================================
+# Section 4 - live end-to-end flow (only when a scenario is available)
+# =====================================================================
+
+- name: Discover an existing capacity planning scenario (list via raw v4 API)
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:{{ port | default(9440) }}/api/aiops/v4.0/config/scenarios?$limit=1"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs | default(false) }}"
+    status_code: [200, 401, 403, 404, 500]
+    return_content: true
+    body_format: json
+  register: scenarios_probe
+  ignore_errors: true
+
+- name: Extract scenario_ext_id from the probe response when the API responded 200
+  ansible.builtin.set_fact:
+    live_scenario_ext_id: >-
+      {{ (scenarios_probe.json.data | default([]) | first).extId
+         | default((scenarios_probe.json.data | default([]) | first).ext_id | default(''), true) }}
+  when:
+    - scenarios_probe is defined
+    - scenarios_probe.status is defined
+    - scenarios_probe.status == 200
+    - scenarios_probe.json is defined
+    - scenarios_probe.json.data is defined
+    - scenarios_probe.json.data | length > 0
+
+- name: Report scenario discovery result
+  ansible.builtin.debug:
+    msg: >-
+      Discovered scenario_ext_id={{ live_scenario_ext_id | default('<none>') }}
+      (probe status={{ scenarios_probe.status | default('unknown') }})
+
+- name: Live end-to-end block (only runs when a scenario is available)
+  when:
+    - live_scenario_ext_id is defined
+    - live_scenario_ext_id | length > 0
+  block:
+    - name: Trigger report generation for the discovered scenario
+      nutanix.ncp.ntnx_scenario_report_v2:
+        scenario_ext_id: "{{ live_scenario_ext_id }}"
+      register: generate_result
+      ignore_errors: true
+
+    - name: Assert report generation task returned expected fields
+      ansible.builtin.assert:
+        that:
+          - generate_result is defined
+          - generate_result.failed == false
+          - generate_result.changed == true
+          - generate_result.ext_id == live_scenario_ext_id
+          - generate_result.task_ext_id is defined
+          - generate_result.task_ext_id | length > 0
+          - generate_result.response is defined
+          - generate_result.response.status == "SUCCEEDED"
+        success_msg: "Scenario report generation task succeeded"
+        fail_msg: "Scenario report generation task did NOT return the expected fields"
+
+    - name: Fetch generated report (no dest)
+      nutanix.ncp.ntnx_scenario_reports_info_v2:
+        scenario_ext_id: "{{ live_scenario_ext_id }}"
+      register: fetch_result
+      ignore_errors: true
+
+    - name: Stat the temporary report path returned by the SDK
+      ansible.builtin.stat:
+        path: "{{ fetch_result.report_file_path }}"
+      register: fetch_stat
+      when:
+        - fetch_result is defined
+        - not fetch_result.failed
+        - fetch_result.report_file_path is defined
+
+    - name: Assert fetch (no dest) returned a real PDF on disk
+      ansible.builtin.assert:
+        that:
+          - fetch_result is defined
+          - fetch_result.failed == false
+          - fetch_result.changed == false
+          - fetch_result.ext_id == live_scenario_ext_id
+          - fetch_result.response is defined
+          - fetch_result.response.content_type == "application/pdf"
+          - fetch_result.response.report_file_path is defined
+          - fetch_result.report_file_path == fetch_result.response.report_file_path
+          - fetch_stat.stat.exists == true
+          - fetch_stat.stat.size > 0
+        success_msg: "Report was downloaded to a temporary path successfully"
+        fail_msg: "Report was NOT downloaded to a temporary path"
+
+    - name: Ensure the destination directory does not exist yet
+      ansible.builtin.file:
+        path: "{{ report_dest_dir }}"
+        state: absent
+
+    - name: Fetch generated report and copy it to a stable dest
+      nutanix.ncp.ntnx_scenario_reports_info_v2:
+        scenario_ext_id: "{{ live_scenario_ext_id }}"
+        dest: "{{ report_dest_path }}"
+      register: fetch_dest_result
+      ignore_errors: true
+
+    - name: Stat the stable destination path
+      ansible.builtin.stat:
+        path: "{{ report_dest_path }}"
+      register: dest_stat
+
+    - name: Assert fetch (with dest) copied the report to the exact requested path
+      ansible.builtin.assert:
+        that:
+          - fetch_dest_result is defined
+          - fetch_dest_result.failed == false
+          - fetch_dest_result.changed == false
+          - fetch_dest_result.ext_id == live_scenario_ext_id
+          - fetch_dest_result.report_file_path == report_dest_path
+          - fetch_dest_result.response.report_file_path == report_dest_path
+          - fetch_dest_result.response.content_type == "application/pdf"
+          - dest_stat.stat.exists == true
+          - dest_stat.stat.size > 0
+        success_msg: "Report was copied to the requested destination path"
+        fail_msg: "Report was NOT copied to the requested destination path"
+
+    - name: Re-fetch report (idempotency for info module - still returns file, still unchanged)
+      nutanix.ncp.ntnx_scenario_reports_info_v2:
+        scenario_ext_id: "{{ live_scenario_ext_id }}"
+      register: refetch_result
+      ignore_errors: true
+
+    - name: Assert re-fetching the report is idempotent
+      ansible.builtin.assert:
+        that:
+          - refetch_result is defined
+          - refetch_result.failed == false
+          - refetch_result.changed == false
+          - refetch_result.report_file_path is defined
+          - refetch_result.response.content_type == "application/pdf"
+        success_msg: "Re-fetching the report is idempotent"
+        fail_msg: "Re-fetching the report was NOT idempotent"
+
+    - name: Clean up destination directory
+      ansible.builtin.file:
+        path: "{{ report_dest_dir }}"
+        state: absent
+
+- name: Note when no scenario is available on the target cluster
+  ansible.builtin.debug:
+    msg: >-
+      No capacity planning scenario is available on the target Prism Central,
+      so the live end-to-end flow was skipped. Negative and check_mode
+      coverage still ran.
+  when:
+    - live_scenario_ext_id is not defined or (live_scenario_ext_id | default('') | length == 0)
