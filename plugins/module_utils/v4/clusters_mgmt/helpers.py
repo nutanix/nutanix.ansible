@@ -71,6 +71,62 @@ def get_storage_container(module, api_instance, ext_id):
         )
 
 
+def list_data_stores_by_cluster_id(module, api_instance, cluster_ext_id, **kwargs):
+    """
+    This method will return the list of datastores associated with a cluster.
+
+    Datastores in Nutanix map to Storage Containers that have been mounted as
+    NFS datastores on the ESXi hosts of the cluster. This helper wraps the
+    SDK method ``list_data_stores_by_cluster_id`` and centralises error
+    handling so that callers only have to consume the returned API response.
+
+    Args:
+        module: Ansible module.
+        api_instance: StorageContainersApi instance from the SDK.
+        cluster_ext_id (str): The external identifier of the cluster whose
+            datastores should be listed.
+        **kwargs: Optional query parameters (e.g. ``_page``, ``_limit``,
+            ``_filter``) supported by the SDK method.
+    Returns:
+        The raw SDK response object exposing ``.data`` (list of DataStore)
+        and ``.metadata`` (pagination metadata).
+    """
+    try:
+        return api_instance.list_data_stores_by_cluster_id(
+            clusterExtId=cluster_ext_id, **kwargs
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while listing datastores for cluster with ext_id: {0}".format(
+                cluster_ext_id
+            ),
+        )
+
+
+def find_data_store_by_name(module, api_instance, cluster_ext_id, datastore_name):
+    """
+    This method returns the DataStore dict matching ``datastore_name`` inside
+    the cluster identified by ``cluster_ext_id``. Returns ``None`` when no
+    such datastore is currently mounted on the cluster.
+
+    Args:
+        module: Ansible module.
+        api_instance: StorageContainersApi instance from the SDK.
+        cluster_ext_id (str): The external identifier of the cluster.
+        datastore_name (str): The name of the datastore to look up.
+    Returns:
+        The matching DataStore SDK object, or ``None`` if not found.
+    """
+    resp = list_data_stores_by_cluster_id(module, api_instance, cluster_ext_id)
+    data_stores = getattr(resp, "data", None) or []
+    for data_store in data_stores:
+        if getattr(data_store, "datastore_name", None) == datastore_name:
+            return data_store
+    return None
+
+
 def get_ssl_certificates(module, api_instance, ext_id):
     """
     This method will return SSL certificate info using external ID.

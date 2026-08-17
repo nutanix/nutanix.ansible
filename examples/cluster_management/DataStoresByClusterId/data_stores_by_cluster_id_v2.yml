@@ -1,0 +1,91 @@
+---
+# Summary:
+# This playbook demonstrates managing NFS datastores exposed to VMware ESXi
+# hosts of a Nutanix cluster using the v4 cluster management APIs.
+# It covers:
+#   1. Mounting a Storage Container as an NFS datastore on ESXi node(s)
+#      (state=present, create).
+#   2. Listing all datastores of a cluster (info module).
+#   3. Listing datastores of a cluster with an OData filter.
+#   4. Listing datastores of a cluster with a limit.
+#   5. Fetching a datastore by the parent Storage Container ext_id.
+#   6. Unmounting the datastore from ESXi node(s) (state=absent, delete).
+#
+# Prerequisites:
+#   * A Nutanix cluster running VMware ESXi as the hypervisor.
+#   * An existing Storage Container to be mounted as a datastore.
+#   * Proper RBAC permissions (Prism Admin / Storage Admin / Super Admin).
+#
+# NOTE: `nutanix_host`, `nutanix_username`, `nutanix_password`, and
+# `validate_certs` are declared once via the play-level
+# `module_defaults` block (per reviewer guidance) so individual tasks do
+# not repeat connection parameters.
+
+- name: DataStoresByClusterId (mount / unmount / info) playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.44.76.28"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    - name: Set example variables
+      ansible.builtin.set_fact:
+        cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+        storage_container_ext_id: "547c01c4-19c2-4293-8a9c-43441c18d0c7"
+        datastore_name: "ansible_datastore"
+        container_name: "ansible_container"
+        node_ext_ids:
+          - "f28e7475-f835-42ef-ac35-ecbc48d5421e"
+
+    - name: Mount a Storage Container as an NFS datastore on ESXi hosts (create)
+      nutanix.ncp.ntnx_data_stores_by_cluster_id_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ storage_container_ext_id }}"
+        datastore_name: "{{ datastore_name }}"
+        container_name: "{{ container_name }}"
+        node_ext_ids: "{{ node_ext_ids }}"
+        is_read_only: false
+        target_path: "/vmfs/volumes/{{ datastore_name }}"
+      register: mount_result
+      ignore_errors: true
+
+    - name: List all datastores of the cluster
+      nutanix.ncp.ntnx_cluster_data_stores_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: list_all_result
+      ignore_errors: true
+
+    - name: List datastores of the cluster with an OData filter
+      nutanix.ncp.ntnx_cluster_data_stores_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        filter: "datastoreName eq '{{ datastore_name }}'"
+      register: list_filter_result
+      ignore_errors: true
+
+    - name: List datastores of the cluster with a limit
+      nutanix.ncp.ntnx_cluster_data_stores_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        limit: 1
+      register: list_limit_result
+      ignore_errors: true
+
+    - name: Fetch a datastore of the cluster by parent Storage Container ext_id
+      nutanix.ncp.ntnx_cluster_data_stores_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ storage_container_ext_id }}"
+      register: fetch_by_ext_id_result
+      ignore_errors: true
+
+    - name: Unmount the datastore from ESXi hosts (delete)
+      nutanix.ncp.ntnx_data_stores_by_cluster_id_v2:
+        state: absent
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ storage_container_ext_id }}"
+        datastore_name: "{{ datastore_name }}"
+        node_ext_ids: "{{ node_ext_ids }}"
+      register: unmount_result
+      ignore_errors: true
