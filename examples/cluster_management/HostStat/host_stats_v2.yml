@@ -1,0 +1,80 @@
+---
+# Summary:
+# This playbook demonstrates using the HostStat modules to fetch time-series
+# host statistics from Nutanix Prism Central using the v4 API.
+#
+# It shows every operation supported by the two generated modules:
+#
+#   1. Discover a Prism Element cluster (registered under Prism Central).
+#   2. Discover a host in that cluster.
+#   3. Fetch stats for that single host using ntnx_host_stat_v2 (all attributes).
+#   4. Fetch stats for that single host using ntnx_host_stats_info_v2 (all attributes).
+#   5. Fetch stats for every host in the cluster using ntnx_host_stats_info_v2.
+#
+# There are no create / update / delete operations because the underlying v4
+# stats endpoint (GetHostStats) is read-only.
+
+- name: HostStat playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('<user>', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('<pass>', true) }}"
+      validate_certs: false
+  tasks:
+    - name: Set stats reporting window (last hour, ISO-8601 UTC)
+      ansible.builtin.set_fact:
+        stats_start_time: "{{ lookup('pipe', 'date -u -d \"1 hour ago\" +%Y-%m-%dT%H:%M:%SZ') }}"
+        stats_end_time: "{{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ') }}"
+
+    - name: Fetch the Prism Element cluster registered to Prism Central
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+        limit: 1
+      register: clusters_info
+
+    - name: Set cluster ext_id
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters_info.response[0].ext_id }}"
+
+    - name: List hosts in the cluster
+      nutanix.ncp.ntnx_hosts_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: hosts_info
+
+    - name: Set host ext_id
+      ansible.builtin.set_fact:
+        host_ext_id: "{{ hosts_info.response[0].ext_id }}"
+
+    - name: Fetch host stats via ntnx_host_stat_v2 with all optional attributes
+      nutanix.ncp.ntnx_host_stat_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ host_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+        sampling_interval: 30
+        stat_type: "AVG"
+        select: "controllerNumIops,hypervisorCpuUsagePpm,overallMemoryUsagePpm"
+      register: single_host_stats
+
+    - name: Fetch host stats via ntnx_host_stats_info_v2 with all optional attributes
+      nutanix.ncp.ntnx_host_stats_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ host_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+        sampling_interval: 30
+        stat_type: "AVG"
+        select: "controllerNumIops,hypervisorCpuUsagePpm,overallMemoryUsagePpm"
+      register: single_host_stats_info
+
+    - name: Fetch host stats for every host in the cluster
+      nutanix.ncp.ntnx_host_stats_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+        sampling_interval: 60
+        stat_type: "AVG"
+      register: cluster_host_stats
