@@ -66,3 +66,25 @@ def get_lcm_entity(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching entity info using external identifier of the entity",
         )
+
+
+def get_upgrade_selection(module, api_instance, ext_id):
+    """
+    This method fetches details of a single LCM Upgrade Selection using its external id.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LCM UpgradeSelections api instance
+        ext_id (str): External id of the LCM Upgrade Selection
+    Returns:
+        upgrade_selection (object): LCM Upgrade Selection SDK object
+    """
+    try:
+        return api_instance.get_upgrade_selection_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM upgrade selection with ext_id: {0}".format(
+                ext_id
+            ),
+        )

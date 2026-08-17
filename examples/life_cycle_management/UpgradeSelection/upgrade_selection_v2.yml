@@ -1,0 +1,118 @@
+---
+# Summary:
+# This playbook demonstrates the LCM Upgrade Selection v4 module:
+# 1. Perform LCM inventory (prerequisite - populates available upgrade candidates).
+# 2. Discover an LCM entity that has at least one available version.
+# 3. Create an LCM upgrade selection for that entity.
+# 4. Fetch the created upgrade selection by ext_id.
+# 5. List all upgrade selections, then filter/limit examples.
+# 6. Export the upgrade selection (generates darksite download_helper.zip).
+# 7. Delete the upgrade selection.
+#
+# Notes:
+#  - An LCM Upgrade Selection is IMMUTABLE - the underlying API does not expose an
+#    update endpoint. Passing state=present with ext_id without export=true will
+#    result in a skipped/no-op with a descriptive message.
+
+- name: LCM Upgrade Selection v4 playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', True) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', True) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', True) }}"
+      validate_certs: false
+  tasks:
+    - name: Perform LCM inventory (prerequisite)
+      nutanix.ncp.ntnx_lcm_inventory_v2:
+      register: inventory_result
+      ignore_errors: true
+
+    - name: List LCM entities that have at least one available version
+      nutanix.ncp.ntnx_lcm_entities_info_v2:
+      register: entities_info
+      ignore_errors: true
+
+    - name: Pick the first upgradable entity for the selection
+      ansible.builtin.set_fact:
+        target_entity_uuid: "{{ upgradable[0].ext_id }}"
+        target_entity_version: "{{ upgradable[0].available_versions[0].version }}"
+      vars:
+        upgradable: >-
+          {{ (entities_info.response | default([]))
+             | selectattr('available_versions', 'defined')
+             | selectattr('available_versions', 'ne', none)
+             | rejectattr('available_versions', 'equalto', [])
+             | list }}
+      when:
+        - entities_info.response is defined
+        - entities_info.response | length > 0
+        - upgradable | length > 0
+
+    - name: Create an LCM upgrade selection
+      nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
+        state: present
+        selected_upgrades:
+          - entity_uuid: "{{ target_entity_uuid }}"
+            to_version: "{{ target_entity_version }}"
+      register: create_result
+      when: target_entity_uuid is defined
+      ignore_errors: true
+
+    - name: Capture the created selection ext_id
+      ansible.builtin.set_fact:
+        upgrade_selection_ext_id: "{{ create_result.ext_id }}"
+      when:
+        - create_result is defined
+        - create_result.ext_id is defined
+        - create_result.ext_id | length > 0
+
+    - name: Get the created upgrade selection by ext_id
+      nutanix.ncp.ntnx_lcm_upgrade_selections_info_v2:
+        ext_id: "{{ upgrade_selection_ext_id }}"
+      register: get_result
+      when: upgrade_selection_ext_id is defined
+      ignore_errors: true
+
+    - name: List all LCM upgrade selections
+      nutanix.ncp.ntnx_lcm_upgrade_selections_info_v2:
+      register: list_result
+      ignore_errors: true
+
+    - name: List LCM upgrade selections with a filter on status
+      nutanix.ncp.ntnx_lcm_upgrade_selections_info_v2:
+        filter: "status eq 'UPGRADE_READY'"
+      register: filter_result
+      ignore_errors: true
+
+    - name: List LCM upgrade selections with a limit
+      nutanix.ncp.ntnx_lcm_upgrade_selections_info_v2:
+        limit: 1
+      register: limit_result
+      ignore_errors: true
+
+    - name: Export the LCM upgrade selection (download helper zip)
+      nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
+        state: present
+        ext_id: "{{ upgrade_selection_ext_id }}"
+        export: true
+      register: export_result
+      when: upgrade_selection_ext_id is defined
+      ignore_errors: true
+
+    - name: Attempt to update - immutable resource returns skipped
+      nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
+        state: present
+        ext_id: "{{ upgrade_selection_ext_id }}"
+      register: skipped_update_result
+      when: upgrade_selection_ext_id is defined
+      ignore_errors: true
+
+    - name: Delete the LCM upgrade selection
+      nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
+        state: absent
+        ext_id: "{{ upgrade_selection_ext_id }}"
+      register: delete_result
+      when: upgrade_selection_ext_id is defined
+      ignore_errors: true

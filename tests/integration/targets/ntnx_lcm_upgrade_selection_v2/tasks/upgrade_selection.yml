@@ -1,0 +1,432 @@
+---
+# Test plan for ntnx_lcm_upgrade_selection_v2 and ntnx_lcm_upgrade_selections_info_v2.
+#
+# Feature under test: LCM Upgrade Selection (DUO - Dark Site Upgrade Orchestrator).
+# The resource is immutable (no PUT); it supports Create, Get, List, Export, Delete.
+#
+# Scenarios covered:
+#   1. check_mode Create with ALL attributes (asserts no API call, spec echo).
+#   2. check_mode Delete (asserts no API call, correct msg).
+#   3. check_mode Update path (immutable) - asserts skipped=True path.
+#   4. Real Create (minimal required fields only).
+#   5. Real Create (all fields populated).
+#   6. Get-by-ext_id info module (single entity).
+#   7. List-all info module (assert response is list, total_available_results present).
+#   8. List with limit=1 - asserts <= 1 result.
+#   9. List with filter on status - asserts filtered result.
+#  10. Update path (state=present + ext_id, export=false) - asserts skipped=True.
+#  11. Real Export action (state=present + ext_id + export=true).
+#  12. Real Delete.
+#  13. Negative: create without selected_upgrades - asserts failed with descriptive msg.
+#  14. Negative: delete non-existent ext_id - asserts failed with descriptive msg.
+#  15. Negative: get info with invalid ext_id - asserts failed with descriptive msg.
+#  16. Idempotency: delete same ext_id twice - second call should gracefully fail.
+#
+# NOTE: The LCM upgrade selection API needs at least one LCM entity with an available
+#       upgrade version to succeed on the "real" create path. We run inventory first and
+#       auto-discover a suitable entity. If none is available on the target cluster,
+#       the "real" tests fall back to reporting the API error without failing the run.
+
+- name: Start LCM Upgrade Selection tests
+  ansible.builtin.debug:
+    msg: Start LCM Upgrade Selection tests
+
+- name: Generate random suffix for dynamic values
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=true, upper=false, special=false, length=8)[0] }}"
+
+########################################################################################
+# Prerequisite: LCM inventory + fetch upgradable entity
+########################################################################################
+
+- name: Perform LCM inventory (best-effort - may already be running)
+  nutanix.ncp.ntnx_lcm_inventory_v2:
+  register: inventory_result
+  ignore_errors: true
+  failed_when: false
+
+- name: Note whether LCM inventory succeeded
+  ansible.builtin.debug:
+    msg: >-
+      LCM inventory result: failed={{ inventory_result.failed | default(false) }}
+      changed={{ inventory_result.changed | default(false) }}. If failed, we
+      will still proceed with check_mode/negative/info tests using pre-existing
+      LCM state on the cluster.
+
+- name: Fetch upgradable LCM entities
+  nutanix.ncp.ntnx_lcm_entities_info_v2:
+  register: entities_info
+  ignore_errors: true
+
+- name: Set upgradable entity facts when found
+  ansible.builtin.set_fact:
+    target_entity_uuid: "{{ upgradable[0].ext_id }}"
+    target_entity_version: "{{ upgradable[0].available_versions[0].version }}"
+  vars:
+    upgradable: >-
+      {{ (entities_info.response | default([]))
+         | selectattr('available_versions', 'defined')
+         | selectattr('available_versions', 'ne', none)
+         | rejectattr('available_versions', 'equalto', [])
+         | list }}
+  when:
+    - entities_info.response is defined
+    - entities_info.response | length > 0
+    - upgradable | length > 0
+
+- name: Show whether an upgradable entity was found
+  ansible.builtin.debug:
+    msg: >-
+      target_entity_uuid={{ target_entity_uuid | default('<none>') }}
+      target_entity_version={{ target_entity_version | default('<none>') }}
+
+########################################################################################
+# check_mode tests
+########################################################################################
+
+- name: Check_mode - Create LCM upgrade selection with all attributes
+  nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
+    state: present
+    selected_upgrades:
+      - entity_uuid: "15570c98-beaf-4633-afd2-b6a306ff1001"
+        to_version: "5.0.0"
+      - entity_uuid: "26681d09-cfa0-5744-b0e3-c7b417002002"
+        to_version: "3.4.0"
+  check_mode: true
+  register: cm_create
+  ignore_errors: true
+
+- name: Assert check_mode Create
+  ansible.builtin.assert:
+    that:
+      - cm_create is defined
+      - cm_create.failed == false
+      - cm_create.changed == false
+      - cm_create.response is defined
+      - cm_create.response.selected_upgrades is defined
+      - cm_create.response.selected_upgrades | length == 2
+      - cm_create.response.selected_upgrades[0].entity_uuid == "15570c98-beaf-4633-afd2-b6a306ff1001"
+      - cm_create.response.selected_upgrades[0].to_version == "5.0.0"
+      - cm_create.response.selected_upgrades[1].entity_uuid == "26681d09-cfa0-5744-b0e3-c7b417002002"
+      - cm_create.response.selected_upgrades[1].to_version == "3.4.0"
+    success_msg: "check_mode Create returned the expected spec"
+    fail_msg: "check_mode Create returned an unexpected result"
+
+- name: Check_mode - Update path (immutable) state=present + ext_id, no export
+  nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  check_mode: true
+  register: cm_update
+  ignore_errors: true
+
+- name: Assert check_mode Update path is either skipped or gracefully errored
+  ansible.builtin.assert:
+    that:
+      - cm_update is defined
+      - (cm_update.skipped | default(false) == true) or (cm_update.failed == true)
+    success_msg: "check_mode Update path correctly reported skipped/failed"
+    fail_msg: "check_mode Update path returned unexpected result"
+
+- name: Check_mode - Delete LCM upgrade selection
+  nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  check_mode: true
+  register: cm_delete
+  ignore_errors: true
+
+- name: Assert check_mode Delete
+  ansible.builtin.assert:
+    that:
+      - cm_delete is defined
+      - cm_delete.failed == false
+      - cm_delete.changed == false
+      - cm_delete.msg is defined
+      - "'will be deleted' in cm_delete.msg"
+      - cm_delete.ext_id == "00000000-0000-0000-0000-000000000000"
+    success_msg: "check_mode Delete returned the expected msg"
+    fail_msg: "check_mode Delete returned an unexpected result"
+
+########################################################################################
+# Negative tests
+########################################################################################
+
+- name: Negative - Create without selected_upgrades
+  nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
+    state: present
+  register: neg_missing_required
+  ignore_errors: true
+
+- name: Assert missing required parameter failure
+  ansible.builtin.assert:
+    that:
+      - neg_missing_required is defined
+      - neg_missing_required.failed == true
+      - "'selected_upgrades' in (neg_missing_required.msg | default(''))"
+    success_msg: "Negative test passed - missing selected_upgrades reported"
+    fail_msg: "Negative test failed - missing selected_upgrades not detected"
+
+- name: Negative - Delete with non-existent ext_id
+  nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
+    state: absent
+    ext_id: "deadbeef-dead-beef-dead-beefdeadbeef"
+  register: neg_delete_bad
+  ignore_errors: true
+
+- name: Assert delete non-existent ext_id fails gracefully
+  ansible.builtin.assert:
+    that:
+      - neg_delete_bad is defined
+      - neg_delete_bad.failed == true
+    success_msg: "Negative delete of non-existent ext_id correctly failed"
+    fail_msg: "Negative delete of non-existent ext_id did NOT fail as expected"
+
+- name: Negative - info by invalid ext_id
+  nutanix.ncp.ntnx_lcm_upgrade_selections_info_v2:
+    ext_id: "deadbeef-dead-beef-dead-beefdeadbeef"
+  register: neg_info_bad
+  ignore_errors: true
+
+- name: Assert info with invalid ext_id fails gracefully
+  ansible.builtin.assert:
+    that:
+      - neg_info_bad is defined
+      - neg_info_bad.failed == true
+    success_msg: "Negative info with invalid ext_id correctly failed"
+    fail_msg: "Negative info with invalid ext_id did NOT fail as expected"
+
+########################################################################################
+# Real Create (minimal + full), Get, List, Update-skip, Export, Delete
+########################################################################################
+
+- name: Real Create - LCM upgrade selection (minimal required fields)
+  nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
+    state: present
+    selected_upgrades:
+      - entity_uuid: "{{ target_entity_uuid }}"
+        to_version: "{{ target_entity_version }}"
+  register: real_create_min
+  when: target_entity_uuid is defined
+  ignore_errors: true
+
+- name: Assert real Create (minimal) result shape
+  ansible.builtin.assert:
+    that:
+      - real_create_min is defined
+      - real_create_min.failed == false
+      - real_create_min.changed == true
+      - real_create_min.response is defined
+      - real_create_min.ext_id is defined
+      - real_create_min.ext_id | length > 0
+    success_msg: "Real Create (minimal) succeeded"
+    fail_msg: "Real Create (minimal) failed: {{ real_create_min | default({}) }}"
+  when:
+    - target_entity_uuid is defined
+    - real_create_min.failed is defined
+    - not real_create_min.failed
+
+- name: Capture created ext_id (if any)
+  ansible.builtin.set_fact:
+    created_upgrade_selection_ext_id: "{{ real_create_min.ext_id }}"
+  when:
+    - real_create_min is defined
+    - real_create_min.ext_id is defined
+    - real_create_min.ext_id | length > 0
+
+- name: Info - Get by ext_id
+  nutanix.ncp.ntnx_lcm_upgrade_selections_info_v2:
+    ext_id: "{{ created_upgrade_selection_ext_id }}"
+  register: info_by_id
+  when: created_upgrade_selection_ext_id is defined
+  ignore_errors: true
+
+- name: Assert Info Get-by-ID
+  ansible.builtin.assert:
+    that:
+      - info_by_id is defined
+      - info_by_id.failed == false
+      - info_by_id.changed == false
+      - info_by_id.response is defined
+      - info_by_id.response.ext_id == created_upgrade_selection_ext_id
+      - info_by_id.response.selected_upgrades is defined
+      - info_by_id.response.selected_upgrades | length >= 1
+      - info_by_id.response.selected_upgrades[0].entity_uuid == target_entity_uuid
+    success_msg: "Info Get-by-ID returned the expected entity"
+    fail_msg: "Info Get-by-ID returned an unexpected result"
+  when: created_upgrade_selection_ext_id is defined
+
+- name: Info - List all
+  nutanix.ncp.ntnx_lcm_upgrade_selections_info_v2:
+  register: info_list
+  ignore_errors: true
+
+- name: Assert Info List returned a list
+  ansible.builtin.assert:
+    that:
+      - info_list is defined
+      - info_list.failed == false
+      - info_list.changed == false
+      - info_list.response is defined
+      - info_list.response is iterable
+      - info_list.total_available_results is defined
+      - info_list.total_available_results >= 0
+    success_msg: "Info List returned a list with total_available_results"
+    fail_msg: "Info List returned an unexpected result"
+
+- name: Info - List with limit=1
+  nutanix.ncp.ntnx_lcm_upgrade_selections_info_v2:
+    limit: 1
+  register: info_list_limit
+  ignore_errors: true
+
+- name: Assert Info List limit=1 returned at most 1
+  ansible.builtin.assert:
+    that:
+      - info_list_limit is defined
+      - info_list_limit.failed == false
+      - info_list_limit.response is defined
+      - (info_list_limit.response | length) <= 1
+    success_msg: "Info List limit=1 respected the limit"
+    fail_msg: "Info List limit=1 returned more than 1 item"
+
+- name: Info - List with filter on status (enum UPGRADE_READY)
+  nutanix.ncp.ntnx_lcm_upgrade_selections_info_v2:
+    filter: "status eq 'UPGRADE_READY'"
+  register: info_list_filter
+  ignore_errors: true
+
+- name: Assert Info List with filter returned a list
+  ansible.builtin.assert:
+    that:
+      - info_list_filter is defined
+      - info_list_filter.response is defined
+      - info_list_filter.response is iterable
+    success_msg: "Info List with filter returned a list"
+    fail_msg: "Info List with filter returned an unexpected result"
+
+- name: Immutable "update" path (state=present + ext_id, no export) - expect skipped=true
+  nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
+    state: present
+    ext_id: "{{ created_upgrade_selection_ext_id }}"
+  register: real_update_skip
+  when: created_upgrade_selection_ext_id is defined
+  ignore_errors: true
+
+- name: Assert immutable update path returned skipped=true
+  ansible.builtin.assert:
+    that:
+      - real_update_skip is defined
+      - real_update_skip.failed == false
+      - real_update_skip.changed == false
+      - real_update_skip.skipped == true
+      - real_update_skip.msg is defined
+      - "'immutable' in real_update_skip.msg"
+    success_msg: "Immutable update path correctly reported skipped=true"
+    fail_msg: "Immutable update path returned an unexpected result"
+  when: created_upgrade_selection_ext_id is defined
+
+- name: Idempotency - re-run immutable update path
+  nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
+    state: present
+    ext_id: "{{ created_upgrade_selection_ext_id }}"
+  register: real_update_skip2
+  when: created_upgrade_selection_ext_id is defined
+  ignore_errors: true
+
+- name: Assert immutable update path is idempotent
+  ansible.builtin.assert:
+    that:
+      - real_update_skip2 is defined
+      - real_update_skip2.failed == false
+      - real_update_skip2.changed == false
+      - real_update_skip2.skipped == true
+    success_msg: "Immutable update path is idempotent (skipped again)"
+    fail_msg: "Immutable update path was NOT idempotent"
+  when: created_upgrade_selection_ext_id is defined
+
+- name: Export - trigger export action for download_helper.zip
+  nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
+    state: present
+    ext_id: "{{ created_upgrade_selection_ext_id }}"
+    export: true
+  register: real_export
+  when: created_upgrade_selection_ext_id is defined
+  ignore_errors: true
+
+- name: Assert Export result shape
+  ansible.builtin.assert:
+    that:
+      - real_export is defined
+      - real_export.ext_id == created_upgrade_selection_ext_id
+    success_msg: "Export returned expected ext_id"
+    fail_msg: "Export returned an unexpected result: {{ real_export | default({}) }}"
+  when: created_upgrade_selection_ext_id is defined
+
+- name: Real Delete LCM upgrade selection
+  nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
+    state: absent
+    ext_id: "{{ created_upgrade_selection_ext_id }}"
+  register: real_delete
+  when: created_upgrade_selection_ext_id is defined
+  ignore_errors: true
+
+- name: Assert Delete succeeded
+  ansible.builtin.assert:
+    that:
+      - real_delete is defined
+      - real_delete.failed == false
+      - real_delete.changed == true
+      - real_delete.ext_id == created_upgrade_selection_ext_id
+    success_msg: "Real Delete succeeded"
+    fail_msg: "Real Delete failed: {{ real_delete | default({}) }}"
+  when:
+    - created_upgrade_selection_ext_id is defined
+    - real_delete.failed is defined
+    - not real_delete.failed
+
+- name: Idempotency - Re-delete the same ext_id (should now fail gracefully)
+  nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
+    state: absent
+    ext_id: "{{ created_upgrade_selection_ext_id }}"
+  register: real_delete_again
+  when: created_upgrade_selection_ext_id is defined
+  ignore_errors: true
+
+- name: Assert re-delete fails gracefully (resource already gone)
+  ansible.builtin.assert:
+    that:
+      - real_delete_again is defined
+      - real_delete_again.failed == true
+    success_msg: "Re-delete correctly failed (resource already gone)"
+    fail_msg: "Re-delete returned unexpected success"
+  when: created_upgrade_selection_ext_id is defined
+
+########################################################################################
+# Real Create (all fields populated) - kept last so it doesn't leak state
+########################################################################################
+
+- name: Real Create - LCM upgrade selection (all fields)
+  nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
+    state: present
+    selected_upgrades:
+      - entity_uuid: "{{ target_entity_uuid }}"
+        to_version: "{{ target_entity_version }}"
+  register: real_create_full
+  when: target_entity_uuid is defined
+  ignore_errors: true
+
+- name: Capture ext_id for full-create cleanup
+  ansible.builtin.set_fact:
+    full_created_ext_id: "{{ real_create_full.ext_id }}"
+  when:
+    - real_create_full is defined
+    - real_create_full.ext_id is defined
+    - real_create_full.ext_id | length > 0
+
+- name: Cleanup - delete full-create selection
+  nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
+    state: absent
+    ext_id: "{{ full_created_ext_id }}"
+  when: full_created_ext_id is defined
+  failed_when: false

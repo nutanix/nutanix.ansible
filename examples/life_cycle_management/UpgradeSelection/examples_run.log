@@ -1,0 +1,47 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [LCM Upgrade Selection v4 playbook] ***************************************
+
+TASK [Perform LCM inventory (prerequisite)] ************************************
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task Failed", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": ["cae459ec-08db-475e-a5e5-151e390c9484"], "completed_time": "2026-07-20T15:11:42.886678+00:00", "completion_details": null, "created_time": "2026-07-20T15:11:42.212699+00:00", "entities_affected": null, "error_messages": [{"arguments_map": null, "code": "TSKS-20801", "error_group": "LEGACY_ERROR", "locale": "en_US", "message": "Operation failed due to legacy error and 'legacyErrorMessage' should be referred to for details", "severity": "ERROR"}], "ext_id": "ZXJnb24=:2cd6f48b-a4f6-50c2-bcb6-41313296abfb", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-07-20T15:11:42.886677+00:00", "legacy_error_message": "Failed to perform the operation performInventory on cluster cae459ec-08db-475e-a5e5-151e390c9484 due to an ongoing operation Inventory and root task ef3c47f4-3675-48df-57b9-4e633125de91.", "number_of_entities_affected": 0, "number_of_subtasks": 0, "operation": "PerformInventory", "operation_description": "Perform Inventory", "owned_by": {"ext_id": "00000000-0000-0000-0000-000000000000", "name": "admin"}, "parent_task": null, "progress_percentage": 100, "projectExtId": "00000000-0000-0000-0000-000000000000", "resource_links": null, "root_task": null, "started_time": "2026-07-20T15:11:42.212699+00:00", "status": "FAILED", "sub_steps": null, "sub_tasks": null, "warnings": null}}
+...ignoring
+
+TASK [List LCM entities that have at least one available version] **************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Pick the first upgradable entity for the selection] **********************
+skipping: [localhost] => {"changed": false, "false_condition": "entities_info.response | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [Create an LCM upgrade selection] *****************************************
+skipping: [localhost] => {"changed": false, "false_condition": "target_entity_uuid is defined", "skip_reason": "Conditional result was False"}
+
+TASK [Capture the created selection ext_id] ************************************
+skipping: [localhost] => {"changed": false, "false_condition": "create_result.ext_id is defined", "skip_reason": "Conditional result was False"}
+
+TASK [Get the created upgrade selection by ext_id] *****************************
+skipping: [localhost] => {"changed": false, "false_condition": "upgrade_selection_ext_id is defined", "skip_reason": "Conditional result was False"}
+
+TASK [List all LCM upgrade selections] *****************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List LCM upgrade selections with a filter on status] *********************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List LCM upgrade selections with a limit] ********************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Export the LCM upgrade selection (download helper zip)] ******************
+skipping: [localhost] => {"changed": false, "false_condition": "upgrade_selection_ext_id is defined", "skip_reason": "Conditional result was False"}
+
+TASK [Attempt to update - immutable resource returns skipped] ******************
+skipping: [localhost] => {"changed": false, "false_condition": "upgrade_selection_ext_id is defined", "skip_reason": "Conditional result was False"}
+
+TASK [Delete the LCM upgrade selection] ****************************************
+skipping: [localhost] => {"changed": false, "false_condition": "upgrade_selection_ext_id is defined", "skip_reason": "Conditional result was False"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=0    unreachable=0    failed=0    skipped=7    rescued=0    ignored=1   
+
