@@ -1,0 +1,34 @@
+---
+# Summary:
+# This playbook demonstrates how to revert a Nutanix Volume Group to a
+# previously created Volume Group recovery point via the v4 API.
+#
+# Prerequisites:
+# 1. An existing Volume Group in Prism Central.
+# 2. A Volume Group recovery point captured for that Volume Group (created via
+#    the recovery points v4 module, e.g. ntnx_recovery_points_v2).
+#
+# The revert operation is asynchronous and returns task details. When
+# `wait` is true (default) the module blocks until the task terminates.
+
+- name: Volume Group revert playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        volume_group_ext_id: "6aeec7b5-6ab6-4eb6-acf9-cf1e8b14a0b8"
+        volume_group_recovery_point_ext_id: "522670d7-e92d-45c5-9139-76ccff6813c2"
+
+    - name: Revert a Volume Group to a Volume Group recovery point
+      nutanix.ncp.ntnx_volume_group_revert_v2:
+        ext_id: "{{ volume_group_ext_id }}"
+        volume_group_recovery_point_ext_id: "{{ volume_group_recovery_point_ext_id }}"
+      register: result
+      ignore_errors: true

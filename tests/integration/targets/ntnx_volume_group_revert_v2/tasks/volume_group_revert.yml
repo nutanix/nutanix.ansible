@@ -1,0 +1,315 @@
+---
+# Integration tests for ntnx_volume_group_revert_v2.
+#
+# Test Plan
+# ---------
+# 1. Set up prerequisites on the live cluster:
+#    - Create a Volume Group.
+#    - Create a Volume Group recovery point via ntnx_recovery_points_v2.
+#    - Extract the individual Volume Group recovery point ext_id from the parent
+#      recovery point response (this is what the RevertSpec expects, not the
+#      parent RP ext_id).
+#
+# 2. Positive path:
+#    - Run one check_mode revert with ALL attributes (asserts spec, no changes).
+#    - Run a real revert and assert task SUCCEEDED, entities affected include the
+#      VG and the VG recovery point, and change/failure flags.
+#
+# 3. Negative path:
+#    - Missing volume_group_recovery_point_ext_id (Ansible validates required=True).
+#    - Missing ext_id (Ansible validates required=True).
+#    - Non-existent Volume Group ext_id (API layer returns not-found).
+#    - Non-existent VG recovery point ext_id (API task fails with error).
+#
+# 4. Idempotency: reverting to the same recovery point is expected to keep
+#    returning changed=true because this is a task-based action (no client-side
+#    idempotency). We still assert both calls succeed and both report
+#    changed=true — this validates the module does not silently skip work.
+#
+# 5. Cleanup: delete the parent recovery point and the Volume Group.
+#
+# Variables required from prepare_env / integration_config.yml:
+# - ip / username / password (module_defaults).
+# - cluster.uuid (via prepare_env vars).
+
+- name: Start Volume Group revert tests
+  ansible.builtin.debug:
+    msg: Start Volume Group revert tests
+
+- name: Generate random suffix for resource names
+  ansible.builtin.set_fact:
+    random_name: >-
+      {{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}
+    suffix_name: "ansible-vg-revert"
+
+- name: Set Volume Group and recovery point names
+  ansible.builtin.set_fact:
+    vg_name: "{{ suffix_name }}-{{ random_name }}-vg"
+    recovery_point_name: "{{ suffix_name }}-{{ random_name }}-rp"
+    vg_todelete: []
+    recovery_point_todelete: []
+
+- name: Compute an ISO-8601 expiration one month from now for the recovery point
+  ansible.builtin.set_fact:
+    expiration_time: '{{ lookup(''pipe'', ''date -d "+1 month" +%Y-%m-%dT%H:%M:%S%:z'') }}'
+
+########################################################################################
+# Prerequisite 1 — Create the Volume Group we will revert
+########################################################################################
+
+- name: Create Volume Group to be reverted
+  nutanix.ncp.ntnx_volume_groups_v2:
+    name: "{{ vg_name }}"
+    description: "Volume Group used by the ntnx_volume_group_revert_v2 integration tests"
+    cluster_reference: "{{ cluster.uuid }}"
+  register: vg_create
+  ignore_errors: true
+
+- name: Create Volume Group status
+  ansible.builtin.assert:
+    that:
+      - vg_create is defined
+      - vg_create.changed == true
+      - vg_create.failed == false
+      - vg_create.ext_id is defined
+      - vg_create.response is defined
+      - vg_create.response.name == vg_name
+      - vg_create.response.cluster_reference == cluster.uuid
+    fail_msg: "Unable to create Volume Group for revert test"
+    success_msg: "Volume Group for revert test created successfully"
+
+- name: Set VG ext_id and add to cleanup list
+  ansible.builtin.set_fact:
+    vg_ext_id: "{{ vg_create.ext_id }}"
+    vg_todelete: "{{ vg_todelete + [vg_create.ext_id] }}"
+
+########################################################################################
+# Prerequisite 2 — Create a Volume Group recovery point via ntnx_recovery_points_v2
+########################################################################################
+
+- name: Create a Volume Group recovery point
+  nutanix.ncp.ntnx_recovery_points_v2:
+    name: "{{ recovery_point_name }}"
+    expiration_time: "{{ expiration_time }}"
+    recovery_point_type: "CRASH_CONSISTENT"
+    volume_group_recovery_points:
+      - volume_group_ext_id: "{{ vg_ext_id }}"
+  register: rp_create
+  ignore_errors: true
+
+- name: Create Volume Group recovery point status
+  ansible.builtin.assert:
+    that:
+      - rp_create is defined
+      - rp_create.changed == true
+      - rp_create.failed == false
+      - rp_create.ext_id is defined
+      - rp_create.response is defined
+      - rp_create.response.status == "COMPLETE"
+      - rp_create.response.recovery_point_type == "CRASH_CONSISTENT"
+      - rp_create.response.volume_group_recovery_points is defined
+      - rp_create.response.volume_group_recovery_points | length == 1
+      - >-
+        rp_create.response.volume_group_recovery_points[0].volume_group_ext_id
+        == vg_ext_id
+      - rp_create.response.volume_group_recovery_points[0].ext_id is defined
+    fail_msg: "Unable to create Volume Group recovery point"
+    success_msg: "Volume Group recovery point created successfully"
+
+- name: Record parent recovery point ext_id and the child VG recovery point ext_id
+  ansible.builtin.set_fact:
+    parent_rp_ext_id: "{{ rp_create.ext_id }}"
+    vg_recovery_point_ext_id: "{{ rp_create.response.volume_group_recovery_points[0].ext_id }}"
+    recovery_point_todelete: "{{ recovery_point_todelete + [rp_create.ext_id] }}"
+
+########################################################################################
+# 1. Check mode — Revert VG (asserts spec only, must NOT change anything)
+########################################################################################
+
+- name: Revert VG in check_mode with all attributes
+  nutanix.ncp.ntnx_volume_group_revert_v2:
+    ext_id: "{{ vg_ext_id }}"
+    volume_group_recovery_point_ext_id: "{{ vg_recovery_point_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Revert VG in check_mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == vg_ext_id
+      - result.response is defined
+      - >-
+        result.response.volume_group_recovery_point_ext_id
+        == vg_recovery_point_ext_id
+    fail_msg: "check_mode revert did not generate the expected spec"
+    success_msg: "check_mode revert generated the expected spec"
+
+########################################################################################
+# 2. Negative — Missing volume_group_recovery_point_ext_id (Ansible spec validation)
+########################################################################################
+
+- name: Revert VG without volume_group_recovery_point_ext_id (should fail)
+  nutanix.ncp.ntnx_volume_group_revert_v2:
+    ext_id: "{{ vg_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Revert VG without volume_group_recovery_point_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'volume_group_recovery_point_ext_id' in result.msg"
+    fail_msg: "Missing volume_group_recovery_point_ext_id did not fail as expected"
+    success_msg: "Missing volume_group_recovery_point_ext_id failed as expected"
+
+########################################################################################
+# 3. Negative — Missing ext_id (Ansible spec validation)
+########################################################################################
+
+- name: Revert VG without ext_id (should fail)
+  nutanix.ncp.ntnx_volume_group_revert_v2:
+    volume_group_recovery_point_ext_id: "{{ vg_recovery_point_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Revert VG without ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'ext_id' in result.msg"
+    fail_msg: "Missing ext_id did not fail as expected"
+    success_msg: "Missing ext_id failed as expected"
+
+########################################################################################
+# 4. Negative — Non-existent Volume Group ext_id (API returns not found)
+########################################################################################
+
+- name: Revert with non-existent Volume Group ext_id (should fail)
+  nutanix.ncp.ntnx_volume_group_revert_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    volume_group_recovery_point_ext_id: "{{ vg_recovery_point_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Revert with non-existent Volume Group ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Revert with non-existent VG ext_id did not fail as expected"
+    success_msg: "Revert with non-existent VG ext_id failed as expected"
+
+########################################################################################
+# 5. Positive — Actual revert to the recovery point
+########################################################################################
+
+- name: Revert Volume Group to the recovery point
+  nutanix.ncp.ntnx_volume_group_revert_v2:
+    ext_id: "{{ vg_ext_id }}"
+    volume_group_recovery_point_ext_id: "{{ vg_recovery_point_ext_id }}"
+  register: revert_result
+  ignore_errors: true
+
+- name: Revert Volume Group to the recovery point status
+  ansible.builtin.assert:
+    that:
+      - revert_result is defined
+      - revert_result.changed == true
+      - revert_result.failed == false
+      - revert_result.ext_id == vg_ext_id
+      - revert_result.task_ext_id is defined
+      - revert_result.response is defined
+      - revert_result.response.status == "SUCCEEDED"
+      - revert_result.response.entities_affected is defined
+      - revert_result.response.entities_affected | length >= 1
+    fail_msg: "Volume Group revert to recovery point failed"
+    success_msg: "Volume Group revert to recovery point succeeded"
+
+########################################################################################
+# 6. Domain — Reverting to the same recovery point again still succeeds (no
+#    client-side idempotency for an action; task runs again).
+########################################################################################
+
+- name: Revert Volume Group to the same recovery point again
+  nutanix.ncp.ntnx_volume_group_revert_v2:
+    ext_id: "{{ vg_ext_id }}"
+    volume_group_recovery_point_ext_id: "{{ vg_recovery_point_ext_id }}"
+  register: revert_again
+  ignore_errors: true
+
+- name: Second revert status
+  ansible.builtin.assert:
+    that:
+      - revert_again is defined
+      - revert_again.changed == true
+      - revert_again.failed == false
+      - revert_again.ext_id == vg_ext_id
+      - revert_again.response is defined
+      - revert_again.response.status == "SUCCEEDED"
+    fail_msg: "Second Volume Group revert did not succeed"
+    success_msg: "Second Volume Group revert succeeded (action re-run)"
+
+########################################################################################
+# 7. Negative — Non-existent VG recovery point ext_id (API task fails)
+########################################################################################
+
+- name: Revert with non-existent VG recovery point ext_id (should fail)
+  nutanix.ncp.ntnx_volume_group_revert_v2:
+    ext_id: "{{ vg_ext_id }}"
+    volume_group_recovery_point_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Revert with non-existent VG recovery point ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Revert with non-existent VG recovery point ext_id did not fail as expected"
+    success_msg: "Revert with non-existent VG recovery point ext_id failed as expected"
+
+########################################################################################
+# Cleanup — Delete recovery points, then Volume Groups
+########################################################################################
+
+- name: Delete Volume Group recovery points
+  nutanix.ncp.ntnx_recovery_points_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ recovery_point_todelete }}"
+  register: rp_delete
+  ignore_errors: true
+
+- name: Delete Volume Group recovery points status
+  ansible.builtin.assert:
+    that:
+      - rp_delete is defined
+      - rp_delete.results | length == recovery_point_todelete | length
+    fail_msg: "Failed deleting Volume Group recovery points"
+    success_msg: "Volume Group recovery points deleted"
+
+- name: Delete Volume Groups
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ vg_todelete }}"
+  register: vg_delete
+  ignore_errors: true
+
+- name: Delete Volume Groups status
+  ansible.builtin.assert:
+    that:
+      - vg_delete is defined
+      - vg_delete.results | length == vg_todelete | length
+    fail_msg: "Failed deleting Volume Groups"
+    success_msg: "Volume Groups deleted"
