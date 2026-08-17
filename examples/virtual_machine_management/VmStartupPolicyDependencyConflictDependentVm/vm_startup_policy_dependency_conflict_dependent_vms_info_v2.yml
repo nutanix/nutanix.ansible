@@ -1,0 +1,56 @@
+---
+# Summary:
+# This playbook demonstrates fetching Dependent VMs of a Dependency conflict of a VM startup policy.
+#
+# The entity `VmStartupPolicyDependencyConflictDependentVm` is a read-only view surfaced by the
+# VmStartupPolicies v4.2 API. Nutanix Prism Central computes dependency conflicts when categorized
+# startup policies contain circular / conflicting ordering. The dependent VMs of a conflict are
+# the VMs whose start would be blocked because they depend (transitively) on VMs that belong to
+# the conflicting startup chain.
+#
+# Prerequisites (must exist on the target cluster before running this playbook):
+#   * A VM startup policy whose ext_id you can plug into vm_startup_policy_ext_id below.
+#   * At least one dependency-conflict computed on that policy (typically induced by creating
+#     circular category-based dependencies). Its ext_id maps to dependency_conflict_ext_id below.
+#
+# Only info operations are exposed - there is no Create / Update / Delete API for this entity.
+
+- name: VM Startup Policy Dependency Conflict Dependent VMs info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.44.76.28"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    - name: Set common variables for the playbook
+      ansible.builtin.set_fact:
+        vm_startup_policy_ext_id: "b32c4b09-4b40-4d3f-8f97-2f81b06ba6ea"
+        dependency_conflict_ext_id: "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"
+        target_dependent_vm_ext_id: "aabbccdd-1111-2222-3333-444455556666"
+
+    - name: List all dependent VMs of a Dependency conflict of a VM startup policy
+      nutanix.ncp.ntnx_vm_startup_policy_dependency_conflict_dependent_vms_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        dependency_conflict_ext_id: "{{ dependency_conflict_ext_id }}"
+      register: dependent_vms_all
+      ignore_errors: true
+
+    - name: List dependent VMs with pagination (page/limit)
+      nutanix.ncp.ntnx_vm_startup_policy_dependency_conflict_dependent_vms_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        dependency_conflict_ext_id: "{{ dependency_conflict_ext_id }}"
+        page: 0
+        limit: 10
+      register: dependent_vms_paged
+      ignore_errors: true
+
+    - name: Fetch a specific dependent VM using ext_id (client-side filter)
+      nutanix.ncp.ntnx_vm_startup_policy_dependency_conflict_dependent_vms_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        dependency_conflict_ext_id: "{{ dependency_conflict_ext_id }}"
+        ext_id: "{{ target_dependent_vm_ext_id }}"
+      register: dependent_vm_by_ext_id
+      ignore_errors: true
