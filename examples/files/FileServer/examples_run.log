@@ -1,0 +1,72 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [File Servers info playbook] **********************************************
+
+TASK [List all file servers] ***************************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching file servers info
+Origin: /tmp/codegen/ff00b97f396145ba8ca9eaeae8c4e6f8/repo/examples/files/FileServer/file_servers_info_v2.yml:21:7
+
+19       validate_certs: "{{ validate_certs | default(false) }}"
+20   tasks:
+21     - name: List all file servers
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching file servers info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List file servers with a name filter] ************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching file servers info
+Origin: /tmp/codegen/ff00b97f396145ba8ca9eaeae8c4e6f8/repo/examples/files/FileServer/file_servers_info_v2.yml:26:7
+
+24       ignore_errors: true
+25
+26     - name: List file servers with a name filter
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching file servers info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List file servers with limit] ********************************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching file servers info
+Origin: /tmp/codegen/ff00b97f396145ba8ca9eaeae8c4e6f8/repo/examples/files/FileServer/file_servers_info_v2.yml:32:7
+
+30       ignore_errors: true
+31
+32     - name: List file servers with limit
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching file servers info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List file servers ordered by name asc] ***********************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching file servers info
+Origin: /tmp/codegen/ff00b97f396145ba8ca9eaeae8c4e6f8/repo/examples/files/FileServer/file_servers_info_v2.yml:38:7
+
+36       ignore_errors: true
+37
+38     - name: List file servers ordered by name asc
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching file servers info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [List file servers selecting the name column only] ************************
+[ERROR]: Task failed: Module failed: Api Exception raised while fetching file servers info
+Origin: /tmp/codegen/ff00b97f396145ba8ca9eaeae8c4e6f8/repo/examples/files/FileServer/file_servers_info_v2.yml:44:7
+
+42       ignore_errors: true
+43
+44     - name: List file servers selecting the name column only
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "SERVICE UNAVAILABLE", "msg": "Api Exception raised while fetching file servers info", "response": {"message": "Http request to endpoint 0:127.0.0.1:7509 failed with error. Response status: 2"}, "status": 503}
+...ignoring
+
+TASK [Get first file server using ext_id (if present)] *************************
+skipping: [localhost] => {"changed": false, "false_condition": "file_servers_result.failed | default(false) == false", "skip_reason": "Conditional result was False"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=5   
+
