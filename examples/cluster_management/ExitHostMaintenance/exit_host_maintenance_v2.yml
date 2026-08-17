@@ -1,0 +1,79 @@
+---
+# Summary:
+# This playbook demonstrates the Exit Host Maintenance workflow on a Nutanix cluster host.
+# It covers:
+#   1. Discovering the Prism Element cluster and one of its hosts via the info modules.
+#   2. Exiting an AHV host from maintenance mode.
+#   3. Exiting an ESXi host from maintenance mode with vCenter credentials.
+#
+# The Exit Host Maintenance action transitions a hypervisor host back to normal
+# operation, restores VM locality by migrating VMs back to the host, powers on
+# pinned VMs, and releases the cluster-wide shutdown token acquired at entry.
+
+- name: Exit Host Maintenance playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    ####################################################################
+    # 1. Discover a Prism Element (AOS) cluster and one of its hosts.
+    ####################################################################
+    - name: List all AOS clusters (exclude Prism Central)
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: clusters_result
+
+    - name: Set target cluster ext_id
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+    - name: Fetch hosts for the target cluster
+      nutanix.ncp.ntnx_hosts_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: hosts_result
+
+    - name: Set target host ext_id
+      ansible.builtin.set_fact:
+        host_ext_id: "{{ hosts_result.response[0].ext_id }}"
+
+    ####################################################################
+    # 2. Exit AHV host from maintenance mode.
+    #    Use this variant for AHV clusters — no vCenter credentials
+    #    are required.
+    ####################################################################
+    - name: Exit AHV host from maintenance mode
+      nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ host_ext_id }}"
+        timeout_seconds: 600
+      register: exit_ahv_result
+      ignore_errors: true
+
+    ####################################################################
+    # 3. Exit ESXi host from maintenance mode.
+    #    ESXi requires vCenter address + credentials so the exit
+    #    maintenance workflow can coordinate with vSphere.
+    ####################################################################
+    - name: Exit ESXi host from maintenance mode with vCenter details
+      nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ host_ext_id }}"
+        timeout_seconds: 900
+        vcenter_info:
+          address:
+            ipv4:
+              value: "10.44.100.10"
+              prefix_length: 32
+          credentials:
+            username: "administrator@vsphere.local"
+            password: "vC3nt3rP@ss!"
+            port: 443
+      register: exit_esxi_result
+      ignore_errors: true

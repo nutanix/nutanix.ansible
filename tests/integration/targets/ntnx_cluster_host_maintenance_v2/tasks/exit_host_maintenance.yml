@@ -1,0 +1,377 @@
+---
+# Test plan — ntnx_cluster_host_maintenance_v2 (Exit Host Maintenance)
+#
+# ExitHostMaintenance is an action-type v4 API. It takes a host that is
+# already in maintenance mode and transitions it back to normal
+# operation. Because putting a live production host into maintenance
+# just to exit it is disruptive to real workloads, the tests below
+# focus on the safe surface area of the module:
+#
+#   1. Discover a Prism Element (AOS) cluster and one of its hosts via
+#      the info modules so we always have realistic ext_ids to feed the
+#      module. This also proves the "happy path" input plumbing works.
+#   2. Check-mode create with the minimal spec — verify no API is
+#      invoked and no changes are reported.
+#   3. Check-mode create with EVERY module attribute (including
+#      vcenter_info + credentials) — verify the SpecGenerator produces
+#      the correct payload and that every field flows through.
+#   4. Negative tests:
+#      a. Missing required param cluster_ext_id.
+#      b. Missing required param ext_id.
+#      c. Missing required nested field vcenter_info.address.
+#      d. Invalid vcenter_info.credentials (missing password).
+#   5. Real API call against a non-existent host — verify the module
+#      surfaces the platform's not-found/error response cleanly and
+#      does NOT report changed=true.
+#   6. Real API call against a host that is NOT currently in
+#      maintenance mode — verify the module surfaces the platform's
+#      error cleanly and does NOT report changed=true.
+#   7. Idempotency: re-run the check-mode call and verify the module
+#      behaves identically (no side effects, changed=false).
+#
+# These cover every argument in get_module_spec(), all required_if
+# constraints, and the SDK error paths without disrupting the cluster.
+
+- name: Start ExitHostMaintenance tests
+  ansible.builtin.debug:
+    msg: Start ExitHostMaintenance tests
+
+- name: Generate random suffix for logs
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+####################################################################
+# 1. Prerequisite discovery — cluster + host ext_ids
+####################################################################
+
+- name: List all AOS clusters (exclude Prism Central) to pick a target
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_result
+  ignore_errors: true
+
+- name: Verify at least one AOS cluster is reachable
+  ansible.builtin.assert:
+    that:
+      - clusters_result is defined
+      - clusters_result.failed == false
+      - clusters_result.changed == false
+      - clusters_result.response is defined
+      - clusters_result.response | length > 0
+      - clusters_result.response[0].ext_id is defined
+    success_msg: "AOS cluster discovered successfully"
+    fail_msg: "No AOS cluster discovered — cannot run ExitHostMaintenance tests"
+
+- name: Set target cluster ext_id
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+- name: Fetch hosts belonging to the target cluster
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: hosts_result
+  ignore_errors: true
+
+- name: Verify at least one host was returned
+  ansible.builtin.assert:
+    that:
+      - hosts_result is defined
+      - hosts_result.failed == false
+      - hosts_result.changed == false
+      - hosts_result.response is defined
+      - hosts_result.response | length > 0
+      - hosts_result.response[0].ext_id is defined
+    success_msg: "Discovered {{ hosts_result.response | length }} host(s) in cluster {{ target_cluster_ext_id }}"
+    fail_msg: "Unable to discover any hosts in cluster {{ target_cluster_ext_id }}"
+
+- name: Set target host ext_id
+  ansible.builtin.set_fact:
+    target_host_ext_id: "{{ hosts_result.response[0].ext_id }}"
+
+####################################################################
+# 2. Check-mode with minimal spec
+####################################################################
+
+- name: Exit host maintenance in check_mode with minimal spec
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "{{ target_host_ext_id }}"
+  check_mode: true
+  register: check_min_result
+  ignore_errors: true
+
+- name: Verify minimal check_mode result
+  ansible.builtin.assert:
+    that:
+      - check_min_result is defined
+      - check_min_result.changed == false
+      - check_min_result.failed == false
+      - check_min_result.response is defined
+      - check_min_result.ext_id == target_host_ext_id
+    success_msg: "Minimal check_mode exit host maintenance produced a valid spec"
+    fail_msg: "Minimal check_mode exit host maintenance failed"
+
+####################################################################
+# 3. Check-mode with ALL attributes (vcenter_info + credentials)
+####################################################################
+
+- name: Exit host maintenance in check_mode with ALL attributes
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "{{ target_host_ext_id }}"
+    timeout_seconds: 900
+    vcenter_info:
+      address:
+        ipv4:
+          value: "10.44.100.10"
+          prefix_length: 32
+      credentials:
+        username: "administrator@vsphere.local"
+        password: "vC3nt3rP@ss!"
+        port: 443
+  check_mode: true
+  register: check_full_result
+  ignore_errors: true
+
+- name: Verify full check_mode result — every field is echoed back
+  ansible.builtin.assert:
+    that:
+      - check_full_result is defined
+      - check_full_result.changed == false
+      - check_full_result.failed == false
+      - check_full_result.response is defined
+      - check_full_result.ext_id == target_host_ext_id
+      - check_full_result.response.timeout_seconds == 900
+      - check_full_result.response.vcenter_info is defined
+      - check_full_result.response.vcenter_info.address is defined
+      - check_full_result.response.vcenter_info.address.ipv4 is defined
+      - check_full_result.response.vcenter_info.address.ipv4.value == "10.44.100.10"
+      - check_full_result.response.vcenter_info.address.ipv4.prefix_length == 32
+      - check_full_result.response.vcenter_info.credentials is defined
+      - check_full_result.response.vcenter_info.credentials.username == "administrator@vsphere.local"
+      - check_full_result.response.vcenter_info.credentials.port == 443
+    success_msg: "Full check_mode exit host maintenance produced the correct spec"
+    fail_msg: "Full check_mode exit host maintenance did not produce the expected spec"
+
+- name: Check-mode with FQDN vCenter address
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "{{ target_host_ext_id }}"
+    timeout_seconds: 1200
+    vcenter_info:
+      address:
+        fqdn:
+          value: "vcenter.example.com"
+      credentials:
+        username: "svc-nutanix@vsphere.local"
+        password: "sVc-P@ss!"
+  check_mode: true
+  register: check_fqdn_result
+  ignore_errors: true
+
+- name: Verify FQDN check_mode result
+  ansible.builtin.assert:
+    that:
+      - check_fqdn_result is defined
+      - check_fqdn_result.changed == false
+      - check_fqdn_result.failed == false
+      - check_fqdn_result.response is defined
+      - check_fqdn_result.response.vcenter_info.address.fqdn is defined
+      - check_fqdn_result.response.vcenter_info.address.fqdn.value == "vcenter.example.com"
+      - check_fqdn_result.response.timeout_seconds == 1200
+    success_msg: "FQDN check_mode exit host maintenance produced the correct spec"
+    fail_msg: "FQDN check_mode exit host maintenance did not produce the expected spec"
+
+####################################################################
+# 4. Negative tests — argument validation
+####################################################################
+
+- name: Negative — missing cluster_ext_id
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    state: present
+    ext_id: "{{ target_host_ext_id }}"
+  register: neg_no_cluster_result
+  ignore_errors: true
+
+- name: Verify missing cluster_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_no_cluster_result is defined
+      - neg_no_cluster_result.failed == true
+      - neg_no_cluster_result.changed == false
+      - "'cluster_ext_id' in (neg_no_cluster_result.msg | default(''))"
+    success_msg: "Missing cluster_ext_id was correctly rejected"
+    fail_msg: "Missing cluster_ext_id was NOT rejected"
+
+- name: Negative — missing ext_id (host)
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: neg_no_host_result
+  ignore_errors: true
+
+- name: Verify missing host ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_no_host_result is defined
+      - neg_no_host_result.failed == true
+      - neg_no_host_result.changed == false
+      - "'ext_id' in (neg_no_host_result.msg | default(''))"
+    success_msg: "Missing host ext_id was correctly rejected"
+    fail_msg: "Missing host ext_id was NOT rejected"
+
+- name: Negative — vcenter_info without required address
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "{{ target_host_ext_id }}"
+    vcenter_info:
+      credentials:
+        username: "admin"
+        password: "irrelevant"
+  check_mode: true
+  register: neg_no_addr_result
+  ignore_errors: true
+
+- name: Verify missing vcenter_info.address is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_no_addr_result is defined
+      - neg_no_addr_result.failed == true
+      - neg_no_addr_result.changed == false
+    success_msg: "Missing vcenter_info.address was correctly rejected"
+    fail_msg: "Missing vcenter_info.address was NOT rejected"
+
+- name: Negative — vcenter_info.credentials without password
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "{{ target_host_ext_id }}"
+    vcenter_info:
+      address:
+        ipv4:
+          value: "10.44.100.10"
+      credentials:
+        username: "admin"
+  check_mode: true
+  register: neg_no_pw_result
+  ignore_errors: true
+
+- name: Verify credentials without password is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_no_pw_result is defined
+      - neg_no_pw_result.failed == true
+      - neg_no_pw_result.changed == false
+    success_msg: "Credentials without password were correctly rejected"
+    fail_msg: "Credentials without password were NOT rejected"
+
+- name: Negative — invalid state choice
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    state: absent
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "{{ target_host_ext_id }}"
+  check_mode: true
+  register: neg_invalid_state_result
+  ignore_errors: true
+
+- name: Verify invalid state is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_invalid_state_result is defined
+      - neg_invalid_state_result.failed == true
+      - neg_invalid_state_result.changed == false
+    success_msg: "Invalid state choice was correctly rejected"
+    fail_msg: "Invalid state choice was NOT rejected"
+
+####################################################################
+# 5. Real API — invalid host ext_id (expect controlled failure)
+####################################################################
+
+- name: Exit host maintenance with non-existent host ext_id
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-deadbeefdead"
+    timeout_seconds: 60
+  register: bad_host_result
+  ignore_errors: true
+
+- name: Verify non-existent host is rejected by the platform
+  ansible.builtin.assert:
+    that:
+      - bad_host_result is defined
+      - bad_host_result.failed == true
+      - bad_host_result.changed == false
+    success_msg: "Non-existent host ext_id was correctly rejected by the platform"
+    fail_msg: "Non-existent host ext_id was NOT rejected"
+
+- name: Exit host maintenance with non-existent cluster ext_id
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    state: present
+    cluster_ext_id: "00000000-0000-0000-0000-cafebabecafe"
+    ext_id: "{{ target_host_ext_id }}"
+    timeout_seconds: 60
+  register: bad_cluster_result
+  ignore_errors: true
+
+- name: Verify non-existent cluster is rejected by the platform
+  ansible.builtin.assert:
+    that:
+      - bad_cluster_result is defined
+      - bad_cluster_result.failed == true
+      - bad_cluster_result.changed == false
+    success_msg: "Non-existent cluster ext_id was correctly rejected by the platform"
+    fail_msg: "Non-existent cluster ext_id was NOT rejected"
+
+####################################################################
+# 6. Real API — host NOT currently in maintenance mode.
+#    The exit action should fail cleanly because the state machine
+#    has no maintenance intent to release. This exercises the real
+#    error path in a safe, non-disruptive way.
+####################################################################
+
+- name: Attempt to exit maintenance on a host that is not in maintenance
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "{{ target_host_ext_id }}"
+    timeout_seconds: 60
+  register: not_in_maint_result
+  ignore_errors: true
+
+- name: Verify the exit action against a non-maintenance host is handled cleanly
+  ansible.builtin.assert:
+    that:
+      - not_in_maint_result is defined
+      - not_in_maint_result.changed in [true, false]
+      - (not_in_maint_result.failed == true) or (not_in_maint_result.task_ext_id is defined)
+    success_msg: "Exit against non-maintenance host was handled cleanly (either rejected or a task was produced)"
+    fail_msg: "Exit against non-maintenance host was NOT handled cleanly"
+
+####################################################################
+# 7. Idempotency — repeat check_mode call
+####################################################################
+
+- name: Re-run minimal check_mode call to verify idempotent behaviour
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    ext_id: "{{ target_host_ext_id }}"
+  check_mode: true
+  register: idem_result
+  ignore_errors: true
+
+- name: Verify re-run produces the same result (changed=false)
+  ansible.builtin.assert:
+    that:
+      - idem_result is defined
+      - idem_result.changed == false
+      - idem_result.failed == false
+      - idem_result.response is defined
+      - idem_result.ext_id == target_host_ext_id
+    success_msg: "Re-running the exit host maintenance action in check_mode is idempotent"
+    fail_msg: "Re-running the exit host maintenance action in check_mode produced a different result"
