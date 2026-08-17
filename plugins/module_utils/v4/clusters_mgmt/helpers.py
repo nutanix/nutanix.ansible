@@ -109,3 +109,26 @@ def get_cluster_profile(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching cluster profile info using ext_id",
         )
+
+
+def get_bmc_info(module, api_instance, cluster_ext_id, host_ext_id):
+    """
+    This method will return BMC info for a specific host in a cluster.
+    Args:
+        module: Ansible module
+        api_instance: BmcApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        host_ext_id (str): host external ID
+    return:
+        bmc info (object): BMC info entity
+    """
+    try:
+        return api_instance.get_bmc_info(
+            clusterExtId=cluster_ext_id, extId=host_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching BMC info using cluster and host ext_id",
+        )
