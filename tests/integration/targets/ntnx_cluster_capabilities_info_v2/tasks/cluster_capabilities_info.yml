@@ -1,0 +1,332 @@
+---
+###############################################################################
+# Integration tests for ntnx_cluster_capabilities_info_v2
+#
+# Test plan (informed by the SDK + module + Nutanix networking domain):
+#
+#   The underlying /networking/v4.3/config/capabilities endpoint is READ-ONLY
+#   and only exposes a LIST operation. There is no get-by-id, create, update
+#   or delete API; therefore no CRUD lifecycle exists to exercise here.
+#   Coverage focuses on:
+#     1. Baseline list (no arguments) — asserts response shape and that at least
+#        one ClusterCapability entry is returned for the registered PE cluster.
+#     2. Every field returned by the ClusterCapability model is present and
+#        typed as expected on every entry (cluster_id, capabilities,
+#        ext_id, links, metadata, tenant_id).
+#     3. Each capabilities[*] element has the shape mandated by the SDK
+#        (capability_name str + is_supported bool).
+#     4. cluster_id convenience option — asserts the returned list is filtered
+#        to the selected PE cluster only.
+#     5. Explicit $filter — asserts the same filter can be expressed with the
+#        raw OData filter parameter and produces the same result.
+#     6. limit=1 — asserts limit is honoured.
+#     7. page=0 — asserts pagination first page works.
+#     8. orderby=clusterId — asserts orderby is honoured.
+#     9. Combined limit + page + orderby — asserts they compose correctly.
+#    10. Non-existent cluster filter — asserts empty response, not a failure.
+#    11. Domain check — Glean context: SPAN_V3 / PC_DVS / FLOW capabilities
+#        must be reported; asserts SUPPORTS_SPAN_V3 exists and is a bool.
+#    12. Negative — cluster_id and filter mutually exclusive.
+#    13. Negative — invalid OData filter surfaces a descriptive API error.
+#    14. Negative — invalid limit value surfaces an API-level error.
+###############################################################################
+
+- name: Start ntnx_cluster_capabilities_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_cluster_capabilities_info_v2 tests
+
+########################################################################
+# 1. Baseline list
+########################################################################
+
+- name: List all cluster capabilities (baseline)
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+  register: baseline
+  ignore_errors: true
+
+- name: Assert baseline list succeeded and returned at least one entry
+  ansible.builtin.assert:
+    that:
+      - baseline is defined
+      - baseline.changed == false
+      - baseline.failed == false
+      - baseline.response is defined
+      - baseline.response | length > 0
+      - baseline.response[0].cluster_id is defined
+      - baseline.response[0].cluster_id | length > 0
+      - baseline.response[0].capabilities is defined
+      - baseline.response[0].capabilities | length > 0
+      - "'total_available_results' in baseline"
+    fail_msg: "Baseline list of cluster capabilities failed or returned an empty response"
+    success_msg: "Baseline list of cluster capabilities succeeded"
+
+- name: Capture the first cluster's UUID for reuse
+  ansible.builtin.set_fact:
+    target_cluster_id: "{{ baseline.response[0].cluster_id }}"
+
+########################################################################
+# 2. Response schema — every documented ClusterCapability field is present
+########################################################################
+
+- name: Assert every ClusterCapability entry exposes the documented schema
+  ansible.builtin.assert:
+    that:
+      - item.cluster_id is defined
+      - item.cluster_id is string
+      - item.capabilities is defined
+      - item.capabilities | length > 0
+      - "'ext_id' in item"
+      - "'links' in item"
+      - "'metadata' in item"
+      - "'tenant_id' in item"
+    fail_msg: "ClusterCapability entry {{ item.cluster_id | default('<no cluster_id>') }} missing documented fields"
+    success_msg: "ClusterCapability entry {{ item.cluster_id }} exposes the documented schema"
+  loop: "{{ baseline.response }}"
+  loop_control:
+    label: "{{ item.cluster_id | default('unknown') }}"
+
+########################################################################
+# 3. Every capabilities[*] element matches the SDK Capability shape
+########################################################################
+
+- name: Assert every capability entry has the documented (capability_name, is_supported) shape
+  ansible.builtin.assert:
+    that:
+      - item.1.capability_name is defined
+      - item.1.capability_name is string
+      - item.1.capability_name | length > 0
+      - item.1.is_supported is defined
+      - item.1.is_supported is boolean
+    fail_msg: >-
+      Capability entry {{ item.1.capability_name | default('<no name>') }} on cluster
+      {{ item.0.cluster_id }} does not match the documented shape
+    success_msg: "Capability {{ item.1.capability_name }} on {{ item.0.cluster_id }} matches schema"
+  loop: "{{ baseline.response | subelements('capabilities') }}"
+  loop_control:
+    label: "{{ item.0.cluster_id }}::{{ item.1.capability_name | default('unknown') }}"
+
+########################################################################
+# 4. cluster_id convenience option
+########################################################################
+
+- name: List cluster capabilities scoped to a single cluster via cluster_id
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    cluster_id: "{{ target_cluster_id }}"
+  register: by_cluster_id
+  ignore_errors: true
+
+- name: Assert cluster_id filter returned exactly the requested cluster
+  ansible.builtin.assert:
+    that:
+      - by_cluster_id.changed == false
+      - by_cluster_id.failed == false
+      - by_cluster_id.response is defined
+      - by_cluster_id.response | length == 1
+      - by_cluster_id.response[0].cluster_id == target_cluster_id
+      - by_cluster_id.response[0].capabilities | length > 0
+    fail_msg: "cluster_id convenience option did not scope the response to the requested PE cluster"
+    success_msg: "cluster_id convenience option correctly scoped the response"
+
+########################################################################
+# 5. Explicit OData filter should behave identically to the cluster_id shortcut
+########################################################################
+
+- name: List cluster capabilities using explicit clusterId $filter
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    filter: "clusterId eq '{{ target_cluster_id }}'"
+  register: by_filter
+  ignore_errors: true
+
+- name: Assert explicit filter is equivalent to the cluster_id shortcut
+  ansible.builtin.assert:
+    that:
+      - by_filter.changed == false
+      - by_filter.failed == false
+      - by_filter.response is defined
+      - by_filter.response | length == 1
+      - by_filter.response[0].cluster_id == target_cluster_id
+      - (by_filter.response[0].capabilities | map(attribute='capability_name') | sort) ==
+          (by_cluster_id.response[0].capabilities | map(attribute='capability_name') | sort)
+    fail_msg: "Explicit OData filter did not produce the same result as cluster_id"
+    success_msg: "Explicit OData filter produced the same result as cluster_id"
+
+########################################################################
+# 6. limit=1
+########################################################################
+
+- name: List cluster capabilities with limit=1
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    limit: 1
+  register: limited
+  ignore_errors: true
+
+- name: Assert limit=1 returns at most one ClusterCapability entry
+  ansible.builtin.assert:
+    that:
+      - limited.changed == false
+      - limited.failed == false
+      - limited.response is defined
+      - limited.response | length <= 1
+    fail_msg: "limit=1 returned more than one entry"
+    success_msg: "limit=1 correctly capped the response"
+
+########################################################################
+# 7. page=0
+########################################################################
+
+- name: List cluster capabilities with page=0
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    page: 0
+    limit: 5
+  register: paged
+  ignore_errors: true
+
+- name: Assert page=0 returned the same first page as the baseline
+  ansible.builtin.assert:
+    that:
+      - paged.changed == false
+      - paged.failed == false
+      - paged.response is defined
+      - paged.response | length >= 1
+      - paged.response[0].cluster_id == baseline.response[0].cluster_id
+    fail_msg: "page=0 did not return the expected first page"
+    success_msg: "page=0 returned the expected first page"
+
+########################################################################
+# 8. orderby=clusterId
+########################################################################
+
+- name: List cluster capabilities ordered by clusterId
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    orderby: "clusterId"
+  register: ordered
+  ignore_errors: true
+
+- name: Assert orderby result is sorted ascending by cluster_id
+  ansible.builtin.assert:
+    that:
+      - ordered.changed == false
+      - ordered.failed == false
+      - ordered.response is defined
+      - ordered.response | length >= 1
+      - (ordered.response | map(attribute='cluster_id') | list) ==
+          (ordered.response | map(attribute='cluster_id') | list | sort)
+    fail_msg: "orderby=clusterId did not return a sorted response"
+    success_msg: "orderby=clusterId returned an ascending-sorted response"
+
+########################################################################
+# 9. Combined limit + page + orderby
+########################################################################
+
+- name: List cluster capabilities with limit + page + orderby combined
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    limit: 1
+    page: 0
+    orderby: "clusterId"
+  register: combined
+  ignore_errors: true
+
+- name: Assert combined limit + page + orderby is honoured
+  ansible.builtin.assert:
+    that:
+      - combined.changed == false
+      - combined.failed == false
+      - combined.response is defined
+      - combined.response | length <= 1
+    fail_msg: "Combined limit + page + orderby did not compose correctly"
+    success_msg: "Combined limit + page + orderby composed correctly"
+
+########################################################################
+# 10. Non-existent cluster filter — empty response, not a failure
+########################################################################
+
+- name: List cluster capabilities for a non-existent cluster UUID
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    cluster_id: "00000000-0000-0000-0000-000000000000"
+  register: empty_result
+  ignore_errors: true
+
+- name: Assert non-existent cluster filter returns an empty list, not an error
+  ansible.builtin.assert:
+    that:
+      - empty_result.changed == false
+      - empty_result.failed == false
+      - empty_result.response is defined
+      - empty_result.response | length == 0
+    fail_msg: "Non-existent cluster filter should return an empty list, not an error"
+    success_msg: "Non-existent cluster filter correctly returned an empty list"
+
+########################################################################
+# 11. Domain check — Glean context reports SPAN v3 as one of the tracked caps
+########################################################################
+
+- name: Extract SUPPORTS_SPAN_V3 capability, if present, for the target cluster
+  ansible.builtin.set_fact:
+    span_v3_entries: >-
+      {{ by_cluster_id.response[0].capabilities
+         | selectattr('capability_name', 'equalto', 'SUPPORTS_SPAN_V3')
+         | list }}
+
+- name: Assert SUPPORTS_SPAN_V3 capability is reported as a boolean flag
+  ansible.builtin.assert:
+    that:
+      - span_v3_entries | length == 1
+      - span_v3_entries[0].is_supported is boolean
+    fail_msg: "SUPPORTS_SPAN_V3 capability should be reported once with a boolean is_supported flag"
+    success_msg: "SUPPORTS_SPAN_V3 capability is reported once with a boolean is_supported flag"
+
+########################################################################
+# 12. Negative — cluster_id and filter are mutually exclusive
+########################################################################
+
+- name: Ensure cluster_id and filter are mutually exclusive
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    cluster_id: "{{ target_cluster_id }}"
+    filter: "clusterId eq '{{ target_cluster_id }}'"
+  register: mutex_result
+  ignore_errors: true
+
+- name: Assert the module rejected cluster_id + filter combination
+  ansible.builtin.assert:
+    that:
+      - mutex_result.failed == true
+      - mutex_result.msg is defined
+      - mutex_result.msg is search("mutually exclusive")
+    fail_msg: "Module should have failed with a 'mutually exclusive' error"
+    success_msg: "Module correctly rejected cluster_id + filter combination"
+
+########################################################################
+# 13. Negative — invalid OData filter
+########################################################################
+
+- name: List cluster capabilities with an invalid OData filter
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    filter: "this is not a valid odata filter"
+  register: bad_filter
+  ignore_errors: true
+
+- name: Assert invalid filter surfaces an API-level error
+  ansible.builtin.assert:
+    that:
+      - bad_filter.failed == true
+      - bad_filter.msg is defined
+    fail_msg: "Invalid OData filter should have surfaced an error"
+    success_msg: "Invalid OData filter correctly surfaced an error"
+
+########################################################################
+# 14. Negative — invalid limit value
+########################################################################
+
+- name: List cluster capabilities with an out-of-range limit
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    limit: 9999
+  register: bad_limit
+  ignore_errors: true
+
+- name: Assert out-of-range limit surfaces an API-level error
+  ansible.builtin.assert:
+    that:
+      - bad_limit.failed == true
+      - bad_limit.msg is defined
+    fail_msg: "Out-of-range limit should have surfaced an error"
+    success_msg: "Out-of-range limit correctly surfaced an error"
