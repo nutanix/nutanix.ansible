@@ -1,0 +1,100 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Cleanup Recovery Plan Resources playbook] ********************************
+
+TASK [Set recovery plan external ID] *******************************************
+ok: [localhost] => {"ansible_facts": {"recovery_plan_ext_id": "1ca2963d-77b6-453a-ae23-2c19e7a954a3"}, "changed": false}
+
+TASK [Cleanup resources from the last execution of a Recovery Plan] ************
+[ERROR]: Task failed: Module failed: Api Exception raised while cleaning up recovery plan resources
+Origin: /tmp/codegen/23207902d3ed4dd083674aa1aef90747/repo/examples/data_protection/CleanupRecoveryPlanResource/cleanup_recovery_plan_resource_v2.yml:34:7
+
+32         recovery_plan_ext_id: "{{ lookup('env', 'RECOVERY_PLAN_EXT_ID') | default('1ca2963d-77b6-453a-ae23-2c19e7a...
+33
+34     - name: Cleanup resources from the last execution of a Recovery Plan
+         ^ column 7
+
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while cleaning up recovery plan resources", "response": {"data": {"$objectType": "dataprotection.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "dataprotection.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "argumentsMap": {"reason": "Entity with external identifier 1ca2963d-77b6-453a-ae23-2c19e7a954a3 does not exist"}, "code": "DP-10400", "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR", "locale": "en_US", "message": "The request failed as one or more entities do not exist - Entity with external identifier 1ca2963d-77b6-453a-ae23-2c19e7a954a3 does not exist.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+TASK [Show cleanup result] *****************************************************
+ok: [localhost] => {
+    "cleanup_result": {
+        "changed": false,
+        "error": "NOT FOUND",
+        "exception": "(traceback unavailable)",
+        "failed": true,
+        "msg": "Api Exception raised while cleaning up recovery plan resources",
+        "response": {
+            "data": {
+                "$objectType": "dataprotection.v4.error.ErrorResponse",
+                "$reserved": {
+                    "$fv": "v4.r4"
+                },
+                "error": [
+                    {
+                        "$objectType": "dataprotection.v4.error.AppMessage",
+                        "$reserved": {
+                            "$fv": "v4.r4"
+                        },
+                        "argumentsMap": {
+                            "reason": "Entity with external identifier 1ca2963d-77b6-453a-ae23-2c19e7a954a3 does not exist"
+                        },
+                        "code": "DP-10400",
+                        "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR",
+                        "locale": "en_US",
+                        "message": "The request failed as one or more entities do not exist - Entity with external identifier 1ca2963d-77b6-453a-ae23-2c19e7a954a3 does not exist.",
+                        "severity": "ERROR"
+                    }
+                ]
+            },
+            "metadata": {
+                "$objectType": "common.v1.response.ApiResponseMetadata",
+                "$reserved": {
+                    "$fv": "v1.r0"
+                },
+                "flags": [
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "hasError",
+                        "value": true
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isPaginated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isTruncated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isExpandRestricted",
+                        "value": false
+                    }
+                ]
+            }
+        },
+        "status": 404
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+

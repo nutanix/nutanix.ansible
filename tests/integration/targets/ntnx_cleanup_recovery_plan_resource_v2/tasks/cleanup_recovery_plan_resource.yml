@@ -1,0 +1,194 @@
+---
+# Test plan for ntnx_cleanup_recovery_plan_resource_v2 (action-type module).
+#
+# Coverage goals (see Step 4 of INSTRUCTIONS):
+#
+#   1. Positive check_mode - trigger with a valid-looking ext_id in
+#      check_mode; must not call the API but must set the "will be triggered"
+#      message and leave changed=false.
+#   2. Negative - missing required ext_id -> module must fail with an
+#      argument-spec error.
+#   3. Negative - invalid state value -> module must fail because the only
+#      allowed choice is "present".
+#   4. Negative - unknown parameter -> module must fail (argument_spec is
+#      intentionally minimal for this action module).
+#   5. Negative - real call with a bogus recovery plan ext_id -> module
+#      must fail with an API "not found" error.
+#   6. Positive - real cleanup call, but only when a recovery plan
+#      ext_id is provided via `recovery_plan.ext_id` in
+#      tests/integration/integration_config.yml. This is optional because
+#      the shared code-gen cluster does not always have a Recovery Plan
+#      configured; without a real prerequisite we cannot exercise the
+#      happy path safely.
+
+- name: Start ntnx_cleanup_recovery_plan_resource_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_cleanup_recovery_plan_resource_v2 tests
+
+- name: Generate random suffix for test data
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set fake ext_id for the check_mode / negative test paths
+  ansible.builtin.set_fact:
+    fake_recovery_plan_ext_id: "00000000-0000-0000-0000-{{ random_name | lower | truncate(12, True, '') }}"
+
+########################################################################################
+# 1. Check-mode - triggering the cleanup MUST NOT call the API and must
+#    return the "will be triggered" message with changed=false.
+########################################################################################
+
+- name: Cleanup Recovery Plan resources in check mode
+  nutanix.ncp.ntnx_cleanup_recovery_plan_resource_v2:
+    state: present
+    ext_id: "{{ fake_recovery_plan_ext_id }}"
+  check_mode: true
+  register: check_mode_result
+  ignore_errors: true
+
+- name: Check-mode cleanup status
+  ansible.builtin.assert:
+    that:
+      - check_mode_result is defined
+      - check_mode_result.changed == false
+      - check_mode_result.failed == false
+      - check_mode_result.ext_id == fake_recovery_plan_ext_id
+      - check_mode_result.msg is defined
+      - "'will be triggered' in check_mode_result.msg"
+      - "fake_recovery_plan_ext_id in check_mode_result.msg"
+    success_msg: "Cleanup Recovery Plan resources check-mode passed"
+    fail_msg: "Cleanup Recovery Plan resources check-mode failed"
+
+########################################################################################
+# 2. Negative - missing required ext_id.
+########################################################################################
+
+- name: Cleanup with missing ext_id
+  nutanix.ncp.ntnx_cleanup_recovery_plan_resource_v2:
+    state: present
+  register: missing_ext_id_result
+  ignore_errors: true
+
+- name: Missing ext_id status
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_result is defined
+      - missing_ext_id_result.failed == true
+      - missing_ext_id_result.changed == false
+      - "'missing required arguments: ext_id' in missing_ext_id_result.msg"
+    success_msg: "Cleanup with missing ext_id failed as expected"
+    fail_msg: "Cleanup with missing ext_id did not fail as expected"
+
+########################################################################################
+# 3. Negative - invalid state value ("absent" is not allowed on an action module).
+########################################################################################
+
+- name: Cleanup with invalid state
+  nutanix.ncp.ntnx_cleanup_recovery_plan_resource_v2:
+    state: absent
+    ext_id: "{{ fake_recovery_plan_ext_id }}"
+  register: bad_state_result
+  ignore_errors: true
+
+- name: Invalid state status
+  ansible.builtin.assert:
+    that:
+      - bad_state_result is defined
+      - bad_state_result.failed == true
+      - bad_state_result.changed == false
+      - "'value of state must be one of: present' in bad_state_result.msg"
+    success_msg: "Cleanup with invalid state failed as expected"
+    fail_msg: "Cleanup with invalid state did not fail as expected"
+
+########################################################################################
+# 4. Negative - unknown parameter (guards against schema drift where someone
+#    accidentally accepts an option the SDK does not support).
+########################################################################################
+
+- name: Cleanup with unsupported parameter
+  nutanix.ncp.ntnx_cleanup_recovery_plan_resource_v2:
+    state: present
+    ext_id: "{{ fake_recovery_plan_ext_id }}"
+    body: {}
+  register: bad_param_result
+  ignore_errors: true
+
+- name: Unsupported parameter status
+  ansible.builtin.assert:
+    that:
+      - bad_param_result is defined
+      - bad_param_result.failed == true
+      - bad_param_result.changed == false
+      - "'Unsupported parameters' in bad_param_result.msg or 'unsupported parameter' in bad_param_result.msg"
+    success_msg: "Cleanup with unsupported parameter failed as expected"
+    fail_msg: "Cleanup with unsupported parameter did not fail as expected"
+
+########################################################################################
+# 5. Negative - real API call with a bogus recovery plan ext_id.
+#    The API must return a not-found / invalid-id error and the module
+#    must surface that as a failure (not silently succeed).
+########################################################################################
+
+- name: Cleanup with non-existent recovery plan ext_id
+  nutanix.ncp.ntnx_cleanup_recovery_plan_resource_v2:
+    state: present
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+  register: not_found_result
+  ignore_errors: true
+
+- name: Non-existent recovery plan status
+  ansible.builtin.assert:
+    that:
+      - not_found_result is defined
+      - not_found_result.failed == true
+      - not_found_result.changed == false
+      - not_found_result.msg is defined
+      - "'Api Exception raised while cleaning up recovery plan resources' in not_found_result.msg"
+    success_msg: "Cleanup with non-existent recovery plan failed as expected"
+    fail_msg: "Cleanup with non-existent recovery plan did not fail as expected"
+
+########################################################################################
+# 6. Positive - real cleanup call. Only runs when the operator provided
+#    `recovery_plan.ext_id` in tests/integration/integration_config.yml.
+#    This is the only test that actually invokes the live API on a real
+#    Recovery Plan; skip it gracefully when the prerequisite is missing.
+########################################################################################
+
+- name: Cleanup Recovery Plan resources on a real recovery plan
+  nutanix.ncp.ntnx_cleanup_recovery_plan_resource_v2:
+    state: present
+    ext_id: "{{ recovery_plan.ext_id }}"
+  register: cleanup_result
+  ignore_errors: true
+  when:
+    - recovery_plan is defined
+    - recovery_plan.ext_id is defined
+    - recovery_plan.ext_id | length > 0
+
+- name: Cleanup Recovery Plan resources on a real recovery plan status
+  ansible.builtin.assert:
+    that:
+      - cleanup_result is defined
+      - cleanup_result.failed == false
+      - cleanup_result.changed == true
+      - cleanup_result.ext_id == recovery_plan.ext_id
+      - cleanup_result.task_ext_id is defined
+      - cleanup_result.task_ext_id | length > 0
+      - cleanup_result.response is defined
+      - cleanup_result.response.status == "SUCCEEDED"
+    success_msg: "Cleanup Recovery Plan resources against live plan passed"
+    fail_msg: "Cleanup Recovery Plan resources against live plan failed"
+  when:
+    - recovery_plan is defined
+    - recovery_plan.ext_id is defined
+    - recovery_plan.ext_id | length > 0
+
+- name: Skipped-live-cleanup notice
+  ansible.builtin.debug:
+    msg: >-
+      Skipping the live cleanup positive test because
+      `recovery_plan.ext_id` is not defined in
+      tests/integration/integration_config.yml. Provide one to exercise
+      the happy path against a real Recovery Plan.
+  when:
+    - not (recovery_plan is defined and recovery_plan.ext_id is defined and recovery_plan.ext_id | length > 0)
