@@ -1,0 +1,140 @@
+---
+# Summary:
+# This playbook demonstrates the full lifecycle of an iSCSI external attachment
+# on a Volume Group in Nutanix Prism Central using the v4 storage APIs:
+#   0. Setup: create a Volume Group to attach against (via ntnx_volume_groups_v2).
+#   1. Create (attach) an iSCSI external attachment with all supported fields.
+#   2. Update (idempotent no-op) on the existing attachment with all supported fields.
+#   3. Fetch a single external attachment by ext_id.
+#   4. List all external attachments on the Volume Group.
+#   5. List with an OData filter.
+#   6. List with a limit.
+#   7. Delete (detach) the external attachment.
+#   8. Cleanup: delete the Volume Group.
+#
+# Requirements:
+#   - Prism Central endpoint running a build that publishes the
+#     /api/storage/v4.0.a4/ namespace (matches ntnx-storage-py-client).
+#   - Reachable Data Services IP and open TCP port 3260 if you exercise a
+#     real iSCSI client against this attachment afterwards.
+
+- name: External Attachment (iSCSI) playbook - storage v4
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default('9440', true) | int }}"
+      validate_certs: false
+  vars:
+    cluster_ext_id: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+    iscsi_initiator_name: "iqn.1991-05.com.microsoft:ansible-example-host"
+  tasks:
+    - name: Create a Volume Group to attach against (setup)
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: present
+        name: "ansible-external-attachment-example"
+        description: "Volume Group created for the external attachment example playbook"
+        target_prefix: "vg1"
+        cluster_reference: "{{ cluster_ext_id }}"
+        usage_type: "USER"
+      register: vg_setup
+      ignore_errors: true
+
+    - name: Capture Volume Group ext_id
+      ansible.builtin.set_fact:
+        volume_group_ext_id: "{{ vg_setup.ext_id }}"
+      when: vg_setup is defined and vg_setup.ext_id | default('', true) | length > 0
+
+    - name: Attach an iSCSI external attachment to the Volume Group (create, with all fields)
+      nutanix.ncp.ntnx_external_attachment_v2:
+        state: present
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        iscsi_initiator_name: "{{ iscsi_initiator_name }}"
+        num_virtual_targets: 32
+        enabled_authentications: NONE
+        attachment_site: PRIMARY
+        iscsi_target_names:
+          - "iqn.2010-06.com.nutanix:vg-ansible-example"
+      register: attach_result
+      when: volume_group_ext_id is defined
+      ignore_errors: true
+
+    - name: Capture attachment ext_id from create response
+      ansible.builtin.set_fact:
+        attachment_ext_id: >-
+          {{
+            (attach_result.ext_id
+              if (attach_result is defined and attach_result.ext_id | default('', true))
+              else (attach_result.response.entities_affected
+                    | default([])
+                    | selectattr('rel', 'search', 'iscsi-client')
+                    | map(attribute='ext_id')
+                    | first
+                    | default(''))
+            )
+          }}
+      when: attach_result is defined
+
+    - name: Verify existing attachment (update - idempotent, with all fields)
+      nutanix.ncp.ntnx_external_attachment_v2:
+        state: present
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        ext_id: "{{ attachment_ext_id }}"
+        iscsi_initiator_name: "{{ iscsi_initiator_name }}"
+        num_virtual_targets: 32
+        enabled_authentications: NONE
+        attachment_site: PRIMARY
+      register: update_result
+      when: attachment_ext_id | default('', true) | length > 0
+      ignore_errors: true
+
+    - name: Fetch specific external attachment by ext_id
+      nutanix.ncp.ntnx_volume_group_external_attachments_info_v2:
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        ext_id: "{{ attachment_ext_id }}"
+      register: attachment_info
+      when: attachment_ext_id | default('', true) | length > 0
+      ignore_errors: true
+
+    - name: List all external attachments for the Volume Group
+      nutanix.ncp.ntnx_volume_group_external_attachments_info_v2:
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+      register: attachments_list
+      when: volume_group_ext_id is defined
+      ignore_errors: true
+
+    - name: List external attachments with OData filter on cluster reference
+      nutanix.ncp.ntnx_volume_group_external_attachments_info_v2:
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        filter: "startswith(clusterReference, '0')"
+      register: attachments_filtered
+      when: volume_group_ext_id is defined
+      ignore_errors: true
+
+    - name: List external attachments with a limit
+      nutanix.ncp.ntnx_volume_group_external_attachments_info_v2:
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        limit: 1
+      register: attachments_limited
+      when: volume_group_ext_id is defined
+      ignore_errors: true
+
+    - name: Detach (delete) the iSCSI external attachment
+      nutanix.ncp.ntnx_external_attachment_v2:
+        state: absent
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        ext_id: "{{ attachment_ext_id }}"
+      register: detach_result
+      when: attachment_ext_id | default('', true) | length > 0
+      ignore_errors: true
+
+    - name: Delete the Volume Group (cleanup)
+      nutanix.ncp.ntnx_volume_groups_v2:
+        state: absent
+        ext_id: "{{ volume_group_ext_id }}"
+      register: vg_cleanup
+      when: volume_group_ext_id is defined
+      ignore_errors: true

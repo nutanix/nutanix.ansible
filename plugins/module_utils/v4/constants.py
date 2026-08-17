@@ -25,6 +25,7 @@ class Tasks:
         VOLUME_GROUP = "volumes:config:volume-group"
         VOLUME_GROUP_DISK = "volumes:config:volume-group:disk"
         ISCSI_CLIENT = "volumes:config:iscsi-client"
+        EXTERNAL_ATTACHMENT = "storage:config:iscsi-client"
         VPC = "networking:config:vpc"
         SUBNET = "networking:config:subnet"
         FLOATING_IP = "networking:config:floating-ip"
