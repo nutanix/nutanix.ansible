@@ -1,0 +1,36 @@
+# Summary:
+# This playbook demonstrates how to control the physical LED of a Disk on a
+# Nutanix cluster via the Cluster Management v4 API. Turning the LED on lets a
+# datacenter operator visually locate a drive (for example, while replacing a
+# failed disk); turning it off is the standard follow-up once maintenance is
+# complete. The `ntnx_disk_led_state_v2` module is action-only — it always
+# submits a task and returns the task response, so use `nutanix.ncp.ntnx_disks_info_v2`
+# (or the platform inventory) to discover a valid disk `ext_id` first.
+
+- name: Disk LED state management playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set disk ext_id used by the play
+      ansible.builtin.set_fact:
+        disk_ext_id: "5a2b0e5c-4a2b-4c9b-8d5a-2f0e0e3b9a11"
+
+    - name: Turn ON the LED for the target disk (locate the drive)
+      nutanix.ncp.ntnx_disk_led_state_v2:
+        ext_id: "{{ disk_ext_id }}"
+        is_engaged: true
+      register: led_on_result
+      ignore_errors: true
+
+    - name: Turn OFF the LED for the target disk (after maintenance)
+      nutanix.ncp.ntnx_disk_led_state_v2:
+        ext_id: "{{ disk_ext_id }}"
+        is_engaged: false
+      register: led_off_result
+      ignore_errors: true

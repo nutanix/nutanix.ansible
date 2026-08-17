@@ -142,3 +142,20 @@ def get_ssl_certificates_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.SSLCertificateApi(client)
+
+
+def get_disks_api_instance(module):
+    """
+    This method will return disks api instance from sdk.
+
+    The DisksApi exposes the cluster-scoped Disk endpoints under
+    ``/api/clustermgmt/v4.x/config/disks`` — including the
+    ``$actions/update-led-state`` action used to identify a physical disk
+    via its chassis LED.
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        DisksApi: DisksApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.DisksApi(client)
