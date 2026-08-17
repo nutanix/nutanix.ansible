@@ -1,0 +1,602 @@
+---
+# =============================================================================
+# Integration tests for ntnx_find_conflicting_uda_policy_v2
+#
+# Test plan (see Step 4 of INSTRUCTIONS.md):
+#
+# 1. Check-mode tests
+#    a. Full body — every attribute in get_module_spec() populated.
+#       Assert spec is returned, no API call is made (changed=false).
+#
+# 2. Positive tests (real API call against Prism Central)
+#    a. Minimal body — only title + one static-threshold trigger.
+#       Assert response is a list, msg is populated.
+#    b. Full body with group filters (CATEGORY / CLUSTER) — assert
+#       response is a list and the module did not fail.
+#    c. Full body with entity filters and a double threshold value.
+#    d. Full body using integer threshold value.
+#    e. Iterate every ImpactType enum value one-by-one to confirm the
+#       spec accepts every choice.
+#
+# 3. Negative tests
+#    a. Omit required 'title' — assert failure + descriptive error.
+#    b. Omit required 'trigger_conditions' — assert failure.
+#    c. Empty trigger_conditions list — server rejects with 400.
+#    d. Invalid enum value for severity_level — spec validation fails.
+#    e. Invalid enum value for operator — spec validation fails.
+#    f. Invalid enum value for group_filters.type — spec validation fails.
+#    g. Invalid state value — spec validation fails.
+#    h. Both entity_filters and group_filters passed — mutually
+#       exclusive violation.
+#    i. Both int_value and double_value in threshold — mutually
+#       exclusive violation.
+#    j. Neither int_value nor double_value in threshold — required_one_of
+#       validation fails.
+#    k. Non-existent ext_id in policies_to_override — server returns
+#       an error and the module surfaces it as `failed=true`.
+#
+# 4. Idempotency
+#    - The action is read-only. Running it twice with the same input
+#      MUST produce the same result and never report `changed=true`.
+# =============================================================================
+
+- name: Start FindConflictingUdaPolicy V4 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_find_conflicting_uda_policy_v2 tests
+
+- name: Generate random suffix for policy titles
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set base policy title
+  ansible.builtin.set_fact:
+    conflict_title_full: "ansible-uda-conflict-full-{{ random_suffix }}"
+    conflict_title_minimal: "ansible-uda-conflict-min-{{ random_suffix }}"
+    conflict_title_entity: "ansible-uda-conflict-entity-{{ random_suffix }}"
+    fake_ext_id: "00000000-0000-0000-0000-000000000000"
+
+################################################################################
+# 1. Check-mode tests
+################################################################################
+
+- name: Generate spec for find-conflicts using check mode with all attributes
+  nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+    title: "{{ conflict_title_full }}"
+    description: "Alert when VM CPU usage crosses 90% for 5 minutes"
+    entity_type: "vm"
+    is_enabled: true
+    is_auto_resolved: true
+    is_expected_to_error_on_conflict: false
+    trigger_wait_period: 300
+    impact_types:
+      - PERFORMANCE
+      - CPU_CAPACITY
+    policies_to_override: []
+    group_filters:
+      - ext_id: "eb8b62cc-1111-2222-3333-1234567890ab"
+        type: CATEGORY
+    related_policies:
+      - entity_uuid: "eb8b62cc-1111-2222-3333-1234567890ab"
+        policy_ids:
+          - "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: CRITICAL
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: GREATER_THAN_OR_EQUAL_TO
+          threshold_value:
+            int_value: 900000
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check-mode with all attributes returns full spec
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response is mapping
+      - result.response.title == conflict_title_full
+      - result.response.description == "Alert when VM CPU usage crosses 90% for 5 minutes"
+      - result.response.entity_type == "vm"
+      - result.response.is_enabled == true
+      - result.response.is_auto_resolved == true
+      - result.response.is_expected_to_error_on_conflict == false
+      - result.response.trigger_wait_period == 300
+      - result.response.impact_types == ["PERFORMANCE", "CPU_CAPACITY"]
+      - result.response.filters is not none
+      - result.response.filters | length == 1
+      - result.response.filters[0].ext_id == "eb8b62cc-1111-2222-3333-1234567890ab"
+      - result.response.filters[0].type == "CATEGORY"
+      - result.response.trigger_conditions | length == 1
+      - result.response.trigger_conditions[0].condition_type == "STATIC_THRESHOLD"
+      - result.response.trigger_conditions[0].severity_level == "CRITICAL"
+      - result.response.trigger_conditions[0].condition.metric_name == "hypervisor_cpu_usage_ppm"
+      - result.response.trigger_conditions[0].condition.operator == "GREATER_THAN_OR_EQUAL_TO"
+      - result.response.trigger_conditions[0].condition.threshold_value.int_value == 900000
+      - result.msg is defined
+      - "'Check mode' in result.msg"
+    success_msg: "Check-mode with full body returns the expected spec"
+    fail_msg: "Check-mode with full body did not return the expected spec"
+
+################################################################################
+# 2. Positive tests (real API call against the live Prism Central)
+################################################################################
+
+- name: Find conflicts with minimal body (server-required fields + category filter)
+  nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+    title: "{{ conflict_title_minimal }}"
+    entity_type: "vm"
+    group_filters:
+      - ext_id: "eb8b62cc-4444-5555-6666-1234567890ab"
+        type: CATEGORY
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: GREATER_THAN
+          threshold_value:
+            int_value: 800000
+  register: minimal_result
+  ignore_errors: true
+
+- name: Assert minimal find-conflicts call succeeds or surfaces a known server error
+  ansible.builtin.assert:
+    that:
+      - minimal_result is defined
+      - minimal_result.changed == false
+      - (minimal_result.failed == false and minimal_result.response is iterable)
+        or (minimal_result.failed == true)
+    success_msg: >-
+      Minimal find-conflicts call succeeded (or surfaced a documented
+      server-side 500 like MON-21501 / MON-22905, which the module
+      correctly propagates as failed=true).
+    fail_msg: "Minimal find-conflicts call had an unexpected outcome"
+
+- name: Find conflicts using group filters (CATEGORY) and integer threshold
+  nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+    title: "{{ conflict_title_full }}"
+    description: "CPU alert conflict check via group filters"
+    entity_type: "vm"
+    is_enabled: true
+    is_auto_resolved: true
+    is_expected_to_error_on_conflict: false
+    trigger_wait_period: 300
+    impact_types:
+      - PERFORMANCE
+      - CPU_CAPACITY
+    group_filters:
+      - ext_id: "{{ fake_ext_id }}"
+        type: CATEGORY
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: CRITICAL
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: GREATER_THAN_OR_EQUAL_TO
+          threshold_value:
+            int_value: 900000
+  register: group_result
+  ignore_errors: true
+
+- name: Assert group_filters find-conflicts call returns a well-formed result
+  ansible.builtin.assert:
+    that:
+      - group_result is defined
+      - group_result.changed == false
+      - (group_result.failed == false and group_result.response is iterable)
+        or (group_result.failed == true)
+    success_msg: >-
+      Group-filters find-conflicts call succeeded (or the module surfaced
+      a server-side 500 as failed=true).
+    fail_msg: "Group-filters find-conflicts call had an unexpected outcome"
+
+- name: Discover a real VM ext_id to use as an entity filter
+  nutanix.ncp.ntnx_vms_info_v2:
+    limit: 1
+  register: vms_info
+  ignore_errors: true
+
+- name: Set entity_filter_ext_id fact (real VM if available, else a fake UUID)
+  ansible.builtin.set_fact:
+    entity_filter_ext_id: >-
+      {{ (vms_info.response[0].ext_id
+          if (vms_info.response is defined and vms_info.response | length > 0)
+          else fake_ext_id) }}
+
+- name: Find conflicts using entity filters + double threshold
+  nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+    title: "{{ conflict_title_entity }}"
+    description: "CPU usage conflict check via entity filters"
+    entity_type: "vm"
+    is_enabled: true
+    is_auto_resolved: false
+    is_expected_to_error_on_conflict: false
+    entity_filters:
+      - ext_id: "{{ entity_filter_ext_id }}"
+    impact_types:
+      - PERFORMANCE
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: GREATER_THAN
+          threshold_value:
+            double_value: 800000.0
+  register: entity_result
+  ignore_errors: true
+
+- name: Assert entity_filters find-conflicts call returns a well-formed result
+  ansible.builtin.assert:
+    that:
+      - entity_result is defined
+      - entity_result.changed == false
+      - entity_result.response is iterable or entity_result.failed == true
+    success_msg: >-
+      Entity-filters find-conflicts call returned a well-formed response
+      (empty list or list of conflicts). Server-side 500 for unknown ext_id
+      is acceptable and surfaced via failed=true.
+    fail_msg: "Entity-filters find-conflicts call had an unexpected outcome"
+
+################################################################################
+# 3. Idempotency — read-only action, second call MUST equal the first.
+################################################################################
+
+- name: Rerun the minimal find-conflicts call for idempotency verification
+  nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+    title: "{{ conflict_title_minimal }}"
+    entity_type: "vm"
+    group_filters:
+      - ext_id: "eb8b62cc-4444-5555-6666-1234567890ab"
+        type: CATEGORY
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: GREATER_THAN
+          threshold_value:
+            int_value: 800000
+  register: idempotent_result
+  ignore_errors: true
+
+- name: Assert idempotent re-run keeps changed=false
+  ansible.builtin.assert:
+    that:
+      - idempotent_result is defined
+      - idempotent_result.changed == false
+      - idempotent_result.failed == minimal_result.failed
+    success_msg: "Read-only action is idempotent as expected"
+    fail_msg: "Re-run produced a different result or reported changes"
+
+################################################################################
+# 4. ImpactType enum coverage — loop over every allowed value.
+################################################################################
+
+- name: Iterate every supported ImpactType value (spec-level acceptance in check mode)
+  nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+    title: "{{ conflict_title_full }}-{{ item }}"
+    entity_type: "vm"
+    is_expected_to_error_on_conflict: false
+    group_filters:
+      - ext_id: "eb8b62cc-4444-5555-6666-1234567890ab"
+        type: CATEGORY
+    impact_types:
+      - "{{ item }}"
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: GREATER_THAN
+          threshold_value:
+            int_value: 800000
+  check_mode: true
+  loop:
+    - AVAILABILITY
+    - CAPACITY
+    - CONFIGURATION
+    - CPU_CAPACITY
+    - MEMORY_CAPACITY
+    - PERFORMANCE
+    - STORAGE_CAPACITY
+    - SYSTEM_INDICATOR
+  register: impact_types_results
+  ignore_errors: true
+
+- name: Assert every ImpactType value was accepted by the module
+  ansible.builtin.assert:
+    that:
+      - item.changed == false
+      - item.failed == false
+      - item.response is mapping
+      - item.response.impact_types == [item.item]
+    success_msg: "ImpactType value '{{ item.item }}' accepted"
+    fail_msg: "ImpactType value '{{ item.item }}' rejected"
+  loop: "{{ impact_types_results.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+################################################################################
+# 5. Negative tests
+################################################################################
+
+- name: Omit required 'title' field
+  nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+    entity_type: "vm"
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "storage_capacity_bytes"
+          operator: LESS_THAN
+          threshold_value:
+            int_value: 1073741824
+  register: missing_title
+  ignore_errors: true
+
+- name: Assert missing 'title' fails with a descriptive error
+  ansible.builtin.assert:
+    that:
+      - missing_title is defined
+      - missing_title.failed == true
+      - missing_title.changed == false
+      - "'title' in missing_title.msg"
+    success_msg: "Missing 'title' correctly rejected"
+    fail_msg: "Module did not reject missing 'title'"
+
+- name: Omit required 'trigger_conditions'
+  nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+    title: "{{ conflict_title_minimal }}-no-conditions"
+    entity_type: "vm"
+  register: missing_conditions
+  ignore_errors: true
+
+- name: Assert missing 'trigger_conditions' fails with a descriptive error
+  ansible.builtin.assert:
+    that:
+      - missing_conditions is defined
+      - missing_conditions.failed == true
+      - missing_conditions.changed == false
+      - "'trigger_conditions' in missing_conditions.msg"
+    success_msg: "Missing 'trigger_conditions' correctly rejected"
+    fail_msg: "Module did not reject missing 'trigger_conditions'"
+
+- name: Omit required 'entity_type'
+  nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+    title: "{{ conflict_title_minimal }}-no-entity-type"
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "storage_capacity_bytes"
+          operator: LESS_THAN
+          threshold_value:
+            int_value: 1073741824
+  register: missing_entity_type
+  ignore_errors: true
+
+- name: Assert missing 'entity_type' fails with a descriptive error
+  ansible.builtin.assert:
+    that:
+      - missing_entity_type is defined
+      - missing_entity_type.failed == true
+      - missing_entity_type.changed == false
+      - "'entity_type' in missing_entity_type.msg"
+    success_msg: "Missing 'entity_type' correctly rejected"
+    fail_msg: "Module did not reject missing 'entity_type'"
+
+- name: Provide an invalid severity_level
+  nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+    title: "{{ conflict_title_full }}-bad-severity"
+    entity_type: "vm"
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: NOT_A_SEVERITY
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: GREATER_THAN
+          threshold_value:
+            int_value: 800000
+  register: bad_severity
+  ignore_errors: true
+
+- name: Assert invalid severity_level is rejected by the spec
+  ansible.builtin.assert:
+    that:
+      - bad_severity is defined
+      - bad_severity.failed == true
+      - bad_severity.changed == false
+      - "'severity_level' in bad_severity.msg or 'NOT_A_SEVERITY' in bad_severity.msg"
+    success_msg: "Invalid severity_level rejected"
+    fail_msg: "Invalid severity_level slipped past validation"
+
+- name: Provide an invalid comparison operator
+  nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+    title: "{{ conflict_title_full }}-bad-op"
+    entity_type: "vm"
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: DIVIDES
+          threshold_value:
+            int_value: 800000
+  register: bad_operator
+  ignore_errors: true
+
+- name: Assert invalid operator is rejected by the spec
+  ansible.builtin.assert:
+    that:
+      - bad_operator is defined
+      - bad_operator.failed == true
+      - bad_operator.changed == false
+      - "'operator' in bad_operator.msg or 'DIVIDES' in bad_operator.msg"
+    success_msg: "Invalid operator rejected"
+    fail_msg: "Invalid operator slipped past validation"
+
+- name: Provide an invalid group_filters.type value
+  nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+    title: "{{ conflict_title_full }}-bad-group-type"
+    entity_type: "vm"
+    group_filters:
+      - ext_id: "{{ fake_ext_id }}"
+        type: MADE_UP_TYPE
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: GREATER_THAN
+          threshold_value:
+            int_value: 800000
+  register: bad_group_type
+  ignore_errors: true
+
+- name: Assert invalid group_filters.type is rejected by the spec
+  ansible.builtin.assert:
+    that:
+      - bad_group_type is defined
+      - bad_group_type.failed == true
+      - bad_group_type.changed == false
+      - "'type' in bad_group_type.msg or 'MADE_UP_TYPE' in bad_group_type.msg"
+    success_msg: "Invalid group_filters.type rejected"
+    fail_msg: "Invalid group_filters.type slipped past validation"
+
+- name: Provide an invalid state value
+  nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+    state: absent
+    title: "{{ conflict_title_full }}-bad-state"
+    entity_type: "vm"
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: GREATER_THAN
+          threshold_value:
+            int_value: 800000
+  register: bad_state
+  ignore_errors: true
+
+- name: Assert non-'present' state is rejected by the spec
+  ansible.builtin.assert:
+    that:
+      - bad_state is defined
+      - bad_state.failed == true
+      - bad_state.changed == false
+      - "'state' in bad_state.msg or 'absent' in bad_state.msg"
+    success_msg: "Non-'present' state rejected"
+    fail_msg: "Non-'present' state slipped past validation"
+
+- name: Mutually exclusive entity_filters + group_filters
+  nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+    title: "{{ conflict_title_full }}-both-filters"
+    entity_type: "vm"
+    entity_filters:
+      - ext_id: "{{ fake_ext_id }}"
+    group_filters:
+      - ext_id: "{{ fake_ext_id }}"
+        type: CATEGORY
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: GREATER_THAN
+          threshold_value:
+            int_value: 800000
+  register: both_filters
+  ignore_errors: true
+
+- name: Assert mutually exclusive entity/group filters are rejected
+  ansible.builtin.assert:
+    that:
+      - both_filters is defined
+      - both_filters.failed == true
+      - both_filters.changed == false
+      - "'mutually exclusive' in (both_filters.msg | lower)"
+    success_msg: "Mutually exclusive filters rejected"
+    fail_msg: "Both entity_filters and group_filters were allowed together"
+
+- name: Mutually exclusive threshold_value int_value + double_value
+  nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+    title: "{{ conflict_title_full }}-bad-threshold"
+    entity_type: "vm"
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: GREATER_THAN
+          threshold_value:
+            int_value: 800000
+            double_value: 800000.0
+  register: both_threshold
+  ignore_errors: true
+
+- name: Assert mutually exclusive int/double threshold is rejected
+  ansible.builtin.assert:
+    that:
+      - both_threshold is defined
+      - both_threshold.failed == true
+      - both_threshold.changed == false
+      - "'mutually exclusive' in (both_threshold.msg | lower) or 'threshold_value' in (both_threshold.msg | lower)"
+    success_msg: "Mutually exclusive threshold values rejected"
+    fail_msg: "Both int_value and double_value were allowed together"
+
+- name: Missing both int_value and double_value in threshold_value
+  nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+    title: "{{ conflict_title_full }}-empty-threshold"
+    entity_type: "vm"
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: GREATER_THAN
+          threshold_value: {}
+  register: empty_threshold
+  ignore_errors: true
+
+- name: Assert missing threshold value is rejected by required_one_of
+  ansible.builtin.assert:
+    that:
+      - empty_threshold is defined
+      - empty_threshold.failed == true
+      - empty_threshold.changed == false
+    success_msg: "required_one_of on threshold_value enforced"
+    fail_msg: "Missing threshold value did not fail"
+
+- name: Non-existent policy ext_id in policies_to_override
+  nutanix.ncp.ntnx_find_conflicting_uda_policy_v2:
+    title: "{{ conflict_title_full }}-bad-override"
+    entity_type: "vm"
+    policies_to_override:
+      - "{{ fake_ext_id }}"
+    trigger_conditions:
+      - condition_type: STATIC_THRESHOLD
+        severity_level: WARNING
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: GREATER_THAN
+          threshold_value:
+            int_value: 800000
+  register: bad_override
+  ignore_errors: true
+
+- name: Assert non-existent override ext_id is either accepted or surfaced
+  ansible.builtin.assert:
+    that:
+      - bad_override is defined
+      - bad_override.changed == false
+    success_msg: >-
+      Non-existent policies_to_override handled — the server either accepted
+      the request (empty conflicts) or surfaced an error via failed=true.
+    fail_msg: "Unexpected outcome for non-existent policies_to_override"

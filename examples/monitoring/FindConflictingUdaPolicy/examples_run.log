@@ -1,0 +1,20 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [FindConflictingUdaPolicy V4 playbook] ************************************
+
+TASK [Find conflicting UDA policies (group filters, all attributes)] ***********
+ok: [localhost] => {"changed": false, "msg": "No conflicting User-Defined Alert policies were found for the given input.", "response": []}
+
+TASK [Find conflicting UDA policies (category filter + double threshold)] ******
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while finding conflicting User-Defined Alert policies", "response": {"$objectType": "monitoring.v4.serviceability.FindConflictingUdaPoliciesApiResponse", "$reserved": {"$fv": "v4.r3"}, "data": {"$objectType": "monitoring.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r3"}, "error": [{"$objectType": "monitoring.v4.error.AppMessage", "$reserved": {"$fv": "v4.r3"}, "code": "MON-21501", "errorGroup": "INTERNAL_SERVER_ERROR", "locale": "en_US", "message": "Failed to get the list of User-Defined Alert policies that conflict with {{{extId}}} due to downstream service error.", "severity": "ERROR"}]}}, "status": 500}
+...ignoring
+
+TASK [Find conflicting UDA policies (minimal body — required fields + category filter)] ***
+ok: [localhost] => {"changed": false, "msg": "No conflicting User-Defined Alert policies were found for the given input.", "response": []}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+
