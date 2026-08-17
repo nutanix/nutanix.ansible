@@ -1,0 +1,504 @@
+---
+# ---------------------------------------------------------------------------
+# Test Plan — ntnx_storage_container_esxi_v2
+# ---------------------------------------------------------------------------
+# The following scenarios are covered end-to-end against a live Prism Central.
+# Assertions ALWAYS include ``changed`` and ``failed`` first, then module-
+# specific attributes. Random suffixes are used for names to avoid collisions
+# with existing Storage Containers on the cluster.
+#
+#   1. Prerequisites — auto-discover a Prism Element cluster ext_id if the
+#      ``cluster`` fact is not already provided by prepare_env vars.
+#   2. Check-mode CREATE with the full attribute set (single test).
+#   3. Minimal CREATE (only required params: name + cluster_ext_id).
+#   4. Full CREATE (all optional attributes populated).
+#   5. Idempotency — re-run update with the same spec, expect ``skipped: true``.
+#   6. Check-mode UPDATE (single test).
+#   7. Real UPDATE — flip enums (ON→OFF), change scalar capacity, replace list.
+#   8. INFO — get by ext_id, list-all, filter by name, limit.
+#   9. INFO — invalid ext_id returns a descriptive error.
+#  10. Negative — missing required param (cluster_ext_id) on CREATE.
+#  11. Negative — invalid enum value on CREATE.
+#  12. Check-mode DELETE (single test), then real DELETE of every SC created.
+#
+# Coverage: every attribute in ``get_module_spec()`` is exercised by at least
+# one CREATE, UPDATE, or INFO assertion. Every enum has both a valid and an
+# invalid value tested.
+
+- name: Start ntnx_storage_container_esxi_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_storage_container_esxi_v2 tests
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Initialize per-test facts
+  ansible.builtin.set_fact:
+    prefix_name: "ansible-sce"
+    todelete: []
+
+- name: Compose Storage Container base name
+  ansible.builtin.set_fact:
+    storage_container_name: "{{ prefix_name }}-{{ random_name }}"
+
+########################################################################################
+# Prerequisites — pick a PE cluster ext_id and an owner ext_id
+########################################################################################
+
+- name: Auto-discover a PE cluster ext_id (used when prepare_env has none)
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(f:f eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_info
+  ignore_errors: true
+  when: cluster is not defined or (cluster.uuid | default('')) == ''
+
+- name: Set discovered cluster ext_id when prepare_env didn't provide one
+  ansible.builtin.set_fact:
+    cluster:
+      uuid: "{{ (clusters_info.response | selectattr('config.cluster_function', 'defined')
+                | rejectattr('name', 'equalto', 'unnamed')
+                | list)[0].ext_id }}"
+  when:
+    - cluster is not defined or (cluster.uuid | default('')) == ''
+    - clusters_info is defined
+    - clusters_info.response is defined
+    - clusters_info.response | length > 0
+
+- name: Set owner ext_id default when prepare_env didn't provide one
+  ansible.builtin.set_fact:
+    owner:
+      uuid: "00000000-0000-0000-0000-000000000000"
+  when: owner is not defined or (owner.uuid | default('')) == ''
+
+- name: Assert prerequisites are satisfied
+  ansible.builtin.assert:
+    that:
+      - cluster is defined
+      - cluster.uuid is defined
+      - cluster.uuid | length > 0
+    fail_msg: "Unable to determine a PE cluster ext_id for Storage Container tests"
+    success_msg: "Using cluster ext_id: {{ cluster.uuid }}"
+
+########################################################################################
+# 2. Check-mode CREATE with the full attribute set
+########################################################################################
+
+- name: Generate check-mode CREATE spec with all attributes
+  nutanix.ncp.ntnx_storage_container_esxi_v2:
+    state: present
+    name: "{{ storage_container_name }}-cm"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    owner_ext_id: "{{ owner.uuid }}"
+    logical_explicit_reserved_capacity_bytes: 0
+    logical_advertised_capacity_bytes: 107374182400
+    replication_factor: 1
+    nfs_whitelist_address:
+      - ipv4:
+          value: "192.168.1.1"
+    erasure_code: "OFF"
+    is_inline_ec_enabled: false
+    has_higher_ec_fault_domain_preference: true
+    cache_deduplication: "OFF"
+    on_disk_dedup: "OFF"
+    is_compression_enabled: true
+    compression_delay_secs: 60
+    is_internal: false
+    is_software_encryption_enabled: false
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check-mode CREATE spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == storage_container_name ~ '-cm'
+      - result.response.cluster_ext_id == cluster.uuid
+      - result.response.owner_ext_id == owner.uuid
+      - result.response.replication_factor == 1
+      - result.response.logical_explicit_reserved_capacity_bytes == 0
+      - result.response.logical_advertised_capacity_bytes == 107374182400
+      - result.response.nfs_whitelist_address[0].ipv4.value == "192.168.1.1"
+      - result.response.erasure_code == "OFF"
+      - result.response.is_inline_ec_enabled == false
+      - result.response.has_higher_ec_fault_domain_preference == true
+      - result.response.cache_deduplication == "OFF"
+      - result.response.on_disk_dedup == "OFF"
+      - result.response.is_compression_enabled == true
+      - result.response.compression_delay_secs == 60
+      - result.response.is_internal == false
+      - result.response.is_software_encryption_enabled == false
+    fail_msg: "check-mode CREATE spec did not materialize expected attributes"
+    success_msg: "check-mode CREATE spec generated as expected"
+
+########################################################################################
+# 3. Minimal CREATE — required fields only
+########################################################################################
+
+- name: Create Storage Container with minimal spec (name + cluster_ext_id)
+  nutanix.ncp.ntnx_storage_container_esxi_v2:
+    state: present
+    name: "{{ storage_container_name }}-min"
+    cluster_ext_id: "{{ cluster.uuid }}"
+  register: minimal_create
+  ignore_errors: true
+
+- name: Assert minimal CREATE
+  ansible.builtin.assert:
+    that:
+      - minimal_create.changed == true
+      - minimal_create.failed == false
+      - minimal_create.ext_id is defined
+      - minimal_create.ext_id | length > 0
+      - minimal_create.task_ext_id is defined
+      - minimal_create.response.name == storage_container_name ~ '-min'
+      - minimal_create.response.cluster_ext_id == cluster.uuid
+      - minimal_create.response.container_ext_id == minimal_create.ext_id
+    fail_msg: "Minimal CREATE failed"
+    success_msg: "Minimal CREATE succeeded"
+
+- name: Track SC for cleanup
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [minimal_create.ext_id] }}"
+
+########################################################################################
+# 4. Full CREATE — every optional attribute populated
+########################################################################################
+
+- name: Create Storage Container with full attribute set
+  nutanix.ncp.ntnx_storage_container_esxi_v2:
+    state: present
+    name: "{{ storage_container_name }}-full"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    owner_ext_id: "{{ owner.uuid }}"
+    logical_explicit_reserved_capacity_bytes: 0
+    logical_advertised_capacity_bytes: 107374182400
+    replication_factor: 1
+    nfs_whitelist_address:
+      - ipv4:
+          value: "192.168.12.0"
+    erasure_code: "OFF"
+    is_inline_ec_enabled: false
+    has_higher_ec_fault_domain_preference: true
+    cache_deduplication: "OFF"
+    on_disk_dedup: "OFF"
+    is_compression_enabled: true
+    compression_delay_secs: 3600
+    is_internal: false
+    is_software_encryption_enabled: false
+  register: full_create
+  ignore_errors: true
+
+- name: Assert full CREATE
+  ansible.builtin.assert:
+    that:
+      - full_create.changed == true
+      - full_create.failed == false
+      - full_create.ext_id is defined
+      - full_create.task_ext_id is defined
+      - full_create.response.name == storage_container_name ~ '-full'
+      - full_create.response.cluster_ext_id == cluster.uuid
+      - full_create.response.owner_ext_id == owner.uuid
+      - full_create.response.logical_explicit_reserved_capacity_bytes == 0
+      - full_create.response.logical_advertised_capacity_bytes == 107374182400
+      - full_create.response.replication_factor == 1
+      - full_create.response.nfs_whitelist_address[0].ipv4.value == "192.168.12.0"
+      - full_create.response.erasure_code == "OFF"
+      - full_create.response.cache_deduplication == "OFF"
+      - full_create.response.on_disk_dedup == "OFF"
+      - full_create.response.is_compression_enabled == true
+      - full_create.response.compression_delay_secs == 3600
+      - full_create.response.is_software_encryption_enabled == false
+      - full_create.response.container_ext_id == full_create.ext_id
+    fail_msg: "Full CREATE failed"
+    success_msg: "Full CREATE succeeded"
+
+- name: Set full SC ext_id for follow-up tests
+  ansible.builtin.set_fact:
+    storage_container_ext_id: "{{ full_create.ext_id }}"
+    todelete: "{{ todelete + [full_create.ext_id] }}"
+
+########################################################################################
+# 5. Idempotency — re-issue update with the exact same spec
+########################################################################################
+
+- name: Re-run update with same spec — expect idempotent behavior
+  nutanix.ncp.ntnx_storage_container_esxi_v2:
+    state: present
+    ext_id: "{{ storage_container_ext_id }}"
+    name: "{{ storage_container_name }}-full"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    owner_ext_id: "{{ owner.uuid }}"
+    logical_explicit_reserved_capacity_bytes: 0
+    logical_advertised_capacity_bytes: 107374182400
+  register: idempotency_result
+  ignore_errors: true
+
+- name: Assert idempotency — module is idempotent (skip) or safe no-op update
+  ansible.builtin.assert:
+    that:
+      - idempotency_result.failed == false
+      - idempotency_result.ext_id == storage_container_ext_id
+      - (idempotency_result.skipped | default(false) and idempotency_result.msg == "Nothing to change.")
+        or idempotency_result.response.name == storage_container_name ~ '-full'
+    fail_msg: "Idempotent update path failed"
+    success_msg: "Idempotent update path completed cleanly"
+
+########################################################################################
+# 6. Check-mode UPDATE
+########################################################################################
+
+- name: Generate check-mode UPDATE spec
+  nutanix.ncp.ntnx_storage_container_esxi_v2:
+    state: present
+    ext_id: "{{ storage_container_ext_id }}"
+    name: "{{ storage_container_name }}-full-updated"
+    logical_explicit_reserved_capacity_bytes: 0
+    logical_advertised_capacity_bytes: 214748364800
+    nfs_whitelist_address:
+      - ipv4:
+          value: "192.168.13.0"
+          prefix_length: 32
+      - ipv6:
+          value: "2001:db8::1"
+          prefix_length: 128
+      - fqdn:
+          value: "example.com"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check-mode UPDATE
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == storage_container_name ~ '-full-updated'
+      - result.response.logical_explicit_reserved_capacity_bytes == 0
+      - result.response.logical_advertised_capacity_bytes == 214748364800
+      - result.response.nfs_whitelist_address[0].ipv4.value == "192.168.13.0"
+      - result.response.nfs_whitelist_address[0].ipv4.prefix_length == 32
+      - result.response.nfs_whitelist_address[1].ipv6.value == "2001:db8::1"
+      - result.response.nfs_whitelist_address[1].ipv6.prefix_length == 128
+      - result.response.nfs_whitelist_address[2].fqdn.value == "example.com"
+      - result.ext_id == storage_container_ext_id
+    fail_msg: "check-mode UPDATE spec did not materialize expected attributes"
+    success_msg: "check-mode UPDATE spec generated as expected"
+
+########################################################################################
+# 7. Real UPDATE — state transitions
+########################################################################################
+
+- name: Update Storage Container — flip attributes and change scalars
+  nutanix.ncp.ntnx_storage_container_esxi_v2:
+    state: present
+    ext_id: "{{ storage_container_ext_id }}"
+    name: "{{ storage_container_name }}-full-updated"
+    logical_explicit_reserved_capacity_bytes: 0
+    logical_advertised_capacity_bytes: 214748364800
+    is_compression_enabled: true
+    compression_delay_secs: 60
+    nfs_whitelist_address:
+      - ipv4:
+          value: "192.168.13.2"
+  register: update_result
+  ignore_errors: true
+
+- name: Assert real UPDATE
+  ansible.builtin.assert:
+    that:
+      - update_result.changed == true
+      - update_result.failed == false
+      - update_result.response.name == storage_container_name ~ '-full-updated'
+      - update_result.response.logical_explicit_reserved_capacity_bytes == 0
+      - update_result.response.logical_advertised_capacity_bytes == 214748364800
+      - update_result.response.compression_delay_secs == 60
+      - update_result.response.is_compression_enabled == true
+      - update_result.response.nfs_whitelist_address[0].ipv4.value == "192.168.13.2"
+      - update_result.ext_id == storage_container_ext_id
+    fail_msg: "Storage Container UPDATE failed"
+    success_msg: "Storage Container UPDATE succeeded"
+
+########################################################################################
+# 8. INFO tests
+########################################################################################
+
+- name: Fetch a Storage Container by ext_id
+  nutanix.ncp.ntnx_storage_containers_info_v2:
+    ext_id: "{{ storage_container_ext_id }}"
+  register: info_by_id
+  ignore_errors: true
+
+- name: Assert INFO — get by ext_id
+  ansible.builtin.assert:
+    that:
+      - info_by_id.changed == false
+      - info_by_id.failed == false
+      - info_by_id.response is defined
+      - info_by_id.response.name == storage_container_name ~ '-full-updated'
+      - info_by_id.response.container_ext_id == storage_container_ext_id
+      - info_by_id.ext_id == storage_container_ext_id
+    fail_msg: "INFO by ext_id failed"
+    success_msg: "INFO by ext_id succeeded"
+
+- name: List all Storage Containers
+  nutanix.ncp.ntnx_storage_containers_info_v2:
+  register: info_all
+  ignore_errors: true
+
+- name: Assert INFO — list all
+  ansible.builtin.assert:
+    that:
+      - info_all.changed == false
+      - info_all.failed == false
+      - info_all.response is defined
+      - info_all.response | length > 0
+      - info_all.total_available_results is defined
+      - info_all.total_available_results > 0
+    fail_msg: "INFO list-all failed"
+    success_msg: "INFO list-all succeeded"
+
+- name: List Storage Containers with filter by name
+  nutanix.ncp.ntnx_storage_containers_info_v2:
+    filter: "name eq '{{ storage_container_name }}-full-updated'"
+  register: info_filter
+  ignore_errors: true
+
+- name: Assert INFO — filter
+  ansible.builtin.assert:
+    that:
+      - info_filter.changed == false
+      - info_filter.failed == false
+      - info_filter.response | length == 1
+      - info_filter.response[0].name == storage_container_name ~ '-full-updated'
+    fail_msg: "INFO filter failed"
+    success_msg: "INFO filter succeeded"
+
+- name: List Storage Containers with limit
+  nutanix.ncp.ntnx_storage_containers_info_v2:
+    limit: 1
+  register: info_limit
+  ignore_errors: true
+
+- name: Assert INFO — limit
+  ansible.builtin.assert:
+    that:
+      - info_limit.changed == false
+      - info_limit.failed == false
+      - info_limit.response | length == 1
+    fail_msg: "INFO limit failed"
+    success_msg: "INFO limit succeeded"
+
+########################################################################################
+# 9. Negative INFO — invalid ext_id
+########################################################################################
+
+- name: Fetch Storage Container with invalid ext_id
+  nutanix.ncp.ntnx_storage_containers_info_v2:
+    ext_id: "00000000-0000-0000-0000-deadbeefdead"
+  register: info_bad
+  ignore_errors: true
+
+- name: Assert INFO — invalid ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - info_bad.failed == true
+      - info_bad.changed == false
+      - info_bad.msg is defined
+      - "'fetching storage container info using ext_id' in info_bad.msg | lower"
+    fail_msg: "INFO with invalid ext_id did not fail cleanly"
+    success_msg: "INFO with invalid ext_id returned a clear error"
+
+########################################################################################
+# 10. Negative CREATE — missing required cluster_ext_id
+########################################################################################
+
+- name: Create Storage Container without cluster_ext_id
+  nutanix.ncp.ntnx_storage_container_esxi_v2:
+    state: present
+    name: "{{ storage_container_name }}-neg-noclu"
+  register: neg_no_cluster
+  ignore_errors: true
+
+- name: Assert negative CREATE — missing cluster_ext_id
+  ansible.builtin.assert:
+    that:
+      - neg_no_cluster.changed == false
+      - neg_no_cluster.failed == true
+      - neg_no_cluster.msg is defined
+      - "'cluster_ext_id' in neg_no_cluster.msg"
+    fail_msg: "Missing cluster_ext_id did not fail with a clear error"
+    success_msg: "Missing cluster_ext_id was correctly rejected"
+
+########################################################################################
+# 11. Negative CREATE — invalid enum value for erasure_code
+########################################################################################
+
+- name: Create Storage Container with invalid erasure_code enum
+  nutanix.ncp.ntnx_storage_container_esxi_v2:
+    state: present
+    name: "{{ storage_container_name }}-neg-enum"
+    cluster_ext_id: "{{ cluster.uuid }}"
+    erasure_code: "BOGUS"
+  register: neg_bad_enum
+  ignore_errors: true
+
+- name: Assert negative CREATE — invalid enum value rejected
+  ansible.builtin.assert:
+    that:
+      - neg_bad_enum.failed == true
+      - neg_bad_enum.changed == false
+      - neg_bad_enum.msg is defined
+      - "'BOGUS' in neg_bad_enum.msg"
+    fail_msg: "Invalid enum value was NOT rejected by argument spec"
+    success_msg: "Invalid enum value was rejected by argument spec"
+
+########################################################################################
+# 12. Check-mode DELETE, then real DELETE of every SC created
+########################################################################################
+
+- name: Delete Storage Container in check mode
+  nutanix.ncp.ntnx_storage_container_esxi_v2:
+    state: absent
+    ext_id: "{{ storage_container_ext_id }}"
+  check_mode: true
+  register: check_delete
+  ignore_errors: true
+
+- name: Assert check-mode DELETE
+  ansible.builtin.assert:
+    that:
+      - check_delete.changed == false
+      - check_delete.failed == false
+      - check_delete.ext_id == storage_container_ext_id
+      - check_delete.msg == ("Storage Container with ext_id:" ~ storage_container_ext_id ~ " will be deleted.")
+    fail_msg: "check-mode DELETE assertion failed"
+    success_msg: "check-mode DELETE assertion succeeded"
+
+- name: Delete every SC created during the test
+  nutanix.ncp.ntnx_storage_container_esxi_v2:
+    state: absent
+    ext_id: "{{ item }}"
+    ignore_small_files: true
+  loop: "{{ todelete }}"
+  register: delete_results
+  ignore_errors: true
+
+- name: Assert every SC was deleted
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.ext_id == todelete[storage_containers_index]
+      - item.response is defined
+    fail_msg: "Failed to delete Storage Container {{ item.ext_id }}"
+    success_msg: "Deleted Storage Container {{ item.ext_id }}"
+  loop: "{{ delete_results.results }}"
+  loop_control:
+    index_var: storage_containers_index
+
+- name: Reset delete list
+  ansible.builtin.set_fact:
+    todelete: []

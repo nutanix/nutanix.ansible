@@ -1,0 +1,92 @@
+---
+# Summary:
+# This playbook demonstrates all StorageContainer operations exposed by the
+# ntnx_storage_container_esxi_v2 CRUD module and the related info module:
+#   1. Create a Storage Container (full spec)
+#   2. Fetch the Storage Container by ext_id
+#   3. Update the Storage Container
+#   4. List all Storage Containers (with a filter)
+#   5. Delete the Storage Container
+
+- name: Storage Container playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        storage_container_name: "ansible_storage_container_example"
+        cluster_ext_id: "{{ cluster.uuid }}"
+        owner_uuid: "{{ owner.uuid | default('00000000-0000-0000-0000-000000000000') }}"
+
+    - name: Create Storage Container with full spec
+      nutanix.ncp.ntnx_storage_container_esxi_v2:
+        state: present
+        name: "{{ storage_container_name }}"
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        owner_ext_id: "{{ owner_uuid }}"
+        logical_explicit_reserved_capacity_bytes: 0
+        logical_advertised_capacity_bytes: 107374182400
+        replication_factor: 1
+        nfs_whitelist_address:
+          - ipv4:
+              value: "192.168.1.1"
+        erasure_code: "OFF"
+        is_inline_ec_enabled: false
+        has_higher_ec_fault_domain_preference: true
+        cache_deduplication: "OFF"
+        on_disk_dedup: "OFF"
+        is_compression_enabled: true
+        compression_delay_secs: 0
+        is_internal: false
+        is_software_encryption_enabled: false
+      register: create_result
+      ignore_errors: true
+
+    - name: Capture ext_id
+      ansible.builtin.set_fact:
+        storage_container_ext_id: "{{ create_result.ext_id }}"
+      when: create_result.ext_id is defined and create_result.ext_id | length > 0
+
+    - name: Fetch the Storage Container by ext_id
+      nutanix.ncp.ntnx_storage_containers_info_v2:
+        ext_id: "{{ storage_container_ext_id }}"
+      register: info_result
+      ignore_errors: true
+      when: storage_container_ext_id is defined
+
+    - name: Update Storage Container
+      nutanix.ncp.ntnx_storage_container_esxi_v2:
+        state: present
+        ext_id: "{{ storage_container_ext_id }}"
+        name: "{{ storage_container_name }}_updated"
+        logical_explicit_reserved_capacity_bytes: 0
+        logical_advertised_capacity_bytes: 214748364800
+        nfs_whitelist_address:
+          - ipv4:
+              value: "192.168.13.2"
+        is_compression_enabled: true
+        compression_delay_secs: 60
+      register: update_result
+      ignore_errors: true
+      when: storage_container_ext_id is defined
+
+    - name: List all Storage Containers with filter on the created name
+      nutanix.ncp.ntnx_storage_containers_info_v2:
+        filter: "name eq '{{ storage_container_name }}_updated'"
+      register: list_result
+      ignore_errors: true
+
+    - name: Delete Storage Container
+      nutanix.ncp.ntnx_storage_container_esxi_v2:
+        state: absent
+        ext_id: "{{ storage_container_ext_id }}"
+        ignore_small_files: true
+      register: delete_result
+      ignore_errors: true
+      when: storage_container_ext_id is defined
