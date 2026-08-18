@@ -52,6 +52,53 @@ def strip_internal_attributes(data, exclude_attributes=None):
     return data
 
 
+def _get_nested_value(obj, dotted_path):
+    """
+    Get a nested value from a dict using a dotted path.
+
+    Example:
+        _get_nested_value({"address": {"ipv4": {"value": "1.2.3.4"}}}, "address.ipv4.value")
+        -> "1.2.3.4"
+    """
+    if obj is None or dotted_path is None:
+        return None
+    current_val = obj
+    for part in str(dotted_path).split("."):
+        if not isinstance(current_val, dict) or part not in current_val:
+            return None
+        current_val = current_val[part]
+    return current_val
+
+
+def filter_entities_by_attribute_get_ext_id(
+    entities,
+    attribute_path,
+    expected_value,
+    ext_id_key="ext_id",
+):
+    """
+    Filter a list of entity dicts by a (possibly nested) attribute and return the matching ext_id.
+
+    Args:
+        entities (list[dict]|None): entities to search (e.g. config['users'] or config['traps'])
+        attribute_path (str): attribute name or dotted path (e.g. 'username' or 'address.ipv4.value')
+        expected_value: value to match with == (after extraction)
+        ext_id_key (str): field name that contains the external id (default: 'ext_id')
+
+    Returns:
+        str|None: the first matched entity's ext_id, or None if no match.
+    """
+    if not entities:
+        return None
+    for item in entities:
+        if not isinstance(item, dict):
+            continue
+        actual = _get_nested_value(item, attribute_path)
+        if actual == expected_value:
+            return item.get(ext_id_key)
+    return None
+
+
 def raise_api_exception(module, exception, msg=None):
     """
     This routine raise module failure as per exception
