@@ -128,7 +128,7 @@
 
 - name: Read content from file
   ansible.builtin.set_fact:
-    xml_file_content: "{{ lookup('file', xml_content.dest + '/content.txt') }}"
+    xml_file_content: "{{ lookup('file', xml_content.dest) }}"
 
 - name: Create saml
   nutanix.ncp.ntnx_saml_identity_providers_v2:
