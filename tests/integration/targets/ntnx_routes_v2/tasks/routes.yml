@@ -31,7 +31,7 @@
 
 - name: List subnets using subnet name and define external subnet variable
   nutanix.ncp.ntnx_subnets_info_v2:
-    filter: name eq '{{ external_nat_subnets[0].name }}'
+    filter: name eq '{{ external_nat_subnet.name }}'
     limit: 1
   register: result
   ignore_errors: true
@@ -41,7 +41,7 @@
     that:
       - result.response is defined
       - result.response | length >= 1
-      - result.response[0].name == "{{ external_nat_subnets[0].name }}"
+      - result.response[0].name == "{{ external_nat_subnet.name }}"
     fail_msg: "List subnets using subnet name and define external subnet variable failed "
     success_msg: "List subnets using subnet name and define external subnet variable passed "
 
