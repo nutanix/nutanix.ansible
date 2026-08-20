@@ -453,6 +453,7 @@
           value: "{{ network.managed.IPs[0] }}"
   register: result
   ignore_errors: true
+  check_mode: true
 
 - name: Check for idempotency Status
   ansible.builtin.assert:
