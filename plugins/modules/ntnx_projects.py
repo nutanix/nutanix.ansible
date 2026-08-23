@@ -142,7 +142,7 @@ options:
             - enable shortlist for directory services and identity providers
         required: false
         type: bool
-        default: true
+        default: false
     identity_providers_reference_list:
         description:
             - list of identity provider references to be added in project
@@ -486,7 +486,7 @@ def get_module_spec():
             required=False,
         ),
         enable_directory_and_identity_provider_shortlist=dict(
-            type="bool", required=False, default=True
+            type="bool", required=False, default=False
         ),
         identity_providers_reference_list=dict(
             type="list",
