@@ -340,6 +340,11 @@ def create_authorization_policy(module, result):
             msg="Failed generating create authorization policy spec", **result
         )
 
+    if module.params.get("is_global"):
+        spec.is_global = module.params.get("is_global")
+    else:
+        spec.is_global = None
+
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
         return

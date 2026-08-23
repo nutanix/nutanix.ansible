@@ -694,14 +694,16 @@ def update_nic(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating vm nic update spec", **result)
 
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(update_spec.to_dict())
-        return
-
-    # check for idempotency
+    # check for idempotency (also in check mode)
+    result["current_spec"] = current_spec.to_dict()
+    result["update_spec"] = update_spec.to_dict()
     if check_idempotency(current_spec, update_spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
+
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(update_spec.to_dict())
+        return
 
     resp = None
     try:
