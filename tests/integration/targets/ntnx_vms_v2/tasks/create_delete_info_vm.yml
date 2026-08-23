@@ -736,7 +736,7 @@
 
 - name: Read content from file
   ansible.builtin.set_fact:
-    xml_file_content: "{{ lookup('file', unattendxml.dest) }}"
+    xml_file_content: "{{ lookup('file', unattendxml.dest) | b64encode }}"
 
 - name: Create vm with windows unattend xml file
   nutanix.ncp.ntnx_vms_v2:
