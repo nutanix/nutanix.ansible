@@ -72,6 +72,11 @@
   nutanix.ncp.ntnx_projects:
     name: "{{project2_name}}"
     desc: desc-123
+    directory_reference_list:
+      - kind: directory_service
+        uuid: "{{ open_ldap_uuid }}"
+      - kind: directory_service
+        uuid: "{{ directory_service_uuid }}"
     clusters:
       - "{{ cluster.uuid }}"
     subnets:
