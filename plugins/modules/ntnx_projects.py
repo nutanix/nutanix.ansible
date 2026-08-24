@@ -131,7 +131,6 @@ options:
                     - reference kind
                 type: str
                 required: false
-                default: directory_service
             uuid:
                 description:
                     - directory service UUID
@@ -142,7 +141,6 @@ options:
             - enable shortlist for directory services and identity providers
         required: false
         type: bool
-        default: true
     identity_providers_reference_list:
         description:
             - list of identity provider references to be added in project
@@ -161,7 +159,6 @@ options:
                     - reference kind
                 type: str
                 required: false
-                default: identity_provider
     collaboration:
         description:
             - to enable collaboration or not for users in projects
@@ -480,20 +477,20 @@ def get_module_spec():
             type="list",
             elements="dict",
             options=dict(
-                kind=dict(type="str", required=False, default="directory_service"),
+                kind=dict(type="str", required=False),
                 uuid=dict(type="str", required=True),
             ),
             required=False,
         ),
         enable_directory_and_identity_provider_shortlist=dict(
-            type="bool", required=False, default=True
+            type="bool", required=False
         ),
         identity_providers_reference_list=dict(
             type="list",
             elements="dict",
             options=dict(
                 uuid=dict(type="str", required=True),
-                kind=dict(type="str", required=False, default="identity_provider"),
+                kind=dict(type="str", required=False),
             ),
             required=False,
         ),
