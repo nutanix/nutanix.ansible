@@ -1,5 +1,6 @@
 ---
 # Variables required before running this playbook:
+# - password
 # - project
 # - cluster
 # - vm_owner
@@ -21,7 +22,7 @@
       #cloud-config
       chpasswd:
         list: |
-          root: "{{ password_for_tests }}"
+          root: "{{ password }}"
           expire: False
       fqdn: myNutanixVM
 ##########################################################################
@@ -168,7 +169,7 @@
         #cloud-config
         chpasswd:
           list: |
-            root: "{{ password_for_tests }}"
+            root: "{{ password }}"
             expire: False
         fqdn: myNutanixVM
       is_overridable: true

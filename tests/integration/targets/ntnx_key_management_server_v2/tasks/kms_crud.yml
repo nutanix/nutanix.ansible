@@ -252,7 +252,7 @@
         tenant_id: "a1b2c3d4-e5f6-7890-abcd-ef0123456789"
         client_id: "b0a1c2d3-e4f5-6789-0abc-def987654321"
         client_secret: "c1d2e3f4-5678-90ab-cdef-1234567890ab"
-        credential_expiry_date: "2060-07-08"
+        credential_expiry_date: "2026-07-08"
   register: invalid_result
   ignore_errors: true
 

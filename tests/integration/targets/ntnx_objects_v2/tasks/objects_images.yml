@@ -26,8 +26,8 @@
 
 - name: Generate AWS access key and secret key from username and password
   ansible.builtin.set_fact:
-    aws_access_key: "{{ (username_for_tests + ':' + password_for_tests) | b64encode }}"
-    aws_secret_key: "{{ (username_for_tests + ':' + password_for_tests) | b64encode }}"
+    aws_access_key: "{{ (username + ':' + password) | b64encode }}"
+    aws_secret_key: "{{ (username + ':' + password) | b64encode }}"
 
 - name: Configure AWS CLI access key
   ansible.builtin.shell: |
@@ -85,7 +85,7 @@
 
 - name: Upload image to object store bucket using AWS CLI
   ansible.builtin.shell: |
-    aws s3api put-object --bucket vmm-images --body {{ cirros_image.dest }} --key {{ object_1_name }} --no-verify-ssl
+    aws s3api put-object --bucket vmm-images --body {{ disk_image.dest }} --key {{ object_1_name }} --no-verify-ssl
   register: upload_result
   ignore_errors: true
   changed_when: "'ETag' in upload_result.stdout"

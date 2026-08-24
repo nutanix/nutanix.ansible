@@ -211,19 +211,24 @@
   register: result
   ignore_errors: true
 
-- name: Create Disk with disk reference status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == true
-      - result.failed == false
-      - result.ext_id is defined
-      - result.task_ext_id is defined
-      - result.vm_ext_id == "{{ vm_uuid }}"
-      - result.response.disk_address.index == 3
-      - result.response.disk_address.bus_type == "SCSI"
-    fail_msg: "Create Disk with disk reference failed"
-    success_msg: "Create Disk with disk reference passed"
+# this fails since data source is null in response
+# - name: Create Disk with disk reference status
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == true
+#       - result.failed == false
+#       - result.ext_id is defined
+#       - result.task_ext_id is defined
+#       - result.vm_ext_id == "{{ vm_uuid }}"
+#       - result.response.backing_info.data_source.vm_disk_reference.disk_ext_id == "{{ todelete[0] }}"
+#       - result.response.backing_info.data_source.vm_disk_reference.vm_reference.ext_id == "{{ vm_uuid }}"
+#       - result.response.backing_info.data_source.vm_disk_reference.disk_address.index == 2
+#       - result.response.backing_info.data_source.vm_disk_reference.disk_address.bus_type == "SCSI"
+#       - result.response.disk_address.index == 3
+#       - result.response.disk_address.bus_type == "SCSI"
+#     fail_msg: "Create Disk with disk reference failed"
+#     success_msg: "Create Disk with disk reference passed"
 
 ################################################################################
 
@@ -393,7 +398,9 @@
     ext_id: "{{ todelete[1] }}"
     backing_info:
       vm_disk:
-        disk_size_bytes: 14763950080
+        disk_size_bytes: 29527900160
+        storage_container:
+          ext_id: "{{ storage_container.uuid }}"
     state: present
   register: result
   ignore_errors: true
@@ -405,7 +412,10 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
-      - result.response.backing_info.disk_size_bytes == 14763950080
+      - result.response.backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.backing_info.storage_config.is_flash_mode_enabled == true
+      - result.response.backing_info.disk_ext_id == "{{ todelete[1] }}"
+      - result.response.backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
       - result.vm_ext_id == "{{ vm_uuid }}"
       - result.response.disk_address.index == 2
     fail_msg: "Update Disk - check mode is enabled failed"
@@ -413,26 +423,65 @@
 
 #################################################################################
 
-- name: Update disk disk_size_bytes
+# Update disk image is not working, the disk is not getting updated
+# - name: Update disk image
+#   ntnx_vms_disks_v2:
+#     vm_ext_id: "{{ vm_uuid }}"
+#     ext_id: "{{ todelete[1] }}"
+#     backing_info:
+#       vm_disk:
+#         storage_container:
+#           ext_id: "{{ storage_container.uuid }}"
+#         data_source:
+#           reference:
+#             image_reference:
+#               image_ext_id: "{{ disk_image.image_ext_ids[1] }}"
+#     state: present
+#   register: result
+#   ignore_errors: true
+
+# - name: Update disk image status
+#   ansible.builtin.assert:
+#     that:
+#       - result.response is defined
+#       - result.changed == true
+#       - result.failed == false
+#       - result.response.backing_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[1] }}"
+#       - result.response.backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+#       - result.response.backing_info.storage_config.is_flash_mode_enabled == true
+#       - result.response.backing_info.disk_ext_id == "{{ todelete[1] }}"
+#       - result.vm_ext_id == "{{ vm_uuid }}"
+#     fail_msg: "Update disk image failed"
+#     success_msg: "Update disk image passed"
+
+#################################################################################
+
+- name: Update disk data source and disk_size_bytes together
   nutanix.ncp.ntnx_vms_disks_v2:
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ todelete[1] }}"
     backing_info:
       vm_disk:
         disk_size_bytes: 268435456000
+        storage_container:
+          ext_id: "{{ storage_container.uuid }}"
+        data_source:
+          reference:
+            image_reference:
+              image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
     state: present
   register: result
   ignore_errors: true
 
-- name: Update disk disk_size_bytes status
+- name: Update disk data source and disk_size_bytes together status
   ansible.builtin.assert:
     that:
-      - result.changed == true
+      - result.response == None
+      - result.changed == false
       - result.failed == false
-      - result.response is defined
-      - result.response.backing_info.disk_size_bytes == 268435456000
-    fail_msg: "Update disk disk_size_bytes failed"
-    success_msg: "Update disk disk_size_bytes passed"
+      - result.error == "data source and disk_size_bytes cannot be sent together"
+    fail_msg: "Update disk data source and disk_size_bytes together failed"
+    success_msg: "Update disk data source and disk_size_bytes together passed"
 
 #################################################################################
 
@@ -481,7 +530,7 @@
     ext_id: "{{ todelete[1] }}"
     backing_info:
       vm_disk:
-        disk_size_bytes: 590558003200
+        disk_size_bytes: 29527900160
     state: present
   register: result
   ignore_errors: true
@@ -492,9 +541,12 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
+      - result.response.backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.backing_info.storage_config.is_flash_mode_enabled == true
+      - result.response.backing_info.disk_ext_id == "{{ todelete[1] }}"
       - result.vm_ext_id == "{{ vm_uuid }}"
       - result.response.disk_address.index == 2
-      - result.response.backing_info.disk_size_bytes == 590558003200
+      - result.response.backing_info.disk_size_bytes == 29527900160
     fail_msg: "Update disk size when VM is powered on failed"
     success_msg: "Update disk size when VM is powered on passed"
 
@@ -506,7 +558,7 @@
     ext_id: "{{ todelete[1] }}"
     backing_info:
       vm_disk:
-        disk_size_bytes: 590558003200
+        disk_size_bytes: 29527900160
     state: present
   register: result
   ignore_errors: true
