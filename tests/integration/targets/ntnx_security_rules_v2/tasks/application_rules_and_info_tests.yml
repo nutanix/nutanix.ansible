@@ -1,6 +1,7 @@
 ---
 # Variables required before running this playbook:
 # - external_nat_subnet
+# - external_subnet_project  (project permanently shared with the external NAT subnet)
 
 - name: Start ntnx_security_rules_v2 application security rules tests
   ansible.builtin.debug:
@@ -22,9 +23,23 @@
 
 ################################################ Test Setup ################################################
 
+# This test creates a VPC on the external NAT subnet and scopes a VPC_LIST
+# network security policy to a project1. The referenced VPC is only "associated
+# with" the project when the project is shared with the VPC's external subnet.
+# The external NAT subnet cannot be unshared once a
+# fixture VPC is attached, so a per-run project could never
+# be torn down. Instead, consume the external_subnet_project that prepare_env
+# creates and permanently shares with the external NAT subnet.
+- name: Set project fact from prepare_env fixture
+  ansible.builtin.set_fact:
+    project1:
+      name: "{{ external_subnet_project.name }}"
+      uuid: "{{ external_subnet_project.uuid }}"
+
 - name: Create min VPC for security rules
   nutanix.ncp.ntnx_vpcs_v2:
     name: ansible-vpc-{{ random_name }}
+    project_ext_id: "{{ project1.uuid }}"
     external_subnets:
       - subnet_reference: "{{ external_nat_subnet.uuid }}"
   register: result
@@ -35,6 +50,7 @@
       - result.response is defined
       - result.changed == true
       - result.ext_id is defined
+      - result.response.project_ext_id == project1.uuid
     fail_msg: Failed to create VPC
     success_msg: Successfully created VPC
 
@@ -67,6 +83,40 @@
     category3: "{{ results.results[2].response.ext_id }}"
     category4: "{{ results.results[3].response.ext_id }}"
     category5: "{{ results.results[4].response.ext_id }}"
+
+# The VPC_LIST security policy below is scoped to a non-default project, and the
+# backend requires every category it references to belong to that same project1.
+# These dedicated project-scoped categories are used only by that policy; the
+# shared categories above stay in the default project for the default-project
+# policies that also reference them.
+- name: Create project-scoped categories for the project-scoped policy
+  nutanix.ncp.ntnx_categories_v2:
+    key: AnsibleSecurityRuleTestProj
+    value: AnsibleSecurityRuleTestProj{{ random_name }}{{ item }}
+    description: ansible test
+    project_ext_id: "{{ project1.uuid }}"
+  register: proj_categories
+  loop: [0, 1]
+
+- name: Verify project-scoped category creation status
+  ansible.builtin.assert:
+    that:
+      - item.response is defined
+      - item.changed == true
+      - item.failed == false
+      - item.ext_id is defined
+      - item.response.project_ext_id == project1.uuid
+      - item.response.key == "AnsibleSecurityRuleTestProj"
+      - item.response.value == "AnsibleSecurityRuleTestProj{{ random_name }}{{ item.item }}"
+      - item.response.description == "ansible test"
+    fail_msg: Failed to create project-scoped category
+    success_msg: Successfully created project-scoped category
+  loop: "{{ proj_categories.results }}"
+
+- name: Set project-scoped categories
+  ansible.builtin.set_fact:
+    proj_category1: "{{ proj_categories.results[0].response.ext_id }}"
+    proj_category2: "{{ proj_categories.results[1].response.ext_id }}"
 
 - name: Create service group to be used in security rules
   nutanix.ncp.ntnx_service_groups_v2:
@@ -121,6 +171,7 @@
   nutanix.ncp.ntnx_security_rules_v2:
     name: "{{ rule_name_1 }}"
     description: Ansible created rule
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
     type: APPLICATION
     policy_state: SAVE
     scope: ALL_VPC
@@ -290,6 +341,7 @@
       - result.response.rules[2].spec.icmp_services[0].is_all_allowed == true
       - result.response.rules[2].spec.icmp_services[0].type == 8
       - result.response.rules[2].spec.icmp_services[0].code == 0
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
     fail_msg: Failed to create security rule
     success_msg: Successfully created security rule
 
@@ -297,12 +349,15 @@
   nutanix.ncp.ntnx_security_rules_v2:
     name: "{{ rule_name_1 }}"
     description: Ansible created rule
+    project_ext_id: "{{ project1.uuid }}"
     type: APPLICATION
     policy_state: ENFORCE
     scope: VPC_LIST
     vpc_references:
       - "{{ vpc_id }}"
-    is_hitlog_enabled: true
+    # Hitlogs are only supported for policies in the default project; this
+    # policy is scoped to a non-default project, so hitlog must stay disabled.
+    is_hitlog_enabled: false
     is_ipv6_traffic_allowed: false
     rules:
       - description: inbound1
@@ -310,8 +365,8 @@
         spec:
           intra_entity_group_rule_spec:
             secured_group_category_references:
-              - "{{ category1 }}"
-              - "{{ category2 }}"
+              - "{{ proj_category1 }}"
+              - "{{ proj_category2 }}"
             secured_group_action: DENY
       - description: outbound1
         type: APPLICATION
@@ -319,8 +374,8 @@
           application_rule_spec:
             dest_allow_spec: ALL
             secured_group_category_references:
-              - "{{ category1 }}"
-              - "{{ category2 }}"
+              - "{{ proj_category1 }}"
+              - "{{ proj_category2 }}"
             is_all_protocol_allowed: true
       - description: inbound2
         type: APPLICATION
@@ -328,14 +383,15 @@
           application_rule_spec:
             src_allow_spec: ALL
             secured_group_category_references:
-              - "{{ category1 }}"
-              - "{{ category2 }}"
+              - "{{ proj_category1 }}"
+              - "{{ proj_category2 }}"
             is_all_protocol_allowed: true
   register: result
 
 - name: Create category list for asserts
   ansible.builtin.set_fact:
     category_list: ["{{ category1 }}", "{{ category2 }}"]
+    proj_category_list: ["{{ proj_category1 }}", "{{ proj_category2 }}"]
 
 - name: Initialize indexes for inbound1, inbound2, and outbound1
   ansible.builtin.set_fact:
@@ -383,32 +439,103 @@
       - result.response.scope == "VPC_LIST"
       - result.response.vpc_references | length == 1
       - result.response.vpc_references[0] == "{{ vpc_id }}"
-      - result.response.is_hitlog_enabled == true
+      - result.response.is_hitlog_enabled == false
       - result.response.is_ipv6_traffic_allowed == false
       - result.response.rules | length == 3
       - result.response.rules[inbound1_index].description == "inbound1"
       - result.response.rules[inbound1_index].type == "INTRA_GROUP"
-      - result.response.rules[inbound1_index].spec.secured_group_category_references[0] in category_list
-      - result.response.rules[inbound1_index].spec.secured_group_category_references[1] in category_list
+      - result.response.rules[inbound1_index].spec.secured_group_category_references[0] in proj_category_list
+      - result.response.rules[inbound1_index].spec.secured_group_category_references[1] in proj_category_list
       - result.response.rules[inbound1_index].spec.secured_group_action == "DENY"
       - result.response.rules[outbound1_index].description == "outbound1"
       - result.response.rules[outbound1_index].type == "APPLICATION"
       - result.response.rules[outbound1_index].spec.dest_allow_spec == "ALL"
-      - result.response.rules[outbound1_index].spec.secured_group_category_references[0] in category_list
-      - result.response.rules[outbound1_index].spec.secured_group_category_references[1] in category_list
+      - result.response.rules[outbound1_index].spec.secured_group_category_references[0] in proj_category_list
+      - result.response.rules[outbound1_index].spec.secured_group_category_references[1] in proj_category_list
       - result.response.rules[outbound1_index].spec.is_all_protocol_allowed == true
       - result.response.rules[inbound2_index].description == "inbound2"
       - result.response.rules[inbound2_index].type == "APPLICATION"
       - result.response.rules[inbound2_index].spec.src_allow_spec == "ALL"
-      - result.response.rules[inbound2_index].spec.secured_group_category_references[0] in category_list
-      - result.response.rules[inbound2_index].spec.secured_group_category_references[1] in category_list
+      - result.response.rules[inbound2_index].spec.secured_group_category_references[0] in proj_category_list
+      - result.response.rules[inbound2_index].spec.secured_group_category_references[1] in proj_category_list
       - result.response.rules[inbound2_index].spec.is_all_protocol_allowed == true
+      - result.response.project_ext_id == project1.uuid
     fail_msg: Failed to create security rule
     success_msg: Successfully created security rule
 
 - name: Set security rule external ID
   ansible.builtin.set_fact:
     todelete: "{{ result.ext_id }}"
+
+- name: List all security policy rules
+  nutanix.ncp.ntnx_security_policy_rules_info_v2:
+    policy_ext_id: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+
+- name: List all security policy rules status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 3
+      - result.policy_ext_id == "{{ todelete }}"
+    fail_msg: Failed to list all security policy rules
+    success_msg: Successfully listed all security policy rules
+
+- name: List security policy rules using intra group filter
+  nutanix.ncp.ntnx_security_policy_rules_info_v2:
+    policy_ext_id: "{{ todelete }}"
+    filter: "type eq Microseg.Config.RuleType'INTRA_GROUP'"
+  register: result
+  ignore_errors: true
+
+- name: List security policy rules using intra group filter status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.policy_ext_id == "{{ todelete }}"
+      - result.response | length == 1
+      - result.response[0].type == "INTRA_GROUP"
+    fail_msg: Failed to list security policy rules using intra group filter
+    success_msg: Successfully listed security policy rules using intra group filter
+
+- name: List security policy rules using limit
+  nutanix.ncp.ntnx_security_policy_rules_info_v2:
+    policy_ext_id: "{{ todelete }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List security policy rules using limit status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.policy_ext_id == "{{ todelete }}"
+      - result.response | length == 1
+    fail_msg: Failed to list security policy rules using limit
+    success_msg: Successfully listed security policy rules using limit
+
+- name: List security policy rules using wrong policy external ID
+  nutanix.ncp.ntnx_security_policy_rules_info_v2:
+    policy_ext_id: "00062ffc-95ad-19e9-185b-ac1f6b6f97a3"
+  register: result
+  ignore_errors: true
+
+- name: List security policy rules using wrong policy external ID status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.response is defined
+      - result.msg == "Api Exception raised while fetching network security policy rules info"
+    fail_msg: list security policy rules using wrong policy external ID did not fail as expected
+    success_msg: list security policy rules using wrong policy external ID failed as expected
 
 - name: Delete security rule with check mode enabled
   nutanix.ncp.ntnx_security_rules_v2:
@@ -1203,6 +1330,25 @@
     fail_msg: Failed to limit security rules
     success_msg: Successfully limited security rules
 
+######################################### Negative test: update project_ext_id #########################################
+
+- name: Verify update of project_ext_id is not supported
+  nutanix.ncp.ntnx_security_rules_v2:
+    state: present
+    ext_id: "{{ policy_ext_id2 }}"
+    project_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Verify update of project_ext_id is blocked status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
+    fail_msg: "Update of project_ext_id should have been blocked"
+    success_msg: "Update of project_ext_id is correctly blocked"
+
 ######################################### Delete tests #########################################
 
 - name: Delete security rule 1
@@ -1294,6 +1440,8 @@
       "{{ category3 }}",
       "{{ category4 }}",
       "{{ category5 }}",
+      "{{ proj_category1 }}",
+      "{{ proj_category2 }}",
     ]
 
 - name: Verify deletion status
@@ -1304,3 +1452,8 @@
     fail_msg: Failed to delete category
     success_msg: Successfully deleted category
   loop: "{{ result.results }}"
+
+# The external_subnet_project fixture and the external NAT subnet's project
+# share are owned by prepare_env and intentionally left in place (the subnet
+# cannot be unshared while a fixture VPC is attached), so there is no
+# project/subnet teardown here.

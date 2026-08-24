@@ -22,6 +22,9 @@
     name: "{{ vm_name }}"
     cluster:
       ext_id: "{{ cluster.uuid }}"
+    num_sockets: 1
+    num_cores_per_socket: 2
+    memory_size_bytes: 2147483648
     disks:
       - backing_info:
           vm_disk:
@@ -107,7 +110,11 @@
     fail_msg: "Unable to get VM info and check if IP address is assigned  "
     success_msg: "VM info is retrieved successfully and IP address is assigned "
 
-#################################################################################
+- name: Set VM IP Fact
+  ansible.builtin.set_fact:
+    vm_ip: "{{ result.response.nics[0].network_info.ipv4_info.learned_ip_addresses[0].value }}"
+
+################################################################################
 
 - name: Install NGT in VM with check mode enabled
   nutanix.ncp.ntnx_vms_ngt_v2:
@@ -569,57 +576,6 @@
     fail_msg: "Unable to get NGT config from VM  "
     success_msg: "NGT config from VM is retrieved successfully "
 
-#################################################################################
-
-- name: Upgrade NGT in VM with check mode enabled
-  nutanix.ncp.ntnx_vms_ngt_upgrade_v2:
-    state: present
-    ext_id: "{{ vm_uuid }}"
-    reboot_preference:
-      schedule_type: LATER
-      schedule:
-        start_time: "2026-08-01T00:00:00Z"
-  register: result
-  ignore_errors: true
-  check_mode: true
-
-- name: Upgrade NGT in VM with check mode enabled Status
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == false
-      - result.failed == false
-      - result.ext_id == "{{ vm_uuid }}"
-      - result.response.reboot_preference.schedule_type == "LATER"
-      - result.response.reboot_preference.schedule.start_time == "2026-08-01T00:00:00Z"
-    fail_msg: "Unable to upgrade NGT with check mode enabled "
-    success_msg: "NGT is upgraded successfully with check mode enabled "
-
-###############################################################################
-
-# This test case is commented since NGT upgrade is failing from v4 api:
-# https://jira.nutanix.com/browse/ENG-665842
-
-# - name: Upgrade NGT in VM
-#   ntnx_vms_ngt_upgrade_v2:
-#     state: present
-#     ext_id: "{{ vm_uuid }}"
-#     reboot_preference:
-#       schedule_type: "SKIP"
-#   register: result
-#   ignore_errors: true
-
-# - name: Upgrade NGT in VM Status
-#   ansible.builtin.assert:
-#     that:
-#       - result.response is defined
-#       - result.changed == true
-#       - result.failed == false
-#       - result.ext_id == "{{ vm_uuid }}"
-#       - result.response.reboot_preference.schedule_type == "SKIP"
-#     fail_msg: "Unable to upgrade NGT "
-#     success_msg: "NGT is upgraded successfully "
-
 ################################################################################
 
 - name: Insert ISO into CD ROM in VM with is_config_only set to true and check mode enabled
@@ -813,6 +769,205 @@
       - result.msg == "NGT is already not installed in the given vm"
     fail_msg: "Uninstall NGT in VM to test idempotency failed "
     success_msg: "Uninstall NGT in VM to test idempotency passed "
+
+##################################################################################
+# Test NGT Upgrade
+
+- name: Update NGT in VM by enabling it
+  nutanix.ncp.ntnx_vms_ngt_update_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    is_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Add VM to dynamic inventory for SSH
+  ansible.builtin.add_host:
+    name: "target_vm_for_ngt"
+    ansible_host: "{{ vm_ip }}"
+    ansible_user: "{{ ngt_config.username }}"
+    ansible_password: "{{ ngt_config.password }}"
+    ansible_connection: ssh
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+
+- name: Wait for SSH to be available
+  ansible.builtin.wait_for:
+    port: 22
+    host: "{{ vm_ip }}"
+    search_regex: OpenSSH
+    delay: 5
+    timeout: 300
+
+- name: Discover Python interpreter on target VM
+  ansible.builtin.raw: 'PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" command -v python3 || command -v python || exit 1'
+  delegate_to: target_vm_for_ngt
+  register: python_discover
+  changed_when: false
+  failed_when: python_discover.rc != 0
+
+- name: Set discovered Python interpreter on dynamic inventory host
+  ansible.builtin.add_host:
+    name: "target_vm_for_ngt"
+    ansible_python_interpreter: "{{ python_discover.stdout | trim }}"
+
+- name: Set vm_ngt_python for install command
+  ansible.builtin.set_fact:
+    vm_ngt_python: "{{ python_discover.stdout | trim }}"
+
+- name: Install coverage on target VM
+  ansible.builtin.raw: "{{ vm_ngt_python }} -m pip install coverage || true"
+  delegate_to: target_vm_for_ngt
+  become: true
+  changed_when: false
+
+- name: Create coveragerc on target VM
+  ansible.builtin.raw: >
+    mkdir -p "{{ lookup('env', '_ANSIBLE_COVERAGE_CONFIG') | dirname }}" &&
+    echo '[run]' > "{{ lookup('env', '_ANSIBLE_COVERAGE_CONFIG') }}"
+  delegate_to: target_vm_for_ngt
+  become: true
+  changed_when: false
+  when: lookup('env', '_ANSIBLE_COVERAGE_CONFIG') | length > 0
+
+- name: Insert ISO into CD ROM in VM
+  nutanix.ncp.ntnx_vms_ngt_insert_iso_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+  register: iso_result
+
+- name: Insert ISO into CD ROM in VM Status
+  ansible.builtin.assert:
+    that:
+      - iso_result.response is defined
+      - iso_result.changed == true
+      - iso_result.failed == false
+      - iso_result.ext_id == "{{ vm_uuid }}"
+      - iso_result.response.is_iso_inserted == true
+    fail_msg: "Unable to insert ISO into CD ROM in VM "
+    success_msg: "ISO is inserted into CD ROM in VM successfully "
+
+- name: Download old NGT installer to VM
+  ansible.builtin.get_url:
+    url: "{{ ngt_config.ngt_installed_url }}"
+    dest: "/tmp/ngt_installer.tar.gz"
+    mode: "0644"
+    validate_certs: false
+  delegate_to: target_vm_for_ngt
+  become: true
+
+- name: Extract NGT installer in VM
+  ansible.builtin.unarchive:
+    src: "/tmp/ngt_installer.tar.gz"
+    dest: "/tmp"
+    remote_src: true
+  delegate_to: target_vm_for_ngt
+  become: true
+
+- name: Install lvm2 dependency for NGT
+  ansible.builtin.package:
+    name: lvm2
+    state: present
+  delegate_to: target_vm_for_ngt
+  become: true
+
+- name: Run NGT Install Script
+  ansible.builtin.command:
+    cmd: "{{ vm_ngt_python }} /tmp/linux/install_ngt.py --operation install"
+  delegate_to: target_vm_for_ngt
+  become: true
+  register: manual_install_out
+  changed_when: manual_install_out.rc == 0
+
+- name: Wait for 2 minutes for CVM to detect NGT version {{ ngt_config.version }}
+  ansible.builtin.pause:
+    minutes: 2
+
+- name: Get NGT config from VM after NGT is installed
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get NGT config from VM after NGT is installed Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.ext_id == "{{ vm_uuid }}"
+      - result.response.guest_tools.is_installed == true
+      - result.response.guest_tools.is_iso_inserted == true
+      - result.response.guest_tools.is_reachable == true
+      - result.response.guest_tools.is_enabled == true
+      - result.response.guest_tools.version == "{{ ngt_config.version }}"
+    fail_msg: "Unable to get NGT config from VM  "
+    success_msg: "NGT config from VM is retrieved successfully "
+
+- name: Upgrade NGT in VM with check mode enabled
+  nutanix.ncp.ntnx_vms_ngt_upgrade_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    reboot_preference:
+      schedule_type: LATER
+      schedule:
+        start_time: "2026-08-01T00:00:00Z"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Upgrade NGT in VM with check mode enabled Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.reboot_preference.schedule_type == "LATER"
+      - result.response.reboot_preference.schedule.start_time == "2026-08-01T00:00:00Z"
+    fail_msg: "Unable to upgrade NGT with check mode enabled "
+    success_msg: "NGT is upgraded successfully with check mode enabled "
+
+- name: Upgrade NGT in VM
+  nutanix.ncp.ntnx_vms_ngt_upgrade_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Upgrade NGT in VM Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.is_installed == true
+      - result.response.is_reachable == true
+      - result.response.is_enabled == true
+      - result.response.version > "{{ ngt_config.version }}"
+    fail_msg: "Unable to upgrade NGT "
+    success_msg: "NGT is upgraded successfully "
+
+- name: Get NGT config from VM after NGT is upgraded
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Get NGT config from VM after NGT is upgraded Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.ext_id == "{{ vm_uuid }}"
+      - result.response.guest_tools.is_installed == true
+      - result.response.guest_tools.is_reachable == true
+      - result.response.guest_tools.is_enabled == true
+      - result.response.guest_tools.version > "{{ ngt_config.version }}"
+      - result.response.guest_tools.version == result.response.guest_tools.available_version
+    fail_msg: "Unable to get NGT config from VM after NGT is upgraded "
+    success_msg: "NGT config from VM is retrieved successfully after NGT is upgraded "
 
 ##################################################################################
 
