@@ -248,6 +248,11 @@ def create_role(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating create Roles Spec", **result)
 
+    if module.params.get("is_global"):
+        spec.is_global = module.params.get("is_global")
+    else:
+        spec.is_global = None
+
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
