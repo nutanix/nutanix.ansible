@@ -152,7 +152,6 @@ options:
           - Specifies whether hit log is enabled for the rule.
         required: false
         type: bool
-        default: false
       spec:
         description:
           - The specification of the rule.
@@ -1025,7 +1024,7 @@ def get_module_spec():
                 "SHARED_SERVICE",
             ],
         ),
-        is_logging_enabled=dict(type="bool", default=False),
+        is_logging_enabled=dict(type="bool"),
         spec=dict(
             type="dict",
             options=rule_spec,
