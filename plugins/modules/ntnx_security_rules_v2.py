@@ -152,7 +152,6 @@ options:
           - Specifies whether hit log is enabled for the rule.
         required: false
         type: bool
-        default: false
       spec:
         description:
           - The specification of the rule.
@@ -1025,7 +1024,7 @@ def get_module_spec():
                 "SHARED_SERVICE",
             ],
         ),
-        is_logging_enabled=dict(type="bool", default=False),
+        is_logging_enabled=dict(type="bool"),
         spec=dict(
             type="dict",
             options=rule_spec,
@@ -1141,14 +1140,9 @@ def check_network_security_policies_idempotency(old_spec, update_spec):
 
     for rule in old_spec.get("rules", []):
         rule["ext_id"] = None
-        # API returns null; drop so module default False is not a change
-        if not rule.get("is_logging_enabled"):
-            rule.pop("is_logging_enabled", None)
 
     for rule in update_spec.get("rules", []):
         rule["ext_id"] = None
-        if not rule.get("is_logging_enabled"):
-            rule.pop("is_logging_enabled", None)
         spec = rule.get("spec", {})
         if (
             "src_category_references" in spec
@@ -1208,8 +1202,6 @@ def update_network_security_policy(module, result):
         update_spec.state = current_spec.state
 
     # check for idempotency
-    result["current_spec"] = current_spec.to_dict()
-    result["update_spec"] = update_spec.to_dict()
     current_spec_dict = strip_internal_attributes(current_spec.to_dict())
     update_spec_dict = strip_internal_attributes(update_spec.to_dict())
     if check_network_security_policies_idempotency(current_spec_dict, update_spec_dict):
