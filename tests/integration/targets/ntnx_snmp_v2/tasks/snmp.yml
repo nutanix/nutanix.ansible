@@ -482,7 +482,7 @@
     username: "{{ snmp_username_all }}"
     auth_type: MD5
     auth_key: "{{ snmp_auth_key_updated }}"
-    priv_type: AES192
+    priv_type: AES
     priv_key: "{{ snmp_priv_key_updated }}"
   register: result
   ignore_errors: true
@@ -497,7 +497,7 @@
       - result.ext_id == to_delete_users[1]
       - result.response.username == snmp_username_all
       - result.response.auth_type == "MD5"
-      - result.response.priv_type == "AES192"
+      - result.response.priv_type == "AES"
       - result.task_ext_id is defined
     fail_msg: "Failed to verify update SNMP user with all attributes"
     success_msg: "Verify update SNMP user with all attributes succeeded"
