@@ -513,7 +513,7 @@
     username: "{{ snmp_username_all }}"
     auth_type: MD5
     auth_key: "{{ snmp_auth_key_updated }}"
-    priv_type: AES192
+    priv_type: AES
     priv_key: "{{ snmp_priv_key_updated }}"
   register: idempotency_result
   ignore_errors: true
