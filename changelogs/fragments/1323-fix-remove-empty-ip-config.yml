@@ -1,0 +1,2 @@
+bugfixes:
+  - ntnx_subnets_v2 - preserve SDK model object instances and safely handle null ip_config in remove_empty_ip_config (fixes #1320, #1019).
