@@ -95,6 +95,7 @@
     role: "{{ role_ext_id }}"
     authorization_policy_type: USER_DEFINED
     project_ext_id: "83083083-0000-0000-0000-000000000000"
+    is_global: true
     entities:
       - images:
           "*":
@@ -132,6 +133,7 @@
       - result.response.description == "ansible created acps"
       - result.response.role == "{{ role_ext_id }}"
       - result.response.authorization_policy_type == "USER_DEFINED"
+      - result.response.is_global == true
       - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
       - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
       - result.response.entities[1].entity_filter.directory_service.uuid.anyof | length == 2
