@@ -72,6 +72,12 @@ options:
         type: list
         elements: str
         required: false
+    is_global:
+        description:
+            - Flag to indicate if the entity is global or not.
+        required: false
+        type: bool
+        default: False
     wait:
         description:
             - Wait for the task to complete.
@@ -234,6 +240,7 @@ def get_module_spec():
         description=dict(type="str"),
         client_name=dict(type="str"),
         operations=dict(type="list", elements="str"),
+        is_global=dict(type="bool", default=False),
     )
     return module_args
 

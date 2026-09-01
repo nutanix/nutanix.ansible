@@ -93,6 +93,12 @@ options:
             - Wait for the task to complete.
             - Not supported for this module.
         required: false
+    is_global:
+        description:
+            - Flag to indicate if the entity is global or not.
+        required: false
+        type: bool
+        default: False
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
@@ -299,6 +305,7 @@ def get_module_spec():
             choices=["USER_DEFINED"],
             default="USER_DEFINED",
         ),
+        is_global=dict(type="bool", default=False),
     )
     return module_args
 
