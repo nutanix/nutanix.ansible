@@ -222,6 +222,11 @@ options:
                                                 - The password of the remote cluster.
                                             type: str
                                             required: true
+                        port:
+                            description:
+                                - Port of remote cluster to register.
+                            type: int
+                            required: false
         cluster_reference:
             description:
                 - The cluster reference details.
@@ -424,6 +429,7 @@ def get_module_spec():
             obj=prism_sdk.Credentials,
             required=True,
         ),
+        port=dict(type="int", required=False),
     )
     domain_manager_remote_cluster_spec = dict(
         remote_cluster=dict(
@@ -496,6 +502,8 @@ def register_pc(module, domain_manager, result):
     spec, err = sg.generate_spec(obj=default_spec)
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+    if not module.params.get("port"):
+        spec.port = None
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating PC registration Spec", **result)
