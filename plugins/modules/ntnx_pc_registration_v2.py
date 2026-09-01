@@ -225,6 +225,7 @@ options:
                         port:
                             description:
                                 - Port of remote cluster to register.
+                                - This field is supported in 7.6 and above.
                             type: int
                             required: false
         cluster_reference:
