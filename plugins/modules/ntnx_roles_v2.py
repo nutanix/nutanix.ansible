@@ -77,7 +77,6 @@ options:
             - Flag to indicate if the entity is global or not.
         required: false
         type: bool
-        default: False
     wait:
         description:
             - Wait for the task to complete.
@@ -240,7 +239,7 @@ def get_module_spec():
         description=dict(type="str"),
         client_name=dict(type="str"),
         operations=dict(type="list", elements="str"),
-        is_global=dict(type="bool", default=False),
+        is_global=dict(type="bool"),
     )
     return module_args
 
@@ -255,9 +254,7 @@ def create_role(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating create Roles Spec", **result)
 
-    if module.params.get("is_global"):
-        spec.is_global = module.params.get("is_global")
-    else:
+    if not module.params.get("is_global"):
         spec.is_global = None
 
     if module.check_mode:

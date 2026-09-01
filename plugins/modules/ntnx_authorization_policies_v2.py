@@ -98,7 +98,6 @@ options:
             - Flag to indicate if the entity is global or not.
         required: false
         type: bool
-        default: False
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
@@ -305,7 +304,7 @@ def get_module_spec():
             choices=["USER_DEFINED"],
             default="USER_DEFINED",
         ),
-        is_global=dict(type="bool", default=False),
+        is_global=dict(type="bool"),
     )
     return module_args
 
@@ -347,9 +346,7 @@ def create_authorization_policy(module, result):
             msg="Failed generating create authorization policy spec", **result
         )
 
-    if module.params.get("is_global"):
-        spec.is_global = module.params.get("is_global")
-    else:
+    if not module.params.get("is_global"):
         spec.is_global = None
 
     if module.check_mode:
