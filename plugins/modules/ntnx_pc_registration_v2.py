@@ -132,6 +132,12 @@ options:
                                                 - The password of the remote cluster.
                                             type: str
                                             required: true
+                        port:
+                            description:
+                                - Port of remote cluster to register.
+                                - This field is supported in 7.6 and above.
+                            type: int
+                            required: false
                 cloud_type:
                     description:
                         - The cloud type of the remote cluster.
