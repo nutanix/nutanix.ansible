@@ -509,11 +509,23 @@ def register_pc(module, domain_manager, result):
     spec, err = sg.generate_spec(obj=default_spec)
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-    if not module.params.get("port"):
-        spec.port = None
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating PC registration Spec", **result)
+    remote_cluster = module.params.get("remote_cluster") or {}
+    remote_cluster_cfg = (
+        (remote_cluster.get("domain_manager_remote_cluster") or {}).get(
+            "remote_cluster"
+        )
+        or (remote_cluster.get("aos_remote_cluster") or {}).get("remote_cluster")
+        or {}
+    )
+    if remote_cluster_cfg.get("port") is None:
+        inner_remote_cluster = getattr(
+            getattr(spec, "remote_cluster", None), "remote_cluster", None
+        )
+        if inner_remote_cluster is not None:
+            inner_remote_cluster.port = None
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
