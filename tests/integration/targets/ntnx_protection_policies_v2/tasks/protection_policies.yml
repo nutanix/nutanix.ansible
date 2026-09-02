@@ -1116,9 +1116,9 @@
     success_msg: "VM is protected successfully"
     fail_msg: "VM protection failed"
 
-- name: Sleep for 5 minutes until VMs and VGs are protected
+- name: Sleep for 10 minutes until VMs and VGs are protected
   ansible.builtin.pause:
-    seconds: 300
+    seconds: 600
 
 - name: Get a protected resource
   nutanix.ncp.ntnx_protected_resources_info_v2:
