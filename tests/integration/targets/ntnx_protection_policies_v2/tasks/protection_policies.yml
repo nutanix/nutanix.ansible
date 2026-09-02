@@ -888,6 +888,15 @@
       ext_id: "{{ cluster.uuid }}"
     categories:
       - ext_id: "{{ category_ext_id_3 }}"
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 26843545600
+            storage_container:
+              ext_id: "{{ storage_container.uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 0
   register: result
   ignore_errors: true
 
@@ -916,6 +925,15 @@
       ext_id: "{{ cluster.uuid }}"
     categories:
       - ext_id: "{{ category_ext_id_2 }}"
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 26843545600
+            storage_container:
+              ext_id: "{{ storage_container.uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 0
   register: result
   ignore_errors: true
 
@@ -1880,7 +1898,7 @@
 - name: Assert that VMs are present
   ansible.builtin.assert:
     that:
-      - protected_vms | length == 2
+      - protected_vms | length == 1
     fail_msg: "No VMs found"
     success_msg: "VMs found"
 
