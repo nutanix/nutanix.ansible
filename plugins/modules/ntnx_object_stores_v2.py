@@ -397,7 +397,10 @@ from ..module_utils.v4.objects.api_client import (  # noqa: E402
     get_objects_api_instance,
 )
 from ..module_utils.v4.objects.helpers import get_object_store  # noqa: E402
-from ..module_utils.v4.objects.spec.objects import ObjectsSpecs as objects_specs  # noqa: E402
+
+from ..module_utils.v4.objects.spec.objects import (  # noqa: E402  # isort: skip
+    ObjectsSpecs as objects_specs,
+)
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
     get_entity_ext_id_from_task,
     wait_for_completion,

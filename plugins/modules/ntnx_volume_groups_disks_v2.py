@@ -258,7 +258,10 @@ from ..module_utils.v4.volumes.api_client import (  # noqa: E402
     get_etag,
     get_vg_api_instance,
 )
-from ..module_utils.v4.volumes.spec.volume_group import VGSpecs as vg_specs  # noqa: E402
+
+from ..module_utils.v4.volumes.spec.volume_group import (  # noqa: E402  # isort: skip
+    VGSpecs as vg_specs,
+)
 
 SDK_IMP_ERROR = None
 try:
