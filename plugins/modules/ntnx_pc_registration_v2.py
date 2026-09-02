@@ -514,7 +514,9 @@ def register_pc(module, domain_manager, result):
         module.fail_json(msg="Failed generating PC registration Spec", **result)
     remote_cluster = module.params.get("remote_cluster") or {}
     remote_cluster_cfg = (
-        (remote_cluster.get("domain_manager_remote_cluster") or {}).get("remote_cluster")
+        (remote_cluster.get("domain_manager_remote_cluster") or {}).get(
+            "remote_cluster"
+        )
         or (remote_cluster.get("aos_remote_cluster") or {}).get("remote_cluster")
         or {}
     )
@@ -524,7 +526,6 @@ def register_pc(module, domain_manager, result):
         )
         if inner_remote_cluster is not None:
             inner_remote_cluster.port = None
-
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
