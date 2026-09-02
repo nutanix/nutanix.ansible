@@ -75,7 +75,7 @@ options:
     is_global:
         description:
             - Flag to indicate if the entity is global or not.
-            This field is supported in 7.6 and above.
+            - This field is supported in 7.6 and above.
         required: false
         type: bool
     wait:
