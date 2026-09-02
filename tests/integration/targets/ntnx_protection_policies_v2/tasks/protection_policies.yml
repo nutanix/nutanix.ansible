@@ -1898,7 +1898,7 @@
 - name: Assert that VMs are present
   ansible.builtin.assert:
     that:
-      - protected_vms | length == 1
+      - protected_vms | length == 2
     fail_msg: "No VMs found"
     success_msg: "VMs found"
 
