@@ -1,0 +1,34 @@
+---
+# Generate a throwaway self-signed SAML SP keypair on the controller for the
+# duration of this test target. The keypair is consumed by the
+# `request_signing_credential` field in `all_operation.yml` and is removed by
+# `cleanup_sp_keypair.yml`.
+
+- name: Create temp dir for SAML SP keypair
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: saml-sp
+  register: sp_tmpdir
+  delegate_to: localhost
+
+- name: Generate self-signed SAML SP keypair (RSA 2048, throwaway)
+  ansible.builtin.command:
+    cmd: >-
+      openssl req -x509 -newkey rsa:2048 -nodes
+      -keyout {{ sp_tmpdir.path }}/sp.key
+      -out {{ sp_tmpdir.path }}/sp.crt
+      -subj /CN=ansible-ntnx-saml-sp-test-DUMMY
+      -days 36500
+    creates: "{{ sp_tmpdir.path }}/sp.crt"
+  delegate_to: localhost
+
+- name: Verify generated SP cert and key are a matching pair
+  ansible.builtin.shell: >-
+    set -o pipefail;
+    diff
+    <(openssl x509 -noout -modulus -in {{ sp_tmpdir.path }}/sp.crt | openssl md5)
+    <(openssl rsa  -noout -modulus -in {{ sp_tmpdir.path }}/sp.key | openssl md5)
+  args:
+    executable: /bin/bash
+  changed_when: false
+  delegate_to: localhost

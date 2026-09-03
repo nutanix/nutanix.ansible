@@ -44,6 +44,12 @@ options:
             - Required for updating or deleting the role.
         type: str
         required: false
+    project_ext_id:
+        description:
+            - External ID (UUID) of the project that owns this role.
+            - Update of this field is not supported.
+        type: str
+        required: false
     display_name:
         description:
             - The display name for the Role.
@@ -66,6 +72,12 @@ options:
         type: list
         elements: str
         required: false
+    is_global:
+        description:
+            - Flag to indicate if the entity is global or not.
+            - This field is supported in 7.6 and above.
+        required: false
+        type: bool
     wait:
         description:
             - Wait for the task to complete.
@@ -93,6 +105,7 @@ EXAMPLES = r"""
     state: present
     display_name: "Display_Name_Test"
     description: test-ansible-role-1-desc
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     operations:
       - "251d4a4f-244f-4c84-70a9-8c8f68f9dff0"
       - "0194fbfd-a5d1-49f8-46f4-e4b01d0abe47"
@@ -202,6 +215,7 @@ from ..module_utils.v4.iam.helpers import get_role  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -221,10 +235,12 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         display_name=dict(type="str"),
         description=dict(type="str"),
         client_name=dict(type="str"),
         operations=dict(type="list", elements="str"),
+        is_global=dict(type="bool"),
     )
     return module_args
 
@@ -238,6 +254,9 @@ def create_role(module, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating create Roles Spec", **result)
+
+    if not module.params.get("is_global"):
+        spec.is_global = None
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
@@ -279,6 +298,10 @@ def update_role(module, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating roles update spec", **result)
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     # check for idempotency
     if check_roles_idempotency(current_spec.to_dict(), update_spec.to_dict()):

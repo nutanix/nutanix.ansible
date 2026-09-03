@@ -584,6 +584,12 @@ def create_nic(module, result):
             resp = get_nic(module, api_instance=vms, ext_id=ext_id, vm_ext_id=vm_ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception("Failed to get entity ext_id from task for VM NIC"),
+                msg="Failed to get entity ext_id from task for VM NIC",
+            )
 
     result["changed"] = True
 
@@ -688,14 +694,14 @@ def update_nic(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating vm nic update spec", **result)
 
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(update_spec.to_dict())
+        return
+
     # check for idempotency
     if check_idempotency(current_spec, update_spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
-
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(update_spec.to_dict())
-        return
 
     resp = None
     try:

@@ -111,6 +111,8 @@ action_groups:
     - ntnx_images_info_v2
     - ntnx_image_placement_policies_v2
     - ntnx_image_placement_policies_info_v2
+    - ntnx_image_rate_limit_policy_v2
+    - ntnx_image_rate_limit_policies_info_v2
     - ntnx_vms_ngt_v2
     - ntnx_vms_ngt_update_v2
     - ntnx_vms_ngt_upgrade_v2
@@ -155,6 +157,8 @@ action_groups:
     - ntnx_roles_info_v2
     - ntnx_directory_services_v2
     - ntnx_directory_services_info_v2
+    - ntnx_directory_services_connection_v2
+    - ntnx_directory_service_search_v2
     - ntnx_saml_identity_providers_v2
     - ntnx_saml_identity_providers_info_v2
     - ntnx_user_groups_v2
@@ -166,6 +170,8 @@ action_groups:
     - ntnx_authorization_policies_info_v2
     - ntnx_security_rules_v2
     - ntnx_security_rules_info_v2
+    - ntnx_security_rules_export_v2
+    - ntnx_security_rules_import_v2
     - ntnx_service_groups_v2
     - ntnx_service_groups_info_v2
     - ntnx_address_groups_v2
@@ -218,6 +224,8 @@ action_groups:
     - ntnx_object_stores_info_v2
     - ntnx_object_stores_certificate_v2
     - ntnx_object_stores_certificate_info_v2
+    - ntnx_object_stores_certificate_download_v2
+    - ntnx_object_stores_stats_info_v2
     - ntnx_password_managers_info_v2
     - ntnx_password_managers_v2
     - ntnx_ova_v2
@@ -246,5 +254,38 @@ action_groups:
     - ntnx_iam_entities_info_v2
     - ntnx_virtual_switch_v2
     - ntnx_virtual_switches_info_v2
+    - ntnx_load_balancer_session_v2
+    - ntnx_load_balancer_sessions_info_v2
+    - ntnx_vpc_virtual_switch_mapping_v2
+    - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_snmp_user_v2
+    - ntnx_snmp_user_info_v2
+    - ntnx_snmp_trap_v2
+    - ntnx_snmp_trap_info_v2
+    - ntnx_snmp_transport_v2
+    - ntnx_snmp_status_v2
+    - ntnx_snmp_config_info_v2
+    - ntnx_vm_startup_policy_v2
+    - ntnx_vm_startup_policies_info_v2
+    - ntnx_category_mapping_v2
+    - ntnx_category_mappings_info_v2
+    - ntnx_directory_server_config_v2
+    - ntnx_directory_server_configs_info_v2
+    - ntnx_template_placement_policy_v2
+    - ntnx_template_placement_policies_info_v2
+    - ntnx_vm_guest_customization_profile_v2
+    - ntnx_vm_guest_customization_profiles_info_v2
+    - ntnx_vm_host_affinity_policy_v2
+    - ntnx_vm_host_affinity_policies_info_v2
+    - ntnx_vm_host_affinity_policy_re_enforce_v2
+    - ntnx_vm_anti_affinity_policy_v2
+    - ntnx_vm_anti_affinity_policies_info_v2
+    - ntnx_vm_anti_affinity_policy_compliance_info_v2
+    - ntnx_project_v2
+    - ntnx_projects_info_v2
+    - ntnx_resource_group_v2
+    - ntnx_resource_groups_info_v2
+    - ntnx_role_membership_v2
+    - ntnx_role_memberships_info_v2
