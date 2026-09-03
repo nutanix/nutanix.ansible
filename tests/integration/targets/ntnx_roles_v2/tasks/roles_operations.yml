@@ -70,6 +70,7 @@
     display_name: "{{ role_2_name }}"
     description: test-ansible-role-1-desc
     project_ext_id: "83083083-0000-0000-0000-000000000000"
+    is_global: true
     operations:
       - "{{ test_operation_1_uuid }}"
       - "{{ test_operation_2_uuid }}"
@@ -88,7 +89,7 @@
       - result.response.operations[0] == "{{ test_operation_1_uuid }}"
       - result.response.operations[1] == "{{ test_operation_2_uuid }}"
       - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
-
+      - result.response.is_global == true
     fail_msg: Create roles with operations in check mode failed
     success_msg: Create roles with operations in check mode passed
 
