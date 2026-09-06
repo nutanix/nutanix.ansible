@@ -92,6 +92,10 @@ options:
       - ISOLATION
       - APPLICATION
       - SHAREDSERVICE
+      - CRITICAL
+      - COREINFRASTRUCTURE
+      - ZONE
+      - WORKLOAD
   policy_state:
     description:
       - Whether the policy is just to be saved, applied, monitored.
@@ -147,6 +151,7 @@ options:
           - INTRA_GROUP
           - MULTI_ENV_ISOLATION
           - SHARED_SERVICE
+          - FLEX
       is_logging_enabled:
         description:
           - Specifies whether hit log is enabled for the rule.
@@ -546,6 +551,165 @@ options:
                             description:
                               - The reference to the group entity group.
                             type: str
+          flex_rule_spec:
+            description:
+              - The specification of a FLEX rule.
+              - Used when rule C(type) is C(FLEX) for CRITICAL, COREINFRASTRUCTURE, ZONE, or WORKLOAD policies.
+            required: false
+            type: dict
+            suboptions:
+              action:
+                description:
+                  - Specifies whether traffic matching this FLEX rule should be allowed, denied, or rejected.
+                type: str
+                required: true
+                choices:
+                  - ALLOW
+                  - DENY
+                  - REJECT
+              direction:
+                description:
+                  - Specifies the traffic direction for the FLEX rule.
+                type: str
+                required: true
+                choices:
+                  - IN
+                  - OUT
+                  - IN_OUT
+              should_allow_any_src:
+                description:
+                  - Indicates whether the flex rule should consider all possible sources.
+                type: bool
+              should_allow_any_dst:
+                description:
+                  - Indicates whether the flex rule should consider all possible destinations.
+                type: bool
+              src_entity_group_references:
+                description:
+                  - External identifiers of the entity groups belonging to the source group.
+                type: list
+                elements: str
+              dest_entity_group_references:
+                description:
+                  - External identifiers of the entity groups belonging to the destination group.
+                type: list
+                elements: str
+              src_subnet:
+                description:
+                  - Source IPv4 subnet.
+                type: dict
+                suboptions:
+                  value:
+                    description: The IPv4 address.
+                    type: str
+                  prefix_length:
+                    description: The prefix length.
+                    type: int
+              dest_subnet:
+                description:
+                  - Destination IPv4 subnet.
+                type: dict
+                suboptions:
+                  value:
+                    description: The IPv4 address.
+                    type: str
+                  prefix_length:
+                    description: The prefix length.
+                    type: int
+              service_group_references:
+                description:
+                  - A list of service group references.
+                type: list
+                elements: str
+              is_all_protocol_allowed:
+                description:
+                  - Denotes whether the rule allows traffic for all protocols.
+                type: bool
+              tcp_services:
+                description:
+                  - The list of TCP services.
+                type: list
+                elements: dict
+                suboptions:
+                  start_port:
+                    description: The start port of the TCP service.
+                    type: int
+                  end_port:
+                    description: The end port of the TCP service.
+                    type: int
+              udp_services:
+                description:
+                  - The list of UDP services.
+                type: list
+                elements: dict
+                suboptions:
+                  start_port:
+                    description: The start port of the UDP service.
+                    type: int
+                  end_port:
+                    description: The end port of the UDP service.
+                    type: int
+              icmp_services:
+                description:
+                  - ICMP Type Code List.
+                type: list
+                elements: dict
+                suboptions:
+                  is_all_allowed:
+                    description:
+                      - Set this field to true if both Type and Code is ANY.
+                    type: bool
+                  type:
+                    description:
+                      - ICMP service Type. Ignore this field if Type has to be ANY.
+                    type: int
+                  code:
+                    description:
+                      - ICMP service Code. Ignore this field if Code has to be ANY.
+                    type: int
+              icmp_v6_services:
+                description:
+                  - ICMPv6 Type Code List.
+                type: list
+                elements: dict
+                suboptions:
+                  is_all_allowed:
+                    description:
+                      - Set this field to true if both Type and Code is ANY.
+                    type: bool
+                  type:
+                    description:
+                      - ICMP service Type. Ignore this field if Type has to be ANY.
+                    type: int
+                  code:
+                    description:
+                      - ICMP service Code. Ignore this field if Code has to be ANY.
+                    type: int
+              network_function_reference:
+                description:
+                  - A reference to the network function in the rule.
+                type: str
+              applied_to_entity_group_references:
+                description:
+                  - Reference to the entity group to which the flex rule is applied.
+                type: list
+                elements: str
+              priority:
+                description:
+                  - Priority for the flex rule. Lower number indicates higher priority.
+                type: int
+              ip_version:
+                description:
+                  - IP address scope for the flex rule.
+                type: str
+                choices:
+                  - IPV4
+                  - IPV6
+                  - IPV4_IPV6
+              is_system_rule:
+                description:
+                  - A flag indicating whether the flex rule is system-defined or not.
+                type: bool
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -846,6 +1010,7 @@ def get_module_spec():
         "application_rule_spec": mic_sdk.ApplicationRuleSpec,
         "intra_entity_group_rule_spec": mic_sdk.IntraEntityGroupRuleSpec,
         "multi_env_isolation_rule_spec": mic_sdk.MultiEnvIsolationRuleSpec,
+        "flex_rule_spec": mic_sdk.FlexRuleSpec,
     }
     multi_env_isolation_rule_spec_obj_map = {
         "all_to_all_isolation_group": mic_sdk.AllToAllIsolationGroup,
@@ -1000,6 +1165,63 @@ def get_module_spec():
         )
     )
 
+    flex_rule_spec = dict(
+        should_allow_any_src=dict(type="bool"),
+        should_allow_any_dst=dict(type="bool"),
+        src_entity_group_references=dict(type="list", elements="str"),
+        dest_entity_group_references=dict(type="list", elements="str"),
+        src_subnet=dict(
+            type="dict", options=ip_address_sub_spec, obj=mic_sdk.IPv4Address
+        ),
+        dest_subnet=dict(
+            type="dict", options=ip_address_sub_spec, obj=mic_sdk.IPv4Address
+        ),
+        service_group_references=dict(type="list", elements="str"),
+        is_all_protocol_allowed=dict(type="bool"),
+        tcp_services=dict(
+            type="list",
+            elements="dict",
+            options=range_spec,
+            obj=mic_sdk.TcpPortRangeSpec,
+        ),
+        udp_services=dict(
+            type="list",
+            elements="dict",
+            options=range_spec,
+            obj=mic_sdk.UdpPortRangeSpec,
+        ),
+        icmp_services=dict(
+            type="list",
+            elements="dict",
+            options=icmp_service_spec,
+            obj=mic_sdk.IcmpTypeCodeSpec,
+        ),
+        icmp_v6_services=dict(
+            type="list",
+            elements="dict",
+            options=icmp_service_spec,
+            obj=mic_sdk.IcmpV6TypeCodeSpec,
+        ),
+        network_function_reference=dict(type="str"),
+        applied_to_entity_group_references=dict(type="list", elements="str"),
+        priority=dict(type="int"),
+        action=dict(
+            type="str",
+            required=True,
+            choices=["ALLOW", "DENY", "REJECT"],
+        ),
+        direction=dict(
+            type="str",
+            required=True,
+            choices=["IN", "OUT", "IN_OUT"],
+        ),
+        ip_version=dict(
+            type="str",
+            choices=["IPV4", "IPV6", "IPV4_IPV6"],
+        ),
+        is_system_rule=dict(type="bool"),
+    )
+
     rule_spec = dict(
         two_env_isolation_rule_spec=dict(type="dict", options=isolation_rule_spec),
         application_rule_spec=dict(type="dict", options=application_rule_spec),
@@ -1007,6 +1229,7 @@ def get_module_spec():
         multi_env_isolation_rule_spec=dict(
             type="dict", options=multi_env_isolation_rule_spec
         ),
+        flex_rule_spec=dict(type="dict", options=flex_rule_spec),
     )
 
     policy_rule = dict(
@@ -1022,6 +1245,7 @@ def get_module_spec():
                 "INTRA_GROUP",
                 "MULTI_ENV_ISOLATION",
                 "SHARED_SERVICE",
+                "FLEX",
             ],
         ),
         is_logging_enabled=dict(type="bool"),
@@ -1035,6 +1259,7 @@ def get_module_spec():
                     "application_rule_spec",
                     "intra_entity_group_rule_spec",
                     "multi_env_isolation_rule_spec",
+                    "flex_rule_spec",
                 )
             ],
         ),
@@ -1047,7 +1272,16 @@ def get_module_spec():
         description=dict(type="str"),
         type=dict(
             type="str",
-            choices=["QUARANTINE", "ISOLATION", "APPLICATION", "SHAREDSERVICE"],
+            choices=[
+                "QUARANTINE",
+                "ISOLATION",
+                "APPLICATION",
+                "SHAREDSERVICE",
+                "CRITICAL",
+                "COREINFRASTRUCTURE",
+                "ZONE",
+                "WORKLOAD",
+            ],
         ),
         policy_state=dict(type="str", choices=["SAVE", "MONITOR", "ENFORCE"]),
         rules=dict(

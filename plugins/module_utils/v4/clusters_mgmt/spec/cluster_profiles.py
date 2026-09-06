@@ -252,6 +252,8 @@ class ClusterProfileSpecs:
                 "PULSE_CONFIG",
                 "NAME_SERVER_CONFIG",
                 "RSYSLOG_SERVER_CONFIG",
+                "REBUILD_RESERVATION_CONFIG",
+                "RESILIENT_CAPACITY_WARNING_THRESHOLD_CONFIG",
             ],
         ),
         name_server_ip_list=dict(
@@ -281,6 +283,20 @@ class ClusterProfileSpecs:
         ),
         pulse_status=dict(
             type="dict", options=pulse_status_spec, obj=clusters_sdk.PulseStatus
+        ),
+        rebuild_reservation_config=dict(
+            type="dict",
+            options=dict(
+                is_rebuild_reservation_enabled=dict(type="bool"),
+            ),
+            obj=clusters_sdk.RebuildReservationConfig,
+        ),
+        resilient_capacity_warning_threshold_config=dict(
+            type="dict",
+            options=dict(
+                resilient_capacity_warning_threshold_percentage=dict(type="int"),
+            ),
+            obj=clusters_sdk.ResilientCapacityWarningThresholdConfig,
         ),
         ntp_server_config_list=dict(
             type="list",

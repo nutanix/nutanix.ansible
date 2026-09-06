@@ -131,6 +131,7 @@
         source:
           vm_disk_source:
             ext_id: "{{ disk_uuid }}"
+            vm_ext_id: "{{ vm_uuid }}"
         category_ext_ids: "{{ category_ext_id }}"
       register: result
 

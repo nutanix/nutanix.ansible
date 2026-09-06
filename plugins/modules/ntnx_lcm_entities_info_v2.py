@@ -88,6 +88,7 @@ response:
             "group_uuid": null,
             "hardware_family": null,
             "hardware_vendor": null,
+            "has_previous_inventory_failed": false,
             "last_updated_time": "2025-02-16T09:56:57.131022+00:00",
             "links": null,
             "location_info": {

@@ -69,3 +69,19 @@
                 value: "{{ pc.ntp_servers.fqdn[1] }}"
       register: result
       ignore_errors: true
+
+    - name: Register Prism Central to a Witness Service remote cluster
+      nutanix.ncp.ntnx_pc_registration_v2:
+        ext_id: "00000000-0000-0000-0000-000000000000"
+        remote_cluster:
+          witness_service_remote_cluster:
+            witness_details:
+              address:
+                ipv4:
+                  value: "10.0.0.2"
+              credentials:
+                authentication:
+                  username: "admin"
+                  password: "password"
+      register: result
+      ignore_errors: true

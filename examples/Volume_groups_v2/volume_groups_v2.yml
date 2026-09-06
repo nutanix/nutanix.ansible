@@ -3,8 +3,9 @@
 # This playbook will do:
 # 1. Create Volume group
 # 2. Fetch above created VG
-# 3. Fetch all VGs using filters
-# 4. Delete Volume group
+# 3. Fetch volume groups with stats expanded
+# 4. Fetch all VGs using filters
+# 5. Delete Volume group
 
 - name: Volume groups playbook
   hosts: localhost
@@ -45,6 +46,12 @@
     - name: Fetch above created VG
       nutanix.ncp.ntnx_volume_groups_info_v2:
         ext_id: "{{ vg1_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch volume groups with stats expanded
+      nutanix.ncp.ntnx_volume_groups_info_v2:
+        expand: volumeGroupStats
       register: result
       ignore_errors: true
 
