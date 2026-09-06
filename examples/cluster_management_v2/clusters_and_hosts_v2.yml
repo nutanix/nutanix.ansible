@@ -9,12 +9,11 @@
 # 6. Associate categories with cluster
 # 7. Update ntp servers, dns servers and smtp servers in cluster
 # 8. List all hosts
-# 9. List all PCIe devices
-# 10. List all hosts using filter
-# 11. Verify fetching host using external ID
-# 12. Fetch hosts of particular cluster
-# 13. Disassociate categories from cluster
-# 14. Destroy the cluster
+# 9. List all hosts using filter
+# 10. Verify fetching host using external ID
+# 11. Fetch hosts of particular cluster
+# 12. Disassociate categories from cluster
+# 13. Destroy the cluster
 
 - name: Clusters CRUD playbook
   hosts: localhost

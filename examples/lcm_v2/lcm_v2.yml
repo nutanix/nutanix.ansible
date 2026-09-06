@@ -6,16 +6,14 @@
 # 3. Update the config of LCM
 # 4. Perform inventory of LCM
 # 5. Perform software-only LCM inventory
-# 6. List LCM summaries
-# 7. Fetch LCM summary using cluster external ID
-# 8. List all LCM entities details
-# 9. List all LCM entities details with filter
-# 10. Set LCM entity external ID
-# 11. List all LCM entities details with limit
-# 12. Fetch LCM entity using external ID
-# 13. Get LCM status before doing prechecks
-# 14. Perform LCM prechecks
-# 15. Perform LCM upgrade
+# 6. List all LCM entities details
+# 7. List all LCM entities details with filter
+# 8. Set LCM entity external ID
+# 9. List all LCM entities details with limit
+# 10. Fetch LCM entity using external ID
+# 11. Get LCM status before doing prechecks
+# 12. Perform LCM prechecks
+# 13. Perform LCM upgrade
 # Note: cluster_ext_id is used to get/precheck/upgrade the entities on the specific cluster.
 # If we pass the Prism Element cluster ID, it will get the entities on that cluster. Otherwise, it will get the entities on the Prism Central.
 
