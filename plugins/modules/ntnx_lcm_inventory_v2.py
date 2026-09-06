@@ -42,6 +42,25 @@ options:
             - We can get the external ID of the cluster using ntnx_clusters_info_v2 module.
         type: str
         required: false
+    inventory_type:
+        description:
+            - The scope of the inventory scan to perform.
+            - When omitted, a full inventory is performed.
+            - C(NODE) requires C(node_list).
+        type: str
+        required: false
+        choices:
+            - FULL
+            - SOFTWARE
+            - NODE
+            - RESCAN
+    node_list:
+        description:
+            - List of node UUIDs to inventory.
+            - Required when C(inventory_type) is C(NODE); ignored for other inventory types.
+        type: list
+        elements: str
+        required: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -56,6 +75,15 @@ EXAMPLES = r"""
     nutanix_username: <user>
     nutanix_password: <pass>
     cluster_ext_id: "00062e00-87eb-ef15-0000-00000000b71a"
+  register: lcm_inventory
+
+- name: Perform software-only LCM inventory
+  nutanix.ncp.ntnx_lcm_inventory_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    cluster_ext_id: "00062e00-87eb-ef15-0000-00000000b71a"
+    inventory_type: SOFTWARE
   register: lcm_inventory
 """
 
@@ -119,16 +147,29 @@ changed:
     sample: false
 """
 
+import traceback  # noqa: E402
 import warnings  # noqa: E402
+
+from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.lcm.api_client import get_inventory_api_instance  # noqa: E402
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
+from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
+
+SDK_IMP_ERROR = None
+try:
+    import ntnx_lifecycle_py_client as lcm_sdk  # noqa: E402
+except ImportError:
+
+    from ..module_utils.v4.sdk_mock import mock_sdk as lcm_sdk  # noqa: E402
+
+    SDK_IMP_ERROR = traceback.format_exc()
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -138,6 +179,11 @@ def get_module_spec():
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
         cluster_ext_id=dict(type="str"),
+        inventory_type=dict(
+            type="str",
+            choices=["FULL", "SOFTWARE", "NODE", "RESCAN"],
+        ),
+        node_list=dict(type="list", elements="str"),
     )
     return module_args
 
@@ -145,9 +191,17 @@ def get_module_spec():
 def lcm_inventory(module, api_instance, result):
     cluster_ext_id = module.params.get("cluster_ext_id")
     resp = None
+    body = None
+    if module.params.get("inventory_type") or module.params.get("node_list"):
+        sg = SpecGenerator(module)
+        spec, err = sg.generate_spec(obj=lcm_sdk.InventorySpec())
+        if err:
+            result["error"] = err
+            module.fail_json(msg="Failed generating LCM inventory Spec", **result)
+        body = spec
 
     try:
-        resp = api_instance.perform_inventory(X_Cluster_Id=cluster_ext_id)
+        resp = api_instance.perform_inventory(X_Cluster_Id=cluster_ext_id, body=body)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -168,7 +222,13 @@ def run_module():
     module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        required_if=[("inventory_type", "NODE", ["node_list"])],
     )
+    if SDK_IMP_ERROR:
+        module.fail_json(
+            msg=missing_required_lib("ntnx_lifecycle_py_client"),
+            exception=SDK_IMP_ERROR,
+        )
 
     remove_param_with_none_value(module.params)
     result = {

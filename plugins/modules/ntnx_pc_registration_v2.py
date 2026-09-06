@@ -244,6 +244,90 @@ options:
                         - The external ID of the cluster.
                     type: str
                     required: true
+        witness_service_remote_cluster:
+            description:
+                - Remote cluster specification required for registering a Witness Service.
+            type: dict
+            suboptions:
+                witness_details:
+                    description:
+                        - The remote cluster details for the Witness Service.
+                    type: dict
+                    required: true
+                    suboptions:
+                        address:
+                            description:
+                                - The address of the remote cluster.
+                            type: dict
+                            required: true
+                            suboptions:
+                                ipv4:
+                                    description:
+                                        - The IPv4 address of the remote cluster.
+                                    type: dict
+                                    suboptions:
+                                        value:
+                                            description:
+                                                - The IPv4 address value.
+                                            type: str
+                                            required: true
+                                        prefix_length:
+                                            description:
+                                                - The prefix length of the IPv4 address.
+                                            type: int
+                                            required: false
+                                ipv6:
+                                    description:
+                                        - The IPv6 address of the remote cluster.
+                                    type: dict
+                                    suboptions:
+                                        value:
+                                            description:
+                                                - The IPv6 address value.
+                                            type: str
+                                            required: true
+                                        prefix_length:
+                                            description:
+                                                - The prefix length of the IPv6 address.
+                                            type: int
+                                            required: false
+                                fqdn:
+                                    description:
+                                        - The FQDN of the remote cluster.
+                                    type: dict
+                                    suboptions:
+                                        value:
+                                            description:
+                                                - The FQDN value.
+                                            type: str
+                                            required: true
+                        credentials:
+                            description:
+                                - The credentials of the remote cluster.
+                            type: dict
+                            required: true
+                            suboptions:
+                                authentication:
+                                    description:
+                                        - The authentication details.
+                                    type: dict
+                                    required: true
+                                    suboptions:
+                                        username:
+                                            description:
+                                                - The username of the remote cluster.
+                                            type: str
+                                            required: true
+                                        password:
+                                            description:
+                                                - The password of the remote cluster.
+                                            type: str
+                                            required: true
+                        port:
+                            description:
+                                - Port of remote cluster to register.
+                            type: int
+                            required: false
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
@@ -266,6 +350,25 @@ EXAMPLES = r"""
           address:
             ipv4:
               value: "10.0.0.1"
+          credentials:
+            authentication:
+              username: "admin"
+              password: "password"
+  register: result
+  ignore_errors: true
+
+- name: Register Prism Central to a Witness Service remote cluster
+  nutanix.ncp.ntnx_pc_registration_v2:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    remote_cluster:
+      witness_service_remote_cluster:
+        witness_details:
+          address:
+            ipv4:
+              value: "10.0.0.2"
           credentials:
             authentication:
               username: "admin"
@@ -468,6 +571,7 @@ def get_module_spec():
         "domain_manager_remote_cluster": prism_sdk.DomainManagerRemoteClusterSpec,
         "aos_remote_cluster": prism_sdk.AOSRemoteClusterSpec,
         "cluster_reference": prism_sdk.ClusterReference,
+        "witness_service_remote_cluster": prism_sdk.WitnessServiceRemoteClusterSpec,
     }
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
@@ -489,12 +593,25 @@ def get_module_spec():
                 cluster_reference=dict(
                     type="dict", options=cluster_reference_spec, required=False
                 ),
+                witness_service_remote_cluster=dict(
+                    type="dict",
+                    options=dict(
+                        witness_details=dict(
+                            type="dict",
+                            options=remote_cluster_spec,
+                            obj=prism_sdk.RemoteClusterSpec,
+                            required=True,
+                        ),
+                    ),
+                    required=False,
+                ),
             ),
             mutually_exclusive=[
                 (
                     "domain_manager_remote_cluster",
                     "aos_remote_cluster",
                     "cluster_reference",
+                    "witness_service_remote_cluster",
                 )
             ],
             required=True,
@@ -518,6 +635,9 @@ def register_pc(module, domain_manager, result):
             "remote_cluster"
         )
         or (remote_cluster.get("aos_remote_cluster") or {}).get("remote_cluster")
+        or (remote_cluster.get("witness_service_remote_cluster") or {}).get(
+            "witness_details"
+        )
         or {}
     )
     if remote_cluster_cfg.get("port") is None:
@@ -526,6 +646,11 @@ def register_pc(module, domain_manager, result):
         )
         if inner_remote_cluster is not None:
             inner_remote_cluster.port = None
+        witness_details = getattr(
+            getattr(spec, "remote_cluster", None), "witness_details", None
+        )
+        if witness_details is not None:
+            witness_details.port = None
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
