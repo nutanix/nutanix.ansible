@@ -245,11 +245,6 @@
       register: result
       ignore_errors: true
 
-    - name: List all PCIe devices
-      nutanix.ncp.ntnx_pcie_devices_info_v2:
-      register: result
-      ignore_errors: true
-
     - name: List all hosts using filter
       nutanix.ncp.ntnx_hosts_info_v2:
         filter: hostName eq '{{ host_name }}'

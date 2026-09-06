@@ -71,17 +71,6 @@
       register: lcm_inventory
       ignore_errors: true
 
-    - name: List LCM summaries
-      nutanix.ncp.ntnx_lcm_summaries_info_v2:
-      register: lcm_summaries
-      ignore_errors: true
-
-    - name: Fetch LCM summary using cluster external ID
-      nutanix.ncp.ntnx_lcm_summaries_info_v2:
-        ext_id: "{{ prism_central_external_id }}"
-      register: lcm_summary
-      ignore_errors: true
-
     - name: List all LCM entities details
       nutanix.ncp.ntnx_lcm_entities_info_v2:
       register: lcm_entities
