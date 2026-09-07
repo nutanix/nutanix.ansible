@@ -1,0 +1,70 @@
+---
+# Test plan (Foundation Central Config Info):
+# 1. Get singleton config — assert all SDK model fields present, changed=false.
+# 2. Confirm list/filter/limit are not applicable (singleton GET only).
+# 3. Re-get and assert stable version/commit_id/tls fingerprint fields.
+#
+# Connection: FCVM via integration_config.yml foundation_* vars (or env fallback).
+
+- name: Resolve FCVM connection
+  ansible.builtin.set_fact:
+    fcc_host: "{{ foundation_host | default(lookup('env', 'FOUNDATION_ENDPOINT'), true) }}"
+    fcc_port: "{{ foundation_port | default(lookup('env', 'FOUNDATION_PORT') | default('9440', true), true) }}"
+    fcc_username: "{{ foundation_username | default(lookup('env', 'FOUNDATION_USERNAME') | default('admin', true), true) }}"
+    fcc_password: "{{ foundation_password | default(lookup('env', 'FOUNDATION_PASSWORD'), true) }}"
+    fcc_validate_certs: false
+
+- name: Assert FCVM endpoint is configured
+  ansible.builtin.assert:
+    that:
+      - fcc_host | length > 0
+      - fcc_password | length > 0
+    fail_msg: "foundation_host/FOUNDATION_ENDPOINT and foundation_password/FOUNDATION_PASSWORD must be set"
+
+- name: Set module defaults for Foundation Central / FCVM
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ fcc_host }}"
+      nutanix_port: "{{ fcc_port }}"
+      nutanix_username: "{{ fcc_username }}"
+      nutanix_password: "{{ fcc_password }}"
+      validate_certs: "{{ fcc_validate_certs }}"
+  block:
+    - name: Get Foundation Central config (singleton)
+      nutanix.ncp.ntnx_foundation_central_config_info_v2:
+      register: fcc_info
+
+    - name: Assert Foundation Central config info
+      ansible.builtin.assert:
+        that:
+          - fcc_info.changed == false
+          - fcc_info.failed == false
+          - fcc_info.error == none
+          - fcc_info.response is mapping
+          - fcc_info.response.version is defined
+          - fcc_info.response.version | length > 0
+          - fcc_info.response.commit_id is defined
+          - fcc_info.response.commit_id | length > 0
+          - fcc_info.response.tls_certificate_fingerprint is defined
+          - fcc_info.response.tls_certificate_fingerprint | length > 0
+          - fcc_info.response.aos_download_timeout_minutes is number
+          - fcc_info.response.ahv_installation_timeout_minutes is number
+        fail_msg: "Foundation Central config info get failed"
+        success_msg: "Foundation Central config info get ok"
+
+    - name: Get Foundation Central config again for stability
+      nutanix.ncp.ntnx_foundation_central_config_info_v2:
+      register: fcc_info_again
+
+    - name: Assert stable singleton fields
+      ansible.builtin.assert:
+        that:
+          - fcc_info_again.changed == false
+          - fcc_info_again.failed == false
+          - fcc_info_again.response.version == fcc_info.response.version
+          - fcc_info_again.response.commit_id == fcc_info.response.commit_id
+          - fcc_info_again.response.tls_certificate_fingerprint == fcc_info.response.tls_certificate_fingerprint
+          - fcc_info_again.response.aos_download_timeout_minutes == fcc_info.response.aos_download_timeout_minutes
+          - fcc_info_again.response.ahv_installation_timeout_minutes == fcc_info.response.ahv_installation_timeout_minutes
+        fail_msg: "Foundation Central config info stability check failed"
+        success_msg: "Foundation Central config info stability check ok"

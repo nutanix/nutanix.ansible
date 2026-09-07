@@ -66,3 +66,26 @@ def get_lcm_entity(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching entity info using external identifier of the entity",
         )
+
+
+def get_foundation_central_config(module, api_instance):
+    """
+    Fetch Foundation Central configuration from FCVM/Foundation.
+
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Foundation Central config api instance
+    Returns:
+        foundation_central_config (object): Foundation Central config data
+    """
+    try:
+        resp = api_instance.get_foundation_central_config()
+        if resp is None or resp.data is None:
+            module.fail_json(msg="Foundation Central config API returned empty data")
+        return resp.data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Foundation Central config",
+        )

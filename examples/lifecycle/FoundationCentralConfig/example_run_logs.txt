@@ -1,0 +1,19 @@
+# Example run logs for Foundation Central Config modules
+# Target: FCVM 10.97.44.170:9440
+# Date: 2026-09-07
+
+## Get Foundation Central config (ntnx_foundation_central_config_info_v2)
+changed: false
+response:
+  version: "2.2"
+  commit_id: "8701b044"
+  tls_certificate_fingerprint: "0789169a1c913336750712ad51ce22a27abcb6ba3a1bbce8a3155decf53c8757"
+  aos_download_timeout_minutes: 60
+  ahv_installation_timeout_minutes: 50
+
+## Update Foundation Central config (ntnx_foundation_central_config_v2)
+# Idempotent run with aos_download_timeout_minutes=60, ahv_installation_timeout_minutes=50
+changed: false
+skipped: true
+msg: "Nothing to change for Foundation Central config. Skipping update."
+response: (same as get above)

@@ -1,0 +1,309 @@
+---
+# Test plan (Foundation Central Config CRUD — domain QA):
+# 1. Get current singleton config (baseline) — assert response fields from SDK model.
+# 2. check_mode create/update for each writable/spec field (aos/ahv timeouts +
+#    version/commit_id/tls fingerprint) — assert changed=false and response values.
+# 3. check_mode delete — assert failed (delete unsupported).
+# 4. Minimal update (timeouts only) — assert changed/task.
+# 5. Full update with all CONFIG_FIELDS — assert values.
+# 6. Idempotent second update with same values — assert skipped / changed=false.
+# 7. Update via ext_id dispatch path — assert update still works.
+# 8. Negative: missing all config fields — assert descriptive error.
+# 9. Negative: state=absent — assert delete unsupported error.
+# 10. Restore original timeouts after tests.
+#
+# All CRUD scenarios live in this single file per code-gen instructions.
+
+- name: Resolve FCVM connection
+  ansible.builtin.set_fact:
+    fcc_host: "{{ foundation_host | default(lookup('env', 'FOUNDATION_ENDPOINT'), true) }}"
+    fcc_port: "{{ foundation_port | default(lookup('env', 'FOUNDATION_PORT') | default('9440', true), true) }}"
+    fcc_username: "{{ foundation_username | default(lookup('env', 'FOUNDATION_USERNAME') | default('admin', true), true) }}"
+    fcc_password: "{{ foundation_password | default(lookup('env', 'FOUNDATION_PASSWORD'), true) }}"
+    fcc_validate_certs: false
+
+- name: Assert FCVM endpoint is configured
+  ansible.builtin.assert:
+    that:
+      - fcc_host | length > 0
+      - fcc_password | length > 0
+    fail_msg: "foundation_host/FOUNDATION_ENDPOINT and foundation_password/FOUNDATION_PASSWORD must be set"
+
+- name: Set module defaults for Foundation Central / FCVM
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ fcc_host }}"
+      nutanix_port: "{{ fcc_port }}"
+      nutanix_username: "{{ fcc_username }}"
+      nutanix_password: "{{ fcc_password }}"
+      validate_certs: "{{ fcc_validate_certs }}"
+  block:
+    - name: Get baseline Foundation Central config
+      nutanix.ncp.ntnx_foundation_central_config_info_v2:
+      register: fcc_baseline
+
+    - name: Assert baseline Foundation Central config
+      ansible.builtin.assert:
+        that:
+          - fcc_baseline.changed == false
+          - fcc_baseline.failed == false
+          - fcc_baseline.response is defined
+          - fcc_baseline.response.version is defined
+          - fcc_baseline.response.commit_id is defined
+          - fcc_baseline.response.tls_certificate_fingerprint is defined
+          - fcc_baseline.response.aos_download_timeout_minutes is defined
+          - fcc_baseline.response.ahv_installation_timeout_minutes is defined
+        fail_msg: "Failed to fetch baseline Foundation Central config"
+        success_msg: "Baseline Foundation Central config fetched"
+
+    - name: Save original timeout values
+      ansible.builtin.set_fact:
+        original_aos_timeout: "{{ fcc_baseline.response.aos_download_timeout_minutes }}"
+        original_ahv_timeout: "{{ fcc_baseline.response.ahv_installation_timeout_minutes }}"
+        original_version: "{{ fcc_baseline.response.version }}"
+        original_commit_id: "{{ fcc_baseline.response.commit_id }}"
+        original_tls_fp: "{{ fcc_baseline.response.tls_certificate_fingerprint }}"
+        new_aos_timeout: "{{ (fcc_baseline.response.aos_download_timeout_minutes | int) + 1 }}"
+        new_ahv_timeout: "{{ (fcc_baseline.response.ahv_installation_timeout_minutes | int) + 1 }}"
+
+    - name: Check mode update aos_download_timeout_minutes
+      nutanix.ncp.ntnx_foundation_central_config_v2:
+        aos_download_timeout_minutes: "{{ new_aos_timeout | int }}"
+      check_mode: true
+      register: fcc_cm_aos
+
+    - name: Assert check_mode aos_download_timeout_minutes
+      ansible.builtin.assert:
+        that:
+          - fcc_cm_aos.changed == false
+          - fcc_cm_aos.failed == false
+          - fcc_cm_aos.response is defined
+          - fcc_cm_aos.response.aos_download_timeout_minutes == (new_aos_timeout | int)
+        fail_msg: "check_mode aos_download_timeout_minutes failed"
+        success_msg: "check_mode aos_download_timeout_minutes ok"
+
+    - name: Check mode update ahv_installation_timeout_minutes
+      nutanix.ncp.ntnx_foundation_central_config_v2:
+        ahv_installation_timeout_minutes: "{{ new_ahv_timeout | int }}"
+      check_mode: true
+      register: fcc_cm_ahv
+
+    - name: Assert check_mode ahv_installation_timeout_minutes
+      ansible.builtin.assert:
+        that:
+          - fcc_cm_ahv.changed == false
+          - fcc_cm_ahv.failed == false
+          - fcc_cm_ahv.response is defined
+          - fcc_cm_ahv.response.ahv_installation_timeout_minutes == (new_ahv_timeout | int)
+        fail_msg: "check_mode ahv_installation_timeout_minutes failed"
+        success_msg: "check_mode ahv_installation_timeout_minutes ok"
+
+    - name: Check mode update version field
+      nutanix.ncp.ntnx_foundation_central_config_v2:
+        version: "{{ original_version }}"
+      check_mode: true
+      register: fcc_cm_version
+
+    - name: Assert check_mode version
+      ansible.builtin.assert:
+        that:
+          - fcc_cm_version.changed == false
+          - fcc_cm_version.failed == false
+          - fcc_cm_version.response is defined
+          - fcc_cm_version.response.version == original_version
+        fail_msg: "check_mode version failed"
+        success_msg: "check_mode version ok"
+
+    - name: Check mode update commit_id field
+      nutanix.ncp.ntnx_foundation_central_config_v2:
+        commit_id: "{{ original_commit_id }}"
+      check_mode: true
+      register: fcc_cm_commit
+
+    - name: Assert check_mode commit_id
+      ansible.builtin.assert:
+        that:
+          - fcc_cm_commit.changed == false
+          - fcc_cm_commit.failed == false
+          - fcc_cm_commit.response is defined
+          - fcc_cm_commit.response.commit_id == original_commit_id
+        fail_msg: "check_mode commit_id failed"
+        success_msg: "check_mode commit_id ok"
+
+    - name: Check mode update tls_certificate_fingerprint field
+      nutanix.ncp.ntnx_foundation_central_config_v2:
+        tls_certificate_fingerprint: "{{ original_tls_fp }}"
+      check_mode: true
+      register: fcc_cm_tls
+
+    - name: Assert check_mode tls_certificate_fingerprint
+      ansible.builtin.assert:
+        that:
+          - fcc_cm_tls.changed == false
+          - fcc_cm_tls.failed == false
+          - fcc_cm_tls.response is defined
+          - fcc_cm_tls.response.tls_certificate_fingerprint == original_tls_fp
+        fail_msg: "check_mode tls_certificate_fingerprint failed"
+        success_msg: "check_mode tls_certificate_fingerprint ok"
+
+    - name: Check mode update all fields together
+      nutanix.ncp.ntnx_foundation_central_config_v2:
+        aos_download_timeout_minutes: "{{ new_aos_timeout | int }}"
+        ahv_installation_timeout_minutes: "{{ new_ahv_timeout | int }}"
+        version: "{{ original_version }}"
+        commit_id: "{{ original_commit_id }}"
+        tls_certificate_fingerprint: "{{ original_tls_fp }}"
+      check_mode: true
+      register: fcc_cm_all
+
+    - name: Assert check_mode all fields
+      ansible.builtin.assert:
+        that:
+          - fcc_cm_all.changed == false
+          - fcc_cm_all.failed == false
+          - fcc_cm_all.response.aos_download_timeout_minutes == (new_aos_timeout | int)
+          - fcc_cm_all.response.ahv_installation_timeout_minutes == (new_ahv_timeout | int)
+          - fcc_cm_all.response.version == original_version
+          - fcc_cm_all.response.commit_id == original_commit_id
+          - fcc_cm_all.response.tls_certificate_fingerprint == original_tls_fp
+        fail_msg: "check_mode all fields failed"
+        success_msg: "check_mode all fields ok"
+
+    - name: Check mode delete Foundation Central config
+      nutanix.ncp.ntnx_foundation_central_config_v2:
+        state: absent
+      check_mode: true
+      register: fcc_cm_delete
+      ignore_errors: true
+
+    - name: Assert check_mode delete is rejected
+      ansible.builtin.assert:
+        that:
+          - fcc_cm_delete.failed == true
+          - fcc_cm_delete.changed == false
+          - "'not supported' in (fcc_cm_delete.msg | default('') | lower)"
+        fail_msg: "check_mode delete should fail as unsupported"
+        success_msg: "check_mode delete correctly rejected"
+
+    - name: Minimal update timeouts only
+      nutanix.ncp.ntnx_foundation_central_config_v2:
+        aos_download_timeout_minutes: "{{ new_aos_timeout | int }}"
+        ahv_installation_timeout_minutes: "{{ new_ahv_timeout | int }}"
+      register: fcc_min_update
+
+    - name: Assert minimal update
+      ansible.builtin.assert:
+        that:
+          - fcc_min_update.changed == true
+          - fcc_min_update.failed == false
+          - fcc_min_update.task_ext_id is defined
+          - fcc_min_update.task_ext_id is not none
+          - fcc_min_update.response is defined
+          - fcc_min_update.response.aos_download_timeout_minutes == (new_aos_timeout | int)
+          - fcc_min_update.response.ahv_installation_timeout_minutes == (new_ahv_timeout | int)
+          - fcc_min_update.ext_id == none
+          - fcc_min_update.error == none
+        fail_msg: "Minimal Foundation Central config update failed"
+        success_msg: "Minimal Foundation Central config update ok"
+
+    - name: Full update with all fields
+      nutanix.ncp.ntnx_foundation_central_config_v2:
+        aos_download_timeout_minutes: "{{ new_aos_timeout | int }}"
+        ahv_installation_timeout_minutes: "{{ new_ahv_timeout | int }}"
+        version: "{{ original_version }}"
+        commit_id: "{{ original_commit_id }}"
+        tls_certificate_fingerprint: "{{ original_tls_fp }}"
+      register: fcc_full_update
+
+    - name: Assert full update idempotent or applied
+      ansible.builtin.assert:
+        that:
+          - fcc_full_update.failed == false
+          - fcc_full_update.response is defined
+          - fcc_full_update.response.aos_download_timeout_minutes == (new_aos_timeout | int)
+          - fcc_full_update.response.ahv_installation_timeout_minutes == (new_ahv_timeout | int)
+          - fcc_full_update.response.version == original_version
+          - fcc_full_update.response.commit_id == original_commit_id
+          - fcc_full_update.response.tls_certificate_fingerprint == original_tls_fp
+          - (fcc_full_update.changed == false and fcc_full_update.skipped == true) or (fcc_full_update.changed == true)
+        fail_msg: "Full Foundation Central config update failed"
+        success_msg: "Full Foundation Central config update ok"
+
+    - name: Idempotent update with same timeouts
+      nutanix.ncp.ntnx_foundation_central_config_v2:
+        aos_download_timeout_minutes: "{{ new_aos_timeout | int }}"
+        ahv_installation_timeout_minutes: "{{ new_ahv_timeout | int }}"
+      register: fcc_idempotent
+
+    - name: Assert idempotent update skipped
+      ansible.builtin.assert:
+        that:
+          - fcc_idempotent.changed == false
+          - fcc_idempotent.failed == false
+          - fcc_idempotent.skipped == true
+          - "'Skipping update' in (fcc_idempotent.msg | default(''))"
+          - fcc_idempotent.response.aos_download_timeout_minutes == (new_aos_timeout | int)
+          - fcc_idempotent.response.ahv_installation_timeout_minutes == (new_ahv_timeout | int)
+        fail_msg: "Idempotent Foundation Central config update failed"
+        success_msg: "Idempotent Foundation Central config update ok"
+
+    - name: Update via ext_id dispatch path
+      nutanix.ncp.ntnx_foundation_central_config_v2:
+        ext_id: "foundation-central-config"
+        aos_download_timeout_minutes: "{{ new_aos_timeout | int }}"
+        ahv_installation_timeout_minutes: "{{ new_ahv_timeout | int }}"
+      register: fcc_ext_id_update
+
+    - name: Assert update via ext_id path
+      ansible.builtin.assert:
+        that:
+          - fcc_ext_id_update.failed == false
+          - fcc_ext_id_update.changed == false
+          - fcc_ext_id_update.skipped == true
+          - fcc_ext_id_update.response.aos_download_timeout_minutes == (new_aos_timeout | int)
+        fail_msg: "Update via ext_id dispatch failed"
+        success_msg: "Update via ext_id dispatch ok"
+
+    - name: Negative missing all config fields
+      nutanix.ncp.ntnx_foundation_central_config_v2:
+      register: fcc_missing
+      ignore_errors: true
+
+    - name: Assert missing fields error
+      ansible.builtin.assert:
+        that:
+          - fcc_missing.failed == true
+          - fcc_missing.changed == false
+          - "'Provide at least one' in (fcc_missing.msg | default(''))"
+        fail_msg: "Missing fields negative test failed"
+        success_msg: "Missing fields negative test ok"
+
+    - name: Negative delete unsupported
+      nutanix.ncp.ntnx_foundation_central_config_v2:
+        state: absent
+      register: fcc_delete
+      ignore_errors: true
+
+    - name: Assert delete unsupported
+      ansible.builtin.assert:
+        that:
+          - fcc_delete.failed == true
+          - fcc_delete.changed == false
+          - "'not supported' in (fcc_delete.msg | default('') | lower)"
+        fail_msg: "Delete unsupported negative test failed"
+        success_msg: "Delete unsupported negative test ok"
+
+    - name: Restore original timeouts
+      nutanix.ncp.ntnx_foundation_central_config_v2:
+        aos_download_timeout_minutes: "{{ original_aos_timeout | int }}"
+        ahv_installation_timeout_minutes: "{{ original_ahv_timeout | int }}"
+      register: fcc_restore
+
+    - name: Assert restore
+      ansible.builtin.assert:
+        that:
+          - fcc_restore.failed == false
+          - fcc_restore.response.aos_download_timeout_minutes == (original_aos_timeout | int)
+          - fcc_restore.response.ahv_installation_timeout_minutes == (original_ahv_timeout | int)
+        fail_msg: "Failed to restore original Foundation Central config"
+        success_msg: "Original Foundation Central config restored"
