@@ -1,0 +1,18 @@
+---
+# NOTE:
+# The Foundation Central configuration APIs are served by the Foundation Central
+# VM (FCVM)/Foundation endpoint, NOT by Prism Central. We therefore point the
+# module defaults at the Foundation endpoint (falling back to sensible defaults).
+- name: Set module defaults
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ foundation_central_host | default('10.97.44.170') }}"
+      nutanix_username: "{{ foundation_central_username | default('admin') }}"
+      nutanix_password: "{{ foundation_central_password | default(omit) }}"
+      nutanix_port: "{{ foundation_central_port | default(9440) }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+      nutanix_debug: "{{ nutanix_debug | default(omit) }}"
+      nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
+  block:
+    - name: Import foundation_central_config.yml
+      ansible.builtin.import_tasks: foundation_central_config.yml

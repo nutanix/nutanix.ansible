@@ -21,12 +21,17 @@ except ImportError:
     SDK_IMP_ERROR = traceback.format_exc()
 
 
-def get_api_client(module):
+def get_api_client(module, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION):
     """
     This method will return client to be used in api connection using
     given connection details.
     Args:
         module (object): Ansible module object
+        allow_version_negotiation (bool): Whether the SDK should negotiate the
+            API version with the server. Some endpoints (e.g. the Foundation
+            Central config APIs, which only exist at v4.3) must disable
+            negotiation because the server can otherwise negotiate the client
+            down to an older API version that does not expose the endpoint.
     return:
         client (object): api client object
     """
@@ -54,14 +59,14 @@ def get_api_client(module):
     config.verify_ssl = module.params.get("validate_certs")
     try:
         client = ntnx_lifecycle_py_client.ApiClient(
-            configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
+            configuration=config, allow_version_negotiation=allow_version_negotiation
         )
     except TypeError:
         client = ntnx_lifecycle_py_client.ApiClient(configuration=config)
     config.read_timeout = module.params.get("read_timeout")
     _apply_proxy_from_env(config, module)
     client = ntnx_lifecycle_py_client.ApiClient(
-        configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
+        configuration=config, allow_version_negotiation=allow_version_negotiation
     )
     if not api_key:
         cred = "{0}:{1}".format(config.username, config.password)
@@ -159,3 +164,24 @@ def get_entity_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_lifecycle_py_client.EntitiesApi(api_client=api_client)
+
+
+def get_foundation_central_config_api_instance(module):
+    """
+    This method will return Foundation Central config API instance.
+
+    Note:
+        The Foundation Central configuration APIs are served by the Foundation
+        Central VM (FCVM)/Foundation endpoint and NOT by Prism Central. The
+        caller must set ``nutanix_host``/``nutanix_port`` to the FCVM/Foundation
+        endpoint (default port 9440).
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 Foundation Central config api instance
+    """
+    # The Foundation Central config endpoint only exists at API version v4.3.
+    # Disable version negotiation so the SDK does not get downgraded to an
+    # older version (e.g. v4.2) that returns 404 for this endpoint.
+    api_client = get_api_client(module, allow_version_negotiation=False)
+    return ntnx_lifecycle_py_client.FoundationCentralConfigApi(api_client=api_client)

@@ -1,0 +1,315 @@
+---
+############################################################################
+# Test plan — Foundation Central config v4 modules
+#
+# Modules under test:
+#   - ntnx_foundation_central_config_info_v2  (GetFoundationCentralConfig)
+#   - ntnx_foundation_central_config_v2       (UpdateFoundationCentralConfig)
+#
+# Foundation Central config is a SINGLETON resource served by the FCVM /
+# Foundation endpoint (NOT Prism Central). It supports only get + update.
+#
+# Writable fields (from SDK request struct FoundationCentralConfig):
+#   - tls_certificate_fingerprint (str)
+#   - aos_download_timeout_minutes (int)
+#   - ahv_installation_timeout_minutes (int)
+# Read-only fields (RETURN only, must NOT be in the argument spec):
+#   - version (str), commit_id (str)
+#
+# Scenarios covered:
+#   1.  Info: get the singleton config; assert changed/failed False.
+#   2.  Save original config to restore at the end (safe re-runs).
+#   3.  check_mode: update each writable field individually (no real change).
+#   4.  check_mode: update ALL writable fields together (no real change).
+#   5.  Real update of ALL fields; assert changed + returned values.
+#   6.  Info after update reflects new values.
+#   7.  Idempotency: re-run identical update -> changed False + skipped True.
+#   8.  State transition: change a scalar int field to a DIFFERENT valid value.
+#   9.  Partial update preserves unspecified writable fields.
+#   10. Negative: invalid type for an int field is rejected by the arg spec.
+#   11. Read-only fields are not accepted as input params.
+#   12. Restore the original configuration.
+############################################################################
+
+- name: Start testing Foundation Central config v4 modules
+  ansible.builtin.debug:
+    msg: Start testing Foundation Central config v4 modules
+
+############################################################################
+# 1. Info — get the singleton config
+############################################################################
+- name: Get Foundation Central configuration
+  nutanix.ncp.ntnx_foundation_central_config_info_v2:
+  register: fc_info
+  ignore_errors: true
+
+- name: Assert Foundation Central config info is fetched
+  ansible.builtin.assert:
+    that:
+      - fc_info.changed == false
+      - fc_info.failed == false
+      - fc_info.response is defined
+      - fc_info.response.version is defined
+      - fc_info.response.aos_download_timeout_minutes is defined
+      - fc_info.response.ahv_installation_timeout_minutes is defined
+    fail_msg: "Failed to fetch Foundation Central configuration"
+    success_msg: "Foundation Central configuration fetched successfully"
+
+############################################################################
+# 2. Save original config for restoration
+############################################################################
+- name: Save original Foundation Central configuration
+  ansible.builtin.set_fact:
+    original_aos_timeout: "{{ fc_info.response.aos_download_timeout_minutes }}"
+    original_ahv_timeout: "{{ fc_info.response.ahv_installation_timeout_minutes }}"
+    original_tls_fingerprint: "{{ fc_info.response.tls_certificate_fingerprint }}"
+
+############################################################################
+# 3. check_mode — each writable field individually
+############################################################################
+- name: Update aos_download_timeout_minutes in check mode
+  nutanix.ncp.ntnx_foundation_central_config_v2:
+    aos_download_timeout_minutes: 90
+  check_mode: true
+  register: cm_aos
+  ignore_errors: true
+
+- name: Assert check mode aos_download_timeout_minutes
+  ansible.builtin.assert:
+    that:
+      - cm_aos.changed == false
+      - cm_aos.failed == false
+      - cm_aos.response is defined
+      - cm_aos.response.aos_download_timeout_minutes == 90
+    fail_msg: "check_mode aos_download_timeout_minutes failed"
+    success_msg: "check_mode aos_download_timeout_minutes passed"
+
+- name: Update ahv_installation_timeout_minutes in check mode
+  nutanix.ncp.ntnx_foundation_central_config_v2:
+    ahv_installation_timeout_minutes: 75
+  check_mode: true
+  register: cm_ahv
+  ignore_errors: true
+
+- name: Assert check mode ahv_installation_timeout_minutes
+  ansible.builtin.assert:
+    that:
+      - cm_ahv.changed == false
+      - cm_ahv.failed == false
+      - cm_ahv.response is defined
+      - cm_ahv.response.ahv_installation_timeout_minutes == 75
+    fail_msg: "check_mode ahv_installation_timeout_minutes failed"
+    success_msg: "check_mode ahv_installation_timeout_minutes passed"
+
+- name: Update tls_certificate_fingerprint in check mode
+  nutanix.ncp.ntnx_foundation_central_config_v2:
+    tls_certificate_fingerprint: "AA:BB:CC:DD:EE:FF"
+  check_mode: true
+  register: cm_tls
+  ignore_errors: true
+
+- name: Assert check mode tls_certificate_fingerprint
+  ansible.builtin.assert:
+    that:
+      - cm_tls.changed == false
+      - cm_tls.failed == false
+      - cm_tls.response is defined
+      - cm_tls.response.tls_certificate_fingerprint == "AA:BB:CC:DD:EE:FF"
+    fail_msg: "check_mode tls_certificate_fingerprint failed"
+    success_msg: "check_mode tls_certificate_fingerprint passed"
+
+############################################################################
+# 4. check_mode — all writable fields together
+############################################################################
+- name: Update all writable fields in check mode
+  nutanix.ncp.ntnx_foundation_central_config_v2:
+    aos_download_timeout_minutes: 95
+    ahv_installation_timeout_minutes: 65
+    tls_certificate_fingerprint: "{{ original_tls_fingerprint }}"
+  check_mode: true
+  register: cm_all
+  ignore_errors: true
+
+- name: Assert check mode all fields
+  ansible.builtin.assert:
+    that:
+      - cm_all.changed == false
+      - cm_all.failed == false
+      - cm_all.response.aos_download_timeout_minutes == 95
+      - cm_all.response.ahv_installation_timeout_minutes == 65
+      - cm_all.response.tls_certificate_fingerprint == original_tls_fingerprint
+    fail_msg: "check_mode all fields failed"
+    success_msg: "check_mode all fields passed"
+
+- name: Get config after check mode to confirm no real change
+  nutanix.ncp.ntnx_foundation_central_config_info_v2:
+  register: fc_info_after_cm
+  ignore_errors: true
+
+- name: Assert check mode did not change anything
+  ansible.builtin.assert:
+    that:
+      - fc_info_after_cm.response.aos_download_timeout_minutes == (original_aos_timeout | int)
+      - fc_info_after_cm.response.ahv_installation_timeout_minutes == (original_ahv_timeout | int)
+    fail_msg: "check_mode unexpectedly changed the configuration"
+    success_msg: "check_mode correctly made no real change"
+
+############################################################################
+# 5. Real update — all writable fields
+############################################################################
+- name: Update all writable fields (real)
+  nutanix.ncp.ntnx_foundation_central_config_v2:
+    aos_download_timeout_minutes: 91
+    ahv_installation_timeout_minutes: 71
+    tls_certificate_fingerprint: "{{ original_tls_fingerprint }}"
+  register: update_all
+  ignore_errors: true
+
+- name: Assert real update of all fields
+  ansible.builtin.assert:
+    that:
+      - update_all.changed == true
+      - update_all.failed == false
+      - update_all.response.aos_download_timeout_minutes == 91
+      - update_all.response.ahv_installation_timeout_minutes == 71
+      - update_all.response.tls_certificate_fingerprint == original_tls_fingerprint
+    fail_msg: "Failed to update all Foundation Central config fields"
+    success_msg: "Updated all Foundation Central config fields successfully"
+
+############################################################################
+# 6. Info after update reflects new values
+############################################################################
+- name: Get config after real update
+  nutanix.ncp.ntnx_foundation_central_config_info_v2:
+  register: fc_info_after_update
+  ignore_errors: true
+
+- name: Assert info reflects updated values
+  ansible.builtin.assert:
+    that:
+      - fc_info_after_update.changed == false
+      - fc_info_after_update.failed == false
+      - fc_info_after_update.response.aos_download_timeout_minutes == 91
+      - fc_info_after_update.response.ahv_installation_timeout_minutes == 71
+    fail_msg: "Info did not reflect the updated configuration"
+    success_msg: "Info correctly reflects the updated configuration"
+
+############################################################################
+# 7. Idempotency — re-run identical update
+############################################################################
+- name: Re-run identical update (idempotency)
+  nutanix.ncp.ntnx_foundation_central_config_v2:
+    aos_download_timeout_minutes: 91
+    ahv_installation_timeout_minutes: 71
+    tls_certificate_fingerprint: "{{ original_tls_fingerprint }}"
+  register: update_idem
+  ignore_errors: true
+
+- name: Assert idempotency
+  ansible.builtin.assert:
+    that:
+      - update_idem.changed == false
+      - update_idem.failed == false
+      - update_idem.skipped == true
+      - update_idem.response.aos_download_timeout_minutes == 91
+      - update_idem.response.ahv_installation_timeout_minutes == 71
+    fail_msg: "Idempotency check failed - identical update was not skipped"
+    success_msg: "Idempotency check passed - identical update was skipped"
+
+############################################################################
+# 8. State transition — change int field to a different valid value
+############################################################################
+- name: Change aos_download_timeout_minutes to a different value
+  nutanix.ncp.ntnx_foundation_central_config_v2:
+    aos_download_timeout_minutes: 92
+  register: transition
+  ignore_errors: true
+
+- name: Assert state transition
+  ansible.builtin.assert:
+    that:
+      - transition.changed == true
+      - transition.failed == false
+      - transition.response.aos_download_timeout_minutes == 92
+    fail_msg: "State transition of aos_download_timeout_minutes failed"
+    success_msg: "State transition of aos_download_timeout_minutes passed"
+
+############################################################################
+# 9. Partial update preserves unspecified writable fields
+############################################################################
+- name: Partial update of only ahv_installation_timeout_minutes
+  nutanix.ncp.ntnx_foundation_central_config_v2:
+    ahv_installation_timeout_minutes: 72
+  register: partial
+  ignore_errors: true
+
+- name: Assert partial update preserves other fields
+  ansible.builtin.assert:
+    that:
+      - partial.changed == true
+      - partial.failed == false
+      - partial.response.ahv_installation_timeout_minutes == 72
+      # aos was 92 from previous task and must be preserved
+      - partial.response.aos_download_timeout_minutes == 92
+      - partial.response.tls_certificate_fingerprint == original_tls_fingerprint
+    fail_msg: "Partial update did not preserve unspecified fields"
+    success_msg: "Partial update correctly preserved unspecified fields"
+
+############################################################################
+# 10. Negative — invalid type for an int field
+############################################################################
+- name: Attempt update with invalid (non-integer) value
+  nutanix.ncp.ntnx_foundation_central_config_v2:
+    aos_download_timeout_minutes: "not-an-int"
+  register: invalid_type
+  ignore_errors: true
+
+- name: Assert invalid type is rejected
+  ansible.builtin.assert:
+    that:
+      - invalid_type.failed == true
+      - invalid_type.changed == false
+    fail_msg: "Invalid integer value was not rejected"
+    success_msg: "Invalid integer value correctly rejected"
+
+############################################################################
+# 11. Negative — read-only field is not a valid input parameter
+############################################################################
+- name: Attempt update passing a read-only field (version)
+  nutanix.ncp.ntnx_foundation_central_config_v2:
+    version: "9.9"
+  register: readonly_param
+  ignore_errors: true
+
+- name: Assert read-only field is not a valid parameter
+  ansible.builtin.assert:
+    that:
+      - readonly_param.failed == true
+      - readonly_param.changed == false
+    fail_msg: "Read-only field 'version' was unexpectedly accepted as a parameter"
+    success_msg: "Read-only field 'version' correctly rejected as an input parameter"
+
+############################################################################
+# 12. Restore the original configuration
+############################################################################
+- name: Restore original Foundation Central configuration
+  nutanix.ncp.ntnx_foundation_central_config_v2:
+    aos_download_timeout_minutes: "{{ original_aos_timeout | int }}"
+    ahv_installation_timeout_minutes: "{{ original_ahv_timeout | int }}"
+    tls_certificate_fingerprint: "{{ original_tls_fingerprint }}"
+  register: restore
+  ignore_errors: true
+
+- name: Assert original configuration is restored
+  ansible.builtin.assert:
+    that:
+      - restore.failed == false
+      - restore.response.aos_download_timeout_minutes == (original_aos_timeout | int)
+      - restore.response.ahv_installation_timeout_minutes == (original_ahv_timeout | int)
+      - restore.response.tls_certificate_fingerprint == original_tls_fingerprint
+    fail_msg: "Failed to restore the original Foundation Central configuration"
+    success_msg: "Original Foundation Central configuration restored successfully"
+
+- name: Finish testing Foundation Central config v4 modules
+  ansible.builtin.debug:
+    msg: Finished testing Foundation Central config v4 modules

@@ -66,3 +66,26 @@ def get_lcm_entity(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching entity info using external identifier of the entity",
         )
+
+
+def get_foundation_central_config(module, api_instance):
+    """
+    This method will return the Foundation Central configuration.
+
+    Note:
+        This API targets the Foundation Central VM (FCVM)/Foundation endpoint,
+        not Prism Central.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Foundation Central config api instance
+    Returns:
+        response (object): Foundation Central config API response (with etag)
+    """
+    try:
+        return api_instance.get_foundation_central_config()
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Foundation Central config info",
+        )

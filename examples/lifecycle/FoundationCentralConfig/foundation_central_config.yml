@@ -1,0 +1,58 @@
+---
+# Summary:
+# This playbook demonstrates the Foundation Central (FC) configuration modules:
+#   1. Get the current Foundation Central configuration (info).
+#   2. Update the Foundation Central configuration.
+#   3. Get the Foundation Central configuration again to confirm the update.
+#
+# IMPORTANT — endpoint awareness:
+#   The Foundation Central configuration APIs are served by the Foundation
+#   Central VM (FCVM)/Foundation endpoint, NOT by Prism Central. Set
+#   nutanix_host/nutanix_port to the FCVM/Foundation endpoint (default 9440).
+#
+#   Foundation Central configuration is a singleton resource: there is only a
+#   single configuration object, so only get (info) and update are supported.
+
+- name: Foundation Central configuration playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      # FCVM / Foundation endpoint (NOT Prism Central)
+      nutanix_host: "10.97.44.170"
+      nutanix_username: <fcvm_user>
+      nutanix_password: <fcvm_password>
+      nutanix_port: 9440
+      validate_certs: false
+  tasks:
+    - name: Get Foundation Central configuration
+      nutanix.ncp.ntnx_foundation_central_config_info_v2:
+      register: fc_config_info
+
+    - name: Print current Foundation Central configuration
+      ansible.builtin.debug:
+        var: fc_config_info.response
+
+    - name: Update Foundation Central configuration
+      nutanix.ncp.ntnx_foundation_central_config_v2:
+        aos_download_timeout_minutes: 60
+        ahv_installation_timeout_minutes: 50
+        tls_certificate_fingerprint: "0789169a1c913336750712ad51ce22a27abcb6ba3a1bbce8a3155decf53c8757"
+      register: fc_config_update
+
+    - name: Print updated Foundation Central configuration
+      ansible.builtin.debug:
+        var: fc_config_update.response
+
+    - name: Update only the AOS download timeout (other fields are preserved)
+      nutanix.ncp.ntnx_foundation_central_config_v2:
+        aos_download_timeout_minutes: 60
+      register: fc_config_update_partial
+
+    - name: Get Foundation Central configuration after update
+      nutanix.ncp.ntnx_foundation_central_config_info_v2:
+      register: fc_config_info_after_update
+
+    - name: Print Foundation Central configuration after update
+      ansible.builtin.debug:
+        var: fc_config_info_after_update.response
