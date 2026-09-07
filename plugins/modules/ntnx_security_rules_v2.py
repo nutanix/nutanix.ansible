@@ -1173,6 +1173,40 @@ def check_network_security_policies_idempotency(old_spec, update_spec):
     return True
 
 
+def preserve_rule_logging(update_spec, current_spec, module_params):
+    """Keep is_logging_enabled when omitted from rules on update.
+
+    SpecGenerator rebuilds each rule via NetworkSecurityPolicyRule(), so unset
+    rule fields become None even though update starts from current_spec.
+    """
+    if not getattr(update_spec, "rules", None):
+        return
+
+    param_rules = module_params.get("rules") or []
+    current_by_desc = {
+        r.description: r
+        for r in (current_spec.rules or [])
+        if getattr(r, "description", None)
+    }
+
+    for idx, rule in enumerate(update_spec.rules):
+        # Explicit playbook value already applied by generate_spec
+        if (
+            idx < len(param_rules)
+            and param_rules[idx].get("is_logging_enabled") is not None
+        ):
+            continue
+        if rule.is_logging_enabled is not None:
+            continue
+
+        current_rule = current_by_desc.get(rule.description)
+        if current_rule is not None and current_rule.is_logging_enabled is not None:
+            rule.is_logging_enabled = current_rule.is_logging_enabled
+        else:
+            # New rule / no match — avoid sending null to the API
+            rule.is_logging_enabled = False
+
+
 def update_network_security_policy(module, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
@@ -1191,6 +1225,8 @@ def update_network_security_policy(module, result):
             msg="Failed generating network_security_policies update spec", **result
         )
 
+    preserve_rule_logging(update_spec, current_spec, module.params)
+
     raise_unsupported_update_fields(
         module, current_spec, update_spec, ["project_ext_id"]
     )
@@ -1202,6 +1238,8 @@ def update_network_security_policy(module, result):
         update_spec.state = current_spec.state
 
     # check for idempotency
+    result["current_spec_dict"] = current_spec.to_dict()
+    result["update_spec_dict"] = update_spec.to_dict()
     current_spec_dict = strip_internal_attributes(current_spec.to_dict())
     update_spec_dict = strip_internal_attributes(update_spec.to_dict())
     if check_network_security_policies_idempotency(current_spec_dict, update_spec_dict):
