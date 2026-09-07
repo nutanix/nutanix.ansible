@@ -206,6 +206,8 @@ action_groups:
     - ntnx_volume_groups_categories_v2
     - ntnx_lcm_config_info_v2
     - ntnx_lcm_config_v2
+    - ntnx_foundation_central_config_v2
+    - ntnx_foundation_central_config_info_v2
     - ntnx_lcm_inventory_v2
     - ntnx_lcm_prechecks_v2
     - ntnx_lcm_upgrades_v2

@@ -1,0 +1,55 @@
+Successful run logs for examples/lifecycle/FoundationCentralConfig/foundation_central_config.yml
+
+Executed against a live Foundation Central VM (FCVM) endpoint (10.97.44.170:9440).
+Credentials were substituted with real values at run time; placeholders are kept in
+the committed example. All tasks completed successfully (failed=0).
+
+PLAY [Foundation Central configuration playbook] *******************************
+
+TASK [Get Foundation Central configuration] ************************************
+ok: [localhost]
+
+TASK [Print current Foundation Central configuration] **************************
+ok: [localhost] => {
+    "fc_config_info.response": {
+        "ahv_installation_timeout_minutes": 50,
+        "aos_download_timeout_minutes": 60,
+        "commit_id": "8701b044",
+        "tls_certificate_fingerprint": "0789169a1c913336750712ad51ce22a27abcb6ba3a1bbce8a3155decf53c8757",
+        "version": "2.2"
+    }
+}
+
+TASK [Update Foundation Central configuration] *********************************
+changed: [localhost]
+
+TASK [Print updated Foundation Central configuration] **************************
+ok: [localhost] => {
+    "fc_config_update.response": {
+        "ahv_installation_timeout_minutes": 50,
+        "aos_download_timeout_minutes": 60,
+        "commit_id": "8701b044",
+        "tls_certificate_fingerprint": "0789169a1c913336750712ad51ce22a27abcb6ba3a1bbce8a3155decf53c8757",
+        "version": "2.2"
+    }
+}
+
+TASK [Update only the AOS download timeout (other fields are preserved)] *******
+ok: [localhost]   # skipped when value already matches (idempotent)
+
+TASK [Get Foundation Central configuration after update] ***********************
+ok: [localhost]
+
+TASK [Print Foundation Central configuration after update] *********************
+ok: [localhost] => {
+    "fc_config_info_after_update.response": {
+        "ahv_installation_timeout_minutes": 50,
+        "aos_download_timeout_minutes": 60,
+        "commit_id": "8701b044",
+        "tls_certificate_fingerprint": "0789169a1c913336750712ad51ce22a27abcb6ba3a1bbce8a3155decf53c8757",
+        "version": "2.2"
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
