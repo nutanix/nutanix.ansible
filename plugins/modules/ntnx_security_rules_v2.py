@@ -1130,7 +1130,7 @@ def create_network_security_policy(module, result):
 
 
 def default_rule_logging(old_spec, update_spec):
-    if not getattr(update_spec, "rules", None):
+    if not update_spec.get("rules"):
         return
 
     for i in range(len(update_spec["rules"])):
@@ -1215,8 +1215,6 @@ def update_network_security_policy(module, result):
         update_spec.state = current_spec.state
 
     # check for idempotency
-    result["current_spec"] = strip_internal_attributes(current_spec.to_dict())
-    result["update_spec"] = strip_internal_attributes(update_spec.to_dict())
     current_spec_dict = strip_internal_attributes(current_spec.to_dict())
     update_spec_dict = strip_internal_attributes(update_spec.to_dict())
     if check_network_security_policies_idempotency(current_spec_dict, update_spec_dict):
