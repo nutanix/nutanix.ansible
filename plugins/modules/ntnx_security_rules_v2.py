@@ -1134,10 +1134,10 @@ def default_rule_logging(old_spec, update_spec):
         return
 
     for i in range(len(update_spec["rules"])):
-      if update_spec["rules"][i].get("is_logging_enabled") is None:
-          update_spec["rules"][i]["is_logging_enabled"] = False
-      if old_spec["rules"][i].get("is_logging_enabled") is None:
-          old_spec["rules"][i]["is_logging_enabled"] = False
+        if update_spec["rules"][i].get("is_logging_enabled") is None:
+            update_spec["rules"][i]["is_logging_enabled"] = False
+        if old_spec["rules"][i].get("is_logging_enabled") is None:
+            old_spec["rules"][i]["is_logging_enabled"] = False
 
 
 def check_network_security_policies_idempotency(old_spec, update_spec):
