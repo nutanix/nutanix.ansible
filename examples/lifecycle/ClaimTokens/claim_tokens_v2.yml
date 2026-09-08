@@ -1,0 +1,96 @@
+---
+# Summary:
+# This playbook demonstrates the Foundation Central claim tokens v4 modules.
+# NOTE: Claim tokens are Foundation Central (FCVM) entities, so nutanix_host
+# below must point at the Foundation Central VM endpoint (not Prism Central).
+# It will do:
+# 1. Create a claim token
+# 2. Get the claim token using ext_id
+# 3. Get the claim token secret
+# 4. List nodes registered with the claim token
+# 5. List all claim tokens
+# 6. List claim tokens with filter
+# 7. List claim tokens with limit
+# 8. Update the claim token
+# 9. Delete the claim token
+
+- name: Foundation Central Claim Tokens playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <foundation_central_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        claim_token_name: "claim_token_ansible"
+
+    - name: Create a claim token
+      nutanix.ncp.ntnx_claim_tokens_v2:
+        state: present
+        name: "{{ claim_token_name }}"
+        expiry_time: "2026-11-01T00:00:00Z"
+        max_usage_count: 5
+      register: result
+      ignore_errors: true
+
+    - name: Set claim token ext_id
+      ansible.builtin.set_fact:
+        claim_token_ext_id: "{{ result.response.ext_id }}"
+
+    - name: Get claim token using ext_id
+      nutanix.ncp.ntnx_claim_tokenss_info_v2:
+        ext_id: "{{ claim_token_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Get claim token secret
+      nutanix.ncp.ntnx_claim_tokenss_info_v2:
+        ext_id: "{{ claim_token_ext_id }}"
+        fetch_secret: true
+      register: result
+      ignore_errors: true
+
+    - name: List nodes registered with the claim token
+      nutanix.ncp.ntnx_claim_tokenss_info_v2:
+        ext_id: "{{ claim_token_ext_id }}"
+        fetch_nodes: true
+      register: result
+      ignore_errors: true
+
+    - name: List all claim tokens
+      nutanix.ncp.ntnx_claim_tokenss_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List claim tokens with filter
+      nutanix.ncp.ntnx_claim_tokenss_info_v2:
+        filter: "name eq '{{ claim_token_name }}'"
+      register: result
+      ignore_errors: true
+
+    - name: List claim tokens with limit
+      nutanix.ncp.ntnx_claim_tokenss_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Update the claim token
+      nutanix.ncp.ntnx_claim_tokens_v2:
+        state: present
+        ext_id: "{{ claim_token_ext_id }}"
+        name: "{{ claim_token_name }}_updated"
+        expiry_time: "2026-12-01T00:00:00Z"
+        max_usage_count: 10
+      register: result
+      ignore_errors: true
+
+    - name: Delete the claim token
+      nutanix.ncp.ntnx_claim_tokens_v2:
+        state: absent
+        ext_id: "{{ claim_token_ext_id }}"
+      register: result
+      ignore_errors: true

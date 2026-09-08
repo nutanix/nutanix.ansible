@@ -1,0 +1,501 @@
+---
+###############################################################################
+# Test plan for Foundation Central Claim Tokens (ntnx_claim_tokens_v2 and
+# ntnx_claim_tokenss_info_v2). Claim tokens are FCVM entities.
+#
+# Writable spec fields (from SDK ClaimToken request body):
+#   - name (str, required on create)
+#   - expiry_time (str/datetime, optional)
+#   - max_usage_count (int, optional)
+# Read-only/response-only fields (NOT in spec; only in RETURN):
+#   - current_usage_count, created_time, owner_ext_id, ext_id, links, tenant_id
+#
+# Scenarios covered:
+#   1.  check_mode create (all attributes) - no API call, spec echoed back
+#   2.  Create with required fields only (name) - minimal create
+#   3.  Create with ALL fields (name, expiry_time, max_usage_count) - full create
+#   4.  Get claim token by ext_id (single entity)
+#   5.  Get claim token secret (fetch_secret)
+#   6.  List nodes registered with the claim token (fetch_nodes -> list, may be empty)
+#   7.  List all claim tokens (plural datasource)
+#   8.  List claim tokens with filter
+#   9.  List claim tokens with limit
+#   10. check_mode update (all attributes) - no API call
+#   11. Update claim token - change name, expiry_time, max_usage_count
+#   12. Idempotency - re-run update with same params -> skipped/changed false
+#   13. Negative - create without required name -> failure
+#   14. Negative - get by invalid ext_id -> failure with clear message
+#   15. check_mode delete - no API call, msg set
+#   16. Delete claim token (real)
+#   17. Delete already-deleted claim token -> graceful failure
+###############################################################################
+
+- name: Start Claim Tokens tests
+  ansible.builtin.debug:
+    msg: Start Foundation Central Claim Tokens tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ (99999999999999 | random) | to_uuid | replace('-', '') | truncate(12, true, '') }}"
+    todelete: []
+
+- name: Set names for claim token
+  ansible.builtin.set_fact:
+    ct_name: "ct_ansible_{{ random_name }}"
+    ct_name_full: "ct_ansible_full_{{ random_name }}"
+
+########################################################################################
+# 1. check_mode create (all attributes)
+########################################################################################
+
+- name: Create claim token with all attributes in check mode
+  nutanix.ncp.ntnx_claim_tokens_v2:
+    state: present
+    name: "check_mode_{{ ct_name }}"
+    expiry_time: "2026-11-01T00:00:00Z"
+    max_usage_count: 5
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode create result
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_" + ct_name
+      - result.response.max_usage_count == 5
+    success_msg: "check_mode create returned expected spec without making changes"
+    fail_msg: "check_mode create did not behave as expected"
+
+########################################################################################
+# 2. Create with required fields only (minimal)
+#    NOTE: For claim tokens name, expiry_time and max_usage_count are ALL
+#    required by the API, so the minimal create equals the full create.
+########################################################################################
+
+- name: Create claim token with required fields only
+  nutanix.ncp.ntnx_claim_tokens_v2:
+    state: present
+    name: "{{ ct_name }}"
+    expiry_time: "2026-11-01T00:00:00Z"
+    max_usage_count: 3
+  register: minimal_ct
+  ignore_errors: true
+
+- name: Assert minimal create
+  ansible.builtin.assert:
+    that:
+      - minimal_ct.changed == true
+      - minimal_ct.failed == false
+      - minimal_ct.ext_id is defined
+      - minimal_ct.response.name == ct_name
+      - minimal_ct.response.max_usage_count == 3
+    success_msg: "Claim token created successfully with required fields only"
+    fail_msg: "Minimal claim token creation failed"
+
+- name: Add minimal claim token to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [minimal_ct.ext_id] }}"
+  when: minimal_ct.ext_id is defined
+
+########################################################################################
+# 3. Create with ALL fields (full)
+########################################################################################
+
+- name: Create claim token with all attributes
+  nutanix.ncp.ntnx_claim_tokens_v2:
+    state: present
+    name: "{{ ct_name_full }}"
+    expiry_time: "2026-11-15T00:00:00Z"
+    max_usage_count: 10
+  register: full_ct
+  ignore_errors: true
+
+- name: Assert full create
+  ansible.builtin.assert:
+    that:
+      - full_ct.changed == true
+      - full_ct.failed == false
+      - full_ct.ext_id is defined
+      - full_ct.response.name == ct_name_full
+      - full_ct.response.max_usage_count == 10
+    success_msg: "Claim token created successfully with all attributes"
+    fail_msg: "Full claim token creation failed"
+
+- name: Set full claim token ext_id
+  ansible.builtin.set_fact:
+    ct_ext_id: "{{ full_ct.ext_id }}"
+
+########################################################################################
+# 4. Get claim token by ext_id
+########################################################################################
+
+- name: Get claim token using ext_id
+  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+    ext_id: "{{ ct_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert get by ext_id
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == ct_ext_id
+      - result.response.name == ct_name_full
+      - result.response.ext_id == ct_ext_id
+    success_msg: "Fetched single claim token by ext_id successfully"
+    fail_msg: "Get claim token by ext_id failed"
+
+########################################################################################
+# 5. Get claim token secret
+########################################################################################
+
+- name: Get claim token secret
+  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+    ext_id: "{{ ct_ext_id }}"
+    fetch_secret: true
+  register: result
+  ignore_errors: true
+
+- name: Assert get secret
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == ct_ext_id
+      - result.response is defined
+      - result.response.secret is defined
+    success_msg: "Fetched claim token secret successfully"
+    fail_msg: "Get claim token secret failed"
+
+########################################################################################
+# 6. List nodes registered with the claim token (likely empty for a new token)
+########################################################################################
+
+- name: List nodes registered with the claim token
+  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+    ext_id: "{{ ct_ext_id }}"
+    fetch_nodes: true
+  register: result
+  ignore_errors: true
+
+- name: Assert list nodes
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response is iterable
+    success_msg: "Listed nodes registered with claim token successfully"
+    fail_msg: "List nodes by claim token failed"
+
+########################################################################################
+# 7. List all claim tokens
+########################################################################################
+
+- name: List all claim tokens
+  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Assert list all
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length > 0
+      - result.total_available_results is defined
+    success_msg: "Listed all claim tokens successfully"
+    fail_msg: "List all claim tokens failed"
+
+########################################################################################
+# 8. List claim tokens with filter
+########################################################################################
+
+- name: List claim tokens with filter
+  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+    filter: "name eq '{{ ct_name_full }}'"
+  register: result
+  ignore_errors: true
+
+- name: Assert filtered list
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1
+      - result.response[0].name == ct_name_full
+    success_msg: "Filtered claim tokens list returned expected result"
+    fail_msg: "Filtered claim tokens list failed"
+
+########################################################################################
+# 9. List claim tokens with limit
+########################################################################################
+
+- name: List claim tokens with limit
+  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Assert limited list
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1
+    success_msg: "Limited claim tokens list returned expected count"
+    fail_msg: "Limited claim tokens list failed"
+
+########################################################################################
+# 10. check_mode update (all attributes)
+########################################################################################
+
+- name: Update claim token with all attributes in check mode
+  nutanix.ncp.ntnx_claim_tokens_v2:
+    state: present
+    ext_id: "{{ ct_ext_id }}"
+    name: "{{ ct_name_full }}_cm"
+    expiry_time: "2026-12-01T00:00:00Z"
+    max_usage_count: 20
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode update
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == ct_name_full + "_cm"
+      - result.response.max_usage_count == 20
+    success_msg: "check_mode update returned expected spec without making changes"
+    fail_msg: "check_mode update did not behave as expected"
+
+########################################################################################
+# 11. Update claim token (real)
+########################################################################################
+
+- name: Update claim token
+  nutanix.ncp.ntnx_claim_tokens_v2:
+    state: present
+    ext_id: "{{ ct_ext_id }}"
+    name: "{{ ct_name_full }}_updated"
+    expiry_time: "2026-12-01T00:00:00Z"
+    max_usage_count: 20
+  register: updated_ct
+  ignore_errors: true
+
+- name: Assert update
+  ansible.builtin.assert:
+    that:
+      - updated_ct.changed == true
+      - updated_ct.failed == false
+      - updated_ct.ext_id == ct_ext_id
+      - updated_ct.response.name == ct_name_full + "_updated"
+      - updated_ct.response.max_usage_count == 20
+    success_msg: "Claim token updated successfully"
+    fail_msg: "Claim token update failed"
+
+########################################################################################
+# 12. Idempotency - re-run update with same params
+########################################################################################
+
+- name: Update claim token again with same params (idempotency)
+  nutanix.ncp.ntnx_claim_tokens_v2:
+    state: present
+    ext_id: "{{ ct_ext_id }}"
+    name: "{{ ct_name_full }}_updated"
+    expiry_time: "2026-12-01T00:00:00Z"
+    max_usage_count: 20
+  register: idempotent_ct
+  ignore_errors: true
+
+- name: Assert idempotency
+  ansible.builtin.assert:
+    that:
+      - idempotent_ct.changed == false
+      - idempotent_ct.failed == false
+      - idempotent_ct.skipped is defined
+      - idempotent_ct.msg == "Nothing to change."
+    success_msg: "Idempotent update correctly skipped"
+    fail_msg: "Idempotent update did not skip as expected"
+
+########################################################################################
+# 13. Negative - create without required name
+########################################################################################
+
+- name: Create claim token without required name (negative)
+  nutanix.ncp.ntnx_claim_tokens_v2:
+    state: present
+    max_usage_count: 5
+  register: result
+  ignore_errors: true
+
+- name: Assert missing required name fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Create without required name failed as expected"
+    fail_msg: "Create without required name did not fail"
+
+- name: Create claim token without required expiry_time (negative)
+  nutanix.ncp.ntnx_claim_tokens_v2:
+    state: present
+    name: "neg_{{ ct_name }}"
+    max_usage_count: 5
+  register: result
+  ignore_errors: true
+
+- name: Assert missing required expiry_time fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Create without required expiry_time failed as expected"
+    fail_msg: "Create without required expiry_time did not fail"
+
+- name: Create claim token without required max_usage_count (negative)
+  nutanix.ncp.ntnx_claim_tokens_v2:
+    state: present
+    name: "neg_{{ ct_name }}"
+    expiry_time: "2026-11-01T00:00:00Z"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing required max_usage_count fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Create without required max_usage_count failed as expected"
+    fail_msg: "Create without required max_usage_count did not fail"
+
+- name: Create claim token with expiry beyond 3 months (negative / domain rule)
+  nutanix.ncp.ntnx_claim_tokens_v2:
+    state: present
+    name: "neg_expiry_{{ ct_name }}"
+    expiry_time: "2027-06-01T00:00:00Z"
+    max_usage_count: 5
+  register: result
+  ignore_errors: true
+
+- name: Assert expiry beyond 3 months fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Create with expiry beyond 3 months failed as expected"
+    fail_msg: "Create with expiry beyond 3 months did not fail"
+
+########################################################################################
+# 14. Negative - get by invalid ext_id
+########################################################################################
+
+- name: Get claim token with invalid ext_id (negative)
+  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Get with invalid ext_id failed as expected"
+    fail_msg: "Get with invalid ext_id did not fail"
+
+########################################################################################
+# 15. check_mode delete
+########################################################################################
+
+- name: Delete claim token in check mode
+  nutanix.ncp.ntnx_claim_tokens_v2:
+    state: absent
+    ext_id: "{{ ct_ext_id }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode delete
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg is defined
+      - ct_ext_id in result.msg
+    success_msg: "check_mode delete returned expected message without deleting"
+    fail_msg: "check_mode delete did not behave as expected"
+
+########################################################################################
+# 16. Delete claim token (real)
+########################################################################################
+
+- name: Delete claim token
+  nutanix.ncp.ntnx_claim_tokens_v2:
+    state: absent
+    ext_id: "{{ ct_ext_id }}"
+  register: deleted_ct
+  ignore_errors: true
+
+- name: Assert delete
+  ansible.builtin.assert:
+    that:
+      - deleted_ct.changed == true
+      - deleted_ct.failed == false
+      - deleted_ct.ext_id == ct_ext_id
+    success_msg: "Claim token deleted successfully"
+    fail_msg: "Claim token delete failed"
+
+- name: Remove deleted full claim token from delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete | difference([ct_ext_id]) }}"
+
+########################################################################################
+# 17. Delete already-deleted claim token (negative / graceful)
+########################################################################################
+
+- name: Delete already-deleted claim token (negative)
+  nutanix.ncp.ntnx_claim_tokens_v2:
+    state: absent
+    ext_id: "{{ ct_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert deleting non-existent claim token fails gracefully
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    success_msg: "Deleting non-existent claim token failed gracefully as expected"
+    fail_msg: "Deleting non-existent claim token did not fail as expected"
+
+########################################################################################
+# Cleanup any remaining claim tokens created during the test
+########################################################################################
+
+- name: Cleanup remaining claim tokens
+  nutanix.ncp.ntnx_claim_tokens_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ todelete }}"
+  register: cleanup_result
+  ignore_errors: true
+
+- name: Assert cleanup
+  ansible.builtin.assert:
+    that:
+      - cleanup_result is defined
+    success_msg: "Cleanup completed"
+    fail_msg: "Cleanup failed"
+
+- name: Reset delete list
+  ansible.builtin.set_fact:
+    todelete: []
