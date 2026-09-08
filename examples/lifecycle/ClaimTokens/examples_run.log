@@ -1,0 +1,43 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Foundation Central Claim Tokens playbook] ********************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"claim_token_name": "claim_token_ansible"}, "changed": false}
+
+TASK [Create a claim token] ****************************************************
+changed: [localhost] => {"changed": true, "ext_id": "5b3a0229-c34b-40e1-92be-216f5256666b", "response": {"created_time": "2026-09-08T06:29:30.183575+00:00", "current_usage_count": 0, "expiry_time": "2026-11-01T00:00:00+00:00", "ext_id": "5b3a0229-c34b-40e1-92be-216f5256666b", "links": null, "max_usage_count": 5, "name": "claim_token_ansible", "owner_ext_id": "7cb3e9ea-7815-4d1a-9c1e-4e3a9277c17b", "tenant_id": "703c7c79-5e87-4813-a137-76c09b808db9"}, "task_ext_id": "ZXJnb24=:598efbb9-b9c5-52d6-acfd-dd0fde74e962"}
+
+TASK [Set claim token ext_id] **************************************************
+ok: [localhost] => {"ansible_facts": {"claim_token_ext_id": "5b3a0229-c34b-40e1-92be-216f5256666b"}, "changed": false}
+
+TASK [Get claim token using ext_id] ********************************************
+ok: [localhost] => {"changed": false, "ext_id": "5b3a0229-c34b-40e1-92be-216f5256666b", "response": {"created_time": "2026-09-08T06:29:30.183575+00:00", "current_usage_count": 0, "expiry_time": "2026-11-01T00:00:00+00:00", "ext_id": "5b3a0229-c34b-40e1-92be-216f5256666b", "links": null, "max_usage_count": 5, "name": "claim_token_ansible", "owner_ext_id": "7cb3e9ea-7815-4d1a-9c1e-4e3a9277c17b", "tenant_id": "703c7c79-5e87-4813-a137-76c09b808db9"}}
+
+TASK [Get claim token secret] **************************************************
+ok: [localhost] => {"changed": false, "ext_id": "5b3a0229-c34b-40e1-92be-216f5256666b", "response": {"secret": "<redacted>"}}
+
+TASK [List nodes registered with the claim token] ******************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List all claim tokens] ***************************************************
+ok: [localhost] => {"changed": false, "response": [{"created_time": "2026-09-08T06:29:30.183575+00:00", "current_usage_count": 0, "expiry_time": "2026-11-01T00:00:00+00:00", "ext_id": "5b3a0229-c34b-40e1-92be-216f5256666b", "links": null, "max_usage_count": 5, "name": "claim_token_ansible", "owner_ext_id": "7cb3e9ea-7815-4d1a-9c1e-4e3a9277c17b", "tenant_id": "703c7c79-5e87-4813-a137-76c09b808db9"}, {"created_time": "2026-09-08T06:21:46.626376+00:00", "current_usage_count": 0, "expiry_time": "2026-11-01T00:00:00+00:00", "ext_id": "cacc720d-280a-4bfe-a461-e7ea68dd2929", "links": null, "max_usage_count": 3, "name": "probe_ct_delete_me", "owner_ext_id": "7cb3e9ea-7815-4d1a-9c1e-4e3a9277c17b", "tenant_id": "703c7c79-5e87-4813-a137-76c09b808db9"}, {"created_time": "2026-09-03T12:39:26.968811+00:00", "current_usage_count": 0, "expiry_time": "2026-09-23T21:30:00+00:00", "ext_id": "a191b084-bd5e-48d2-b76f-0e8e1fc76e80", "links": null, "max_usage_count": 2, "name": "first_claim_token", "owner_ext_id": "7cb3e9ea-7815-4d1a-9c1e-4e3a9277c17b", "tenant_id": "703c7c79-5e87-4813-a137-76c09b808db9"}], "total_available_results": 3}
+
+TASK [List claim tokens with filter] *******************************************
+ok: [localhost] => {"changed": false, "response": [{"created_time": "2026-09-08T06:29:30.183575+00:00", "current_usage_count": 0, "expiry_time": "2026-11-01T00:00:00+00:00", "ext_id": "5b3a0229-c34b-40e1-92be-216f5256666b", "links": null, "max_usage_count": 5, "name": "claim_token_ansible", "owner_ext_id": "7cb3e9ea-7815-4d1a-9c1e-4e3a9277c17b", "tenant_id": "703c7c79-5e87-4813-a137-76c09b808db9"}], "total_available_results": 1}
+
+TASK [List claim tokens with limit] ********************************************
+ok: [localhost] => {"changed": false, "response": [{"created_time": "2026-09-08T06:29:30.183575+00:00", "current_usage_count": 0, "expiry_time": "2026-11-01T00:00:00+00:00", "ext_id": "5b3a0229-c34b-40e1-92be-216f5256666b", "links": null, "max_usage_count": 5, "name": "claim_token_ansible", "owner_ext_id": "7cb3e9ea-7815-4d1a-9c1e-4e3a9277c17b", "tenant_id": "703c7c79-5e87-4813-a137-76c09b808db9"}], "total_available_results": 3}
+
+TASK [Update the claim token] **************************************************
+changed: [localhost] => {"changed": true, "ext_id": "5b3a0229-c34b-40e1-92be-216f5256666b", "response": {"created_time": "2026-09-08T06:29:30.183575+00:00", "current_usage_count": 0, "expiry_time": "2026-12-01T00:00:00+00:00", "ext_id": "5b3a0229-c34b-40e1-92be-216f5256666b", "links": null, "max_usage_count": 10, "name": "claim_token_ansible_updated", "owner_ext_id": "7cb3e9ea-7815-4d1a-9c1e-4e3a9277c17b", "tenant_id": "703c7c79-5e87-4813-a137-76c09b808db9"}, "task_ext_id": "ZXJnb24=:f75615a1-bbfd-5015-bd2d-10ea446fddd2"}
+
+TASK [Delete the claim token] **************************************************
+changed: [localhost] => {"changed": true, "ext_id": "5b3a0229-c34b-40e1-92be-216f5256666b", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": null, "completed_time": "2026-09-08T06:29:46.901001+00:00", "completion_details": null, "created_time": "2026-09-08T06:29:46.798148+00:00", "entities_affected": [{"ext_id": "5b3a0229-c34b-40e1-92be-216f5256666b", "name": "claim-tokens", "rel": "lifecycle:config:claim-tokens"}], "error_messages": null, "ext_id": "ZXJnb24=:e5dbb60d-b7bc-5145-88d1-eb8562ad482f", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-09-08T06:29:46.901000+00:00", "legacy_error_message": null, "number_of_entities_affected": 1, "number_of_subtasks": 0, "operation": "DeleteClaimTokenTask", "operation_description": "Delete Claim Token", "owned_by": null, "parent_task": null, "progress_percentage": 100, "resource_links": null, "root_task": null, "started_time": "2026-09-08T06:29:46.820001+00:00", "status": "SUCCEEDED", "sub_steps": [{"name": "Starting claim token deletion"}, {"name": "Claim token deleted successfully"}], "sub_tasks": null, "warnings": null}, "task_ext_id": "ZXJnb24=:e5dbb60d-b7bc-5145-88d1-eb8562ad482f"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=11   changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

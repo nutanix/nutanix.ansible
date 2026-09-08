@@ -66,3 +66,23 @@ def get_lcm_entity(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching entity info using external identifier of the entity",
         )
+
+
+def get_claim_token(module, api_instance, ext_id):
+    """
+    This method will return a Foundation Central claim token using its ext_id.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): ClaimTokensApi instance
+        ext_id (str): External id of the claim token
+    Returns:
+        claim_token (object): Claim token info object
+    """
+    try:
+        return api_instance.get_claim_token_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching claim token info using ext_id",
+        )
