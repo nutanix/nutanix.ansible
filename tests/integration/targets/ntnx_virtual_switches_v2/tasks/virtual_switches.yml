@@ -592,6 +592,11 @@
       querier_spec:
         is_querier_enabled: true
         vlan_id_list: ["{{ virtual_switch.vlan_id }}"]
+    metadata:
+      owner_user_name: "{{ username_for_tests }}"
+      category_ids:
+        - "{{ categories[3] }}"
+        - "{{ categories[4] }}"
   register: result
   ignore_errors: true
 
@@ -615,7 +620,14 @@
       - result.response.igmp_spec.snooping_timeout == 300
       - result.response.igmp_spec.querier_spec.is_querier_enabled == true
       - result.response.igmp_spec.querier_spec.vlan_id_list | length == 1
-      - result.response.igmp_spec.querier_spec.vlan_id_list[0] == {{ virtual_switch.vlan_id | int }}
+      - result.response.igmp_spec.querier_spec.vlan_id_list[0] == {{
+        virtual_switch.vlan_id | int }}
+      - result.response.metadata is defined
+      - result.response.metadata.owner_user_name == "{{ username_for_tests }}"
+      - result.response.metadata.category_ids is defined
+      - result.response.metadata.category_ids | length == 2
+      - categories[3] in result.response.metadata.category_ids
+      - categories[4] in result.response.metadata.category_ids
     success_msg: "Update virtual switch with all attributes passed"
     fail_msg: "Update virtual switch with all attributes failed"
 
@@ -638,6 +650,11 @@
       querier_spec:
         is_querier_enabled: true
         vlan_id_list: ["{{ virtual_switch.vlan_id }}"]
+    metadata:
+      owner_user_name: "{{ username_for_tests }}"
+      category_ids:
+        - "{{ categories[3] }}"
+        - "{{ categories[4] }}"
   register: result
   ignore_errors: true
 
@@ -701,7 +718,14 @@
       - result.response.igmp_spec.snooping_timeout == 300
       - result.response.igmp_spec.querier_spec.is_querier_enabled == true
       - result.response.igmp_spec.querier_spec.vlan_id_list | length == 1
-      - result.response.igmp_spec.querier_spec.vlan_id_list[0] == {{ virtual_switch.vlan_id | int }}
+      - result.response.igmp_spec.querier_spec.vlan_id_list[0] == {{
+        virtual_switch.vlan_id | int }}
+      - result.response.metadata is defined
+      - result.response.metadata.owner_user_name == "{{ username_for_tests }}"
+      - result.response.metadata.category_ids is defined
+      - result.response.metadata.category_ids | length == 2
+      - categories[3] in result.response.metadata.category_ids
+      - categories[4] in result.response.metadata.category_ids
     success_msg: "Fetch virtual switch using external ID passed"
     fail_msg: "Fetch virtual switch using external ID failed"
 

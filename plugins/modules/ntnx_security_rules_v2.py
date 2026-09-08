@@ -1129,11 +1129,24 @@ def create_network_security_policy(module, result):
     result["changed"] = True
 
 
+def default_rule_logging(old_spec, update_spec):
+    if not update_spec.get("rules"):
+        return
+
+    for i in range(len(update_spec["rules"])):
+        if update_spec["rules"][i].get("is_logging_enabled") is None:
+            update_spec["rules"][i]["is_logging_enabled"] = False
+        if old_spec["rules"][i].get("is_logging_enabled") is None:
+            old_spec["rules"][i]["is_logging_enabled"] = False
+
+
 def check_network_security_policies_idempotency(old_spec, update_spec):
 
     # check if numbers of rules are same
     if len(old_spec.get("rules", [])) != len(update_spec.get("rules", [])):
         return False
+
+    default_rule_logging(old_spec, update_spec)
 
     # remove external ID from older spec's each rule.
     # since update will overlap all existing rules
