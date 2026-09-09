@@ -159,3 +159,18 @@ def get_entity_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_lifecycle_py_client.EntitiesApi(api_client=api_client)
+
+
+def get_patched_images_api_instance(module):
+    """
+    This method will return LCM patched images API instance.
+
+    The patched images APIs are part of the Life Cycle Management (LCM)
+    namespace and are served by Foundation Central (FCVM), not Prism Central.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 LCM patched images api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.PatchedImagesApi(api_client=api_client)
