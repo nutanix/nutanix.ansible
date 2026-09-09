@@ -48,6 +48,7 @@ class Tasks:
         NETWORK_FUNCTION = "Networking:config:network-function"
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
         ENTITY_GROUP = "microseg:config:entity-group"
+        PATCHED_IMAGE = "lifecycle:config:patched-image"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
