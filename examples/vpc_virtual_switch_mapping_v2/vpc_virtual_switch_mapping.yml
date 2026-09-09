@@ -1,0 +1,108 @@
+---
+- name: VPC Virtual Switch Mapping playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    ############################################################################
+    # List existing virtual switches to get a virtual_switch_uuid
+    ############################################################################
+    - name: List virtual switches
+      nutanix.ncp.ntnx_virtual_switches_info_v2:
+        limit: 1
+      register: vs_info
+
+    - name: Set virtual switch UUID from first available switch
+      ansible.builtin.set_fact:
+        virtual_switch_uuid: "{{ vs_info.response[0].ext_id }}"
+      when: vs_info.response | length > 0
+
+    - name: Fail if no virtual switch found
+      ansible.builtin.fail:
+        msg: "No virtual switches found on the cluster"
+      when: vs_info.response | length == 0
+
+    ############################################################################
+    # List existing clusters to get cluster UUID
+    ############################################################################
+    - name: List clusters
+      nutanix.ncp.ntnx_clusters_info_v2:
+        limit: 1
+      register: cluster_info
+
+    - name: Set cluster UUID
+      ansible.builtin.set_fact:
+        cluster_uuid: "{{ cluster_info.response[0].ext_id }}"
+      when: cluster_info.response | length > 0
+
+    ############################################################################
+    # Create/Set VPC virtual switch mapping with is_all_traffic_permitted=true
+    ############################################################################
+    - name: Create VPC virtual switch mapping
+      nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
+        state: present
+        virtual_switch_uuid: "{{ virtual_switch_uuid }}"
+        cluster_uuids:
+          - "{{ cluster_uuid }}"
+        is_all_traffic_permitted: true
+      register: create_result
+      ignore_errors: true
+
+    ############################################################################
+    # Idempotency check - same request should skip
+    ############################################################################
+    - name: Create same mapping again (idempotency check)
+      nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
+        state: present
+        virtual_switch_uuid: "{{ virtual_switch_uuid }}"
+        cluster_uuids:
+          - "{{ cluster_uuid }}"
+        is_all_traffic_permitted: true
+      register: idempotent_result
+      ignore_errors: true
+
+    - name: Assert idempotency - should be skipped
+      ansible.builtin.assert:
+        that:
+          - idempotent_result.skipped is defined
+          - idempotent_result.skipped == true
+        fail_msg: "Idempotency check failed"
+
+    ############################################################################
+    # Update mapping - change is_all_traffic_permitted to false
+    ############################################################################
+    - name: Update VPC virtual switch mapping
+      nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
+        state: present
+        virtual_switch_uuid: "{{ virtual_switch_uuid }}"
+        cluster_uuids:
+          - "{{ cluster_uuid }}"
+        is_all_traffic_permitted: false
+      register: update_result
+      ignore_errors: true
+
+    ############################################################################
+    # List all VPC virtual switch mappings
+    ############################################################################
+    - name: List all VPC virtual switch mappings
+      nutanix.ncp.ntnx_vpc_virtual_switch_mappings_info_v2:
+      register: list_result
+      ignore_errors: true
+
+    ############################################################################
+    # Restore mapping to original state
+    ############################################################################
+    - name: Restore original mapping
+      nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
+        state: present
+        virtual_switch_uuid: "{{ virtual_switch_uuid }}"
+        cluster_uuids:
+          - "{{ cluster_uuid }}"
+        is_all_traffic_permitted: true
+      register: restore_result
+      ignore_errors: true

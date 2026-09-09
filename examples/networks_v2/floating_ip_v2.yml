@@ -22,6 +22,7 @@
         floating_ip_ext_id: "d7419d65-1254-9632-1122-ec1431516bbe"
         external_nat_subnet_uuid: "e2dee03b-aa1a-54dc-81b4-6788222f17b8"
         project_uuid: "d7419d65-100e-4c99-a666-ec1431516bbe"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
         user_uuid: "7c62834e-43f0-4c20-a5d4-cbf36b9a142b"
         category_ext_id: "2dff5b0a-99c5-46d6-9002-d42439a8b6e5"
         floating_ip: "10.0.0.1"
@@ -32,6 +33,7 @@
       nutanix.ncp.ntnx_floating_ips_v2:
         state: present
         name: "{{ floating_ip_name }}"
+        project_ext_id: "{{ project_ext_id }}"
         external_subnet_reference: "{{ external_nat_subnet_uuid }}"
         metadata:
           project_reference_id: "{{ project_uuid }}"

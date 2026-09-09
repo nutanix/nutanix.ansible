@@ -1,0 +1,73 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create an SNMP user
+# 2. Fetch SNMP user by ext_id
+# 3. Update SNMP user
+# 4. Delete SNMP user
+
+- name: SNMP users playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        snmp_username: "george2"
+        snmp_auth_key: "testAuthKey12345"
+        snmp_priv_key: "testPrivKey12345"
+        snmp_auth_key_updated: "testAuthKey123456"
+        snmp_priv_key_updated: "testPrivKey123456"
+        cluster_ext_id: "913fa076-d385-4dd8-b549-0e628e645569"
+
+    - name: Create SNMP user
+      nutanix.ncp.ntnx_snmp_user_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        state: present
+        username: "{{ snmp_username }}"
+        auth_type: "SHA"
+        auth_key: "{{ snmp_auth_key }}"
+        priv_type: "AES"
+        priv_key: "{{ snmp_priv_key }}"
+      register: result
+      ignore_errors: true
+
+    - name: Extract user ext_id from response
+      ansible.builtin.set_fact:
+        snmp_user_ext_id: >-
+          {{ (result.response.users
+             | selectattr('username', 'equalto', snmp_username)
+             | list | first).ext_id }}
+
+    - name: Fetch SNMP user by ext_id
+      nutanix.ncp.ntnx_snmp_user_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ snmp_user_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update SNMP user
+      nutanix.ncp.ntnx_snmp_user_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        state: present
+        ext_id: "{{ snmp_user_ext_id }}"
+        username: "{{ snmp_username }}"
+        auth_type: "MD5"
+        auth_key: "{{ snmp_auth_key_updated }}"
+        priv_type: "DES"
+        priv_key: "{{ snmp_priv_key_updated }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete SNMP user
+      nutanix.ncp.ntnx_snmp_user_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        state: absent
+        ext_id: "{{ snmp_user_ext_id }}"
+      register: result
+      ignore_errors: true

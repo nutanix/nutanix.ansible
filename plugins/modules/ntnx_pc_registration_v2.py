@@ -132,6 +132,12 @@ options:
                                                 - The password of the remote cluster.
                                             type: str
                                             required: true
+                        port:
+                            description:
+                                - Port of remote cluster to register.
+                                - This field is supported in 7.6 and above.
+                            type: int
+                            required: false
                 cloud_type:
                     description:
                         - The cloud type of the remote cluster.
@@ -222,6 +228,12 @@ options:
                                                 - The password of the remote cluster.
                                             type: str
                                             required: true
+                        port:
+                            description:
+                                - Port of remote cluster to register.
+                                - This field is supported in 7.6 and above.
+                            type: int
+                            required: false
         cluster_reference:
             description:
                 - The cluster reference details.
@@ -424,6 +436,7 @@ def get_module_spec():
             obj=prism_sdk.Credentials,
             required=True,
         ),
+        port=dict(type="int", required=False),
     )
     domain_manager_remote_cluster_spec = dict(
         remote_cluster=dict(
@@ -499,6 +512,20 @@ def register_pc(module, domain_manager, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating PC registration Spec", **result)
+    remote_cluster = module.params.get("remote_cluster") or {}
+    remote_cluster_cfg = (
+        (remote_cluster.get("domain_manager_remote_cluster") or {}).get(
+            "remote_cluster"
+        )
+        or (remote_cluster.get("aos_remote_cluster") or {}).get("remote_cluster")
+        or {}
+    )
+    if remote_cluster_cfg.get("port") is None:
+        inner_remote_cluster = getattr(
+            getattr(spec, "remote_cluster", None), "remote_cluster", None
+        )
+        if inner_remote_cluster is not None:
+            inner_remote_cluster.port = None
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())

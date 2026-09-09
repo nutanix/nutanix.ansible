@@ -91,6 +91,12 @@
   nutanix.ncp.ntnx_projects:
     name: "{{project2_name}}"
     desc: desc-123
+    collaboration: true
+    directory_reference_list:
+      - kind: directory_service
+        uuid: "{{ open_ldap_uuid }}"
+      - kind: directory_service
+        uuid: "{{ directory_service_uuid }}"
     clusters:
       - "{{ cluster.uuid }}"
     subnets:
@@ -103,11 +109,19 @@
       - name: "{{accounts[0].name}}"
     vpcs:
       - name: "{{vpc.name}}"
-    users:
-      - "{{ users[0] }}"
-      - "{{ users[1] }}"
-    external_user_groups:
-      - "{{ user_groups[0] }}"
+    role_mappings:
+      - role:
+          name: "{{ role_mappings[0] }}"
+        user:
+          uuid: "{{ users[0] }}"
+      - role:
+          name: "{{ role_mappings[1] }}"
+        user:
+          uuid: "{{ users[1] }}"
+      - role:
+          name: "{{ role_mappings[1] }}"
+        user_group:
+          uuid: "{{ user_groups[0] }}"
   register: result
   ignore_errors: true
 
@@ -116,25 +130,38 @@
     expected_subnets:
       ["{{ network.dhcp.uuid }}", "{{ static.uuid }}", "{{ overlay.uuid }}"]
     expected_users: ["{{ users[0] }}", "{{ users[1] }}"]
+    actual_subnet_uuids: "{{ result.response.status.project_status.resources.subnet_reference_list | map(attribute='uuid') | list }}"
+    response_acp: "{{ result.response.status.access_control_policy_list_status[0].access_control_policy_status.resources }}"
+  when:
+    - result.response is defined
+    - result.response.status is defined
+    - result.response.status.project_status is defined
+
+- name: Debug create project response resources
+  ansible.builtin.debug:
+    var: result.response.status.project_status.resources
+  when:
+    - result.response is defined
+    - result.response.status is defined
+    - result.response.status.project_status is defined
 
 - name: Creation Status
   ansible.builtin.assert:
     that:
       - result.response is defined
       - result.response.status.state == 'COMPLETE'
-      - result.response.status.name == "{{project2_name}}"
-      - result.response.status.description == 'desc-123'
-      - result.response.status.resources.subnet_reference_list | length == 3
-      - result.response.status.resources.subnet_reference_list[0].uuid in "{{expected_subnets}}"
-      - result.response.status.resources.subnet_reference_list[1].uuid in "{{expected_subnets}}"
-      - result.response.status.resources.subnet_reference_list[2].uuid in "{{expected_subnets}}"
-      - result.response.status.resources.user_reference_list[0].uuid in "{{expected_users}}"
-      - result.response.status.resources.user_reference_list[1].uuid in "{{expected_users}}"
-      - result.response.status.resources.external_user_group_reference_list[0].uuid == "{{ user_groups[0] }}"
-      - result.response.status.resources.default_subnet_reference.uuid == "{{ network.dhcp.uuid }}"
-      - result.response.status.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
-      - result.response.status.resources.vpc_reference_list[0].uuid == "{{ vpc.uuid }}"
-      - result.response.status.resources.account_reference_list[0].uuid == "{{ accounts[0].uuid }}"
+      - result.response.status.project_status.name == "{{project2_name}}"
+      - result.response.status.project_status.description == 'desc-123'
+      - result.response.status.project_status.resources.subnet_reference_list | length == 3
+      - expected_subnets | difference(actual_subnet_uuids) | length == 0
+      - actual_subnet_uuids | difference(expected_subnets) | length == 0
+      - result.response.status.project_status.resources.default_subnet_reference.uuid == "{{ network.dhcp.uuid }}"
+      - result.response.status.project_status.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
+      - result.response.status.project_status.resources.vpc_reference_list[0].uuid == "{{ vpc.uuid }}"
+      - result.response.status.project_status.resources.account_reference_list[0].uuid == "{{ accounts[0].uuid }}"
+      - result.response.status.project_status.resources.directory_reference_list[0].uuid == "{{ open_ldap_uuid }}"
+      - result.response.status.access_control_policy_list_status | length >= 1
+      - response_acp.user_reference_list[0].uuid in expected_users
 
     fail_msg: "Unable to create project with all specifications"
     success_msg: "Project with all specifications created successfully"
