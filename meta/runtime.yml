@@ -248,3 +248,7 @@ action_groups:
     - ntnx_virtual_switches_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_hardware_providers_v2
+    - ntnx_create_connection_by_hardware_provider_id_v2
+    - ntnx_refresh_connection_v2
+    - ntnx_hardware_providerss_info_v2
