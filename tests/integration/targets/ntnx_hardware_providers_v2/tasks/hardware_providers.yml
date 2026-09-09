@@ -1,0 +1,614 @@
+---
+# ============================================================================
+# TEST PLAN — Hardware Provider connections (Foundation Central / FCVM)
+# ============================================================================
+# Modules under test:
+#   - ntnx_create_connection_by_hardware_provider_id_v2 (action: create)
+#   - ntnx_hardware_providers_v2                         (CRUD: update, delete)
+#   - ntnx_refresh_connection_v2                         (action: refresh)
+#   - ntnx_hardware_providerss_info_v2                   (info: get/list)
+#
+# Scenarios covered:
+#   1.  List hardware providers (list-all datasource).
+#   2.  Negative: get hardware provider with an invalid ext_id -> API error.
+#   3.  Discover a real hardware provider ext_id (prerequisite for the rest).
+#   4.  Negative: create connection missing required 'name' -> module error.
+#   5.  Negative: create connection missing required 'access_details' -> error.
+#   6.  Negative: create connection with an invalid deployment_type enum -> error.
+#   7.  check_mode create with ALL attributes -> no API call, changed reported.
+#   8.  Create connection with required fields only (minimal).
+#   9.  Create connection with ALL fields (full) -> capture ext_id.
+#   10. Info: get connection by ext_id (single entity).
+#   11. Info: list connections for the hardware provider (list datasource).
+#   12. check_mode update with ALL attributes -> no API call.
+#   13. Update connection (state transition: change name/region/endpoint).
+#   14. Idempotency: run the same update again -> changed=false, "Nothing to change."
+#   15. Refresh connection (default configuration).
+#   16. Refresh connection with discover_nodes configuration.
+#   17. check_mode refresh -> no API call.
+#   18. Info: list discovered nodes / ip / mac / server-identity pools.
+#   19. Negative: mutually exclusive endpoint types on create -> module error.
+#   20. check_mode delete -> no API call.
+#   21. Delete connection(s) created during the run (teardown).
+#
+# All tests are gated on a hardware provider being present on the cluster.
+# If none is discovered, connection lifecycle tests are skipped with a clear
+# message (the FCVM must have at least one configured hardware provider).
+# ============================================================================
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+    todelete: []
+
+- name: Set connection names
+  ansible.builtin.set_fact:
+    connection_name: "connection_{{ suffix_name }}_{{ random_name }}"
+    connection_name_min: "connection_min_{{ suffix_name }}_{{ random_name }}"
+    connection_name_updated: "connection_upd_{{ suffix_name }}_{{ random_name }}"
+
+# ---------------------------------------------------------------------------
+# 1. List hardware providers
+# ---------------------------------------------------------------------------
+- name: List all hardware providers
+  ntnx_hardware_providerss_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all hardware providers - assertions
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "Failed to list hardware providers"
+    success_msg: "Successfully listed hardware providers"
+
+# ---------------------------------------------------------------------------
+# 2. Negative: get hardware provider with invalid ext_id
+# ---------------------------------------------------------------------------
+- name: Get hardware provider with invalid ext_id
+  ntnx_hardware_providerss_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Get hardware provider with invalid ext_id - assertions
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+    fail_msg: "Getting a hardware provider with an invalid ext_id should fail"
+    success_msg: "Getting a hardware provider with an invalid ext_id failed as expected"
+
+# ---------------------------------------------------------------------------
+# 3. Discover a real hardware provider ext_id
+# ---------------------------------------------------------------------------
+- name: Fetch hardware providers to discover an ext_id
+  ntnx_hardware_providerss_info_v2:
+  register: hp_list
+  ignore_errors: true
+
+# Prefer a STANDALONE provider (BASIC auth + IP address endpoint) because we can
+# create connections against those without external SaaS API keys. MANAGED
+# providers (e.g. Cisco Intersight) require SIGNED_API_KEY auth + URL endpoint.
+- name: Select a STANDALONE hardware provider
+  ansible.builtin.set_fact:
+    standalone_providers: >-
+      {{ hp_list.response | default([]) | selectattr('type', 'equalto', 'STANDALONE') | list }}
+  when:
+    - hp_list.response is defined
+    - hp_list.response | length > 0
+
+- name: Set hardware_provider_ext_id if a STANDALONE provider is available
+  ansible.builtin.set_fact:
+    hardware_provider_ext_id: "{{ standalone_providers[0].ext_id }}"
+  when:
+    - standalone_providers is defined
+    - standalone_providers | length > 0
+
+- name: Report missing hardware provider prerequisite
+  ansible.builtin.debug:
+    msg: >-
+      No STANDALONE hardware provider is configured on this Foundation Central
+      endpoint. Connection lifecycle tests will be skipped.
+  when: hardware_provider_ext_id is not defined
+
+# ===========================================================================
+# The following tests require a hardware provider to exist.
+# ===========================================================================
+- name: Connection lifecycle tests
+  when: hardware_provider_ext_id is defined
+  block:
+    # -----------------------------------------------------------------------
+    # 4. Negative: create missing required 'name'
+    # -----------------------------------------------------------------------
+    - name: Create connection without name (negative)
+      ntnx_create_connection_by_hardware_provider_id_v2:
+        hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+        access_details:
+          - endpoint:
+              url_endpoint:
+                url: "https://intersight.example.com"
+            auth:
+              basic_auth:
+                username: "admin"
+                password: "secret"
+      register: result
+      ignore_errors: true
+
+    - name: Create connection without name - assertions
+      ansible.builtin.assert:
+        that:
+          - result.failed == true
+          - result.changed == false
+        fail_msg: "Creating a connection without name should fail"
+        success_msg: "Creating a connection without name failed as expected"
+
+    # -----------------------------------------------------------------------
+    # 5. Negative: create missing required 'access_details'
+    # -----------------------------------------------------------------------
+    - name: Create connection without access_details (negative)
+      ntnx_create_connection_by_hardware_provider_id_v2:
+        hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+        name: "{{ connection_name }}"
+      register: result
+      ignore_errors: true
+
+    - name: Create connection without access_details - assertions
+      ansible.builtin.assert:
+        that:
+          - result.failed == true
+          - result.changed == false
+        fail_msg: "Creating a connection without access_details should fail"
+        success_msg: "Creating a connection without access_details failed as expected"
+
+    # -----------------------------------------------------------------------
+    # 6. Negative: invalid deployment_type enum
+    # -----------------------------------------------------------------------
+    - name: Create connection with invalid deployment_type (negative)
+      ntnx_create_connection_by_hardware_provider_id_v2:
+        hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+        name: "{{ connection_name }}"
+        deployment_type: "INVALID_TYPE"
+        access_details:
+          - endpoint:
+              url_endpoint:
+                url: "https://intersight.example.com"
+            auth:
+              basic_auth:
+                username: "admin"
+                password: "secret"
+      register: result
+      ignore_errors: true
+
+    - name: Create connection with invalid deployment_type - assertions
+      ansible.builtin.assert:
+        that:
+          - result.failed == true
+          - result.changed == false
+        fail_msg: "Creating a connection with an invalid deployment_type should fail"
+        success_msg: "Creating a connection with an invalid deployment_type failed as expected"
+
+    # -----------------------------------------------------------------------
+    # 19. Negative: mutually exclusive endpoint types
+    # -----------------------------------------------------------------------
+    - name: Create connection with mutually exclusive endpoints (negative)
+      ntnx_create_connection_by_hardware_provider_id_v2:
+        hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+        name: "{{ connection_name }}"
+        access_details:
+          - endpoint:
+              url_endpoint:
+                url: "https://intersight.example.com"
+              ip_address_endpoint:
+                ip_addresses:
+                  - ipv4:
+                      value: "10.0.0.1"
+            auth:
+              basic_auth:
+                username: "admin"
+                password: "secret"
+      register: result
+      ignore_errors: true
+
+    - name: Mutually exclusive endpoints - assertions
+      ansible.builtin.assert:
+        that:
+          - result.failed == true
+          - result.changed == false
+        fail_msg: "Creating a connection with mutually exclusive endpoints should fail"
+        success_msg: "Creating a connection with mutually exclusive endpoints failed as expected"
+
+    # -----------------------------------------------------------------------
+    # 7. check_mode create with ALL attributes
+    # -----------------------------------------------------------------------
+    - name: Create connection in check_mode (all attributes)
+      ntnx_create_connection_by_hardware_provider_id_v2:
+        hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+        name: "{{ connection_name }}"
+        deployment_type: "STANDALONE"
+        region: "us-west"
+        access_details:
+          - endpoint:
+              ip_address_endpoint:
+                ip_addresses:
+                  - ipv4:
+                      value: "10.97.44.180"
+            auth:
+              basic_auth:
+                username: "admin"
+                password: "secret"
+      register: result
+      check_mode: true
+      ignore_errors: true
+
+    - name: check_mode create - assertions
+      ansible.builtin.assert:
+        that:
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response.name == connection_name
+          - result.response.region == "us-west"
+          - result.response.deployment_type == "STANDALONE"
+        fail_msg: "check_mode create did not return expected spec"
+        success_msg: "check_mode create returned the expected spec without calling the API"
+
+    # -----------------------------------------------------------------------
+    # 8. Create connection with required fields only (minimal)
+    # -----------------------------------------------------------------------
+    - name: Create connection with required fields only
+      ntnx_create_connection_by_hardware_provider_id_v2:
+        hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+        name: "{{ connection_name_min }}"
+        access_details:
+          - endpoint:
+              ip_address_endpoint:
+                ip_addresses:
+                  - ipv4:
+                      value: "10.97.44.190"
+            auth:
+              basic_auth:
+                username: "admin"
+                password: "secret"
+      register: min_connection
+      ignore_errors: true
+
+    - name: Create connection (minimal) - assertions
+      ansible.builtin.assert:
+        that:
+          - min_connection.failed == false
+          - min_connection.changed == true
+        fail_msg: "Failed to create connection with required fields only"
+        success_msg: "Successfully created connection with required fields only"
+
+    - name: Track minimal connection for cleanup
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [min_connection.ext_id] }}"
+      when: min_connection.ext_id is defined and min_connection.ext_id
+
+    # -----------------------------------------------------------------------
+    # 9. Create connection with ALL fields (full)
+    # -----------------------------------------------------------------------
+    - name: Create connection with all fields
+      ntnx_create_connection_by_hardware_provider_id_v2:
+        hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+        name: "{{ connection_name }}"
+        deployment_type: "STANDALONE"
+        region: "us-west"
+        access_details:
+          - endpoint:
+              ip_address_endpoint:
+                ip_addresses:
+                  - ipv4:
+                      value: "10.97.44.180"
+            auth:
+              basic_auth:
+                username: "admin"
+                password: "secret"
+      register: full_connection
+      ignore_errors: true
+
+    - name: Create connection (full) - assertions
+      ansible.builtin.assert:
+        that:
+          - full_connection.failed == false
+          - full_connection.changed == true
+        fail_msg: "Failed to create connection with all fields"
+        success_msg: "Successfully created connection with all fields"
+
+    - name: Set connection ext_id
+      ansible.builtin.set_fact:
+        connection_ext_id: "{{ full_connection.ext_id }}"
+      when: full_connection.ext_id is defined and full_connection.ext_id
+
+    - name: Track full connection for cleanup
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [full_connection.ext_id] }}"
+      when: full_connection.ext_id is defined and full_connection.ext_id
+
+    # ===================================================================
+    # Tests requiring a created connection ext_id
+    # ===================================================================
+    - name: Connection resource tests
+      when: connection_ext_id is defined
+      block:
+        # ---------------------------------------------------------------
+        # 10. Info: get connection by ext_id
+        # ---------------------------------------------------------------
+        - name: Get connection by ext_id
+          ntnx_hardware_providerss_info_v2:
+            hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+            ext_id: "{{ connection_ext_id }}"
+          register: result
+          ignore_errors: true
+
+        - name: Get connection by ext_id - assertions
+          ansible.builtin.assert:
+            that:
+              - result.changed == false
+              - result.failed == false
+              - result.ext_id == connection_ext_id
+              - result.response.name == connection_name
+            fail_msg: "Failed to get connection by ext_id"
+            success_msg: "Successfully fetched connection by ext_id"
+
+        # ---------------------------------------------------------------
+        # 11. Info: list connections
+        # ---------------------------------------------------------------
+        - name: List connections for the hardware provider
+          ntnx_hardware_providerss_info_v2:
+            hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+          register: result
+          ignore_errors: true
+
+        - name: List connections - assertions
+          ansible.builtin.assert:
+            that:
+              - result.changed == false
+              - result.failed == false
+              - result.response is defined
+              - result.response | length > 0
+            fail_msg: "Failed to list connections"
+            success_msg: "Successfully listed connections"
+
+        # ---------------------------------------------------------------
+        # 12. check_mode update
+        # ---------------------------------------------------------------
+        - name: Update connection in check_mode
+          ntnx_hardware_providers_v2:
+            state: present
+            hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+            ext_id: "{{ connection_ext_id }}"
+            name: "{{ connection_name_updated }}"
+            deployment_type: "STANDALONE"
+            region: "us-east"
+            access_details:
+              - endpoint:
+                  ip_address_endpoint:
+                    ip_addresses:
+                      - ipv4:
+                          value: "10.97.44.181"
+                auth:
+                  basic_auth:
+                    username: "admin"
+                    password: "secret"
+          register: result
+          check_mode: true
+          ignore_errors: true
+
+        - name: check_mode update - assertions
+          ansible.builtin.assert:
+            that:
+              - result.changed == false
+              - result.failed == false
+              - result.response is defined
+              - result.response.name == connection_name_updated
+            fail_msg: "check_mode update did not return expected spec"
+            success_msg: "check_mode update returned the expected spec without calling the API"
+
+        # ---------------------------------------------------------------
+        # 13. Update connection (state transition)
+        # ---------------------------------------------------------------
+        - name: Update connection
+          ntnx_hardware_providers_v2:
+            state: present
+            hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+            ext_id: "{{ connection_ext_id }}"
+            name: "{{ connection_name_updated }}"
+            deployment_type: "STANDALONE"
+            region: "us-east"
+            access_details:
+              - endpoint:
+                  ip_address_endpoint:
+                    ip_addresses:
+                      - ipv4:
+                          value: "10.97.44.181"
+                auth:
+                  basic_auth:
+                    username: "admin"
+                    password: "secret"
+          register: result
+          ignore_errors: true
+
+        - name: Update connection - assertions
+          ansible.builtin.assert:
+            that:
+              - result.failed == false
+              - result.changed == true
+              - result.ext_id == connection_ext_id
+            fail_msg: "Failed to update connection"
+            success_msg: "Successfully updated connection"
+
+        # ---------------------------------------------------------------
+        # 14. Idempotency: same update again
+        # ---------------------------------------------------------------
+        - name: Update connection again (idempotency)
+          ntnx_hardware_providers_v2:
+            state: present
+            hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+            ext_id: "{{ connection_ext_id }}"
+            name: "{{ connection_name_updated }}"
+            deployment_type: "STANDALONE"
+            region: "us-east"
+            access_details:
+              - endpoint:
+                  ip_address_endpoint:
+                    ip_addresses:
+                      - ipv4:
+                          value: "10.97.44.181"
+                auth:
+                  basic_auth:
+                    username: "admin"
+                    password: "secret"
+          register: result
+          ignore_errors: true
+
+        - name: Idempotency - assertions
+          ansible.builtin.assert:
+            that:
+              - result.changed == false
+              - result.msg == "Nothing to change."
+            fail_msg: "Update should be idempotent on a second identical run"
+            success_msg: "Update is idempotent as expected"
+
+        # ---------------------------------------------------------------
+        # 17. check_mode refresh
+        # ---------------------------------------------------------------
+        - name: Refresh connection in check_mode
+          ntnx_refresh_connection_v2:
+            hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+            ext_id: "{{ connection_ext_id }}"
+          register: result
+          check_mode: true
+          ignore_errors: true
+
+        - name: check_mode refresh - assertions
+          ansible.builtin.assert:
+            that:
+              - result.changed == false
+              - result.failed == false
+              - result.ext_id == connection_ext_id
+            fail_msg: "check_mode refresh should not call the API"
+            success_msg: "check_mode refresh did not call the API as expected"
+
+        # ---------------------------------------------------------------
+        # 15. Refresh connection (refresh_resources configuration)
+        # ---------------------------------------------------------------
+        - name: Refresh connection (refresh_resources)
+          ntnx_refresh_connection_v2:
+            hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+            ext_id: "{{ connection_ext_id }}"
+            configuration:
+              refresh_resources:
+                should_refresh_mac_pools: true
+                should_refresh_ip_pools: true
+                should_refresh_server_identity_pools: false
+          register: result
+          ignore_errors: true
+
+        - name: Refresh connection (refresh_resources) - assertions
+          ansible.builtin.assert:
+            that:
+              - result.failed == false
+              - result.ext_id == connection_ext_id
+            fail_msg: "Failed to refresh connection"
+            success_msg: "Successfully refreshed connection"
+
+        # ---------------------------------------------------------------
+        # 16. Refresh connection with discover_nodes configuration
+        # ---------------------------------------------------------------
+        - name: Refresh connection (discover_nodes)
+          ntnx_refresh_connection_v2:
+            hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+            ext_id: "{{ connection_ext_id }}"
+            configuration:
+              discover_nodes:
+                group_ids:
+                  - "default"
+          register: result
+          ignore_errors: true
+
+        # Discovery may complete with warnings (e.g. unreachable endpoints in a
+        # lab). We only assert the module returned the connection ext_id.
+        - name: Refresh connection (discover_nodes) - assertions
+          ansible.builtin.assert:
+            that:
+              - result.ext_id is defined
+              - result.ext_id == connection_ext_id
+            fail_msg: "Refresh with discover_nodes returned unexpected result"
+            success_msg: "Refresh with discover_nodes completed"
+
+        # ---------------------------------------------------------------
+        # 18. Info: list nodes / ip / mac / server-identity pools
+        # ---------------------------------------------------------------
+        - name: List connection resources (nodes and pools)
+          ntnx_hardware_providerss_info_v2:
+            resource_type: "{{ item }}"
+            hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+            connection_ext_id: "{{ connection_ext_id }}"
+          register: resources_result
+          ignore_errors: true
+          loop:
+            - node
+            - ip_pool
+            - mac_pool
+            - server_identity_pool
+
+        - name: List connection resources - assertions
+          ansible.builtin.assert:
+            that:
+              - item.changed == false
+              - item.response is defined
+            fail_msg: "Failed to list connection resource {{ item.item }}"
+            success_msg: "Listed connection resource {{ item.item }}"
+          loop: "{{ resources_result.results }}"
+          loop_control:
+            label: "{{ item.item }}"
+
+# ---------------------------------------------------------------------------
+# 20. check_mode delete + 21. teardown
+# ---------------------------------------------------------------------------
+- name: Delete connection in check_mode
+  ntnx_hardware_providers_v2:
+    state: absent
+    hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+  when: todelete | length > 0
+
+- name: check_mode delete - assertions
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    fail_msg: "check_mode delete should not call the API"
+    success_msg: "check_mode delete did not call the API as expected"
+  when: todelete | length > 0
+
+- name: Delete created connections
+  ntnx_hardware_providers_v2:
+    state: absent
+    hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+  when: todelete | length > 0
+
+- name: Delete connections - assertions
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+    fail_msg: "Failed to delete connection {{ item.item }}"
+    success_msg: "Deleted connection {{ item.item }}"
+  loop: "{{ result.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: todelete | length > 0

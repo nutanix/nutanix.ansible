@@ -66,3 +66,164 @@ def get_lcm_entity(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching entity info using external identifier of the entity",
         )
+
+
+def get_hardware_provider(module, api_instance, ext_id):
+    """
+    This method will return a hardware provider using its external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Hardware providers api instance
+        ext_id (str): External id of the hardware provider
+    Returns:
+        hardware_provider (object): Hardware provider info
+    """
+    try:
+        return api_instance.get_hardware_provider_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching hardware provider info "
+            "using external identifier of the hardware provider",
+        )
+
+
+def get_connection(module, api_instance, hardware_provider_ext_id, ext_id):
+    """
+    This method will return a connection using its external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Hardware providers api instance
+        hardware_provider_ext_id (str): External id of the hardware provider
+        ext_id (str): External id of the connection
+    Returns:
+        connection (object): Connection info
+    """
+    try:
+        return api_instance.get_connection_by_id(
+            hardwareProviderExtId=hardware_provider_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching connection info "
+            "using external identifier of the connection",
+        )
+
+
+def get_connection_node(
+    module, api_instance, hardware_provider_ext_id, connection_ext_id, ext_id
+):
+    """
+    This method will return a discovered node using its external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Hardware providers api instance
+        hardware_provider_ext_id (str): External id of the hardware provider
+        connection_ext_id (str): External id of the connection
+        ext_id (str): External id of the discovered node
+    Returns:
+        node (object): Discovered node info
+    """
+    try:
+        return api_instance.get_connection_node_by_id(
+            hardwareProviderExtId=hardware_provider_ext_id,
+            connectionExtId=connection_ext_id,
+            extId=ext_id,
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching discovered node info "
+            "using external identifier of the node",
+        )
+
+
+def get_ip_pool(
+    module, api_instance, hardware_provider_ext_id, connection_ext_id, ext_id
+):
+    """
+    This method will return an IP address pool using its external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Hardware providers api instance
+        hardware_provider_ext_id (str): External id of the hardware provider
+        connection_ext_id (str): External id of the connection
+        ext_id (str): External id of the IP address pool
+    Returns:
+        ip_pool (object): IP address pool info
+    """
+    try:
+        return api_instance.get_ip_pool_by_id(
+            hardwareProviderExtId=hardware_provider_ext_id,
+            connectionExtId=connection_ext_id,
+            extId=ext_id,
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching IP address pool info "
+            "using external identifier of the pool",
+        )
+
+
+def get_mac_pool(
+    module, api_instance, hardware_provider_ext_id, connection_ext_id, ext_id
+):
+    """
+    This method will return a MAC address pool using its external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Hardware providers api instance
+        hardware_provider_ext_id (str): External id of the hardware provider
+        connection_ext_id (str): External id of the connection
+        ext_id (str): External id of the MAC address pool
+    Returns:
+        mac_pool (object): MAC address pool info
+    """
+    try:
+        return api_instance.get_mac_pool_by_id(
+            hardwareProviderExtId=hardware_provider_ext_id,
+            connectionExtId=connection_ext_id,
+            extId=ext_id,
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching MAC address pool info "
+            "using external identifier of the pool",
+        )
+
+
+def get_server_identity_pool(
+    module, api_instance, hardware_provider_ext_id, connection_ext_id, ext_id
+):
+    """
+    This method will return a server identity pool using its external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Hardware providers api instance
+        hardware_provider_ext_id (str): External id of the hardware provider
+        connection_ext_id (str): External id of the connection
+        ext_id (str): External id of the server identity pool
+    Returns:
+        server_identity_pool (object): Server identity pool info
+    """
+    try:
+        return api_instance.get_server_identity_pool_by_id(
+            hardwareProviderExtId=hardware_provider_ext_id,
+            connectionExtId=connection_ext_id,
+            extId=ext_id,
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching server identity pool info "
+            "using external identifier of the pool",
+        )

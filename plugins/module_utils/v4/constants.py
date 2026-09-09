@@ -48,6 +48,7 @@ class Tasks:
         NETWORK_FUNCTION = "Networking:config:network-function"
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
         ENTITY_GROUP = "microseg:config:entity-group"
+        HARDWARE_PROVIDER_CONNECTION = "lifecycle:config:hardware-provider-connections"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""

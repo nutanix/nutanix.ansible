@@ -1,0 +1,142 @@
+---
+# Examples for managing Hardware Provider connections in Nutanix Foundation Central (FCVM).
+#
+# NOTE: These modules talk to Foundation Central (FCVM), NOT Prism Central.
+# Set the connection parameters to the FCVM endpoint.
+- name: Hardware Providers playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: 10.97.44.170
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        hardware_provider_ext_id: "5e5a9d0b-8f3d-4c14-9f6f-6b3a3c9c6a01"
+        connection_name: "connection_ansible"
+
+    - name: List all hardware providers
+      nutanix.ncp.ntnx_hardware_providerss_info_v2:
+      register: hardware_providers
+      ignore_errors: true
+
+    - name: Get a hardware provider by ext_id
+      nutanix.ncp.ntnx_hardware_providerss_info_v2:
+        ext_id: "{{ hardware_provider_ext_id }}"
+      register: hardware_provider
+      ignore_errors: true
+
+    # STANDALONE providers (e.g. Dell iDRAC, HPE iLO, Lenovo) use an IP address
+    # endpoint with basic auth. MANAGED providers (e.g. Cisco Intersight) use a
+    # URL endpoint with API key auth (url_endpoint + api_key_auth).
+    - name: Create a connection to a hardware provider
+      nutanix.ncp.ntnx_create_connection_by_hardware_provider_id_v2:
+        hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+        name: "{{ connection_name }}"
+        deployment_type: "STANDALONE"
+        region: "us-west"
+        access_details:
+          - endpoint:
+              ip_address_endpoint:
+                ip_addresses:
+                  - ipv4:
+                      value: "10.97.44.180"
+            auth:
+              basic_auth:
+                username: "admin"
+                password: "secret"
+      register: created_connection
+      ignore_errors: true
+
+    - name: Set connection ext_id
+      ansible.builtin.set_fact:
+        connection_ext_id: "{{ created_connection.ext_id }}"
+      when: created_connection.ext_id is defined and created_connection.ext_id
+
+    - name: List connections for a hardware provider
+      nutanix.ncp.ntnx_hardware_providerss_info_v2:
+        hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+      register: connections
+      ignore_errors: true
+
+    - name: Get a connection by ext_id
+      nutanix.ncp.ntnx_hardware_providerss_info_v2:
+        hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+        ext_id: "{{ connection_ext_id }}"
+      register: connection_info
+      ignore_errors: true
+
+    - name: Update a hardware provider connection
+      nutanix.ncp.ntnx_hardware_providers_v2:
+        state: present
+        hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+        ext_id: "{{ connection_ext_id }}"
+        name: "connection_ansible_updated"
+        deployment_type: "STANDALONE"
+        region: "us-east"
+        access_details:
+          - endpoint:
+              ip_address_endpoint:
+                ip_addresses:
+                  - ipv4:
+                      value: "10.97.44.181"
+            auth:
+              basic_auth:
+                username: "admin"
+                password: "secret"
+      register: updated_connection
+      ignore_errors: true
+
+    - name: Refresh a connection to discover nodes
+      nutanix.ncp.ntnx_refresh_connection_v2:
+        hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+        ext_id: "{{ connection_ext_id }}"
+        configuration:
+          discover_nodes:
+            group_ids:
+              - "group-1"
+      register: refreshed_connection
+      ignore_errors: true
+
+    - name: List discovered nodes for a connection
+      nutanix.ncp.ntnx_hardware_providerss_info_v2:
+        resource_type: node
+        hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+        connection_ext_id: "{{ connection_ext_id }}"
+      register: nodes
+      ignore_errors: true
+
+    - name: List IP address pools for a connection
+      nutanix.ncp.ntnx_hardware_providerss_info_v2:
+        resource_type: ip_pool
+        hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+        connection_ext_id: "{{ connection_ext_id }}"
+      register: ip_pools
+      ignore_errors: true
+
+    - name: List MAC address pools for a connection
+      nutanix.ncp.ntnx_hardware_providerss_info_v2:
+        resource_type: mac_pool
+        hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+        connection_ext_id: "{{ connection_ext_id }}"
+      register: mac_pools
+      ignore_errors: true
+
+    - name: List server identity pools for a connection
+      nutanix.ncp.ntnx_hardware_providerss_info_v2:
+        resource_type: server_identity_pool
+        hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+        connection_ext_id: "{{ connection_ext_id }}"
+      register: server_identity_pools
+      ignore_errors: true
+
+    - name: Delete a hardware provider connection
+      nutanix.ncp.ntnx_hardware_providers_v2:
+        state: absent
+        hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
+        ext_id: "{{ connection_ext_id }}"
+      register: deleted_connection
+      ignore_errors: true
