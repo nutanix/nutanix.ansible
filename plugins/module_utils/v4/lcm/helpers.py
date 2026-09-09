@@ -48,6 +48,30 @@ def get_lcm_config(module, api_instance, cluster_ext_id=None):
         )
 
 
+def get_node(module, api_instance, ext_id):
+    """
+    This method will return node info using external identifier of the node.
+
+    The Nodes APIs are served by Foundation Central (FCVM/Foundation).
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Nodes api instance
+        ext_id (str): External id of the node
+    Returns:
+        node_info (object): Node info (raw v4 api response with etag headers)
+    """
+    try:
+        return api_instance.get_node_by_id(extId=ext_id)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching node info using external ID: {0}".format(
+                ext_id
+            ),
+        )
+
+
 def get_lcm_entity(module, api_instance, ext_id):
     """
     This method will return entity info using external identifier of the entity.

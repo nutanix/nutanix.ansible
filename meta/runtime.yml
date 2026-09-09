@@ -248,3 +248,8 @@ action_groups:
     - ntnx_virtual_switches_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_nodes_v2
+    - ntnx_nodess_info_v2
+    - ntnx_configure_node_v2
+    - ntnx_image_node_v2
+    - ntnx_refresh_node_v2

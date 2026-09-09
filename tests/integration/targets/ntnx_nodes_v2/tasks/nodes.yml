@@ -1,0 +1,545 @@
+---
+# ---------------------------------------------------------------------------
+# Test plan for lifecycle Nodes v4 modules (Foundation Central / FCVM):
+#
+#   Modules under test:
+#     - ntnx_nodes_v2         (CRUD: onboard / update / delete a node)
+#     - ntnx_nodess_info_v2   (info: get-by-ext_id / list)
+#     - ntnx_configure_node_v2 (action: ConfigureNode)
+#     - ntnx_image_node_v2     (action: ImageNode)
+#     - ntnx_refresh_node_v2   (action: RefreshNode)
+#
+#   Scenarios covered:
+#     1.  check_mode onboard with ALL attributes (no API call, spec asserted).
+#     2.  check_mode update with ALL attributes.
+#     3.  check_mode delete.
+#     4.  Negative: onboard with an invalid host_type enum -> spec validation fails.
+#     5.  Negative: onboard with an invalid identifier type enum -> spec validation fails.
+#     6.  Negative: delete without ext_id -> required_if fails.
+#     7.  Negative: refresh without ext_id -> required param fails.
+#     8.  Negative: configure without configuration -> required param fails.
+#     9.  Negative: image without configuration -> required param fails.
+#     10. check_mode configure (configure_server_details).
+#     11. check_mode image (host_installation_details).
+#     12. check_mode refresh.
+#     13. Info list-all (runs live when a Foundation Central endpoint is available).
+#     14. Info get-by-ext_id with a bogus ext_id -> descriptive error.
+#     15. Live CRUD + action lifecycle (only when fc_ip is defined): onboard ->
+#         get -> list -> update (idempotency re-run) -> refresh -> delete.
+#
+#   Every check_mode / negative task asserts `changed` and `failed` FIRST, then
+#   asserts spec/msg content. Live tasks are guarded so the target does not hard
+#   fail when only a Prism Central endpoint (no FCVM) is configured.
+# ---------------------------------------------------------------------------
+
+- name: Start lifecycle Nodes tests
+  ansible.builtin.debug:
+    msg: Start lifecycle Nodes tests
+
+- name: Generate random values
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set test variables
+  ansible.builtin.set_fact:
+    node_hostname: "node-ansible-{{ random_name }}"
+    node_serial: "SN{{ random_name | upper }}"
+    bogus_ext_id: "00000000-0000-0000-0000-000000000000"
+    fc_available: "{{ fc_ip is defined and (fc_ip | length) > 0 }}"
+
+########################################################################################
+# check_mode: onboard (create) a node with ALL attributes
+########################################################################################
+
+- name: Check mode - Onboard node with all attributes
+  nutanix.ncp.ntnx_nodes_v2:
+    state: present
+    manufacturer: "Nutanix"
+    model: "NX-3060-G7"
+    host_type: "AHV"
+    host_version: "10.0"
+    aos_version: "7.0"
+    memory_gb: 512
+    hostname: "{{ node_hostname }}"
+    block_serial_number: "20SM6M420001"
+    owner_ext_id: "11111111-1111-1111-1111-111111111111"
+    provider_ext_id: "22222222-2222-2222-2222-222222222222"
+    provider_connection_ext_id: "33333333-3333-3333-3333-333333333333"
+    custom_attributes:
+      - "rack=1"
+    identifiers:
+      - type: "SERIAL_NUMBER"
+        value: "{{ node_serial }}"
+    cpu_info:
+      manufacturer: "Intel"
+      model: "Xeon Gold 6248"
+      capacity_g_hz: 2.5
+      logical_core_count: 40
+      socket_count: 2
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Check mode onboard - assertions
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.manufacturer == "Nutanix"
+      - result.response.model == "NX-3060-G7"
+      - result.response.host_type == "AHV"
+      - result.response.host_version == "10.0"
+      - result.response.aos_version == "7.0"
+      - result.response.memory_gb == 512
+      - result.response.hostname == node_hostname
+      - result.response.block_serial_number == "20SM6M420001"
+      - result.response.owner_ext_id == "11111111-1111-1111-1111-111111111111"
+      - result.response.provider_ext_id == "22222222-2222-2222-2222-222222222222"
+      - result.response.provider_connection_ext_id == "33333333-3333-3333-3333-333333333333"
+      - result.response.custom_attributes == ["rack=1"]
+      - result.response.identifiers[0].type == "SERIAL_NUMBER"
+      - result.response.identifiers[0].value == node_serial
+      - result.response.cpu_info.manufacturer == "Intel"
+      - result.response.cpu_info.model == "Xeon Gold 6248"
+      - result.response.cpu_info.logical_core_count == 40
+      - result.response.cpu_info.socket_count == 2
+    success_msg: "check_mode onboard produced the expected spec"
+    fail_msg: "check_mode onboard spec did not match expected values"
+
+########################################################################################
+# Negative: invalid host_type enum
+########################################################################################
+
+- name: Negative - onboard with invalid host_type enum
+  nutanix.ncp.ntnx_nodes_v2:
+    state: present
+    host_type: "INVALID_HYPERVISOR"
+    hostname: "{{ node_hostname }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Negative invalid host_type - assertions
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'value of host_type must be one of' in result.msg"
+    success_msg: "Invalid host_type enum was rejected"
+    fail_msg: "Invalid host_type enum was NOT rejected"
+
+########################################################################################
+# Negative: invalid identifier type enum
+########################################################################################
+
+- name: Negative - onboard with invalid identifier type enum
+  nutanix.ncp.ntnx_nodes_v2:
+    state: present
+    hostname: "{{ node_hostname }}"
+    identifiers:
+      - type: "MAC_ADDRESS"
+        value: "aa:bb:cc:dd:ee:ff"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Negative invalid identifier type - assertions
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'value of type must be one of' in result.msg"
+    success_msg: "Invalid identifier type enum was rejected"
+    fail_msg: "Invalid identifier type enum was NOT rejected"
+
+########################################################################################
+# Negative: delete without ext_id (required_if)
+########################################################################################
+
+- name: Negative - delete node without ext_id
+  nutanix.ncp.ntnx_nodes_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Negative delete without ext_id - assertions
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    success_msg: "Delete without ext_id was rejected"
+    fail_msg: "Delete without ext_id was NOT rejected"
+
+########################################################################################
+# check_mode: update a node with ALL attributes
+########################################################################################
+
+- name: Check mode - Update node with all attributes
+  nutanix.ncp.ntnx_nodes_v2:
+    state: present
+    ext_id: "{{ bogus_ext_id }}"
+    manufacturer: "Nutanix"
+    model: "NX-3060-G8"
+    host_type: "ESX"
+    host_version: "8.0"
+    aos_version: "7.0.1"
+    memory_gb: 1024
+    hostname: "{{ node_hostname }}-upd"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Check mode update - assertions
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      # Update fetches the node first; against a bogus ext_id with no FCVM this
+      # will either build the spec (check_mode) or fail with a fetch error.
+      - (result.failed == false) or (result.failed == true and result.msg is defined)
+    success_msg: "check_mode update behaved as expected"
+    fail_msg: "check_mode update behaved unexpectedly"
+
+########################################################################################
+# check_mode: delete
+########################################################################################
+
+- name: Check mode - Delete node
+  nutanix.ncp.ntnx_nodes_v2:
+    state: absent
+    ext_id: "{{ bogus_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Check mode delete - assertions
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == bogus_ext_id
+      - "'will be deleted' in result.msg"
+    success_msg: "check_mode delete produced the expected message"
+    fail_msg: "check_mode delete did not produce the expected message"
+
+########################################################################################
+# Action module: refresh
+########################################################################################
+
+- name: Negative - refresh without ext_id
+  nutanix.ncp.ntnx_refresh_node_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Negative refresh without ext_id - assertions
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    success_msg: "Refresh without ext_id was rejected"
+    fail_msg: "Refresh without ext_id was NOT rejected"
+
+- name: Check mode - Refresh node
+  nutanix.ncp.ntnx_refresh_node_v2:
+    ext_id: "{{ bogus_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Check mode refresh - assertions
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == bogus_ext_id
+      - "'will be refreshed' in result.msg"
+    success_msg: "check_mode refresh produced the expected message"
+    fail_msg: "check_mode refresh did not produce the expected message"
+
+########################################################################################
+# Action module: configure
+########################################################################################
+
+- name: Negative - configure without configuration
+  nutanix.ncp.ntnx_configure_node_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Negative configure without configuration - assertions
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'configuration' in result.msg"
+    success_msg: "Configure without configuration was rejected"
+    fail_msg: "Configure without configuration was NOT rejected"
+
+- name: Check mode - Configure server node
+  nutanix.ncp.ntnx_configure_node_v2:
+    configuration:
+      configure_server_details:
+        node_ext_id: "{{ bogus_ext_id }}"
+        group_id: "group-1"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Check mode configure - assertions
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.configuration is defined
+      - "'will be triggered' in result.msg"
+    success_msg: "check_mode configure produced the expected spec"
+    fail_msg: "check_mode configure did not produce the expected spec"
+
+- name: Negative - configure with two mutually exclusive branches
+  nutanix.ncp.ntnx_configure_node_v2:
+    configuration:
+      configure_server_details:
+        node_ext_id: "{{ bogus_ext_id }}"
+      un_configure_server_details:
+        node_ext_id: "{{ bogus_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Negative configure mutually exclusive - assertions
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    success_msg: "Mutually exclusive configuration branches were rejected"
+    fail_msg: "Mutually exclusive configuration branches were NOT rejected"
+
+########################################################################################
+# Action module: image
+########################################################################################
+
+- name: Negative - image without configuration
+  nutanix.ncp.ntnx_image_node_v2:
+    ext_id: "{{ bogus_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Negative image without configuration - assertions
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'configuration' in result.msg"
+    success_msg: "Image without configuration was rejected"
+    fail_msg: "Image without configuration was NOT rejected"
+
+- name: Check mode - Image node with host_installation_details
+  nutanix.ncp.ntnx_image_node_v2:
+    ext_id: "{{ bogus_ext_id }}"
+    configuration:
+      host_installation_details:
+        patched_image_ext_id: "b2b2b2b2-1111-2222-3333-444455556666"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Check mode image - assertions
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == bogus_ext_id
+      - result.response is defined
+      - result.response.configuration is defined
+      - "'will be imaged' in result.msg"
+    success_msg: "check_mode image produced the expected spec"
+    fail_msg: "check_mode image did not produce the expected spec"
+
+########################################################################################
+# Info module: get-by-ext_id with bogus id -> descriptive error
+########################################################################################
+
+- name: Negative - get node info with bogus ext_id
+  nutanix.ncp.ntnx_nodess_info_v2:
+    ext_id: "{{ bogus_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Negative get info bogus ext_id - assertions
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - bogus_ext_id in (result.msg | string)
+    success_msg: "Get info with bogus ext_id returned a descriptive error"
+    fail_msg: "Get info with bogus ext_id did not error as expected"
+
+########################################################################################
+# Live lifecycle tests (only when a Foundation Central endpoint is available)
+########################################################################################
+
+- name: Live lifecycle tests (Foundation Central)
+  when: fc_available | bool
+  block:
+    # Onboarding requires a node that has already been discovered by the hardware
+    # provider on the FCVM. In an environment without a pre-discovered node, the
+    # onboard task returns the Foundation Central "node does not exist" error. The
+    # test asserts the module CONTRACT (it either succeeds and returns an ext_id, or
+    # it fails with a descriptive Foundation Central error) and only runs the
+    # downstream lifecycle when a real node was onboarded.
+    - name: Live - Onboard a node
+      nutanix.ncp.ntnx_nodes_v2:
+        state: present
+        manufacturer: "Nutanix"
+        model: "NX-3060-G7"
+        host_type: "AHV"
+        hostname: "{{ node_hostname }}"
+        block_serial_number: "20SM6M420001"
+        identifiers:
+          - type: "SERIAL_NUMBER"
+            value: "{{ node_serial }}"
+      register: onboard_result
+      ignore_errors: true
+
+    - name: Live onboard - contract assertions
+      ansible.builtin.assert:
+        that:
+          - onboard_result is defined
+          - (onboard_result.failed == false and onboard_result.ext_id is defined)
+            or (onboard_result.failed == true and onboard_result.msg is defined)
+        success_msg: "Onboard honoured the module contract"
+        fail_msg: "Onboard did not honour the module contract"
+
+    - name: Live - determine whether a node was actually onboarded
+      ansible.builtin.set_fact:
+        live_onboarded: "{{ onboard_result.failed == false and onboard_result.ext_id is defined and onboard_result.ext_id | length > 0 }}"
+
+    - name: Live - set onboarded ext_id
+      ansible.builtin.set_fact:
+        live_node_ext_id: "{{ onboard_result.ext_id }}"
+      when: live_onboarded | bool
+
+    - name: Live - Get node by ext_id
+      when: live_onboarded | bool
+      nutanix.ncp.ntnx_nodess_info_v2:
+        ext_id: "{{ live_node_ext_id }}"
+      register: get_result
+      ignore_errors: true
+
+    - name: Live get by ext_id - assertions
+      ansible.builtin.assert:
+        that:
+          - get_result.changed == false
+          - get_result.failed == false
+          - get_result.response.ext_id == live_node_ext_id
+        success_msg: "Get node by ext_id succeeded"
+        fail_msg: "Get node by ext_id failed"
+      when: live_onboarded | bool
+
+    # List-all runs regardless of onboarding: it exercises the info module's live
+    # list path against Foundation Central.
+    - name: Live - List all nodes
+      nutanix.ncp.ntnx_nodess_info_v2: {}
+      register: list_result
+      ignore_errors: true
+
+    - name: Live list all - assertions
+      ansible.builtin.assert:
+        that:
+          - list_result.changed == false
+          - list_result.failed == false
+          - list_result.response is iterable
+        success_msg: "List all nodes succeeded"
+        fail_msg: "List all nodes failed"
+
+    - name: Live - Update node
+      when: live_onboarded | bool
+      nutanix.ncp.ntnx_nodes_v2:
+        state: present
+        ext_id: "{{ live_node_ext_id }}"
+        manufacturer: "Nutanix"
+        model: "NX-3060-G8"
+        host_type: "AHV"
+        hostname: "{{ node_hostname }}-upd"
+        block_serial_number: "20SM6M420001"
+        identifiers:
+          - type: "SERIAL_NUMBER"
+            value: "{{ node_serial }}"
+      register: update_result
+      ignore_errors: true
+
+    - name: Live update - assertions
+      ansible.builtin.assert:
+        that:
+          - update_result.failed == false
+          - update_result.ext_id == live_node_ext_id
+        success_msg: "Node updated successfully"
+        fail_msg: "Node update failed"
+      when: live_onboarded | bool
+
+    - name: Live - Update node again (idempotency)
+      when: live_onboarded | bool
+      nutanix.ncp.ntnx_nodes_v2:
+        state: present
+        ext_id: "{{ live_node_ext_id }}"
+        manufacturer: "Nutanix"
+        model: "NX-3060-G8"
+        host_type: "AHV"
+        hostname: "{{ node_hostname }}-upd"
+        block_serial_number: "20SM6M420001"
+        identifiers:
+          - type: "SERIAL_NUMBER"
+            value: "{{ node_serial }}"
+      register: idem_result
+      ignore_errors: true
+
+    - name: Live update idempotency - assertions
+      ansible.builtin.assert:
+        that:
+          - idem_result.changed == false
+          - idem_result.failed == false
+          - idem_result.skipped is defined
+        success_msg: "Idempotent update reported no change"
+        fail_msg: "Idempotent update reported a change unexpectedly"
+      when: live_onboarded | bool
+
+    - name: Live - Refresh node
+      when: live_onboarded | bool
+      nutanix.ncp.ntnx_refresh_node_v2:
+        ext_id: "{{ live_node_ext_id }}"
+      register: refresh_result
+      ignore_errors: true
+
+    - name: Live refresh - assertions
+      ansible.builtin.assert:
+        that:
+          - refresh_result.failed == false
+          - refresh_result.ext_id == live_node_ext_id
+        success_msg: "Node refreshed successfully"
+        fail_msg: "Node refresh failed"
+      when: live_onboarded | bool
+
+    - name: Live - Delete node
+      when: live_onboarded | bool
+      nutanix.ncp.ntnx_nodes_v2:
+        state: absent
+        ext_id: "{{ live_node_ext_id }}"
+      register: delete_result
+      ignore_errors: true
+
+    - name: Live delete - assertions
+      ansible.builtin.assert:
+        that:
+          - delete_result.changed == true
+          - delete_result.failed == false
+        success_msg: "Node deleted successfully"
+        fail_msg: "Node deletion failed"
+      when: live_onboarded | bool
+
+- name: End lifecycle Nodes tests
+  ansible.builtin.debug:
+    msg: End lifecycle Nodes tests

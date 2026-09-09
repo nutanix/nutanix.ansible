@@ -1,0 +1,136 @@
+---
+# Summary:
+# This playbook demonstrates the lifecycle Nodes v4 modules managed by Foundation Central (FCVM).
+# IMPORTANT: These APIs target Foundation Central (FCVM/Foundation), NOT Prism Central.
+# Set nutanix_host to the Foundation Central endpoint (for example 10.97.44.170).
+#
+# It will do:
+# 1. Onboard (create) a node
+# 2. Update a node
+# 3. Get a node using ext_id
+# 4. List all nodes
+# 5. List nodes with filter
+# 6. List nodes with limit
+# 7. Configure a node (action)
+# 8. Image a node (action)
+# 9. Refresh a node (action)
+# 10. Delete a node
+
+- name: Lifecycle Nodes playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <foundation_central_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Onboard a node with all attributes
+      nutanix.ncp.ntnx_nodes_v2:
+        state: present
+        manufacturer: "Nutanix"
+        model: "NX-3060-G7"
+        host_type: "AHV"
+        host_version: "10.0"
+        aos_version: "7.0"
+        memory_gb: 512
+        hostname: "node-ansible"
+        block_serial_number: "20SM6M420001"
+        custom_attributes:
+          - "rack=1"
+        identifiers:
+          - type: "SERIAL_NUMBER"
+            value: "ZM204S000001"
+        cpu_info:
+          manufacturer: "Intel"
+          model: "Xeon Gold 6248"
+          capacity_g_hz: 2.5
+          logical_core_count: 40
+          socket_count: 2
+      register: result
+      ignore_errors: true
+
+    - name: Set node ext_id
+      ansible.builtin.set_fact:
+        node_ext_id: "{{ result.response.ext_id }}"
+
+    - name: Update a node with all attributes
+      nutanix.ncp.ntnx_nodes_v2:
+        state: present
+        ext_id: "{{ node_ext_id }}"
+        manufacturer: "Nutanix"
+        model: "NX-3060-G8"
+        host_type: "AHV"
+        host_version: "10.0.1"
+        aos_version: "7.0.1"
+        memory_gb: 1024
+        hostname: "node-ansible-updated"
+        block_serial_number: "20SM6M420001"
+        custom_attributes:
+          - "rack=2"
+        identifiers:
+          - type: "SERIAL_NUMBER"
+            value: "ZM204S000001"
+        cpu_info:
+          manufacturer: "Intel"
+          model: "Xeon Gold 6348"
+          capacity_g_hz: 2.6
+          logical_core_count: 56
+          socket_count: 2
+      register: result
+      ignore_errors: true
+
+    - name: Get node using ext_id
+      nutanix.ncp.ntnx_nodess_info_v2:
+        ext_id: "{{ node_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all nodes
+      nutanix.ncp.ntnx_nodess_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List nodes with filter
+      nutanix.ncp.ntnx_nodess_info_v2:
+        filter: "manufacturer eq 'Nutanix'"
+      register: result
+      ignore_errors: true
+
+    - name: List nodes with limit
+      nutanix.ncp.ntnx_nodess_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Configure a server node
+      nutanix.ncp.ntnx_configure_node_v2:
+        configuration:
+          configure_server_details:
+            node_ext_id: "{{ node_ext_id }}"
+            group_id: "group-1"
+      register: result
+      ignore_errors: true
+
+    - name: Image a node using a patched host image
+      nutanix.ncp.ntnx_image_node_v2:
+        ext_id: "{{ node_ext_id }}"
+        configuration:
+          host_installation_details:
+            patched_image_ext_id: "b2b2b2b2-1111-2222-3333-444455556666"
+      register: result
+      ignore_errors: true
+
+    - name: Refresh a node
+      nutanix.ncp.ntnx_refresh_node_v2:
+        ext_id: "{{ node_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete a node
+      nutanix.ncp.ntnx_nodes_v2:
+        state: absent
+        ext_id: "{{ node_ext_id }}"
+      register: result
+      ignore_errors: true
