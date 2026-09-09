@@ -159,3 +159,20 @@ def get_entity_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_lifecycle_py_client.EntitiesApi(api_client=api_client)
+
+
+def get_nodes_api_instance(module):
+    """
+    This method will return Foundation Central Nodes API instance.
+
+    The Nodes APIs under Life Cycle Management are served by Foundation
+    Central (FCVM/Foundation), not by Prism Central. Wire the connection
+    parameters to the Foundation Central endpoint before calling this.
+
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 Nodes api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.NodesApi(api_client=api_client)
