@@ -1,0 +1,135 @@
+---
+# Summary:
+# This playbook demonstrates the lifecycle of LCM installer images using the
+# ntnx_installer_images_v2 and ntnx_installer_images_info_v2 modules.
+#
+# IMPORTANT — endpoint awareness:
+# The LCM installer images APIs are served by Foundation Central (FCVM),
+# NOT by Prism Central. The connection details in the module_defaults block
+# below MUST point to the FCVM/Foundation endpoint (default port 9440).
+#
+# Domain behavior:
+# 1. On create only name, type and source are accepted by Foundation Central.
+# 2. The image URL (and checksum/metadata for AHV images with source REMOTE_URL)
+#    is applied through the update operation.
+# 3. The image name cannot be modified after creation.
+#
+# This playbook will:
+# 1. Create an installer image (name, type, source only)
+# 2. Update the installer image to set its URL, checksum and metadata URL
+# 3. Fetch the installer image using its external ID
+# 4. List all installer images
+# 5. Delete the installer image
+
+- name: Installer Images playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <fcvm_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Create installer image
+      nutanix.ncp.ntnx_installer_images_v2:
+        state: present
+        name: "aos_image_ansible"
+        type: "AOS"
+        source: "REMOTE_URL"
+      register: create_result
+      ignore_errors: true
+      # sample (real output captured from a live Foundation Central run):
+      #   changed: true
+      #   ext_id: "da23f7f6-1dee-41f5-a076-f953c3d7818d"
+      #   task_ext_id: "ZXJnb24=:9e4fb87e-ffe4-5a39-98b4-e45e93bb470c"
+      #   response:
+      #     name: "aos_image_ansible"
+      #     type: "AOS"
+      #     source: "REMOTE_URL"
+      #     checksum: null
+      #     certificate_chain: null
+      #     url: null
+      #     metadata_download_url: null
+      #     file_status: "NOT_AVAILABLE"
+      #     metadata_status: "NOT_AVAILABLE"
+      #     version: null
+      #     created_time: "2026-09-09T05:59:02.370436+00:00"
+      #     ext_id: "da23f7f6-1dee-41f5-a076-f953c3d7818d"
+      #     tenant_id: "703c7c79-5e87-4813-a137-76c09b808db9"
+
+    - name: Set installer image external ID
+      ansible.builtin.set_fact:
+        installer_image_ext_id: "{{ create_result.ext_id }}"
+
+    - name: Update installer image with all attributes
+      nutanix.ncp.ntnx_installer_images_v2:
+        state: present
+        ext_id: "{{ installer_image_ext_id }}"
+        name: "aos_image_ansible"
+        type: "AOS"
+        source: "REMOTE_URL"
+        url: "https://download.example.com/aos/nutanix_installer_package.tar.gz"
+        metadata_download_url: "https://download.example.com/aos/metadata.json"
+      register: update_result
+      ignore_errors: true
+      # sample: <Need to add sample>
+      # The update submits an image download task on Foundation Central. When the
+      # URL points to a real, reachable installer bundle the task succeeds and
+      # returns the updated image; with the placeholder URL used here the async
+      # download task fails, so no real success sample could be captured.
+
+    - name: Fetch installer image using external ID
+      nutanix.ncp.ntnx_installer_images_info_v2:
+        ext_id: "{{ installer_image_ext_id }}"
+      register: info_result
+      ignore_errors: true
+      # sample (real output captured from a live Foundation Central run):
+      #   changed: false
+      #   ext_id: "da23f7f6-1dee-41f5-a076-f953c3d7818d"
+      #   response:
+      #     name: "aos_image_ansible"
+      #     type: "AOS"
+      #     source: "REMOTE_URL"
+      #     checksum: null
+      #     certificate_chain: null
+      #     url: null
+      #     metadata_download_url: null
+      #     file_status: "NOT_AVAILABLE"
+      #     metadata_status: "NOT_AVAILABLE"
+      #     created_time: "2026-09-09T05:59:02.370436+00:00"
+      #     ext_id: "da23f7f6-1dee-41f5-a076-f953c3d7818d"
+      #     tenant_id: "703c7c79-5e87-4813-a137-76c09b808db9"
+
+    - name: List all installer images
+      nutanix.ncp.ntnx_installer_images_info_v2:
+      register: list_result
+      ignore_errors: true
+      # sample (real output captured from a live Foundation Central run):
+      #   changed: false
+      #   total_available_results: 1
+      #   response:
+      #     - name: "aos_image_ansible"
+      #       type: "AOS"
+      #       source: "REMOTE_URL"
+      #       file_status: "NOT_AVAILABLE"
+      #       metadata_status: "NOT_AVAILABLE"
+      #       created_time: "2026-09-09T05:59:02.370436+00:00"
+      #       ext_id: "da23f7f6-1dee-41f5-a076-f953c3d7818d"
+      #       tenant_id: "703c7c79-5e87-4813-a137-76c09b808db9"
+
+    - name: Delete installer image
+      nutanix.ncp.ntnx_installer_images_v2:
+        state: absent
+        ext_id: "{{ installer_image_ext_id }}"
+      register: delete_result
+      ignore_errors: true
+      # sample (real output captured from a live Foundation Central run):
+      #   changed: true
+      #   ext_id: "da23f7f6-1dee-41f5-a076-f953c3d7818d"
+      #   task_ext_id: "ZXJnb24=:885ed609-3f8e-5092-b6a0-07af182f5efd"
+      #   response:
+      #     operation: "ImageEntityDeletionTask"
+      #     operation_description: "Image entity deletion task"
+      #     progress_percentage: 100
+      #     status: "SUCCEEDED"
