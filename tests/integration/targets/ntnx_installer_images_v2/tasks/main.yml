@@ -1,0 +1,19 @@
+---
+# NOTE: The LCM installer images APIs are served by Foundation Central (FCVM),
+# NOT by Prism Central. The module_defaults below therefore point to the
+# FCVM/Foundation endpoint variables (foundation_host / foundation_username /
+# foundation_password / foundation_port). These are provided via
+# tests/integration/integration_config.yml.
+- name: Set module defaults
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ foundation_host }}"
+      nutanix_username: "{{ foundation_username | default(omit) }}"
+      nutanix_password: "{{ foundation_password | default(omit) }}"
+      nutanix_port: "{{ foundation_port | default(omit) }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+      nutanix_debug: "{{ nutanix_debug | default(omit) }}"
+      nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
+  block:
+    - name: Import installer_images.yml
+      ansible.builtin.import_tasks: installer_images.yml

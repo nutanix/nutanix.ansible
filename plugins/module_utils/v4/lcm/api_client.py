@@ -159,3 +159,21 @@ def get_entity_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_lifecycle_py_client.EntitiesApi(api_client=api_client)
+
+
+def get_installer_images_api_instance(module):
+    """
+    This method will return LCM installer images API instance.
+
+    Note:
+        The installer images APIs are served by Foundation Central (FCVM),
+        NOT by Prism Central. The connection details (nutanix_host,
+        nutanix_username, nutanix_password, nutanix_port) supplied to the
+        module must therefore point to the FCVM/Foundation endpoint.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 LCM installer images api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.InstallerImagesApi(api_client=api_client)

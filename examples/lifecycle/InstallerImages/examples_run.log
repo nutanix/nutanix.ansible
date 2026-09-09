@@ -1,0 +1,29 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Installer Images playbook] ***********************************************
+
+TASK [Create installer image] **************************************************
+changed: [localhost] => {"changed": true, "ext_id": "da23f7f6-1dee-41f5-a076-f953c3d7818d", "response": {"certificate_chain": null, "checksum": null, "created_time": "2026-09-09T05:59:02.370436+00:00", "ext_id": "da23f7f6-1dee-41f5-a076-f953c3d7818d", "file_status": "NOT_AVAILABLE", "links": null, "metadata_download_url": null, "metadata_status": "NOT_AVAILABLE", "name": "aos_image_ansible", "source": "REMOTE_URL", "tenant_id": "703c7c79-5e87-4813-a137-76c09b808db9", "type": "AOS", "url": null, "version": null}, "task_ext_id": "ZXJnb24=:9e4fb87e-ffe4-5a39-98b4-e45e93bb470c"}
+
+TASK [Set installer image external ID] *****************************************
+ok: [localhost] => {"ansible_facts": {"installer_image_ext_id": "da23f7f6-1dee-41f5-a076-f953c3d7818d"}, "changed": false}
+
+TASK [Update installer image with all attributes] ******************************
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Task Failed", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": null, "completed_time": "2026-09-09T05:59:05.042869+00:00", "completion_details": null, "created_time": "2026-09-09T05:59:04.994812+00:00", "entities_affected": null, "error_messages": [{"arguments_map": null, "code": "TSKS-20801", "error_group": "LEGACY_ERROR", "locale": "en_US", "message": "Operation failed due to legacy error and 'legacyErrorMessage' should be referred to for details", "severity": "ERROR"}], "ext_id": "ZXJnb24=:a43e6aab-ddc1-5040-afa6-b060fbf1c882", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-09-09T05:59:05.042868+00:00", "legacy_error_message": "Metadata is not available for image: da23f7f6-1dee-41f5-a076-f953c3d7818d: 400", "number_of_entities_affected": 0, "number_of_subtasks": 0, "operation": "InstallerImageTask", "operation_description": "Installer image task", "owned_by": null, "parent_task": null, "progress_percentage": 100, "resource_links": null, "root_task": null, "started_time": "2026-09-09T05:59:05.008300+00:00", "status": "FAILED", "sub_steps": null, "sub_tasks": null, "warnings": null}}
+...ignoring
+
+TASK [Fetch installer image using external ID] *********************************
+ok: [localhost] => {"changed": false, "ext_id": "da23f7f6-1dee-41f5-a076-f953c3d7818d", "response": {"certificate_chain": null, "checksum": null, "created_time": "2026-09-09T05:59:02.370436+00:00", "ext_id": "da23f7f6-1dee-41f5-a076-f953c3d7818d", "file_status": "NOT_AVAILABLE", "links": null, "metadata_download_url": null, "metadata_status": "NOT_AVAILABLE", "name": "aos_image_ansible", "source": "REMOTE_URL", "tenant_id": "703c7c79-5e87-4813-a137-76c09b808db9", "type": "AOS", "url": null, "version": null}}
+
+TASK [List all installer images] ***********************************************
+ok: [localhost] => {"changed": false, "response": [{"certificate_chain": null, "checksum": null, "created_time": "2026-09-09T05:59:02.370436+00:00", "ext_id": "da23f7f6-1dee-41f5-a076-f953c3d7818d", "file_status": "NOT_AVAILABLE", "links": null, "metadata_download_url": null, "metadata_status": "NOT_AVAILABLE", "name": "aos_image_ansible", "source": "REMOTE_URL", "tenant_id": "703c7c79-5e87-4813-a137-76c09b808db9", "type": "AOS", "url": null, "version": null}], "total_available_results": 1}
+
+TASK [Delete installer image] **************************************************
+changed: [localhost] => {"changed": true, "ext_id": "da23f7f6-1dee-41f5-a076-f953c3d7818d", "response": {"app_name": null, "batch_summary": null, "cluster_ext_ids": null, "completed_time": "2026-09-09T05:59:06.770000+00:00", "completion_details": null, "created_time": "2026-09-09T05:59:06.671650+00:00", "entities_affected": null, "error_messages": null, "ext_id": "ZXJnb24=:885ed609-3f8e-5092-b6a0-07af182f5efd", "is_background_task": false, "is_cancelable": false, "last_updated_time": "2026-09-09T05:59:06.769999+00:00", "legacy_error_message": null, "number_of_entities_affected": 0, "number_of_subtasks": 0, "operation": "ImageEntityDeletionTask", "operation_description": "Image entity deletion task", "owned_by": null, "parent_task": null, "progress_percentage": 100, "resource_links": null, "root_task": null, "started_time": "2026-09-09T05:59:06.684920+00:00", "status": "SUCCEEDED", "sub_steps": null, "sub_tasks": null, "warnings": null}, "task_ext_id": "ZXJnb24=:885ed609-3f8e-5092-b6a0-07af182f5efd"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+
