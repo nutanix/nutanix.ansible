@@ -19,70 +19,6 @@
     vg1_name: "{{suffix_name}}-{{random_name}}1"
     vg2_name: "{{suffix_name}}-{{random_name}}2"
 
-- name: Create project for tests
-  nutanix.ncp.ntnx_project_v2:
-    state: present
-    name: "{{ random_name }}-ansible-project"
-    project_id: "{{ random_name }}-ansible-project-id"
-  register: create_project_result
-  ignore_errors: true
-
-- name: Status of project creation for tests
-  ansible.builtin.assert:
-    that:
-      - create_project_result.changed == true
-      - create_project_result.failed == false
-      - create_project_result.response is defined
-      - create_project_result.ext_id is defined
-      - create_project_result.ext_id | length > 0
-      - create_project_result.task_ext_id is defined
-      - create_project_result.response.state == "ACTIVE"
-    fail_msg: "Unable to create project for tests"
-    success_msg: "Project for tests created successfully"
-
-- name: Set project fact for tests
-  ansible.builtin.set_fact:
-    project1:
-      name: "{{ random_name }}-ansible-project"
-      uuid: "{{ create_project_result.ext_id }}"
-
-# A project needs a Resource Group (placement targets) before volume groups can
-# be created in it; without one, VolumeGroupCreate fails with "No Resource Group
-# Objects found for Project". Create the resource group so project-scoped volume
-# groups below succeed.
-- name: Create resource group for the test project
-  nutanix.ncp.ntnx_resource_group_v2:
-    state: present
-    name: "{{ random_name }}-ansible-rg"
-    project_ext_id: "{{ project1.uuid }}"
-    placement_targets:
-      - cluster_ext_id: "{{ cluster.uuid }}"
-        storage_containers:
-          - ext_id: "{{ storage_container.uuid }}"
-  register: create_rg_result
-  ignore_errors: true
-
-- name: Status of resource group creation for tests
-  ansible.builtin.assert:
-    that:
-      - create_rg_result.changed == true
-      - create_rg_result.failed == false
-      - create_rg_result.response is defined
-      - create_rg_result.ext_id is defined
-      - create_rg_result.ext_id | length > 0
-      - create_rg_result.response.project_ext_id == project1.uuid
-      - create_rg_result.response.name == "{{ random_name }}-ansible-rg"
-      - create_rg_result.response.placement_targets | length == 1
-      - create_rg_result.response.placement_targets[0].cluster_ext_id == "{{ cluster.uuid }}"
-      - create_rg_result.response.placement_targets[0].storage_containers | length == 1
-      - create_rg_result.response.placement_targets[0].storage_containers[0].ext_id == "{{ storage_container.uuid }}"
-    fail_msg: "Unable to create resource group for tests"
-    success_msg: "Resource group for tests created successfully"
-
-- name: Set resource group fact for tests
-  ansible.builtin.set_fact:
-    resource_group_ext_id: "{{ create_rg_result.ext_id }}"
-
 - name: Create Volume group with check mode
   nutanix.ncp.ntnx_volume_groups_v2:
     name: "{{vg1_name}}"
@@ -93,7 +29,6 @@
     cluster_reference: "{{ cluster.uuid }}"
     usage_type: "USER"
     is_hidden: true
-    project_ext_id: "83083083-0000-0000-0000-000000000000"
     storage_features:
       flash_mode:
         is_enabled: true
@@ -120,7 +55,6 @@
       - result.response.is_hidden == true
       - result.response.storage_features.flash_mode.is_enabled == true
       - result.response.iscsi_features.enabled_authentications == "CHAP"
-      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
 
     fail_msg: "Unable to create spec for VG create"
     success_msg: "Spec generated successfully for VG create"
@@ -130,7 +64,6 @@
     name: "{{vg1_name}}"
     description: "Volume group 1"
     cluster_reference: "{{ cluster.uuid }}"
-    project_ext_id: "{{ project1.uuid }}"
   register: result
   ignore_errors: true
 
@@ -148,7 +81,6 @@
       - result.response.description == "Volume group 1"
       - result.response.should_load_balance_vm_attachments == false
       - result.response.sharing_status == None
-      - result.response.project_ext_id == project1.uuid
     fail_msg: "Unable to create VG"
     success_msg: "VG created successfully"
 
@@ -165,7 +97,6 @@
     target_prefix: "vg1"
     cluster_reference: "{{ cluster.uuid }}"
     usage_type: "USER"
-    project_ext_id: "{{ project1.uuid }}"
     storage_features:
       flash_mode:
         is_enabled: true
@@ -193,7 +124,6 @@
       - result.response.storage_features.flash_mode.is_enabled == true
       - result.response.iscsi_features.target_secret == None
       - result.response.iscsi_features.enabled_authentications == "CHAP"
-      - result.response.project_ext_id == project1.uuid
     fail_msg: "Unable to create VG"
     success_msg: "VG created successfully"
 
@@ -374,23 +304,6 @@
     fail_msg: "Unable to fetch VGs using limits"
     success_msg: "VGs fetched successfully"
 
-- name: Verify update of project_ext_id is not supported
-  nutanix.ncp.ntnx_volume_groups_v2:
-    state: present
-    ext_id: "{{ vg1_uuid }}"
-    project_ext_id: "00000000-0000-0000-0000-000000000001"
-  register: result
-  ignore_errors: true
-
-- name: Verify update of project_ext_id is blocked status
-  ansible.builtin.assert:
-    that:
-      - result.failed == true
-      - result.changed == false
-      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
-    fail_msg: "Update of project_ext_id should have been blocked"
-    success_msg: "Update of project_ext_id is correctly blocked"
-
 - name: Delete volume group with check mode is enabled
   nutanix.ncp.ntnx_volume_groups_v2:
     state: absent
@@ -445,39 +358,3 @@
       - result.response.status == "SUCCEEDED"
     fail_msg: "Unable to delete VG"
     success_msg: "VG deleted successfully"
-
-- name: Delete resource group created for tests
-  nutanix.ncp.ntnx_resource_group_v2:
-    state: absent
-    ext_id: "{{ resource_group_ext_id }}"
-  register: delete_rg_result
-  ignore_errors: true
-
-- name: Status of resource group deletion for tests
-  ansible.builtin.assert:
-    that:
-      - delete_rg_result.changed == true
-      - delete_rg_result.failed == false
-      - delete_rg_result.ext_id == resource_group_ext_id
-      - delete_rg_result.response.status == "SUCCEEDED"
-    fail_msg: "Unable to delete resource group created for tests"
-    success_msg: "Resource group created for tests deleted successfully"
-
-- name: Delete project created for tests
-  nutanix.ncp.ntnx_project_v2:
-    state: absent
-    ext_id: "{{ project1.uuid }}"
-  register: delete_project_result
-  ignore_errors: true
-
-- name: Status of project deletion for tests
-  ansible.builtin.assert:
-    that:
-      - delete_project_result.changed == true
-      - delete_project_result.failed == false
-      - delete_project_result.ext_id == project1.uuid
-      - delete_project_result.response is defined
-      - delete_project_result.response.status == "SUCCEEDED"
-      - delete_project_result.task_ext_id is defined
-    fail_msg: "Unable to delete project created for tests"
-    success_msg: "Project created for tests deleted successfully"

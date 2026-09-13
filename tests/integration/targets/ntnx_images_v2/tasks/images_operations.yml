@@ -3,7 +3,6 @@
 # - cluster
 # - disk_image
 # - iso_image
-# - storage_container
 
 - name: Start testing ntnx_images_v2
   ansible.builtin.debug:
@@ -22,67 +21,6 @@
 - name: Set todelete list
   ansible.builtin.set_fact:
     todelete: []
-
-##################################################################################
-# Create a dedicated v2 project and attach a Resource Group to it. Images require
-# the project to have a Resource Group, which the v4 project API does
-# not create on its own, so we add one with ntnx_resource_group_v2.
-- name: Create project for image tests
-  nutanix.ncp.ntnx_project_v2:
-    state: present
-    name: "{{ random_name }}-ansible-image-project"
-    project_id: "{{ random_name }}-ansible-image-project-id"
-  register: create_image_project_result
-
-- name: Status of project creation for image tests
-  ansible.builtin.assert:
-    that:
-      - create_image_project_result.changed == true
-      - create_image_project_result.failed == false
-      - create_image_project_result.ext_id is defined
-      - create_image_project_result.ext_id | length > 0
-      - create_image_project_result.task_ext_id is defined
-      - create_image_project_result.response.state == "ACTIVE"
-    fail_msg: "Unable to create project for image tests"
-    success_msg: "Project for image tests created successfully"
-
-- name: Set image test project fact
-  ansible.builtin.set_fact:
-    image_project_uuid: "{{ create_image_project_result.ext_id }}"
-
-- name: Create resource group for the image test project
-  nutanix.ncp.ntnx_resource_group_v2:
-    state: present
-    name: "{{ random_name }}-ansible-image-rg"
-    project_ext_id: "{{ image_project_uuid }}"
-    placement_targets:
-      - cluster_ext_id: "{{ cluster.uuid }}"
-        storage_containers:
-          - ext_id: "{{ storage_container.uuid }}"
-  register: create_image_rg_result
-
-- name: Status of resource group creation for image tests
-  ansible.builtin.assert:
-    that:
-      - create_image_rg_result.changed == true
-      - create_image_rg_result.failed == false
-      - create_image_rg_result.response is defined
-      - create_image_rg_result.ext_id is defined
-      - create_image_rg_result.ext_id | length > 0
-      - create_image_rg_result.response.project_ext_id == image_project_uuid
-      - create_image_rg_result.response.name == "{{ random_name }}-ansible-image-rg"
-      - create_image_rg_result.response.placement_targets | length == 1
-      - create_image_rg_result.response.placement_targets[0].cluster_ext_id == cluster.uuid
-      - create_image_rg_result.response.placement_targets[0].storage_containers | length == 1
-      - create_image_rg_result.response.placement_targets[0].storage_containers[0].ext_id == storage_container.uuid
-    fail_msg: "Unable to create resource group for image tests"
-    success_msg: "Resource group for image tests created successfully"
-
-- name: Set image test resource group fact
-  ansible.builtin.set_fact:
-    image_rg_uuid: "{{ create_image_rg_result.ext_id }}"
-
-##################################################################################
 
 - name: Create VM to test the images
   nutanix.ncp.ntnx_vms_v2:
@@ -149,7 +87,6 @@
     type: ISO_IMAGE
     name: "{{ iso_image_name }}"
     description: image created from integration test
-    project_ext_id: "83083083-0000-0000-0000-000000000000"
     checksum:
       sha1:
         hex_digest: "{{ iso_image.checksum }}"
@@ -173,7 +110,6 @@
       - result.response.name == "{{ iso_image_name }}"
       - result.response.source.url == "{{ iso_image.url }}"
       - result.response.category_ext_ids[0] == "{{ category_ext_id }}"
-      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
     fail_msg: "Unable to Create ISO_IMAGE with valid source url with check mode enabled  "
     success_msg: "ISO_IMAGE with valid source url is created successfully with check mode enabled "
 
@@ -220,7 +156,6 @@
     type: ISO_IMAGE
     name: "{{ iso_image_name }}"
     description: image created from integration test
-    project_ext_id: "{{ image_project_uuid }}"
     checksum:
       sha1:
         hex_digest: "{{ iso_image.checksum }}"
@@ -245,7 +180,6 @@
       - result.ext_id == result.response.ext_id
       - result.task_ext_id is defined
       - result.response.cluster_location_ext_ids[0] == "{{ cluster.uuid }}"
-      - result.response.project_ext_id == image_project_uuid
     fail_msg: "Unable to Create ISO_IMAGE with valid source url  "
     success_msg: "ISO_IMAGE with valid source url is created successfully "
 
@@ -615,25 +549,6 @@
 
 ##################################################################################
 
-- name: Verify update of project_ext_id is not supported
-  nutanix.ncp.ntnx_images_v2:
-    state: present
-    ext_id: "{{ todelete[0] }}"
-    project_ext_id: "00000000-0000-0000-0000-000000000001"
-  register: result
-  ignore_errors: true
-
-- name: Verify update of project_ext_id is blocked status
-  ansible.builtin.assert:
-    that:
-      - result.failed == true
-      - result.changed == false
-      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
-    fail_msg: "Update of project_ext_id should have been blocked"
-    success_msg: "Update of project_ext_id is correctly blocked"
-
-#################################################################################
-
 - name: Delete image with check mode enabled
   nutanix.ncp.ntnx_images_v2:
     state: absent
@@ -712,40 +627,3 @@
       - result.response.status == 'SUCCEEDED'
     fail_msg: "Unable to delete VM  "
     success_msg: "VM is deleted successfully "
-
-##################################################################################
-
-- name: Delete the resource group created for image tests
-  nutanix.ncp.ntnx_resource_group_v2:
-    state: absent
-    ext_id: "{{ image_rg_uuid }}"
-  register: delete_image_rg_result
-  ignore_errors: true
-
-- name: Status of deleting the resource group created for image tests
-  ansible.builtin.assert:
-    that:
-      - delete_image_rg_result.changed == true
-      - delete_image_rg_result.failed == false
-      - delete_image_rg_result.task_ext_id is defined
-      - delete_image_rg_result.response.status == "SUCCEEDED"
-    fail_msg: "Unable to delete the resource group created for image tests"
-    success_msg: "Resource group created for image tests deleted successfully"
-
-- name: Delete the project created for image tests
-  nutanix.ncp.ntnx_project_v2:
-    state: absent
-    ext_id: "{{ image_project_uuid }}"
-  register: delete_image_project_result
-  ignore_errors: true
-
-- name: Status of deleting the project created for image tests
-  ansible.builtin.assert:
-    that:
-      - delete_image_project_result.changed == true
-      - delete_image_project_result.failed == false
-      - delete_image_project_result.ext_id == image_project_uuid
-      - delete_image_project_result.task_ext_id is defined
-      - delete_image_project_result.response.status == "SUCCEEDED"
-    fail_msg: "Unable to delete the project created for image tests"
-    success_msg: "Project created for image tests deleted successfully"

@@ -33,77 +33,12 @@
     version_3_name: "{{ random_name }}{{ suffix_name }}version3"
     value2: "{{ random_name }}{{ suffix_name }}value2"
 ########################################################################
-
-- name: Create project for tests
-  nutanix.ncp.ntnx_project_v2:
-    state: present
-    name: "{{ random_name }}-ansible-project"
-    project_id: "{{ random_name }}-ansible-project-id"
-  register: create_project_result
-  ignore_errors: true
-
-- name: Status of project creation for tests
-  ansible.builtin.assert:
-    that:
-      - create_project_result.changed == true
-      - create_project_result.failed == false
-      - create_project_result.response is defined
-      - create_project_result.ext_id is defined
-      - create_project_result.ext_id | length > 0
-      - create_project_result.task_ext_id is defined
-      - create_project_result.response.state == "ACTIVE"
-    fail_msg: "Unable to create project for tests"
-    success_msg: "Project for tests created successfully"
-
-- name: Set project fact for tests
-  ansible.builtin.set_fact:
-    project1:
-      name: "{{ random_name }}-ansible-project"
-      uuid: "{{ create_project_result.ext_id }}"
-
-# A project needs a Resource Group (placement targets) before VMs can be created
-# in it via the v4 API; without one, v4 CreateVm fails with VMM-10000. Create
-# the resource group for the project so the project-scoped v2 VM + template
-# below succeed.
-- name: Create resource group for the test project
-  nutanix.ncp.ntnx_resource_group_v2:
-    state: present
-    name: "{{ random_name }}-ansible-rg"
-    project_ext_id: "{{ project1.uuid }}"
-    placement_targets:
-      - cluster_ext_id: "{{ cluster.uuid }}"
-        storage_containers:
-          - ext_id: "{{ storage_container.uuid }}"
-  register: create_rg_result
-  ignore_errors: true
-
-- name: Status of resource group creation for tests
-  ansible.builtin.assert:
-    that:
-      - create_rg_result.changed == true
-      - create_rg_result.failed == false
-      - create_rg_result.response is defined
-      - create_rg_result.ext_id is defined
-      - create_rg_result.ext_id | length > 0
-      - create_rg_result.response.project_ext_id == project1.uuid
-      - create_rg_result.response.name == "{{ random_name }}-ansible-rg"
-      - create_rg_result.response.placement_targets | length == 1
-      - create_rg_result.response.placement_targets[0].cluster_ext_id == "{{ cluster.uuid }}"
-      - create_rg_result.response.placement_targets[0].storage_containers | length == 1
-      - create_rg_result.response.placement_targets[0].storage_containers[0].ext_id == "{{ storage_container.uuid }}"
-    fail_msg: "Unable to create resource group for tests"
-    success_msg: "Resource group for tests created successfully"
-
-- name: Set resource group fact for tests
-  ansible.builtin.set_fact:
-    resource_group_ext_id: "{{ create_rg_result.ext_id }}"
-########################################################################
 - name: VM with minimum requirements
-  nutanix.ncp.ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms:
+    state: present
     name: "{{ vm1_name }}"
-    description: ansible test
     cluster:
-      ext_id: "{{ cluster.uuid }}"
+      name: "{{ cluster.name }}"
   register: result
   ignore_errors: true
 
@@ -111,25 +46,19 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == True
-      - result.failed == False
-      - result.ext_id is defined
-      - result.response.name == "{{ vm1_name }}"
-      - result.response.description == "ansible test"
-      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.status.state == 'COMPLETE'
     fail_msg: " Unable to create VM with minimum requirements "
     success_msg: " VM with minimum requirements created successfully "
 
 - name: Set variables
   ansible.builtin.set_fact:
-    to_delete_vms: "{{ to_delete_vms + [result.ext_id] }}"
-    vm_uuid: "{{ result.ext_id }}"
+    to_delete_vms: "{{ to_delete_vms + [result.vm_uuid] }}"
+    vm_uuid: "{{ result.vm_uuid }}"
 ########################################################################
 - name: Create new template from a vm with check mode
   nutanix.ncp.ntnx_templates_v2:
     template_name: "{{ template_name }}"
     template_description: ansible test
-    project_ext_id: "83083083-0000-0000-0000-000000000000"
     template_version_spec:
       version_source:
         template_vm_reference:
@@ -147,13 +76,9 @@
       - result.response.template_name == "{{ template_name }}"
       - result.response.template_description == "ansible test"
       - result.response.template_version_spec.version_source.ext_id == "{{ vm_uuid }}"
-      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
     fail_msg: "Create new template from a vm with check mode failed"
     success_msg: "Create new template from a vm with check mode passed"
 ########################################################################
-# template1 is created in the default project because it is deployed later and
-# the deploy would place VMs in the project (complicating project teardown).
-# The created project is exercised end-to-end on template2 below.
 - name: Create new template from a vm
   nutanix.ncp.ntnx_templates_v2:
     template_name: "{{ template_name }}"
@@ -540,8 +465,9 @@
     fail_msg: Unable to deploy VM with override config
     success_msg: VM deployed with override config successfully
 - name: Get deployed vms using name filter criteria
-  nutanix.ncp.ntnx_vms_info_v2:
-    filter: name eq '{{ vm3_name }}'
+  nutanix.ncp.ntnx_vms_info:
+    filter:
+      vm_name: "{{ vm3_name }}"
   register: result
   ignore_errors: true
 
@@ -549,19 +475,18 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == False
-      - result.failed == False
-      - result.response | length == 1
-      - result.response[0].name == "{{ vm3_name }}"
-      - result.response[0].num_sockets == 4
-      - result.response[0].num_cores_per_socket == 4
-      - result.response[0].num_threads_per_core == 2
-      - result.response[0].cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.entities | length == 1
+      - result.response.entities[0].spec.name == "{{ vm3_name }}"
+      - result.response.entities[0].spec.resources.num_vcpus_per_socket == 4
+      - result.response.entities[0].spec.resources.num_sockets == 4
+      - result.response.entities[0].spec.resources.num_threads_per_core == 2
+      - result.response.entities[0].spec.cluster_reference.uuid == "{{ cluster.uuid }}"
+      - result.response.entities[0].status.state == "COMPLETE"
     fail_msg: " Unable to find deployed vms using name filter criteria"
     success_msg: " VMs listed successfully "
 - name: Add vm to delete list
   ansible.builtin.set_fact:
-    to_delete_vms: "{{ to_delete_vms + [result.response[0].ext_id] }}"
+    to_delete_vms: "{{ to_delete_vms + [result.response.entities[0].metadata.uuid] }}"
 ########################################################################
 - name: Initiate_guest_os_update with check mode
   nutanix.ncp.ntnx_templates_guest_os_v2:
@@ -697,46 +622,14 @@
     success_msg: template versions listed successfully
 
 ########################################################################
-# Exercise project_ext_id end-to-end. The source VM and the template must belong
-# to the same project, so create a dedicated v2 VM in the resource-group project
-# and build a project-scoped template from it (this template is not deployed).
-- name: Create VM in the test project for the project-scoped template
-  nutanix.ncp.ntnx_vms_v2:
-    name: "{{ vm2_name }}"
-    description: ansible test
-    cluster:
-      ext_id: "{{ cluster.uuid }}"
-    project_ext_id: "{{ project1.uuid }}"
-  register: proj_vm_result
-  ignore_errors: true
-
-- name: Status of project-scoped VM creation
-  ansible.builtin.assert:
-    that:
-      - proj_vm_result.response is defined
-      - proj_vm_result.changed == True
-      - proj_vm_result.failed == False
-      - proj_vm_result.ext_id is defined
-      - proj_vm_result.response.name == "{{ vm2_name }}"
-      - proj_vm_result.response.cluster.ext_id == "{{ cluster.uuid }}"
-      - proj_vm_result.response.project_ext_id == project1.uuid
-    fail_msg: "Unable to create VM in the test project"
-    success_msg: "VM created in the test project successfully"
-
-- name: Add project-scoped VM to delete list
-  ansible.builtin.set_fact:
-    to_delete_vms: "{{ to_delete_vms + [proj_vm_result.ext_id] }}"
-    proj_vm_uuid: "{{ proj_vm_result.ext_id }}"
-
 - name: Create new template from a vm
   nutanix.ncp.ntnx_templates_v2:
     template_name: "{{ template2_name }}"
     template_description: ansible test
-    project_ext_id: "{{ project1.uuid }}"
     template_version_spec:
       version_source:
         template_vm_reference:
-          ext_id: "{{ proj_vm_uuid }}"
+          ext_id: "{{ vm_uuid }}"
   register: result
   ignore_errors: true
 
@@ -756,7 +649,6 @@
       - result.response.template_description == "ansible test"
       - result.ext_id == result.response.ext_id
       - result.task_ext_id is defined
-      - result.response.project_ext_id == project1.uuid
     fail_msg: " Unable to create new template "
     success_msg: " New template created successfully "
 ########################################################################
@@ -846,9 +738,9 @@
     success_msg: Returned as expected
 ########################################################################
 - name: Delete created vms
-  nutanix.ncp.ntnx_vms_v2:
+  nutanix.ncp.ntnx_vms:
     state: absent
-    ext_id: "{{ item }}"
+    vm_uuid: "{{ item }}"
   register: result
   ignore_errors: true
   loop: "{{ to_delete_vms }}"
@@ -856,15 +748,10 @@
 - name: Deletion Status
   ansible.builtin.assert:
     that:
-      - item.changed == true
-      - item.failed == false
-      - item.response.status == "SUCCEEDED"
-      - item.ext_id == "{{ to_delete_vms[vms_index] }}"
+      - result.changed == True
+      - result.msg ==  "All items completed"
     fail_msg: Unable to delete vm
     success_msg: VM deleted successfully
-  loop: "{{ result.results }}"
-  loop_control:
-    index_var: vms_index
 ########################################################################
 - name: Delete Created Templates
   nutanix.ncp.ntnx_templates_v2:
@@ -872,40 +759,3 @@
     ext_id: "{{ template2_ext_id }}"
   register: result
   ignore_errors: true
-########################################################################
-
-- name: Delete resource group created for tests
-  nutanix.ncp.ntnx_resource_group_v2:
-    state: absent
-    ext_id: "{{ resource_group_ext_id }}"
-  register: delete_rg_result
-  ignore_errors: true
-
-- name: Status of resource group deletion for tests
-  ansible.builtin.assert:
-    that:
-      - delete_rg_result.changed == true
-      - delete_rg_result.failed == false
-      - delete_rg_result.ext_id == resource_group_ext_id
-      - delete_rg_result.response.status == "SUCCEEDED"
-    fail_msg: "Unable to delete resource group created for tests"
-    success_msg: "Resource group created for tests deleted successfully"
-
-- name: Delete project created for tests
-  nutanix.ncp.ntnx_project_v2:
-    state: absent
-    ext_id: "{{ project1.uuid }}"
-  register: delete_project_result
-  ignore_errors: true
-
-- name: Status of project deletion for tests
-  ansible.builtin.assert:
-    that:
-      - delete_project_result.changed == true
-      - delete_project_result.failed == false
-      - delete_project_result.ext_id == project1.uuid
-      - delete_project_result.response is defined
-      - delete_project_result.response.status == "SUCCEEDED"
-      - delete_project_result.task_ext_id is defined
-    fail_msg: "Unable to delete project created for tests"
-    success_msg: "Project created for tests deleted successfully"

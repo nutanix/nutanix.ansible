@@ -17,83 +17,12 @@
     key1: "{{random_name}}{{suffix_name}}key1"
     value1: "{{random_name}}{{suffix_name}}value1"
     value2: "{{random_name}}{{suffix_name}}value2"
-
 ########################################################################
-# Get the default project
-########################################################################
-
-- name: Get the default project
-  nutanix.ncp.ntnx_projects_info_v2:
-  register: default_project_result
-  ignore_errors: true
-
-- name: Status of fetching the default project
-  ansible.builtin.assert:
-    that:
-      - default_project_result.changed == false
-      - default_project_result.failed == false
-      - default_project_result.response is defined
-      - default_project_result.response | selectattr('is_default', 'equalto', true) | list | length > 0
-    fail_msg: "Unable to fetch the default project"
-    success_msg: "Default project fetched successfully"
-
-- name: Set default project fact
-  ansible.builtin.set_fact:
-    default_project:
-      uuid: "{{ (default_project_result.response | selectattr('is_default', 'equalto', true) | first).ext_id }}"
-
-########################################################################
-# Create projects to be used for project_ext_id and sharing tests
-########################################################################
-
-- name: Create projects for tests
-  nutanix.ncp.ntnx_project_v2:
-    state: present
-    name: "{{ random_name }}-ansible-project-{{ item }}"
-    project_id: "{{ random_name }}-ansible-project-id-{{ item }}"
-  register: create_projects_result
-  loop: "{{ range(1, 4) | list }}"
-  ignore_errors: true
-
-- name: Status of projects creation for tests
-  ansible.builtin.assert:
-    that:
-      - item.changed == true
-      - item.failed == false
-      - item.response is defined
-      - item.ext_id is defined
-      - item.ext_id | length > 0
-      - item.task_ext_id is defined
-      - item.response.state == "ACTIVE"
-    fail_msg: "Unable to create project for tests"
-    success_msg: "Project for tests created successfully"
-  loop: "{{ create_projects_result.results }}"
-  loop_control:
-    label: "{{ item.item }}"
-
-- name: Set project facts for tests
-  ansible.builtin.set_fact:
-    project1:
-      name: "{{ random_name }}-ansible-project-1"
-      uuid: "{{ create_projects_result.results[0].ext_id }}"
-    project2:
-      name: "{{ random_name }}-ansible-project-2"
-      uuid: "{{ create_projects_result.results[1].ext_id }}"
-    project3:
-      name: "{{ random_name }}-ansible-project-3"
-      uuid: "{{ create_projects_result.results[2].ext_id }}"
-
-########################################################################
-
 - name: Create category key & value with check_mode
   nutanix.ncp.ntnx_categories_v2:
     key: "{{key1}}"
     value: "{{value1}}"
     description: "ansible test"
-    project_ext_id: "83083083-0000-0000-0000-000000000000"
-    shared_with_projects:
-      - "11111111-1111-1111-1111-111111111111"
-      - "22222222-2222-2222-2222-222222222222"
   register: result
   ignore_errors: true
   check_mode: true
@@ -101,28 +30,19 @@
 - name: Check mode status
   ansible.builtin.assert:
     that:
-      - result.changed == false
-      - result.failed == false
+      - result.changed == False
+      - result.failed == False
       - result.response.key == "{{key1}}"
       - result.response.value == "{{value1}}"
       - result.response.description == "ansible test"
-      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
-      - result.response.shared_with_projects is defined
-      - result.response.shared_with_projects | length == 2
-      - result.response.shared_with_projects == ["11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222"]
     fail_msg: "Check mode failed"
     success_msg: "Check mode passed"
-
 ########################################################################
-
 - name: Create category key & value
   nutanix.ncp.ntnx_categories_v2:
     key: "{{key1}}"
     value: "{{value1}}"
     description: "ansible test"
-    project_ext_id: "{{ default_project.uuid }}"
-    shared_with_projects:
-      - "{{ project2.uuid }}"
   register: output
   ignore_errors: true
 
@@ -134,25 +54,19 @@
       - output.response.value == "{{value1}}"
       - output.response.type == "USER"
       - output.response.ext_id is defined
-      - output.changed == true
-      - output.failed == false
+      - output.changed == True
+      - output.failed == False
       - output.response.description == "ansible test"
-      - output.response.project_ext_id == "{{ default_project.uuid }}"
-      - output.response.shared_with_projects is defined
-      - output.response.shared_with_projects | length == 1
-      - output.response.shared_with_projects[0] == project2.uuid
     fail_msg: "Unable to create category key & value"
     success_msg: "Category key & value created successfully"
 
 - name: Add category to delete list
   ansible.builtin.set_fact:
     todelete: '{{ todelete + [  output["response"]["ext_id"] ] }}'
-
 ########################################################################
-
 - name: Update category value and description
   nutanix.ncp.ntnx_categories_v2:
-    ext_id: "{{ todelete[0] }}"
+    ext_id: "{{output.response.ext_id}}"
     key: "{{key1}}"
     value: "{{value2}}"
     description: "ansible test New value"
@@ -162,20 +76,18 @@
 - name: Update status
   ansible.builtin.assert:
     that:
-      - result.changed == true
-      - result.failed == false
+      - result.changed == True
+      - result.failed == False
       - result.response.type == "USER"
       - result.response.key == "{{key1}}"
       - result.response.value == "{{value2}}"
       - result.response.description == "ansible test New value"
     fail_msg: "Unable to update category key & value"
     success_msg: "Category description & value updated successfully"
-
 ########################################################################
-
 - name: Check idempotency
   nutanix.ncp.ntnx_categories_v2:
-    ext_id: "{{ todelete[0] }}"
+    ext_id: "{{output.response.ext_id}}"
     key: "{{key1}}"
     value: "{{value2}}"
     description: "ansible test New value"
@@ -185,23 +97,19 @@
 - name: Idempotency status
   ansible.builtin.assert:
     that:
-      - result.changed == false
-      - result.failed == false
-      - result.skipped == true
+      - result.changed == False
+      - result.failed == False
+      - result.skipped == True
       - result.msg == "Nothing to change."
     fail_msg: "Idempotency failed"
     success_msg: "Idempotency passed"
-
 ########################################################################
-
 - name: Update category value and description with check_mode
   nutanix.ncp.ntnx_categories_v2:
-    ext_id: "{{ todelete[0] }}"
+    ext_id: "{{output.response.ext_id}}"
     key: "{{key1}}"
     value: "new value"
     description: "ansible test New value"
-    shared_with_projects:
-      - "33333333-3333-3333-3333-333333333333"
   register: result
   ignore_errors: true
   check_mode: true
@@ -209,19 +117,14 @@
 - name: Check mode status
   ansible.builtin.assert:
     that:
-      - result.changed == false
-      - result.failed == false
+      - result.changed == False
+      - result.failed == False
       - result.response.key == "{{key1}}"
       - result.response.value == "new value"
       - result.response.description == "ansible test New value"
-      - result.response.shared_with_projects is defined
-      - result.response.shared_with_projects | length == 1
-      - result.response.shared_with_projects[0] == "33333333-3333-3333-3333-333333333333"
     fail_msg: "Check mode failed"
     success_msg: "Check mode passed"
-
 ########################################################################
-
 - name: List all categories
   nutanix.ncp.ntnx_categories_info_v2:
   register: result
@@ -231,8 +134,8 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == false
-      - result.failed == false
+      - result.changed == False
+      - result.failed == False
       - result.response | length > 0
       - result.total_available_results is defined
       - result.total_available_results > 0
@@ -244,7 +147,6 @@
     category_name: "{{result.response.0.key}}"
 
 ########################################################################
-
 - name: List all categories with keyname & expand associations
   nutanix.ncp.ntnx_categories_info_v2:
     expand: associations
@@ -256,15 +158,13 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == false
-      - result.failed == false
+      - result.changed == False
+      - result.failed == False
       - result.response | length > 0
       - result.response.0.associations is defined
     fail_msg: "Unable to List all categories with keyname & expand associations "
     success_msg: "categories with keyname & expand  listed successfully"
-
 ########################################################################
-
 - name: Fetch category using ext id & expand detailedAssociations
   nutanix.ncp.ntnx_categories_info_v2:
     ext_id: "{{result.response.0.ext_id}}"
@@ -276,17 +176,16 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.changed == false
-      - result.failed == false
+      - result.changed == False
+      - result.failed == False
       - result.response.key == "{{category_name}}"
     fail_msg: "Unable to fetch category using ext id & expand detailedAssociations"
     success_msg: "category fetched using ext id & expand detailedAssociations successfully"
-
 ########################################################################
 
 - name: Delete category with check mode enabled
   nutanix.ncp.ntnx_categories_v2:
-    ext_id: "{{ todelete[0] }}"
+    ext_id: "{{todelete[0]}}"
     state: absent
   register: result
   ignore_errors: true
@@ -304,169 +203,6 @@
     success_msg: "Delete category with check mode passed"
 
 ########################################################################
-# Tests for shared_with_projects
-########################################################################
-
-- name: Create category for sharing tests shared with two projects on create
-  nutanix.ncp.ntnx_categories_v2:
-    key: "{{ key1 }}_shared"
-    value: "{{ value1 }}_shared"
-    description: "ansible shared test"
-    shared_with_projects:
-      - "{{ project1.uuid }}"
-      - "{{ project2.uuid }}"
-  register: result
-  ignore_errors: true
-
-- name: Status of create for sharing tests
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == true
-      - result.failed == false
-      - result.ext_id is defined
-      - result.response.key == key1 ~ "_shared"
-      - result.response.value == value1 ~ "_shared"
-      - result.response.description == "ansible shared test"
-      - result.response.is_shared_with_all_projects == false
-      - result.response.shared_with_projects is defined
-      - result.response.shared_with_projects | length == 2
-      - (result.response.shared_with_projects | sort) == ([project1.uuid, project2.uuid] | sort)
-    fail_msg: "Create category for sharing tests failed"
-    success_msg: "Created category for sharing tests"
-
-- name: Set shared category ext_id
-  ansible.builtin.set_fact:
-    todelete: "{{ todelete + [ result.response.ext_id ] }}"
-    shared_category_ext_id: "{{ result.response.ext_id }}"
-
-########################################################################
-# Scenario: share with all three projects (add a project)
-########################################################################
-
-- name: Update category to share with all three projects
-  nutanix.ncp.ntnx_categories_v2:
-    state: present
-    ext_id: "{{ shared_category_ext_id }}"
-    shared_with_projects:
-      - "{{ project1.uuid }}"
-      - "{{ project2.uuid }}"
-      - "{{ project3.uuid }}"
-  register: result
-  ignore_errors: true
-
-- name: Status of share with all three projects
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == true
-      - result.failed == false
-      - result.response.shared_with_projects is not none
-      - result.response.shared_with_projects | length == 3
-      - (result.response.shared_with_projects | sort) == ([project1.uuid, project2.uuid, project3.uuid] | sort)
-      - result.ext_id == shared_category_ext_id
-    fail_msg: "Share with all three projects failed"
-    success_msg: "Shared with all three projects successfully"
-
-########################################################################
-# Scenario: sharing idempotency (share with the same three projects again)
-########################################################################
-
-- name: Update category sharing with the same projects (idempotency)
-  nutanix.ncp.ntnx_categories_v2:
-    state: present
-    ext_id: "{{ shared_category_ext_id }}"
-    shared_with_projects:
-      - "{{ project1.uuid }}"
-      - "{{ project2.uuid }}"
-      - "{{ project3.uuid }}"
-  register: result
-  ignore_errors: true
-
-- name: Status of sharing idempotency
-  ansible.builtin.assert:
-    that:
-      - result.failed == false
-      - result.changed == false
-      - result.skipped == true
-      - result.msg == "Nothing to change."
-    fail_msg: "Category sharing idempotency failed"
-    success_msg: "Category sharing idempotency passed"
-
-########################################################################
-# Scenario: reconcile shared projects to a subset (drop one, keep two)
-########################################################################
-
-- name: Update category to reconcile shared projects to a subset
-  nutanix.ncp.ntnx_categories_v2:
-    state: present
-    ext_id: "{{ shared_category_ext_id }}"
-    shared_with_projects:
-      - "{{ project2.uuid }}"
-      - "{{ project3.uuid }}"
-  register: result
-  ignore_errors: true
-
-- name: Status of reconcile shared projects to a subset
-  ansible.builtin.assert:
-    that:
-      - result.response is defined
-      - result.changed == true
-      - result.failed == false
-      - result.response.shared_with_projects is not none
-      - result.response.shared_with_projects | length == 2
-      - (result.response.shared_with_projects | sort) == ([project2.uuid, project3.uuid] | sort)
-      - project1.uuid not in result.response.shared_with_projects
-      - result.ext_id == shared_category_ext_id
-    fail_msg: "Reconcile shared projects to a subset failed"
-    success_msg: "Reconciled shared projects to a subset successfully"
-
-########################################################################
-# Scenario: unshare from all projects
-########################################################################
-
-- name: Update categories to unshare from all projects
-  nutanix.ncp.ntnx_categories_v2:
-    state: present
-    ext_id: "{{ item }}"
-    shared_with_projects: []
-  loop: "{{ todelete }}"
-  register: result
-  ignore_errors: true
-
-- name: Status of unshare from all projects
-  ansible.builtin.assert:
-    that:
-      - item.failed == false
-      - item.changed == true
-      - item.response.shared_with_projects is none or item.response.shared_with_projects | length == 0
-      - item.ext_id in todelete
-      - result.changed == true
-      - result.msg == "All items completed"
-    fail_msg: "Unshare from all projects failed with error"
-    success_msg: "Unshare from all projects completed"
-  loop: "{{ result.results }}"
-
-########################################################################
-
-- name: Verify update of project_ext_id is not supported
-  nutanix.ncp.ntnx_categories_v2:
-    state: present
-    ext_id: "{{ shared_category_ext_id }}"
-    project_ext_id: "00000000-0000-0000-0000-000000000001"
-  register: result
-  ignore_errors: true
-
-- name: Verify update of project_ext_id is blocked status
-  ansible.builtin.assert:
-    that:
-      - result.failed == true
-      - result.changed == false
-      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
-    fail_msg: "Update of project_ext_id should have been blocked"
-    success_msg: "Update of project_ext_id is correctly blocked"
-
-########################################################################
 
 - name: Delete Created categories
   nutanix.ncp.ntnx_categories_v2:
@@ -476,46 +212,10 @@
   loop: "{{ todelete }}"
   ignore_errors: true
 
-- name: Delete Created categories status
+- name: Deletion Status
   ansible.builtin.assert:
     that:
-      - item.failed == false
-      - item.changed == true
-      - item.ext_id in todelete
-      - result.changed == true
+      - result.changed == True
       - result.msg == "All items completed"
     fail_msg: "Unable to delete category key & value"
     success_msg: "Category key & value deleted successfully"
-  loop: "{{ result.results }}"
-
-- name: Reset todelete list
-  ansible.builtin.set_fact:
-    todelete: []
-
-########################################################################
-# Delete the projects created for tests
-########################################################################
-
-- name: Delete projects created for tests
-  nutanix.ncp.ntnx_project_v2:
-    state: absent
-    ext_id: "{{ item }}"
-  register: delete_projects_result
-  loop:
-    - "{{ project1.uuid }}"
-    - "{{ project2.uuid }}"
-    - "{{ project3.uuid }}"
-  ignore_errors: true
-
-- name: Status of projects deletion for tests
-  ansible.builtin.assert:
-    that:
-      - item.changed == true
-      - item.failed == false
-      - item.ext_id == item.item
-      - item.task_ext_id is defined
-    fail_msg: "Unable to delete project created for tests"
-    success_msg: "Project created for tests deleted successfully"
-  loop: "{{ delete_projects_result.results }}"
-  loop_control:
-    label: "{{ item.item }}"

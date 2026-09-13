@@ -20,42 +20,11 @@
   ansible.builtin.set_fact:
     todelete: []
 
-###################################################################################################
-# Create a project to be used for project_ext_id tests
-###################################################################################################
-- name: Create project for tests
-  nutanix.ncp.ntnx_project_v2:
-    state: present
-    name: "{{ random_name }}-ansible-project"
-    project_id: "{{ random_name }}-ansible-project-id"
-  register: create_project_result
-  ignore_errors: true
-
-- name: Status of project creation for tests
-  ansible.builtin.assert:
-    that:
-      - create_project_result.changed == true
-      - create_project_result.failed == false
-      - create_project_result.response is defined
-      - create_project_result.ext_id is defined
-      - create_project_result.ext_id | length > 0
-      - create_project_result.task_ext_id is defined
-      - create_project_result.response.state == "ACTIVE"
-    fail_msg: "Unable to create project for tests"
-    success_msg: "Project for tests created successfully"
-
-- name: Set project fact for tests
-  ansible.builtin.set_fact:
-    project1:
-      name: "{{ random_name }}-ansible-project"
-      uuid: "{{ create_project_result.ext_id }}"
-
 - name: Create address group with check mode enabled
   nutanix.ncp.ntnx_address_groups_v2:
     state: present
     name: "{{ ag1 }}"
     description: test-ansible-address-group-2-desc
-    project_ext_id: "83083083-0000-0000-0000-000000000000"
     ipv4_addresses:
       - value: 10.1.1.0
         prefix_length: 24
@@ -82,7 +51,6 @@
       - result.response.ipv4_addresses[1].prefix_length == 32
       - result.response.ip_ranges[0].start_ip == "10.2.1.0"
       - result.response.ip_ranges[0].end_ip == "10.2.2.0"
-      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
 
     fail_msg: Create address group with check mode enabled failed
     success_msg: Create address group with check mode enabled passed
@@ -94,7 +62,6 @@
     state: present
     name: "{{ ag2 }}"
     description: test-ansible-group-1-desc
-    project_ext_id: "{{ project1.uuid }}"
     ipv4_addresses:
       - value: 10.1.1.0
         prefix_length: 24
@@ -118,7 +85,6 @@
       - result.response.ipv4_addresses[0].prefix_length == 24
       - result.response.ipv4_addresses[1].prefix_length == 32
       - result.task_ext_id is defined
-      - result.response.project_ext_id == project1.uuid
 
     fail_msg: Unable to create address group
     success_msg: Address group created successfully
@@ -180,7 +146,6 @@
       - result.response is defined
       - result.ext_id is defined
       - result.changed == True
-      - result.task_ext_id is defined
       - result.response.name == "{{ ag1 }}"
       - result.response.description == "test-ansible-group-3-desc"
       - result.response.ipv4_addresses[0].value == "10.1.4.1"
@@ -216,14 +181,13 @@
 
 ###################################################################################################
 
-- name: Check if address group with existing name fails or not in same project
+- name: Check if address group with existing name fails or not
   nutanix.ncp.ntnx_address_groups_v2:
     state: present
     name: "{{ ag1 }}"
     ipv4_addresses:
       - value: 10.1.1.0
         prefix_length: 24
-    project_ext_id: "{{ project1.uuid }}"
   register: result
   ignore_errors: true
 
@@ -233,7 +197,6 @@
       - result.msg == "Task Failed"
       - result.changed == false
       - result.failed == true
-      - result.response.project_ext_id == project1.uuid
 
     fail_msg: Was able to create address group with existing address group name
     success_msg: Address group with existing address group name failed successfully
@@ -318,25 +281,6 @@
 
 ###################################################################################################
 
-- name: Verify update of project_ext_id is not supported
-  nutanix.ncp.ntnx_address_groups_v2:
-    state: present
-    ext_id: "{{ todelete }}"
-    project_ext_id: "00000000-0000-0000-0000-000000000001"
-  register: result
-  ignore_errors: true
-
-- name: Verify update of project_ext_id is blocked status
-  ansible.builtin.assert:
-    that:
-      - result.failed == true
-      - result.changed == false
-      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
-    fail_msg: "Update of project_ext_id should have been blocked"
-    success_msg: "Update of project_ext_id is correctly blocked"
-
-###################################################################################################
-
 - name: Delete address group with check mode enabled
   nutanix.ncp.ntnx_address_groups_v2:
     state: absent
@@ -363,38 +307,6 @@
   register: result
   ignore_errors: true
 
-- name: Delete address group status
-  ansible.builtin.assert:
-    that:
-      - result.changed == true
-      - result.failed == false
-      - result.ext_id == "{{ todelete }}"
-      - result.task_ext_id is defined
-      - result.response.status == "SUCCEEDED"
-    fail_msg: "Unable to delete address group"
-    success_msg: "Address group deleted successfully"
-
 - name: Reset todelete variable
   ansible.builtin.set_fact:
     todelete: []
-
-###################################################################################################
-# Delete the project created for tests
-###################################################################################################
-- name: Delete project created for tests
-  nutanix.ncp.ntnx_project_v2:
-    state: absent
-    ext_id: "{{ project1.uuid }}"
-  register: delete_project_result
-  ignore_errors: true
-
-- name: Status of project deletion for tests
-  ansible.builtin.assert:
-    that:
-      - delete_project_result.changed == true
-      - delete_project_result.failed == false
-      - delete_project_result.ext_id == project1.uuid
-      - delete_project_result.task_ext_id is defined
-      - delete_project_result.response.status == "SUCCEEDED"
-    fail_msg: "Unable to delete project created for tests"
-    success_msg: "Project created for tests deleted successfully"

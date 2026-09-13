@@ -31,9 +31,6 @@
   nutanix.ncp.ntnx_projects:
     name: "{{project2_name}}"
     collaboration: true
-    directory_reference_list:
-      - kind: directory_service
-        uuid: "{{ open_ldap_uuid }}"
     role_mappings:
       - role:
           name: "{{role_mappings[0]}}"
