@@ -6,251 +6,251 @@
   tasks:
     - name: Include var file for environment preparation
       ansible.builtin.include_vars: ../vars/main.yml
-    # - name: Create external subnet with NAT
-    #   nutanix.ncp.ntnx_subnets:
-    #     state: present
-    #     nutanix_host: "{{ ip }}"
-    #     nutanix_username: "{{ username | default(omit) }}"
-    #     nutanix_password: "{{ password | default(omit) }}"
-    #     nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
-    #     nutanix_debug: "{{ nutanix_debug | default(omit) }}"
-    #     nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
-    #     validate_certs: false
-    #     name: "{{external_nat_subnets[0].name}}_{{ external_nat_subnets[0].vlan_id }}"
-    #     external_subnet:
-    #       vlan_id: "{{external_nat_subnets[0].vlan_id}}"
-    #       enable_nat: true
-    #       cluster:
-    #         name: "{{ cluster.name }}"
-    #       ipam:
-    #         network_ip: "{{ external_nat_subnets[0].network_ip }}"
-    #         network_prefix: "{{ external_nat_subnets[0].network_prefix }}"
-    #         gateway_ip: "{{ external_nat_subnets[0].gateway_ip_address }}"
-    #         ip_pools:
-    #           - start_ip: "{{ external_nat_subnets[0].dhcp.start_address }}"
-    #             end_ip: "{{ external_nat_subnets[0].dhcp.end_address }}"
-    #   register: result
-    # - name: Insert external subnet configuration block to vars
-    #   ansible.builtin.blockinfile:
-    #     path: ../vars/main.yml
-    #     marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 1"
-    #     block: |
-    #       external_nat_subnet:
-    #         name: "{{external_nat_subnets[0].name}}_{{ external_nat_subnets[0].vlan_id }}"
-    #         uuid: "{{result.subnet_uuid}}"
+    - name: Create external subnet with NAT
+      nutanix.ncp.ntnx_subnets:
+        state: present
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username | default(omit) }}"
+        nutanix_password: "{{ password | default(omit) }}"
+        nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
+        nutanix_debug: "{{ nutanix_debug | default(omit) }}"
+        nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
+        validate_certs: false
+        name: "{{external_nat_subnets[0].name}}_{{ external_nat_subnets[0].vlan_id }}"
+        external_subnet:
+          vlan_id: "{{external_nat_subnets[0].vlan_id}}"
+          enable_nat: true
+          cluster:
+            name: "{{ cluster.name }}"
+          ipam:
+            network_ip: "{{ external_nat_subnets[0].network_ip }}"
+            network_prefix: "{{ external_nat_subnets[0].network_prefix }}"
+            gateway_ip: "{{ external_nat_subnets[0].gateway_ip_address }}"
+            ip_pools:
+              - start_ip: "{{ external_nat_subnets[0].dhcp.start_address }}"
+                end_ip: "{{ external_nat_subnets[0].dhcp.end_address }}"
+      register: result
+    - name: Insert external subnet configuration block to vars
+      ansible.builtin.blockinfile:
+        path: ../vars/main.yml
+        marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 1"
+        block: |
+          external_nat_subnet:
+            name: "{{external_nat_subnets[0].name}}_{{ external_nat_subnets[0].vlan_id }}"
+            uuid: "{{result.subnet_uuid}}"
 
-    # - name: Create min VPC with external_subnet uuid
-    #   nutanix.ncp.ntnx_vpcs:
-    #     state: present
-    #     nutanix_host: "{{ ip }}"
-    #     nutanix_username: "{{ username | default(omit) }}"
-    #     nutanix_password: "{{ password | default(omit) }}"
-    #     nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
-    #     nutanix_debug: "{{ nutanix_debug | default(omit) }}"
-    #     nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
-    #     validate_certs: false
-    #     name: "{{vpc_name}}_{{ external_nat_subnets[0].vlan_id }}"
-    #     external_subnets:
-    #       - subnet_uuid: "{{ result.subnet_uuid }}"
-    #   register: result
+    - name: Create min VPC with external_subnet uuid
+      nutanix.ncp.ntnx_vpcs:
+        state: present
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username | default(omit) }}"
+        nutanix_password: "{{ password | default(omit) }}"
+        nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
+        nutanix_debug: "{{ nutanix_debug | default(omit) }}"
+        nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
+        validate_certs: false
+        name: "{{vpc_name}}_{{ external_nat_subnets[0].vlan_id }}"
+        external_subnets:
+          - subnet_uuid: "{{ result.subnet_uuid }}"
+      register: result
 
-    # - name: Insert  VPC configuration block to vars
-    #   ansible.builtin.blockinfile:
-    #     path: ../vars/main.yml
-    #     marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 2"
-    #     block: |
-    #       vpc:
-    #         name: "{{vpc_name}}_{{ external_nat_subnets[0].vlan_id }}"
-    #         uuid: "{{result.vpc_uuid}}"
+    - name: Insert  VPC configuration block to vars
+      ansible.builtin.blockinfile:
+        path: ../vars/main.yml
+        marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 2"
+        block: |
+          vpc:
+            name: "{{vpc_name}}_{{ external_nat_subnets[0].vlan_id }}"
+            uuid: "{{result.vpc_uuid}}"
 
-    # - name: Create vlan subnet with IPAM
-    #   nutanix.ncp.ntnx_subnets:
-    #     state: present
-    #     nutanix_host: "{{ ip }}"
-    #     nutanix_username: "{{ username | default(omit) }}"
-    #     nutanix_password: "{{ password | default(omit) }}"
-    #     nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
-    #     nutanix_debug: "{{ nutanix_debug | default(omit) }}"
-    #     nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
-    #     validate_certs: false
-    #     name: "{{static_subnet_name}}_{{ external_nat_subnets[0].vlan_id }}"
-    #     vlan_subnet:
-    #       vlan_id: "{{ (external_nat_subnets[0].vlan_id | int) + 1 }}"
-    #       virtual_switch:
-    #         name: vs0
-    #       cluster:
-    #         name: "{{ cluster.name }}"
-    #       ipam:
-    #         network_ip: 10.30.30.0
-    #         network_prefix: 24
-    #         gateway_ip: 10.30.30.254
-    #         ip_pools:
-    #           - start_ip: 10.30.30.10
-    #             end_ip: 10.30.30.90
-    #   register: result
+    - name: Create vlan subnet with IPAM
+      nutanix.ncp.ntnx_subnets:
+        state: present
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username | default(omit) }}"
+        nutanix_password: "{{ password | default(omit) }}"
+        nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
+        nutanix_debug: "{{ nutanix_debug | default(omit) }}"
+        nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
+        validate_certs: false
+        name: "{{static_subnet_name}}_{{ external_nat_subnets[0].vlan_id }}"
+        vlan_subnet:
+          vlan_id: "{{ (external_nat_subnets[0].vlan_id | int) + 1 }}"
+          virtual_switch:
+            name: vs0
+          cluster:
+            name: "{{ cluster.name }}"
+          ipam:
+            network_ip: 10.30.30.0
+            network_prefix: 24
+            gateway_ip: 10.30.30.254
+            ip_pools:
+              - start_ip: 10.30.30.10
+                end_ip: 10.30.30.90
+      register: result
 
-    # - name: Insert vlan subnet configuration block to var file
-    #   ansible.builtin.blockinfile:
-    #     path: ../vars/main.yml
-    #     marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 3"
-    #     block: |
-    #       static:
-    #         name: "{{static_subnet_name}}_{{ external_nat_subnets[0].vlan_id }}"
-    #         uuid: "{{result.subnet_uuid}}"
-    #         network_ip: 10.30.30.0
-    #         network_prefix: 24
-    #         gateway_ip: 10.30.30.254
+    - name: Insert vlan subnet configuration block to var file
+      ansible.builtin.blockinfile:
+        path: ../vars/main.yml
+        marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 3"
+        block: |
+          static:
+            name: "{{static_subnet_name}}_{{ external_nat_subnets[0].vlan_id }}"
+            uuid: "{{result.subnet_uuid}}"
+            network_ip: 10.30.30.0
+            network_prefix: 24
+            gateway_ip: 10.30.30.254
 
-    # - name: Include var file
-    #   ansible.builtin.include_vars: ../vars/main.yml
-    # - name: Create overlay Subnet with minimum requirements
-    #   nutanix.ncp.ntnx_subnets:
-    #     state: present
-    #     nutanix_host: "{{ ip }}"
-    #     nutanix_username: "{{ username | default(omit) }}"
-    #     nutanix_password: "{{ password | default(omit) }}"
-    #     nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
-    #     nutanix_debug: "{{ nutanix_debug | default(omit) }}"
-    #     nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
-    #     validate_certs: false
-    #     name: "{{overlay_subnet.name}}_{{ external_nat_subnets[0].vlan_id }}"
-    #     overlay_subnet:
-    #       vpc:
-    #         uuid: "{{ vpc.uuid }}"
-    #       ipam:
-    #         network_ip: "{{overlay_subnet.network_ip}}"
-    #         network_prefix: "{{overlay_subnet.network_prefix}}"
-    #         gateway_ip: "{{overlay_subnet.gateway_ip}}"
-    #   register: result
+    - name: Include var file
+      ansible.builtin.include_vars: ../vars/main.yml
+    - name: Create overlay Subnet with minimum requirements
+      nutanix.ncp.ntnx_subnets:
+        state: present
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username | default(omit) }}"
+        nutanix_password: "{{ password | default(omit) }}"
+        nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
+        nutanix_debug: "{{ nutanix_debug | default(omit) }}"
+        nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
+        validate_certs: false
+        name: "{{overlay_subnet.name}}_{{ external_nat_subnets[0].vlan_id }}"
+        overlay_subnet:
+          vpc:
+            uuid: "{{ vpc.uuid }}"
+          ipam:
+            network_ip: "{{overlay_subnet.network_ip}}"
+            network_prefix: "{{overlay_subnet.network_prefix}}"
+            gateway_ip: "{{overlay_subnet.gateway_ip}}"
+      register: result
 
-    # - name: Insert overlay subnet configuration block to var file
-    #   ansible.builtin.blockinfile:
-    #     path: ../vars/main.yml
-    #     marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 4"
-    #     block: |
-    #       overlay:
-    #         name: "{{overlay_subnet.name}}_{{ external_nat_subnets[0].vlan_id }}"
-    #         uuid: "{{result.subnet_uuid}}"
+    - name: Insert overlay subnet configuration block to var file
+      ansible.builtin.blockinfile:
+        path: ../vars/main.yml
+        marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 4"
+        block: |
+          overlay:
+            name: "{{overlay_subnet.name}}_{{ external_nat_subnets[0].vlan_id }}"
+            uuid: "{{result.subnet_uuid}}"
 
-    # - name: Create VM with overlay subnet
+    - name: Create VM with overlay subnet
+      nutanix.ncp.ntnx_vms:
+        state: present
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username | default(omit) }}"
+        nutanix_password: "{{ password | default(omit) }}"
+        nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
+        nutanix_debug: "{{ nutanix_debug | default(omit) }}"
+        nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
+        validate_certs: false
+        name: "{{vm_name}}_{{ external_nat_subnets[0].vlan_id }}"
+        cluster:
+          uuid: "{{ cluster.uuid }}"
+        networks:
+          - is_connected: true
+            subnet:
+              name: "{{overlay_subnet.name}}_{{ external_nat_subnets[0].vlan_id }}"
+            private_ip: "{{overlay_subnet.private_ip}}"
+          - is_connected: true
+            subnet:
+              name: "{{overlay_subnet.name}}_{{ external_nat_subnets[0].vlan_id }}"
+            private_ip: "{{overlay_subnet.private_ip1}}"
+      register: result
+
+    - name: Insert vm configuration block to var file
+      ansible.builtin.blockinfile:
+        path: ../vars/main.yml
+        marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 5"
+        block: |
+          vm:
+            name: "{{vm_name}}_{{ external_nat_subnets[0].vlan_id }}"
+            uuid: "{{result.vm_uuid}}"
+
+    # - name: create VM with static subnet for dr tests
     #   nutanix.ncp.ntnx_vms:
     #     state: present
     #     nutanix_host: "{{ ip }}"
-    #     nutanix_username: "{{ username | default(omit) }}"
-    #     nutanix_password: "{{ password | default(omit) }}"
-    #     nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
-    #     nutanix_debug: "{{ nutanix_debug | default(omit) }}"
-    #     nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
+    #     nutanix_username: "{{ username }}"
+    #     nutanix_password: "{{ password }}"
     #     validate_certs: false
-    #     name: "{{vm_name}}_{{ external_nat_subnets[0].vlan_id }}"
+    #     name: "{{dr_vm_name}}"
+    #     categories:
+    #       Environment:
+    #         - Staging
+    #         - Testing
     #     cluster:
     #       uuid: "{{ cluster.uuid }}"
     #     networks:
-    #       - is_connected: true
-    #         subnet:
-    #           name: "{{overlay_subnet.name}}_{{ external_nat_subnets[0].vlan_id }}"
-    #         private_ip: "{{overlay_subnet.private_ip}}"
-    #       - is_connected: true
-    #         subnet:
-    #           name: "{{overlay_subnet.name}}_{{ external_nat_subnets[0].vlan_id }}"
-    #         private_ip: "{{overlay_subnet.private_ip1}}"
+    #         - is_connected: true
+    #           subnet:
+    #             name: "{{static_subnet_name}}"
+    #     vcpus: 1
+    #     cores_per_vcpu: 1
+    #     memory_gb: 1
     #   register: result
 
     # - name: Insert vm configuration block to var file
     #   ansible.builtin.blockinfile:
     #     path: ../vars/main.yml
-    #     marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 5"
+    #     marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 6"
     #     block: |
-    #       vm:
-    #         name: "{{vm_name}}_{{ external_nat_subnets[0].vlan_id }}"
-    #         uuid: "{{result.vm_uuid}}"
+    #         dr_vm:
+    #           name: "{{dr_vm_name}}"
+    #           uuid: "{{result.vm_uuid}}"
 
-    # # - name: create VM with static subnet for dr tests
-    # #   nutanix.ncp.ntnx_vms:
-    # #     state: present
-    # #     nutanix_host: "{{ ip }}"
-    # #     nutanix_username: "{{ username }}"
-    # #     nutanix_password: "{{ password }}"
-    # #     validate_certs: false
-    # #     name: "{{dr_vm_name}}"
-    # #     categories:
-    # #       Environment:
-    # #         - Staging
-    # #         - Testing
-    # #     cluster:
-    # #       uuid: "{{ cluster.uuid }}"
-    # #     networks:
-    # #         - is_connected: true
-    # #           subnet:
-    # #             name: "{{static_subnet_name}}"
-    # #     vcpus: 1
-    # #     cores_per_vcpu: 1
-    # #     memory_gb: 1
-    # #   register: result
+    - name: Check if cirros image already exists locally
+      ansible.builtin.stat:
+        path: "{{ cirros_image.dest }}"
+      register: cirros_image_stat
 
-    # # - name: Insert vm configuration block to var file
-    # #   ansible.builtin.blockinfile:
-    # #     path: ../vars/main.yml
-    # #     marker: "# {mark} ANSIBLE MANAGED BLOCK insertion 6"
-    # #     block: |
-    # #         dr_vm:
-    # #           name: "{{dr_vm_name}}"
-    # #           uuid: "{{result.vm_uuid}}"
+    - name: Downloading small cirros image for object store upload tests
+      ansible.builtin.get_url:
+        mode: "0644"
+        url: "{{ cirros_image.url }}"
+        dest: "{{ cirros_image.dest }}"
+        timeout: 120
+      when: not cirros_image_stat.stat.exists
 
-    # - name: Check if cirros image already exists locally
-    #   ansible.builtin.stat:
-    #     path: "{{ cirros_image.dest }}"
-    #   register: cirros_image_stat
+    - name: Check if disk image already exists locally
+      ansible.builtin.stat:
+        path: "{{ disk_image.dest }}"
+      register: disk_image_stat
 
-    # - name: Downloading small cirros image for object store upload tests
-    #   ansible.builtin.get_url:
-    #     mode: "0644"
-    #     url: "{{ cirros_image.url }}"
-    #     dest: "{{ cirros_image.dest }}"
-    #     timeout: 120
-    #   when: not cirros_image_stat.stat.exists
+    - name: Downloading disk image for image related tests
+      ansible.builtin.get_url:
+        mode: "0644"
+        url: "{{ disk_image.url }}"
+        dest: "{{ disk_image.dest }}"
+        timeout: 120
+      when: not disk_image_stat.stat.exists
+    #   # - name: create address group for network security policy related tests
+    #   #   nutanix.ncp.ntnx_address_groups:
+    #   #     state: present
+    #   #     name: dest
+    #   #     desc: dest
+    #   #     subnets:
+    #   #       - network_ip: "10.1.1.0"
+    #   #         network_prefix: 24
 
-    # - name: Check if disk image already exists locally
-    #   ansible.builtin.stat:
-    #     path: "{{ disk_image.dest }}"
-    #   register: disk_image_stat
+    - name: Check if saml xml content already exists locally
+      ansible.builtin.stat:
+        path: "{{ xml_content.dest }}"
+      register: xml_content_stat
 
-    # - name: Downloading disk image for image related tests
-    #   ansible.builtin.get_url:
-    #     mode: "0644"
-    #     url: "{{ disk_image.url }}"
-    #     dest: "{{ disk_image.dest }}"
-    #     timeout: 120
-    #   when: not disk_image_stat.stat.exists
-    # #   # - name: create address group for network security policy related tests
-    # #   #   nutanix.ncp.ntnx_address_groups:
-    # #   #     state: present
-    # #   #     name: dest
-    # #   #     desc: dest
-    # #   #     subnets:
-    # #   #       - network_ip: "10.1.1.0"
-    # #   #         network_prefix: 24
+    - name: Downloading xml content for saml tests
+      ansible.builtin.get_url:
+        mode: "0644"
+        url: "{{ xml_content.url }}"
+        dest: "{{ xml_content.dest }}"
+      when: not xml_content_stat.stat.exists
 
-    # - name: Check if saml xml content already exists locally
-    #   ansible.builtin.stat:
-    #     path: "{{ xml_content.dest }}"
-    #   register: xml_content_stat
+    - name: Check if unattendxml file already exists locally
+      ansible.builtin.stat:
+        path: "{{ unattendxml.dest }}"
+      register: unattendxml_stat
 
-    # - name: Downloading xml content for saml tests
-    #   ansible.builtin.get_url:
-    #     mode: "0644"
-    #     url: "{{ xml_content.url }}"
-    #     dest: "{{ xml_content.dest }}"
-    #   when: not xml_content_stat.stat.exists
-
-    # - name: Check if unattendxml file already exists locally
-    #   ansible.builtin.stat:
-    #     path: "{{ unattendxml.dest }}"
-    #   register: unattendxml_stat
-
-    # - name: Downloading unattendxml file for windows tests
-    #   ansible.builtin.get_url:
-    #     mode: "0644"
-    #     url: "{{ unattendxml.url }}"
-    #     dest: "{{ unattendxml.dest }}"
-    #   when: not unattendxml_stat.stat.exists
+    - name: Downloading unattendxml file for windows tests
+      ansible.builtin.get_url:
+        mode: "0644"
+        url: "{{ unattendxml.url }}"
+        dest: "{{ unattendxml.dest }}"
+      when: not unattendxml_stat.stat.exists
