@@ -454,6 +454,10 @@
   register: result
   ignore_errors: true
 
+- name: Debug result
+  ansible.builtin.debug:
+    msg: "{{ result }}"
+
 - name: Check for idempotency Status
   ansible.builtin.assert:
     that:

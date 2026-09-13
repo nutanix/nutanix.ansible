@@ -31,31 +31,6 @@
   ansible.builtin.set_fact:
     ubuntu_image_uuid: "{{ ubuntu_image_result.response[0].ext_id }}"
 
-###################################################################################################
-# Fetch the default project to be used for project_ext_id tests.
-# Network functions can only be created in the default project (NETWORKING-10056),
-# so we use the default project's ext_id for the project-scoped create test.
-###################################################################################################
-- name: Get the default project
-  nutanix.ncp.ntnx_projects_info_v2:
-  register: default_project_result
-  ignore_errors: true
-
-- name: Status of fetching the default project
-  ansible.builtin.assert:
-    that:
-      - default_project_result.changed == false
-      - default_project_result.failed == false
-      - default_project_result.response is defined
-      - default_project_result.response | selectattr('is_default', 'equalto', true) | list | length > 0
-    fail_msg: "Unable to fetch the default project"
-    success_msg: "Default project fetched successfully"
-
-- name: Set project fact for network function tests
-  ansible.builtin.set_fact:
-    project1:
-      uuid: "{{ (default_project_result.response | selectattr('is_default', 'equalto', true) | first).ext_id }}"
-
 ##################################################
 - name: Create VLAN subnet without IPAM
   nutanix.ncp.ntnx_subnets_v2:
@@ -321,7 +296,6 @@
   nutanix.ncp.ntnx_network_function_v2:
     name: "test-network-function"
     description: "network function for testing purposes"
-    project_ext_id: "83083083-0000-0000-0000-000000000000"
     high_availability_mode: ACTIVE_PASSIVE
     failure_handling: FAIL_OPEN
     traffic_forwarding_mode: INLINE
@@ -359,7 +333,6 @@
       - network_function_spec.response is defined
       - network_function_spec.response.name == "test-network-function"
       - network_function_spec.response.description == "network function for testing purposes"
-      - network_function_spec.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
       - network_function_spec.response.high_availability_mode == "ACTIVE_PASSIVE"
       - network_function_spec.response.failure_handling == "FAIL_OPEN"
       - network_function_spec.response.traffic_forwarding_mode == "INLINE"
@@ -422,7 +395,6 @@
   nutanix.ncp.ntnx_network_function_v2:
     name: "{{ network_function_name }}_1"
     description: "network function for testing the first network function"
-    project_ext_id: "{{ project1.uuid }}"
     high_availability_mode: ACTIVE_PASSIVE
     failure_handling: FAIL_CLOSE
     traffic_forwarding_mode: INLINE
@@ -453,7 +425,6 @@
       - network_function_result.task_ext_id is defined
       - network_function_result.response.name == "{{ network_function_name }}_1"
       - network_function_result.response.description == "network function for testing the first network function"
-      - network_function_result.response.project_ext_id == project1.uuid
       - network_function_result.response.high_availability_mode == "ACTIVE_PASSIVE"
       - network_function_result.response.failure_handling == "FAIL_CLOSE"
       - network_function_result.response.traffic_forwarding_mode == "INLINE"
@@ -582,7 +553,7 @@
     that:
       - network_function_result.changed == false
       - network_function_result.failed == true
-      - 'network_function_result.msg == "state is present but any of the following are missing: name, ext_id"'
+      - network_function_result.msg == "state is present but any of the following are missing: name, ext_id"
     fail_msg: "Failed to validate missing name error"
     success_msg: "Missing name validation passed successfully"
 
@@ -767,23 +738,6 @@
       - network_function_result.msg == "Nothing to change."
     fail_msg: "Failed to test idempotency by updating network function with same spec"
     success_msg: "Test idempotency by updating network function with same spec is successful"
-
-- name: Verify update of project_ext_id is not supported
-  nutanix.ncp.ntnx_network_function_v2:
-    state: present
-    ext_id: "{{ network_function_ext_id_1 }}"
-    project_ext_id: "00000000-0000-0000-0000-000000000001"
-  register: network_function_result
-  ignore_errors: true
-
-- name: Verify update of project_ext_id is blocked status
-  ansible.builtin.assert:
-    that:
-      - network_function_result.failed == true
-      - network_function_result.changed == false
-      - 'network_function_result.msg == "Update is not supported for the following field(s): project_ext_id"'
-    fail_msg: "Update of project_ext_id should have been blocked"
-    success_msg: "Update of project_ext_id is correctly blocked"
 
 - name: Update network function with wrong vm and nic external IDs
   nutanix.ncp.ntnx_network_function_v2:

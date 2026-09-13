@@ -721,7 +721,7 @@
       - result.changed == false
       - result.failed == true
       - result.response is defined
-      - result.msg == "Api Exception raised while deleting entity group"
+      - result.msg == "Task Failed"
     fail_msg: Delete entity group with wrong ext_id did not fail as expected
     success_msg: Delete entity group with wrong ext_id failed as expected
 
