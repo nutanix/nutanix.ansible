@@ -3,7 +3,7 @@ Official Nutanix Ansible Collection
 
 ## Requirements
 
-To run any Nutanix Ansible module, the host must have the Python dependencies listed in [requirements.txt](https://github.com/nutanix/nutanix.ansible/blob/v2.5.0/requirements.txt)
+To run any Nutanix Ansible module, the host must have the Python dependencies listed in [requirements.txt](https://github.com/nutanix/nutanix.ansible/blob/v2.6.0/requirements.txt)
 Once the collection is installed, install these dependencies into your Python environment using pip: `pip install -r ~/.ansible/collections/ansible_collections/nutanix/ncp/requirements.txt`
 This collection requires ansible-core>=2.16.0. This should be installed explicitly if ansible-core version is not installed previously or is below the specified version.
 
@@ -16,11 +16,65 @@ It is designed keeping simplicity as the core value. Hence it is
 
 Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the-nutanix-ansible-module/) for getting started with nutanix ansible module.
 
-NOTE: The latest version of the Nutanix Ansible collection is [v2.5.0](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.5.0).
+NOTE: The latest version of the Nutanix Ansible collection is [v2.6.0](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.6.0).
 
-## Introducing Nutanix Ansible Collection Version v2.5.0
+## Introducing Nutanix Ansible Collection Version v2.6.0
 
-We are excited to announce the release of **Nutanix Ansible Collection v2.5.0** — a major update that brings powerful new features, enhancements, and critical bug fixes for automating your Nutanix infrastructure.
+We are excited to announce the release of **Nutanix Ansible Collection v2.6.0** — a major update that brings powerful new features, enhancements, and critical bug fixes for automating your Nutanix infrastructure.
+
+### What's New in v2.6.0
+
+- **Built on v4 APIs/SDKs**
+  This release continues to expand coverage of the latest Nutanix v4 APIs and SDKs, providing improved performance, stability, and alignment with the newest platform capabilities.
+
+- **New Resource Support**
+  - **Projects v4 (Prism)**: Create, update, delete, and list Projects using v4 SDKs. [#944](https://github.com/nutanix/nutanix.ansible/issues/944) [#838](https://github.com/nutanix/nutanix.ansible/issues/838)
+  - **Resource Groups (Prism)**: Manage resource groups using v4 SDKs. [#946](https://github.com/nutanix/nutanix.ansible/issues/946)
+  - **Role Memberships (IAM)**: Manage role memberships using v4 SDKs. [#945](https://github.com/nutanix/nutanix.ansible/issues/945)
+  - **Directory Services Connection (IAM)**: Manage directory services connections using v4 SDKs. [#1005](https://github.com/nutanix/nutanix.ansible/issues/1005)
+  - **SNMP (Cluster Management)**: Manage SNMP status, transport, traps, and users using v4 SDKs. [#930](https://github.com/nutanix/nutanix.ansible/issues/930)
+  - **Load Balancer Session (Networking)**: Manage load balancer sessions using v4 SDKs. [#1007](https://github.com/nutanix/nutanix.ansible/issues/1007)
+  - **VPC Virtual Switch Mapping (Networking)**: Manage VPC virtual switch mappings using v4 SDKs. [#996](https://github.com/nutanix/nutanix.ansible/issues/996)
+  - **VM Anti-Affinity Policy (VMM)**: Manage VM anti-affinity policies using v4 SDKs. [#992](https://github.com/nutanix/nutanix.ansible/issues/992)
+  - **VM Host Affinity Policy (VMM)**: Manage VM host affinity policies using v4 SDKs. [#993](https://github.com/nutanix/nutanix.ansible/issues/993)
+  - **VM Startup Policy (VMM)**: Manage VM startup policies using v4 SDKs. [#997](https://github.com/nutanix/nutanix.ansible/issues/997)
+  - **Template Placement Policy (VMM)**: Manage template placement policies using v4 SDKs. [#995](https://github.com/nutanix/nutanix.ansible/issues/995)
+  - **Image Rate Limit Policy (VMM)**: Manage image rate limit policies using v4 SDKs. [#998](https://github.com/nutanix/nutanix.ansible/issues/998)
+  - **VM Guest Customization Profile (VMM)**: Manage VM guest customization profiles using v4 SDKs. [#966](https://github.com/nutanix/nutanix.ansible/issues/966)
+  - **Directory Server Config and Category Mapping (Flow Management)**: Manage directory server configs and category mappings using v4 SDKs. [#994](https://github.com/nutanix/nutanix.ansible/issues/994)
+  - **Security Rules Export/Import (Flow Management)**: Export and import security rules using v4 SDKs. [#1311](https://github.com/nutanix/nutanix.ansible/issues/1311)
+  - **Object Store statistics and certificate authority download (Objects)**: Fetch object store statistics and download certificate authorities using v4 SDKs. [#1008](https://github.com/nutanix/nutanix.ansible/issues/1008)
+  - **ext_id lookup plugin (`ntnx_ext_id`)**: Resolve entity external IDs via an Ansible lookup plugin. [#1001](https://github.com/nutanix/nutanix.ansible/issues/1001)
+
+- **Major Improvements**
+  - **Projects 2.0 project_ext_id and share/unshare (Projects)**: Add `project_ext_id` and share/unshare project operations to existing modules. [#943](https://github.com/nutanix/nutanix.ansible/issues/943)
+  - **Missing project attributes (ntnx_projects)**: Add missing project attributes to the V3 projects module and update integration tests. [#1315](https://github.com/nutanix/nutanix.ansible/issues/1315)
+  - **VM ownership (ntnx_vms_v2)**: Add functionality to set ownership on VMs. [#757](https://github.com/nutanix/nutanix.ansible/issues/757)
+  - **IP search (ntnx_vms_info_v2)**: Add IP search option when listing/getting VMs. [#1021](https://github.com/nutanix/nutanix.ansible/issues/1021)
+  - **raise_api_exception on missing ext_id (All create v2 modules)**: Raise an API exception when entity `ext_id` is missing from task responses for create (non-info) v2 modules. [#1010](https://github.com/nutanix/nutanix.ansible/issues/1010)
+  - **check_mode-before-idempotency (All v4 update modules)**: Apply check_mode-before-idempotency convention to all v4 update modules. [#991](https://github.com/nutanix/nutanix.ansible/issues/991)
+  - **Categories API helper (ntnx_categories_v2)**: Add `get_categories_api_instance` to `pc_api_client` for categories modules. [#990](https://github.com/nutanix/nutanix.ansible/issues/990)
+  - **ext_id-based resource references (All v4/_v2 modules)**: Require `ext_id` for resource references; name-based resolution removed as v3 API modules deprecate. [#979](https://github.com/nutanix/nutanix.ansible/issues/979)
+  - **Inventory categories as key/value pairs (Inventory)**: Resolve inventory plugin categories to key/value pairs. [#963](https://github.com/nutanix/nutanix.ansible/issues/963)
+  - **base64 note for sysprep (guest_customization)**: Document base64 requirements for sysprep guest customization. [#952](https://github.com/nutanix/nutanix.ansible/issues/952)
+  - **Flow entities deprecation notice (Flow Management)**: Add deprecation notice in Flow entities. [#1317](https://github.com/nutanix/nutanix.ansible/issues/1317)
+
+- **Bug Fixes and Stability Improvements**
+  - `ntnx_prism_vm_inventory[_v2]` can set `ansible_host` to an APIPA address [#1305](https://github.com/nutanix/nutanix.ansible/issues/1305)
+  - `ntnx_subnets_v2` update fails with `NoneType` has no attribute `copy` when `ip_config` is null [#1019](https://github.com/nutanix/nutanix.ansible/issues/1019)
+  - Api Exception raised while fetching NGT info for a given VM in `ntnx_vms_ngt_v2` [#962](https://github.com/nutanix/nutanix.ansible/issues/962)
+  - `ntnx_categories_v2` is not idempotent [#890](https://github.com/nutanix/nutanix.ansible/issues/890)
+
+- **Breaking change**
+  - **ext_id-based resource references (All v4/_v2 modules)**: Require `ext_id` for resource references; name-based resolution removed as v3 API modules deprecate. [#979](https://github.com/nutanix/nutanix.ansible/issues/979)
+
+---
+
+Upgrade now to take advantage of these powerful features and streamline your Nutanix automation workflows!
+
+
+<details>
+<summary><b>Previous Release: v2.5.0</b></summary>
 
 ### What's New in v2.5.0
 
@@ -49,11 +103,6 @@ We are excited to announce the release of **Nutanix Ansible Collection v2.5.0** 
   - Unnecessary required fields for `state: present` in module ntnx_subnets_v2 [#895](https://github.com/nutanix/nutanix.ansible/issues/895)
   - Missing total_available_results in response in module ntnx_password_managers_info_v2 [#902](https://github.com/nutanix/nutanix.ansible/issues/902)
   - vSwitches spec issue in module ntnx_foundation [#749](https://github.com/nutanix/nutanix.ansible/issues/749)
-
----
-
-Upgrade now to take advantage of these powerful features and streamline your Nutanix automation workflows!
-
 
 <details>
 <summary><b>Previous Release: v2.4.0</b></summary>
@@ -93,6 +142,8 @@ Upgrade now to take advantage of these powerful features and streamline your Nut
 
 </details>
 
+</details>
+
 
 ## Important Notice
 Upcoming Deprecation of Legacy Nutanix Ansible Modules. Starting with the Nutanix Ansible Collection release planned for Q4-CY2026, legacy modules which are based on v0.8,v1,v2 and v3 APIs will be deprecated and no longer supported. For more information, visit
@@ -124,6 +175,7 @@ This collection requires Python 3.12 or greater
 
 | Ansible Version |  AOS Version | PC version  | Other software versions | Supported |
 |  :--- |  :--- | :--- | :--- | :--- |
+| 2.6.0 | 7.5, 7.5.1 |  pc7.5, pc7.5.1 or later| | yes |
 | 2.5.0 | 7.5, 7.5.1 |  pc7.5, pc7.5.1 or later| | yes |
 | 2.4.0 | 7.5 |  pc7.5 or later| | yes |
 | 2.3.0 | 7.3, 7.3.1 |  pc7.3, pc7.3.1 or later| | yes |
@@ -147,7 +199,7 @@ This collection requires Python 3.12 or greater
 
 | SDK | PC | PE |
 |  :--- |  :--- | :--- |
-| v4.2, v4.1, v4.0 | pc7.5, pc7.5.1 | 7.5, 7.5.1 |
+| v4.4, v4.3, v4.2, v4.1, v4.0 | pc7.5, pc7.5.1 | 7.5, 7.5.1 |
 | v4.1, v4.0 | pc7.3, pc7.3.1 | 7.3, 7.3.1 |
 | v4.0 | pc2024.3.1, pc2024.3 | 7.0.1, 7.0 |
 
@@ -190,7 +242,7 @@ Installation:
 
 ```ansible-galaxy collection install nutanix.ncp```
 
-Install [requirements](https://github.com/nutanix/nutanix.ansible/blob/v2.5.0/requirements.txt) from repository if dependencies are missing in environment (Ref: [GitHub Issue](https://github.com/nutanix/nutanix.ansible/issues/600)):
+Install [requirements](https://github.com/nutanix/nutanix.ansible/blob/v2.6.0/requirements.txt) from repository if dependencies are missing in environment (Ref: [GitHub Issue](https://github.com/nutanix/nutanix.ansible/issues/600)):
 
 ```pip install -r requirements.txt```
 
@@ -273,7 +325,7 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | ntnx_images | ntnx_images_v2 |
 | ntnx_image_placement_policy | ntnx_image_placement_policies_v2 |
 | ntnx_pbrs | ntnx_pbrs_v2 |
-| ntnx_projects | - |
+| ntnx_projects | ntnx_project_v2 |
 | ntnx_protection_rules | - |
 | ntnx_recovery_plans | - |
 | ntnx_recovery_plan_jobs | - |
@@ -385,6 +437,28 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_network_function_v2 |
 | - | ntnx_entity_group_v2 |
 | - | ntnx_virtual_switch_v2 |
+| - | ntnx_resource_group_v2 |
+| - | ntnx_role_membership_v2 |
+| - | ntnx_directory_services_connection_v2 |
+| - | ntnx_directory_service_search_v2 |
+| - | ntnx_directory_server_config_v2 |
+| - | ntnx_category_mapping_v2 |
+| - | ntnx_snmp_status_v2 |
+| - | ntnx_snmp_transport_v2 |
+| - | ntnx_snmp_trap_v2 |
+| - | ntnx_snmp_user_v2 |
+| - | ntnx_load_balancer_session_v2 |
+| - | ntnx_vpc_virtual_switch_mapping_v2 |
+| - | ntnx_vm_anti_affinity_policy_v2 |
+| - | ntnx_vm_host_affinity_policy_v2 |
+| - | ntnx_vm_host_affinity_policy_re_enforce_v2 |
+| - | ntnx_vm_startup_policy_v2 |
+| - | ntnx_template_placement_policy_v2 |
+| - | ntnx_image_rate_limit_policy_v2 |
+| - | ntnx_vm_guest_customization_profile_v2 |
+| - | ntnx_security_rules_export_v2 |
+| - | ntnx_security_rules_import_v2 |
+| - | ntnx_object_stores_certificate_download_v2 |
 
 
 ## Data Sources
@@ -400,7 +474,7 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | ntnx_image_placement_policies_info | ntnx_image_placement_policies_info_v2 |
 | ntnx_pbrs_info | ntnx_pbrs_info_v2 |
 | ntnx_permissions_info | ntnx_operations_info_v2 |
-| ntnx_projects_info | - |
+| ntnx_projects_info | ntnx_projects_info_v2 |
 | ntnx_protection_rules_info | - |
 | ntnx_recovery_plans_info | - |
 | ntnx_recovery_plan_jobs_info | - |
@@ -479,6 +553,30 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_security_policy_rules_info_v2 |
 | - | ntnx_iam_entities_info_v2 |
 | - | ntnx_virtual_switches_info_v2 |
+| - | ntnx_resource_groups_info_v2 |
+| - | ntnx_role_memberships_info_v2 |
+| - | ntnx_directory_server_configs_info_v2 |
+| - | ntnx_category_mappings_info_v2 |
+| - | ntnx_snmp_config_info_v2 |
+| - | ntnx_snmp_trap_info_v2 |
+| - | ntnx_snmp_user_info_v2 |
+| - | ntnx_load_balancer_sessions_info_v2 |
+| - | ntnx_vpc_virtual_switch_mappings_info_v2 |
+| - | ntnx_vm_anti_affinity_policies_info_v2 |
+| - | ntnx_vm_anti_affinity_policy_compliance_info_v2 |
+| - | ntnx_vm_host_affinity_policies_info_v2 |
+| - | ntnx_vm_startup_policies_info_v2 |
+| - | ntnx_template_placement_policies_info_v2 |
+| - | ntnx_image_rate_limit_policies_info_v2 |
+| - | ntnx_vm_guest_customization_profiles_info_v2 |
+| - | ntnx_object_stores_stats_info_v2 |
+
+
+## Lookup Plugins
+
+| Name | Description |
+| --- | --- |
+| ntnx_ext_id | Resolve Nutanix entity external IDs (ext_id) |
 
 
 ## Inventory Plugins
