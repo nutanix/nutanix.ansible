@@ -146,13 +146,21 @@ options:
             vm_disk_source:
                 description:
                     - The VM disk source of the image.
+                    - Providing C(ext_id) without C(vm_ext_id) is deprecated and will not be supported in a future release.
                 type: dict
                 suboptions:
                     ext_id:
                         description:
                             - The unique identifier of the VM disk.
+                            - Providing this identifier without C(vm_ext_id) is deprecated.
                         type: str
                         required: true
+                    vm_ext_id:
+                        description:
+                            - The external identifier of the source VM for the specified disk.
+                            - Strongly recommended with C(ext_id) to ensure compatibility with future releases.
+                        type: str
+                        required: false
             objects_lite_source:
                 description:
                     - The Objects Lite source of the image.
@@ -366,7 +374,10 @@ def get_module_spec():
         username=dict(type="str", required=True),
         password=dict(type="str", required=True, no_log=True),
     )
-    vm_disk_source = dict(ext_id=dict(type="str", required=True))
+    vm_disk_source = dict(
+        ext_id=dict(type="str", required=True),
+        vm_ext_id=dict(type="str"),
+    )
     url_source = dict(
         url=dict(type="str", required=True),
         should_allow_insecure_url=dict(type="bool", default=False),
@@ -426,6 +437,13 @@ def create_image(module, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating create Image Spec", **result)
+
+    vm_disk_source = (module.params.get("source") or {}).get("vm_disk_source") or {}
+    if vm_disk_source.get("ext_id") and not vm_disk_source.get("vm_ext_id"):
+        module.deprecate(
+            "Providing source.vm_disk_source.ext_id without source.vm_disk_source.vm_ext_id is deprecated and will not be supported in a future release.",
+            version="3.0.0",
+        )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())

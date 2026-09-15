@@ -37,6 +37,12 @@ options:
             - The external ID of the Volume Group.
         type: str
         required: false
+    expand:
+        description:
+            - Expand related resources when listing or getting a Volume Group.
+            - Use C(volumeGroupStats) to include volume group statistics.
+        type: str
+        required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
@@ -67,6 +73,14 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     ext_id: 530567f3-abda-4913-b5d0-0ab6758ec1653
+
+- name: List volume groups with stats expanded
+  nutanix.ncp.ntnx_volume_groups_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    expand: volumeGroupStats
 """
 
 RETURN = r"""
@@ -147,6 +161,7 @@ from ..module_utils.v4.volumes.api_client import get_vg_api_instance  # noqa: E4
 def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str"),
+        expand=dict(type="str"),
     )
     return module_args
 
@@ -154,9 +169,10 @@ def get_module_spec():
 def get_vg(module, result):
     vgs = get_vg_api_instance(module)
     ext_id = module.params.get("ext_id")
+    expand = module.params.get("expand")
 
     try:
-        resp = vgs.get_volume_group_by_id(extId=ext_id)
+        resp = vgs.get_volume_group_by_id(extId=ext_id, _expand=expand)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -172,7 +188,7 @@ def get_vgs(module, result):
     vgs = get_vg_api_instance(module)
 
     sg = SpecGenerator(module)
-    kwargs, err = sg.get_info_spec(attr=module.params)
+    kwargs, err = sg.get_info_spec(attr=module.params, extra_params=["expand"])
 
     if err:
         result["error"] = err

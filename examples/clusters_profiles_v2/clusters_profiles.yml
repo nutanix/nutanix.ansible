@@ -265,6 +265,10 @@
         pulse_status:
           is_enabled: "{{ cluster_profiles[0].pulse_status.is_enabled }}"
           pii_scrubbing_level: "{{ cluster_profiles[0].pulse_status.pii_scrubbing_level }}"
+        rebuild_reservation_config:
+          is_rebuild_reservation_enabled: true
+        resilient_capacity_warning_threshold_config:
+          resilient_capacity_warning_threshold_percentage: 80
       register: result
 
     - name: Set cluster profile external ID

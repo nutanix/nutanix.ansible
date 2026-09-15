@@ -168,6 +168,8 @@ options:
   nexthop:
     description:
       - Nexthop information for the route.
+      - Deprecated in favor of C(nexthops) to support multiple nexthops.
+      - Mutually exclusive with C(nexthops).
     type: dict
     suboptions:
       nexthop_type:
@@ -176,8 +178,11 @@ options:
         type: str
         required: true
         choices:
-          - VPN_CONNECTION
+          - IP_ADDRESS
+          - DIRECT_CONNECT_VIF
+          - LOCAL_SUBNET
           - EXTERNAL_SUBNET
+          - VPN_CONNECTION
       nexthop_reference:
         description:
           - Reference to the nexthop.
@@ -208,7 +213,63 @@ options:
             suboptions:
               value:
                 description:
+                  - IPv6 address.
+                type: str
+                required: true
+              prefix_length:
+                description:
+                  - Prefix length of the subnet.
+                type: int
+  nexthops:
+    description:
+      - List of nexthops for the route.
+      - Use this instead of C(nexthop) when more than one nexthop is required.
+      - Mutually exclusive with C(nexthop).
+    type: list
+    elements: dict
+    suboptions:
+      nexthop_type:
+        description:
+          - Type of the nexthop.
+        type: str
+        required: true
+        choices:
+          - IP_ADDRESS
+          - DIRECT_CONNECT_VIF
+          - LOCAL_SUBNET
+          - EXTERNAL_SUBNET
+          - VPN_CONNECTION
+      nexthop_reference:
+        description:
+          - Reference to the nexthop.
+        type: str
+      nexthop_ip_address:
+        description:
+          - IP address of the nexthop.
+        type: dict
+        suboptions:
+          ipv4:
+            description:
+              - IPv4 address.
+            type: dict
+            suboptions:
+              value:
+                description:
                   - IPv4 address.
+                type: str
+                required: true
+              prefix_length:
+                description:
+                  - Prefix length of the subnet.
+                type: int
+          ipv6:
+            description:
+              - IPv6 address.
+            type: dict
+            suboptions:
+              value:
+                description:
+                  - IPv6 address.
                 type: str
                 required: true
               prefix_length:
@@ -251,6 +312,32 @@ EXAMPLES = r"""
     metadata:
       owner_reference_id: "a1f7c8d4-3b9e-4891-b7ae-6c2d4e5f9b21"
       project_reference_id: "d7f1b9c3-6a5e-40d2-a1c4-e3f8b6a4d9f0"
+  register: result
+
+- name: Create route with multiple nexthops
+  nutanix.ncp.ntnx_routes_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: present
+    name: "route_test_nexthops"
+    description: "Route with multiple nexthops"
+    vpc_reference: "c9a4b37d-5f8d-4a2a-b639-2d8e1f5a0c67"
+    route_table_ext_id: "7f9a76a3-922b-4aba-8d79-e7eb5cdaf201"
+    route_type: STATIC
+    destination:
+      ipv4:
+        ip:
+          value: "10.0.1.0"
+        prefix_length: 24
+    nexthops:
+      - nexthop_type: "EXTERNAL_SUBNET"
+        nexthop_reference: "5e98d574-c54c-4775-9f7a-8ebb2bc77d2c"
+      - nexthop_type: "IP_ADDRESS"
+        nexthop_ip_address:
+          ipv4:
+            value: "10.0.0.254"
   register: result
 
 - name: Update route
@@ -443,8 +530,11 @@ def get_module_spec():
         nexthop_type=dict(
             type="str",
             choices=[
-                "VPN_CONNECTION",
+                "IP_ADDRESS",
+                "DIRECT_CONNECT_VIF",
+                "LOCAL_SUBNET",
                 "EXTERNAL_SUBNET",
+                "VPN_CONNECTION",
             ],
             obj=net_sdk.NexthopType,
             required=True,
@@ -464,6 +554,12 @@ def get_module_spec():
         description=dict(type="str"),
         destination=dict(type="dict", options=ip_subnet_spec, obj=net_sdk.IPSubnet),
         nexthop=dict(type="dict", options=nexthop_spec, obj=net_sdk.Nexthop),
+        nexthops=dict(
+            type="list",
+            elements="dict",
+            options=nexthop_spec,
+            obj=net_sdk.Nexthop,
+        ),
         route_table_ext_id=dict(type="str", required=True),
         external_routing_domain_reference=dict(type="str"),
         route_type=dict(
@@ -476,6 +572,23 @@ def get_module_spec():
     return module_args
 
 
+def _deprecate_nexthop_if_used(module):
+    if module.params.get("nexthop") is not None:
+        module.deprecate(
+            "The 'nexthop' option is deprecated. Use 'nexthops' instead to support multiple nexthops.",
+            version="3.0.0",
+        )
+
+
+def _drop_conflicting_nexthop_fields(module, spec):
+    """The API rejects a body that contains both singular nexthop and plural nexthops."""
+    if module.params.get("nexthops") is not None:
+        spec.nexthop = None
+    else:
+        # Keep legacy create/update playbooks on the singular field.
+        spec.nexthops = None
+
+
 def create_route_table(module, route_api_instance, result):
     sg = SpecGenerator(module)
     default_spec = net_sdk.Route()
@@ -483,6 +596,7 @@ def create_route_table(module, route_api_instance, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating create route spec", **result)
+    _drop_conflicting_nexthop_fields(module, spec)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
@@ -530,18 +644,16 @@ def update_route_table(module, route_api_instance, result):
     result["route_table_ext_id"] = route_table_ext_id
     current_spec = get_route(module, route_api_instance, ext_id, route_table_ext_id)
 
-    # The API returns both the singular `nexthop` and the server-managed plural
-    # `nexthops` on GET, but rejects an update body that contains both.
-    # The module only manages `nexthop`, so drop the
-    # server-only `nexthops` field before building and comparing the update spec.
-    if getattr(current_spec, "nexthops", None) is not None:
-        current_spec.nexthops = None
+    # GET returns both singular nexthop and plural nexthops; the API rejects both
+    # on update. Drop the unused representation before generating the spec.
+    _drop_conflicting_nexthop_fields(module, current_spec)
 
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating update route spec", **result)
+    _drop_conflicting_nexthop_fields(module, update_spec)
 
     raise_unsupported_update_fields(
         module, current_spec, update_spec, ["project_ext_id"]
@@ -611,6 +723,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[["state", "absent", ["ext_id"]]],
+        mutually_exclusive=[("nexthop", "nexthops")],
     )
     if SDK_IMP_ERROR:
         module.fail_json(
@@ -619,6 +732,7 @@ def run_module():
         )
 
     remove_param_with_none_value(module.params)
+    _deprecate_nexthop_if_used(module)
     result = {
         "changed": False,
         "error": None,

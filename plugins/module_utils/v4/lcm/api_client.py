@@ -149,6 +149,18 @@ def get_status_api_instance(module):
     return ntnx_lifecycle_py_client.StatusApi(api_client=api_client)
 
 
+def get_summaries_api_instance(module):
+    """
+    This method will return LCM summaries API instance
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 LCM summaries api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.LcmSummariesApi(api_client=api_client)
+
+
 def get_entity_api_instance(module):
     """
     This method will return LCM entity API instance

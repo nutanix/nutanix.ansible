@@ -350,6 +350,11 @@ options:
     description:
       - flag to mark the subnet as external
     type: bool
+  is_connected:
+    description:
+      - Indicates whether the subnet is in a connected or disconnected state.
+      - When omitted, the API default of True is used.
+    type: bool
   network_function_chain_reference:
     description:
       - Network function chain external ID
@@ -483,6 +488,7 @@ EXAMPLES = r"""
     name: Overlay Subnet with IP_pools and DHCP
     subnet_type: OVERLAY
     vpc_reference: 4c92c01e-2eb7-4a50-bda3-09729b62b634
+    is_connected: true
     ip_config:
       - ipv4:
           ip_subnet:
@@ -731,6 +737,7 @@ def get_module_spec():
         vpc_reference=dict(type="str"),
         is_nat_enabled=dict(type="bool"),
         is_external=dict(type="bool"),
+        is_connected=dict(type="bool"),
         network_function_chain_reference=dict(type="str"),
         is_advanced_networking=dict(type="bool"),
         hypervisor_type=dict(type="str"),

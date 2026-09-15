@@ -48,6 +48,26 @@ def get_lcm_config(module, api_instance, cluster_ext_id=None):
         )
 
 
+def get_lcm_summary(module, api_instance, ext_id):
+    """
+    This method will return LCM summary info using the cluster external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LCM summaries api instance
+        ext_id (str): External id of the cluster
+    Returns:
+        summary_info (object): LCM summary info
+    """
+    try:
+        return api_instance.get_lcm_summary_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM summary info using external identifier",
+        )
+
+
 def get_lcm_entity(module, api_instance, ext_id):
     """
     This method will return entity info using external identifier of the entity.
