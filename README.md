@@ -28,7 +28,8 @@ We are excited to announce the release of **Nutanix Ansible Collection v2.6.0** 
   This release continues to expand coverage of the latest Nutanix v4 APIs and SDKs, providing improved performance, stability, and alignment with the newest platform capabilities.
 
 - **New Resource Support**
-  - **Projects v4 (Prism)**: Create, update, delete, and list Projects using v4 SDKs. [#944](https://github.com/nutanix/nutanix.ansible/issues/944) [#838](https://github.com/nutanix/nutanix.ansible/issues/838)
+  - **Projects 2.0 IaC support (Prism)**: Redesign project architecture on v4 APIs with Ansible IaC support for Projects 2.0. [#838](https://github.com/nutanix/nutanix.ansible/issues/838)
+  - **Projects v4 (Prism)**: Create, update, delete, and list Projects using v4 SDKs. [#944](https://github.com/nutanix/nutanix.ansible/issues/944)
   - **Resource Groups (Prism)**: Manage resource groups using v4 SDKs. [#946](https://github.com/nutanix/nutanix.ansible/issues/946)
   - **Role Memberships (IAM)**: Manage role memberships using v4 SDKs. [#945](https://github.com/nutanix/nutanix.ansible/issues/945)
   - **Directory Services Connection (IAM)**: Manage directory services connections using v4 SDKs. [#1005](https://github.com/nutanix/nutanix.ansible/issues/1005)
@@ -61,12 +62,8 @@ We are excited to announce the release of **Nutanix Ansible Collection v2.6.0** 
 
 - **Bug Fixes and Stability Improvements**
   - `ntnx_prism_vm_inventory[_v2]` can set `ansible_host` to an APIPA address [#1305](https://github.com/nutanix/nutanix.ansible/issues/1305)
-  - `ntnx_subnets_v2` update fails with `NoneType` has no attribute `copy` when `ip_config` is null [#1019](https://github.com/nutanix/nutanix.ansible/issues/1019)
   - Api Exception raised while fetching NGT info for a given VM in `ntnx_vms_ngt_v2` [#962](https://github.com/nutanix/nutanix.ansible/issues/962)
   - `ntnx_categories_v2` is not idempotent [#890](https://github.com/nutanix/nutanix.ansible/issues/890)
-
-- **Breaking change**
-  - **ext_id-based resource references (All v4/_v2 modules)**: Require `ext_id` for resource references; name-based resolution removed as v3 API modules deprecate. [#979](https://github.com/nutanix/nutanix.ansible/issues/979)
 
 ---
 
@@ -175,7 +172,7 @@ This collection requires Python 3.12 or greater
 
 | Ansible Version |  AOS Version | PC version  | Other software versions | Supported |
 |  :--- |  :--- | :--- | :--- | :--- |
-| 2.6.0 | 7.5, 7.5.1 |  pc7.5, pc7.5.1 or later| | yes |
+| 2.6.0 | 7.6, 7.6.0.6 |  pc7.6, pc7.6.0.6 or later| | yes |
 | 2.5.0 | 7.5, 7.5.1 |  pc7.5, pc7.5.1 or later| | yes |
 | 2.4.0 | 7.5 |  pc7.5 or later| | yes |
 | 2.3.0 | 7.3, 7.3.1 |  pc7.3, pc7.3.1 or later| | yes |
@@ -199,7 +196,8 @@ This collection requires Python 3.12 or greater
 
 | SDK | PC | PE |
 |  :--- |  :--- | :--- |
-| v4.4, v4.3, v4.2, v4.1, v4.0 | pc7.5, pc7.5.1 | 7.5, 7.5.1 |
+| v4.4, v4.3 | pc7.6, pc7.6.0.6 | 7.6, 7.6.0.6 |
+| v4.2, v4.1, v4.0 | pc7.5, pc7.5.1 | 7.5, 7.5.1 |
 | v4.1, v4.0 | pc7.3, pc7.3.1 | 7.3, 7.3.1 |
 | v4.0 | pc2024.3.1, pc2024.3 | 7.0.1, 7.0 |
 
