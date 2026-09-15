@@ -1206,12 +1206,6 @@ releases:
         bug fixes.
 
         "
-    fragments:
-      - 2.6.0-bugfixes.yml
-      - 2.6.0-deprecated.yml
-      - 2.6.0-features.yml
-      - 2.6.0-improvements.yml
-      - 2.6.0-release_summary.yml
     modules:
       - description: Create, Update, Delete Directory Service Category Mapping.
         name: ntnx_category_mapping_v2
