@@ -172,7 +172,7 @@ This collection requires Python 3.12 or greater
 
 | Ansible Version |  AOS Version | PC version  | Other software versions | Supported |
 |  :--- |  :--- | :--- | :--- | :--- |
-| 2.6.0 | 7.6, 7.6.0.6 |  pc7.6, pc7.6.0.6 or later| | yes |
+| 2.6.0 | 7.5.1, 7.6, 7.6.0.6 or later |  pc7.5, pc7.5.1, pc7.6, pc7.6.0.6 or later| | yes |
 | 2.5.0 | 7.5, 7.5.1 |  pc7.5, pc7.5.1 or later| | yes |
 | 2.4.0 | 7.5 |  pc7.5 or later| | yes |
 | 2.3.0 | 7.3, 7.3.1 |  pc7.3, pc7.3.1 or later| | yes |
@@ -196,8 +196,7 @@ This collection requires Python 3.12 or greater
 
 | SDK | PC | PE |
 |  :--- |  :--- | :--- |
-| v4.4, v4.3, v4.2, v4.1, v4.0 | pc7.6, pc7.6.0.6 | 7.6, 7.6.0.6 |
-| v4.4, v4.3, v4.2, v4.1, v4.0 | pc7.5, pc7.5.1 | 7.5, 7.5.1 |
+| v4.4, v4.3, v4.2, v4.1, v4.0 | pc7.6.0.6, pc7.6, pc7.5.1, pc7.5 | 7.6.0.6, 7.6, 7.5.1, 7.5 |
 | v4.1, v4.0 | pc7.3, pc7.3.1 | 7.3, 7.3.1 |
 | v4.0 | pc2024.3.1, pc2024.3 | 7.0.1, 7.0 |
 
