@@ -10,30 +10,30 @@ v2.6.0
 Release Summary
 ---------------
 
-Built on v4 SDKs. Adds Projects 2.0/v4, Resource Groups, Role Memberships, Directory Services, SNMP, Load Balancer Sessions, VPC Virtual Switch Mapping, VM affinity/startup/placement policies, Guest Customization Profiles, Flow directory server configs, Security Rules export/import, Object Store statistics, and the ntnx_ext_id lookup with several improvements and bug fixes.
+Built on v4 SDKs. Adds Projects 2.0/v4, Resource Groups, Role Memberships, Directory Services, SNMP, Load Balancer Sessions, VPC Virtual Switch Mapping, VM affinity/startup/placement policies, Guest Customization Profiles, Flow directory server configs, Security Policy export/import, Object Store statistics, and the ntnx_ext_id lookup with compatibility and usability updates.
 
 Minor Changes
 -------------
 
 - All create v2 modules - [Imprv] Raise an API exception when entity ext_id is missing from task responses for create (non-info) v2 modules (`#1010 <https://github.com/nutanix/nutanix.ansible/issues/1010>`_)
-- All v4 update modules - [Imprv] Apply check_mode-before-idempotency convention to all v4 update modules (`#991 <https://github.com/nutanix/nutanix.ansible/issues/991>`_)
-- All v4/_v2 modules - [Imprv] Require ext_id for resource references; name-based resolution removed as v3 API modules deprecate (`#979 <https://github.com/nutanix/nutanix.ansible/issues/979>`_)
-- Inventory - [Imprv] Resolve inventory plugin categories to key/value pairs (`#963 <https://github.com/nutanix/nutanix.ansible/issues/963>`_)
+- Applicable v2 modules - [Imprv] Add project_ext_id and project sharing operations across supported namespaces (`#943 <https://github.com/nutanix/nutanix.ansible/issues/943>`_)
+- Applicable v4 update modules - [Imprv] Run check mode before idempotency checks in update modules that already implement idempotency (`#991 <https://github.com/nutanix/nutanix.ansible/issues/991>`_)
+- Inventory - [Imprv] Resolve category external IDs to key/value pairs and add auto_create_cluster_groups and resolve_categories options (`#963 <https://github.com/nutanix/nutanix.ansible/issues/963>`_)
 - guest_customization - [Imprv] Document base64 requirements for sysprep guest customization (`#952 <https://github.com/nutanix/nutanix.ansible/issues/952>`_)
 - ntnx_categories_v2 - [Imprv] Add get_categories_api_instance to pc_api_client for categories modules (`#990 <https://github.com/nutanix/nutanix.ansible/issues/990>`_)
 - ntnx_directory_server_config_v2, ntnx_category_mapping_v2 - [Feat] Manage directory server configs and category mappings using v4 SDKs (`#994 <https://github.com/nutanix/nutanix.ansible/issues/994>`_)
-- ntnx_directory_services_connection_v2 - [Feat] Manage directory services connections using v4 SDKs (`#1005 <https://github.com/nutanix/nutanix.ansible/issues/1005>`_)
-- ntnx_ext_id - [Feat] Resolve entity external IDs via an Ansible lookup plugin (`#1001 <https://github.com/nutanix/nutanix.ansible/issues/1001>`_)
+- ntnx_directory_services_connection_v2 - [Feat] Verify connectivity to an existing directory service using v4 SDKs (`#1005 <https://github.com/nutanix/nutanix.ansible/issues/1005>`_)
+- ntnx_ext_id - [Feat] Resolve human-readable entity values to the external IDs required by v4 modules (`#979 <https://github.com/nutanix/nutanix.ansible/issues/979>`_) (`#1001 <https://github.com/nutanix/nutanix.ansible/issues/1001>`_)
 - ntnx_image_rate_limit_policy_v2 - [Feat] Manage image rate limit policies using v4 SDKs (`#998 <https://github.com/nutanix/nutanix.ansible/issues/998>`_)
 - ntnx_load_balancer_session_v2, ntnx_load_balancer_sessions_info_v2 - [Feat] Manage load balancer sessions using v4 SDKs (`#1007 <https://github.com/nutanix/nutanix.ansible/issues/1007>`_)
 - ntnx_object_stores_stats_info_v2, ntnx_object_stores_certificate_download_v2 - [Feat] Fetch object store statistics and download certificate authorities using v4 SDKs (`#1008 <https://github.com/nutanix/nutanix.ansible/issues/1008>`_)
+- ntnx_prism_vm_inventory, ntnx_prism_vm_inventory_v2 - [Imprv] Expose all detected addresses through vm_ip_addresses and document APIPA filtering with compose. Default ansible_host selection remains unchanged (`#1305 <https://github.com/nutanix/nutanix.ansible/issues/1305>`_)
 - ntnx_project_v2 - [Feat] Redesign project architecture on v4 APIs with Ansible IaC support for Projects 2.0 (`#838 <https://github.com/nutanix/nutanix.ansible/issues/838>`_)
 - ntnx_project_v2, ntnx_projects_info_v2 - [Feat] Create, update, delete, and list Projects using v4 SDKs (`#944 <https://github.com/nutanix/nutanix.ansible/issues/944>`_)
 - ntnx_projects - [Imprv] Add missing project attributes to the V3 projects module and update integration tests (`#1315 <https://github.com/nutanix/nutanix.ansible/issues/1315>`_)
-- ntnx_projects, ntnx_acps, ntnx_users, ntnx_user_groups - [Imprv] Add project_ext_id and share/unshare project operations to existing modules (`#943 <https://github.com/nutanix/nutanix.ansible/issues/943>`_)
 - ntnx_resource_group_v2, ntnx_resource_groups_info_v2 - [Feat] Manage resource groups using v4 SDKs (`#946 <https://github.com/nutanix/nutanix.ansible/issues/946>`_)
 - ntnx_role_membership_v2, ntnx_role_memberships_info_v2 - [Feat] Manage role memberships using v4 SDKs (`#945 <https://github.com/nutanix/nutanix.ansible/issues/945>`_)
-- ntnx_security_rules_export_v2, ntnx_security_rules_import_v2 - [Feat] Export and import security rules using v4 SDKs (`#1311 <https://github.com/nutanix/nutanix.ansible/issues/1311>`_)
+- ntnx_security_rules_export_v2, ntnx_security_rules_import_v2 - [Feat] Export and import network security policies using v4 SDKs (`#1311 <https://github.com/nutanix/nutanix.ansible/issues/1311>`_)
 - ntnx_snmp_status_v2, ntnx_snmp_transport_v2, ntnx_snmp_trap_v2, ntnx_snmp_user_v2 - [Feat] Manage SNMP status, transport, traps, and users using v4 SDKs (`#930 <https://github.com/nutanix/nutanix.ansible/issues/930>`_)
 - ntnx_template_placement_policy_v2 - [Feat] Manage template placement policies using v4 SDKs (`#995 <https://github.com/nutanix/nutanix.ansible/issues/995>`_)
 - ntnx_vm_anti_affinity_policy_v2 - [Feat] Manage VM anti-affinity policies using v4 SDKs (`#992 <https://github.com/nutanix/nutanix.ansible/issues/992>`_)
@@ -41,20 +41,19 @@ Minor Changes
 - ntnx_vm_host_affinity_policy_v2 - [Feat] Manage VM host affinity policies using v4 SDKs (`#993 <https://github.com/nutanix/nutanix.ansible/issues/993>`_)
 - ntnx_vm_startup_policy_v2 - [Feat] Manage VM startup policies using v4 SDKs (`#997 <https://github.com/nutanix/nutanix.ansible/issues/997>`_)
 - ntnx_vms_info_v2 - [Imprv] Add IP search option when listing/getting VMs (`#1021 <https://github.com/nutanix/nutanix.ansible/issues/1021>`_)
+- ntnx_vms_ngt_v2 - [Docs] Clarify that ext_id must be a decoded VM UUID, not the complete Ansible slurp result (`#962 <https://github.com/nutanix/nutanix.ansible/issues/962>`_)
 - ntnx_vms_v2 - [Imprv] Add functionality to set ownership on VMs (`#757 <https://github.com/nutanix/nutanix.ansible/issues/757>`_)
 - ntnx_vpc_virtual_switch_mapping_v2, ntnx_vpc_virtual_switch_mappings_info_v2 - [Feat] Manage VPC virtual switch mappings using v4 SDKs (`#996 <https://github.com/nutanix/nutanix.ansible/issues/996>`_)
 
 Deprecated Features
 -------------------
 
-- Flow entities - [Deprecated] Add deprecation notice in Flow entities (`#1317 <https://github.com/nutanix/nutanix.ansible/issues/1317>`_)
+- ntnx_address_groups, ntnx_address_groups_info, ntnx_service_groups, ntnx_service_groups_info - [Deprecated] Legacy Flow modules stop working with PC 7.6. Migrate to ntnx_address_groups_v2, ntnx_address_groups_info_v2, ntnx_service_groups_v2, and ntnx_service_groups_info_v2 (`#1317 <https://github.com/nutanix/nutanix.ansible/issues/1317>`_)
 
-Bugfixes
---------
+Known Issues
+------------
 
-- ntnx_categories_v2 - [Bug] ntnx_categories_v2 is not idempotent (`#890 <https://github.com/nutanix/nutanix.ansible/issues/890>`_)
-- ntnx_prism_vm_inventory, ntnx_prism_vm_inventory_v2 - [Bug] Inventory can set ansible_host to an APIPA address (`#1305 <https://github.com/nutanix/nutanix.ansible/issues/1305>`_)
-- ntnx_vms_ngt_v2 - [Bug] Api Exception raised while fetching NGT info for a given VM (`#962 <https://github.com/nutanix/nutanix.ansible/issues/962>`_)
+- ntnx_categories_v2 - [Known limitation] Create operations remain non-idempotent by design. Query for an existing category before creating one (`#890 <https://github.com/nutanix/nutanix.ansible/issues/890>`_)
 
 New Plugins
 -----------
@@ -92,7 +91,7 @@ New Modules
 - nutanix.ncp.ntnx_snmp_transport_v2 - Add or Remove SNMP transport ports and protocol details on a Nutanix cluster.
 - nutanix.ncp.ntnx_snmp_trap_info_v2 - Fetch information about a specific SNMP trap.
 - nutanix.ncp.ntnx_snmp_trap_v2 - Create, Update and Delete SNMP traps in Nutanix Prism Central.
-- nutanix.ncp.ntnx_snmp_user_info_v2 - Fetch information about snmp user.
+- nutanix.ncp.ntnx_snmp_user_info_v2 - Fetch information about an SNMP user.
 - nutanix.ncp.ntnx_snmp_user_v2 - Create, Update and Delete SNMP users in Nutanix Prism Central.
 - nutanix.ncp.ntnx_template_placement_policies_info_v2 - Fetches information about Nutanix PC template placement policies.
 - nutanix.ncp.ntnx_template_placement_policy_v2 - Manage template placement policies in Nutanix Prism Central.
