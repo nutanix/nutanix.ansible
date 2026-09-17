@@ -8,7 +8,7 @@ releases:
       minor_changes:
         - Add meta file for collection
         - Allow environment variables for nutanix connection parameters
-    release_date: '2022-03-02'
+    release_date: "2022-03-02"
   1.0.0-beta.1:
     changes:
       bugfixes:
@@ -26,8 +26,8 @@ releases:
     modules:
       - description: v4 sdks based module for vms
         name: ntnx_vms
-        namespace: ''
-    release_date: '2022-01-28'
+        namespace: ""
+    release_date: "2022-01-28"
   1.0.0-beta.2:
     changes:
       bugfixes:
@@ -47,17 +47,17 @@ releases:
     modules:
       - description: v4 sdks based module for floating Ips
         name: ntnx_floating_ips
-        namespace: ''
+        namespace: ""
       - description: v4 sdks based module for policy based routing
         name: ntnx_pbrs
-        namespace: ''
+        namespace: ""
       - description: v4 sdks based module for subnets
         name: ntnx_subnets
-        namespace: ''
+        namespace: ""
       - description: v4 sdks based module for vpcs
         name: ntnx_vpcs
-        namespace: ''
-    release_date: '2022-02-22'
+        namespace: ""
+    release_date: "2022-02-22"
   1.1.0:
     changes:
       minor_changes:
@@ -66,46 +66,51 @@ releases:
     modules:
       - description: Nutanix module to image nodes and optionally create clusters
         name: ntnx_foundation
-        namespace: ''
+        namespace: ""
       - description: Nutanix module which configures IPMI IP address on BMC of nodes.
         name: ntnx_foundation_bmc_ipmi_config
-        namespace: ''
+        namespace: ""
       - description: Nutanix module which returns nodes discovered by Foundation
         name: ntnx_foundation_discover_nodes_info
-        namespace: ''
-      - description: Nutanix module which returns the hypervisor images uploaded to
+        namespace: ""
+      - description:
+          Nutanix module which returns the hypervisor images uploaded to
           Foundation
         name: ntnx_foundation_hypervisor_images_info
-        namespace: ''
-      - description: Nutanix module which uploads hypervisor or AOS image to foundation
+        namespace: ""
+      - description:
+          Nutanix module which uploads hypervisor or AOS image to foundation
           vm.
         name: ntnx_foundation_image_upload
-        namespace: ''
-      - description: Nutanix module which returns node network information discovered
+        namespace: ""
+      - description:
+          Nutanix module which returns node network information discovered
           by Foundation
         name: ntnx_foundation_node_network_info
-        namespace: ''
-    release_date: '2022-04-11'
+        namespace: ""
+    release_date: "2022-04-11"
   1.1.0-beta.2:
     modules:
       - description: Nutanix module to imaged Nodes and optionally create cluster
         name: ntnx_foundation_central
-        namespace: ''
+        namespace: ""
       - description: Nutanix module which creates api key for foundation central
         name: ntnx_foundation_central_api_keys
-        namespace: ''
+        namespace: ""
       - description: Nutanix module which returns the api key
         name: ntnx_foundation_central_api_keys_info
-        namespace: ''
-      - description: Nutanix module which returns the imaged clusters within the Foundation
+        namespace: ""
+      - description:
+          Nutanix module which returns the imaged clusters within the Foundation
           Central
         name: ntnx_foundation_central_imaged_clusters_info
-        namespace: ''
-      - description: Nutanix module which returns the imaged nodes within the Foundation
+        namespace: ""
+      - description:
+          Nutanix module which returns the imaged nodes within the Foundation
           Central
         name: ntnx_foundation_central_imaged_nodes_info
-        namespace: ''
-    release_date: '2022-04-28'
+        namespace: ""
+    release_date: "2022-04-28"
   1.2.0:
     changes:
       minor_changes:
@@ -113,54 +118,55 @@ releases:
     modules:
       - description: Nutanix info module for floating Ips
         name: ntnx_floating_ips_info
-        namespace: ''
+        namespace: ""
       - description: Nutanix info module for policy based routing
         name: ntnx_pbrs_info
-        namespace: ''
+        namespace: ""
       - description: Nutanix info module for subnets
         name: ntnx_subnets_info
-        namespace: ''
+        namespace: ""
       - description: VM module which supports VM clone operations
         name: ntnx_vms_clone
-        namespace: ''
+        namespace: ""
       - description: Nutanix info module for vms
         name: ntnx_vms_info
-        namespace: ''
+        namespace: ""
       - description: VM module which supports ova creation
         name: ntnx_vms_ova
-        namespace: ''
+        namespace: ""
       - description: Nutanix info module for vpcs
         name: ntnx_vpcs_info
-        namespace: ''
-    release_date: '2022-06-03'
+        namespace: ""
+    release_date: "2022-06-03"
   1.3.0:
     modules:
       - description: image placement policies info module
         name: ntnx_image_placement_policies_info
-        namespace: ''
-      - description: image placement policy module which supports Create, update and
+        namespace: ""
+      - description:
+          image placement policy module which supports Create, update and
           delete operations
         name: ntnx_image_placement_policy
-        namespace: ''
+        namespace: ""
       - description: images module which supports pc images management CRUD operations
         name: ntnx_images
-        namespace: ''
+        namespace: ""
       - description: images info module
         name: ntnx_images_info
-        namespace: ''
+        namespace: ""
       - description: security_rule module which suports security_rule CRUD operations
         name: ntnx_security_rules
-        namespace: ''
+        namespace: ""
       - description: security_rule info module
         name: ntnx_security_rules_info
-        namespace: ''
+        namespace: ""
       - description: vpc static routes
         name: ntnx_static_routes
-        namespace: ''
+        namespace: ""
       - description: vpc static routes info module
         name: ntnx_static_routes_info
-        namespace: ''
-    release_date: '2022-07-04'
+        namespace: ""
+    release_date: "2022-07-04"
   1.4.0:
     changes:
       bugfixes:
@@ -168,99 +174,101 @@ releases:
     modules:
       - description: acp module which suports acp Create, update and delete operations
         name: ntnx_acps
-        namespace: ''
+        namespace: ""
       - description: acp info module
         name: ntnx_acps_info
-        namespace: ''
+        namespace: ""
       - description: module which supports address groups CRUD operations
         name: ntnx_address_groups
-        namespace: ''
+        namespace: ""
       - description: address groups info module
         name: ntnx_address_groups_info
-        namespace: ''
+        namespace: ""
       - description: category module which supports pc category management CRUD operations
         name: ntnx_categories
-        namespace: ''
+        namespace: ""
       - description: categories info module
         name: ntnx_categories_info
-        namespace: ''
+        namespace: ""
       - description: cluster info module
         name: ntnx_clusters_info
-        namespace: ''
+        namespace: ""
       - description: host  info module
         name: ntnx_hosts_info
-        namespace: ''
+        namespace: ""
       - description: permissions info module
         name: ntnx_permissions_info
-        namespace: ''
+        namespace: ""
       - description: module for create, update and delete pc projects
         name: ntnx_projects
-        namespace: ''
+        namespace: ""
       - description: projects info module
         name: ntnx_projects_info
-        namespace: ''
+        namespace: ""
       - description: module which supports role CRUD operations
         name: ntnx_roles
-        namespace: ''
+        namespace: ""
       - description: role info module
         name: ntnx_roles_info
-        namespace: ''
+        namespace: ""
       - description: service_groups module which suports service_groups CRUD operations
         name: ntnx_service_groups
-        namespace: ''
+        namespace: ""
       - description: service_group info module
         name: ntnx_service_groups_info
-        namespace: ''
-      - description: user_groups module which supports pc user_groups management create
+        namespace: ""
+      - description:
+          user_groups module which supports pc user_groups management create
           delete operations
         name: ntnx_user_groups
-        namespace: ''
+        namespace: ""
       - description: User Groups info module
         name: ntnx_user_groups_info
-        namespace: ''
+        namespace: ""
       - description: users module which supports pc users management create delete operations
         name: ntnx_users
-        namespace: ''
+        namespace: ""
       - description: users info module
         name: ntnx_users_info
-        namespace: ''
-    release_date: '2022-07-28'
+        namespace: ""
+    release_date: "2022-07-28"
   1.5.0:
     modules:
       - description: v4 sdks based module for protection rules
         name: ntnx_protection_rules
-        namespace: ''
+        namespace: ""
       - description: Nutanix info module for protection rules
         name: ntnx_protection_rules_info
-        namespace: ''
+        namespace: ""
       - description: v4 sdks based module for recovery plan jobs
         name: ntnx_recovery_plan_jobs
-        namespace: ''
+        namespace: ""
       - description: Nutanix info module for protection
         name: ntnx_recovery_plan_jobs_info
-        namespace: ''
+        namespace: ""
       - description: v4 sdks based module for recovery plan
         name: ntnx_recovery_plans
-        namespace: ''
+        namespace: ""
       - description: Nutanix info module for recovery plan
         name: ntnx_recovery_plans_info
-        namespace: ''
+        namespace: ""
   1.6.0:
     modules:
       - description: v4 sdks based module for karbon clusters
         name: ntnx_karbon_clusters
-        namespace: ''
-      - description: Nutanix info module for karbon clusters with kubeconifg and ssh
+        namespace: ""
+      - description:
+          Nutanix info module for karbon clusters with kubeconifg and ssh
           config
         name: ntnx_karbon_clusters_info
-        namespace: ''
+        namespace: ""
       - description: v4 sdks based module for karbon private registry
         name: ntnx_karbon_registries
-        namespace: ''
+        namespace: ""
       - description: Nutanix info module for karbon private registry
         name: ntnx_karbon_registries_info
-        namespace: ''
-    release_date: '2022-09-09'
+        namespace: ""
+    release_date: "2022-09-09"
   1.7.0:
     changes:
       bugfixes:
@@ -281,112 +289,115 @@ releases:
           ntnx_vms [\#201](https://github.com/nutanix/nutanix.ansible/issues/201)
         - nutanix.ncp.ntnx_prism_vm_inventory - [Imprv] add functionality constructed
           to module inventory [\#235](https://github.com/nutanix/nutanix.ansible/issues/235)
-    release_date: '2022-09-30'
+    release_date: "2022-09-30"
   1.8.0:
     modules:
       - description: module for authorizing db server vm
         name: ntnx_ndb_authorize_db_server_vms
-        namespace: ''
+        namespace: ""
       - description: Create, Update and Delete NDB clusters
         name: ntnx_ndb_clusters
-        namespace: ''
+        namespace: ""
       - description: module for database clone refresh.
         name: ntnx_ndb_database_clone_refresh
-        namespace: ''
+        namespace: ""
       - description: module for create, update and delete of ndb database clones
         name: ntnx_ndb_database_clones
-        namespace: ''
+        namespace: ""
       - description: module for performing log catchups action
         name: ntnx_ndb_database_log_catchup
-        namespace: ''
+        namespace: ""
       - description: module for restoring database instance
         name: ntnx_ndb_database_restore
-        namespace: ''
+        namespace: ""
       - description: module for scaling database instance
         name: ntnx_ndb_database_scale
-        namespace: ''
+        namespace: ""
       - description: module for creating, updating and deleting database snapshots
         name: ntnx_ndb_database_snapshots
-        namespace: ''
+        namespace: ""
       - description: module for create, delete and update of database server vms
         name: ntnx_ndb_db_server_vms
-        namespace: ''
+        namespace: ""
       - description: module to manage linked databases of a database instance
         name: ntnx_ndb_linked_databases
-        namespace: ''
+        namespace: ""
       - description: module to add and remove maintenance related tasks
         name: ntnx_ndb_maintenance_tasks
-        namespace: ''
+        namespace: ""
       - description: module to create, update and delete maintenance window
         name: ntnx_ndb_maintenance_window
-        namespace: ''
+        namespace: ""
       - description: module for fetching maintenance windows info
         name: ntnx_ndb_maintenance_windows_info
-        namespace: ''
+        namespace: ""
       - description: module for create, update and delete of profiles
         name: ntnx_ndb_profiles
-        namespace: ''
+        namespace: ""
       - description: module for database instance registration
         name: ntnx_ndb_register_database
-        namespace: ''
+        namespace: ""
       - description: module for registration of database server vm
         name: ntnx_ndb_register_db_server_vm
-        namespace: ''
-      - description: module for replicating database snapshots across clusters of time
+        namespace: ""
+      - description:
+          module for replicating database snapshots across clusters of time
           machine
         name: ntnx_ndb_replicate_database_snapshots
-        namespace: ''
+        namespace: ""
       - description: module for creating, updating and deleting slas
         name: ntnx_ndb_slas
-        namespace: ''
+        namespace: ""
       - description: info module for ndb snapshots info
         name: ntnx_ndb_snapshots_info
-        namespace: ''
+        namespace: ""
       - description: Module for create, update and delete of stretched vlan.
         name: ntnx_ndb_stretched_vlans
-        namespace: ''
+        namespace: ""
       - description: module for create, update and delete of tags
         name: ntnx_ndb_tags
-        namespace: ''
-      - description: Module for create, update and delete for data access management
+        namespace: ""
+      - description:
+          Module for create, update and delete for data access management
           in time machines.
         name: ntnx_ndb_time_machine_clusters
-        namespace: ''
+        namespace: ""
       - description: Module for create, update and delete of ndb vlan.
         name: ntnx_ndb_vlans
-        namespace: ''
+        namespace: ""
       - description: info module for ndb vlans
         name: ntnx_ndb_vlans_info
-        namespace: ''
-    release_date: '2023-02-28'
+        namespace: ""
+    release_date: "2023-02-28"
   1.8.0-beta.1:
     modules:
       - description: info module for database clones
         name: ntnx_ndb_clones_info
-        namespace: ''
+        namespace: ""
       - description: info module for ndb clusters info
         name: ntnx_ndb_clusters_info
-        namespace: ''
-      - description: Module for create, update and delete of single instance database.
+        namespace: ""
+      - description:
+          Module for create, update and delete of single instance database.
           Currently, postgres type database is officially supported.
         name: ntnx_ndb_databases
-        namespace: ''
+        namespace: ""
       - description: info module for ndb database instances
         name: ntnx_ndb_databases_info
-        namespace: ''
+        namespace: ""
       - description: info module for ndb db server vms info
         name: ntnx_ndb_db_servers_info
-        namespace: ''
+        namespace: ""
       - description: info module for ndb profiles
         name: ntnx_ndb_profiles_info
-        namespace: ''
+        namespace: ""
       - description: info module for ndb slas
         name: ntnx_ndb_slas_info
-        namespace: ''
+        namespace: ""
       - description: info module for ndb time machines
         name: ntnx_ndb_time_machines_info
-        namespace: ''
-    release_date: '2022-10-20'
+        namespace: ""
+    release_date: "2022-10-20"
   1.9.0:
     changes:
       bugfixes:
@@ -409,14 +420,15 @@ releases:
         - ntnx_security_rules - [Imprv] Flow Network Security Multi-Tier support in
           Security Policy definition [\#319](https://github.com/nutanix/nutanix.ansible/issues/319)
     modules:
-      - description: Create,Update and Delete a worker node pools with the provided
+      - description:
+          Create,Update and Delete a worker node pools with the provided
           configuration.
         name: ntnx_karbon_clusters_node_pools
-        namespace: ''
+        namespace: ""
       - description: info module for ndb tags info
         name: ntnx_ndb_tags_info
-        namespace: ''
-    release_date: '2023-07-11'
+        namespace: ""
+    release_date: "2023-07-11"
   1.9.1:
     changes:
       bugfixes:
@@ -448,7 +460,7 @@ releases:
         - ntnx_vms_info - [Imprv] add examples with guest customization for module ntnx_vms
           [[\#395](https://github.com/nutanix/nutanix.ansible/issues/395)]
       release_summary: This release included bug fixes and improvement.
-    release_date: '2023-10-09'
+    release_date: "2023-10-09"
   1.9.2:
     changes:
       breaking_changes:
@@ -456,359 +468,367 @@ releases:
           than v2.15.0 are EOL, we are also deprecating support for same and minimum
           version to use this collection is ansible-core==2.15.0. [[\#479](https://github.com/nutanix/nutanix.ansible/issues/479)]
       release_summary: Deprecating support for ansible-core less than v2.15.0
-    release_date: '2024-05-30'
+    release_date: "2024-05-30"
   2.0.0:
     changes:
       release_summary: Releasing new modules using PC GA v4 sdks
     modules:
       - description: Get address groups info
         name: ntnx_address_groups_info_v2
-        namespace: ''
+        namespace: ""
       - description: Create, Update, Delete address groups
         name: ntnx_address_groups_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch Authorization policies info from Nutanix PC.
         name: ntnx_authorization_policies_info_v2
-        namespace: ''
+        namespace: ""
       - description: Manage Nutanix PC IAM authorization policies
         name: ntnx_authorization_policies_v2
-        namespace: ''
+        namespace: ""
       - description: Nutanix PC categories info module
         name: ntnx_categories_info_v2
-        namespace: ''
+        namespace: ""
       - description: Manage categories in Nutanix Prism Central
         name: ntnx_categories_v2
-        namespace: ''
+        namespace: ""
       - description: Retrieve information about Nutanix clusters from PC
         name: ntnx_clusters_info_v2
-        namespace: ''
+        namespace: ""
       - description: Add or Remove nodes from cluster using Nutanix PC
         name: ntnx_clusters_nodes_v2
-        namespace: ''
+        namespace: ""
       - description: Manage Nutanix clusters in Prism Central
         name: ntnx_clusters_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch directory services info
         name: ntnx_directory_services_info_v2
-        namespace: ''
-      - description: Module to create, update and delete directory services in Nutanix
+        namespace: ""
+      - description:
+          Module to create, update and delete directory services in Nutanix
           PC.
         name: ntnx_directory_services_v2
-        namespace: ''
+        namespace: ""
       - description: Discover unconfigured nodes from Nutanix Prism Central
         name: ntnx_discover_unconfigured_nodes_v2
-        namespace: ''
+        namespace: ""
       - description: floating_ip info module
         name: ntnx_floating_ips_info_v2
-        namespace: ''
+        namespace: ""
       - description: floating_ips module which supports floating_ip CRUD operations
         name: ntnx_floating_ips_v2
-        namespace: ''
+        namespace: ""
       - description: Retrieve information about Nutanix hosts from PC.
         name: ntnx_hosts_info_v2
-        namespace: ''
+        namespace: ""
       - description: Fetches information about Nutanix PC image placement policies.
         name: ntnx_image_placement_policies_info_v2
-        namespace: ''
+        namespace: ""
       - description: Manage image placement policies in Nutanix Prism Central
         name: ntnx_image_placement_policies_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch information about Nutanix images
         name: ntnx_images_info_v2
-        namespace: ''
+        namespace: ""
       - description: Manage Nutanix Prism Central images.
         name: ntnx_images_v2
-        namespace: ''
+        namespace: ""
       - description: Get network information for unconfigured cluster nodes
         name: ntnx_nodes_network_info_v2
-        namespace: ''
+        namespace: ""
       - description: Module to fetch IAM operations info (previously `permissions`)
         name: ntnx_operations_info_v2
-        namespace: ''
+        namespace: ""
       - description: Routing Policies info module
         name: ntnx_pbrs_info_v2
-        namespace: ''
+        namespace: ""
       - description: Module for create, update and delete of Policy based routing.
         name: ntnx_pbrs_v2
-        namespace: ''
-      - description: Registers a domain manager (Prism Central) instance to other entities
+        namespace: ""
+      - description:
+          Registers a domain manager (Prism Central) instance to other entities
           like PE and PC
         name: ntnx_pc_registration_v2
-        namespace: ''
+        namespace: ""
       - description: Replicate recovery points
         name: ntnx_recovery_point_replicate_v2
-        namespace: ''
-      - description: Restore recovery points, Creates a clone of the VM/VG from the
+        namespace: ""
+      - description:
+          Restore recovery points, Creates a clone of the VM/VG from the
           selected recovery point
         name: ntnx_recovery_point_restore_v2
-        namespace: ''
+        namespace: ""
       - description: Get recovery points info
         name: ntnx_recovery_points_info_v2
-        namespace: ''
+        namespace: ""
       - description: Create, Update, Delete  recovery points
         name: ntnx_recovery_points_v2
-        namespace: ''
+        namespace: ""
       - description: Get roles info
         name: ntnx_roles_info_v2
-        namespace: ''
+        namespace: ""
       - description: Create, update, and delete roles.
         name: ntnx_roles_v2
-        namespace: ''
+        namespace: ""
       - description: Route tables info module
         name: ntnx_route_tables_info_v2
-        namespace: ''
+        namespace: ""
       - description: Routes info module
         name: ntnx_routes_info_v2
-        namespace: ''
+        namespace: ""
       - description: Module to create, update, and delete routes in route table in VPC
         name: ntnx_routes_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch SAML identity providers from Nutanix PC
         name: ntnx_saml_identity_providers_info_v2
-        namespace: ''
+        namespace: ""
       - description: Manage SAML identity providers in Nutanix PC
         name: ntnx_saml_identity_providers_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch network security policies info from Nutanix PC.
         name: ntnx_security_rules_info_v2
-        namespace: ''
+        namespace: ""
       - description: Manage network security policies in Nutanix Prism Central
         name: ntnx_security_rules_v2
-        namespace: ''
+        namespace: ""
       - description: service_group info module
         name: ntnx_service_groups_info_v2
-        namespace: ''
+        namespace: ""
       - description: Create, Update, Delete service groups
         name: ntnx_service_groups_v2
-        namespace: ''
+        namespace: ""
       - description: Retrieve information about Nutanix storage container from PC
         name: ntnx_storage_containers_info_v2
-        namespace: ''
+        namespace: ""
       - description: Retrieve stats about Nutanix storage container from PC
         name: ntnx_storage_containers_stats_v2
-        namespace: ''
+        namespace: ""
       - description: Manage storage containers in Nutanix Prism Central
         name: ntnx_storage_containers_v2
-        namespace: ''
+        namespace: ""
       - description: subnet info module
         name: ntnx_subnets_info_v2
-        namespace: ''
+        namespace: ""
       - description: subnets module which supports Create, Update, Delete subnets
         name: ntnx_subnets_v2
-        namespace: ''
+        namespace: ""
       - description: Deploy Nutanix templates
         name: ntnx_templates_deploy_v2
-        namespace: ''
+        namespace: ""
       - description: Manage guest OS updates for Nutanix AHV templates.
         name: ntnx_templates_guest_os_v2
-        namespace: ''
+        namespace: ""
       - description: template info module
         name: ntnx_templates_info_v2
-        namespace: ''
+        namespace: ""
       - description: Manage Nutanix AHV template resources
         name: ntnx_templates_v2
-        namespace: ''
+        namespace: ""
       - description: Manage Nutanix template versions
         name: ntnx_templates_version_v2
-        namespace: ''
+        namespace: ""
       - description: Fetches information about Nutanix template versions.
         name: ntnx_templates_versions_info_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch user groups
         name: ntnx_user_groups_info_v2
-        namespace: ''
+        namespace: ""
       - description: Create and Delete user groups
         name: ntnx_user_groups_v2
-        namespace: ''
+        namespace: ""
       - description: Get users info
         name: ntnx_users_info_v2
-        namespace: ''
+        namespace: ""
       - description: Module to create and update users from Nutanix PC.
         name: ntnx_users_v2
-        namespace: ''
+        namespace: ""
       - description: Get VM recovery point info
         name: ntnx_vm_recovery_point_info_v2
-        namespace: ''
+        namespace: ""
       - description: Revert VM from recovery point
         name: ntnx_vm_revert_v2
-        namespace: ''
+        namespace: ""
       - description: Associate or disassociate categories to a VM in AHV Nutanix.
         name: ntnx_vms_categories_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch information about Nutanix VM's CD ROM
         name: ntnx_vms_cd_rom_info_v2
-        namespace: ''
+        namespace: ""
       - description: Insert or Eject ISO from CD ROM of Nutanix VMs
         name: ntnx_vms_cd_rom_iso_v2
-        namespace: ''
+        namespace: ""
       - description: Manage CDROM for Nutanix AHV VMs
         name: ntnx_vms_cd_rom_v2
-        namespace: ''
+        namespace: ""
       - description: Clone a virtual machine in Nutanix AHV.
         name: ntnx_vms_clone_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch information about Nutanix VM's disks
         name: ntnx_vms_disks_info_v2
-        namespace: ''
+        namespace: ""
       - description: Manage disks for Nutanix AHV VMs
         name: ntnx_vms_disks_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch information about Nutanix AHV based PC VMs
         name: ntnx_vms_info_v2
-        namespace: ''
+        namespace: ""
       - description: Get Nutanix Guest Tools (NGT) current config for a virtual machine.
         name: ntnx_vms_ngt_info_v2
-        namespace: ''
+        namespace: ""
       - description: Insert Nutanix Guest Tools (NGT) ISO into a virtual machine.
         name: ntnx_vms_ngt_insert_iso_v2
-        namespace: ''
+        namespace: ""
       - description: Update Nutanix Guest Tools (NGT) configuration for a VM.
         name: ntnx_vms_ngt_update_v2
-        namespace: ''
+        namespace: ""
       - description: Upgrade Nutanix Guest Tools on a VM
         name: ntnx_vms_ngt_upgrade_v2
-        namespace: ''
+        namespace: ""
       - description: Install or uninstall Nutanix Guest Tools (NGT) on a VM.
         name: ntnx_vms_ngt_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch information about Nutanix VM's NICs
         name: ntnx_vms_nics_info_v2
-        namespace: ''
+        namespace: ""
       - description: Assign/Release IP to/from Nutanix VM NICs.
         name: ntnx_vms_nics_ip_v2
-        namespace: ''
+        namespace: ""
       - description: Manage NICs of Nutanix VMs
         name: ntnx_vms_nics_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch information about Nutanix VM's serial ports
         name: ntnx_vms_serial_port_info_v2
-        namespace: ''
+        namespace: ""
       - description: VM Serial Port module which supports VM serial port CRUD states
         name: ntnx_vms_serial_port_v2
-        namespace: ''
+        namespace: ""
       - description: Stage guest customization configuration for a Nutanix VM
         name: ntnx_vms_stage_guest_customization_v2
-        namespace: ''
+        namespace: ""
       - description: Create, Update and delete VMs in Nutanix AHV based PC
         name: ntnx_vms_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch information about Nutanix PC Volume group disks.
         name: ntnx_volume_groups_disks_info_v2
-        namespace: ''
+        namespace: ""
       - description: Manage Nutanix volume group disks
         name: ntnx_volume_groups_disks_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch information about Nutanix PC Volume groups.
         name: ntnx_volume_groups_info_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch ISCSI clients info.
         name: ntnx_volume_groups_iscsi_clients_info_v2
-        namespace: ''
+        namespace: ""
       - description: Manage Nutanix volume groups iscsi clients in Nutanix PC.
         name: ntnx_volume_groups_iscsi_clients_v2
-        namespace: ''
+        namespace: ""
       - description: Manage Nutanix volume group in PC
         name: ntnx_volume_groups_v2
-        namespace: ''
+        namespace: ""
       - description: Attach/Detach volume group to AHV VMs in Nutanix PC
         name: ntnx_volume_groups_vms_v2
-        namespace: ''
+        namespace: ""
       - description: vpc info module
         name: ntnx_vpcs_info_v2
-        namespace: ''
+        namespace: ""
       - description: vpcs module which supports vpc CRUD operations
         name: ntnx_vpcs_v2
-        namespace: ''
-    release_date: '2025-01-07'
+        namespace: ""
+    release_date: "2025-01-07"
   2.1.0:
     changes:
       breaking_changes:
         - nutanix.ncp collection - We are deprecating support for ansible-core==2.15.0
           and minimum version to use this collection is ansible-core==2.16.0.
-      release_summary: Releasing new modules for Prism, Data Protection, Data Policies,
+      release_summary:
+        Releasing new modules for Prism, Data Protection, Data Policies,
         LCM and Volumes using PC GA v4 sdks
     modules:
       - description: Fetch LCM Configuration
         name: ntnx_lcm_config_info_v2
-        namespace: ''
+        namespace: ""
       - description: Update LCM Configuration
         name: ntnx_lcm_config_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch LCM Entities Info
         name: ntnx_lcm_entities_info_v2
-        namespace: ''
+        namespace: ""
       - description: Perform Inventory
         name: ntnx_lcm_inventory_v2
-        namespace: ''
+        namespace: ""
       - description: Perform LCM Prechecks
         name: ntnx_lcm_prechecks_v2
-        namespace: ''
+        namespace: ""
       - description: Get the LCM framework status.
         name: ntnx_lcm_status_info_v2
-        namespace: ''
+        namespace: ""
       - description: Perform LCM upgrades
         name: ntnx_lcm_upgrades_v2
-        namespace: ''
+        namespace: ""
       - description: Get PC backup targets info
         name: ntnx_pc_backup_target_info_v2
-        namespace: ''
+        namespace: ""
       - description: Create, Update and Delete a PC backup target.
         name: ntnx_pc_backup_target_v2
-        namespace: ''
+        namespace: ""
       - description: Get PC Configuration info
         name: ntnx_pc_config_info_v2
-        namespace: ''
+        namespace: ""
       - description: Deploys a Prism Central using the provided details
         name: ntnx_pc_deploy_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch restorable domain managers info
         name: ntnx_pc_restorable_domain_managers_info_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch pc restore points info
         name: ntnx_pc_restore_points_info_v2
-        namespace: ''
+        namespace: ""
       - description: Get PC restore source info
         name: ntnx_pc_restore_source_info_v2
-        namespace: ''
-      - description: Creates or Deletes a restore source pointing to a cluster or object
+        namespace: ""
+      - description:
+          Creates or Deletes a restore source pointing to a cluster or object
           store to restore the domain manager.
         name: ntnx_pc_restore_source_v2
-        namespace: ''
-      - description: Restores a domain manager(PC) from a cluster or object store backup
+        namespace: ""
+      - description:
+          Restores a domain manager(PC) from a cluster or object store backup
           location based on the selected restore point.
         name: ntnx_pc_restore_v2
-        namespace: ''
+        namespace: ""
       - description: Unregister a PC-PC setup connected using availability zone.
         name: ntnx_pc_unregistration_v2
-        namespace: ''
+        namespace: ""
       - description: Module to promote a protected resource in Nutanix Prism Central.
         name: ntnx_promote_protected_resources_v2
-        namespace: ''
+        namespace: ""
       - description: Module to fetch protected resource in Nutanix Prism Central.
         name: ntnx_protected_resources_info_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch protection policies info in Nutanix Prism Central
         name: ntnx_protection_policies_info_v2
-        namespace: ''
+        namespace: ""
       - description: Create, Update, Delete protection policy in Nutanix Prism Central
         name: ntnx_protection_policies_v2
-        namespace: ''
+        namespace: ""
       - description: Module to restore a protected resource in Nutanix Prism Central.
         name: ntnx_restore_protected_resources_v2
-        namespace: ''
-      - description: Module to associate or disassociate categories with a volume group
+        namespace: ""
+      - description:
+          Module to associate or disassociate categories with a volume group
           in Nutanix Prism Central.
         name: ntnx_volume_groups_categories_v2
-        namespace: ''
-    release_date: '2025-04-07'
+        namespace: ""
+    release_date: "2025-04-07"
   2.1.1:
     changes:
       bugfixes:
         - requirements file - [Bug] The entries in the requirements file MUST NOT have
           a version cap or be fixed [[\#631](https://github.com/nutanix/nutanix.ansible/issues/631)]
-      release_summary: Releasing this to make it inline with guidelines of Redhat
+      release_summary:
+        Releasing this to make it inline with guidelines of Redhat
         by removing version cap or fixed version from requirements.txt
-    release_date: '2025-04-09'
+    release_date: "2025-04-09"
   2.2.0:
     changes:
       bugfixes:
@@ -847,37 +867,45 @@ releases:
           in dynamic inventory for groupping [[\#500](https://github.com/nutanix/nutanix.ansible/issues/500)]
         - ntnx_vms_v2 - [Imprv] add functionality uefi boot_order to module ntnx_vms_v2
           [[\#579](https://github.com/nutanix/nutanix.ansible/issues/579)]
-      release_summary: Releasing new modules for Object Stores, Service Accounts and Several Bugs using PC GA v4.1 sdks
+      release_summary:
+        Releasing new modules for Object Stores, Service Accounts and
+        Several Bugs using PC GA v4.1 sdks
     modules:
-      - description: Fetch information about object stores certificates in Nutanix Prism Central.
+      - description:
+          Fetch information about object stores certificates in Nutanix Prism
+          Central.
         name: ntnx_object_stores_certificate_info_v2
-        namespace: ''
-      - description: Create, Update and Delete object stores certificates in Nutanix
+        namespace: ""
+      - description:
+          Create, Update and Delete object stores certificates in Nutanix
           Prism Central.
         name: ntnx_object_stores_certificate_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch information about object stores in Nutanix Prism Central.
         name: ntnx_object_stores_info_v2
-        namespace: ''
+        namespace: ""
       - description: Create, Update and Delete object stores in Nutanix Prism Central.
         name: ntnx_object_stores_v2
-        namespace: ''
-      - description: Fetch API key information for a Service account user in Nutanix
+        namespace: ""
+      - description:
+          Fetch API key information for a Service account user in Nutanix
           Prism Central.
         name: ntnx_users_api_key_info_v2
-        namespace: ''
-      - description: Generate or Delete API key for a Service account user in Nutanix
+        namespace: ""
+      - description:
+          Generate or Delete API key for a Service account user in Nutanix
           Prism Central.
         name: ntnx_users_api_key_v2
-        namespace: ''
+        namespace: ""
       - description: Revoke API key for a Service account user in Nutanix Prism Central.
         name: ntnx_users_revoke_api_key_v2
-        namespace: ''
-      - description: Create Service account in Nutanix Prism Central using ntnx_users_v2
+        namespace: ""
+      - description:
+          Create Service account in Nutanix Prism Central using ntnx_users_v2
           module.
         name: ntnx_users_v2
-        namespace: ''
-    release_date: '2025-07-17'
+        namespace: ""
+    release_date: "2025-07-17"
   2.3.0:
     changes:
       bugfixes:
@@ -911,37 +939,38 @@ releases:
           Ansible module [[\#705](https://github.com/nutanix/nutanix.ansible/issues/705)]
         - requirements.txt - [Imprv] Remove extra python packages from the requirements.txt
           file [[\#785](https://github.com/nutanix/nutanix.ansible/issues/785)]
-      release_summary: Built on v4.1 SDKs. Adds OVA management, Password Managers,
+      release_summary:
+        Built on v4.1 SDKs. Adds OVA management, Password Managers,
         and VM Disk Migration modules with several improvements and bug fixes.
     modules:
       - description: Deploy a VM from an OVA in Nutanix Prism Central.
         name: ntnx_ova_deploy_vm_v2
-        namespace: ''
+        namespace: ""
       - description: Download an OVA from Nutanix Prism Central.
         name: ntnx_ova_download_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch information about OVA in Nutanix Prism Central.
         name: ntnx_ova_info_v2
-        namespace: ''
+        namespace: ""
       - description: Create, Update and Delete OVA in Nutanix Prism Central.
         name: ntnx_ova_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch information about Password Managers in Nutanix Prism Central.
         name: ntnx_password_managers_info_v2
-        namespace: ''
+        namespace: ""
       - description: Update Password of System Users in Nutanix Prism Central.
         name: ntnx_password_managers_v2
-        namespace: ''
+        namespace: ""
       - description: Abort a PC Task in Nutanix Prism Central.
         name: ntnx_pc_task_abort_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch information about PC Tasks in Nutanix Prism Central.
         name: ntnx_pc_tasks_info_v2
-        namespace: ''
+        namespace: ""
       - description: Migrate disks of a VM in Nutanix Prism Central.
         name: ntnx_vms_disks_migrate_v2
-        namespace: ''
-    release_date: '2025-10-29'
+        namespace: ""
+    release_date: "2025-10-29"
   2.4.0:
     changes:
       breaking_changes:
@@ -965,68 +994,73 @@ releases:
           ntnx_vms via a variable instead of a file [[\#389](https://github.com/nutanix/nutanix.ansible/issues/389)]
         - ntnx_vms_cd_rom_iso_v2 - [Imprv] add code enhancement for ntnx_vms_cd_rom_iso_v2
           module [[\#827](https://github.com/nutanix/nutanix.ansible/issues/827)]
-      release_summary: Built on v4 SDKs. Adds Key Management Server, STIGs, SSL Certificates,
+      release_summary:
+        Built on v4 SDKs. Adds Key Management Server, STIGs, SSL Certificates,
         Storage Policies, EULA, Dynamic Inventory and Host Inventory modules with
         several improvements and bug fixes.
     modules:
       - description: Associate or disassociate categories with a Nutanix cluster
         name: ntnx_clusters_categories_v2
-        namespace: ''
+        namespace: ""
       - description: Associate or disassociate cluster profile with a cluster
         name: ntnx_clusters_profile_association_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch information about clusters profiles in Nutanix Prism Central
         name: ntnx_clusters_profiles_info_v2
-        namespace: ''
+        namespace: ""
       - description: Create, Update and Delete clusters profiles in Nutanix Prism Central
         name: ntnx_clusters_profiles_v2
-        namespace: ''
+        namespace: ""
       - description: Accept the EULA for a specific cluster
         name: ntnx_eula_accept_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch information about the EULA for a specific cluster
         name: ntnx_eula_info_v2
-        namespace: ''
-      - description: Fetch information about key management server in Nutanix Prism
+        namespace: ""
+      - description:
+          Fetch information about key management server in Nutanix Prism
           Central
         name: ntnx_key_management_server_info_v2
-        namespace: ''
-      - description: Create, Update and Delete key management server in Nutanix Prism
+        namespace: ""
+      - description:
+          Create, Update and Delete key management server in Nutanix Prism
           Central
         name: ntnx_key_management_server_v2
-        namespace: ''
+        namespace: ""
       - description: Get a list of Nutanix hosts for ansible dynamic inventory
         name: ntnx_prism_host_inventory_v2
-        namespace: ''
+        namespace: ""
       - description: Get a list of Nutanix hosts for ansible dynamic inventory
         name: ntnx_prism_vm_inventory_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch information about the SSL certificate for a specific cluster
         name: ntnx_ssl_certificates_info_v2
-        namespace: ''
+        namespace: ""
       - description: Update the SSL certificate for a specific cluster
         name: ntnx_ssl_certificates_v2
-        namespace: ''
+        namespace: ""
       - description: Get STIGs info in Nutanix Prism Central.
         name: ntnx_stigs_info_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch information about storage policies in Nutanix Prism Central
         name: ntnx_storage_policies_info_v2
-        namespace: ''
+        namespace: ""
       - description: Create, Update and Delete storage policies in Nutanix Prism Central
         name: ntnx_storage_policies_v2
-        namespace: ''
+        namespace: ""
     plugins:
       inventory:
-        - description: Get a list of Nutanix hosts for ansible dynamic inventory using
+        - description:
+            Get a list of Nutanix hosts for ansible dynamic inventory using
             V4 APIs.
           name: ntnx_prism_host_inventory_v2
           namespace: null
-        - description: Get a list of Nutanix VMs for ansible dynamic inventory using
+        - description:
+            Get a list of Nutanix VMs for ansible dynamic inventory using
             V4 APIs.
           name: ntnx_prism_vm_inventory_v2
           namespace: null
-    release_date: '2026-01-06'
+    release_date: "2026-01-06"
   2.5.0:
     changes:
       breaking_changes:
@@ -1035,61 +1069,288 @@ releases:
           modules are deprecated and will be removed in a future release as Prism Central
           versions later than 7.3 no longer support Karbon [[\#921](https://github.com/nutanix/nutanix.ansible/issues/921)]
       bugfixes:
+        - ntnx_foundation - [Bug] vSwitches spec issue in module ntnx_foundation [[\#749](https://github.com/nutanix/nutanix.ansible/issues/749)]
+        - ntnx_password_managers_info_v2 - [Bug] Missing total_available_results in
+          response in module ntnx_password_managers_info_v2 [[\#902](https://github.com/nutanix/nutanix.ansible/issues/902)]
         - ntnx_prism_vm_inventory, ntnx_prism_vm_inventory_v2, ntnx_prism_host_inventory_v2
           - [Bug] NoneType crash in inventory plugins when VM fields are explicitly
           None [[\#939](https://github.com/nutanix/nutanix.ansible/issues/939)]
-        - ntnx_subnets_v2 - [Bug] Unnecessary required fields for state present in
-          module ntnx_subnets_v2 [[\#895](https://github.com/nutanix/nutanix.ansible/issues/895)]
-        - ntnx_password_managers_info_v2 - [Bug] Missing total_available_results in
-          response in module ntnx_password_managers_info_v2 [[\#902](https://github.com/nutanix/nutanix.ansible/issues/902)]
-        - ntnx_foundation - [Bug] vSwitches spec issue in module ntnx_foundation
-          [[\#749](https://github.com/nutanix/nutanix.ansible/issues/749)]
+        - ntnx_subnets_v2 - [Bug] Unnecessary required fields for state present in module
+          ntnx_subnets_v2 [[\#895](https://github.com/nutanix/nutanix.ansible/issues/895)]
       minor_changes:
+        - All modules - [Imprv] Add Service Account API key authentication support [[\#888](https://github.com/nutanix/nutanix.ansible/issues/888)]
+        - All modules - [Imprv] Document required permissions required for Ansible service
+          account used [[\#769](https://github.com/nutanix/nutanix.ansible/issues/769)]
         - All v4 modules - [Imprv] Add configurable read_timeout functionality to all
           v4 modules [[\#882](https://github.com/nutanix/nutanix.ansible/issues/882)]
         - All v4 modules - [Imprv] Add proxy support for v4 API client modules [[\#900](https://github.com/nutanix/nutanix.ansible/issues/900)]
-        - All modules - [Imprv] Add Service Account API key authentication support
-          [[\#888](https://github.com/nutanix/nutanix.ansible/issues/888)]
         - All v4 modules - [Imprv] Separate Base Module for v4 to avoid unnecessary
           flags [[\#918](https://github.com/nutanix/nutanix.ansible/issues/918)]
-        - ntnx_security_rules_v2 - [Imprv] Add global scope, intratier rules, subnet/VPC
-          references [[\#853](https://github.com/nutanix/nutanix.ansible/issues/853)]
+        - CI/CD - [Imprv] Update CI/CD Pipeline and Dependencies to Python 3.12 [[\#915](https://github.com/nutanix/nutanix.ansible/issues/915)]
+        - ntnx_karbon_clusters - [Imprv] Add deprecation message for Karbon modules
+          as Karbon is not supported on PC versions later than 7.3 [[\#921](https://github.com/nutanix/nutanix.ansible/issues/921)]
         - ntnx_prism_vm_inventory - [Imprv] Handle invalid group name characters in
           inventory plugins [[\#917](https://github.com/nutanix/nutanix.ansible/issues/917)]
-        - ntnx_karbon_clusters - [Imprv] Add deprecation message for Karbon modules
-          as Karbon is not supported on PC versions later than 7.3
-          [[\#921](https://github.com/nutanix/nutanix.ansible/issues/921)]
-        - CI/CD - [Imprv] Update CI/CD Pipeline and Dependencies to Python 3.12 [[\#915](https://github.com/nutanix/nutanix.ansible/issues/915)]
-        - All modules - [Imprv] Document required permissions required for Ansible
-          service account used [[\#769](https://github.com/nutanix/nutanix.ansible/issues/769)]
-      release_summary: Built on v4 SDKs. Adds Network Functions, Entity Groups, Security
+        - ntnx_security_rules_v2 - [Imprv] Add global scope, intratier rules, subnet/VPC
+          references [[\#853](https://github.com/nutanix/nutanix.ansible/issues/853)]
+      release_summary:
+        Built on v4 SDKs. Adds Network Functions, Entity Groups, Security
         Policy Rules, IAM Entities, and Virtual Switches modules with proxy support,
         Service Account API key authentication, read timeout, and several improvements
         and bug fixes.
     modules:
-      - description: Create, Update and Delete network functions in Nutanix Prism Central using v4 SDKs.
-        name: ntnx_network_function_v2
-        namespace: ''
-      - description: Fetch information about network functions in Nutanix Prism Central.
-        name: ntnx_network_functions_info_v2
-        namespace: ''
       - description: Create, Update and Delete entity groups in Nutanix Prism Central.
         name: ntnx_entity_group_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch information about entity groups in Nutanix Prism Central.
         name: ntnx_entity_groups_info_v2
-        namespace: ''
-      - description: List all network security policy rules by policy ExtID in Nutanix
-          Prism Central.
-        name: ntnx_security_policy_rules_info_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch information about IAM entities in Nutanix Prism Central.
         name: ntnx_iam_entities_info_v2
-        namespace: ''
+        namespace: ""
+      - description:
+          Create, Update and Delete network functions in Nutanix Prism Central
+          using v4 SDKs.
+        name: ntnx_network_function_v2
+        namespace: ""
+      - description: Fetch information about network functions in Nutanix Prism Central.
+        name: ntnx_network_functions_info_v2
+        namespace: ""
+      - description:
+          List all network security policy rules by policy ExtID in Nutanix
+          Prism Central.
+        name: ntnx_security_policy_rules_info_v2
+        namespace: ""
       - description: Create, Update and Delete virtual switches in Nutanix Prism Central.
         name: ntnx_virtual_switch_v2
-        namespace: ''
+        namespace: ""
       - description: Fetch information about virtual switches in Nutanix Prism Central.
         name: ntnx_virtual_switches_info_v2
-        namespace: ''
-    release_date: '2026-04-15'
+        namespace: ""
+    release_date: "2026-04-15"
+  2.6.0:
+    changes:
+      deprecated_features:
+        - ntnx_address_groups, ntnx_address_groups_info, ntnx_service_groups, ntnx_service_groups_info
+          - [Deprecated] Legacy Flow modules stop working with PC 7.6. Migrate to
+          ntnx_address_groups_v2, ntnx_address_groups_info_v2, ntnx_service_groups_v2,
+          and ntnx_service_groups_info_v2 (`#1317 <https://github.com/nutanix/nutanix.ansible/issues/1317>`_)
+      known_issues:
+        - ntnx_categories_v2 - [Known limitation] Create operations remain non-idempotent
+          by design. Query for an existing category before creating one (`#890 <https://github.com/nutanix/nutanix.ansible/issues/890>`_)
+      minor_changes:
+        - All create v2 modules - [Imprv] Raise an API exception when entity ext_id
+          is missing from task responses for create (non-info) v2 modules (`#1010 <https://github.com/nutanix/nutanix.ansible/issues/1010>`_)
+        - Applicable v4 update modules - [Imprv] Run check mode before idempotency
+          checks in update modules that already implement idempotency (`#991 <https://github.com/nutanix/nutanix.ansible/issues/991>`_)
+        - Inventory - [Imprv] Resolve category external IDs to key/value pairs and
+          add auto_create_cluster_groups and resolve_categories options (`#963 <https://github.com/nutanix/nutanix.ansible/issues/963>`_)
+        - guest_customization - [Imprv] Document base64 requirements for sysprep guest
+          customization (`#952 <https://github.com/nutanix/nutanix.ansible/issues/952>`_)
+        - ntnx_categories_v2 - [Imprv] Add get_categories_api_instance to pc_api_client
+          for categories modules (`#990 <https://github.com/nutanix/nutanix.ansible/issues/990>`_)
+        - ntnx_directory_server_config_v2, ntnx_category_mapping_v2 - [Feat] Manage
+          directory server configs and category mappings using v4 SDKs (`#994 <https://github.com/nutanix/nutanix.ansible/issues/994>`_)
+        - ntnx_directory_services_connection_v2 - [Feat] Verify connectivity to an
+          existing directory service using v4 SDKs (`#1005 <https://github.com/nutanix/nutanix.ansible/issues/1005>`_)
+        - ntnx_ext_id - [Feat] Resolve human-readable entity values to the external
+          IDs required by v4 modules (`#979 <https://github.com/nutanix/nutanix.ansible/issues/979>`_)
+          (`#1001 <https://github.com/nutanix/nutanix.ansible/issues/1001>`_)
+        - ntnx_image_rate_limit_policy_v2 - [Feat] Manage image rate limit policies
+          using v4 SDKs (`#998 <https://github.com/nutanix/nutanix.ansible/issues/998>`_)
+        - ntnx_load_balancer_session_v2, ntnx_load_balancer_sessions_info_v2 - [Feat]
+          Manage load balancer sessions using v4 SDKs (`#1007 <https://github.com/nutanix/nutanix.ansible/issues/1007>`_)
+        - ntnx_object_stores_stats_info_v2, ntnx_object_stores_certificate_download_v2
+          - [Feat] Fetch object store statistics and download certificate authorities
+          using v4 SDKs (`#1008 <https://github.com/nutanix/nutanix.ansible/issues/1008>`_)
+        - ntnx_project_v2 - [Feat] Redesign project architecture on v4 APIs with Ansible
+          IaC support for Projects 2.0 (`#838 <https://github.com/nutanix/nutanix.ansible/issues/838>`_)
+        - ntnx_project_v2, ntnx_projects_info_v2 - [Feat] Create, update, delete, and
+          list Projects using v4 SDKs (`#944 <https://github.com/nutanix/nutanix.ansible/issues/944>`_)
+        - ntnx_projects - [Imprv] Add missing project attributes to the V3 projects
+          module and update integration tests (`#1315 <https://github.com/nutanix/nutanix.ansible/issues/1315>`_)
+        - Applicable v2 modules - [Imprv] Add project_ext_id and project sharing operations
+          across supported namespaces (`#943 <https://github.com/nutanix/nutanix.ansible/issues/943>`_)
+        - ntnx_resource_group_v2, ntnx_resource_groups_info_v2 - [Feat] Manage resource
+          groups using v4 SDKs (`#946 <https://github.com/nutanix/nutanix.ansible/issues/946>`_)
+        - ntnx_role_membership_v2, ntnx_role_memberships_info_v2 - [Feat] Manage role
+          memberships using v4 SDKs (`#945 <https://github.com/nutanix/nutanix.ansible/issues/945>`_)
+        - ntnx_security_rules_export_v2, ntnx_security_rules_import_v2 - [Feat] Export
+          and import network security policies using v4 SDKs (`#1311 <https://github.com/nutanix/nutanix.ansible/issues/1311>`_)
+        - ntnx_snmp_status_v2, ntnx_snmp_transport_v2, ntnx_snmp_trap_v2, ntnx_snmp_user_v2
+          - [Feat] Manage SNMP status, transport, traps, and users using v4 SDKs (`#930
+          <https://github.com/nutanix/nutanix.ansible/issues/930>`_)
+        - ntnx_template_placement_policy_v2 - [Feat] Manage template placement policies
+          using v4 SDKs (`#995 <https://github.com/nutanix/nutanix.ansible/issues/995>`_)
+        - ntnx_vm_anti_affinity_policy_v2 - [Feat] Manage VM anti-affinity policies
+          using v4 SDKs (`#992 <https://github.com/nutanix/nutanix.ansible/issues/992>`_)
+        - ntnx_vm_guest_customization_profile_v2 - [Feat] Manage VM guest customization
+          profiles using v4 SDKs (`#966 <https://github.com/nutanix/nutanix.ansible/issues/966>`_)
+        - ntnx_vm_host_affinity_policy_v2 - [Feat] Manage VM host affinity policies
+          using v4 SDKs (`#993 <https://github.com/nutanix/nutanix.ansible/issues/993>`_)
+        - ntnx_vm_startup_policy_v2 - [Feat] Manage VM startup policies using v4 SDKs
+          (`#997 <https://github.com/nutanix/nutanix.ansible/issues/997>`_)
+        - ntnx_vms_info_v2 - [Imprv] Add IP search option when listing/getting VMs (`#1021
+          <https://github.com/nutanix/nutanix.ansible/issues/1021>`_)
+        - ntnx_prism_vm_inventory, ntnx_prism_vm_inventory_v2 - [Imprv] Expose all
+          detected addresses through vm_ip_addresses and document APIPA filtering
+          with compose. Default ansible_host selection remains unchanged (`#1305
+          <https://github.com/nutanix/nutanix.ansible/issues/1305>`_)
+        - ntnx_vms_ngt_v2 - [Docs] Clarify that ext_id must be a decoded VM UUID,
+          not the complete Ansible slurp result (`#962 <https://github.com/nutanix/nutanix.ansible/issues/962>`_)
+        - ntnx_vms_v2 - [Imprv] Add functionality to set ownership on VMs (`#757 <https://github.com/nutanix/nutanix.ansible/issues/757>`_)
+        - ntnx_vpc_virtual_switch_mapping_v2, ntnx_vpc_virtual_switch_mappings_info_v2
+          - [Feat] Manage VPC virtual switch mappings using v4 SDKs (`#996 <https://github.com/nutanix/nutanix.ansible/issues/996>`_)
+      release_summary:
+        "Built on v4 SDKs. Adds Projects 2.0/v4, Resource Groups, Role
+        Memberships, Directory Services, SNMP, Load Balancer Sessions, VPC Virtual
+        Switch Mapping, VM affinity/startup/placement policies, Guest Customization
+        Profiles, Flow directory server configs, Security Policy export/import, Object
+        Store statistics, and the ntnx_ext_id lookup with compatibility and usability
+        updates.
+
+        "
+    modules:
+      - description: Create, Update, Delete Directory Service Category Mapping.
+        name: ntnx_category_mapping_v2
+        namespace: ""
+      - description: Get Directory Service Category Mappings info.
+        name: ntnx_category_mappings_info_v2
+        namespace: ""
+      - description: Create, Update, Delete directory server config.
+        name: ntnx_directory_server_config_v2
+        namespace: ""
+      - description: Get directory server configs info.
+        name: ntnx_directory_server_configs_info_v2
+        namespace: ""
+      - description: Search users and groups in a directory service in Nutanix PC.
+        name: ntnx_directory_service_search_v2
+        namespace: ""
+      - description: Check the connection to a directory service in Nutanix PC.
+        name: ntnx_directory_services_connection_v2
+        namespace: ""
+      - description: Fetches information about Nutanix PC image rate limit policies.
+        name: ntnx_image_rate_limit_policies_info_v2
+        namespace: ""
+      - description: Manage image rate limit policies in Nutanix Prism Central.
+        name: ntnx_image_rate_limit_policy_v2
+        namespace: ""
+      - description:
+          Create, Update, Delete load balancer sessions in Nutanix Prism
+          Central.
+        name: ntnx_load_balancer_session_v2
+        namespace: ""
+      - description: Fetch load balancer sessions info in Nutanix Prism Central.
+        name: ntnx_load_balancer_sessions_info_v2
+        namespace: ""
+      - description: Download Object Stores certificate authority.
+        name: ntnx_object_stores_certificate_download_v2
+        namespace: ""
+      - description: Get Object Store statistics.
+        name: ntnx_object_stores_stats_info_v2
+        namespace: ""
+      - description: Manage projects in Nutanix Prism Central using v4 APIs.
+        name: ntnx_project_v2
+        namespace: ""
+      - description: Fetch projects info from Nutanix Prism Central using v4 APIs.
+        name: ntnx_projects_info_v2
+        namespace: ""
+      - description: Manage resource groups in Nutanix Prism Central using v4 APIs.
+        name: ntnx_resource_group_v2
+        namespace: ""
+      - description: Fetch resource group information using Nutanix v4 APIs.
+        name: ntnx_resource_groups_info_v2
+        namespace: ""
+      - description: Manage role memberships in Nutanix Prism Central using v4 APIs.
+        name: ntnx_role_membership_v2
+        namespace: ""
+      - description: Fetch role membership information using Nutanix v4 APIs.
+        name: ntnx_role_memberships_info_v2
+        namespace: ""
+      - description: Export network security policies in Nutanix Prism Central.
+        name: ntnx_security_rules_export_v2
+        namespace: ""
+      - description: Import network security policies into Nutanix Prism Central.
+        name: ntnx_security_rules_import_v2
+        namespace: ""
+      - description: Fetch SNMP configuration of a Nutanix cluster.
+        name: ntnx_snmp_config_info_v2
+        namespace: ""
+      - description: Update SNMP status (enable/disable) on a Nutanix cluster.
+        name: ntnx_snmp_status_v2
+        namespace: ""
+      - description:
+          Add or Remove SNMP transport ports and protocol details on a Nutanix
+          cluster.
+        name: ntnx_snmp_transport_v2
+        namespace: ""
+      - description: Fetch information about a specific SNMP trap.
+        name: ntnx_snmp_trap_info_v2
+        namespace: ""
+      - description: Create, Update and Delete SNMP traps in Nutanix Prism Central.
+        name: ntnx_snmp_trap_v2
+        namespace: ""
+      - description: Fetch information about an SNMP user.
+        name: ntnx_snmp_user_info_v2
+        namespace: ""
+      - description: Create, Update and Delete SNMP users in Nutanix Prism Central.
+        name: ntnx_snmp_user_v2
+        namespace: ""
+      - description: Fetches information about Nutanix PC template placement policies.
+        name: ntnx_template_placement_policies_info_v2
+        namespace: ""
+      - description: Manage template placement policies in Nutanix Prism Central.
+        name: ntnx_template_placement_policy_v2
+        namespace: ""
+      - description:
+          Fetches information about VM\-VM anti\-affinity policies in Nutanix
+          Prism Central.
+        name: ntnx_vm_anti_affinity_policies_info_v2
+        namespace: ""
+      - description:
+          Fetch VM compliance states for a VM\-VM anti\-affinity policy in
+          Nutanix Prism Central.
+        name: ntnx_vm_anti_affinity_policy_compliance_info_v2
+        namespace: ""
+      - description: Manage VM\-VM anti\-affinity policy in Nutanix Prism Central.
+        name: ntnx_vm_anti_affinity_policy_v2
+        namespace: ""
+      - description:
+          Create, update and delete VM Guest Customization Profiles in Nutanix
+          Prism Central.
+        name: ntnx_vm_guest_customization_profile_v2
+        namespace: ""
+      - description: Fetch information about VM Guest Customization Profile(s).
+        name: ntnx_vm_guest_customization_profiles_info_v2
+        namespace: ""
+      - description:
+          Fetches information about VM\-host affinity policies in Nutanix
+          Prism Central.
+        name: ntnx_vm_host_affinity_policies_info_v2
+        namespace: ""
+      - description: Re\-enforce VM\-host affinity policy in Nutanix Prism Central.
+        name: ntnx_vm_host_affinity_policy_re_enforce_v2
+        namespace: ""
+      - description: Manage VM\-host affinity policy in Nutanix Prism Central.
+        name: ntnx_vm_host_affinity_policy_v2
+        namespace: ""
+      - description: Fetch VM startup policies info in Nutanix Prism Central.
+        name: ntnx_vm_startup_policies_info_v2
+        namespace: ""
+      - description: Create, Update, Delete VM startup policies in Nutanix Prism Central.
+        name: ntnx_vm_startup_policy_v2
+        namespace: ""
+      - description: Set VPC for virtual switch mappings traffic config.
+        name: ntnx_vpc_virtual_switch_mapping_v2
+        namespace: ""
+      - description: Fetch VPC virtual switch mappings info in Nutanix Prism Central.
+        name: ntnx_vpc_virtual_switch_mappings_info_v2
+        namespace: ""
+    plugins:
+      lookup:
+        - description:
+            Resolve a Nutanix entity name to its external ID (ext\_id) using
+            V4 APIs.
+          name: ntnx_ext_id
+          namespace: null
+    release_date: "2026-09-21"

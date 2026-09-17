@@ -2,133 +2,245 @@
 
 **Topics**
 
-- <a href="#v2-5-0">v2\.5\.0</a>
+- <a href="#v2-6-0">v2\.6\.0</a>
     - <a href="#release-summary">Release Summary</a>
     - <a href="#minor-changes">Minor Changes</a>
-    - <a href="#bugfixes">Bugfixes</a>
+    - <a href="#deprecated-features">Deprecated Features</a>
+    - <a href="#known-issues">Known Issues</a>
+    - <a href="#new-plugins">New Plugins</a>
+        - <a href="#lookup">Lookup</a>
     - <a href="#new-modules">New Modules</a>
-- <a href="#v2-4-0">v2\.4\.0</a>
+- <a href="#v2-5-0">v2\.5\.0</a>
     - <a href="#release-summary-1">Release Summary</a>
     - <a href="#minor-changes-1">Minor Changes</a>
     - <a href="#breaking-changes--porting-guide">Breaking Changes / Porting Guide</a>
-    - <a href="#bugfixes-1">Bugfixes</a>
-    - <a href="#new-plugins">New Plugins</a>
-        - <a href="#inventory">Inventory</a>
+    - <a href="#bugfixes">Bugfixes</a>
     - <a href="#new-modules-1">New Modules</a>
-- <a href="#v2-3-0">v2\.3\.0</a>
+- <a href="#v2-4-0">v2\.4\.0</a>
     - <a href="#release-summary-2">Release Summary</a>
     - <a href="#minor-changes-2">Minor Changes</a>
-    - <a href="#bugfixes-2">Bugfixes</a>
+    - <a href="#breaking-changes--porting-guide-1">Breaking Changes / Porting Guide</a>
+    - <a href="#bugfixes-1">Bugfixes</a>
+    - <a href="#new-plugins-1">New Plugins</a>
+        - <a href="#inventory">Inventory</a>
     - <a href="#new-modules-2">New Modules</a>
-- <a href="#v2-2-0">v2\.2\.0</a>
+- <a href="#v2-3-0">v2\.3\.0</a>
     - <a href="#release-summary-3">Release Summary</a>
     - <a href="#minor-changes-3">Minor Changes</a>
-    - <a href="#bugfixes-3">Bugfixes</a>
+    - <a href="#bugfixes-2">Bugfixes</a>
     - <a href="#new-modules-3">New Modules</a>
-- <a href="#v2-1-1">v2\.1\.1</a>
+- <a href="#v2-2-0">v2\.2\.0</a>
     - <a href="#release-summary-4">Release Summary</a>
+    - <a href="#minor-changes-4">Minor Changes</a>
+    - <a href="#bugfixes-3">Bugfixes</a>
+    - <a href="#new-modules-4">New Modules</a>
+- <a href="#v2-1-1">v2\.1\.1</a>
+    - <a href="#release-summary-5">Release Summary</a>
     - <a href="#bugfixes-4">Bugfixes</a>
 - <a href="#v2-1-0">v2\.1\.0</a>
-    - <a href="#release-summary-5">Release Summary</a>
-    - <a href="#breaking-changes--porting-guide-1">Breaking Changes / Porting Guide</a>
-    - <a href="#new-modules-4">New Modules</a>
-- <a href="#v2-0-0">v2\.0\.0</a>
     - <a href="#release-summary-6">Release Summary</a>
-    - <a href="#new-modules-5">New Modules</a>
-- <a href="#v1-9-2">v1\.9\.2</a>
-    - <a href="#release-summary-7">Release Summary</a>
     - <a href="#breaking-changes--porting-guide-2">Breaking Changes / Porting Guide</a>
-- <a href="#v1-9-1">v1\.9\.1</a>
+    - <a href="#new-modules-5">New Modules</a>
+- <a href="#v2-0-0">v2\.0\.0</a>
+    - <a href="#release-summary-7">Release Summary</a>
+    - <a href="#new-modules-6">New Modules</a>
+- <a href="#v1-9-2">v1\.9\.2</a>
     - <a href="#release-summary-8">Release Summary</a>
-    - <a href="#minor-changes-4">Minor Changes</a>
+    - <a href="#breaking-changes--porting-guide-3">Breaking Changes / Porting Guide</a>
+- <a href="#v1-9-1">v1\.9\.1</a>
+    - <a href="#release-summary-9">Release Summary</a>
+    - <a href="#minor-changes-5">Minor Changes</a>
     - <a href="#bugfixes-5">Bugfixes</a>
 - <a href="#v1-9-0">v1\.9\.0</a>
-    - <a href="#minor-changes-5">Minor Changes</a>
-    - <a href="#deprecated-features">Deprecated Features</a>
-    - <a href="#bugfixes-6">Bugfixes</a>
-    - <a href="#new-modules-6">New Modules</a>
-- <a href="#v1-8-0">v1\.8\.0</a>
-    - <a href="#new-modules-7">New Modules</a>
-- <a href="#v1-7-0">v1\.7\.0</a>
     - <a href="#minor-changes-6">Minor Changes</a>
+    - <a href="#deprecated-features-1">Deprecated Features</a>
+    - <a href="#bugfixes-6">Bugfixes</a>
+    - <a href="#new-modules-7">New Modules</a>
+- <a href="#v1-8-0">v1\.8\.0</a>
+    - <a href="#new-modules-8">New Modules</a>
+- <a href="#v1-7-0">v1\.7\.0</a>
+    - <a href="#minor-changes-7">Minor Changes</a>
     - <a href="#bugfixes-7">Bugfixes</a>
 - <a href="#v1-6-0">v1\.6\.0</a>
-    - <a href="#new-modules-8">New Modules</a>
-- <a href="#v1-5-0">v1\.5\.0</a>
     - <a href="#new-modules-9">New Modules</a>
+- <a href="#v1-5-0">v1\.5\.0</a>
+    - <a href="#new-modules-10">New Modules</a>
 - <a href="#v1-4-0">v1\.4\.0</a>
     - <a href="#bugfixes-8">Bugfixes</a>
-    - <a href="#new-modules-10">New Modules</a>
-- <a href="#v1-3-0">v1\.3\.0</a>
     - <a href="#new-modules-11">New Modules</a>
-- <a href="#v1-2-0">v1\.2\.0</a>
-    - <a href="#minor-changes-7">Minor Changes</a>
+- <a href="#v1-3-0">v1\.3\.0</a>
     - <a href="#new-modules-12">New Modules</a>
-- <a href="#v1-1-0">v1\.1\.0</a>
+- <a href="#v1-2-0">v1\.2\.0</a>
     - <a href="#minor-changes-8">Minor Changes</a>
     - <a href="#new-modules-13">New Modules</a>
+- <a href="#v1-1-0">v1\.1\.0</a>
+    - <a href="#minor-changes-9">Minor Changes</a>
+    - <a href="#new-modules-14">New Modules</a>
 - <a href="#v1-0-0">v1\.0\.0</a>
     - <a href="#major-changes">Major Changes</a>
-    - <a href="#minor-changes-9">Minor Changes</a>
+    - <a href="#minor-changes-10">Minor Changes</a>
     - <a href="#bugfixes-9">Bugfixes</a>
-    - <a href="#new-modules-14">New Modules</a>
+    - <a href="#new-modules-15">New Modules</a>
 
-<a id="v2-5-0"></a>
-## v2\.5\.0
+<a id="v2-6-0"></a>
+## v2\.6\.0
 
 <a id="release-summary"></a>
 ### Release Summary
 
-Built on v4 SDKs\. Adds Network Functions\, Entity Groups\, Security Policy Rules\, IAM Entities\, and Virtual Switches modules with proxy support\, Service Account API key authentication\, read timeout\, and several improvements and bug fixes\.
-
-<a id="breaking-changes"></a>
-### Breaking Changes / Porting Guide
-
-* ntnx\_karbon\_clusters\, ntnx\_karbon\_clusters\_node\_pools\, ntnx\_karbon\_registries\, ntnx\_karbon\_clusters\_info\, ntnx\_karbon\_registries\_info \- \[Breaking\] Karbon modules are deprecated and will be removed in a future release as Prism Central versions later than 7\.3 no longer support Karbon \[\[\#921\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/921](https\://github\.com/nutanix/nutanix\.ansible/issues/921)\)\]
+Built on v4 SDKs\. Adds Projects 2\.0/v4\, Resource Groups\, Role Memberships\, Directory Services\, SNMP\, Load Balancer Sessions\, VPC Virtual Switch Mapping\, VM affinity/startup/placement policies\, Guest Customization Profiles\, Flow directory server configs\, Security Policy export/import\, Object Store statistics\, and the ntnx\_ext\_id lookup with compatibility and usability updates\.
 
 <a id="minor-changes"></a>
 ### Minor Changes
 
-* All v4 modules \- \[Imprv\] Add configurable read\_timeout functionality to all v4 modules \[\[\#882\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/882](https\://github\.com/nutanix/nutanix\.ansible/issues/882)\)\]
-* All v4 modules \- \[Imprv\] Add proxy support for v4 API client modules \[\[\#900\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/900](https\://github\.com/nutanix/nutanix\.ansible/issues/900)\)\]
-* All modules \- \[Imprv\] Add Service Account API key authentication support \[\[\#888\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/888](https\://github\.com/nutanix/nutanix\.ansible/issues/888)\)\]
-* All v4 modules \- \[Imprv\] Separate Base Module for v4 to avoid unnecessary flags \[\[\#918\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/918](https\://github\.com/nutanix/nutanix\.ansible/issues/918)\)\]
-* ntnx\_security\_rules\_v2 \- \[Imprv\] Add global scope\, intratier rules\, subnet/VPC references \[\[\#853\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/853](https\://github\.com/nutanix/nutanix\.ansible/issues/853)\)\]
-* ntnx\_prism\_vm\_inventory \- \[Imprv\] Handle invalid group name characters in inventory plugins \[\[\#917\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/917](https\://github\.com/nutanix/nutanix\.ansible/issues/917)\)\]
-* ntnx\_karbon\_clusters \- \[Imprv\] Add deprecation message for Karbon modules as Karbon is not supported on PC versions later than 7\.3 \[\[\#921\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/921](https\://github\.com/nutanix/nutanix\.ansible/issues/921)\)\]
-* CI/CD \- \[Imprv\] Update CI/CD Pipeline and Dependencies to Python 3\.12 \[\[\#915\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/915](https\://github\.com/nutanix/nutanix\.ansible/issues/915)\)\]
-* All modules \- \[Imprv\] Document required permissions required for Ansible service account used \[\[\#769\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/769](https\://github\.com/nutanix/nutanix\.ansible/issues/769)\)\]
+* All create v2 modules \- \[Imprv\] Raise an API exception when entity ext\_id is missing from task responses for create \(non\-info\) v2 modules \([\#1010](https\://github\.com/nutanix/nutanix\.ansible/issues/1010)\)
+* Applicable v2 modules \- \[Imprv\] Add project\_ext\_id and project sharing operations across supported namespaces \([\#943](https\://github\.com/nutanix/nutanix\.ansible/issues/943)\)
+* Applicable v4 update modules \- \[Imprv\] Run check mode before idempotency checks in update modules that already implement idempotency \([\#991](https\://github\.com/nutanix/nutanix\.ansible/issues/991)\)
+* Inventory \- \[Imprv\] Resolve category external IDs to key/value pairs and add auto\_create\_cluster\_groups and resolve\_categories options \([\#963](https\://github\.com/nutanix/nutanix\.ansible/issues/963)\)
+* guest\_customization \- \[Imprv\] Document base64 requirements for sysprep guest customization \([\#952](https\://github\.com/nutanix/nutanix\.ansible/issues/952)\)
+* ntnx\_categories\_v2 \- \[Imprv\] Add get\_categories\_api\_instance to pc\_api\_client for categories modules \([\#990](https\://github\.com/nutanix/nutanix\.ansible/issues/990)\)
+* ntnx\_directory\_server\_config\_v2\, ntnx\_category\_mapping\_v2 \- \[Feat\] Manage directory server configs and category mappings using v4 SDKs \([\#994](https\://github\.com/nutanix/nutanix\.ansible/issues/994)\)
+* ntnx\_directory\_services\_connection\_v2 \- \[Feat\] Verify connectivity to an existing directory service using v4 SDKs \([\#1005](https\://github\.com/nutanix/nutanix\.ansible/issues/1005)\)
+* ntnx\_ext\_id \- \[Feat\] Resolve human\-readable entity values to the external IDs required by v4 modules \([\#979](https\://github\.com/nutanix/nutanix\.ansible/issues/979)\) \([\#1001](https\://github\.com/nutanix/nutanix\.ansible/issues/1001)\)
+* ntnx\_image\_rate\_limit\_policy\_v2 \- \[Feat\] Manage image rate limit policies using v4 SDKs \([\#998](https\://github\.com/nutanix/nutanix\.ansible/issues/998)\)
+* ntnx\_load\_balancer\_session\_v2\, ntnx\_load\_balancer\_sessions\_info\_v2 \- \[Feat\] Manage load balancer sessions using v4 SDKs \([\#1007](https\://github\.com/nutanix/nutanix\.ansible/issues/1007)\)
+* ntnx\_object\_stores\_stats\_info\_v2\, ntnx\_object\_stores\_certificate\_download\_v2 \- \[Feat\] Fetch object store statistics and download certificate authorities using v4 SDKs \([\#1008](https\://github\.com/nutanix/nutanix\.ansible/issues/1008)\)
+* ntnx\_prism\_vm\_inventory\, ntnx\_prism\_vm\_inventory\_v2 \- \[Imprv\] Expose all detected addresses through vm\_ip\_addresses and document APIPA filtering with compose\. Default ansible\_host selection remains unchanged \([\#1305](https\://github\.com/nutanix/nutanix\.ansible/issues/1305)\)
+* ntnx\_project\_v2 \- \[Feat\] Redesign project architecture on v4 APIs with Ansible IaC support for Projects 2\.0 \([\#838](https\://github\.com/nutanix/nutanix\.ansible/issues/838)\)
+* ntnx\_project\_v2\, ntnx\_projects\_info\_v2 \- \[Feat\] Create\, update\, delete\, and list Projects using v4 SDKs \([\#944](https\://github\.com/nutanix/nutanix\.ansible/issues/944)\)
+* ntnx\_projects \- \[Imprv\] Add missing project attributes to the V3 projects module and update integration tests \([\#1315](https\://github\.com/nutanix/nutanix\.ansible/issues/1315)\)
+* ntnx\_resource\_group\_v2\, ntnx\_resource\_groups\_info\_v2 \- \[Feat\] Manage resource groups using v4 SDKs \([\#946](https\://github\.com/nutanix/nutanix\.ansible/issues/946)\)
+* ntnx\_role\_membership\_v2\, ntnx\_role\_memberships\_info\_v2 \- \[Feat\] Manage role memberships using v4 SDKs \([\#945](https\://github\.com/nutanix/nutanix\.ansible/issues/945)\)
+* ntnx\_security\_rules\_export\_v2\, ntnx\_security\_rules\_import\_v2 \- \[Feat\] Export and import network security policies using v4 SDKs \([\#1311](https\://github\.com/nutanix/nutanix\.ansible/issues/1311)\)
+* ntnx\_snmp\_status\_v2\, ntnx\_snmp\_transport\_v2\, ntnx\_snmp\_trap\_v2\, ntnx\_snmp\_user\_v2 \- \[Feat\] Manage SNMP status\, transport\, traps\, and users using v4 SDKs \([\#930](https\://github\.com/nutanix/nutanix\.ansible/issues/930)\)
+* ntnx\_template\_placement\_policy\_v2 \- \[Feat\] Manage template placement policies using v4 SDKs \([\#995](https\://github\.com/nutanix/nutanix\.ansible/issues/995)\)
+* ntnx\_vm\_anti\_affinity\_policy\_v2 \- \[Feat\] Manage VM anti\-affinity policies using v4 SDKs \([\#992](https\://github\.com/nutanix/nutanix\.ansible/issues/992)\)
+* ntnx\_vm\_guest\_customization\_profile\_v2 \- \[Feat\] Manage VM guest customization profiles using v4 SDKs \([\#966](https\://github\.com/nutanix/nutanix\.ansible/issues/966)\)
+* ntnx\_vm\_host\_affinity\_policy\_v2 \- \[Feat\] Manage VM host affinity policies using v4 SDKs \([\#993](https\://github\.com/nutanix/nutanix\.ansible/issues/993)\)
+* ntnx\_vm\_startup\_policy\_v2 \- \[Feat\] Manage VM startup policies using v4 SDKs \([\#997](https\://github\.com/nutanix/nutanix\.ansible/issues/997)\)
+* ntnx\_vms\_info\_v2 \- \[Imprv\] Add IP search option when listing/getting VMs \([\#1021](https\://github\.com/nutanix/nutanix\.ansible/issues/1021)\)
+* ntnx\_vms\_ngt\_v2 \- \[Docs\] Clarify that ext\_id must be a decoded VM UUID\, not the complete Ansible slurp result \([\#962](https\://github\.com/nutanix/nutanix\.ansible/issues/962)\)
+* ntnx\_vms\_v2 \- \[Imprv\] Add functionality to set ownership on VMs \([\#757](https\://github\.com/nutanix/nutanix\.ansible/issues/757)\)
+* ntnx\_vpc\_virtual\_switch\_mapping\_v2\, ntnx\_vpc\_virtual\_switch\_mappings\_info\_v2 \- \[Feat\] Manage VPC virtual switch mappings using v4 SDKs \([\#996](https\://github\.com/nutanix/nutanix\.ansible/issues/996)\)
 
-<a id="bugfixes"></a>
-### Bugfixes
+<a id="deprecated-features"></a>
+### Deprecated Features
 
-* ntnx\_prism\_vm\_inventory\, ntnx\_prism\_vm\_inventory\_v2\, ntnx\_prism\_host\_inventory\_v2 \- \[Bug\] NoneType crash in inventory plugins when VM fields are explicitly None \[\[\#939\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/939](https\://github\.com/nutanix/nutanix\.ansible/issues/939)\)\]
-* ntnx\_subnets\_v2 \- \[Bug\] Unnecessary required fields for state\: present in module ntnx\_subnets\_v2 \[\[\#895\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/895](https\://github\.com/nutanix/nutanix\.ansible/issues/895)\)\]
-* ntnx\_password\_managers\_info\_v2 \- \[Bug\] Missing total\_available\_results in response in module ntnx\_password\_managers\_info\_v2 \[\[\#902\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/902](https\://github\.com/nutanix/nutanix\.ansible/issues/902)\)\]
-* ntnx\_foundation \- \[Bug\] vSwitches spec issue in module ntnx\_foundation \[\[\#749\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/749](https\://github\.com/nutanix/nutanix\.ansible/issues/749)\)\]
+* ntnx\_address\_groups\, ntnx\_address\_groups\_info\, ntnx\_service\_groups\, ntnx\_service\_groups\_info \- \[Deprecated\] Legacy Flow modules stop working with PC 7\.6\. Migrate to ntnx\_address\_groups\_v2\, ntnx\_address\_groups\_info\_v2\, ntnx\_service\_groups\_v2\, and ntnx\_service\_groups\_info\_v2 \([\#1317](https\://github\.com/nutanix/nutanix\.ansible/issues/1317)\)
 
+<a id="known-issues"></a>
+### Known Issues
+
+* ntnx\_categories\_v2 \- \[Known limitation\] Create operations remain non\-idempotent by design\. Query for an existing category before creating one \([\#890](https\://github\.com/nutanix/nutanix\.ansible/issues/890)\)
+
+<a id="new-plugins"></a>
+### New Plugins
+
+<a id="lookup"></a>
+#### Lookup
+
+* nutanix\.ncp\.ntnx\_ext\_id \- Resolve a Nutanix entity name to its external ID \(ext\_id\) using V4 APIs\.
 
 <a id="new-modules"></a>
 ### New Modules
 
-* nutanix\.ncp\.ntnx\_network\_function\_v2 \- Create, Update and Delete network functions in Nutanix Prism Central using v4 SDKs\.
-* nutanix\.ncp\.ntnx\_network\_functions\_info\_v2 \- Fetch information about network functions in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_category\_mapping\_v2 \- Create\, Update\, Delete Directory Service Category Mapping\.
+* nutanix\.ncp\.ntnx\_category\_mappings\_info\_v2 \- Get Directory Service Category Mappings info\.
+* nutanix\.ncp\.ntnx\_directory\_server\_config\_v2 \- Create\, Update\, Delete directory server config\.
+* nutanix\.ncp\.ntnx\_directory\_server\_configs\_info\_v2 \- Get directory server configs info\.
+* nutanix\.ncp\.ntnx\_directory\_service\_search\_v2 \- Search users and groups in a directory service in Nutanix PC\.
+* nutanix\.ncp\.ntnx\_directory\_services\_connection\_v2 \- Check the connection to a directory service in Nutanix PC\.
+* nutanix\.ncp\.ntnx\_image\_rate\_limit\_policies\_info\_v2 \- Fetches information about Nutanix PC image rate limit policies\.
+* nutanix\.ncp\.ntnx\_image\_rate\_limit\_policy\_v2 \- Manage image rate limit policies in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_load\_balancer\_session\_v2 \- Create\, Update\, Delete load balancer sessions in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_load\_balancer\_sessions\_info\_v2 \- Fetch load balancer sessions info in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_object\_stores\_certificate\_download\_v2 \- Download Object Stores certificate authority\.
+* nutanix\.ncp\.ntnx\_object\_stores\_stats\_info\_v2 \- Get Object Store statistics\.
+* nutanix\.ncp\.ntnx\_project\_v2 \- Manage projects in Nutanix Prism Central using v4 APIs\.
+* nutanix\.ncp\.ntnx\_projects\_info\_v2 \- Fetch projects info from Nutanix Prism Central using v4 APIs\.
+* nutanix\.ncp\.ntnx\_resource\_group\_v2 \- Manage resource groups in Nutanix Prism Central using v4 APIs\.
+* nutanix\.ncp\.ntnx\_resource\_groups\_info\_v2 \- Fetch resource group information using Nutanix v4 APIs\.
+* nutanix\.ncp\.ntnx\_role\_membership\_v2 \- Manage role memberships in Nutanix Prism Central using v4 APIs\.
+* nutanix\.ncp\.ntnx\_role\_memberships\_info\_v2 \- Fetch role membership information using Nutanix v4 APIs\.
+* nutanix\.ncp\.ntnx\_security\_rules\_export\_v2 \- Export network security policies in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_security\_rules\_import\_v2 \- Import network security policies into Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_snmp\_config\_info\_v2 \- Fetch SNMP configuration of a Nutanix cluster\.
+* nutanix\.ncp\.ntnx\_snmp\_status\_v2 \- Update SNMP status \(enable/disable\) on a Nutanix cluster\.
+* nutanix\.ncp\.ntnx\_snmp\_transport\_v2 \- Add or Remove SNMP transport ports and protocol details on a Nutanix cluster\.
+* nutanix\.ncp\.ntnx\_snmp\_trap\_info\_v2 \- Fetch information about a specific SNMP trap\.
+* nutanix\.ncp\.ntnx\_snmp\_trap\_v2 \- Create\, Update and Delete SNMP traps in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_snmp\_user\_info\_v2 \- Fetch information about an SNMP user\.
+* nutanix\.ncp\.ntnx\_snmp\_user\_v2 \- Create\, Update and Delete SNMP users in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_template\_placement\_policies\_info\_v2 \- Fetches information about Nutanix PC template placement policies\.
+* nutanix\.ncp\.ntnx\_template\_placement\_policy\_v2 \- Manage template placement policies in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_vm\_anti\_affinity\_policies\_info\_v2 \- Fetches information about VM\-VM anti\-affinity policies in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_vm\_anti\_affinity\_policy\_compliance\_info\_v2 \- Fetch VM compliance states for a VM\-VM anti\-affinity policy in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_vm\_anti\_affinity\_policy\_v2 \- Manage VM\-VM anti\-affinity policy in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_vm\_guest\_customization\_profile\_v2 \- Create\, update and delete VM Guest Customization Profiles in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_vm\_guest\_customization\_profiles\_info\_v2 \- Fetch information about VM Guest Customization Profile\(s\)\.
+* nutanix\.ncp\.ntnx\_vm\_host\_affinity\_policies\_info\_v2 \- Fetches information about VM\-host affinity policies in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_vm\_host\_affinity\_policy\_re\_enforce\_v2 \- Re\-enforce VM\-host affinity policy in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_vm\_host\_affinity\_policy\_v2 \- Manage VM\-host affinity policy in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_vm\_startup\_policies\_info\_v2 \- Fetch VM startup policies info in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_vm\_startup\_policy\_v2 \- Create\, Update\, Delete VM startup policies in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_vpc\_virtual\_switch\_mapping\_v2 \- Set VPC for virtual switch mappings traffic config\.
+* nutanix\.ncp\.ntnx\_vpc\_virtual\_switch\_mappings\_info\_v2 \- Fetch VPC virtual switch mappings info in Nutanix Prism Central\.
+
+<a id="v2-5-0"></a>
+## v2\.5\.0
+
+<a id="release-summary-1"></a>
+### Release Summary
+
+Built on v4 SDKs\. Adds Network Functions\, Entity Groups\, Security Policy Rules\, IAM Entities\, and Virtual Switches modules with proxy support\, Service Account API key authentication\, read timeout\, and several improvements and bug fixes\.
+
+<a id="minor-changes-1"></a>
+### Minor Changes
+
+* All modules \- \[Imprv\] Add Service Account API key authentication support \[\[\#888\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/888](https\://github\.com/nutanix/nutanix\.ansible/issues/888)\)\]
+* All modules \- \[Imprv\] Document required permissions required for Ansible service account used \[\[\#769\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/769](https\://github\.com/nutanix/nutanix\.ansible/issues/769)\)\]
+* All v4 modules \- \[Imprv\] Add configurable read\_timeout functionality to all v4 modules \[\[\#882\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/882](https\://github\.com/nutanix/nutanix\.ansible/issues/882)\)\]
+* All v4 modules \- \[Imprv\] Add proxy support for v4 API client modules \[\[\#900\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/900](https\://github\.com/nutanix/nutanix\.ansible/issues/900)\)\]
+* All v4 modules \- \[Imprv\] Separate Base Module for v4 to avoid unnecessary flags \[\[\#918\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/918](https\://github\.com/nutanix/nutanix\.ansible/issues/918)\)\]
+* CI/CD \- \[Imprv\] Update CI/CD Pipeline and Dependencies to Python 3\.12 \[\[\#915\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/915](https\://github\.com/nutanix/nutanix\.ansible/issues/915)\)\]
+* ntnx\_karbon\_clusters \- \[Imprv\] Add deprecation message for Karbon modules as Karbon is not supported on PC versions later than 7\.3 \[\[\#921\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/921](https\://github\.com/nutanix/nutanix\.ansible/issues/921)\)\]
+* ntnx\_prism\_vm\_inventory \- \[Imprv\] Handle invalid group name characters in inventory plugins \[\[\#917\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/917](https\://github\.com/nutanix/nutanix\.ansible/issues/917)\)\]
+* ntnx\_security\_rules\_v2 \- \[Imprv\] Add global scope\, intratier rules\, subnet/VPC references \[\[\#853\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/853](https\://github\.com/nutanix/nutanix\.ansible/issues/853)\)\]
+
+<a id="breaking-changes--porting-guide"></a>
+### Breaking Changes / Porting Guide
+
+* ntnx\_karbon\_clusters\, ntnx\_karbon\_clusters\_node\_pools\, ntnx\_karbon\_registries\, ntnx\_karbon\_clusters\_info\, ntnx\_karbon\_registries\_info \- \[Breaking\] Karbon modules are deprecated and will be removed in a future release as Prism Central versions later than 7\.3 no longer support Karbon \[\[\#921\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/921](https\://github\.com/nutanix/nutanix\.ansible/issues/921)\)\]
+
+<a id="bugfixes"></a>
+### Bugfixes
+
+* ntnx\_foundation \- \[Bug\] vSwitches spec issue in module ntnx\_foundation \[\[\#749\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/749](https\://github\.com/nutanix/nutanix\.ansible/issues/749)\)\]
+* ntnx\_password\_managers\_info\_v2 \- \[Bug\] Missing total\_available\_results in response in module ntnx\_password\_managers\_info\_v2 \[\[\#902\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/902](https\://github\.com/nutanix/nutanix\.ansible/issues/902)\)\]
+* ntnx\_prism\_vm\_inventory\, ntnx\_prism\_vm\_inventory\_v2\, ntnx\_prism\_host\_inventory\_v2 \- \[Bug\] NoneType crash in inventory plugins when VM fields are explicitly None \[\[\#939\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/939](https\://github\.com/nutanix/nutanix\.ansible/issues/939)\)\]
+* ntnx\_subnets\_v2 \- \[Bug\] Unnecessary required fields for state present in module ntnx\_subnets\_v2 \[\[\#895\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/895](https\://github\.com/nutanix/nutanix\.ansible/issues/895)\)\]
+
+<a id="new-modules-1"></a>
+### New Modules
+
 * nutanix\.ncp\.ntnx\_entity\_group\_v2 \- Create\, Update and Delete entity groups in Nutanix Prism Central\.
 * nutanix\.ncp\.ntnx\_entity\_groups\_info\_v2 \- Fetch information about entity groups in Nutanix Prism Central\.
-* nutanix\.ncp\.ntnx\_security\_policy\_rules\_info\_v2 \- List all network security policy rules by policy ExtID in Nutanix Prism Central\.
 * nutanix\.ncp\.ntnx\_iam\_entities\_info\_v2 \- Fetch information about IAM entities in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_network\_function\_v2 \- Create\, Update and Delete network functions in Nutanix Prism Central using v4 SDKs\.
+* nutanix\.ncp\.ntnx\_network\_functions\_info\_v2 \- Fetch information about network functions in Nutanix Prism Central\.
+* nutanix\.ncp\.ntnx\_security\_policy\_rules\_info\_v2 \- List all network security policy rules by policy ExtID in Nutanix Prism Central\.
 * nutanix\.ncp\.ntnx\_virtual\_switch\_v2 \- Create\, Update and Delete virtual switches in Nutanix Prism Central\.
 * nutanix\.ncp\.ntnx\_virtual\_switches\_info\_v2 \- Fetch information about virtual switches in Nutanix Prism Central\.
 
 <a id="v2-4-0"></a>
 ## v2\.4\.0
 
-<a id="release-summary-1"></a>
+<a id="release-summary-2"></a>
 ### Release Summary
 
 Built on v4 SDKs\. Adds Key Management Server\, STIGs\, SSL Certificates\, Storage Policies\, EULA\, Dynamic Inventory and Host Inventory modules with several improvements and bug fixes\.
 
-<a id="minor-changes-1"></a>
+<a id="minor-changes-2"></a>
 ### Minor Changes
 
 * All modules \- \[Imprv\] Add logger based on flag to enable debug logs \[\[\#294\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/294](https\://github\.com/nutanix/nutanix\.ansible/issues/294)\)\]
@@ -137,7 +249,7 @@ Built on v4 SDKs\. Adds Key Management Server\, STIGs\, SSL Certificates\, Stora
 * ntnx\_vms \- \[Imprv\] add functionality to provide sysprep or cloud\-init to module ntnx\_vms via a variable instead of a file \[\[\#389\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/389](https\://github\.com/nutanix/nutanix\.ansible/issues/389)\)\]
 * ntnx\_vms\_cd\_rom\_iso\_v2 \- \[Imprv\] add code enhancement for ntnx\_vms\_cd\_rom\_iso\_v2 module \[\[\#827\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/827](https\://github\.com/nutanix/nutanix\.ansible/issues/827)\)\]
 
-<a id="breaking-changes--porting-guide"></a>
+<a id="breaking-changes--porting-guide-1"></a>
 ### Breaking Changes / Porting Guide
 
 * ntnx\_projects \- \[Breaking\] Remove resource limit functionality from ntnx\_projects as not supported by API \[\[\#880\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/880](https\://github\.com/nutanix/nutanix\.ansible/issues/880)\)\]
@@ -152,7 +264,7 @@ Built on v4 SDKs\. Adds Key Management Server\, STIGs\, SSL Certificates\, Stora
 * ntnx\_vms\_v2 \- \[Bug\] Not able to disable apc\_config in module ntnx\_vms\_v2 \[\[\#872\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/872](https\://github\.com/nutanix/nutanix\.ansible/issues/872)\)\]
 * website \- \[Bug\] Github page deployment action is failing\. \[\[\#383\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/383](https\://github\.com/nutanix/nutanix\.ansible/issues/383)\)\]
 
-<a id="new-plugins"></a>
+<a id="new-plugins-1"></a>
 ### New Plugins
 
 <a id="inventory"></a>
@@ -161,7 +273,7 @@ Built on v4 SDKs\. Adds Key Management Server\, STIGs\, SSL Certificates\, Stora
 * nutanix\.ncp\.ntnx\_prism\_host\_inventory\_v2 \- Get a list of Nutanix hosts for ansible dynamic inventory using V4 APIs\.
 * nutanix\.ncp\.ntnx\_prism\_vm\_inventory\_v2 \- Get a list of Nutanix VMs for ansible dynamic inventory using V4 APIs\.
 
-<a id="new-modules-1"></a>
+<a id="new-modules-2"></a>
 ### New Modules
 
 * nutanix\.ncp\.ntnx\_clusters\_categories\_v2 \- Associate or disassociate categories with a Nutanix cluster
@@ -183,12 +295,12 @@ Built on v4 SDKs\. Adds Key Management Server\, STIGs\, SSL Certificates\, Stora
 <a id="v2-3-0"></a>
 ## v2\.3\.0
 
-<a id="release-summary-2"></a>
+<a id="release-summary-3"></a>
 ### Release Summary
 
 Built on v4\.1 SDKs\. Adds OVA management\, Password Managers\, and VM Disk Migration modules with several improvements and bug fixes\.
 
-<a id="minor-changes-2"></a>
+<a id="minor-changes-3"></a>
 ### Minor Changes
 
 * All info modules \- \[Imprv\] Enhance Info Modules to Return Total Entities Count for Improved Data Retrieval \[\[\#614\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/614](https\://github\.com/nutanix/nutanix\.ansible/issues/614)\)\]
@@ -211,7 +323,7 @@ Built on v4\.1 SDKs\. Adds OVA management\, Password Managers\, and VM Disk Migr
 * ntnx\_vms\_ngt\_insert\_iso\_v2 \- \[Bug\] How to unmount NGT ISO after install\? \[\[\#739\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/739](https\://github\.com/nutanix/nutanix\.ansible/issues/739)\)\]
 * ntnx\_vms\_ngt\_v2 \- \[Bug\] Documentation is incorrect in module ntnx\_vms\_ngt\_v2 \[\[\#693\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/693](https\://github\.com/nutanix/nutanix\.ansible/issues/693)\)\]
 
-<a id="new-modules-2"></a>
+<a id="new-modules-3"></a>
 ### New Modules
 
 * nutanix\.ncp\.ntnx\_ova\_deploy\_vm\_v2 \- Deploy a VM from an OVA in Nutanix Prism Central\.
@@ -227,12 +339,12 @@ Built on v4\.1 SDKs\. Adds OVA management\, Password Managers\, and VM Disk Migr
 <a id="v2-2-0"></a>
 ## v2\.2\.0
 
-<a id="release-summary-3"></a>
+<a id="release-summary-4"></a>
 ### Release Summary
 
 Releasing new modules for Object Stores\, Service Accounts and Several Bugs using PC GA v4\.1 sdks
 
-<a id="minor-changes-3"></a>
+<a id="minor-changes-4"></a>
 ### Minor Changes
 
 * Check mode for delete \- \[Imprv\] add functionality check\_mode to module ntnx\_vms \[\[\#334\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/334](https\://github\.com/nutanix/nutanix\.ansible/issues/334)\)\]
@@ -259,7 +371,7 @@ Releasing new modules for Object Stores\, Service Accounts and Several Bugs usin
 * recovery\_plans \- \[Bug\] recovery\_plan fails to create in module plugin\_modules/prism/recovery\_plans\.py \[\[\#515\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/515](https\://github\.com/nutanix/nutanix\.ansible/issues/515)\)\]
 * v3 modules \- \[Bug\] \"Failed to convert API response into JSON\" in all modules of Nutanix\.ncp ansible collection \[\[\#490\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/490](https\://github\.com/nutanix/nutanix\.ansible/issues/490)\)\]
 
-<a id="new-modules-3"></a>
+<a id="new-modules-4"></a>
 ### New Modules
 
 * nutanix\.ncp\.ntnx\_object\_stores\_certificate\_info\_v2 \- Fetch information about object stores certificates in Nutanix Prism Central\.
@@ -274,7 +386,7 @@ Releasing new modules for Object Stores\, Service Accounts and Several Bugs usin
 <a id="v2-1-1"></a>
 ## v2\.1\.1
 
-<a id="release-summary-4"></a>
+<a id="release-summary-5"></a>
 ### Release Summary
 
 Releasing this to make it inline with guidelines of Redhat by removing version cap or fixed version from requirements\.txt
@@ -287,17 +399,17 @@ Releasing this to make it inline with guidelines of Redhat by removing version c
 <a id="v2-1-0"></a>
 ## v2\.1\.0
 
-<a id="release-summary-5"></a>
+<a id="release-summary-6"></a>
 ### Release Summary
 
 Releasing new modules for Prism\, Data Protection\, Data Policies\, LCM and Volumes using PC GA v4 sdks
 
-<a id="breaking-changes--porting-guide-1"></a>
+<a id="breaking-changes--porting-guide-2"></a>
 ### Breaking Changes / Porting Guide
 
 * nutanix\.ncp collection \- We are deprecating support for ansible\-core\=\=2\.15\.0 and minimum version to use this collection is ansible\-core\=\=2\.16\.0\.
 
-<a id="new-modules-4"></a>
+<a id="new-modules-5"></a>
 ### New Modules
 
 * nutanix\.ncp\.ntnx\_lcm\_config\_info\_v2 \- Fetch LCM Configuration
@@ -327,12 +439,12 @@ Releasing new modules for Prism\, Data Protection\, Data Policies\, LCM and Volu
 <a id="v2-0-0"></a>
 ## v2\.0\.0
 
-<a id="release-summary-6"></a>
+<a id="release-summary-7"></a>
 ### Release Summary
 
 Releasing new modules using PC GA v4 sdks
 
-<a id="new-modules-5"></a>
+<a id="new-modules-6"></a>
 ### New Modules
 
 * nutanix\.ncp\.ntnx\_address\_groups\_info\_v2 \- Get address groups info
@@ -424,12 +536,12 @@ Releasing new modules using PC GA v4 sdks
 <a id="v1-9-2"></a>
 ## v1\.9\.2
 
-<a id="release-summary-7"></a>
+<a id="release-summary-8"></a>
 ### Release Summary
 
 Deprecating support for ansible\-core less than v2\.15\.0
 
-<a id="breaking-changes--porting-guide-2"></a>
+<a id="breaking-changes--porting-guide-3"></a>
 ### Breaking Changes / Porting Guide
 
 * nutanix\.ncp collection \- Due to all versions of ansible\-core version less than v2\.15\.0 are EOL\, we are also deprecating support for same and minimum version to use this collection is ansible\-core\=\=2\.15\.0\. \[\[\#479\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/479](https\://github\.com/nutanix/nutanix\.ansible/issues/479)\)\]
@@ -437,12 +549,12 @@ Deprecating support for ansible\-core less than v2\.15\.0
 <a id="v1-9-1"></a>
 ## v1\.9\.1
 
-<a id="release-summary-8"></a>
+<a id="release-summary-9"></a>
 ### Release Summary
 
 This release included bug fixes and improvement\.
 
-<a id="minor-changes-4"></a>
+<a id="minor-changes-5"></a>
 ### Minor Changes
 
 * docs \- \[Imprv\] add doc regarding running integration tests locally \[\[\#435\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/435](https\://github\.com/nutanix/nutanix\.ansible/issues/435)\)\]
@@ -469,13 +581,13 @@ This release included bug fixes and improvement\.
 <a id="v1-9-0"></a>
 ## v1\.9\.0
 
-<a id="minor-changes-5"></a>
+<a id="minor-changes-6"></a>
 ### Minor Changes
 
 * ntnx\_profiles\_info \- \[Impr\] Develop ansible module for getting available IPs for given network profiles in NDB \[\#345\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/345](https\://github\.com/nutanix/nutanix\.ansible/issues/345)\)
 * ntnx\_security\_rules \- \[Imprv\] Flow Network Security Multi\-Tier support in Security Policy definition \[\#319\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/319](https\://github\.com/nutanix/nutanix\.ansible/issues/319)\)
 
-<a id="deprecated-features"></a>
+<a id="deprecated-features-1"></a>
 ### Deprecated Features
 
 * ntnx\_security\_rules \- The <code>apptier</code> option in target group has been removed\. New option called <code>apptiers</code> has been added to support multi tier policy\.
@@ -489,7 +601,7 @@ This release included bug fixes and improvement\.
 * ntnx\_karbon\_clusters \- \[Bug\] impossible to deploy NKE cluster with etcd using disk smaller than 120GB \[\[\#350\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/350](https\://github\.com/nutanix/nutanix\.ansible/issues/350)\)\]
 * ntnx\_subnets \- \[Bug\] wrong virtual\_switch selected in module ntnx\_subnets \[\#328\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/328](https\://github\.com/nutanix/nutanix\.ansible/issues/328)\)
 
-<a id="new-modules-6"></a>
+<a id="new-modules-7"></a>
 ### New Modules
 
 * nutanix\.ncp\.ntnx\_karbon\_clusters\_node\_pools \- Create\,Update and Delete a worker node pools with the provided configuration\.
@@ -498,7 +610,7 @@ This release included bug fixes and improvement\.
 <a id="v1-8-0"></a>
 ## v1\.8\.0
 
-<a id="new-modules-7"></a>
+<a id="new-modules-8"></a>
 ### New Modules
 
 * nutanix\.ncp\.ntnx\_ndb\_authorize\_db\_server\_vms \- module for authorizing db server vm
@@ -537,7 +649,7 @@ This release included bug fixes and improvement\.
 <a id="v1-7-0"></a>
 ## v1\.7\.0
 
-<a id="minor-changes-6"></a>
+<a id="minor-changes-7"></a>
 ### Minor Changes
 
 * examples \- \[Imprv\] Add version related notes to examples \[\#279\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/279](https\://github\.com/nutanix/nutanix\.ansible/issues/279)\)
@@ -558,7 +670,7 @@ This release included bug fixes and improvement\.
 <a id="v1-6-0"></a>
 ## v1\.6\.0
 
-<a id="new-modules-8"></a>
+<a id="new-modules-9"></a>
 ### New Modules
 
 * nutanix\.ncp\.ntnx\_karbon\_clusters \- v4 sdks based module for karbon clusters
@@ -569,7 +681,7 @@ This release included bug fixes and improvement\.
 <a id="v1-5-0"></a>
 ## v1\.5\.0
 
-<a id="new-modules-9"></a>
+<a id="new-modules-10"></a>
 ### New Modules
 
 * nutanix\.ncp\.ntnx\_protection\_rules \- v4 sdks based module for protection rules
@@ -587,7 +699,7 @@ This release included bug fixes and improvement\.
 
 * Fix examples of info modules \[\#226\]\([https\://github\.com/nutanix/nutanix\.ansible/issues/226](https\://github\.com/nutanix/nutanix\.ansible/issues/226)\)
 
-<a id="new-modules-10"></a>
+<a id="new-modules-11"></a>
 ### New Modules
 
 * nutanix\.ncp\.ntnx\_acps \- acp module which suports acp Create\, update and delete operations
@@ -613,7 +725,7 @@ This release included bug fixes and improvement\.
 <a id="v1-3-0"></a>
 ## v1\.3\.0
 
-<a id="new-modules-11"></a>
+<a id="new-modules-12"></a>
 ### New Modules
 
 * nutanix\.ncp\.ntnx\_image\_placement\_policies\_info \- image placement policies info module
@@ -628,12 +740,12 @@ This release included bug fixes and improvement\.
 <a id="v1-2-0"></a>
 ## v1\.2\.0
 
-<a id="minor-changes-7"></a>
+<a id="minor-changes-8"></a>
 ### Minor Changes
 
 * VM\'s update functionality
 
-<a id="new-modules-12"></a>
+<a id="new-modules-13"></a>
 ### New Modules
 
 * nutanix\.ncp\.ntnx\_floating\_ips\_info \- Nutanix info module for floating Ips
@@ -647,12 +759,12 @@ This release included bug fixes and improvement\.
 <a id="v1-1-0"></a>
 ## v1\.1\.0
 
-<a id="minor-changes-8"></a>
+<a id="minor-changes-9"></a>
 ### Minor Changes
 
 * Added integration tests for foundation and foundation central
 
-<a id="new-modules-13"></a>
+<a id="new-modules-14"></a>
 ### New Modules
 
 * nutanix\.ncp\.ntnx\_foundation \- Nutanix module to image nodes and optionally create clusters
@@ -675,7 +787,7 @@ This release included bug fixes and improvement\.
 
 * CICD pipeline using GitHub actions
 
-<a id="minor-changes-9"></a>
+<a id="minor-changes-10"></a>
 ### Minor Changes
 
 * Add meta file for collection
@@ -708,7 +820,7 @@ This release included bug fixes and improvement\.
 * solve python 2\.7 issues \[\#41\]\([https\://github\.com/nutanix/nutanix\.ansible/pull/41](https\://github\.com/nutanix/nutanix\.ansible/pull/41)\)
 * updates for guest customization spec \[\#20\]\([https\://github\.com/nutanix/nutanix\.ansible/pull/20](https\://github\.com/nutanix/nutanix\.ansible/pull/20)\)
 
-<a id="new-modules-14"></a>
+<a id="new-modules-15"></a>
 ### New Modules
 
 * nutanix\.ncp\.ntnx\_floating\_ips \- v4 sdks based module for floating Ips

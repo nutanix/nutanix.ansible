@@ -4,6 +4,110 @@ Nutanix.Ncp Release Notes
 
 .. contents:: Topics
 
+v2.6.0
+======
+
+Release Summary
+---------------
+
+Built on v4 SDKs. Adds Projects 2.0/v4, Resource Groups, Role Memberships, Directory Services, SNMP, Load Balancer Sessions, VPC Virtual Switch Mapping, VM affinity/startup/placement policies, Guest Customization Profiles, Flow directory server configs, Security Policy export/import, Object Store statistics, and the ntnx_ext_id lookup with compatibility and usability updates.
+
+Minor Changes
+-------------
+
+- All create v2 modules - [Imprv] Raise an API exception when entity ext_id is missing from task responses for create (non-info) v2 modules (`#1010 <https://github.com/nutanix/nutanix.ansible/issues/1010>`_)
+- Applicable v2 modules - [Imprv] Add project_ext_id and project sharing operations across supported namespaces (`#943 <https://github.com/nutanix/nutanix.ansible/issues/943>`_)
+- Applicable v4 update modules - [Imprv] Run check mode before idempotency checks in update modules that already implement idempotency (`#991 <https://github.com/nutanix/nutanix.ansible/issues/991>`_)
+- Inventory - [Imprv] Resolve category external IDs to key/value pairs and add auto_create_cluster_groups and resolve_categories options (`#963 <https://github.com/nutanix/nutanix.ansible/issues/963>`_)
+- guest_customization - [Imprv] Document base64 requirements for sysprep guest customization (`#952 <https://github.com/nutanix/nutanix.ansible/issues/952>`_)
+- ntnx_categories_v2 - [Imprv] Add get_categories_api_instance to pc_api_client for categories modules (`#990 <https://github.com/nutanix/nutanix.ansible/issues/990>`_)
+- ntnx_directory_server_config_v2, ntnx_category_mapping_v2 - [Feat] Manage directory server configs and category mappings using v4 SDKs (`#994 <https://github.com/nutanix/nutanix.ansible/issues/994>`_)
+- ntnx_directory_services_connection_v2 - [Feat] Verify connectivity to an existing directory service using v4 SDKs (`#1005 <https://github.com/nutanix/nutanix.ansible/issues/1005>`_)
+- ntnx_ext_id - [Feat] Resolve human-readable entity values to the external IDs required by v4 modules (`#979 <https://github.com/nutanix/nutanix.ansible/issues/979>`_) (`#1001 <https://github.com/nutanix/nutanix.ansible/issues/1001>`_)
+- ntnx_image_rate_limit_policy_v2 - [Feat] Manage image rate limit policies using v4 SDKs (`#998 <https://github.com/nutanix/nutanix.ansible/issues/998>`_)
+- ntnx_load_balancer_session_v2, ntnx_load_balancer_sessions_info_v2 - [Feat] Manage load balancer sessions using v4 SDKs (`#1007 <https://github.com/nutanix/nutanix.ansible/issues/1007>`_)
+- ntnx_object_stores_stats_info_v2, ntnx_object_stores_certificate_download_v2 - [Feat] Fetch object store statistics and download certificate authorities using v4 SDKs (`#1008 <https://github.com/nutanix/nutanix.ansible/issues/1008>`_)
+- ntnx_prism_vm_inventory, ntnx_prism_vm_inventory_v2 - [Imprv] Expose all detected addresses through vm_ip_addresses and document APIPA filtering with compose. Default ansible_host selection remains unchanged (`#1305 <https://github.com/nutanix/nutanix.ansible/issues/1305>`_)
+- ntnx_project_v2 - [Feat] Redesign project architecture on v4 APIs with Ansible IaC support for Projects 2.0 (`#838 <https://github.com/nutanix/nutanix.ansible/issues/838>`_)
+- ntnx_project_v2, ntnx_projects_info_v2 - [Feat] Create, update, delete, and list Projects using v4 SDKs (`#944 <https://github.com/nutanix/nutanix.ansible/issues/944>`_)
+- ntnx_projects - [Imprv] Add missing project attributes to the V3 projects module and update integration tests (`#1315 <https://github.com/nutanix/nutanix.ansible/issues/1315>`_)
+- ntnx_resource_group_v2, ntnx_resource_groups_info_v2 - [Feat] Manage resource groups using v4 SDKs (`#946 <https://github.com/nutanix/nutanix.ansible/issues/946>`_)
+- ntnx_role_membership_v2, ntnx_role_memberships_info_v2 - [Feat] Manage role memberships using v4 SDKs (`#945 <https://github.com/nutanix/nutanix.ansible/issues/945>`_)
+- ntnx_security_rules_export_v2, ntnx_security_rules_import_v2 - [Feat] Export and import network security policies using v4 SDKs (`#1311 <https://github.com/nutanix/nutanix.ansible/issues/1311>`_)
+- ntnx_snmp_status_v2, ntnx_snmp_transport_v2, ntnx_snmp_trap_v2, ntnx_snmp_user_v2 - [Feat] Manage SNMP status, transport, traps, and users using v4 SDKs (`#930 <https://github.com/nutanix/nutanix.ansible/issues/930>`_)
+- ntnx_template_placement_policy_v2 - [Feat] Manage template placement policies using v4 SDKs (`#995 <https://github.com/nutanix/nutanix.ansible/issues/995>`_)
+- ntnx_vm_anti_affinity_policy_v2 - [Feat] Manage VM anti-affinity policies using v4 SDKs (`#992 <https://github.com/nutanix/nutanix.ansible/issues/992>`_)
+- ntnx_vm_guest_customization_profile_v2 - [Feat] Manage VM guest customization profiles using v4 SDKs (`#966 <https://github.com/nutanix/nutanix.ansible/issues/966>`_)
+- ntnx_vm_host_affinity_policy_v2 - [Feat] Manage VM host affinity policies using v4 SDKs (`#993 <https://github.com/nutanix/nutanix.ansible/issues/993>`_)
+- ntnx_vm_startup_policy_v2 - [Feat] Manage VM startup policies using v4 SDKs (`#997 <https://github.com/nutanix/nutanix.ansible/issues/997>`_)
+- ntnx_vms_info_v2 - [Imprv] Add IP search option when listing/getting VMs (`#1021 <https://github.com/nutanix/nutanix.ansible/issues/1021>`_)
+- ntnx_vms_ngt_v2 - [Docs] Clarify that ext_id must be a decoded VM UUID, not the complete Ansible slurp result (`#962 <https://github.com/nutanix/nutanix.ansible/issues/962>`_)
+- ntnx_vms_v2 - [Imprv] Add functionality to set ownership on VMs (`#757 <https://github.com/nutanix/nutanix.ansible/issues/757>`_)
+- ntnx_vpc_virtual_switch_mapping_v2, ntnx_vpc_virtual_switch_mappings_info_v2 - [Feat] Manage VPC virtual switch mappings using v4 SDKs (`#996 <https://github.com/nutanix/nutanix.ansible/issues/996>`_)
+
+Deprecated Features
+-------------------
+
+- ntnx_address_groups, ntnx_address_groups_info, ntnx_service_groups, ntnx_service_groups_info - [Deprecated] Legacy Flow modules stop working with PC 7.6. Migrate to ntnx_address_groups_v2, ntnx_address_groups_info_v2, ntnx_service_groups_v2, and ntnx_service_groups_info_v2 (`#1317 <https://github.com/nutanix/nutanix.ansible/issues/1317>`_)
+
+Known Issues
+------------
+
+- ntnx_categories_v2 - [Known limitation] Create operations remain non-idempotent by design. Query for an existing category before creating one (`#890 <https://github.com/nutanix/nutanix.ansible/issues/890>`_)
+
+New Plugins
+-----------
+
+Lookup
+~~~~~~
+
+- nutanix.ncp.ntnx_ext_id - Resolve a Nutanix entity name to its external ID (ext\_id) using V4 APIs.
+
+New Modules
+-----------
+
+- nutanix.ncp.ntnx_category_mapping_v2 - Create, Update, Delete Directory Service Category Mapping.
+- nutanix.ncp.ntnx_category_mappings_info_v2 - Get Directory Service Category Mappings info.
+- nutanix.ncp.ntnx_directory_server_config_v2 - Create, Update, Delete directory server config.
+- nutanix.ncp.ntnx_directory_server_configs_info_v2 - Get directory server configs info.
+- nutanix.ncp.ntnx_directory_service_search_v2 - Search users and groups in a directory service in Nutanix PC.
+- nutanix.ncp.ntnx_directory_services_connection_v2 - Check the connection to a directory service in Nutanix PC.
+- nutanix.ncp.ntnx_image_rate_limit_policies_info_v2 - Fetches information about Nutanix PC image rate limit policies.
+- nutanix.ncp.ntnx_image_rate_limit_policy_v2 - Manage image rate limit policies in Nutanix Prism Central.
+- nutanix.ncp.ntnx_load_balancer_session_v2 - Create, Update, Delete load balancer sessions in Nutanix Prism Central.
+- nutanix.ncp.ntnx_load_balancer_sessions_info_v2 - Fetch load balancer sessions info in Nutanix Prism Central.
+- nutanix.ncp.ntnx_object_stores_certificate_download_v2 - Download Object Stores certificate authority.
+- nutanix.ncp.ntnx_object_stores_stats_info_v2 - Get Object Store statistics.
+- nutanix.ncp.ntnx_project_v2 - Manage projects in Nutanix Prism Central using v4 APIs.
+- nutanix.ncp.ntnx_projects_info_v2 - Fetch projects info from Nutanix Prism Central using v4 APIs.
+- nutanix.ncp.ntnx_resource_group_v2 - Manage resource groups in Nutanix Prism Central using v4 APIs.
+- nutanix.ncp.ntnx_resource_groups_info_v2 - Fetch resource group information using Nutanix v4 APIs.
+- nutanix.ncp.ntnx_role_membership_v2 - Manage role memberships in Nutanix Prism Central using v4 APIs.
+- nutanix.ncp.ntnx_role_memberships_info_v2 - Fetch role membership information using Nutanix v4 APIs.
+- nutanix.ncp.ntnx_security_rules_export_v2 - Export network security policies in Nutanix Prism Central.
+- nutanix.ncp.ntnx_security_rules_import_v2 - Import network security policies into Nutanix Prism Central.
+- nutanix.ncp.ntnx_snmp_config_info_v2 - Fetch SNMP configuration of a Nutanix cluster.
+- nutanix.ncp.ntnx_snmp_status_v2 - Update SNMP status (enable/disable) on a Nutanix cluster.
+- nutanix.ncp.ntnx_snmp_transport_v2 - Add or Remove SNMP transport ports and protocol details on a Nutanix cluster.
+- nutanix.ncp.ntnx_snmp_trap_info_v2 - Fetch information about a specific SNMP trap.
+- nutanix.ncp.ntnx_snmp_trap_v2 - Create, Update and Delete SNMP traps in Nutanix Prism Central.
+- nutanix.ncp.ntnx_snmp_user_info_v2 - Fetch information about an SNMP user.
+- nutanix.ncp.ntnx_snmp_user_v2 - Create, Update and Delete SNMP users in Nutanix Prism Central.
+- nutanix.ncp.ntnx_template_placement_policies_info_v2 - Fetches information about Nutanix PC template placement policies.
+- nutanix.ncp.ntnx_template_placement_policy_v2 - Manage template placement policies in Nutanix Prism Central.
+- nutanix.ncp.ntnx_vm_anti_affinity_policies_info_v2 - Fetches information about VM\-VM anti\-affinity policies in Nutanix Prism Central.
+- nutanix.ncp.ntnx_vm_anti_affinity_policy_compliance_info_v2 - Fetch VM compliance states for a VM\-VM anti\-affinity policy in Nutanix Prism Central.
+- nutanix.ncp.ntnx_vm_anti_affinity_policy_v2 - Manage VM\-VM anti\-affinity policy in Nutanix Prism Central.
+- nutanix.ncp.ntnx_vm_guest_customization_profile_v2 - Create, update and delete VM Guest Customization Profiles in Nutanix Prism Central.
+- nutanix.ncp.ntnx_vm_guest_customization_profiles_info_v2 - Fetch information about VM Guest Customization Profile(s).
+- nutanix.ncp.ntnx_vm_host_affinity_policies_info_v2 - Fetches information about VM\-host affinity policies in Nutanix Prism Central.
+- nutanix.ncp.ntnx_vm_host_affinity_policy_re_enforce_v2 - Re\-enforce VM\-host affinity policy in Nutanix Prism Central.
+- nutanix.ncp.ntnx_vm_host_affinity_policy_v2 - Manage VM\-host affinity policy in Nutanix Prism Central.
+- nutanix.ncp.ntnx_vm_startup_policies_info_v2 - Fetch VM startup policies info in Nutanix Prism Central.
+- nutanix.ncp.ntnx_vm_startup_policy_v2 - Create, Update, Delete VM startup policies in Nutanix Prism Central.
+- nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2 - Set VPC for virtual switch mappings traffic config.
+- nutanix.ncp.ntnx_vpc_virtual_switch_mappings_info_v2 - Fetch VPC virtual switch mappings info in Nutanix Prism Central.
+
 v2.5.0
 ======
 
@@ -12,42 +116,41 @@ Release Summary
 
 Built on v4 SDKs. Adds Network Functions, Entity Groups, Security Policy Rules, IAM Entities, and Virtual Switches modules with proxy support, Service Account API key authentication, read timeout, and several improvements and bug fixes.
 
-Breaking Changes / Porting Guide
----------------------------------
-
-- ntnx_karbon_clusters, ntnx_karbon_clusters_node_pools, ntnx_karbon_registries, ntnx_karbon_clusters_info, ntnx_karbon_registries_info - [Breaking] Karbon modules are deprecated and will be removed in a future release as Prism Central versions later than 7.3 no longer support Karbon [[\#921](https://github.com/nutanix/nutanix.ansible/issues/921)]
-
 Minor Changes
 -------------
 
+- All modules - [Imprv] Add Service Account API key authentication support [[\#888](https://github.com/nutanix/nutanix.ansible/issues/888)]
+- All modules - [Imprv] Document required permissions required for Ansible service account used [[\#769](https://github.com/nutanix/nutanix.ansible/issues/769)]
 - All v4 modules - [Imprv] Add configurable read_timeout functionality to all v4 modules [[\#882](https://github.com/nutanix/nutanix.ansible/issues/882)]
 - All v4 modules - [Imprv] Add proxy support for v4 API client modules [[\#900](https://github.com/nutanix/nutanix.ansible/issues/900)]
-- All modules - [Imprv] Add Service Account API key authentication support [[\#888](https://github.com/nutanix/nutanix.ansible/issues/888)]
 - All v4 modules - [Imprv] Separate Base Module for v4 to avoid unnecessary flags [[\#918](https://github.com/nutanix/nutanix.ansible/issues/918)]
-- ntnx_security_rules_v2 - [Imprv] Add global scope, intratier rules, subnet/VPC references [[\#853](https://github.com/nutanix/nutanix.ansible/issues/853)]
-- ntnx_prism_vm_inventory - [Imprv] Handle invalid group name characters in inventory plugins [[\#917](https://github.com/nutanix/nutanix.ansible/issues/917)]
-- ntnx_karbon_clusters - [Imprv] Add deprecation message for Karbon modules as Karbon is not supported on PC versions later than 7.3 [[\#921](https://github.com/nutanix/nutanix.ansible/issues/921)]
 - CI/CD - [Imprv] Update CI/CD Pipeline and Dependencies to Python 3.12 [[\#915](https://github.com/nutanix/nutanix.ansible/issues/915)]
-- All modules - [Imprv] Document required permissions required for Ansible service account used [[\#769](https://github.com/nutanix/nutanix.ansible/issues/769)]
+- ntnx_karbon_clusters - [Imprv] Add deprecation message for Karbon modules as Karbon is not supported on PC versions later than 7.3 [[\#921](https://github.com/nutanix/nutanix.ansible/issues/921)]
+- ntnx_prism_vm_inventory - [Imprv] Handle invalid group name characters in inventory plugins [[\#917](https://github.com/nutanix/nutanix.ansible/issues/917)]
+- ntnx_security_rules_v2 - [Imprv] Add global scope, intratier rules, subnet/VPC references [[\#853](https://github.com/nutanix/nutanix.ansible/issues/853)]
+
+Breaking Changes / Porting Guide
+--------------------------------
+
+- ntnx_karbon_clusters, ntnx_karbon_clusters_node_pools, ntnx_karbon_registries, ntnx_karbon_clusters_info, ntnx_karbon_registries_info - [Breaking] Karbon modules are deprecated and will be removed in a future release as Prism Central versions later than 7.3 no longer support Karbon [[\#921](https://github.com/nutanix/nutanix.ansible/issues/921)]
 
 Bugfixes
 --------
 
-- ntnx_prism_vm_inventory, ntnx_prism_vm_inventory_v2, ntnx_prism_host_inventory_v2 - [Bug] NoneType crash in inventory plugins when VM fields are explicitly None [[\#939](https://github.com/nutanix/nutanix.ansible/issues/939)]
-- ntnx_subnets_v2 - [Bug] Unnecessary required fields for state: present in module ntnx_subnets_v2 [[\#895](https://github.com/nutanix/nutanix.ansible/issues/895)]
-- ntnx_password_managers_info_v2 - [Bug] Missing total_available_results in response in module ntnx_password_managers_info_v2 [[\#902](https://github.com/nutanix/nutanix.ansible/issues/902)]
 - ntnx_foundation - [Bug] vSwitches spec issue in module ntnx_foundation [[\#749](https://github.com/nutanix/nutanix.ansible/issues/749)]
-
+- ntnx_password_managers_info_v2 - [Bug] Missing total_available_results in response in module ntnx_password_managers_info_v2 [[\#902](https://github.com/nutanix/nutanix.ansible/issues/902)]
+- ntnx_prism_vm_inventory, ntnx_prism_vm_inventory_v2, ntnx_prism_host_inventory_v2 - [Bug] NoneType crash in inventory plugins when VM fields are explicitly None [[\#939](https://github.com/nutanix/nutanix.ansible/issues/939)]
+- ntnx_subnets_v2 - [Bug] Unnecessary required fields for state present in module ntnx_subnets_v2 [[\#895](https://github.com/nutanix/nutanix.ansible/issues/895)]
 
 New Modules
 -----------
 
-- nutanix.ncp.ntnx_network_function_v2 - Create, Update and Delete network functions in Nutanix Prism Central using v4 SDKs.
-- nutanix.ncp.ntnx_network_functions_info_v2 - Fetch information about network functions in Nutanix Prism Central.
 - nutanix.ncp.ntnx_entity_group_v2 - Create, Update and Delete entity groups in Nutanix Prism Central.
 - nutanix.ncp.ntnx_entity_groups_info_v2 - Fetch information about entity groups in Nutanix Prism Central.
-- nutanix.ncp.ntnx_security_policy_rules_info_v2 - List all network security policy rules by policy ExtID in Nutanix Prism Central.
 - nutanix.ncp.ntnx_iam_entities_info_v2 - Fetch information about IAM entities in Nutanix Prism Central.
+- nutanix.ncp.ntnx_network_function_v2 - Create, Update and Delete network functions in Nutanix Prism Central using v4 SDKs.
+- nutanix.ncp.ntnx_network_functions_info_v2 - Fetch information about network functions in Nutanix Prism Central.
+- nutanix.ncp.ntnx_security_policy_rules_info_v2 - List all network security policy rules by policy ExtID in Nutanix Prism Central.
 - nutanix.ncp.ntnx_virtual_switch_v2 - Create, Update and Delete virtual switches in Nutanix Prism Central.
 - nutanix.ncp.ntnx_virtual_switches_info_v2 - Fetch information about virtual switches in Nutanix Prism Central.
 
