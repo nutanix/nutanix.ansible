@@ -1,0 +1,121 @@
+---
+# Summary:
+# This playbook demonstrates the domain manager (Prism Central) action modules:
+# 1. Register a Prism Element to the current Prism Central (ntnx_register_v2)
+# 2. Scale up a domain manager (Prism Central) cluster (ntnx_scale_up_domain_manager_by_id_v2)
+# 3. Unregister a registered remote cluster from the local cluster (ntnx_unregister_v2)
+# 4. Restore a domain manager (Prism Central) from a backup restore point (ntnx_restore_v2)
+#
+# Endpoint awareness:
+# - ntnx_register_v2, ntnx_scale_up_domain_manager_by_id_v2 and ntnx_unregister_v2 talk to
+#   Prism Central (PC). Connection params below point to PC.
+# - ntnx_restore_v2 talks to Prism Element (PE). Its connection params are supplied per task
+#   because the target host differs from PC.
+
+- name: Domain manager (Prism Central) actions playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        domain_manager_ext_id: "00000000-0000-0000-0000-000000000000"
+        remote_cluster_ip: "10.0.0.1"
+        remote_cluster_username: "admin"
+        remote_cluster_password: "password"
+        remote_cluster_ext_id: "86b54161-3214-5874-9632-89afcd365004"
+        pe_ip: "<pe_ip>"
+        pe_username: "<pe_user>"
+        pe_password: "<pe_pass>"
+        restore_source_ext_id: "84125478-6543-2131-5678-ac1f6b6f97e2"
+        restorable_domain_manager_ext_id: "54678987-1222-5678-9090-ac1f6b6f97e2"
+        restore_point_ext_id: "95148523-1234-5678-9090-ac1f6b6f97e2"
+
+    - name: Register a Prism Element to the current Prism Central
+      nutanix.ncp.ntnx_register_v2:
+        ext_id: "{{ domain_manager_ext_id }}"
+        remote_cluster:
+          aos_remote_cluster:
+            remote_cluster:
+              address:
+                ipv4:
+                  value: "{{ remote_cluster_ip }}"
+              credentials:
+                authentication:
+                  username: "{{ remote_cluster_username }}"
+                  password: "{{ remote_cluster_password }}"
+      register: register_result
+      ignore_errors: true
+
+    - name: Scale up a domain manager (Prism Central) to LARGE
+      nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+        ext_id: "{{ domain_manager_ext_id }}"
+        size: "LARGE"
+      register: scale_up_result
+      ignore_errors: true
+
+    - name: Unregister a remote cluster from the local domain manager (Prism Central)
+      nutanix.ncp.ntnx_unregister_v2:
+        ext_id: "{{ domain_manager_ext_id }}"
+        remote_cluster_ext_id: "{{ remote_cluster_ext_id }}"
+      register: unregister_result
+      ignore_errors: true
+
+    - name: Restore a domain manager (Prism Central) from a backup restore point
+      nutanix.ncp.ntnx_restore_v2:
+        nutanix_host: "{{ pe_ip }}"
+        nutanix_username: "{{ pe_username }}"
+        nutanix_password: "{{ pe_password }}"
+        validate_certs: false
+        ext_id: "{{ restore_point_ext_id }}"
+        restore_source_ext_id: "{{ restore_source_ext_id }}"
+        restorable_domain_manager_ext_id: "{{ restorable_domain_manager_ext_id }}"
+        domain_manager:
+          config:
+            should_enable_lockdown_mode: false
+            build_info:
+              version: "pc.2024.3"
+            name: "PC_10.0.0.2"
+            size: "SMALL"
+            resource_config:
+              data_disk_size_bytes: 536870912000
+              memory_size_bytes: 37580963840
+              num_vcpus: 10
+              container_ext_ids:
+                - "6171a26e-7d08-4f10-b6fa-9304b333f6b6"
+          network:
+            external_address:
+              ipv4:
+                value: "10.0.0.3"
+            name_servers:
+              - ipv4:
+                  value: "10.0.0.5"
+              - ipv4:
+                  value: "10.0.0.6"
+            ntp_servers:
+              - fqdn:
+                  value: "1.example.org"
+              - fqdn:
+                  value: "2.example.org"
+            external_networks:
+              - network_ext_id: "54678987-1764-3478-8050-ac1f6b6f97e2"
+                default_gateway:
+                  ipv4:
+                    value: "10.0.0.0"
+                subnet_mask:
+                  ipv4:
+                    value: "255.255.252.0"
+                ip_ranges:
+                  - begin:
+                      ipv4:
+                        value: "10.1.1.1"
+                    end:
+                      ipv4:
+                        value: "10.1.1.1"
+      register: restore_result
+      ignore_errors: true

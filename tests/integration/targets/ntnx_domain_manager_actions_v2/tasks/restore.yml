@@ -1,0 +1,322 @@
+---
+# Test plan for ntnx_restore_v2 (Restore a domain manager / Prism Central from a restore point)
+# NOTE: This module targets Prism Element (PE), not Prism Central. Its connection params are
+# supplied per task. The check_mode / negative tests below only build the spec locally, so they
+# do not require a reachable PE. The real restore is guarded by `run_destructive_restore`.
+# 1. check_mode: build the full RestoreSpec (config + network) with all fields; assert changed
+#    false, skipped true and the response reflects the submitted domain_manager spec.
+# 2. Negative: omit the required ext_id -> module must fail.
+# 3. Negative: omit the required restore_source_ext_id -> module must fail.
+# 4. Negative: omit the required restorable_domain_manager_ext_id -> module must fail.
+# 5. Negative: omit the required domain_manager -> module must fail.
+# 6. Negative: pass an invalid size enum inside domain_manager.config -> validation must reject.
+# 7. Optional real restore guarded by `run_destructive_restore`.
+
+- name: Start ntnx_restore_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_restore_v2 tests
+
+- name: Restore domain manager with all fields - check mode
+  nutanix.ncp.ntnx_restore_v2:
+    nutanix_host: "{{ pe_ip | default('10.0.0.2') }}"
+    nutanix_username: "{{ pe_username | default('admin') }}"
+    nutanix_password: "{{ pe_password | default('Nutanix.123') }}"
+    validate_certs: false
+    ext_id: "95148523-1234-5678-9090-ac1f6b6f97e2"
+    restore_source_ext_id: "84125478-6543-2131-5678-ac1f6b6f97e2"
+    restorable_domain_manager_ext_id: "54678987-1222-5678-9090-ac1f6b6f97e2"
+    domain_manager:
+      config:
+        should_enable_lockdown_mode: false
+        build_info:
+          version: "pc.2024.3"
+        name: "PC_10.0.0.2"
+        size: "SMALL"
+        resource_config:
+          data_disk_size_bytes: 536870912000
+          memory_size_bytes: 37580963840
+          num_vcpus: 10
+          container_ext_ids:
+            - "6171a26e-7d08-4f10-b6fa-9304b333f6b6"
+      network:
+        external_address:
+          ipv4:
+            value: "10.0.0.3"
+        name_servers:
+          - ipv4:
+              value: "10.0.0.5"
+          - ipv4:
+              value: "10.0.0.6"
+        ntp_servers:
+          - fqdn:
+              value: "1.example.org"
+          - fqdn:
+              value: "2.example.org"
+        external_networks:
+          - network_ext_id: "54678987-1764-3478-8050-ac1f6b6f97e2"
+            default_gateway:
+              ipv4:
+                value: "10.0.0.0"
+            subnet_mask:
+              ipv4:
+                value: "255.255.252.0"
+            ip_ranges:
+              - begin:
+                  ipv4:
+                    value: "10.1.1.1"
+                end:
+                  ipv4:
+                    value: "10.1.1.1"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Restore domain manager with all fields - check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.response is defined
+      - result.response.domain_manager.config.name == "PC_10.0.0.2"
+      - result.response.domain_manager.config.size == "SMALL"
+      - result.ext_id == "95148523-1234-5678-9090-ac1f6b6f97e2"
+      - result.restore_source_ext_id == "84125478-6543-2131-5678-ac1f6b6f97e2"
+      - result.restorable_domain_manager_ext_id == "54678987-1222-5678-9090-ac1f6b6f97e2"
+    fail_msg: "Restore domain manager with all fields check mode failed"
+    success_msg: "Restore domain manager with all fields check mode passed"
+
+- name: Restore without ext_id - negative
+  nutanix.ncp.ntnx_restore_v2:
+    nutanix_host: "{{ pe_ip | default('10.0.0.2') }}"
+    nutanix_username: "{{ pe_username | default('admin') }}"
+    nutanix_password: "{{ pe_password | default('Nutanix.123') }}"
+    validate_certs: false
+    restore_source_ext_id: "84125478-6543-2131-5678-ac1f6b6f97e2"
+    restorable_domain_manager_ext_id: "54678987-1222-5678-9090-ac1f6b6f97e2"
+    domain_manager:
+      config:
+        build_info:
+          version: "pc.2024.3"
+        name: "PC_10.0.0.2"
+        size: "SMALL"
+      network:
+        name_servers:
+          - ipv4:
+              value: "10.0.0.5"
+        ntp_servers:
+          - fqdn:
+              value: "1.example.org"
+        external_networks:
+          - network_ext_id: "54678987-1764-3478-8050-ac1f6b6f97e2"
+            default_gateway:
+              ipv4:
+                value: "10.0.0.0"
+            subnet_mask:
+              ipv4:
+                value: "255.255.252.0"
+            ip_ranges:
+              - begin:
+                  ipv4:
+                    value: "10.1.1.1"
+                end:
+                  ipv4:
+                    value: "10.1.1.1"
+  register: result
+  ignore_errors: true
+
+- name: Restore without ext_id - negative status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    fail_msg: "Restore without ext_id should have failed"
+    success_msg: "Restore without ext_id failed as expected"
+
+- name: Restore without restore_source_ext_id - negative
+  nutanix.ncp.ntnx_restore_v2:
+    nutanix_host: "{{ pe_ip | default('10.0.0.2') }}"
+    nutanix_username: "{{ pe_username | default('admin') }}"
+    nutanix_password: "{{ pe_password | default('Nutanix.123') }}"
+    validate_certs: false
+    ext_id: "95148523-1234-5678-9090-ac1f6b6f97e2"
+    restorable_domain_manager_ext_id: "54678987-1222-5678-9090-ac1f6b6f97e2"
+    domain_manager:
+      config:
+        build_info:
+          version: "pc.2024.3"
+        name: "PC_10.0.0.2"
+        size: "SMALL"
+      network:
+        name_servers:
+          - ipv4:
+              value: "10.0.0.5"
+        ntp_servers:
+          - fqdn:
+              value: "1.example.org"
+        external_networks:
+          - network_ext_id: "54678987-1764-3478-8050-ac1f6b6f97e2"
+            default_gateway:
+              ipv4:
+                value: "10.0.0.0"
+            subnet_mask:
+              ipv4:
+                value: "255.255.252.0"
+            ip_ranges:
+              - begin:
+                  ipv4:
+                    value: "10.1.1.1"
+                end:
+                  ipv4:
+                    value: "10.1.1.1"
+  register: result
+  ignore_errors: true
+
+- name: Restore without restore_source_ext_id - negative status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'restore_source_ext_id' in result.msg"
+    fail_msg: "Restore without restore_source_ext_id should have failed"
+    success_msg: "Restore without restore_source_ext_id failed as expected"
+
+- name: Restore without restorable_domain_manager_ext_id - negative
+  nutanix.ncp.ntnx_restore_v2:
+    nutanix_host: "{{ pe_ip | default('10.0.0.2') }}"
+    nutanix_username: "{{ pe_username | default('admin') }}"
+    nutanix_password: "{{ pe_password | default('Nutanix.123') }}"
+    validate_certs: false
+    ext_id: "95148523-1234-5678-9090-ac1f6b6f97e2"
+    restore_source_ext_id: "84125478-6543-2131-5678-ac1f6b6f97e2"
+    domain_manager:
+      config:
+        build_info:
+          version: "pc.2024.3"
+        name: "PC_10.0.0.2"
+        size: "SMALL"
+      network:
+        name_servers:
+          - ipv4:
+              value: "10.0.0.5"
+        ntp_servers:
+          - fqdn:
+              value: "1.example.org"
+        external_networks:
+          - network_ext_id: "54678987-1764-3478-8050-ac1f6b6f97e2"
+            default_gateway:
+              ipv4:
+                value: "10.0.0.0"
+            subnet_mask:
+              ipv4:
+                value: "255.255.252.0"
+            ip_ranges:
+              - begin:
+                  ipv4:
+                    value: "10.1.1.1"
+                end:
+                  ipv4:
+                    value: "10.1.1.1"
+  register: result
+  ignore_errors: true
+
+- name: Restore without restorable_domain_manager_ext_id - negative status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'restorable_domain_manager_ext_id' in result.msg"
+    fail_msg: "Restore without restorable_domain_manager_ext_id should have failed"
+    success_msg: "Restore without restorable_domain_manager_ext_id failed as expected"
+
+- name: Restore without domain_manager - negative
+  nutanix.ncp.ntnx_restore_v2:
+    nutanix_host: "{{ pe_ip | default('10.0.0.2') }}"
+    nutanix_username: "{{ pe_username | default('admin') }}"
+    nutanix_password: "{{ pe_password | default('Nutanix.123') }}"
+    validate_certs: false
+    ext_id: "95148523-1234-5678-9090-ac1f6b6f97e2"
+    restore_source_ext_id: "84125478-6543-2131-5678-ac1f6b6f97e2"
+    restorable_domain_manager_ext_id: "54678987-1222-5678-9090-ac1f6b6f97e2"
+  register: result
+  ignore_errors: true
+
+- name: Restore without domain_manager - negative status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'domain_manager' in result.msg"
+    fail_msg: "Restore without domain_manager should have failed"
+    success_msg: "Restore without domain_manager failed as expected"
+
+- name: Restore with invalid size enum - negative
+  nutanix.ncp.ntnx_restore_v2:
+    nutanix_host: "{{ pe_ip | default('10.0.0.2') }}"
+    nutanix_username: "{{ pe_username | default('admin') }}"
+    nutanix_password: "{{ pe_password | default('Nutanix.123') }}"
+    validate_certs: false
+    ext_id: "95148523-1234-5678-9090-ac1f6b6f97e2"
+    restore_source_ext_id: "84125478-6543-2131-5678-ac1f6b6f97e2"
+    restorable_domain_manager_ext_id: "54678987-1222-5678-9090-ac1f6b6f97e2"
+    domain_manager:
+      config:
+        build_info:
+          version: "pc.2024.3"
+        name: "PC_10.0.0.2"
+        size: "HUGE"
+      network:
+        name_servers:
+          - ipv4:
+              value: "10.0.0.5"
+        ntp_servers:
+          - fqdn:
+              value: "1.example.org"
+        external_networks:
+          - network_ext_id: "54678987-1764-3478-8050-ac1f6b6f97e2"
+            default_gateway:
+              ipv4:
+                value: "10.0.0.0"
+            subnet_mask:
+              ipv4:
+                value: "255.255.252.0"
+            ip_ranges:
+              - begin:
+                  ipv4:
+                    value: "10.1.1.1"
+                end:
+                  ipv4:
+                    value: "10.1.1.1"
+  register: result
+  ignore_errors: true
+
+- name: Restore with invalid size enum - negative status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'size' in result.msg"
+    fail_msg: "Restore with invalid size should have failed"
+    success_msg: "Restore with invalid size failed as expected"
+
+- name: Restore domain manager (destructive, guarded)
+  nutanix.ncp.ntnx_restore_v2:
+    nutanix_host: "{{ pe_ip }}"
+    nutanix_username: "{{ pe_username }}"
+    nutanix_password: "{{ pe_password }}"
+    validate_certs: false
+    ext_id: "{{ restore_point_ext_id }}"
+    restore_source_ext_id: "{{ restore_source_ext_id }}"
+    restorable_domain_manager_ext_id: "{{ restorable_domain_manager_ext_id }}"
+    domain_manager: "{{ restore_domain_manager_spec }}"
+  register: result
+  ignore_errors: true
+  when: run_destructive_restore | default(false) | bool
+
+- name: Restore domain manager status (destructive, guarded)
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+      - result.task_ext_id is defined
+    fail_msg: "Restore domain manager failed"
+    success_msg: "Restore domain manager passed"
+  when: run_destructive_restore | default(false) | bool
