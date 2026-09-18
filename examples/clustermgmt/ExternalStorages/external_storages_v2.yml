@@ -1,0 +1,113 @@
+---
+# Summary:
+# This playbook demonstrates the external storages v4 modules against Prism Central (PC).
+# It will:
+# 1. Create an external storage (Dell PowerFlex provider) with all fields
+# 2. Update the external storage with all fields
+# 3. Get the external storage using ext_id
+# 4. List all external storages
+# 5. List external storages with a filter
+# 6. List external storages with a limit
+# 7. Delete the external storage (delete is not supported by the API and returns a clear message)
+#
+# NOTE: External storages talk to Prism Central. Creating an external storage requires a
+# reachable third-party storage backend (Dell PowerFlex / Everpure FlashArray / Dell PowerStore)
+# and a registered AOS cluster. Update credentials/endpoints below to match your environment.
+
+- name: External Storages playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.44.76.43"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    - name: Fetch a cluster to attach the external storage to
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: clusters_result
+      ignore_errors: true
+
+    - name: Set cluster ext_id
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+    - name: Create external storage with Dell PowerFlex provider
+      nutanix.ncp.ntnx_external_storages_v2:
+        state: present
+        name: "external_storage_ansible"
+        provider_type: "DELL_POWERFLEX"
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        end_point_address:
+          ipv4:
+            value: "10.44.76.100"
+        config:
+          dell_powerflex:
+            system_id: "powerflex-system-01"
+            username: "admin"
+            password: "PowerFlex.123"
+            protection_domain_name: "pd-01"
+            storage_pool_name: "sp-01"
+            storage_pool_id: "sp-id-01"
+      register: result
+      ignore_errors: true
+
+    - name: Set external storage ext_id
+      ansible.builtin.set_fact:
+        external_storage_ext_id: "{{ result.ext_id | default('') }}"
+
+    - name: Update external storage with Dell PowerFlex provider
+      nutanix.ncp.ntnx_external_storages_v2:
+        state: present
+        ext_id: "{{ external_storage_ext_id }}"
+        name: "external_storage_ansible_updated"
+        provider_type: "DELL_POWERFLEX"
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        end_point_address:
+          ipv4:
+            value: "10.44.76.101"
+        config:
+          dell_powerflex:
+            system_id: "powerflex-system-01"
+            username: "admin"
+            password: "PowerFlex.456"
+            protection_domain_name: "pd-01"
+            storage_pool_name: "sp-01"
+            storage_pool_id: "sp-id-01"
+      register: result
+      ignore_errors: true
+      when: external_storage_ext_id | length > 0
+
+    - name: Get external storage using ext_id
+      nutanix.ncp.ntnx_external_storages_info_v2:
+        ext_id: "{{ external_storage_ext_id }}"
+      register: result
+      ignore_errors: true
+      when: external_storage_ext_id | length > 0
+
+    - name: List all external storages
+      nutanix.ncp.ntnx_external_storages_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List external storages with filter
+      nutanix.ncp.ntnx_external_storages_info_v2:
+        filter: "name eq 'external_storage_ansible_updated'"
+      register: result
+      ignore_errors: true
+
+    - name: List external storages with limit
+      nutanix.ncp.ntnx_external_storages_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Delete external storage (not supported by the API)
+      nutanix.ncp.ntnx_external_storages_v2:
+        state: absent
+        ext_id: "{{ external_storage_ext_id }}"
+      register: result
+      ignore_errors: true
+      when: external_storage_ext_id | length > 0
