@@ -181,6 +181,7 @@ action_groups:
     - ntnx_recovery_point_replicate_v2
     - ntnx_gpus_v2
     - ntnx_gpus_info_v2
+    - ntnx_gpu_profiles_info_v2
     - ntnx_clusters_nodes_v2
     - ntnx_nodes_network_info_v2
     - ntnx_pc_registration_v2
