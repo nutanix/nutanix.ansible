@@ -1,0 +1,51 @@
+---
+# Summary:
+# This playbook will do:
+# 1. List all PCIe devices
+# 2. Fetch a specific PCIe device using ext_id
+# 3. List PCIe devices with a filter
+# 4. List PCIe devices with a limit
+#
+# Note: PcieDevices is an info-only (read-only) entity. The PCIe devices are
+# discovered from the AHV hosts of the registered clusters and are fetched
+# from Prism Central (PC).
+
+- name: PCIe devices info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: List all PCIe devices
+      nutanix.ncp.ntnx_pcie_devices_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Set PCIe device ext_id from the list
+      ansible.builtin.set_fact:
+        pcie_device_ext_id: "{{ result.response[0].ext_id }}"
+      when: result.response | length > 0
+
+    - name: Fetch a specific PCIe device using ext_id
+      nutanix.ncp.ntnx_pcie_devices_info_v2:
+        ext_id: "{{ pcie_device_ext_id }}"
+      register: result
+      ignore_errors: true
+      when: pcie_device_ext_id is defined
+
+    - name: List PCIe devices with a filter
+      nutanix.ncp.ntnx_pcie_devices_info_v2:
+        filter: "extId eq '{{ pcie_device_ext_id }}'"
+      register: result
+      ignore_errors: true
+      when: pcie_device_ext_id is defined
+
+    - name: List PCIe devices with a limit
+      nutanix.ncp.ntnx_pcie_devices_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
