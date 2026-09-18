@@ -142,3 +142,15 @@ def get_ssl_certificates_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.SSLCertificateApi(client)
+
+
+def get_certificate_manager_api_instance(module):
+    """
+    This method will return certificate manager api instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        CertificateManagerApi: CertificateManagerApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.CertificateManagerApi(client)

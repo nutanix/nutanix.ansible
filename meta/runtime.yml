@@ -248,3 +248,9 @@ action_groups:
     - ntnx_virtual_switches_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_certificate_manager_v2
+    - ntnx_create_certificate_authority_by_cluster_id_v2
+    - ntnx_create_certificate_by_cluster_id_v2
+    - ntnx_create_csr_by_cluster_id_v2
+    - ntnx_download_csr_by_id_v2
+    - ntnx_certificate_managers_info_v2

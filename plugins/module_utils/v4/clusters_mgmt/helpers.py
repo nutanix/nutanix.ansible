@@ -109,3 +109,72 @@ def get_cluster_profile(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching cluster profile info using ext_id",
         )
+
+
+def get_certificate_authority(module, api_instance, ext_id, cluster_ext_id):
+    """
+    This method will return Certificate Authority (CA) info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: CertificateManagerApi instance from sdk
+        ext_id (str): Certificate Authority external ID
+        cluster_ext_id (str): cluster external ID
+    return:
+        certificate authority info (object): certificate authority info
+    """
+    try:
+        return api_instance.get_certificate_authority_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching certificate authority info using ext_id",
+        )
+
+
+def get_certificate(module, api_instance, ext_id, cluster_ext_id):
+    """
+    This method will return Certificate info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: CertificateManagerApi instance from sdk
+        ext_id (str): Certificate external ID
+        cluster_ext_id (str): cluster external ID
+    return:
+        certificate info (object): certificate info
+    """
+    try:
+        return api_instance.get_certificate_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching certificate info using ext_id",
+        )
+
+
+def get_csr(module, api_instance, ext_id, cluster_ext_id):
+    """
+    This method will return Certificate Signing Request (CSR) info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: CertificateManagerApi instance from sdk
+        ext_id (str): CSR external ID
+        cluster_ext_id (str): cluster external ID
+    return:
+        csr info (object): csr info
+    """
+    try:
+        return api_instance.get_csr_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching CSR info using ext_id",
+        )
