@@ -1,0 +1,164 @@
+---
+############################################################################################
+# Test plan for ntnx_pcie_devices_info_v2 (info-only / read-only module)
+#
+# PcieDevices is a read-only entity discovered from the AHV hosts of the registered
+# clusters and fetched from Prism Central (PC). The SDK exposes only ListPcieDevices;
+# there is no dedicated Get-by-ID method, so the module implements get-by-ext_id by
+# filtering the list on `extId`.
+#
+# Scenarios covered:
+#   1. List all PCIe devices          -> changed=false, failed=false, response is a list,
+#                                        total_available_results is populated.
+#   2. List with limit                -> response length is bounded by the limit.
+#   3. Fetch a single device by ext_id -> single dict response, ext_id is echoed back.
+#      (only when the cluster actually has PCIe devices)
+#   4. List with filter on extId       -> exactly one device matching the ext_id.
+#   5. Fetch with a non-existent ext_id -> graceful "not found" handling.
+#   6. Mutually exclusive ext_id + filter -> module rejects the combination.
+############################################################################################
+
+- name: Start ntnx_pcie_devices_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_pcie_devices_info_v2 tests
+
+############################################################################################
+# List all PCIe devices
+############################################################################################
+
+- name: List all PCIe devices
+  nutanix.ncp.ntnx_pcie_devices_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all PCIe devices status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response is iterable
+      - result.total_available_results is defined
+    success_msg: "List all PCIe devices passed"
+    fail_msg: "List all PCIe devices failed"
+
+- name: Set has_pcie_devices flag
+  ansible.builtin.set_fact:
+    has_pcie_devices: "{{ (result.response | length) > 0 }}"
+    all_pcie_devices: "{{ result.response }}"
+
+############################################################################################
+# List PCIe devices with limit
+############################################################################################
+
+- name: List PCIe devices with limit
+  nutanix.ncp.ntnx_pcie_devices_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List PCIe devices with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length <= 1
+    success_msg: "List PCIe devices with limit passed"
+    fail_msg: "List PCIe devices with limit failed"
+
+############################################################################################
+# Fetch a single PCIe device using ext_id (only when devices exist on the cluster)
+############################################################################################
+
+- name: Set first PCIe device ext_id
+  ansible.builtin.set_fact:
+    pcie_device_ext_id: "{{ all_pcie_devices[0].ext_id }}"
+  when: has_pcie_devices | bool
+
+- name: Fetch a specific PCIe device using ext_id
+  nutanix.ncp.ntnx_pcie_devices_info_v2:
+    ext_id: "{{ pcie_device_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: has_pcie_devices | bool
+
+- name: Fetch a specific PCIe device using ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == pcie_device_ext_id
+      - result.response is defined
+      - result.response.ext_id == pcie_device_ext_id
+    success_msg: "Fetch a specific PCIe device using ext_id passed"
+    fail_msg: "Fetch a specific PCIe device using ext_id failed"
+  when: has_pcie_devices | bool
+
+############################################################################################
+# List PCIe devices with a filter on extId
+############################################################################################
+
+- name: List PCIe devices with filter on extId
+  nutanix.ncp.ntnx_pcie_devices_info_v2:
+    filter: "extId eq '{{ pcie_device_ext_id }}'"
+  register: result
+  ignore_errors: true
+  when: has_pcie_devices | bool
+
+- name: List PCIe devices with filter on extId status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].ext_id == pcie_device_ext_id
+    success_msg: "List PCIe devices with filter on extId passed"
+    fail_msg: "List PCIe devices with filter on extId failed"
+  when: has_pcie_devices | bool
+
+############################################################################################
+# Fetch PCIe device with a non-existent ext_id (graceful not-found handling)
+############################################################################################
+
+- name: Fetch PCIe device with a non-existent ext_id
+  nutanix.ncp.ntnx_pcie_devices_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Fetch PCIe device with a non-existent ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.response is defined
+      - result.response | length == 0
+      - "'not found' in result.msg"
+    success_msg: "Fetch PCIe device with a non-existent ext_id handled gracefully"
+    fail_msg: "Fetch PCIe device with a non-existent ext_id was not handled gracefully"
+
+############################################################################################
+# Negative: ext_id and filter are mutually exclusive
+############################################################################################
+
+- name: Fetch PCIe device with both ext_id and filter (should fail)
+  nutanix.ncp.ntnx_pcie_devices_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    filter: "extId eq '00000000-0000-0000-0000-000000000000'"
+  register: result
+  ignore_errors: true
+
+- name: Fetch PCIe device with both ext_id and filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    success_msg: "Providing both ext_id and filter failed as expected"
+    fail_msg: "Providing both ext_id and filter did not fail as expected"

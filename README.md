@@ -450,6 +450,7 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_recovery_points_info_v2 |
 | - | ntnx_vm_recovery_point_info_v2 |
 | - | ntnx_gpus_info_v2 |
+| - | ntnx_pcie_devices_info_v2 |
 | - | ntnx_nodes_network_info_v2 |
 | - | ntnx_storage_containers_info_v2 |
 | - | ntnx_pc_backup_target_info_v2 |
