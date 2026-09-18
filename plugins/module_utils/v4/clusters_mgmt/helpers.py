@@ -91,6 +91,27 @@ def get_ssl_certificates(module, api_instance, ext_id):
         )
 
 
+def get_encryption_config(module, api_instance, cluster_ext_id):
+    """
+    This method will return the encryption configuration of a cluster
+    using the cluster external ID.
+    Args:
+        module: Ansible module
+        api_instance: EncryptionApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+    return:
+        encryption config info (object): encryption configuration of the cluster
+    """
+    try:
+        return api_instance.get_encryption_config(clusterExtId=cluster_ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching encryption config using cluster ext_id",
+        )
+
+
 def get_cluster_profile(module, api_instance, ext_id):
     """
     This method will return cluster profile info using external ID.

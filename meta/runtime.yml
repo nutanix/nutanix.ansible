@@ -248,3 +248,8 @@ action_groups:
     - ntnx_virtual_switches_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_encryption_v2
+    - ntnx_encryption_info_v2
+    - ntnx_download_encryption_keys_backup_v2
+    - ntnx_prepare_encryption_keys_backup_v2
+    - ntnx_rotate_encryption_keys_v2
