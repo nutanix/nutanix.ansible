@@ -1,0 +1,445 @@
+---
+# Test plan for clustermgmt Encryption v4 modules
+# =================================================
+# The Encryption feature configures data-at-rest encryption on a Nutanix cluster.
+# Enabling SOFTWARE encryption on a cluster is IRREVERSIBLE (it cannot be disabled
+# once enabled), so the mutating tests (update/rotate/prepare/download) are gated
+# behind the `run_destructive_encryption_tests` variable (default: false) to avoid
+# permanently changing the state of a shared test cluster.
+#
+# Scenarios covered (always run - non-destructive):
+#   1. Discover a valid cluster ext_id from the live PC.
+#   2. Info: get encryption config by valid cluster ext_id (assert changed/failed/response).
+#   3. Info: get encryption config with invalid cluster ext_id (negative - not found).
+#   4. CRUD check_mode: update encryption config with ALL fields (assert spec, no API call).
+#   5. Rotate check_mode: assert spec + skipped, no API call.
+#   6. Prepare backup check_mode: assert spec + skipped, no API call.
+#   7. Download backup check_mode: assert skipped, no API call.
+#   8. Negative: update with missing required field `type`.
+#   9. Negative: rotate with missing required field `encryption_types`.
+#  10. Negative: prepare with missing required field `backup_password`.
+#  11. Negative: invalid enum value for `type` / `scope` / `kms_type` rejected by spec.
+#  12. Negative: rotate / update / info with invalid cluster ext_id (API not-found).
+#
+# Scenarios covered (only when run_destructive_encryption_tests is true):
+#  13. Update (configure) encryption config on the cluster (full spec).
+#  14. Idempotency: run the same update again -> skipped, changed=false.
+#  15. Rotate encryption keys.
+#  16. Prepare encryption keys backup and capture backup ext_id.
+#  17. Download encryption keys backup using captured ext_id.
+
+- name: Start Encryption tests
+  ansible.builtin.debug:
+    msg: Start Encryption tests
+
+- name: Set encryption test facts
+  ansible.builtin.set_fact:
+    invalid_cluster_ext_id: "12345678-0000-6524-9856-123456789854"
+    invalid_backup_ext_id: "12345678-0000-6524-9856-000000000000"
+    encryption_backup_password: "Backup.Password.123"
+    run_destructive_encryption_tests: "{{ run_destructive_encryption_tests | default(false) | bool }}"
+
+##############################################################################
+# 1. Discover a valid cluster ext_id
+##############################################################################
+- name: List clusters to discover a valid PE cluster ext_id
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_result
+  ignore_errors: true
+
+- name: Set discovered cluster ext_ids list
+  ansible.builtin.set_fact:
+    discovered_cluster_ext_ids: "{{ clusters_result.response | default([]) | selectattr('ext_id', 'defined') | map(attribute='ext_id') | list }}"
+
+- name: Set target cluster ext_id
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: "{{ discovered_cluster_ext_ids | first | default(cluster.uuid | default('')) }}"
+
+- name: Assert a target cluster was discovered
+  ansible.builtin.assert:
+    that:
+      - target_cluster_ext_id | length > 0
+    fail_msg: "Could not discover a valid cluster ext_id for encryption tests"
+    success_msg: "Discovered target cluster ext_id: {{ target_cluster_ext_id }}"
+
+##############################################################################
+# 2. Info: get encryption config by valid cluster ext_id
+##############################################################################
+- name: Get encryption config using valid cluster ext_id
+  nutanix.ncp.ntnx_encryption_info_v2:
+    ext_id: "{{ target_cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+# On a cluster where encryption has never been configured, the GET API returns a
+# CLU-20003 "Encryption config not found" error. Both a successful fetch and this
+# specific not-found error are valid outcomes for this non-destructive test.
+- name: Get encryption config status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - >-
+        (result.failed == false and result.response is defined and result.ext_id == target_cluster_ext_id)
+        or (result.failed == true and result.msg == "Api Exception raised while fetching encryption config using cluster ext_id")
+    fail_msg: "Unexpected result while fetching encryption config for cluster {{ target_cluster_ext_id }}"
+    success_msg: "Encryption config info returned an expected result for cluster {{ target_cluster_ext_id }}"
+
+##############################################################################
+# 3. Info: get encryption config with invalid cluster ext_id (negative)
+##############################################################################
+- name: Get encryption config using invalid cluster ext_id
+  nutanix.ncp.ntnx_encryption_info_v2:
+    ext_id: "{{ invalid_cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Get encryption config with invalid cluster ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching encryption config using cluster ext_id"
+    fail_msg: "Get encryption config with invalid cluster ext_id did not fail as expected"
+    success_msg: "Get encryption config with invalid cluster ext_id failed as expected"
+
+##############################################################################
+# 4. CRUD check_mode: update encryption config with ALL fields
+##############################################################################
+- name: Generate spec for updating encryption config using check mode
+  nutanix.ncp.ntnx_encryption_v2:
+    state: present
+    ext_id: "{{ target_cluster_ext_id }}"
+    type:
+      - SOFTWARE
+    scope: CLUSTER
+    kms_spec:
+      kms_type: NATIVE_LOCAL
+      external_kms_ext_ids: []
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for updating encryption config using check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == target_cluster_ext_id
+      - result.response is defined
+      - result.response.type == ["SOFTWARE"]
+      - result.response.scope == "CLUSTER"
+      - result.response.kms_spec.kms_type == "NATIVE_LOCAL"
+    fail_msg: "Failed to generate spec for updating encryption config using check mode"
+    success_msg: "Spec for updating encryption config generated successfully using check mode"
+
+##############################################################################
+# 5. Rotate check_mode
+##############################################################################
+- name: Rotate encryption keys using check mode
+  nutanix.ncp.ntnx_rotate_encryption_keys_v2:
+    ext_id: "{{ target_cluster_ext_id }}"
+    encryption_types:
+      - SOFTWARE
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Rotate encryption keys using check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.ext_id == target_cluster_ext_id
+      - result.response is defined
+      - result.response.encryption_types == ["SOFTWARE"]
+      - "'Check mode' in result.msg"
+    fail_msg: "Failed to generate rotate encryption keys spec using check mode"
+    success_msg: "Rotate encryption keys spec generated successfully using check mode"
+
+##############################################################################
+# 6. Prepare backup check_mode
+##############################################################################
+- name: Prepare encryption keys backup using check mode
+  nutanix.ncp.ntnx_prepare_encryption_keys_backup_v2:
+    backup_password: "{{ encryption_backup_password }}"
+    cluster_ext_ids:
+      - "{{ target_cluster_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Prepare encryption keys backup using check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.response is defined
+      - result.response.cluster_ext_ids == [target_cluster_ext_id]
+      - "'Check mode' in result.msg"
+    fail_msg: "Failed to generate prepare encryption keys backup spec using check mode"
+    success_msg: "Prepare encryption keys backup spec generated successfully using check mode"
+
+##############################################################################
+# 7. Download backup check_mode
+##############################################################################
+- name: Download encryption keys backup using check mode
+  nutanix.ncp.ntnx_download_encryption_keys_backup_v2:
+    ext_id: "{{ invalid_backup_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Download encryption keys backup using check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.ext_id == invalid_backup_ext_id
+      - "'Check mode' in result.msg"
+    fail_msg: "Download encryption keys backup check mode did not behave as expected"
+    success_msg: "Download encryption keys backup check mode behaved as expected"
+
+##############################################################################
+# 8. Negative: update with missing required field `type`
+##############################################################################
+- name: Update encryption config with missing required field type
+  nutanix.ncp.ntnx_encryption_v2:
+    state: present
+    ext_id: "{{ target_cluster_ext_id }}"
+    scope: CLUSTER
+  register: result
+  ignore_errors: true
+
+- name: Update encryption config with missing required field type status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'type' in result.msg"
+    fail_msg: "Update encryption config with missing type did not fail as expected"
+    success_msg: "Update encryption config with missing type failed as expected"
+
+##############################################################################
+# 9. Negative: rotate with missing required field `encryption_types`
+##############################################################################
+- name: Rotate encryption keys with missing required field encryption_types
+  nutanix.ncp.ntnx_rotate_encryption_keys_v2:
+    ext_id: "{{ target_cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Rotate encryption keys with missing required field encryption_types status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'encryption_types' in result.msg"
+    fail_msg: "Rotate encryption keys with missing encryption_types did not fail as expected"
+    success_msg: "Rotate encryption keys with missing encryption_types failed as expected"
+
+##############################################################################
+# 10. Negative: prepare with missing required field `backup_password`
+##############################################################################
+- name: Prepare encryption keys backup with missing required field backup_password
+  nutanix.ncp.ntnx_prepare_encryption_keys_backup_v2:
+    cluster_ext_ids:
+      - "{{ target_cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Prepare encryption keys backup with missing required field backup_password status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'backup_password' in result.msg"
+    fail_msg: "Prepare encryption keys backup with missing backup_password did not fail as expected"
+    success_msg: "Prepare encryption keys backup with missing backup_password failed as expected"
+
+##############################################################################
+# 11. Negative: invalid enum values rejected by spec
+##############################################################################
+- name: Update encryption config with invalid type enum value
+  nutanix.ncp.ntnx_encryption_v2:
+    state: present
+    ext_id: "{{ target_cluster_ext_id }}"
+    type:
+      - INVALID_TYPE
+  register: result
+  ignore_errors: true
+
+- name: Update encryption config with invalid type enum value status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'value of type' in result.msg or 'not one of' in result.msg or 'INVALID_TYPE' in result.msg"
+    fail_msg: "Update encryption config with invalid type enum did not fail as expected"
+    success_msg: "Update encryption config with invalid type enum failed as expected"
+
+- name: Update encryption config with invalid scope enum value
+  nutanix.ncp.ntnx_encryption_v2:
+    state: present
+    ext_id: "{{ target_cluster_ext_id }}"
+    type:
+      - SOFTWARE
+    scope: INVALID_SCOPE
+  register: result
+  ignore_errors: true
+
+- name: Update encryption config with invalid scope enum value status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'value of scope' in result.msg or 'not one of' in result.msg or 'INVALID_SCOPE' in result.msg"
+    fail_msg: "Update encryption config with invalid scope enum did not fail as expected"
+    success_msg: "Update encryption config with invalid scope enum failed as expected"
+
+- name: Update encryption config with invalid kms_type enum value
+  nutanix.ncp.ntnx_encryption_v2:
+    state: present
+    ext_id: "{{ target_cluster_ext_id }}"
+    type:
+      - SOFTWARE
+    kms_spec:
+      kms_type: INVALID_KMS
+  register: result
+  ignore_errors: true
+
+- name: Update encryption config with invalid kms_type enum value status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'value of kms_type' in result.msg or 'not one of' in result.msg or 'INVALID_KMS' in result.msg"
+    fail_msg: "Update encryption config with invalid kms_type enum did not fail as expected"
+    success_msg: "Update encryption config with invalid kms_type enum failed as expected"
+
+##############################################################################
+# 12. Negative: rotate with invalid cluster ext_id (API not-found)
+##############################################################################
+- name: Rotate encryption keys with invalid cluster ext_id
+  nutanix.ncp.ntnx_rotate_encryption_keys_v2:
+    ext_id: "{{ invalid_cluster_ext_id }}"
+    encryption_types:
+      - SOFTWARE
+  register: result
+  ignore_errors: true
+
+- name: Rotate encryption keys with invalid cluster ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+    fail_msg: "Rotate encryption keys with invalid cluster ext_id did not fail as expected"
+    success_msg: "Rotate encryption keys with invalid cluster ext_id failed as expected"
+
+##############################################################################
+# 13-17. Destructive tests (gated) - actually mutate cluster encryption state
+##############################################################################
+- name: Run destructive encryption tests
+  when: run_destructive_encryption_tests | bool
+  block:
+    - name: Update (configure) encryption config on the cluster
+      nutanix.ncp.ntnx_encryption_v2:
+        state: present
+        ext_id: "{{ target_cluster_ext_id }}"
+        type:
+          - SOFTWARE
+        scope: CLUSTER
+        kms_spec:
+          kms_type: NATIVE_LOCAL
+      register: result
+      ignore_errors: true
+
+    - name: Update encryption config status
+      ansible.builtin.assert:
+        that:
+          - result.failed == false
+          - result.ext_id == target_cluster_ext_id
+          - result.response is defined
+        fail_msg: "Failed to update encryption config on the cluster"
+        success_msg: "Encryption config updated successfully on the cluster"
+
+    - name: Update (configure) encryption config again for idempotency
+      nutanix.ncp.ntnx_encryption_v2:
+        state: present
+        ext_id: "{{ target_cluster_ext_id }}"
+        type:
+          - SOFTWARE
+        scope: CLUSTER
+        kms_spec:
+          kms_type: NATIVE_LOCAL
+      register: result
+      ignore_errors: true
+
+    - name: Update encryption config idempotency status
+      ansible.builtin.assert:
+        that:
+          - result.changed == false
+          - result.failed == false
+          - result.msg == "Nothing to change."
+        fail_msg: "Encryption config update was not idempotent"
+        success_msg: "Encryption config update was idempotent as expected"
+
+    - name: Rotate encryption keys for the cluster
+      nutanix.ncp.ntnx_rotate_encryption_keys_v2:
+        ext_id: "{{ target_cluster_ext_id }}"
+        encryption_types:
+          - SOFTWARE
+      register: result
+      ignore_errors: true
+
+    - name: Rotate encryption keys status
+      ansible.builtin.assert:
+        that:
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id == target_cluster_ext_id
+          - result.task_ext_id is defined
+        fail_msg: "Failed to rotate encryption keys for the cluster"
+        success_msg: "Encryption keys rotated successfully for the cluster"
+
+    - name: Prepare encryption keys backup
+      nutanix.ncp.ntnx_prepare_encryption_keys_backup_v2:
+        backup_password: "{{ encryption_backup_password }}"
+        cluster_ext_ids:
+          - "{{ target_cluster_ext_id }}"
+      register: prepare_result
+      ignore_errors: true
+
+    - name: Prepare encryption keys backup status
+      ansible.builtin.assert:
+        that:
+          - prepare_result.changed == true
+          - prepare_result.failed == false
+          - prepare_result.response is defined
+        fail_msg: "Failed to prepare encryption keys backup"
+        success_msg: "Encryption keys backup prepared successfully"
+
+    - name: Set backup ext_id
+      ansible.builtin.set_fact:
+        backup_ext_id: "{{ prepare_result.response.ext_id | default('') }}"
+
+    - name: Download encryption keys backup
+      nutanix.ncp.ntnx_download_encryption_keys_backup_v2:
+        ext_id: "{{ backup_ext_id }}"
+      when: backup_ext_id | length > 0
+      register: result
+      ignore_errors: true
+
+    - name: Download encryption keys backup status
+      ansible.builtin.assert:
+        that:
+          - result.failed == false
+          - result.ext_id == backup_ext_id
+          - result.response is defined
+        fail_msg: "Failed to download encryption keys backup"
+        success_msg: "Encryption keys backup downloaded successfully"
+      when: backup_ext_id | length > 0
+
+- name: Finish Encryption tests
+  ansible.builtin.debug:
+    msg: Finish Encryption tests

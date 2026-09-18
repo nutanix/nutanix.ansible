@@ -1,0 +1,36 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Encryption playbook] *****************************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"backup_password": "Backup.Password.123", "cluster_ext_id": "000653ea-e2f2-ee30-0000-000000019bcd"}, "changed": false}
+
+TASK [Get encryption configuration of a cluster using cluster ext_id] **********
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching encryption config using cluster ext_id", "response": {"$dataItemDiscriminator": "clustermgmt.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<clustermgmt.v4.error.AppMessage>", "$objectType": "clustermgmt.v4.error.ErrorResponse", "error": [{"$objectType": "clustermgmt.v4.error.AppMessage", "argumentsMap": {"reason": "Encryption config not found for cluster 000653ea-e2f2-ee30-0000-000000019bcd"}, "code": "CLU-20003", "errorGroup": "ENCRYPTION_UNKNOWN_ENTITY_ERROR", "locale": "en-US", "message": "Failed to perform the operation as an unknown entity exception occurred due to - Encryption config not found for cluster 000653ea-e2f2-ee30-0000-000000019bcd.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Update encryption configuration of a cluster] ****************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching encryption config using cluster ext_id", "response": {"$dataItemDiscriminator": "clustermgmt.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<clustermgmt.v4.error.AppMessage>", "$objectType": "clustermgmt.v4.error.ErrorResponse", "error": [{"$objectType": "clustermgmt.v4.error.AppMessage", "argumentsMap": {"reason": "Encryption config not found for cluster 000653ea-e2f2-ee30-0000-000000019bcd"}, "code": "CLU-20003", "errorGroup": "ENCRYPTION_UNKNOWN_ENTITY_ERROR", "locale": "en-US", "message": "Failed to perform the operation as an unknown entity exception occurred due to - Encryption config not found for cluster 000653ea-e2f2-ee30-0000-000000019bcd.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Rotate encryption keys for a cluster] ************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while rotating encryption keys", "response": {"$dataItemDiscriminator": "clustermgmt.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<clustermgmt.v4.error.AppMessage>", "$objectType": "clustermgmt.v4.error.ErrorResponse", "error": [{"$objectType": "clustermgmt.v4.error.AppMessage", "argumentsMap": {"reason": "Encryption config not found for cluster 000653ea-e2f2-ee30-0000-000000019bcd"}, "code": "CLU-20003", "errorGroup": "ENCRYPTION_UNKNOWN_ENTITY_ERROR", "locale": "en-US", "message": "Failed to perform the operation as an unknown entity exception occurred due to - Encryption config not found for cluster 000653ea-e2f2-ee30-0000-000000019bcd.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Prepare encryption keys backup for clusters] *****************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while preparing encryption keys backup", "response": {"$dataItemDiscriminator": "clustermgmt.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<clustermgmt.v4.error.AppMessage>", "$objectType": "clustermgmt.v4.error.ErrorResponse", "error": [{"$objectType": "clustermgmt.v4.error.AppMessage", "argumentsMap": {"reason": "Encryption config not found for cluster 000653ea-e2f2-ee30-0000-000000019bcd"}, "code": "CLU-20003", "errorGroup": "ENCRYPTION_UNKNOWN_ENTITY_ERROR", "locale": "en-US", "message": "Failed to perform the operation as an unknown entity exception occurred due to - Encryption config not found for cluster 000653ea-e2f2-ee30-0000-000000019bcd.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Set encryption keys backup ext_id] ***************************************
+ok: [localhost] => {"ansible_facts": {"backup_ext_id": ""}, "changed": false}
+
+TASK [Download encryption keys backup] *****************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while downloading encryption keys backup", "response": {"error": "Not Found", "message": "Not Found", "path": "/api/clustermgmt/v4.3/config/encryption-keys-backup", "status": 404, "timestamp": "2026-09-18T20:47:59.739288078Z"}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=5   
+
