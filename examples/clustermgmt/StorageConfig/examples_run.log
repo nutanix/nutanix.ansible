@@ -1,0 +1,19 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Storage Config playbook] *************************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"cluster_ext_id": "00065b6f-ec68-302b-185b-ac1f6b6f97e2"}, "changed": false}
+
+TASK [Get storage configuration of a cluster] **********************************
+ok: [localhost] => {"changed": false, "ext_id": "00065b6f-ec68-302b-185b-ac1f6b6f97e2", "response": {"is_delayed_maintenance_resiliency_enabled": true, "is_rebuild_reservation_enabled": false, "is_rf1_enabled": false, "resilient_capacity_warning_threshold_percentage": 75, "storage_over_provisioning_caution_threshold": -1.0}}
+
+TASK [Update storage configuration of a cluster] *******************************
+changed: [localhost] => {"changed": true, "error": null, "ext_id": "00065b6f-ec68-302b-185b-ac1f6b6f97e2", "response": {"is_delayed_maintenance_resiliency_enabled": true, "is_rebuild_reservation_enabled": false, "is_rf1_enabled": false, "resilient_capacity_warning_threshold_percentage": 75, "storage_over_provisioning_caution_threshold": 3.0}, "task_ext_id": "ZXJnb24=:ac3dab28-ffc9-4eec-a08b-d70dd913180b"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
