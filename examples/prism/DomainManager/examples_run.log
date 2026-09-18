@@ -1,0 +1,34 @@
+# Example playbook run: examples/prism/DomainManager/domain_manager_actions_v2.yml
+# Cluster (PC): 10.44.76.43 (real domain manager ext_id: bc0165c6-e2bb-4db3-b3e2-b0b7f6dd936c)
+# Command: ansible-playbook domain_manager_actions_v2.yml --check -v
+# NOTE: Executed in --check mode against the live Prism Central. register / scale-up /
+#       unregister / restore are destructive, cluster-altering actions; running them for
+#       real would reconfigure/destroy the shared single-node PC and requires prerequisites
+#       (a second PC to register/unregister, a valid restore point + PE, a scalable PC).
+#       Check mode validates the full spec build against the real endpoint without mutating it.
+#
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Domain manager (Prism Central) actions playbook] *************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"domain_manager_ext_id": "bc0165c6-e2bb-4db3-b3e2-b0b7f6dd936c", "pe_ip": "<pe_ip>", "pe_password": "<pe_pass>", "pe_username": "<pe_user>", "remote_cluster_ext_id": "86b54161-3214-5874-9632-89afcd365004", "remote_cluster_ip": "10.0.0.1", "remote_cluster_password": "password", "remote_cluster_username": "admin", "restorable_domain_manager_ext_id": "54678987-1222-5678-9090-ac1f6b6f97e2", "restore_point_ext_id": "95148523-1234-5678-9090-ac1f6b6f97e2", "restore_source_ext_id": "84125478-6543-2131-5678-ac1f6b6f97e2"}, "changed": false}
+
+TASK [Register a Prism Element to the current Prism Central] *******************
+skipping: [localhost] => {"changed": false, "ext_id": "bc0165c6-e2bb-4db3-b3e2-b0b7f6dd936c", "response": {"remote_cluster": {"remote_cluster": {"address": {"fqdn": null, "ipv4": {"prefix_length": 32, "value": "10.0.0.1"}, "ipv6": null}, "credentials": {"authentication": {"password": "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER", "username": "admin"}}, "port": null}}}, "task_ext_id": null}
+
+TASK [Scale up a domain manager (Prism Central) to LARGE] **********************
+skipping: [localhost] => {"changed": false, "ext_id": "bc0165c6-e2bb-4db3-b3e2-b0b7f6dd936c", "response": {"size": "LARGE"}, "task_ext_id": null}
+
+TASK [Unregister a remote cluster from the local domain manager (Prism Central)] ***
+skipping: [localhost] => {"changed": false, "ext_id": "bc0165c6-e2bb-4db3-b3e2-b0b7f6dd936c", "response": {"ext_id": "86b54161-3214-5874-9632-89afcd365004", "name": null}, "task_ext_id": null}
+
+TASK [Restore a domain manager (Prism Central) from a backup restore point] ****
+skipping: [localhost] => {"changed": false, "ext_id": "95148523-1234-5678-9090-ac1f6b6f97e2", "response": {"domain_manager": {"config": {"bootstrap_config": null, "build_info": {"version": "pc.2024.3"}, "credentials": null, "name": "PC_10.0.0.2", "resource_config": {"container_ext_ids": ["6171a26e-7d08-4f10-b6fa-9304b333f6b6"], "data_disk_size_bytes": 536870912000, "memory_size_bytes": 37580963840, "num_vcpus": 10}, "should_enable_lockdown_mode": false, "size": "SMALL"}, "created_time": null, "ext_id": null, "hosting_cluster_ext_id": null, "is_registered_with_hosting_cluster": null, "links": null, "network": {"capability": null, "external_address": {"ipv4": {"prefix_length": 32, "value": "10.0.0.3"}, "ipv6": null}, "external_networks": [{"default_gateway": {"fqdn": null, "ipv4": {"prefix_length": 32, "value": "10.0.0.0"}, "ipv6": null}, "ip_addresses": null, "ip_ranges": [{"begin": {"ipv4": {"prefix_length": 32, "value": "10.1.1.1"}, "ipv6": null}, "end": {"ipv4": {"prefix_length": 32, "value": "10.1.1.1"}, "ipv6": null}}], "network_ext_id": "54678987-1764-3478-8050-ac1f6b6f97e2", "subnet_mask": {"fqdn": null, "ipv4": {"prefix_length": 32, "value": "255.255.252.0"}, "ipv6": null}}], "fqdn": null, "http_proxy_config": null, "http_proxy_white_list_config": null, "internal_networks": null, "name_servers": [{"fqdn": null, "ipv4": {"prefix_length": 32, "value": "10.0.0.5"}, "ipv6": null}, {"fqdn": null, "ipv4": {"prefix_length": 32, "value": "10.0.0.6"}, "ipv6": null}], "ntp_servers": [{"fqdn": {"value": "1.example.org"}, "ipv4": null, "ipv6": null}, {"fqdn": {"value": "2.example.org"}, "ipv4": null, "ipv6": null}]}, "node_ext_ids": null, "should_enable_high_availability": false, "tenant_id": null}}, "restorable_domain_manager_ext_id": "54678987-1222-5678-9090-ac1f6b6f97e2", "restore_source_ext_id": "84125478-6543-2131-5678-ac1f6b6f97e2", "task_ext_id": null}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=1    changed=0    unreachable=0    failed=0    skipped=4    rescued=0    ignored=0   
+

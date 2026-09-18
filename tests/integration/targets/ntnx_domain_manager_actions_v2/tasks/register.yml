@@ -1,0 +1,201 @@
+---
+# Test plan for ntnx_register_v2 (Register a domain manager / Prism Central to a cluster)
+# 1. Discover the local Prism Central external ID dynamically.
+# 2. check_mode: generate the AOS remote cluster registration spec with all fields; assert
+#    spec built, changed is false, skipped is true and no API call is made.
+# 3. check_mode: generate the domain manager remote cluster registration spec (cloud_type).
+# 4. Negative: omit the required ext_id -> module must fail with a descriptive error.
+# 5. Negative: omit the required remote_cluster -> module must fail.
+# 6. Negative: pass mutually exclusive remote_cluster branches -> module must fail.
+# 7. Negative: pass an invalid cloud_type enum value -> spec validation must reject it.
+# 8. Optional real registration guarded by `run_destructive_register`.
+
+- name: Start ntnx_register_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_register_v2 tests
+
+- name: List all clusters to get prism central external ID
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+  register: pc_result
+  ignore_errors: true
+
+- name: Set prism central external ID
+  ansible.builtin.set_fact:
+    domain_manager_ext_id: "{{ pc_result.response[0].ext_id }}"
+  when: pc_result.response is defined and pc_result.response | length > 0
+
+- name: Register AOS remote cluster - check mode
+  nutanix.ncp.ntnx_register_v2:
+    ext_id: "{{ domain_manager_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    remote_cluster:
+      aos_remote_cluster:
+        remote_cluster:
+          address:
+            ipv4:
+              value: "10.44.76.99"
+              prefix_length: 32
+          credentials:
+            authentication:
+              username: "admin"
+              password: "Nutanix.123"
+          port: 9440
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Register AOS remote cluster - check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.response is defined
+      - result.ext_id == (domain_manager_ext_id | default('00000000-0000-0000-0000-000000000000'))
+    fail_msg: "Register AOS remote cluster check mode failed"
+    success_msg: "Register AOS remote cluster check mode passed"
+
+- name: Register domain manager remote cluster - check mode
+  nutanix.ncp.ntnx_register_v2:
+    ext_id: "{{ domain_manager_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    remote_cluster:
+      domain_manager_remote_cluster:
+        cloud_type: "ONPREM_CLOUD"
+        remote_cluster:
+          address:
+            fqdn:
+              value: "remote-pc.example.com"
+          credentials:
+            authentication:
+              username: "admin"
+              password: "Nutanix.123"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Register domain manager remote cluster - check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.response is defined
+    fail_msg: "Register domain manager remote cluster check mode failed"
+    success_msg: "Register domain manager remote cluster check mode passed"
+
+- name: Register without ext_id - negative
+  nutanix.ncp.ntnx_register_v2:
+    remote_cluster:
+      aos_remote_cluster:
+        remote_cluster:
+          address:
+            ipv4:
+              value: "10.44.76.99"
+          credentials:
+            authentication:
+              username: "admin"
+              password: "Nutanix.123"
+  register: result
+  ignore_errors: true
+
+- name: Register without ext_id - negative status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    fail_msg: "Register without ext_id should have failed"
+    success_msg: "Register without ext_id failed as expected"
+
+- name: Register without remote_cluster - negative
+  nutanix.ncp.ntnx_register_v2:
+    ext_id: "{{ domain_manager_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+  register: result
+  ignore_errors: true
+
+- name: Register without remote_cluster - negative status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'remote_cluster' in result.msg"
+    fail_msg: "Register without remote_cluster should have failed"
+    success_msg: "Register without remote_cluster failed as expected"
+
+- name: Register with mutually exclusive remote_cluster branches - negative
+  nutanix.ncp.ntnx_register_v2:
+    ext_id: "{{ domain_manager_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    remote_cluster:
+      aos_remote_cluster:
+        remote_cluster:
+          address:
+            ipv4:
+              value: "10.44.76.99"
+          credentials:
+            authentication:
+              username: "admin"
+              password: "Nutanix.123"
+      cluster_reference:
+        ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Register with mutually exclusive remote_cluster branches - negative status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    fail_msg: "Register with mutually exclusive branches should have failed"
+    success_msg: "Register with mutually exclusive branches failed as expected"
+
+- name: Register with invalid cloud_type enum - negative
+  nutanix.ncp.ntnx_register_v2:
+    ext_id: "{{ domain_manager_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    remote_cluster:
+      domain_manager_remote_cluster:
+        cloud_type: "INVALID_CLOUD"
+        remote_cluster:
+          address:
+            fqdn:
+              value: "remote-pc.example.com"
+          credentials:
+            authentication:
+              username: "admin"
+              password: "Nutanix.123"
+  register: result
+  ignore_errors: true
+
+- name: Register with invalid cloud_type enum - negative status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'cloud_type' in result.msg"
+    fail_msg: "Register with invalid cloud_type should have failed"
+    success_msg: "Register with invalid cloud_type failed as expected"
+
+- name: Register a Prism Element (destructive, guarded)
+  nutanix.ncp.ntnx_register_v2:
+    ext_id: "{{ domain_manager_ext_id }}"
+    remote_cluster:
+      aos_remote_cluster:
+        remote_cluster:
+          address:
+            ipv4:
+              value: "{{ pe_ip_to_register }}"
+          credentials:
+            authentication:
+              username: "{{ pe_username_to_register }}"
+              password: "{{ pe_password_to_register }}"
+  register: result
+  ignore_errors: true
+  when: run_destructive_register | default(false) | bool
+
+- name: Register a Prism Element status (destructive, guarded)
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+      - result.task_ext_id is defined
+    fail_msg: "Register Prism Element failed"
+    success_msg: "Register Prism Element passed"
+  when: run_destructive_register | default(false) | bool
