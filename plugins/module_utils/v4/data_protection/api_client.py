@@ -108,3 +108,15 @@ def get_protected_resource_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_dataprotection_py_client.ProtectedResourcesApi(client)
+
+
+def get_recovery_point_stores_api_instance(module):
+    """
+    This method will return the recovery point stores api instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): recovery point stores api instance
+    """
+    client = get_api_client(module)
+    return ntnx_dataprotection_py_client.RecoveryPointStoresApi(client)

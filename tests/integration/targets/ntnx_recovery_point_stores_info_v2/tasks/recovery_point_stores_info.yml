@@ -1,0 +1,149 @@
+---
+# Test plan for ntnx_recovery_point_stores_info_v2
+#
+# The ntnx_recovery_point_stores_info_v2 module is an INFO (read-only) module that
+# wraps the dataprotection v4.4 RecoveryPointStores APIs:
+#   - list_recovery_point_stores  (plural datasource)
+#   - get_recovery_point_store_by_id (singular datasource, requires ext_id)
+#
+# A recovery point store references object storage (Nutanix Objects, Amazon S3, Azure
+# Blob Storage) used to hold recovery points with Multicloud Snapshot Technology (MST).
+# There is no create/update/delete API exposed for this entity in the SDK, so this
+# target validates the read paths only and is designed to be safe on a cluster that
+# has zero recovery point stores configured.
+#
+# Scenarios covered:
+#   1. List all recovery point stores (changed/failed flags, response type,
+#      total_available_results present and consistent with the returned list).
+#   2. List with limit — response length never exceeds the limit.
+#   3. List with a filter that matches nothing — empty list, no failure.
+#   4. Negative: get by a random/non-existent ext_id — module fails with a 404 and a
+#      descriptive error.
+#   5. Conditional (only when the cluster has >= 1 store): get-by-ext_id returns a
+#      single entity with a matching ext_id, and a name filter returns that store.
+#
+# Every assert block checks `changed` and `failed` first, then the scenario-specific
+# assertions, per the repo testing conventions.
+
+- name: List all recovery point stores
+  nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all recovery point stores status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response is iterable
+      - result.total_available_results is defined
+      - result.total_available_results >= 0
+      - result.response | length == result.total_available_results
+    fail_msg: "List all recovery point stores failed"
+    success_msg: "List all recovery point stores passed"
+
+########################################################################################################
+
+- name: List recovery point stores with limit
+  nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List recovery point stores with limit status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length <= 1
+    fail_msg: "List recovery point stores with limit failed"
+    success_msg: "List recovery point stores with limit passed"
+
+########################################################################################################
+
+- name: List recovery point stores with a filter that matches nothing
+  nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+    filter: "name eq 'non_existent_recovery_point_store_ansible_xyz'"
+  register: result
+  ignore_errors: true
+
+- name: List recovery point stores with non-matching filter status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 0
+    fail_msg: "List recovery point stores with non-matching filter failed"
+    success_msg: "List recovery point stores with non-matching filter passed"
+
+########################################################################################################
+
+- name: Get recovery point store using a non-existent external ID
+  nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Get recovery point store using a non-existent external ID status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+    fail_msg: "Get recovery point store using a non-existent external ID should have failed"
+    success_msg: "Get recovery point store using a non-existent external ID passed"
+
+########################################################################################################
+
+- name: Fetch all recovery point stores to drive conditional tests
+  nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+  register: all_stores
+  ignore_errors: true
+
+# The following tests only run when the cluster actually has a recovery point store.
+# On an empty cluster they are skipped (there is no create API to seed one).
+- name: Conditional get-by-ext_id and filter tests
+  when: all_stores.response | length > 0
+  block:
+    - name: Set the first recovery point store facts
+      ansible.builtin.set_fact:
+        first_store_ext_id: "{{ all_stores.response[0].ext_id }}"
+        first_store_name: "{{ all_stores.response[0].name }}"
+
+    - name: Get recovery point store using ext_id
+      nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+        ext_id: "{{ first_store_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Get recovery point store using ext_id status
+      ansible.builtin.assert:
+        that:
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.ext_id == first_store_ext_id
+          - result.response.ext_id == first_store_ext_id
+          - result.response.name == first_store_name
+        fail_msg: "Get recovery point store using ext_id failed"
+        success_msg: "Get recovery point store using ext_id passed"
+
+    - name: List recovery point stores filtered by name
+      nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+        filter: "name eq '{{ first_store_name }}'"
+      register: result
+      ignore_errors: true
+
+    - name: List recovery point stores filtered by name status
+      ansible.builtin.assert:
+        that:
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response | length >= 1
+          - result.response[0].name == first_store_name
+        fail_msg: "List recovery point stores filtered by name failed"
+        success_msg: "List recovery point stores filtered by name passed"
