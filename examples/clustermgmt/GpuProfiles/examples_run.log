@@ -1,0 +1,28 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [GPU Profiles info playbook] **********************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"cluster_uuid": "00065b6f-ec68-302b-185b-ac1f6b6f97e2"}, "changed": false}
+
+TASK [List all GPU profiles (physical and virtual) of a cluster] ***************
+ok: [localhost] => {"changed": false, "response": {"physical_gpu_profiles": [], "virtual_gpu_profiles": []}, "total_available_results": {"physical_gpu_profiles": 0, "virtual_gpu_profiles": 0}}
+
+TASK [List physical GPU profiles of a cluster] *********************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List virtual GPU profiles of a cluster] **********************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List physical GPU profiles with a filter] ********************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List virtual GPU profiles with a limit] **********************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

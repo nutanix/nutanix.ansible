@@ -109,3 +109,55 @@ def get_cluster_profile(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching cluster profile info using ext_id",
         )
+
+
+def list_physical_gpu_profiles(module, api_instance, cluster_ext_id, **kwargs):
+    """
+    This method will return the list of physical GPU profiles for a cluster.
+    Physical GPU profiles are automatically discovered from the installed GPU
+    hardware across the registered clusters and are attached to virtual machines
+    in passthrough mode.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): UUID of the cluster
+        kwargs (dict): additional query parameters (_page, _limit, _filter, _orderby)
+    return:
+        physical GPU profiles list API response (object)
+    """
+    try:
+        return api_instance.list_physical_gpu_profiles(
+            clusterExtId=cluster_ext_id, **kwargs
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching physical GPU profiles info",
+        )
+
+
+def list_virtual_gpu_profiles(module, api_instance, cluster_ext_id, **kwargs):
+    """
+    This method will return the list of virtual GPU profiles for a cluster.
+    Virtual GPU profiles define the resource allocation (frame buffer, display
+    heads, resolution, licensing) available to virtual machines across the
+    registered clusters.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): UUID of the cluster
+        kwargs (dict): additional query parameters (_page, _limit, _filter, _orderby)
+    return:
+        virtual GPU profiles list API response (object)
+    """
+    try:
+        return api_instance.list_virtual_gpu_profiles(
+            clusterExtId=cluster_ext_id, **kwargs
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching virtual GPU profiles info",
+        )
