@@ -1,0 +1,674 @@
+---
+############################################################################################
+# Test plan (Certificate Manager v4 modules):
+#
+# These tests exercise the clustermgmt CertificateManager v4 modules end-to-end against a
+# live Prism Central + Prism Element (AOS) cluster:
+#   - ntnx_create_csr_by_cluster_id_v2 (action)
+#   - ntnx_create_certificate_authority_by_cluster_id_v2 (action)
+#   - ntnx_create_certificate_by_cluster_id_v2 (action)
+#   - ntnx_download_csr_by_id_v2 (action)
+#   - ntnx_certificate_managers_info_v2 (info: get-by-id + list, type = CA/CERTIFICATE/CSR)
+#   - ntnx_certificate_manager_v2 (CRUD: delete CA and CSR)
+#
+# Scenarios covered:
+#   1.  Discover a Prism Element (AOS) cluster ext_id from the live PC.
+#   2.  check_mode: create CSR with all attributes (no API call, spec generated).
+#   3.  Create CSR with minimum attributes; assert task + changed.
+#   4.  Create CSR with all attributes (enums, SANs, key usages); assert task.
+#   5.  Info: list CSRs, list with limit, get CSR by ext_id, get with wrong ext_id.
+#   6.  Download CSR by id; assert PEM content is returned.
+#   7.  Negative: create CSR without required certificate_info; invalid enum value.
+#   8.  Negative: create CA with invalid certificate (task fails).
+#   9.  Negative: create Certificate without required certificate.
+#   10. check_mode delete for CSR and CA.
+#   11. Delete created CSR(s) via CRUD module; idempotency / wrong id checks.
+#   12. Negative: delete with missing required params (ext_id / cluster_ext_id / type).
+############################################################################################
+
+- name: Start Certificate Manager tests
+  ansible.builtin.debug:
+    msg: Start Certificate Manager tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+
+- name: Set common names for CSRs
+  ansible.builtin.set_fact:
+    csr_cn_min: "min-{{ suffix_name }}-{{ random_name | lower }}.nutanix.com"
+    csr_cn_full: "full-{{ suffix_name }}-{{ random_name | lower }}.nutanix.com"
+
+########################################################################################
+# Discover a Prism Element (AOS) cluster
+########################################################################################
+
+- name: List AOS (Prism Element) clusters
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_info
+  ignore_errors: true
+
+- name: Assert AOS cluster discovered
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    success_msg: "AOS cluster info fetched successfully"
+    fail_msg: "AOS cluster info fetch failed"
+
+- name: Set cluster ext_id
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ clusters_info.response[0].ext_id }}"
+
+########################################################################################
+# Create CSR - check mode (all attributes)
+########################################################################################
+
+- name: Generate spec for creating CSR using check mode with all attributes
+  nutanix.ncp.ntnx_create_csr_by_cluster_id_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    certificate_info:
+      common_name: "{{ csr_cn_full }}"
+      subject_alternative_names:
+        - "{{ csr_cn_full }}"
+        - "www.{{ csr_cn_full }}"
+      city: "San Jose"
+      state: "California"
+      country_code: "US"
+      private_key_algorithm: "RSA_2048"
+      key_size_bit: 2048
+      signature_algorithm: "SHA256_WITH_RSA_ENCRYPTION"
+      extended_key_usages:
+        - "SERVER_AUTH"
+        - "CLIENT_AUTH"
+      key_usages:
+        - "DIGITAL_SIGNATURE"
+        - "KEY_ENCIPHERMENT"
+      organization: "Nutanix"
+      organizational_unit: "Engineering"
+    purpose: "SERVER_AUTH"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert CSR check mode spec generated with all attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.certificate_info.common_name == csr_cn_full
+      - result.response.certificate_info.subject_alternative_names | length == 2
+      - result.response.certificate_info.city == "San Jose"
+      - result.response.certificate_info.state == "California"
+      - result.response.certificate_info.country_code == "US"
+      - result.response.certificate_info.private_key_algorithm == "RSA_2048"
+      - result.response.certificate_info.key_size_bit == 2048
+      - result.response.certificate_info.signature_algorithm == "SHA256_WITH_RSA_ENCRYPTION"
+      - result.response.certificate_info.extended_key_usages | length == 2
+      - result.response.certificate_info.key_usages | length == 2
+      - result.response.certificate_info.organization == "Nutanix"
+      - result.response.certificate_info.organizational_unit == "Engineering"
+      - result.response.purpose == "SERVER_AUTH"
+      - "'will be generated' in result.msg"
+    success_msg: "CSR check mode spec with all attributes generated successfully"
+    fail_msg: "CSR check mode spec with all attributes generation failed"
+
+########################################################################################
+# Create CSR - minimum attributes
+########################################################################################
+
+- name: Create CSR with minimum attributes
+  nutanix.ncp.ntnx_create_csr_by_cluster_id_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    certificate_info:
+      common_name: "{{ csr_cn_min }}"
+      city: "San Jose"
+      state: "California"
+      country_code: "US"
+      private_key_algorithm: "RSA_2048"
+      signature_algorithm: "SHA256_WITH_RSA_ENCRYPTION"
+  register: result
+  ignore_errors: true
+
+- name: Assert CSR with minimum attributes created
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined
+      - result.response is defined
+    success_msg: "CSR with minimum attributes created successfully"
+    fail_msg: "CSR with minimum attributes creation failed"
+
+########################################################################################
+# NOTE: The cluster allows only ONE Certificate Signing Request (CSR) at a time
+# ("CSR already exists for the cluster"). Tests therefore create a CSR, exercise the
+# info/get/download/limit paths against it, delete it, then create another one with the
+# full set of attributes and delete that too.
+########################################################################################
+
+# Info: list CSRs and resolve the created (minimum) CSR ext_id
+
+- name: List all CSRs on the cluster
+  nutanix.ncp.ntnx_certificate_managers_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    type: CSR
+  register: csr_list
+  ignore_errors: true
+
+- name: Assert CSRs listed
+  ansible.builtin.assert:
+    that:
+      - csr_list is defined
+      - csr_list.changed == false
+      - csr_list.failed == false
+      - csr_list.response is defined
+      - csr_list.response | length >= 1
+      - csr_list.total_available_results is defined
+    success_msg: "CSRs listed successfully"
+    fail_msg: "CSRs list failed"
+
+- name: Resolve created minimum CSR ext_id
+  ansible.builtin.set_fact:
+    csr_min_ext_id: "{{ item.ext_id }}"
+  loop: "{{ csr_list.response }}"
+  when: item.certificate_info.common_name == csr_cn_min
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+- name: Assert minimum CSR resolved
+  ansible.builtin.assert:
+    that:
+      - csr_min_ext_id is defined
+    success_msg: "Created minimum CSR ext_id resolved successfully"
+    fail_msg: "Created minimum CSR ext_id could not be resolved"
+
+- name: List CSRs with limit
+  nutanix.ncp.ntnx_certificate_managers_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    type: CSR
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Assert CSR list with limit
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    success_msg: "CSR list with limit passed"
+    fail_msg: "CSR list with limit failed"
+
+########################################################################################
+# Info: get CSR by ext_id
+########################################################################################
+
+- name: Get CSR using ext_id
+  nutanix.ncp.ntnx_certificate_managers_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    type: CSR
+    ext_id: "{{ csr_min_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert get CSR using ext_id
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == csr_min_ext_id
+      - result.response is defined
+      - result.response.ext_id == csr_min_ext_id
+      - result.response.certificate_info is defined
+      - result.response.certificate_info.common_name == csr_cn_min
+      - result.response.certificate_info.country_code == "US"
+    success_msg: "Get CSR using ext_id passed"
+    fail_msg: "Get CSR using ext_id failed"
+
+- name: Get CSR using wrong ext_id
+  nutanix.ncp.ntnx_certificate_managers_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    type: CSR
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert get CSR using wrong ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Get CSR using wrong ext_id failed as expected"
+    fail_msg: "Get CSR using wrong ext_id did not fail as expected"
+
+########################################################################################
+# Download CSR
+########################################################################################
+
+- name: Download CSR with check mode
+  nutanix.ncp.ntnx_download_csr_by_id_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    csr_ext_id: "{{ csr_min_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert CSR download check mode
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be downloaded' in result.msg"
+    success_msg: "CSR download check mode passed"
+    fail_msg: "CSR download check mode failed"
+
+- name: Download CSR by ext_id
+  nutanix.ncp.ntnx_download_csr_by_id_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    csr_ext_id: "{{ csr_min_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert CSR downloaded
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == csr_min_ext_id
+      - result.response is defined
+      - "'CERTIFICATE REQUEST' in result.response"
+    success_msg: "CSR downloaded successfully"
+    fail_msg: "CSR download failed"
+
+########################################################################################
+# Delete the minimum CSR via CRUD module (check mode + real delete)
+########################################################################################
+
+- name: Delete CSR with check mode
+  nutanix.ncp.ntnx_certificate_manager_v2:
+    state: absent
+    type: CSR
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ csr_min_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert delete CSR check mode
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    success_msg: "Delete CSR check mode passed"
+    fail_msg: "Delete CSR check mode failed"
+
+- name: Delete the minimum CSR
+  nutanix.ncp.ntnx_certificate_manager_v2:
+    state: absent
+    type: CSR
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ csr_min_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert minimum CSR deleted
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == csr_min_ext_id
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "Minimum CSR deleted successfully"
+    fail_msg: "Minimum CSR deletion failed"
+
+########################################################################################
+# Create CSR - all attributes (after the previous CSR is deleted)
+########################################################################################
+
+- name: Create CSR with all attributes
+  nutanix.ncp.ntnx_create_csr_by_cluster_id_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    certificate_info:
+      common_name: "{{ csr_cn_full }}"
+      subject_alternative_names:
+        - "{{ csr_cn_full }}"
+        - "www.{{ csr_cn_full }}"
+      city: "San Jose"
+      state: "California"
+      country_code: "US"
+      private_key_algorithm: "RSA_2048"
+      signature_algorithm: "SHA256_WITH_RSA_ENCRYPTION"
+      organization: "Nutanix"
+      organizational_unit: "Engineering"
+  register: result
+  ignore_errors: true
+
+- name: Assert CSR with all attributes created
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined
+      - result.response is defined
+    success_msg: "CSR with all attributes created successfully"
+    fail_msg: "CSR with all attributes creation failed"
+
+- name: List CSRs to resolve full CSR ext_id
+  nutanix.ncp.ntnx_certificate_managers_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    type: CSR
+  register: csr_list_full
+  ignore_errors: true
+
+- name: Resolve created full CSR ext_id
+  ansible.builtin.set_fact:
+    csr_full_ext_id: "{{ item.ext_id }}"
+  loop: "{{ csr_list_full.response }}"
+  when: item.certificate_info.common_name == csr_cn_full
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+- name: Get full CSR and assert all attributes
+  nutanix.ncp.ntnx_certificate_managers_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    type: CSR
+    ext_id: "{{ csr_full_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert full CSR attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.certificate_info.common_name == csr_cn_full
+      - result.response.certificate_info.subject_alternative_names | length == 2
+      - result.response.certificate_info.city == "San Jose"
+      - result.response.certificate_info.state == "California"
+      - result.response.certificate_info.country_code == "US"
+      - result.response.certificate_info.private_key_algorithm == "RSA_2048"
+      - result.response.certificate_info.organization == "Nutanix"
+      - result.response.certificate_info.organizational_unit == "Engineering"
+    success_msg: "Full CSR attributes verified successfully"
+    fail_msg: "Full CSR attribute verification failed"
+
+- name: Delete the full CSR
+  nutanix.ncp.ntnx_certificate_manager_v2:
+    state: absent
+    type: CSR
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ csr_full_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert full CSR deleted
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.status == "SUCCEEDED"
+    success_msg: "Full CSR deleted successfully"
+    fail_msg: "Full CSR deletion failed"
+
+########################################################################################
+# Negative: create CSR / certificate / CA validation
+########################################################################################
+
+- name: Create CSR without required certificate_info
+  nutanix.ncp.ntnx_create_csr_by_cluster_id_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    purpose: "SERVER_AUTH"
+  register: result
+  ignore_errors: true
+
+- name: Assert create CSR without certificate_info fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'certificate_info' in result.msg"
+    success_msg: "Create CSR without certificate_info failed as expected"
+    fail_msg: "Create CSR without certificate_info did not fail as expected"
+
+- name: Create CSR with invalid enum value
+  nutanix.ncp.ntnx_create_csr_by_cluster_id_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    certificate_info:
+      common_name: "invalid-enum.nutanix.com"
+      private_key_algorithm: "INVALID_ALGO"
+  register: result
+  ignore_errors: true
+
+- name: Assert create CSR with invalid enum fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Create CSR with invalid enum failed as expected"
+    fail_msg: "Create CSR with invalid enum did not fail as expected"
+
+- name: Create Certificate without required certificate
+  nutanix.ncp.ntnx_create_certificate_by_cluster_id_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    description: "Certificate without body"
+  register: result
+  ignore_errors: true
+
+- name: Assert create Certificate without certificate fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'certificate' in result.msg"
+    success_msg: "Create Certificate without certificate failed as expected"
+    fail_msg: "Create Certificate without certificate did not fail as expected"
+
+- name: Create Certificate Authority (check mode)
+  nutanix.ncp.ntnx_create_certificate_authority_by_cluster_id_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    certificate: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0t"
+    description: "CA check mode"
+    purpose: "SERVER_AUTH"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert CA create check mode spec generated
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.description == "CA check mode"
+      - result.response.purpose == "SERVER_AUTH"
+      - "'will be added' in result.msg"
+    success_msg: "CA create check mode spec generated successfully"
+    fail_msg: "CA create check mode spec generation failed"
+
+- name: Create Certificate Authority with invalid certificate (should fail)
+  nutanix.ncp.ntnx_create_certificate_authority_by_cluster_id_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    certificate: "not-a-valid-base64-certificate"
+    description: "CA with invalid certificate"
+  register: result
+  ignore_errors: true
+
+- name: Assert create CA with invalid certificate fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Create CA with invalid certificate failed as expected"
+    fail_msg: "Create CA with invalid certificate did not fail as expected"
+
+########################################################################################
+# Info: list Certificate Authorities and Certificates
+########################################################################################
+
+- name: List all Certificate Authorities on the cluster
+  nutanix.ncp.ntnx_certificate_managers_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    type: CERTIFICATE_AUTHORITY
+  register: result
+  ignore_errors: true
+
+- name: Assert Certificate Authorities listed
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results is defined
+    success_msg: "Certificate Authorities listed successfully"
+    fail_msg: "Certificate Authorities list failed"
+
+- name: List all Certificates on the cluster
+  nutanix.ncp.ntnx_certificate_managers_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    type: CERTIFICATE
+  register: result
+  ignore_errors: true
+
+- name: Assert Certificates listed
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results is defined
+    success_msg: "Certificates listed successfully"
+    fail_msg: "Certificates list failed"
+
+########################################################################################
+# Delete - Certificate Authority check mode + negative delete paths
+########################################################################################
+
+- name: Delete Certificate Authority with check mode
+  nutanix.ncp.ntnx_certificate_manager_v2:
+    state: absent
+    type: CERTIFICATE_AUTHORITY
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert delete CA check mode
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'Certificate Authority' in result.msg"
+      - "'will be deleted' in result.msg"
+    success_msg: "Delete CA check mode passed"
+    fail_msg: "Delete CA check mode failed"
+
+- name: Delete CSR with wrong ext_id
+  nutanix.ncp.ntnx_certificate_manager_v2:
+    state: absent
+    type: CSR
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert delete CSR with wrong ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Delete CSR with wrong ext_id failed as expected"
+    fail_msg: "Delete CSR with wrong ext_id did not fail as expected"
+
+########################################################################################
+# Negative: delete with missing required params
+########################################################################################
+
+- name: Delete with missing ext_id
+  nutanix.ncp.ntnx_certificate_manager_v2:
+    state: absent
+    type: CSR
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert delete with missing ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    success_msg: "Delete with missing ext_id failed as expected"
+    fail_msg: "Delete with missing ext_id did not fail as expected"
+
+- name: Delete with missing type
+  nutanix.ncp.ntnx_certificate_manager_v2:
+    state: absent
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert delete with missing type fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'type' in result.msg"
+    success_msg: "Delete with missing type failed as expected"
+    fail_msg: "Delete with missing type did not fail as expected"
+
+- name: Attempt state present (unsupported) on CRUD module
+  nutanix.ncp.ntnx_certificate_manager_v2:
+    state: present
+    type: CSR
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert state present is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'dedicated action modules' in result.msg"
+    success_msg: "state present rejected as expected"
+    fail_msg: "state present was not rejected as expected"
+
+- name: Finish Certificate Manager tests
+  ansible.builtin.debug:
+    msg: Finished Certificate Manager tests

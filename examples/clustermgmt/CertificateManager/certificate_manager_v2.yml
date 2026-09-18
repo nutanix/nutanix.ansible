@@ -1,0 +1,154 @@
+---
+# Summary:
+# This playbook demonstrates the Certificate Manager v4 modules for the clustermgmt namespace.
+# All operations target Prism Central (PC).
+# It will do:
+# 1. Generate a Certificate Signing Request (CSR) on a cluster
+# 2. Download the generated CSR
+# 3. Add a Certificate Authority (CA) to a cluster
+# 4. Add a Certificate to a cluster
+# 5. Get a Certificate Authority using ext_id
+# 6. List all Certificate Authorities on a cluster
+# 7. List all Certificates on a cluster
+# 8. List all Certificate Signing Requests on a cluster
+# 9. Delete a Certificate Authority
+# 10. Delete a Certificate Signing Request
+
+- name: Certificate Manager playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
+
+    - name: Generate a Certificate Signing Request on a cluster
+      nutanix.ncp.ntnx_create_csr_by_cluster_id_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        certificate_info:
+          common_name: "ansible.nutanix.com"
+          subject_alternative_names:
+            - "ansible.nutanix.com"
+            - "www.ansible.nutanix.com"
+          city: "San Jose"
+          state: "California"
+          country_code: "US"
+          private_key_algorithm: "RSA_2048"
+          key_size_bit: 2048
+          signature_algorithm: "SHA256_WITH_RSA_ENCRYPTION"
+          extended_key_usages:
+            - "SERVER_AUTH"
+            - "CLIENT_AUTH"
+          key_usages:
+            - "DIGITAL_SIGNATURE"
+            - "KEY_ENCIPHERMENT"
+          organization: "Nutanix"
+          organizational_unit: "Engineering"
+        purpose: "SERVER_AUTH"
+      register: csr_result
+      ignore_errors: true
+
+    # The CSR create task does not return the real CSR external ID, so resolve it
+    # from the list API using the common name that was requested.
+    - name: List CSRs to resolve the created CSR ext_id
+      nutanix.ncp.ntnx_certificate_managers_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        type: CSR
+      register: csr_list
+      ignore_errors: true
+
+    - name: Set CSR ext_id
+      ansible.builtin.set_fact:
+        csr_ext_id: "{{ item.ext_id }}"
+      loop: "{{ csr_list.response | default([]) }}"
+      when: item.certificate_info.common_name == "ansible.nutanix.com"
+      loop_control:
+        label: "{{ item.ext_id }}"
+
+    - name: Download the generated Certificate Signing Request
+      nutanix.ncp.ntnx_download_csr_by_id_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        csr_ext_id: "{{ csr_ext_id }}"
+      register: download_result
+      ignore_errors: true
+
+    - name: Add a Certificate Authority to a cluster
+      nutanix.ncp.ntnx_create_certificate_authority_by_cluster_id_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        certificate: "{{ ca_certificate_base64 }}"
+        description: "Certificate Authority added by Ansible"
+        purpose: "SERVER_AUTH"
+      register: ca_result
+      ignore_errors: true
+
+    - name: Set Certificate Authority ext_id
+      ansible.builtin.set_fact:
+        ca_ext_id: "{{ ca_result.ext_id }}"
+      when: ca_result.ext_id is defined and ca_result.ext_id
+
+    - name: Add a Certificate to a cluster
+      nutanix.ncp.ntnx_create_certificate_by_cluster_id_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        certificate: "{{ certificate_base64 }}"
+        certificate_chain: "{{ certificate_chain_base64 }}"
+        private_key: "{{ private_key_base64 }}"
+        csr_ext_id: "{{ csr_ext_id }}"
+        description: "Certificate added by Ansible"
+        purpose: "SERVER_AUTH"
+      register: certificate_result
+      ignore_errors: true
+
+    - name: Get a Certificate Authority using ext_id
+      nutanix.ncp.ntnx_certificate_managers_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        type: CERTIFICATE_AUTHORITY
+        ext_id: "{{ ca_ext_id }}"
+      register: result
+      ignore_errors: true
+      when: ca_ext_id is defined
+
+    - name: List all Certificate Authorities on a cluster
+      nutanix.ncp.ntnx_certificate_managers_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        type: CERTIFICATE_AUTHORITY
+      register: result
+      ignore_errors: true
+
+    - name: List all Certificates on a cluster
+      nutanix.ncp.ntnx_certificate_managers_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        type: CERTIFICATE
+      register: result
+      ignore_errors: true
+
+    - name: List all Certificate Signing Requests on a cluster
+      nutanix.ncp.ntnx_certificate_managers_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        type: CSR
+      register: result
+      ignore_errors: true
+
+    - name: Delete a Certificate Authority
+      nutanix.ncp.ntnx_certificate_manager_v2:
+        state: absent
+        type: CERTIFICATE_AUTHORITY
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ ca_ext_id }}"
+      register: result
+      ignore_errors: true
+      when: ca_ext_id is defined
+
+    - name: Delete a Certificate Signing Request
+      nutanix.ncp.ntnx_certificate_manager_v2:
+        state: absent
+        type: CSR
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ csr_ext_id }}"
+      register: result
+      ignore_errors: true
