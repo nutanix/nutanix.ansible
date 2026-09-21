@@ -647,11 +647,11 @@
   ansible.builtin.assert:
     that:
       that:
-      - result.changed == false
-      - result.failed == true
-      - result.msg == "Api Exception raised while fetching content repository using ext_id"
-      - result.response is defined
-      - result.response.data.errors | length > 0
+        - result.changed == false
+        - result.failed == true
+        - result.msg == "Api Exception raised while fetching content repository using ext_id"
+        - result.response is defined
+        - result.response.data.errors | length > 0
     fail_msg: "Delete with wrong ext_id should fail"
     success_msg: "Delete with wrong ext_id failed as expected"
 
