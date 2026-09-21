@@ -129,8 +129,8 @@ def sync_content_repository(module, content_repositories, result):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["msg"] = (
-            "Content repository with ext_id:{0} will be synced.".format(ext_id)
+        result["msg"] = "Content repository with ext_id:{0} will be synced.".format(
+            ext_id
         )
         return
 

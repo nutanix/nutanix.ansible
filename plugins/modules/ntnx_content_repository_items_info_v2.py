@@ -176,8 +176,10 @@ def list_content_repository_items(module, content_repositories, result):
         kwargs["X_Cluster_Id"] = module.params.get("cluster_ext_id")
 
     try:
-        resp = content_repositories.list_content_repository_items_by_content_repository_id(
-            extId=ext_id, **kwargs
+        resp = (
+            content_repositories.list_content_repository_items_by_content_repository_id(
+                extId=ext_id, **kwargs
+            )
         )
     except Exception as e:
         raise_api_exception(
