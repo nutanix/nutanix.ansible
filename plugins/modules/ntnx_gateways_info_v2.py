@@ -35,6 +35,10 @@ options:
     description:
       - The external ID of the network gateway.
     type: str
+  expand:
+    description:
+      - Expand related resources in the response (for example C(vpc)).
+    type: str
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
@@ -82,9 +86,9 @@ response:
     {
       "cloud_network_reference": null,
       "deployment": null,
-      "description": "Remote BGP gateway created by Ansible example playbook",
-      "ext_id": "c13bf194-4017-4efb-abbf-d44c837818a9",
-      "gateway_device_vendor": "GENERIC",
+      "description": null,
+      "ext_id": "8fab225c-3cdc-4eeb-99a5-ff959611eaed",
+      "gateway_device_vendor": null,
       "high_availability_group": null,
       "installed_software_version": null,
       "is_active": null,
@@ -96,11 +100,17 @@ response:
           "project_name": "_internal",
           "project_reference_id": "00000000-0000-0000-0000-000000000000"
       },
-      "name": "gateway_ansible_example",
-      "projectExtId": "00000000-0000-0000-0000-000000000000",
+      "name": "gw_ansible_WisfNOatNlEf_min",
+      "project_ext_id": "00000000-0000-0000-0000-000000000000",
       "services": {
           "remote_bgp_service": {
-              "address": {"ipv4": {"prefix_length": 32, "value": "192.0.2.10"}, "ipv6": null},
+              "address": {
+                  "ipv4": {
+                      "prefix_length": 32,
+                      "value": "192.0.2.10"
+                  },
+                  "ipv6": null
+              },
               "asn": 65001
           },
           "remote_vpn_service": null,
@@ -170,6 +180,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        expand=dict(type="str"),
     )
 
     return module_args
@@ -184,7 +195,7 @@ def get_gateway_using_ext_id(module, api_instance, result):
 
 def get_gateways(module, api_instance, result):
     sg = SpecGenerator(module)
-    kwargs, err = sg.get_info_spec(attr=module.params)
+    kwargs, err = sg.get_info_spec(attr=module.params, extra_params=["expand"])
 
     if err:
         result["error"] = err
@@ -199,9 +210,10 @@ def get_gateways(module, api_instance, result):
             msg="Api Exception raised while fetching gateways info",
         )
 
-    total_available_results = resp.metadata.total_available_results
+    resp = strip_internal_attributes(resp.to_dict())
+    total_available_results = resp.get("metadata").get("total_available_results")
     result["total_available_results"] = total_available_results
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    resp = resp.get("data")
     if not resp:
         resp = []
     result["response"] = resp

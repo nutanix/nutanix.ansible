@@ -15,8 +15,7 @@ short_description: Create, Update, Delete, Upgrade network gateways in Nutanix P
 version_added: 2.7.0
 description:
   - This module allows you to create, update, delete and upgrade network gateways in Nutanix Prism Central.
-  - A network gateway is a managed VyOS-based appliance VM used by Flow Virtual Networking to
-    provide VPN, VTEP or BGP connectivity between VPCs / overlay subnets and external or remote networks.
+  - A Network Gateway is a VyOS-based VM that connects VPC networks to external or remote networks using VPN, VTEP, or BGP.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -24,16 +23,20 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a Network Gateway) -
-      Required Roles: Network Infra Admin, Prism Admin, Super Admin, VPC Admin
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin, Super Admin,
+      Tenant Admin, VPC Admin
     - >-
       B(Update a Network Gateway) -
-      Required Roles: Network Infra Admin, Prism Admin, Super Admin, VPC Admin
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin, Super Admin,
+      Tenant Admin, VPC Admin
     - >-
       B(Delete a Network Gateway) -
-      Required Roles: Network Infra Admin, Prism Admin, Super Admin, VPC Admin
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin, Super Admin,
+      Tenant Admin, VPC Admin
     - >-
       B(Upgrade a Network Gateway) -
-      Required Roles: Network Infra Admin, Prism Admin, Super Admin
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin, Super Admin,
+      Tenant Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
@@ -56,8 +59,6 @@ options:
   upgrade:
     description:
       - When true and C(ext_id) is provided the module upgrades the gateway to the latest supported version
-        using the C(/gateways/{extId}/$actions/upgrade) endpoint.
-      - Mutually exclusive with regular update fields; C(state) must be C(present).
     type: bool
     required: false
     default: false
@@ -65,25 +66,28 @@ options:
     description:
       - Name of the gateway.
       - Required for create operation.
-      - Maximum 128 characters.
     type: str
     required: false
   description:
     description:
       - Description of the gateway.
-      - Maximum 1000 characters.
     type: str
     required: false
   vpc_reference:
     description:
       - External ID of the VPC where this gateway will be deployed.
-      - Mutually exclusive with C(cloud_network_reference).
+      - C(vpc_reference) and C(cloud_network_reference) are mutually exclusive.
     type: str
     required: false
   cloud_network_reference:
     description:
       - External ID of the cloud network on which the gateway is deployed (NC2 deployments).
-      - Mutually exclusive with C(vpc_reference).
+      - C(vpc_reference) and C(cloud_network_reference) are mutually exclusive.
+    type: str
+    required: false
+  project_ext_id:
+    description:
+      - External ID of the project that owns this gateway.
     type: str
     required: false
   vm_reference:
@@ -99,7 +103,6 @@ options:
   is_active:
     description:
       - Indicates whether the gateway can be used to service a subnet extension's datapath.
-      - This field is server populated for local gateways and is typically read-only.
     type: bool
     required: false
   deployment:
@@ -430,8 +433,12 @@ options:
   services:
     description:
       - Local or remote gateway service.
-      - Set exactly one of C(local_services) OR C(remote_services); each of them must
-        additionally include exactly one of C(vpn), C(vtep) or C(bgp).
+      - C(local_services) and C(remote_services) are mutually exclusive.
+      - Local services use C(local_vpn_service), C(local_vtep_service) or C(local_bgp_service).
+      - Remote services use C(remote_vpn_service), C(remote_vtep_service) or C(remote_bgp_service).
+      - Module responses return the SDK C(services) object directly (for example
+        C(remote_bgp_service) under C(services)), not wrapped under C(local_services)
+        or C(remote_services).
     type: dict
     required: false
     suboptions:
@@ -522,7 +529,7 @@ options:
                     type: int
                     required: false
                     default: 128
-          vpn:
+          local_vpn_service:
             description:
               - Local VPN service configuration.
             type: dict
@@ -549,7 +556,127 @@ options:
                       - Whether to redistribute learned routes back to the peer.
                     type: bool
                     required: false
-          vtep:
+              peer_igp_config:
+                description:
+                  - Internal routing protocol configuration used to peer with internal routers.
+                type: dict
+                required: false
+                suboptions:
+                  ospf_config:
+                    description:
+                      - OSPF configuration for route peering with internal routers.
+                    type: dict
+                    required: false
+                    suboptions:
+                      area_id:
+                        description:
+                          - OSPF area ID of this gateway.
+                        type: str
+                        required: false
+                      authentication_type:
+                        description:
+                          - OSPF authentication type.
+                        type: str
+                        required: false
+                        choices:
+                          - PLAIN_TEXT
+                          - MD5
+                      password:
+                        description:
+                          - Password for OSPF authentication.
+                        type: str
+                        required: false
+                  ibgp_config_list:
+                    description:
+                      - List of iBGP peer configurations.
+                    type: list
+                    elements: dict
+                    required: false
+                    suboptions:
+                      peer_ip:
+                        description:
+                          - IP address of the iBGP peer.
+                        type: dict
+                        required: false
+                      asn:
+                        description:
+                          - Autonomous System Number.
+                        type: int
+                        required: false
+                      password:
+                        description:
+                          - Optional BGP MD5 authentication password.
+                        type: str
+                        required: false
+                      should_redistribute_routes:
+                        description:
+                          - Whether to redistribute learned routes back to the peer.
+                        type: bool
+                        required: false
+                  local_prefix_list:
+                    description:
+                      - List of local prefixes to advertise over eBGP.
+                    type: list
+                    elements: dict
+                    required: false
+                    suboptions:
+                      ipv4:
+                        description:
+                          - IPv4 subnet.
+                        type: dict
+                        required: false
+                        suboptions:
+                          ip:
+                            description:
+                              - IPv4 address of the subnet.
+                            type: dict
+                            required: true
+                            suboptions:
+                              value:
+                                description:
+                                  - The IPv4 address value.
+                                type: str
+                                required: true
+                              prefix_length:
+                                description:
+                                  - Prefix length of the address.
+                                type: int
+                                required: false
+                                default: 32
+                          prefix_length:
+                            description:
+                              - Prefix length of the IPv4 subnet.
+                            type: int
+                            required: true
+                      ipv6:
+                        description:
+                          - IPv6 subnet.
+                        type: dict
+                        required: false
+                        suboptions:
+                          ip:
+                            description:
+                              - IPv6 address of the subnet.
+                            type: dict
+                            required: true
+                            suboptions:
+                              value:
+                                description:
+                                  - The IPv6 address value.
+                                type: str
+                                required: true
+                              prefix_length:
+                                description:
+                                  - Prefix length of the address.
+                                type: int
+                                required: false
+                                default: 128
+                          prefix_length:
+                            description:
+                              - Prefix length of the IPv6 subnet.
+                            type: int
+                            required: true
+          local_vtep_service:
             description:
               - Local VTEP (VXLAN Tunnel End Point) service configuration.
             type: dict
@@ -560,7 +687,7 @@ options:
                   - UDP port used for VXLAN encapsulation.
                 type: int
                 required: false
-          bgp:
+          local_bgp_service:
             description:
               - Local BGP service configuration.
             type: dict
@@ -587,7 +714,7 @@ options:
         type: dict
         required: false
         suboptions:
-          vpn:
+          remote_vpn_service:
             description:
               - Remote VPN service configuration.
             type: dict
@@ -659,7 +786,70 @@ options:
                       - Whether to redistribute learned routes back to the peer.
                     type: bool
                     required: false
-          vtep:
+              peer_igp_config:
+                description:
+                  - Internal routing protocol configuration used to peer with internal routers.
+                type: dict
+                required: false
+                suboptions:
+                  ospf_config:
+                    description:
+                      - OSPF configuration for route peering with internal routers.
+                    type: dict
+                    required: false
+                    suboptions:
+                      area_id:
+                        description:
+                          - OSPF area ID of this gateway.
+                        type: str
+                        required: false
+                      authentication_type:
+                        description:
+                          - OSPF authentication type.
+                        type: str
+                        required: false
+                        choices:
+                          - PLAIN_TEXT
+                          - MD5
+                      password:
+                        description:
+                          - Password for OSPF authentication.
+                        type: str
+                        required: false
+                  ibgp_config_list:
+                    description:
+                      - List of iBGP peer configurations.
+                    type: list
+                    elements: dict
+                    required: false
+                    suboptions:
+                      peer_ip:
+                        description:
+                          - IP address of the iBGP peer.
+                        type: dict
+                        required: false
+                      asn:
+                        description:
+                          - Autonomous System Number.
+                        type: int
+                        required: false
+                      password:
+                        description:
+                          - Optional BGP MD5 authentication password.
+                        type: str
+                        required: false
+                      should_redistribute_routes:
+                        description:
+                          - Whether to redistribute learned routes back to the peer.
+                        type: bool
+                        required: false
+                  local_prefix_list:
+                    description:
+                      - List of local prefixes to advertise over eBGP.
+                    type: list
+                    elements: dict
+                    required: false
+          remote_vtep_service:
             description:
               - Remote VTEP service configuration.
             type: dict
@@ -717,7 +907,7 @@ options:
                             type: int
                             required: false
                             default: 128
-          bgp:
+          remote_bgp_service:
             description:
               - Remote BGP service configuration.
             type: dict
@@ -835,7 +1025,7 @@ EXAMPLES = r"""
             prefix_length: 24
     services:
       local_services:
-        vpn: {}
+        local_vpn_service: {}
   register: result
 
 - name: Create a remote BGP gateway referencing an external ASN
@@ -850,7 +1040,7 @@ EXAMPLES = r"""
     gateway_device_vendor: "GENERIC"
     services:
       remote_services:
-        bgp:
+        remote_bgp_service:
           asn: 65001
           address:
             ipv4:
@@ -905,8 +1095,8 @@ response:
     {
       "cloud_network_reference": null,
       "deployment": null,
-      "description": "Remote BGP gateway created by Ansible example playbook",
-      "ext_id": "c13bf194-4017-4efb-abbf-d44c837818a9",
+      "description": "Gateway created by Ansible integration tests with all attributes",
+      "ext_id": "a0760ab6-e728-42c3-a5ab-9cf743a45fa5",
       "gateway_device_vendor": "GENERIC",
       "high_availability_group": null,
       "installed_software_version": null,
@@ -919,17 +1109,21 @@ response:
           "project_name": "_internal",
           "project_reference_id": "00000000-0000-0000-0000-000000000000"
       },
-      "name": "gateway_ansible_example",
-      "projectExtId": "00000000-0000-0000-0000-000000000000",
+      "name": "gw_ansible_WisfNOatNlEf_all",
+      "project_ext_id": "00000000-0000-0000-0000-000000000000",
       "services": {
-          "remote_services": {
-              "remote_bgp_service": {
-                  "address": {"ipv4": {"prefix_length": 32, "value": "192.0.2.10"}, "ipv6": null},
-                  "asn": 65001
+          "remote_bgp_service": {
+              "address": {
+                  "ipv4": {
+                      "prefix_length": 32,
+                      "value": "192.0.2.11"
+                  },
+                  "ipv6": null
               },
-              "remote_vpn_service": null,
-              "remote_vtep_service": null
-          }
+              "asn": 65001
+          },
+          "remote_vpn_service": null,
+          "remote_vtep_service": null
       },
       "status": null,
       "supported_software_version": null,
@@ -937,7 +1131,7 @@ response:
       "vm": null,
       "vm_reference": null,
       "vpc": null,
-      "vpc_reference": null
+      "vpc_reference": "f47927e8-8339-43ad-8dfc-d727c44a5418"
     }
 
 task_ext_id:
@@ -964,7 +1158,7 @@ skipped:
   description: This indicates whether the task was skipped
   returned: always
   type: bool
-  sample: "Gateway with name 'gateway_ansible_example' already exists. Skipping creation."
+  sample: true
 
 error:
   description: This indicates the error message if any error occurred
@@ -1025,11 +1219,13 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 READ_ONLY_FIELDS = (
     "installed_software_version",
     "supported_software_version",
-    "vm_reference",
-    "is_active",
     "status",
     "vpc",
     "vm",
+    "metadata",
+    "links",
+    "ext_id",
+    "tenant_id",
 )
 
 
@@ -1159,6 +1355,88 @@ def _get_bgp_config_spec():
     )
 
 
+def _get_ip_subnet_spec():
+    return dict(
+        ipv4=dict(
+            type="dict",
+            required=False,
+            obj=networking_sdk.IPv4Subnet,
+            options=dict(
+                ip=dict(
+                    type="dict",
+                    required=True,
+                    options=_get_ipv4_address_spec(),
+                    obj=networking_sdk.IPv4Address,
+                ),
+                prefix_length=dict(type="int", required=True),
+            ),
+        ),
+        ipv6=dict(
+            type="dict",
+            required=False,
+            obj=networking_sdk.IPv6Subnet,
+            options=dict(
+                ip=dict(
+                    type="dict",
+                    required=True,
+                    options=_get_ipv6_address_spec(),
+                    obj=networking_sdk.IPv6Address,
+                ),
+                prefix_length=dict(type="int", required=True),
+            ),
+        ),
+    )
+
+
+def _get_ospf_config_spec():
+    return dict(
+        area_id=dict(type="str", required=False),
+        authentication_type=dict(
+            type="str",
+            required=False,
+            choices=["PLAIN_TEXT", "MD5"],
+            obj=networking_sdk.AuthenticationType,
+        ),
+        password=dict(type="str", required=False, no_log=True),
+    )
+
+
+def _get_ibgp_config_spec():
+    spec = _get_bgp_config_spec()
+    spec["peer_ip"] = dict(
+        type="dict",
+        required=False,
+        options=_get_ip_address_spec(),
+        obj=networking_sdk.IPAddress,
+    )
+    return spec
+
+
+def _get_peer_igp_config_spec():
+    return dict(
+        ospf_config=dict(
+            type="dict",
+            required=False,
+            options=_get_ospf_config_spec(),
+            obj=networking_sdk.OspfConfig,
+        ),
+        ibgp_config_list=dict(
+            type="list",
+            elements="dict",
+            required=False,
+            options=_get_ibgp_config_spec(),
+            obj=networking_sdk.IbgpConfig,
+        ),
+        local_prefix_list=dict(
+            type="list",
+            elements="dict",
+            required=False,
+            options=_get_ip_subnet_spec(),
+            obj=networking_sdk.IPSubnet,
+        ),
+    )
+
+
 def _get_local_services_spec():
     return dict(
         service_address=dict(
@@ -1174,7 +1452,7 @@ def _get_local_services_spec():
             options=_get_ip_address_spec(),
             obj=networking_sdk.IPAddress,
         ),
-        vpn=dict(
+        local_vpn_service=dict(
             type="dict",
             required=False,
             options=dict(
@@ -1184,10 +1462,16 @@ def _get_local_services_spec():
                     required=False,
                     obj=networking_sdk.BgpConfig,
                 ),
+                peer_igp_config=dict(
+                    type="dict",
+                    options=_get_peer_igp_config_spec(),
+                    required=False,
+                    obj=networking_sdk.InternalRoutingConfig,
+                ),
             ),
             obj=networking_sdk.LocalVpnService,
         ),
-        vtep=dict(
+        local_vtep_service=dict(
             type="dict",
             required=False,
             options=dict(
@@ -1195,7 +1479,7 @@ def _get_local_services_spec():
             ),
             obj=networking_sdk.LocalVtepService,
         ),
-        bgp=dict(
+        local_bgp_service=dict(
             type="dict",
             required=False,
             options=dict(
@@ -1210,7 +1494,7 @@ def _get_local_services_spec():
 
 def _get_remote_services_spec():
     return dict(
-        vpn=dict(
+        remote_vpn_service=dict(
             type="dict",
             required=False,
             options=dict(
@@ -1227,10 +1511,16 @@ def _get_remote_services_spec():
                     required=False,
                     obj=networking_sdk.BgpConfig,
                 ),
+                peer_igp_config=dict(
+                    type="dict",
+                    options=_get_peer_igp_config_spec(),
+                    required=False,
+                    obj=networking_sdk.InternalRoutingConfig,
+                ),
             ),
             obj=networking_sdk.RemoteVpnService,
         ),
-        vtep=dict(
+        remote_vtep_service=dict(
             type="dict",
             required=False,
             options=dict(
@@ -1252,7 +1542,7 @@ def _get_remote_services_spec():
             ),
             obj=networking_sdk.RemoteVtepService,
         ),
-        bgp=dict(
+        remote_bgp_service=dict(
             type="dict",
             required=False,
             options=dict(
@@ -1270,10 +1560,8 @@ def _get_remote_services_spec():
 
 
 def _get_services_spec():
-    # NOTE: no ``obj=`` for this dict. ``Gatewayservices`` is a discriminated
-    # union whose sub-classes (``LocalNetworkServices`` / ``RemoteNetworkServices``)
-    # don't hang off attribute names, so SpecGenerator cannot recurse into it.
-    # We instead build the final object manually in ``_build_services_object``.
+    # SpecGenerator resolves the Gatewayservices OneOf via dynamic ``obj`` on
+    # the parent ``services`` argument (local_services / remote_services).
     return dict(
         local_services=dict(
             type="dict",
@@ -1310,6 +1598,12 @@ def _get_ha_group_spec():
 
 
 def get_module_spec():
+    # maps of spec classes for attributes having more than one type of objects allowed as it value
+    services_allowed_objs = {
+        "local_services": networking_sdk.LocalNetworkServices,
+        "remote_services": networking_sdk.RemoteNetworkServices,
+    }
+
     module_args = dict(
         ext_id=dict(type="str"),
         upgrade=dict(type="bool", default=False),
@@ -1317,6 +1611,7 @@ def get_module_spec():
         description=dict(type="str"),
         vpc_reference=dict(type="str"),
         cloud_network_reference=dict(type="str"),
+        project_ext_id=dict(type="str"),
         vm_reference=dict(type="str"),
         gateway_device_vendor=dict(type="str"),
         is_active=dict(type="bool"),
@@ -1328,6 +1623,8 @@ def get_module_spec():
         services=dict(
             type="dict",
             options=_get_services_spec(),
+            obj=services_allowed_objs,
+            mutually_exclusive=[("local_services", "remote_services")],
         ),
         high_availability_group=dict(
             type="dict",
@@ -1336,151 +1633,6 @@ def get_module_spec():
         ),
     )
     return module_args
-
-
-def _build_ip_address(value):
-    if not value:
-        return None
-    obj = networking_sdk.IPAddress()
-    if value.get("ipv4"):
-        obj.ipv4 = networking_sdk.IPv4Address(
-            value=value["ipv4"].get("value"),
-            prefix_length=value["ipv4"].get("prefix_length", 32),
-        )
-    if value.get("ipv6"):
-        obj.ipv6 = networking_sdk.IPv6Address(
-            value=value["ipv6"].get("value"),
-            prefix_length=value["ipv6"].get("prefix_length", 128),
-        )
-    return obj
-
-
-def _build_bgp_config(value):
-    if not value:
-        return None
-    return networking_sdk.BgpConfig(
-        asn=value.get("asn"),
-        password=value.get("password"),
-        should_redistribute_routes=value.get("should_redistribute_routes"),
-    )
-
-
-def _build_local_services(local):
-    if not local:
-        return None
-    lns = networking_sdk.LocalNetworkServices()
-    lns.service_address = _build_ip_address(local.get("service_address"))
-    if local.get("service_addresses"):
-        lns.service_addresses = [
-            _build_ip_address(ip) for ip in local["service_addresses"]
-        ]
-    if local.get("vpn") is not None:
-        vpn = networking_sdk.LocalVpnService()
-        if local["vpn"].get("ebgp_config"):
-            vpn.ebgp_config = _build_bgp_config(local["vpn"]["ebgp_config"])
-        lns.local_vpn_service = vpn
-    if local.get("vtep") is not None:
-        vtep = networking_sdk.LocalVtepService()
-        if local["vtep"].get("vxlan_port") is not None:
-            vtep.vxlan_port = local["vtep"]["vxlan_port"]
-        lns.local_vtep_service = vtep
-    if local.get("bgp") is not None:
-        bgp = networking_sdk.LocalBgpService()
-        if local["bgp"].get("vpc_reference") is not None:
-            bgp.vpc_reference = local["bgp"]["vpc_reference"]
-        if local["bgp"].get("asn") is not None:
-            bgp.asn = local["bgp"]["asn"]
-        if local["bgp"].get("is_bgp_add_path_enabled") is not None:
-            bgp.is_bgp_add_path_enabled = local["bgp"]["is_bgp_add_path_enabled"]
-        lns.local_bgp_service = bgp
-    return lns
-
-
-def _build_remote_services(remote):
-    if not remote:
-        return None
-    rns = networking_sdk.RemoteNetworkServices()
-    if remote.get("vpn") is not None:
-        vpn = networking_sdk.RemoteVpnService()
-        vpn.service_address = _build_ip_address(remote["vpn"].get("service_address"))
-        if remote["vpn"].get("should_install_xi_route") is not None:
-            vpn.should_install_xi_route = remote["vpn"]["should_install_xi_route"]
-        vpn.ebgp_config = _build_bgp_config(remote["vpn"].get("ebgp_config"))
-        rns.remote_vpn_service = vpn
-    if remote.get("vtep") is not None:
-        vtep = networking_sdk.RemoteVtepService()
-        if remote["vtep"].get("vxlan_port") is not None:
-            vtep.vxlan_port = remote["vtep"]["vxlan_port"]
-        if remote["vtep"].get("vteps"):
-            vteps = []
-            for v in remote["vtep"]["vteps"]:
-                vtep_obj = networking_sdk.Vtep()
-                vtep_obj.address = _build_ip_address(v.get("address"))
-                vteps.append(vtep_obj)
-            vtep.vteps = vteps
-        rns.remote_vtep_service = vtep
-    if remote.get("bgp") is not None:
-        bgp = networking_sdk.RemoteBgpService()
-        if remote["bgp"].get("asn") is not None:
-            bgp.asn = remote["bgp"]["asn"]
-        bgp.address = _build_ip_address(remote["bgp"].get("address"))
-        rns.remote_bgp_service = bgp
-    return rns
-
-
-def _apply_services_payload(spec, params_services):
-    """Populate ``spec.services`` from module params.
-
-    The SDK expresses ``services`` as a discriminated union
-    (``Gatewayservices``) — SpecGenerator cannot recurse into it so we build
-    the ``LocalNetworkServices`` / ``RemoteNetworkServices`` object manually
-    here.
-    """
-    if not params_services:
-        return
-    local = params_services.get("local_services")
-    remote = params_services.get("remote_services")
-    if local:
-        spec.services = _build_local_services(local)
-    elif remote:
-        spec.services = _build_remote_services(remote)
-
-
-def _restore_services_wrapper(response_dict):
-    """Wrap raw SDK services back into the local/remote_services envelope.
-
-    The SDK stores services as either LocalNetworkServices or
-    RemoteNetworkServices, both flattened onto `services`. To make the
-    returned payload symmetric with the request layout, we introspect the
-    known top-level keys and put them back under either
-    `local_services` or `remote_services`.
-    """
-    if not isinstance(response_dict, dict):
-        return response_dict
-    services = response_dict.get("services")
-    if not isinstance(services, dict):
-        return response_dict
-    if "local_services" in services or "remote_services" in services:
-        return response_dict
-    local_keys = {
-        "service_address",
-        "service_addresses",
-        "local_vpn_service",
-        "local_vtep_service",
-        "local_bgp_service",
-    }
-    remote_keys = {
-        "remote_vpn_service",
-        "remote_vtep_service",
-        "remote_bgp_service",
-    }
-    has_local = any(k in services for k in local_keys)
-    has_remote = any(k in services for k in remote_keys)
-    if has_local:
-        response_dict["services"] = {"local_services": services}
-    elif has_remote:
-        response_dict["services"] = {"remote_services": services}
-    return response_dict
 
 
 def create_Gateway(module, api_instance, result):
@@ -1492,14 +1644,8 @@ def create_Gateway(module, api_instance, result):
         result["error"] = err
         module.fail_json(msg="Failed generating create gateway spec", **result)
 
-    _apply_services_payload(spec, module.params.get("services"))
-    strip_read_only_fields(spec, fields=READ_ONLY_FIELDS)
-
     if module.check_mode:
-        response_dict = _restore_services_wrapper(
-            strip_internal_attributes(spec.to_dict())
-        )
-        result["response"] = response_dict
+        result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
     resp = None
@@ -1523,9 +1669,7 @@ def create_Gateway(module, api_instance, result):
         if ext_id:
             result["ext_id"] = ext_id
             gw_resp = get_gateway(module, api_instance, ext_id)
-            result["response"] = _restore_services_wrapper(
-                strip_internal_attributes(gw_resp.to_dict())
-            )
+            result["response"] = strip_internal_attributes(gw_resp.to_dict())
         else:
             raise_api_exception(
                 module=module,
@@ -1556,21 +1700,23 @@ def update_Gateway(module, api_instance, result):
     if not etag:
         return module.fail_json("Unable to fetch etag for updating gateway", **result)
     kwargs = {"if_match": etag}
+
+    # Clear existing OneOf services so SpecGenerator instantiates the correct
+    # LocalNetworkServices / RemoteNetworkServices type from module params.
+    update_base = deepcopy(old_spec)
+    if module.params.get("services"):
+        update_base.services = None
+
     sg = SpecGenerator(module)
-    update_spec, err = sg.generate_spec(obj=deepcopy(old_spec))
+    update_spec, err = sg.generate_spec(obj=update_base)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating update gateway spec", **result)
 
-    if module.params.get("services"):
-        _apply_services_payload(update_spec, module.params.get("services"))
     strip_read_only_fields(update_spec, fields=READ_ONLY_FIELDS)
 
     if module.check_mode:
-        response_dict = _restore_services_wrapper(
-            strip_internal_attributes(update_spec.to_dict())
-        )
-        result["response"] = response_dict
+        result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
     if check_for_idempotency(old_spec.to_dict(), update_spec.to_dict()):
@@ -1594,9 +1740,7 @@ def update_Gateway(module, api_instance, result):
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
         gw_resp = get_gateway(module, api_instance, ext_id)
-        result["response"] = _restore_services_wrapper(
-            strip_internal_attributes(gw_resp.to_dict())
-        )
+        result["response"] = strip_internal_attributes(gw_resp.to_dict())
     result["changed"] = True
 
 
