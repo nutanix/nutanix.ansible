@@ -165,32 +165,32 @@
         mtu: 1500
         address:
           ipv4:
-            value: "10.44.76.230"
-            prefix_length: 24
+            value: "10.30.30.230"
+            prefix_length: "{{ static.network_prefix }}"
         default_gateway:
           ipv4:
-            value: "10.44.76.1"
-            prefix_length: 24
+            value: "{{ static.gateway_ip }}"
+            prefix_length: "{{ static.network_prefix }}"
       interfaces:
-        - subnet_reference: "{{ overlay.uuid }}"
+        - subnet_reference: "{{ static.uuid }}"
           mtu: 1500
           ip_address:
             ipv4:
-              value: "10.44.77.10"
-              prefix_length: 24
+              value: "10.30.30.231"
+              prefix_length: "{{ static.network_prefix }}"
           default_gateway_address:
             ipv4:
-              value: "10.44.77.1"
-              prefix_length: 24
+              value: "{{ static.gateway_ip }}"
+              prefix_length: "{{ static.network_prefix }}"
     services:
       local_services:
         service_address:
           ipv4:
-            value: "10.44.76.240"
+            value: "10.30.30.240"
             prefix_length: 32
         service_addresses:
           - ipv4:
-              value: "10.44.76.241"
+              value: "10.30.30.241"
               prefix_length: 32
         local_vpn_service:
           ebgp_config:
@@ -244,14 +244,14 @@
       - result.response.deployment.dns_servers[0].ipv4.value == "8.8.8.8"
       - result.response.deployment.management_interface.subnet_reference == static.uuid
       - result.response.deployment.management_interface.mtu == 1500
-      - result.response.deployment.management_interface.address.ipv4.value == "10.44.76.230"
-      - result.response.deployment.management_interface.default_gateway.ipv4.value == "10.44.76.1"
+      - result.response.deployment.management_interface.address.ipv4.value == "10.30.30.230"
+      - result.response.deployment.management_interface.default_gateway.ipv4.value == static.gateway_ip
       - result.response.deployment.interfaces | length == 1
-      - result.response.deployment.interfaces[0].subnet_reference == overlay.uuid
-      - result.response.deployment.interfaces[0].ip_address.ipv4.value == "10.44.77.10"
-      - result.response.deployment.interfaces[0].default_gateway_address.ipv4.value == "10.44.77.1"
-      - result.response.services.service_address.ipv4.value == "10.44.76.240"
-      - result.response.services.service_addresses[0].ipv4.value == "10.44.76.241"
+      - result.response.deployment.interfaces[0].subnet_reference == static.uuid
+      - result.response.deployment.interfaces[0].ip_address.ipv4.value == "10.30.30.231"
+      - result.response.deployment.interfaces[0].default_gateway_address.ipv4.value == static.gateway_ip
+      - result.response.services.service_address.ipv4.value == "10.30.30.240"
+      - result.response.services.service_addresses[0].ipv4.value == "10.30.30.241"
       - result.response.services.local_vpn_service.ebgp_config.asn == 65001
       - result.response.services.local_vpn_service.ebgp_config.should_redistribute_routes == true
       - result.response.services.local_vpn_service.peer_igp_config.ospf_config.area_id == "0.0.0.0"
@@ -314,14 +314,71 @@
     gateway_device_vendor: "GENERIC"
     vpc_reference: "{{ vpc.uuid }}"
     project_ext_id: "00000000-0000-0000-0000-000000000000"
-    services:
-      remote_services:
-        remote_bgp_service:
-          asn: 65001
-          address:
+    deployment:
+      cluster_reference: "{{ cluster.uuid }}"
+      vcenter_datastore_name: "ds1"
+      should_synchronize_system_ntp_servers: true
+      should_synchronize_system_dns_servers: true
+      ntp_servers:
+        - fqdn:
+            value: "pool.ntp.org"
+      dns_servers:
+        - ipv4:
+            value: "8.8.8.8"
+            prefix_length: 32
+      management_interface:
+        subnet_reference: "{{ static.uuid }}"
+        mtu: 1500
+        address:
+          ipv4:
+            value: "10.30.30.230"
+            prefix_length: "{{ static.network_prefix }}"
+        default_gateway:
+          ipv4:
+            value: "{{ static.gateway_ip }}"
+            prefix_length: "{{ static.network_prefix }}"
+      interfaces:
+        - subnet_reference: "{{ static.uuid }}"
+          mtu: 1500
+          ip_address:
             ipv4:
-              value: "192.0.2.11"
+              value: "10.30.30.231"
+              prefix_length: "{{ static.network_prefix }}"
+          default_gateway_address:
+            ipv4:
+              value: "{{ static.gateway_ip }}"
+              prefix_length: "{{ static.network_prefix }}"
+    services:
+      local_services:
+        service_address:
+          ipv4:
+            value: "10.30.30.240"
+            prefix_length: 32
+        service_addresses:
+          - ipv4:
+              value: "10.30.30.241"
               prefix_length: 32
+        local_vpn_service:
+          ebgp_config:
+            asn: 65001
+            password: "s3cret"
+            should_redistribute_routes: true
+          peer_igp_config:
+            ospf_config:
+              area_id: "0.0.0.0"
+              authentication_type: "PLAIN_TEXT"
+              password: "ospf-pass"
+        local_vtep_service:
+          vxlan_port: 4789
+        local_bgp_service:
+          vpc_reference: "{{ vpc.uuid }}"
+          asn: 65010
+          is_bgp_add_path_enabled: true
+    high_availability_group:
+      is_ha_enabled: true
+      algorithm: "ACTIVE_BACKUP"
+      peered_gateways:
+        - ext_id: "11111111-1111-1111-1111-111111111111"
   register: result
   ignore_errors: true
 
@@ -343,9 +400,34 @@
       - result.response.gateway_device_vendor == "GENERIC"
       - result.response.vpc_reference == vpc.uuid
       - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
-      - result.response.services.remote_bgp_service.asn == 65001
-      - result.response.services.remote_bgp_service.address.ipv4.value == "192.0.2.11"
-      - result.response.services.remote_bgp_service.address.ipv4.prefix_length == 32
+      - result.response.deployment.cluster_reference == cluster.uuid
+      - result.response.deployment.vcenter_datastore_name == "ds1"
+      - result.response.deployment.should_synchronize_system_ntp_servers == true
+      - result.response.deployment.should_synchronize_system_dns_servers == true
+      - result.response.deployment.ntp_servers | length == 1
+      - result.response.deployment.ntp_servers[0].fqdn.value == "pool.ntp.org"
+      - result.response.deployment.dns_servers | length == 1
+      - result.response.deployment.dns_servers[0].ipv4.value == "8.8.8.8"
+      - result.response.deployment.management_interface.subnet_reference == static.uuid
+      - result.response.deployment.management_interface.mtu == 1500
+      - result.response.deployment.management_interface.address.ipv4.value == "10.30.30.230"
+      - result.response.deployment.management_interface.default_gateway.ipv4.value == static.gateway_ip
+      - result.response.deployment.interfaces | length == 1
+      - result.response.deployment.interfaces[0].subnet_reference == static.uuid
+      - result.response.deployment.interfaces[0].ip_address.ipv4.value == "10.30.30.231"
+      - result.response.deployment.interfaces[0].default_gateway_address.ipv4.value == static.gateway_ip
+      - result.response.services.service_address.ipv4.value == "10.30.30.240"
+      - result.response.services.service_addresses[0].ipv4.value == "10.30.30.241"
+      - result.response.services.local_vpn_service.ebgp_config.asn == 65001
+      - result.response.services.local_vpn_service.ebgp_config.should_redistribute_routes == true
+      - result.response.services.local_vpn_service.peer_igp_config.ospf_config.area_id == "0.0.0.0"
+      - result.response.services.local_vtep_service.vxlan_port == 4789
+      - result.response.services.local_bgp_service.asn == 65010
+      - result.response.services.local_bgp_service.is_bgp_add_path_enabled == true
+      - result.response.high_availability_group.is_ha_enabled == true
+      - result.response.high_availability_group.algorithm == "ACTIVE_BACKUP"
+      - result.response.high_availability_group.peered_gateways | length == 1
+      - result.response.high_availability_group.peered_gateways[0].ext_id == "11111111-1111-1111-1111-111111111111"
     success_msg: "Gateway with all attributes created successfully"
     fail_msg: "Gateway with all attributes creation failed"
 
@@ -485,14 +567,71 @@
     gateway_device_vendor: "GENERIC"
     vpc_reference: "{{ vpc.uuid }}"
     project_ext_id: "00000000-0000-0000-0000-000000000000"
-    services:
-      remote_services:
-        remote_bgp_service:
-          asn: 65001
-          address:
+    deployment:
+      cluster_reference: "{{ cluster.uuid }}"
+      vcenter_datastore_name: "ds1"
+      should_synchronize_system_ntp_servers: true
+      should_synchronize_system_dns_servers: true
+      ntp_servers:
+        - fqdn:
+            value: "pool.ntp.org"
+      dns_servers:
+        - ipv4:
+            value: "8.8.8.8"
+            prefix_length: 32
+      management_interface:
+        subnet_reference: "{{ static.uuid }}"
+        mtu: 1500
+        address:
+          ipv4:
+            value: "10.30.30.230"
+            prefix_length: "{{ static.network_prefix }}"
+        default_gateway:
+          ipv4:
+            value: "{{ static.gateway_ip }}"
+            prefix_length: "{{ static.network_prefix }}"
+      interfaces:
+        - subnet_reference: "{{ static.uuid }}"
+          mtu: 1500
+          ip_address:
             ipv4:
-              value: "192.0.2.11"
+              value: "10.30.30.231"
+              prefix_length: "{{ static.network_prefix }}"
+          default_gateway_address:
+            ipv4:
+              value: "{{ static.gateway_ip }}"
+              prefix_length: "{{ static.network_prefix }}"
+    services:
+      local_services:
+        service_address:
+          ipv4:
+            value: "10.30.30.240"
+            prefix_length: 32
+        service_addresses:
+          - ipv4:
+              value: "10.30.30.241"
               prefix_length: 32
+        local_vpn_service:
+          ebgp_config:
+            asn: 65001
+            password: "s3cret"
+            should_redistribute_routes: true
+          peer_igp_config:
+            ospf_config:
+              area_id: "0.0.0.0"
+              authentication_type: "PLAIN_TEXT"
+              password: "ospf-pass"
+        local_vtep_service:
+          vxlan_port: 4789
+        local_bgp_service:
+          vpc_reference: "{{ vpc.uuid }}"
+          asn: 65010
+          is_bgp_add_path_enabled: true
+    high_availability_group:
+      is_ha_enabled: true
+      algorithm: "ACTIVE_BACKUP"
+      peered_gateways:
+        - ext_id: "11111111-1111-1111-1111-111111111111"
   check_mode: true
   register: result
   when: gateway_all_ext_id | default('') | length > 0
@@ -514,8 +653,15 @@
       - result.response.description == "Updated description for gateway with all attributes"
       - result.response.gateway_device_vendor == "GENERIC"
       - result.response.vpc_reference == vpc.uuid
-      - result.response.services.remote_bgp_service.asn == 65001
-      - result.response.services.remote_bgp_service.address.ipv4.value == "192.0.2.11"
+      - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
+      - result.response.deployment.cluster_reference == cluster.uuid
+      - result.response.deployment.management_interface.subnet_reference == static.uuid
+      - result.response.deployment.management_interface.address.ipv4.value == "10.30.30.230"
+      - result.response.services.local_vpn_service.ebgp_config.asn == 65001
+      - result.response.services.local_vtep_service.vxlan_port == 4789
+      - result.response.services.local_bgp_service.asn == 65010
+      - result.response.high_availability_group.is_ha_enabled == true
+      - result.response.high_availability_group.algorithm == "ACTIVE_BACKUP"
     success_msg: "Spec for updating gateway using check mode with all attributes is generated successfully"
     fail_msg: "Spec for updating gateway using check mode with all attributes is not generated successfully"
   when: gateway_all_ext_id | default('') | length > 0
@@ -529,14 +675,71 @@
     gateway_device_vendor: "GENERIC"
     vpc_reference: "{{ vpc.uuid }}"
     project_ext_id: "00000000-0000-0000-0000-000000000000"
-    services:
-      remote_services:
-        remote_bgp_service:
-          asn: 65001
-          address:
+    deployment:
+      cluster_reference: "{{ cluster.uuid }}"
+      vcenter_datastore_name: "ds1"
+      should_synchronize_system_ntp_servers: true
+      should_synchronize_system_dns_servers: true
+      ntp_servers:
+        - fqdn:
+            value: "pool.ntp.org"
+      dns_servers:
+        - ipv4:
+            value: "8.8.8.8"
+            prefix_length: 32
+      management_interface:
+        subnet_reference: "{{ static.uuid }}"
+        mtu: 1500
+        address:
+          ipv4:
+            value: "10.30.30.230"
+            prefix_length: "{{ static.network_prefix }}"
+        default_gateway:
+          ipv4:
+            value: "{{ static.gateway_ip }}"
+            prefix_length: "{{ static.network_prefix }}"
+      interfaces:
+        - subnet_reference: "{{ static.uuid }}"
+          mtu: 1500
+          ip_address:
             ipv4:
-              value: "192.0.2.11"
+              value: "10.30.30.231"
+              prefix_length: "{{ static.network_prefix }}"
+          default_gateway_address:
+            ipv4:
+              value: "{{ static.gateway_ip }}"
+              prefix_length: "{{ static.network_prefix }}"
+    services:
+      local_services:
+        service_address:
+          ipv4:
+            value: "10.30.30.240"
+            prefix_length: 32
+        service_addresses:
+          - ipv4:
+              value: "10.30.30.241"
               prefix_length: 32
+        local_vpn_service:
+          ebgp_config:
+            asn: 65001
+            password: "s3cret"
+            should_redistribute_routes: true
+          peer_igp_config:
+            ospf_config:
+              area_id: "0.0.0.0"
+              authentication_type: "PLAIN_TEXT"
+              password: "ospf-pass"
+        local_vtep_service:
+          vxlan_port: 4789
+        local_bgp_service:
+          vpc_reference: "{{ vpc.uuid }}"
+          asn: 65010
+          is_bgp_add_path_enabled: true
+    high_availability_group:
+      is_ha_enabled: true
+      algorithm: "ACTIVE_BACKUP"
+      peered_gateways:
+        - ext_id: "11111111-1111-1111-1111-111111111111"
   register: result
   when: gateway_all_ext_id | default('') | length > 0
   ignore_errors: true
@@ -559,8 +762,10 @@
       - result.response.description == "Updated description for gateway with all attributes"
       - result.response.gateway_device_vendor == "GENERIC"
       - result.response.vpc_reference == vpc.uuid
-      - result.response.services.remote_bgp_service.asn == 65001
-      - result.response.services.remote_bgp_service.address.ipv4.value == "192.0.2.11"
+      - result.response.deployment.cluster_reference == cluster.uuid
+      - result.response.services.local_vpn_service.ebgp_config.asn == 65001
+      - result.response.services.local_bgp_service.asn == 65010
+      - result.response.high_availability_group.is_ha_enabled == true
     success_msg: "Update gateway with all attributes passed"
     fail_msg: "Update gateway with all attributes failed"
   when: gateway_all_ext_id | default('') | length > 0
@@ -574,14 +779,71 @@
     gateway_device_vendor: "GENERIC"
     vpc_reference: "{{ vpc.uuid }}"
     project_ext_id: "00000000-0000-0000-0000-000000000000"
-    services:
-      remote_services:
-        remote_bgp_service:
-          asn: 65001
-          address:
+    deployment:
+      cluster_reference: "{{ cluster.uuid }}"
+      vcenter_datastore_name: "ds1"
+      should_synchronize_system_ntp_servers: true
+      should_synchronize_system_dns_servers: true
+      ntp_servers:
+        - fqdn:
+            value: "pool.ntp.org"
+      dns_servers:
+        - ipv4:
+            value: "8.8.8.8"
+            prefix_length: 32
+      management_interface:
+        subnet_reference: "{{ static.uuid }}"
+        mtu: 1500
+        address:
+          ipv4:
+            value: "10.30.30.230"
+            prefix_length: "{{ static.network_prefix }}"
+        default_gateway:
+          ipv4:
+            value: "{{ static.gateway_ip }}"
+            prefix_length: "{{ static.network_prefix }}"
+      interfaces:
+        - subnet_reference: "{{ static.uuid }}"
+          mtu: 1500
+          ip_address:
             ipv4:
-              value: "192.0.2.11"
+              value: "10.30.30.231"
+              prefix_length: "{{ static.network_prefix }}"
+          default_gateway_address:
+            ipv4:
+              value: "{{ static.gateway_ip }}"
+              prefix_length: "{{ static.network_prefix }}"
+    services:
+      local_services:
+        service_address:
+          ipv4:
+            value: "10.30.30.240"
+            prefix_length: 32
+        service_addresses:
+          - ipv4:
+              value: "10.30.30.241"
               prefix_length: 32
+        local_vpn_service:
+          ebgp_config:
+            asn: 65001
+            password: "s3cret"
+            should_redistribute_routes: true
+          peer_igp_config:
+            ospf_config:
+              area_id: "0.0.0.0"
+              authentication_type: "PLAIN_TEXT"
+              password: "ospf-pass"
+        local_vtep_service:
+          vxlan_port: 4789
+        local_bgp_service:
+          vpc_reference: "{{ vpc.uuid }}"
+          asn: 65010
+          is_bgp_add_path_enabled: true
+    high_availability_group:
+      is_ha_enabled: true
+      algorithm: "ACTIVE_BACKUP"
+      peered_gateways:
+        - ext_id: "11111111-1111-1111-1111-111111111111"
   register: result
   when: gateway_all_ext_id | default('') | length > 0
   ignore_errors: true
@@ -647,8 +909,8 @@
     var: result
   when: gateway_all_ext_id | default('') | length > 0
 
-# # Remote BGP gateways are reference-only (no appliance VM), so upgrade is not
-# # supported and the task fails with msg "Task Failed".
+# Upgrade requires a local gateway appliance VM. If the all-attributes create
+# succeeded, the task may succeed; otherwise it may fail with "Task Failed".
 # - name: Upgrade gateway status
 #   ansible.builtin.assert:
 #     that:
@@ -659,8 +921,8 @@
 #       - result.msg == "Task Failed"
 #       - result.response is defined
 #       - result.response.status == "FAILED"
-#     success_msg: "Upgrade of remote BGP gateway failed as expected (Task Failed)"
-#     fail_msg: "Upgrade of remote BGP gateway did NOT fail as expected"
+#     success_msg: "Upgrade of gateway failed as expected (Task Failed)"
+#     fail_msg: "Upgrade of gateway did NOT fail as expected"
 #   when: gateway_all_ext_id | default('') | length > 0
 
 ########################################################################################
