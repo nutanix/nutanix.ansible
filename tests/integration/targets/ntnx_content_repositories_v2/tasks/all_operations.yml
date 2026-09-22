@@ -32,7 +32,7 @@
     state: present
     name: "content_repo_check_mode_1"
     description: "Check mode content repository"
-    project_ext_id: "0a13b2b0-0655-415f-b96a-7edc84693cf7"
+    project_ext_id: "00000000-0000-0000-0000-000000000000"
   register: result
   check_mode: true
   ignore_errors: true
@@ -49,7 +49,7 @@
       - result.failed == false
       - result.response.name == "content_repo_check_mode_1"
       - result.response.description == "Check mode content repository"
-      - result.response.project_ext_id == "0a13b2b0-0655-415f-b96a-7edc84693cf7"
+      - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
     fail_msg: "Unable to generate spec for content repository create using check mode"
     success_msg: "Spec generated successfully for content repository create using check mode"
 
@@ -271,7 +271,7 @@
       - result.response is defined
       - result.ext_id == content_repo_ext_id
       - result.response.name == "{{ content_repo_name }}2_updated"
-      - result.response.description == "Content repository with all fields for testing"
+      - result.response.description == "Updated content repository description 2"
       - result.response.project_ext_id == content_repo_project_ext_id
     fail_msg: "Get content repository by ext_id failed"
     success_msg: "Get content repository by ext_id passed"
@@ -294,7 +294,7 @@
       - result.response is defined
       - result.response | length == 1
       - result.response[0].name == "{{ content_repo_name }}2_updated"
-      - result.response[0].description == "Content repository with all fields for testing"
+      - result.response[0].description == "Updated content repository description 2"
       - result.response[0].project_ext_id == content_repo_project_ext_id
     fail_msg: "List content repositories with filter failed"
     success_msg: "List content repositories with filter passed"
@@ -450,7 +450,7 @@
   nutanix.ncp.ntnx_content_repository_subscribe_v2:
     ext_id: "33333333-3333-3333-3333-333333333333"
     source_domain_manager_ext_id: "44444444-4444-4444-4444-444444444444"
-    project_ext_id: "55555555-5555-5555-5555-555555555555"
+    project_ext_id: "00000000-0000-0000-0000-000000000000"
   register: result
   check_mode: true
   ignore_errors: true
@@ -467,7 +467,7 @@
       - result.response is defined
       - result.ext_id == "33333333-3333-3333-3333-333333333333"
       - result.response.source_domain_manager_ext_id == "44444444-4444-4444-4444-444444444444"
-      - result.response.project_ext_id == "55555555-5555-5555-5555-555555555555"
+      - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
     fail_msg: "Subscribe check mode failed"
     success_msg: "Subscribe check mode passed"
 
@@ -531,7 +531,15 @@
       - subscribe_result.failed == false
       - subscribe_result.task_ext_id is defined
       - subscribe_result.ext_id == content_repo_ext_id
-      - subscribe_result.response.status == "SUCCEEDED"
+      - subscribe_result.response is defined
+      - subscribe_result.response.ext_id == content_repo_ext_id
+      - subscribe_result.response.name == "{{ content_repo_name }}2_updated"
+      - subscribe_result.response.description == "Updated content repository description 2"
+      - subscribe_result.response.project_ext_id == content_repo_project_ext_id
+      - subscribe_result.response.state == "READY"
+      - subscribe_result.response.publisher is defined
+      - subscribe_result.response.publisher.remote_domain_manager_ext_id == source_domain_manager_ext_id
+      - subscribe_result.response.total_item_count == 1
     fail_msg: "Subscribe on availability zone PC failed"
     success_msg: "Subscribe on availability zone PC passed"
   when: source_domain_manager_ext_id is defined
@@ -557,7 +565,14 @@
       - sync_result.failed == false
       - sync_result.task_ext_id is defined
       - sync_result.ext_id == content_repo_ext_id
-      - sync_result.response.status == "SUCCEEDED"
+      - sync_result.response is defined
+      - sync_result.response.ext_id == content_repo_ext_id
+      - sync_result.response.name == "{{ content_repo_name }}2_updated"
+      - sync_result.response.description == "Updated content repository description 2"
+      - sync_result.response.project_ext_id == content_repo_project_ext_id
+      - sync_result.response.state == "READY"
+      - sync_result.response.publisher is defined
+      - sync_result.response.publisher.remote_domain_manager_ext_id == source_domain_manager_ext_id
     fail_msg: "Sync on availability zone PC failed"
     success_msg: "Sync on availability zone PC passed"
   when:
@@ -607,7 +622,8 @@
       - result.failed == true
       - result.msg == "Api Exception raised while fetching content repository using ext_id"
       - result.response is defined
-      - result.response.data.errors | length > 0
+      - result.response.data.error | length > 0
+      - result.status == 404
     fail_msg: "Update with wrong ext_id should fail"
     success_msg: "Update with wrong ext_id failed as expected"
 
@@ -628,7 +644,8 @@
       - result.failed == true
       - result.msg == "Api Exception raised while fetching content repository using ext_id"
       - result.response is defined
-      - result.response.data.errors | length > 0
+      - result.response.data.error | length > 0
+      - result.status == 404
     fail_msg: "Get with wrong ext_id should fail"
     success_msg: "Get with wrong ext_id failed as expected"
 
@@ -646,12 +663,12 @@
 - name: Verify delete with wrong ext_id fails
   ansible.builtin.assert:
     that:
-      that:
-        - result.changed == false
-        - result.failed == true
-        - result.msg == "Api Exception raised while fetching content repository using ext_id"
-        - result.response is defined
-        - result.response.data.errors | length > 0
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while deleting content repository"
+      - result.response is defined
+      - result.response.data.error | length > 0
+      - result.status == 404
     fail_msg: "Delete with wrong ext_id should fail"
     success_msg: "Delete with wrong ext_id failed as expected"
 
@@ -732,7 +749,7 @@
       - item.changed == true
       - item.failed == false
       - item.task_ext_id is defined
-      - item.ext_id == item
+      - item.ext_id == item.item
       - item.response.status == "SUCCEEDED"
     fail_msg: "Delete content repository failed"
     success_msg: "Delete content repository passed"
