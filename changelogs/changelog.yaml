@@ -1135,9 +1135,6 @@ releases:
           - [Deprecated] Legacy Flow modules stop working with PC 7.6. Migrate to
           ntnx_address_groups_v2, ntnx_address_groups_info_v2, ntnx_service_groups_v2,
           and ntnx_service_groups_info_v2 (`#1317 <https://github.com/nutanix/nutanix.ansible/issues/1317>`_)
-      known_issues:
-        - ntnx_categories_v2 - [Known limitation] Create operations remain non-idempotent
-          by design. Query for an existing category before creating one (`#890 <https://github.com/nutanix/nutanix.ansible/issues/890>`_)
       minor_changes:
         - All create v2 modules - [Imprv] Raise an API exception when entity ext_id
           is missing from task responses for create (non-info) v2 modules (`#1010 <https://github.com/nutanix/nutanix.ansible/issues/1010>`_)
@@ -1353,4 +1350,4 @@ releases:
             V4 APIs.
           name: ntnx_ext_id
           namespace: null
-    release_date: "2026-09-21"
+    release_date: "2026-09-23"

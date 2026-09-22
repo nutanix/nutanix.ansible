@@ -20,7 +20,7 @@ NOTE: The latest version of the Nutanix Ansible collection is [v2.6.0](https://g
 
 ## Introducing Nutanix Ansible Collection Version v2.6.0
 
-We are excited to announce the release of **Nutanix Ansible Collection v2.6.0** — a major update that brings powerful new features, enhancements, compatibility notices, and usability improvements for automating your Nutanix infrastructure.
+We are excited to announce the release of **Nutanix Ansible Collection v2.6.0** — a major update that brings powerful new features, enhancements, and critical bug fixes, and usability improvements for automating your Nutanix infrastructure.
 
 ### What's New in v2.6.0
 
@@ -64,7 +64,6 @@ We are excited to announce the release of **Nutanix Ansible Collection v2.6.0** 
 - **Behavior and Usage Notes**
   - **VM inventory APIPA handling**: The VM inventory plugins expose all detected addresses through `vm_ip_addresses` and document how to filter APIPA addresses with `compose`; default `ansible_host` selection remains unchanged. [#1305](https://github.com/nutanix/nutanix.ansible/issues/1305)
   - **NGT VM external ID**: Pass a decoded VM UUID to `ntnx_vms_ngt_v2` as `ext_id`, not the complete Ansible `slurp` result. [#962](https://github.com/nutanix/nutanix.ansible/issues/962)
-  - **Category create idempotency**: Create operations in `ntnx_categories_v2` remain non-idempotent by design; query for an existing category before creating one. [#890](https://github.com/nutanix/nutanix.ansible/issues/890)
 
 ---
 
@@ -197,11 +196,9 @@ This collection requires Python 3.12 or greater
 
 | API/SDK Generation | PC | PE |
 |  :--- |  :--- | :--- |
-| v4.4, v4.3, v4.2, v4.1, v4.0 | pc7.6.0.6, pc7.6, pc7.5.1, pc7.5 | 7.6.0.6, 7.6, 7.5.1, 7.5 |
+| v4.4, v4.3, v4.2, v4.1, v4.0 | pc7.6.0.6, pc7.6, pc7.5.1, pc7.5 | 7.6.0.6, 7.6, 7.5.1 |
 | v4.1, v4.0 | pc7.3, pc7.3.1 | 7.3, 7.3.1 |
 | v4.0 | pc2024.3.1, pc2024.3 | 7.0.1, 7.0 |
-
-The values above describe Nutanix API/SDK generations supported by each platform release. Python client package versions vary by API namespace and are pinned in [requirements.txt](https://github.com/nutanix/nutanix.ansible/blob/v2.6.0/requirements.txt).
 
 ### Notes:
 1. Static routes module (ntnx_static_routes) is supported for PC versions >= pc.2022.1

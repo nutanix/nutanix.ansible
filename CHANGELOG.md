@@ -6,7 +6,6 @@
     - <a href="#release-summary">Release Summary</a>
     - <a href="#minor-changes">Minor Changes</a>
     - <a href="#deprecated-features">Deprecated Features</a>
-    - <a href="#known-issues">Known Issues</a>
     - <a href="#new-plugins">New Plugins</a>
         - <a href="#lookup">Lookup</a>
     - <a href="#new-modules">New Modules</a>
@@ -127,11 +126,6 @@ Built on v4 SDKs\. Adds Projects 2\.0/v4\, Resource Groups\, Role Memberships\, 
 ### Deprecated Features
 
 * ntnx\_address\_groups\, ntnx\_address\_groups\_info\, ntnx\_service\_groups\, ntnx\_service\_groups\_info \- \[Deprecated\] Legacy Flow modules stop working with PC 7\.6\. Migrate to ntnx\_address\_groups\_v2\, ntnx\_address\_groups\_info\_v2\, ntnx\_service\_groups\_v2\, and ntnx\_service\_groups\_info\_v2 \([\#1317](https\://github\.com/nutanix/nutanix\.ansible/issues/1317)\)
-
-<a id="known-issues"></a>
-### Known Issues
-
-* ntnx\_categories\_v2 \- \[Known limitation\] Create operations remain non\-idempotent by design\. Query for an existing category before creating one \([\#890](https\://github\.com/nutanix/nutanix\.ansible/issues/890)\)
 
 <a id="new-plugins"></a>
 ### New Plugins

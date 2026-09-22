@@ -50,11 +50,6 @@ Deprecated Features
 
 - ntnx_address_groups, ntnx_address_groups_info, ntnx_service_groups, ntnx_service_groups_info - [Deprecated] Legacy Flow modules stop working with PC 7.6. Migrate to ntnx_address_groups_v2, ntnx_address_groups_info_v2, ntnx_service_groups_v2, and ntnx_service_groups_info_v2 (`#1317 <https://github.com/nutanix/nutanix.ansible/issues/1317>`_)
 
-Known Issues
-------------
-
-- ntnx_categories_v2 - [Known limitation] Create operations remain non-idempotent by design. Query for an existing category before creating one (`#890 <https://github.com/nutanix/nutanix.ansible/issues/890>`_)
-
 New Plugins
 -----------
 
