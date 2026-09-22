@@ -55,10 +55,30 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - Task details when C(wait) is false.
-        - Content repository details when C(wait) is true.
+        - Response for the content repository sync operation.
+        - It will be content repository details if C(wait) is True.
+        - It will be task details if C(wait) is False.
     returned: always
     type: dict
+    sample:
+        {
+            "create_time": "2026-09-22T13:08:07.927082+00:00",
+            "description": "Updated content repository description 2",
+            "ext_id": "08eb05ce-3434-47db-7349-1fd6afb76c75",
+            "last_update_time": "2026-09-22T13:09:21.522605+00:00",
+            "links": null,
+            "name": "ansible-cr-CwtClEhmslvH2_updated",
+            "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+            "project_ext_id": "00000000-0000-0000-0000-000000000000",
+            "publisher": {
+                "last_sync_time": "2026-09-22T13:09:21.521166+00:00",
+                "remote_domain_manager_ext_id": "53b2b941-ca2f-4f26-8822-52aaa5134e9d"
+            },
+            "state": "READY",
+            "subscribers": null,
+            "tenant_id": null,
+            "total_item_count": 1
+        }
 
 changed:
     description: This indicates whether the task resulted in any changes.

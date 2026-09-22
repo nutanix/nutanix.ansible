@@ -90,28 +90,27 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - The response from the Nutanix PC Content Repositories info v4 API.
-        - It can be a single content repository if external ID is provided.
-        - List of multiple content repositories if external ID is not provided.
+        - Response for the content repositories info operation.
+        - It will be single content repository if external ID is provided.
+        - It will be list of multiple content repositories if external ID is not provided.
     returned: always
     type: dict
-    sample: [
-            {
-                "create_time": "2026-09-21T08:00:00.000000+00:00",
-                "description": "A test content repository",
-                "ext_id": "7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
-                "last_update_time": "2026-09-21T08:00:00.000000+00:00",
-                "links": null,
-                "name": "my-content-repo",
-                "owner_ext_id": "00000000-0000-0000-0000-000000000000",
-                "project_ext_id": "00000000-0000-0000-0000-000000000000",
-                "publisher": null,
-                "state": "READY",
-                "subscribers": null,
-                "tenant_id": null,
-                "total_item_count": 0,
-            },
-        ]
+    sample:
+        {
+            "create_time": "2026-09-22T13:05:50.899541+00:00",
+            "description": "Updated content repository description 2",
+            "ext_id": "08eb05ce-3434-47db-7349-1fd6afb76c75",
+            "last_update_time": "2026-09-22T13:05:59.571540+00:00",
+            "links": null,
+            "name": "ansible-cr-CwtClEhmslvH2_updated",
+            "owner_ext_id": "00000000-0000-0000-0000-000000000000",
+            "project_ext_id": "00000000-0000-0000-0000-000000000000",
+            "publisher": null,
+            "state": "READY",
+            "subscribers": null,
+            "tenant_id": null,
+            "total_item_count": 0
+        }
 
 changed:
     description: This indicates whether the task resulted in any changes.

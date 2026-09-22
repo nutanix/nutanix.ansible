@@ -114,25 +114,26 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - The response from the Nutanix PC Content Repository v4 API.
-        - It will contain the Content Repository details after create or update.
-        - It will contain task details when the operation is delete.
+        - Response for the content repository operation.
+        - For create and update, it will be content repository details if C(wait) is True and task details if C(wait) is False.
+        - For delete, it will be always task details.
     returned: always
     type: dict
-    sample: {
-            "create_time": "2026-09-21T08:00:00.000000+00:00",
-            "description": "A test content repository",
-            "ext_id": "7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
-            "last_update_time": "2026-09-21T08:00:00.000000+00:00",
+    sample:
+        {
+            "create_time": "2026-09-22T13:05:50.899541+00:00",
+            "description": "Content repository with all fields for testing",
+            "ext_id": "08eb05ce-3434-47db-7349-1fd6afb76c75",
+            "last_update_time": "2026-09-22T13:05:50.899541+00:00",
             "links": null,
-            "name": "my-content-repo",
+            "name": "ansible-cr-CwtClEhmslvH2",
             "owner_ext_id": "00000000-0000-0000-0000-000000000000",
             "project_ext_id": "00000000-0000-0000-0000-000000000000",
             "publisher": null,
             "state": "READY",
             "subscribers": null,
             "tenant_id": null,
-            "total_item_count": 0,
+            "total_item_count": 0
         }
 
 changed:

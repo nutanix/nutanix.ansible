@@ -80,23 +80,25 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - List of content repository items.
+        - Response for the content repository items info operation.
+        - It will be list of content repository items.
     returned: always
     type: list
-    sample: [
+    sample:
+        [
             {
-                "create_time": "2026-09-21T08:00:00.000000+00:00",
-                "description": null,
-                "ext_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-                "last_update_time": "2026-09-21T08:00:00.000000+00:00",
+                "create_time": "2026-09-22T13:07:10.425873+00:00",
+                "description": "Image for content repository migrate test",
+                "ext_id": "9f744625-418a-4136-a695-3c8d3146d4ce",
+                "last_update_time": "2026-09-22T13:07:54.699791+00:00",
                 "links": null,
-                "name": "centos-image",
+                "name": "ansible-cr-CwtClEhmslvH-image",
                 "owner_ext_id": "00000000-0000-0000-0000-000000000000",
-                "size_bytes": 262472192,
+                "size_bytes": 397528576,
                 "state": "READY",
                 "tenant_id": null,
-                "type": "IMAGE",
-            },
+                "type": "IMAGE"
+            }
         ]
 
 changed:
