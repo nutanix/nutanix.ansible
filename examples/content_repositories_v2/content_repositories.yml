@@ -10,26 +10,32 @@
 # 7. List content repository items
 # 8. Subscribe to a source content repository (requires paired domains)
 # 9. Sync items of a subscribed content repository
-# 10. Migrate an image to a content repository
-# 11. Delete the content repository
+# 10. Create a disk image (required for migrate)
+# 11. Migrate the image to a content repository
+# 12. Delete the subscribed content repository from the availability zone PC
+# 13. Delete the image (must happen before deleting the content repository)
+# 14. Delete the source content repository
 
 - name: Content repositories playbook
   hosts: localhost
   gather_facts: false
   module_defaults:
     group/nutanix.ncp.ntnx:
-      nutanix_host: <pc_ip>
-      nutanix_username: <user>
-      nutanix_password: <pass>
+      nutanix_host: 10.105.16.0
+      nutanix_username: admin
+      nutanix_password: Nutanix.123
       validate_certs: false
   tasks:
     - name: Setting Variables
       ansible.builtin.set_fact:
         content_repo_name: "ansible-example-content-repo"
         project_ext_id: "00000000-0000-0000-0000-000000000000"
-        content_repo_ext_id: "7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d"
-        source_domain_manager_ext_id: "11111111-1111-1111-1111-111111111111"
-        image_ext_id: "015e6709-d4a6-44bd-8df7-9898f062635b"
+        source_domain_manager_ext_id: "53b2b941-ca2f-4f26-8822-52aaa5134e9d"
+        availability_zone_pc_ip: "10.97.32.29"
+        cluster:
+          uuid: "00065c06-b7be-0e44-784a-7cc25505d491"
+        disk_image:
+          url: http://endor.dyn.nutanix.com/GoldImages/NuCalm/AHV-UVM-Images/CentOS-7-cloudinit.qcow2
 
     ###########################################################
     # CREATE OPERATIONS
@@ -97,6 +103,7 @@
     ###########################################################
     - name: Subscribe to a source content repository
       nutanix.ncp.ntnx_content_repository_subscribe_v2:
+        nutanix_host: "{{ availability_zone_pc_ip }}"
         ext_id: "{{ content_repo_ext_id }}"
         source_domain_manager_ext_id: "{{ source_domain_manager_ext_id }}"
         project_ext_id: "{{ project_ext_id }}"
@@ -105,23 +112,69 @@
 
     - name: Sync items of a subscribed content repository
       nutanix.ncp.ntnx_content_repository_sync_v2:
+        nutanix_host: "{{ availability_zone_pc_ip }}"
         ext_id: "{{ content_repo_ext_id }}"
       register: result
       ignore_errors: true
 
+    # Create a disk image for migrate. Required so migrate has a valid image
+    # external ID; the image must be deleted before deleting the content repository.
+    - name: Create disk image for migrate
+      nutanix.ncp.ntnx_images_v2:
+        state: present
+        type: DISK_IMAGE
+        name: "{{ content_repo_name }}-image"
+        description: "Image for content repository migrate example"
+        source:
+          url_source:
+            url: "{{ disk_image.url }}"
+            should_allow_insecure_url: true
+        cluster_location_ext_ids:
+          - "{{ cluster.uuid }}"
+      register: image_result
+      ignore_errors: true
+
+    - name: Save image ext_id
+      ansible.builtin.set_fact:
+        image_ext_id: "{{ image_result.ext_id }}"
+      when: image_result.ext_id is defined
+
     - name: Migrate an image to a content repository
       nutanix.ncp.ntnx_images_migrate_v2:
-        image_ext_id: "{{ image_ext_id }}"
+        ext_id: "{{ image_ext_id }}"
         content_repository_ext_id: "{{ content_repo_ext_id }}"
       register: result
       ignore_errors: true
+      when: image_ext_id is defined
 
     ###########################################################
     # DELETE OPERATIONS
     ###########################################################
+    # Delete the subscribed content repository on the availability zone PC first.
+    # Use the same content_repo_ext_id as on the source PC (subscription shares it).
+    # The source content repository cannot be deleted while connected subscribers exist.
+    - name: Delete subscribed content repository on availability zone PC
+      nutanix.ncp.ntnx_content_repository_v2:
+        nutanix_host: "{{ availability_zone_pc_ip }}"
+        state: absent
+        ext_id: "{{ content_repo_ext_id }}"
+      register: result
+      ignore_errors: true
+      when: content_repo_ext_id is defined
+
+    # Delete the migrated image before deleting the content repository.
+    - name: Delete migrate image
+      nutanix.ncp.ntnx_images_v2:
+        state: absent
+        ext_id: "{{ image_ext_id }}"
+      register: result
+      ignore_errors: true
+      when: image_ext_id is defined
+
     - name: Delete content repository
       nutanix.ncp.ntnx_content_repository_v2:
         state: absent
         ext_id: "{{ content_repo_ext_id }}"
       register: result
       ignore_errors: true
+      when: content_repo_ext_id is defined
