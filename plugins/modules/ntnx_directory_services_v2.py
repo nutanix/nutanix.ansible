@@ -14,6 +14,8 @@ module: ntnx_directory_services_v2
 short_description: Module to create, update and delete directory services in Nutanix PC.
 version_added: "2.0.0"
 description:
+    - This is a Beta module because the underlying API in the Nutanix SDK is currently in Beta.
+    - The module and its behaviour may change in future releases as the SDK API evolves.
     - This module is used to create, update and delete directory services in Nutanix PC.
     - This module uses PC v4 APIs based SDKs
 notes:
