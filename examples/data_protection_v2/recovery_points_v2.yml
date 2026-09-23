@@ -32,10 +32,12 @@
         vg_uuid2: "2d3e4f5a-6b7c-8d9e-0f1a-2b3c4d5e6f7g"
         pc_uuid_of_target_pc: "97da301d-0a8b-4334-94cd-16a83563218e"
         cluster_uuid_of_target_pc: "00062899-58d4-9d37-185b-ac1f6b6f97e2"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
 
     - name: Create recovery point with multiple VMs and VGs
       nutanix.ncp.ntnx_recovery_points_v2:
         name: "{{ recovery_point_name }}"
+        project_ext_id: "{{ project_ext_id }}"
         expiration_time: "2024-08-30T14:15:22+00:00"
         recovery_point_type: "CRASH_CONSISTENT"
         vm_recovery_points:

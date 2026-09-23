@@ -23,4 +23,5 @@ build_ignore:
   - changelogs/.plugin-cache.yaml
   - .github
   - .vscode
+  - logs
   - py3.12_virt

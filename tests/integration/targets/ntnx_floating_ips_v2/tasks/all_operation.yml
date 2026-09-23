@@ -3,7 +3,7 @@
 # - vm
 # - external_nat_subnet
 # - external_nat_subnets
-# - project
+# - external_subnet_project
 # - users
 # - overlay_subnet
 # - vpc
@@ -44,6 +44,7 @@
   nutanix.ncp.ntnx_floating_ips_v2:
     state: present
     name: "{{ fip1_name }}"
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
     external_subnet_reference: "{{ external_nat_subnet.uuid }}"
     floating_ip:
       ipv4:
@@ -61,16 +62,60 @@
       - result.response.name == "{{ fip1_name }}"
       - result.response.floating_ip.ipv4.value == "{{ external_nat_subnets[0].floating_ip }}"
       - result.response.external_subnet_reference == "{{ external_nat_subnet.uuid }}"
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
     fail_msg: " Unable to create floating ip with external subnet uuid with check mode"
     success_msg: " Floating ip with external subnet uuid created successfully with check mode"
+
+##############################################################
+
+# The floating IP below is created in the external_subnet_project fixture that
+# prepare_env creates and permanently shares with the external NAT subnet. A
+# per-run dedicated project is intentionally NOT used: floating IPs need a real
+# external NAT subnet, and the only one on the cluster (external_nat_subnet) is
+# permanently attached to the fixture VPC. A VPC-attached subnet cannot have a
+# project share removed, and a project cannot be deleted while
+# a subnet is shared with it, so a per-run project could never be torn down.
+# The subnet is already shared with external_subnet_project by prepare_env;
+# re-sharing here is idempotent (unique) and safe.
+- name: Get current sharing of external NAT subnet
+  nutanix.ncp.ntnx_subnets_info_v2:
+    ext_id: "{{ external_nat_subnet.uuid }}"
+  register: external_subnet_info
+
+- name: Set current external NAT subnet sharing fact
+  ansible.builtin.set_fact:
+    external_subnet_current_shares: "{{ external_subnet_info.response.shared_with_projects if external_subnet_info.response.shared_with_projects else [] }}"
+
+- name: Share external NAT subnet with the floating IP project
+  nutanix.ncp.ntnx_subnets_v2:
+    state: present
+    ext_id: "{{ external_nat_subnet.uuid }}"
+    shared_with_projects: "{{ (external_subnet_current_shares + [external_subnet_project.uuid]) | unique }}"
+  register: share_external_subnet_result
+
+- name: Verify external NAT subnet sharing after share
+  nutanix.ncp.ntnx_subnets_info_v2:
+    ext_id: "{{ external_nat_subnet.uuid }}"
+  register: external_subnet_after_share
+
+- name: Status of sharing external NAT subnet with the floating IP project
+  ansible.builtin.assert:
+    that:
+      - share_external_subnet_result.failed == false
+      - external_subnet_after_share.response.shared_with_projects is not none
+      - external_subnet_project.uuid in external_subnet_after_share.response.shared_with_projects
+    fail_msg: "External NAT subnet is not shared with project {{ external_subnet_project.uuid }}"
+    success_msg: "External NAT subnet shared with project {{ external_subnet_project.uuid }} successfully"
+
 ##############################################################
 - name: Create floating ip with external subnet uuid
   nutanix.ncp.ntnx_floating_ips_v2:
     state: present
     name: "{{ fip1_name }}"
+    project_ext_id: "{{ external_subnet_project.uuid }}"
     external_subnet_reference: "{{ external_nat_subnet.uuid }}"
     metadata:
-      project_reference_id: "{{ project.uuid }}"
+      project_reference_id: "{{ external_subnet_project.uuid }}"
       owner_reference_id: "{{ users[0] }}"
       category_ids:
         - "{{ category_ext_id }}"
@@ -88,10 +133,11 @@
       - result.failed == false
       - result.response.name == "{{ fip1_name }}"
       - result.response.external_subnet_reference == "{{ external_nat_subnet.uuid }}"
-      - result.response.metadata.project_reference_id == "{{ project.uuid }}"
+      - result.response.metadata.project_reference_id == "{{ external_subnet_project.uuid }}"
       - result.response.metadata.owner_reference_id == "{{ users[0] }}"
       - result.response.metadata.category_ids[0] == "{{ category_ext_id }}"
       - result.response.floating_ip.ipv4.value == "{{ external_nat_subnets[0].floating_ip }}"
+      - result.response.project_ext_id == external_subnet_project.uuid
     fail_msg: " Unable to create floating ip with external subnet uuid "
     success_msg: " Floating ip with external subnet uuid created successfully "
 
@@ -109,7 +155,7 @@
       - result.failed == false
       - result.response[0].name == "{{ fip1_name }}"
       - result.response[0].external_subnet_reference == "{{ external_nat_subnet.uuid }}"
-      - result.response[0].metadata.project_reference_id == "{{ project.uuid }}"
+      - result.response[0].metadata.project_reference_id == "{{ external_subnet_project.uuid }}"
       - result.response[0].metadata.owner_reference_id == "{{ users[0] }}"
       - result.response[0].metadata.category_ids[0] == "{{ category_ext_id }}"
       - result.response[0].floating_ip.ipv4.value == "{{ external_nat_subnets[0].floating_ip }}"
@@ -380,6 +426,23 @@
     fail_msg: " Unable to list fips "
     success_msg: " fips listed successfully "
 #########################################################
+
+- name: Verify update of project_ext_id is not supported
+  nutanix.ncp.ntnx_floating_ips_v2:
+    state: present
+    ext_id: "{{ fip_ext_id }}"
+    project_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Verify update of project_ext_id is blocked status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
+    fail_msg: "Update of project_ext_id should have been blocked"
+    success_msg: "Update of project_ext_id is correctly blocked"
 
 - name: Delete floating IP with check mode enabled
   nutanix.ncp.ntnx_floating_ips_v2:

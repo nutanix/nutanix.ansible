@@ -3,6 +3,9 @@
 # This playbook will do:
 # 1. Clone VM with same attributes values
 # 2. Clone VM with different attributes values
+# 3. Clone VM with a VM Guest Customization Profile reference and per-clone overrides
+#    (registered owner/organization, static IP). Requires NGT installed on the
+#    source VM; otherwise the clone API rejects the request.
 
 - name: VM clone playbook
   hosts: localhost
@@ -17,6 +20,7 @@
     - name: Setting Variables
       ansible.builtin.set_fact:
         vm_uuid: "a990cfaa-95a8-4861-bdf6-14060555442d"
+        gc_profile_ext_id: "b1c2d3e4-5f67-4890-a123-456789abcdef"
 
     - name: Clone VM with same attributes values
       nutanix.ncp.ntnx_vms_clone_v2:
@@ -32,5 +36,49 @@
         num_sockets: 2
         num_cores_per_socket: 2
         num_threads_per_core: 2
+      register: result
+      ignore_errors: true
+
+    # NGT must be installed on the source VM, otherwise the clone API rejects
+    # the request with an NGT-not-installed error.
+    # When the referenced profile marks fields with `must_provide_during_deployment`,
+    # the per-clone override MUST supply those fields (e.g. computer_name, ipv4_config)
+    # or the API rejects the request.
+    - name: Clone VM with Guest Customization Profile
+      nutanix.ncp.ntnx_vms_clone_v2:
+        ext_id: "{{ vm_uuid }}"
+        name: "integration_test_vm_clone_with_profile"
+        guest_customization_profile_config:
+          profile:
+            ext_id: "{{ gc_profile_ext_id }}"
+          config_override_spec:
+            customization:
+              sysprep_params:
+                general_settings:
+                  computer_name:
+                    name:
+                      value: "cloned-host"
+                  timezone:
+                    value:
+                      value: "Pacific Standard Time"
+                  registered_owner:
+                    value:
+                      value: "cloned-owner"
+                  registered_organization:
+                    value:
+                      value: "cloned-org"
+                network_settings:
+                  nic_config_list:
+                    - dns_config:
+                        preferred_dns_server_address: "10.1.0.100"
+                        alternate_dns_server_addresses:
+                          - "10.1.0.101"
+                      ipv4_config:
+                        static_config:
+                          ip_address:
+                            value: "10.1.0.50"
+                            prefix_length: 24
+                          default_gateways:
+                            - "10.1.0.1"
       register: result
       ignore_errors: true

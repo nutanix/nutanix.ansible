@@ -8,6 +8,26 @@ __metaclass__ = type
 from ..utils import raise_api_exception  # noqa: E402
 
 
+def get_vm_startup_policy(module, api_instance, ext_id):
+    """
+    Get VM startup policy by ext_id.
+    Args:
+        module: Ansible module
+        api_instance: VmStartupPoliciesApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of the VM startup policy
+    Returns:
+        vm_startup_policy (obj): VM startup policy info object
+    """
+    try:
+        return api_instance.get_vm_startup_policy_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM startup policy info using ext_id",
+        )
+
+
 def get_vm(module, api_instance, ext_id):
     """
     Get VM by ext_id
@@ -190,4 +210,104 @@ def get_ova(module, api_instance, ext_id):
             module=module,
             exception=e,
             msg="Api Exception raised while fetching OVA info using ext_id",
+        )
+
+
+def get_rate_limit_policy(module, api_instance, ext_id):
+    """
+    Get Image Rate Limit Policy by ext_id.
+    Args:
+        module: Ansible module
+        api_instance: ImageRateLimitPoliciesApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of the rate limit policy
+    Returns:
+        rate_limit_policy (obj): Rate limit policy info object
+    """
+    try:
+        return api_instance.get_rate_limit_policy_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching image rate limit policy info using ext_id",
+        )
+
+
+def get_vm_guest_customization_profile(module, api_instance, ext_id):
+    """
+    Get VM Guest Customization Profile by ext_id
+    Args:
+        module: Ansible module
+        api_instance: VmGuestCustomizationProfilesApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of VM Guest Customization Profile
+    Returns:
+        profile (obj): VM Guest Customization Profile info object
+    """
+    try:
+        return api_instance.get_vm_guest_customization_profile_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM Guest Customization Profile info using ext_id",
+        )
+
+
+def get_vm_anti_affinity_policy(module, api_instance, ext_id):
+    """
+    Get VM-VM anti-affinity policy by ext_id.
+    Args:
+        module: Ansible module
+        api_instance: VmAntiAffinityPoliciesApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of VM-VM anti-affinity policy
+    Returns:
+        policy (obj): VM-VM anti-affinity policy info object
+    """
+    try:
+        return api_instance.get_vm_anti_affinity_policy_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM-VM anti-affinity policy info using ext_id",
+        )
+
+
+def get_vm_host_affinity_policy(module, api_instance, ext_id):
+    """
+    Get VM host affinity policy by ext_id.
+    Args:
+        module: Ansible module
+        api_instance: VmHostAffinityPoliciesApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of VM host affinity policy
+    Returns:
+        policy (obj): VM host affinity policy info object
+    """
+    try:
+        return api_instance.get_vm_host_affinity_policy_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM host affinity policy info using ext_id",
+        )
+
+
+def get_template_placement_policy(module, api_instance, ext_id):
+    """
+    Get Template Placement Policy by ext_id.
+    Args:
+        module: Ansible module
+        api_instance: TemplatePlacementPoliciesApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of the template placement policy
+    Returns:
+        policy (obj): TemplatePlacementPolicy info object
+    """
+    try:
+        return api_instance.get_template_placement_policy_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching template placement policy info using ext_id",
         )

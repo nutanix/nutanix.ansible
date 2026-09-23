@@ -1,0 +1,87 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a resource group with placement targets
+# 2. Update the resource group name
+# 3. Fetch a resource group using external ID
+# 4. List all resource groups
+# 5. List resource groups with name filter
+# 6. List resource groups with limit
+# 7. Delete the resource group
+
+- name: Resource Groups playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        rg_name: "ansible-example-resource-group"
+        project_ext_id: "11223344-1234-1111-2222-6788222f17b8"
+        cluster_ext_id: "00064c46-8fef-6895-185b-ac1f6b6f97e2"
+        rg_ext_id: "aabb1122-3344-5566-7788-99aabbccddee"
+
+    ###########################################################
+    # CREATE OPERATIONS
+    ###########################################################
+    - name: Create a resource group with placement targets
+      nutanix.ncp.ntnx_resource_group_v2:
+        state: present
+        name: "{{ rg_name }}-full"
+        project_ext_id: "{{ project_ext_id }}"
+        placement_targets:
+          - cluster_ext_id: "{{ cluster_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    ###########################################################
+    # UPDATE OPERATIONS
+    ###########################################################
+    - name: Update resource group name
+      nutanix.ncp.ntnx_resource_group_v2:
+        state: present
+        ext_id: "{{ rg_ext_id }}"
+        name: "{{ rg_name }}-updated"
+      register: result
+      ignore_errors: true
+
+    ###########################################################
+    # INFO OPERATIONS
+    ###########################################################
+    - name: Fetch resource group using external ID
+      nutanix.ncp.ntnx_resource_groups_info_v2:
+        ext_id: "{{ rg_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all resource groups
+      nutanix.ncp.ntnx_resource_groups_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List resource groups with name filter
+      nutanix.ncp.ntnx_resource_groups_info_v2:
+        filter: "name eq '{{ rg_name }}-updated'"
+      register: result
+      ignore_errors: true
+
+    - name: List resource groups with limit
+      nutanix.ncp.ntnx_resource_groups_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    ###########################################################
+    # DELETE OPERATIONS
+    ###########################################################
+    - name: Delete resource group
+      nutanix.ncp.ntnx_resource_group_v2:
+        state: absent
+        ext_id: "{{ rg_ext_id }}"
+      register: result
+      ignore_errors: true

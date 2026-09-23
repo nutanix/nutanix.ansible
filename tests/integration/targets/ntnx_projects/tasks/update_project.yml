@@ -30,6 +30,11 @@
   nutanix.ncp.ntnx_projects:
     name: "{{ project1_name }}"
     desc: desc-123
+    directory_reference_list:
+      - kind: directory_service
+        uuid: "{{ open_ldap_uuid }}"
+      - kind: directory_service
+        uuid: "{{ directory_service_uuid }}"
     subnets:
       - name: "{{ network.dhcp.name }}"
     default_subnet:
@@ -56,16 +61,27 @@
   nutanix.ncp.ntnx_projects:
     project_uuid: "{{ result.project_uuid }}"
     desc: desc-123-updated
+    collaboration: true
+    directory_reference_list:
+      - kind: directory_service
+        uuid: "{{ open_ldap_uuid }}"
+      - kind: directory_service
+        uuid: "{{ directory_service_uuid }}"
     clusters:
       - "{{ cluster.uuid }}"
     subnets:
       - uuid: "{{ static.uuid }}"
     default_subnet:
       uuid: "{{ static.uuid }}"
-    users:
-      - "{{ users[1] }}"
-    external_user_groups:
-      - "{{ user_groups[0] }}"
+    role_mappings:
+      - role:
+          name: "{{ role_mappings[0] }}"
+        user:
+          uuid: "{{ users[1] }}"
+      - role:
+          name: "{{ role_mappings[0] }}"
+        user_group:
+          uuid: "{{ user_groups[0] }}"
   register: result
   ignore_errors: true
   check_mode: true
@@ -75,32 +91,42 @@
     that:
       - result.response is defined
       - result.changed == false
-      - result.response.spec.description == 'desc-123-updated'
-      - result.response.spec.resources.user_reference_list[0].uuid == "{{ users[1] }}"
-      - result.response.spec.resources.external_user_group_reference_list[0].uuid == "{{ user_groups[0] }}"
-      - result.response.spec.resources.subnet_reference_list[0].uuid == "{{ static.uuid }}"
-      - result.response.spec.resources.default_subnet_reference.uuid == "{{ static.uuid }}"
-      - result.response.spec.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
-
+      - result.response.spec.project_detail.description == 'desc-123-updated'
+      - result.response.spec.project_detail.resources.subnet_reference_list | length == 1
+      - result.response.spec.project_detail.resources.subnet_reference_list[0].uuid in ["{{ static.uuid }}"]
+      - result.response.spec.project_detail.resources.default_subnet_reference.uuid == "{{ static.uuid }}"
+      - result.response.spec.project_detail.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
+      - result.response.spec.access_control_policy_list | length >= 1
     fail_msg: "Check mode response for update is incorrect"
     success_msg: "Check mode response for update verified successfully"
 
 #################################################################
 
-- name: Update project. Change subnets, users, quotas and add vpcs
+- name: Update project, users, quotas and add vpcs
   nutanix.ncp.ntnx_projects:
     project_uuid: "{{ result.project_uuid }}"
     desc: desc-123-updated
+    collaboration: true
+    directory_reference_list:
+      - kind: directory_service
+        uuid: "{{ open_ldap_uuid }}"
+      - kind: directory_service
+        uuid: "{{ directory_service_uuid }}"
     clusters:
       - "{{ cluster.uuid }}"
     subnets:
-      - uuid: "{{ static.uuid }}"
+      - name: "{{ network.dhcp.name }}"
     default_subnet:
       uuid: "{{ static.uuid }}"
-    users:
-      - "{{ users[1] }}"
-    external_user_groups:
-      - "{{ user_groups[0] }}"
+    role_mappings:
+      - role:
+          name: "{{ role_mappings[0] }}"
+        user:
+          uuid: "{{ users[1] }}"
+      - role:
+          name: "{{ role_mappings[0] }}"
+        user_group:
+          uuid: "{{ user_groups[0] }}"
     accounts:
       - uuid: "{{ accounts[0].uuid }}"
     vpcs:
@@ -108,20 +134,35 @@
   register: result
   ignore_errors: true
 
+- name: Debug update project response resources
+  ansible.builtin.debug:
+    var: result.response.status.project_status.resources
+  when:
+    - result.response is defined
+    - result.response is mapping
+    - result.response.status is defined
+    - result.response.status.project_status is defined
+
 - name: Update Status
   ansible.builtin.assert:
     that:
       - result.response is defined
+      - result.response is mapping
+      - result.failed == false
       - result.changed == true
       - result.response.status.state == 'COMPLETE'
-      - result.response.status.description == 'desc-123-updated'
-      - result.response.status.resources.user_reference_list[0].uuid == "{{ users[1] }}"
-      - result.response.status.resources.external_user_group_reference_list[0].uuid == "{{ user_groups[0] }}"
-      - result.response.status.resources.subnet_reference_list[0].uuid == "{{ static.uuid }}"
-      - result.response.status.resources.default_subnet_reference.uuid == "{{ static.uuid }}"
-      - result.response.status.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
-      - result.response.status.resources.vpc_reference_list[0].uuid == "{{ vpc.uuid }}"
-      - result.response.status.resources.account_reference_list[0].uuid == "{{ accounts[0].uuid }}"
+      - result.response.status.project_status.description == 'desc-123-updated'
+      - result.response.status.project_status.resources.subnet_reference_list | length == 2
+      - result.response.status.project_status.resources.subnet_reference_list[0].uuid in ["{{ static.uuid }}", "{{ network.dhcp.uuid }}"]
+      - result.response.status.project_status.resources.subnet_reference_list[1].uuid in ["{{ static.uuid }}", "{{ network.dhcp.uuid }}"]
+      - result.response.status.project_status.resources.default_subnet_reference.uuid == "{{ static.uuid }}"
+      - result.response.status.project_status.resources.cluster_reference_list[0].uuid == "{{ cluster.uuid }}"
+      - result.response.status.project_status.resources.vpc_reference_list[0].uuid == "{{ vpc.uuid }}"
+      - result.response.status.project_status.resources.account_reference_list[0].uuid == "{{ accounts[0].uuid }}"
+      - result.response.status.project_status.resources.user_reference_list | length > 0
+      - result.response.status.project_status.resources.external_user_group_reference_list | length > 0
+      - users[1] in (result.response.status.project_status.resources.user_reference_list | map(attribute='uuid') | list)
+      - user_groups[0] in (result.response.status.project_status.resources.external_user_group_reference_list | map(attribute='uuid') | list)
 
     fail_msg: "Project update failed"
     success_msg: "Project updated successfully"
@@ -132,14 +173,28 @@
   nutanix.ncp.ntnx_projects:
     project_uuid: "{{ result.project_uuid }}"
     desc: desc-123-updated
+    collaboration: true
+    directory_reference_list:
+      - kind: directory_service
+        uuid: "{{ open_ldap_uuid }}"
+      - kind: directory_service
+        uuid: "{{ directory_service_uuid }}"
+    clusters:
+      - "{{ cluster.uuid }}"
     subnets:
+      - name: "{{ network.dhcp.name }}"
       - uuid: "{{ static.uuid }}"
     default_subnet:
       uuid: "{{ static.uuid }}"
-    users:
-      - "{{ users[1] }}"
-    external_user_groups:
-      - "{{ user_groups[0] }}"
+    role_mappings:
+      - role:
+          name: "{{ role_mappings[0] }}"
+        user:
+          uuid: "{{ users[1] }}"
+      - role:
+          name: "{{ role_mappings[0] }}"
+        user_group:
+          uuid: "{{ user_groups[0] }}"
     accounts:
       - name: "{{ accounts[0].name }}"
     vpcs:

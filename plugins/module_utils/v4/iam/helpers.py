@@ -148,6 +148,26 @@ def get_directory_service(module, api_instance, ext_id):
         )
 
 
+def get_role_membership(module, api_instance, ext_id):
+    """
+    This method will return role membership info using ext_id.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Role membership api instance
+        ext_id (str): External id of role membership
+    Returns:
+        role_membership_info (object): Role membership info
+    """
+    try:
+        return api_instance.get_role_membership_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching role membership info using ext_id",
+        )
+
+
 def get_requested_key(module, api_instance, ext_id, user_ext_id):
     """
     This method will return requested key info using ext_id.

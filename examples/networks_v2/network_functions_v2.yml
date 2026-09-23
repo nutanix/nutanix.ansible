@@ -1,7 +1,7 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a network function with INLINE traffic forwarding mode and ACTIVE_PASSIVE HA
+# 1. Create a network function with INLINE traffic forwarding mode and ACTIVE_PASSIVE HA owned by a project
 # 2. Create a network function with VTAP traffic forwarding mode
 # 3. Update network function name, description, and data plane health check config
 # 4. Fetch network function using ext_id
@@ -30,12 +30,14 @@
         vm_2_ingress_nic_ext_id_1: "d813fcad-d32c-4469-98bc-028c9ac148e1"
         vm_2_ingress_nic_ext_id_2: "a06ae4cd-5f54-4083-b6cc-d5cdf74d16db"
         vm_2_egress_nic_ext_id: "5349fd3b-e71a-462c-a59f-63b62d45b4de"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
 
-    - name: Create network function with INLINE traffic forwarding mode and ACTIVE_PASSIVE HA
+    - name: Create network function with INLINE traffic forwarding mode and ACTIVE_PASSIVE HA owned by a project
       nutanix.ncp.ntnx_network_function_v2:
         state: present
         name: "{{ network_function_name }}_inline_active_passive"
         description: "Network function for inline traffic inspection"
+        project_ext_id: "{{ project_ext_id }}"
         high_availability_mode: ACTIVE_PASSIVE
         failure_handling: FAIL_CLOSE
         traffic_forwarding_mode: INLINE
