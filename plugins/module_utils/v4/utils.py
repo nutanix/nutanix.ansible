@@ -165,6 +165,7 @@ def remove_empty_ip_config(obj):
         "_unknown_fields",
         "$dataItemDiscriminator",
     )
+
     def _empty(block):
         return not block or all(
             v is None for k, v in block.items() if k not in internal_attributes
