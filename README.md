@@ -62,7 +62,7 @@ We are excited to announce the release of **Nutanix Ansible Collection v2.6.0** 
   - **Legacy Flow entities**: `ntnx_address_groups`, `ntnx_address_groups_info`, `ntnx_service_groups`, and `ntnx_service_groups_info` stop working with PC 7.6. Migrate to `ntnx_address_groups_v2`, `ntnx_address_groups_info_v2`, `ntnx_service_groups_v2`, and `ntnx_service_groups_info_v2`. [#1317](https://github.com/nutanix/nutanix.ansible/issues/1317)
 
 - **Behavior and Usage Notes**
-  - **Beta modules (Projects 2.0 / Role Memberships)**: The following modules are Beta because the underlying API in the Nutanix SDK is currently in Beta. The modules and their behaviour may change in future releases as the SDK API evolves: `ntnx_project_v2`, `ntnx_projects_info_v2`, `ntnx_directory_services_v2`, `ntnx_saml_identity_providers_v2`, `ntnx_role_membership_v2`, and `ntnx_role_memberships_info_v2`.
+  - **Beta modules**: The following modules are in Beta because the underlying Nutanix SDK API is currently in Beta. The modules and their behavior may change in future releases as the SDK API evolves: `ntnx_project_v2`, `ntnx_projects_info_v2`, `ntnx_directory_services_v2`, `ntnx_saml_identity_providers_v2`, `ntnx_role_membership_v2`, and `ntnx_role_memberships_info_v2`.
   - **VM inventory APIPA handling**: The VM inventory plugins expose all detected addresses through `vm_ip_addresses` and document how to filter APIPA addresses with `compose`; default `ansible_host` selection remains unchanged. [#1305](https://github.com/nutanix/nutanix.ansible/issues/1305)
   - **NGT VM external ID**: Pass a decoded VM UUID to `ntnx_vms_ngt_v2` as `ext_id`, not the complete Ansible `slurp` result. [#962](https://github.com/nutanix/nutanix.ansible/issues/962)
 

@@ -14,8 +14,8 @@ module: ntnx_role_memberships_info_v2
 short_description: Fetch role membership information using Nutanix v4 APIs
 version_added: "2.6.0"
 description:
-    - This is a Beta module because the underlying API in the Nutanix SDK is currently in Beta.
-    - The module and its behaviour may change in future releases as the SDK API evolves.
+    - This module is in Beta because the underlying Nutanix SDK API is currently in Beta.
+    - The module and its behavior may change in future releases as the SDK API evolves.
     - Fetch information about role memberships from Nutanix Prism Central.
     - Retrieve a single role membership by external ID or list all role memberships with optional filters.
     - This module uses PC v4 APIs based SDKs.

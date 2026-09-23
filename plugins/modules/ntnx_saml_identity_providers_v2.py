@@ -13,8 +13,8 @@ module: ntnx_saml_identity_providers_v2
 short_description: Manage SAML identity providers in Nutanix PC
 version_added: "2.0.0"
 description:
-  - This is a Beta module because the underlying API in the Nutanix SDK is currently in Beta.
-  - The module and its behaviour may change in future releases as the SDK API evolves.
+  - This module is in Beta because the underlying Nutanix SDK API is currently in Beta.
+  - The module and its behavior may change in future releases as the SDK API evolves.
   - Create, Update, Delete SAML identity providers in Nutanix PC
   - This module uses PC v4 APIs based SDKs
 notes:

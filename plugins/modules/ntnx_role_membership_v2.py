@@ -14,8 +14,8 @@ module: ntnx_role_membership_v2
 short_description: Manage role memberships in Nutanix Prism Central using v4 APIs
 version_added: "2.6.0"
 description:
-    - This is a Beta module because the underlying API in the Nutanix SDK is currently in Beta.
-    - The module and its behaviour may change in future releases as the SDK API evolves.
+    - This module is in Beta because the underlying Nutanix SDK API is currently in Beta.
+    - The module and its behavior may change in future releases as the SDK API evolves.
     - Create and delete role memberships in Nutanix Prism Central.
     - Role memberships bind a role to an identity (user or user group) within a scope.
     - The IAM Role Membership API does not support update operations.
