@@ -62,6 +62,7 @@ We are excited to announce the release of **Nutanix Ansible Collection v2.6.0** 
   - **Legacy Flow entities**: `ntnx_address_groups`, `ntnx_address_groups_info`, `ntnx_service_groups`, and `ntnx_service_groups_info` stop working with PC 7.6. Migrate to `ntnx_address_groups_v2`, `ntnx_address_groups_info_v2`, `ntnx_service_groups_v2`, and `ntnx_service_groups_info_v2`. [#1317](https://github.com/nutanix/nutanix.ansible/issues/1317)
 
 - **Behavior and Usage Notes**
+  - **Beta modules**: The following modules are in Beta because the underlying Nutanix SDK API is currently in Beta. The modules and their behavior may change in future releases as the SDK API evolves: `ntnx_project_v2`, `ntnx_projects_info_v2`, `ntnx_directory_services_v2`, `ntnx_saml_identity_providers_v2`, `ntnx_role_membership_v2`, and `ntnx_role_memberships_info_v2`.
   - **VM inventory APIPA handling**: The VM inventory plugins expose all detected addresses through `vm_ip_addresses` and document how to filter APIPA addresses with `compose`; default `ansible_host` selection remains unchanged. [#1305](https://github.com/nutanix/nutanix.ansible/issues/1305)
   - **NGT VM external ID**: Pass a decoded VM UUID to `ntnx_vms_ngt_v2` as `ext_id`, not the complete Ansible `slurp` result. [#962](https://github.com/nutanix/nutanix.ansible/issues/962)
 
@@ -322,7 +323,7 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | ntnx_images | ntnx_images_v2 |
 | ntnx_image_placement_policy | ntnx_image_placement_policies_v2 |
 | ntnx_pbrs | ntnx_pbrs_v2 |
-| ntnx_projects | ntnx_project_v2 |
+| ntnx_projects | ntnx_project_v2 *(Beta)* |
 | ntnx_protection_rules | - |
 | ntnx_recovery_plans | - |
 | ntnx_recovery_plan_jobs | - |
@@ -391,8 +392,8 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_volume_groups_disks_v2 |
 | - | ntnx_volume_groups_vms_v2 |
 | - | ntnx_volume_groups_iscsi_clients_v2 |
-| - | ntnx_directory_services_v2 |
-| - | ntnx_saml_identity_providers_v2 |
+| - | ntnx_directory_services_v2 *(Beta)* |
+| - | ntnx_saml_identity_providers_v2 *(Beta)* |
 | - | ntnx_clusters_v2 |
 | - | ntnx_recovery_points_v2 |
 | - | ntnx_recovery_point_restore_v2 |
@@ -435,7 +436,7 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_entity_group_v2 |
 | - | ntnx_virtual_switch_v2 |
 | - | ntnx_resource_group_v2 |
-| - | ntnx_role_membership_v2 |
+| - | ntnx_role_membership_v2 *(Beta)* |
 | - | ntnx_directory_services_connection_v2 |
 | - | ntnx_directory_service_search_v2 |
 | - | ntnx_directory_server_config_v2 |
@@ -471,7 +472,7 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | ntnx_image_placement_policies_info | ntnx_image_placement_policies_info_v2 |
 | ntnx_pbrs_info | ntnx_pbrs_info_v2 |
 | ntnx_permissions_info | ntnx_operations_info_v2 |
-| ntnx_projects_info | ntnx_projects_info_v2 |
+| ntnx_projects_info | ntnx_projects_info_v2 *(Beta)* |
 | ntnx_protection_rules_info | - |
 | ntnx_recovery_plans_info | - |
 | ntnx_recovery_plan_jobs_info | - |
@@ -551,7 +552,7 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 | - | ntnx_iam_entities_info_v2 |
 | - | ntnx_virtual_switches_info_v2 |
 | - | ntnx_resource_groups_info_v2 |
-| - | ntnx_role_memberships_info_v2 |
+| - | ntnx_role_memberships_info_v2 *(Beta)* |
 | - | ntnx_directory_server_configs_info_v2 |
 | - | ntnx_category_mappings_info_v2 |
 | - | ntnx_snmp_config_info_v2 |
