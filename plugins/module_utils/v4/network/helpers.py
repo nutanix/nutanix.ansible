@@ -170,3 +170,23 @@ def get_virtual_switch(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching virtual switch info using ext_id",
         )
+
+
+def get_gateway(module, api_instance, ext_id):
+    """
+    This method will return network gateway info using its ext_id
+    Args:
+        module: Ansible module
+        api_instance: GatewaysApi instance from ntnx_networking_py_client sdk
+        ext_id (str): gateway external ID
+    return:
+        info (object): gateway info
+    """
+    try:
+        return api_instance.get_gateway_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching gateway info using ext_id",
+        )
