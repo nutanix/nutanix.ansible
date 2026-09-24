@@ -147,7 +147,6 @@
     gateway_device_vendor: "GENERIC"
     vpc_reference: "{{ vpc.uuid }}"
     project_ext_id: "00000000-0000-0000-0000-000000000000"
-    is_active: true
     deployment:
       cluster_reference: "{{ cluster.uuid }}"
       vcenter_datastore_name: "ds1"
@@ -233,7 +232,6 @@
       - result.response.gateway_device_vendor == "GENERIC"
       - result.response.vpc_reference == vpc.uuid
       - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
-      - result.response.is_active == true
       - result.response.deployment.cluster_reference == cluster.uuid
       - result.response.deployment.vcenter_datastore_name == "ds1"
       - result.response.deployment.should_synchronize_system_ntp_servers == true

@@ -53,19 +53,17 @@ options:
   ext_id:
     description:
       - The external ID of the gateway.
-      - Required for update, delete and upgrade operations.
     type: str
     required: false
   upgrade:
     description:
-      - When true and C(ext_id) is provided the module upgrades the gateway to the latest supported version
+      - When true and ext_id is provided, upgrades the gateway to the latest supported version.
     type: bool
     required: false
     default: false
   name:
     description:
       - Name of the gateway.
-      - Required for create operation.
     type: str
     required: false
   description:
@@ -75,502 +73,513 @@ options:
     required: false
   vpc_reference:
     description:
-      - External ID of the VPC where this gateway will be deployed.
-      - C(vpc_reference) and C(cloud_network_reference) are mutually exclusive.
+      - VPC.
     type: str
     required: false
   cloud_network_reference:
     description:
-      - External ID of the cloud network on which the gateway is deployed (NC2 deployments).
-      - C(vpc_reference) and C(cloud_network_reference) are mutually exclusive.
+      - Cloud network on which network gateway is deployed.
     type: str
     required: false
   project_ext_id:
     description:
-      - External ID of the project that owns this gateway.
-    type: str
-    required: false
-  vm_reference:
-    description:
-      - Reference to a dedicated VM on which a local gateway is deployed.
+      - UUID of the project that owns this entity.
     type: str
     required: false
   gateway_device_vendor:
     description:
-      - Third-party gateway vendor identifier for remote gateways.
+      - Third-party gateway vendor.
     type: str
     required: false
-  is_active:
+  metadata:
     description:
-      - Indicates whether the gateway can be used to service a subnet extension's datapath.
-    type: bool
+      - Metadata associated with this resource.
+    type: dict
     required: false
+    suboptions:
+      owner_reference_id:
+        description:
+          - A globally unique identifier that represents the owner of this resource.
+        type: str
+        required: false
+      owner_user_name:
+        description:
+          - The userName of the owner of this resource.
+        type: str
+        required: false
+      project_reference_id:
+        description:
+          - A globally unique identifier that represents the project this resource belongs to.
+        type: str
+        required: false
+      project_name:
+        description:
+          - The name of the project this resource belongs to.
+        type: str
+        required: false
+      category_ids:
+        description:
+          - A list of globally unique identifiers that represent all the categories the resource is associated with.
+        type: list
+        elements: str
+        required: false
   deployment:
     description:
-      - Deployment configuration describing where the network gateway VM is deployed and how its NICs are configured.
-      - Required when deploying a local (on-prem) network gateway.
+      - Network gateway deployment configuration.
     type: dict
     required: false
     suboptions:
       cluster_reference:
         description:
-          - PE cluster external ID on which to deploy the gateway VM.
+          - Cluster reference required to identify which on-prem cluster to deploy the gateway VM on.
         type: str
         required: true
       vcenter_datastore_name:
         description:
-          - Datastore name to use when the hypervisor is ESXi.
+          - vCenter datastore to which the gateway disks and images will be uploaded during deployment.
         type: str
         required: false
       should_synchronize_system_ntp_servers:
         description:
-          - Whether to synchronize NTP servers from the system configuration.
+          - Boolean flag indicating which NTP servers are configured on the gateway.
         type: bool
         required: false
       should_synchronize_system_dns_servers:
         description:
-          - Whether to synchronize DNS servers from the system configuration.
+          - Boolean flag indicating which DNS servers are configured on the gateway.
         type: bool
         required: false
       ntp_servers:
         description:
-          - List of NTP servers (IPv4/IPv6/FQDN) configured on the gateway VM.
+          - List of NTP servers configured on the gateway.
         type: list
         elements: dict
         required: false
         suboptions:
           ipv4:
             description:
-              - IPv4 address of the NTP server.
+              - IPv4 address.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv4 address value.
+                  - The IPv4 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the network.
+                  - The prefix length of the network to which this host IPv4 address belongs.
                 type: int
                 required: false
                 default: 32
           ipv6:
             description:
-              - IPv6 address of the NTP server.
+              - IPv6 address.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv6 address value.
+                  - The IPv6 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the network.
+                  - The prefix length of the network to which this host IPv6 address belongs.
                 type: int
                 required: false
                 default: 128
           fqdn:
             description:
-              - Fully qualified domain name of the NTP server.
+              - Fully qualified domain name.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The FQDN value.
+                  - The fully qualified domain name of the host.
                 type: str
                 required: true
       dns_servers:
         description:
-          - List of DNS server IP addresses (IPv4/IPv6) configured on the gateway VM.
+          - List of DNS servers configured on the gateway.
         type: list
         elements: dict
         required: false
         suboptions:
           ipv4:
             description:
-              - IPv4 address of the DNS server.
+              - IPv4 address.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv4 address value.
+                  - The IPv4 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the network.
+                  - The prefix length of the network to which this host IPv4 address belongs.
                 type: int
                 required: false
                 default: 32
           ipv6:
             description:
-              - IPv6 address of the DNS server.
+              - IPv6 address.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv6 address value.
+                  - The IPv6 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the network.
+                  - The prefix length of the network to which this host IPv6 address belongs.
                 type: int
                 required: false
                 default: 128
       management_interface:
         description:
-          - Management network interface for the gateway VM.
-          - When C(vpc_reference) is provided, the gateway auto-provisions its subnet inside the VPC;
-            otherwise a VLAN subnet or a VLAN id must be supplied along with C(address) and C(default_gateway).
+          - Network interface used to deliver network services and for managing the gateway.
         type: dict
         required: false
         suboptions:
           subnet_reference:
             description:
-              - External ID of the on-prem VLAN subnet used to reach the gateway VM.
+              - Management Subnet extId reference used for deploying Network Gateway.
             type: str
             required: false
           vlan_id:
             description:
-              - VLAN id to use when a subnet reference is not supplied (VLAN without IPAM).
+              - The on-prem VLAN to deploy the gateway on.
             type: int
             required: false
           mtu:
             description:
-              - MTU for the management interface.
+              - MTU of management interface.
             type: int
             required: false
           address:
             description:
-              - Static IP address assigned to the management interface.
+              - IP address.
             type: dict
             required: false
             suboptions:
               ipv4:
                 description:
-                  - IPv4 address of the management interface.
+                  - IPv4 address.
                 type: dict
                 required: false
                 suboptions:
                   value:
                     description:
-                      - The IPv4 address value.
+                      - The IPv4 address of the host.
                     type: str
                     required: true
                   prefix_length:
                     description:
-                      - Prefix length of the network.
+                      - The prefix length of the network to which this host IPv4 address belongs.
                     type: int
                     required: false
                     default: 32
               ipv6:
                 description:
-                  - IPv6 address of the management interface.
+                  - IPv6 address.
                 type: dict
                 required: false
                 suboptions:
                   value:
                     description:
-                      - The IPv6 address value.
+                      - The IPv6 address of the host.
                     type: str
                     required: true
                   prefix_length:
                     description:
-                      - Prefix length of the network.
+                      - The prefix length of the network to which this host IPv6 address belongs.
                     type: int
                     required: false
                     default: 128
           default_gateway:
             description:
-              - Default gateway of the management network.
+              - Default gateway.
             type: dict
             required: false
             suboptions:
               ipv4:
                 description:
-                  - IPv4 address of the default gateway.
+                  - IPv4 address.
                 type: dict
                 required: false
                 suboptions:
                   value:
                     description:
-                      - The IPv4 address value.
+                      - The IPv4 address of the host.
                     type: str
                     required: true
                   prefix_length:
                     description:
-                      - Prefix length of the network.
+                      - The prefix length of the network to which this host IPv4 address belongs.
                     type: int
                     required: false
                     default: 32
               ipv6:
                 description:
-                  - IPv6 address of the default gateway.
+                  - IPv6 address.
                 type: dict
                 required: false
                 suboptions:
                   value:
                     description:
-                      - The IPv6 address value.
+                      - The IPv6 address of the host.
                     type: str
                     required: true
                   prefix_length:
                     description:
-                      - Prefix length of the network.
+                      - The prefix length of the network to which this host IPv6 address belongs.
                     type: int
                     required: false
                     default: 128
       interfaces:
         description:
-          - Additional data-plane interfaces attached to the gateway VM.
+          - List of network interfaces for this gateway.
         type: list
         elements: dict
         required: false
         suboptions:
           subnet_reference:
             description:
-              - External ID of the VLAN or VPC subnet to attach the interface to.
+              - The VLAN subnet to deploy this network gateway VM on.
             type: str
             required: false
           mac_address:
             description:
-              - MAC address of the interface (optional, usually auto-assigned).
+              - MAC address of this gateway interface.
             type: str
             required: false
           mtu:
             description:
-              - MTU for this interface.
+              - MTU of this gateway interface.
             type: int
             required: false
           ip_address:
             description:
-              - Static IP address of the interface.
+              - IP address.
             type: dict
             required: false
             suboptions:
               ipv4:
                 description:
-                  - IPv4 address of the interface.
+                  - IPv4 address.
                 type: dict
                 required: false
                 suboptions:
                   value:
                     description:
-                      - The IPv4 address value.
+                      - The IPv4 address of the host.
                     type: str
                     required: true
                   prefix_length:
                     description:
-                      - Prefix length of the network.
+                      - The prefix length of the network to which this host IPv4 address belongs.
                     type: int
                     required: false
                     default: 32
               ipv6:
                 description:
-                  - IPv6 address of the interface.
+                  - IPv6 address.
                 type: dict
                 required: false
                 suboptions:
                   value:
                     description:
-                      - The IPv6 address value.
+                      - The IPv6 address of the host.
                     type: str
                     required: true
                   prefix_length:
                     description:
-                      - Prefix length of the network.
+                      - The prefix length of the network to which this host IPv6 address belongs.
                     type: int
                     required: false
                     default: 128
           default_gateway_address:
             description:
-              - Default gateway address to use for traffic on this interface.
+              - Default gateway address.
             type: dict
             required: false
             suboptions:
               ipv4:
                 description:
-                  - IPv4 address of the default gateway for this interface.
+                  - IPv4 address.
                 type: dict
                 required: false
                 suboptions:
                   value:
                     description:
-                      - The IPv4 address value.
+                      - The IPv4 address of the host.
                     type: str
                     required: true
                   prefix_length:
                     description:
-                      - Prefix length of the network.
+                      - The prefix length of the network to which this host IPv4 address belongs.
                     type: int
                     required: false
                     default: 32
               ipv6:
                 description:
-                  - IPv6 address of the default gateway for this interface.
+                  - IPv6 address.
                 type: dict
                 required: false
                 suboptions:
                   value:
                     description:
-                      - The IPv6 address value.
+                      - The IPv6 address of the host.
                     type: str
                     required: true
                   prefix_length:
                     description:
-                      - Prefix length of the network.
+                      - The prefix length of the network to which this host IPv6 address belongs.
                     type: int
                     required: false
                     default: 128
   services:
     description:
-      - Local or remote gateway service.
-      - C(local_services) and C(remote_services) are mutually exclusive.
-      - Local services use C(local_vpn_service), C(local_vtep_service) or C(local_bgp_service).
-      - Remote services use C(remote_vpn_service), C(remote_vtep_service) or C(remote_bgp_service).
-      - Module responses return the SDK C(services) object directly (for example
-        C(remote_bgp_service) under C(services)), not wrapped under C(local_services)
-        or C(remote_services).
+      - Local or remote gateway service type.
     type: dict
     required: false
     suboptions:
       local_services:
         description:
-          - Service configuration for a local (on-prem / this-PC) gateway.
+          - Service configuration for a local gateway.
         type: dict
         required: false
         suboptions:
           service_address:
             description:
-              - Primary floating IP address associated with the local gateway.
+              - Service address.
             type: dict
             required: false
             suboptions:
               ipv4:
                 description:
-                  - IPv4 address of the service address.
+                  - IPv4 address.
                 type: dict
                 required: false
                 suboptions:
                   value:
                     description:
-                      - The IPv4 address value.
+                      - The IPv4 address of the host.
                     type: str
                     required: true
                   prefix_length:
                     description:
-                      - Prefix length of the network.
+                      - The prefix length of the network to which this host IPv4 address belongs.
                     type: int
                     required: false
                     default: 32
               ipv6:
                 description:
-                  - IPv6 address of the service address.
+                  - IPv6 address.
                 type: dict
                 required: false
                 suboptions:
                   value:
                     description:
-                      - The IPv6 address value.
+                      - The IPv6 address of the host.
                     type: str
                     required: true
                   prefix_length:
                     description:
-                      - Prefix length of the network.
+                      - The prefix length of the network to which this host IPv6 address belongs.
                     type: int
                     required: false
                     default: 128
           service_addresses:
             description:
-              - List of floating IP addresses associated with the local gateway.
+              - List of service addresses.
             type: list
             elements: dict
             required: false
             suboptions:
               ipv4:
                 description:
-                  - IPv4 address entry.
+                  - IPv4 address.
                 type: dict
                 required: false
                 suboptions:
                   value:
                     description:
-                      - The IPv4 address value.
+                      - The IPv4 address of the host.
                     type: str
                     required: true
                   prefix_length:
                     description:
-                      - Prefix length of the network.
+                      - The prefix length of the network to which this host IPv4 address belongs.
                     type: int
                     required: false
                     default: 32
               ipv6:
                 description:
-                  - IPv6 address entry.
+                  - IPv6 address.
                 type: dict
                 required: false
                 suboptions:
                   value:
                     description:
-                      - The IPv6 address value.
+                      - The IPv6 address of the host.
                     type: str
                     required: true
                   prefix_length:
                     description:
-                      - Prefix length of the network.
+                      - The prefix length of the network to which this host IPv6 address belongs.
                     type: int
                     required: false
                     default: 128
           local_vpn_service:
             description:
-              - Local VPN service configuration.
+              - VPN service hosted on this local gateway.
             type: dict
             required: false
             suboptions:
               ebgp_config:
                 description:
-                  - Peer eBGP configuration for the VPN tunnel.
+                  - BGP configuration.
                 type: dict
                 required: false
                 suboptions:
                   asn:
                     description:
-                      - Autonomous System Number.
+                      - Autonomous system number.
                     type: int
                     required: false
                   password:
                     description:
-                      - Optional BGP MD5 authentication password.
+                      - BGP password.
                     type: str
                     required: false
                   should_redistribute_routes:
                     description:
-                      - Whether to redistribute learned routes back to the peer.
+                      - Redistribute routes over eBGP.
                     type: bool
                     required: false
               peer_igp_config:
                 description:
-                  - Internal routing protocol configuration used to peer with internal routers.
+                  - Describes the routing protocol configuration spec needed by this gateway to peer and learn routes from internal routers using either iBGP or OSPF.
                 type: dict
                 required: false
                 suboptions:
                   ospf_config:
                     description:
-                      - OSPF configuration for route peering with internal routers.
+                      - OSPF configuration.
                     type: dict
                     required: false
                     suboptions:
                       area_id:
                         description:
-                          - OSPF area ID of this gateway.
+                          - OSPF area id of this gateway.
                         type: str
                         required: false
                       authentication_type:
@@ -583,12 +592,12 @@ options:
                           - MD5
                       password:
                         description:
-                          - Password for OSPF authentication.
+                          - Password for authentication.
                         type: str
                         required: false
                   ibgp_config_list:
                     description:
-                      - List of iBGP peer configurations.
+                      - iBGP configuration.
                     type: list
                     elements: dict
                     required: false
@@ -600,22 +609,22 @@ options:
                         required: false
                       asn:
                         description:
-                          - Autonomous System Number.
+                          - Autonomous system number.
                         type: int
                         required: false
                       password:
                         description:
-                          - Optional BGP MD5 authentication password.
+                          - BGP password.
                         type: str
                         required: false
                       should_redistribute_routes:
                         description:
-                          - Whether to redistribute learned routes back to the peer.
+                          - Redistribute routes over eBGP.
                         type: bool
                         required: false
                   local_prefix_list:
                     description:
-                      - List of local prefixes to advertise over eBGP.
+                      - List of local prefixes to be advertised over eBGP.
                     type: list
                     elements: dict
                     required: false
@@ -628,24 +637,24 @@ options:
                         suboptions:
                           ip:
                             description:
-                              - IPv4 address of the subnet.
+                              - IP address of the subnet.
                             type: dict
                             required: true
                             suboptions:
                               value:
                                 description:
-                                  - The IPv4 address value.
+                                  - The IPv4 address of the host.
                                 type: str
                                 required: true
                               prefix_length:
                                 description:
-                                  - Prefix length of the address.
+                                  - Prefix length of the IPv4 subnet.
                                 type: int
                                 required: false
                                 default: 32
                           prefix_length:
                             description:
-                              - Prefix length of the IPv4 subnet.
+                              - The prefix length of the network to which this host IPv4 address belongs.
                             type: int
                             required: true
                       ipv6:
@@ -656,151 +665,151 @@ options:
                         suboptions:
                           ip:
                             description:
-                              - IPv6 address of the subnet.
+                              - IP address of the subnet.
                             type: dict
                             required: true
                             suboptions:
                               value:
                                 description:
-                                  - The IPv6 address value.
+                                  - The IPv6 address of the host.
                                 type: str
                                 required: true
                               prefix_length:
                                 description:
-                                  - Prefix length of the address.
+                                  - Prefix length of the IPv6 subnet.
                                 type: int
                                 required: false
                                 default: 128
                           prefix_length:
                             description:
-                              - Prefix length of the IPv6 subnet.
+                              - The prefix length of the network to which this host IPv6 address belongs.
                             type: int
                             required: true
           local_vtep_service:
             description:
-              - Local VTEP (VXLAN Tunnel End Point) service configuration.
+              - VTEP service hosted on this local gateway.
             type: dict
             required: false
             suboptions:
               vxlan_port:
                 description:
-                  - UDP port used for VXLAN encapsulation.
+                  - VXLAN port.
                 type: int
                 required: false
           local_bgp_service:
             description:
-              - Local BGP service configuration.
+              - BGP service hosted on this local gateway.
             type: dict
             required: false
             suboptions:
               vpc_reference:
                 description:
-                  - VPC external ID whose routes should be exchanged over BGP.
+                  - Reference to the VPC that this network gateway serves as its BGP speaker.
                 type: str
                 required: false
               asn:
                 description:
-                  - Autonomous System Number of this local BGP gateway.
+                  - Autonomous system number.
                 type: int
                 required: false
               is_bgp_add_path_enabled:
                 description:
-                  - Enable BGP Add-Path capability on the local BGP service.
+                  - If the BGP additional paths capability is enabled on this local gateway.
                 type: bool
                 required: false
       remote_services:
         description:
-          - Service configuration for a remote gateway (reference to a peer in another PC / cloud).
+          - Service configuration for a remote gateway.
         type: dict
         required: false
         suboptions:
           remote_vpn_service:
             description:
-              - Remote VPN service configuration.
+              - VPN service hosted on this remote gateway.
             type: dict
             required: false
             suboptions:
               service_address:
                 description:
-                  - Public IP address of the remote VPN endpoint.
+                  - Service address.
                 type: dict
                 required: false
                 suboptions:
                   ipv4:
                     description:
-                      - IPv4 address of the remote endpoint.
+                      - IPv4 address.
                     type: dict
                     required: false
                     suboptions:
                       value:
                         description:
-                          - The IPv4 address value.
+                          - The IPv4 address of the host.
                         type: str
                         required: true
                       prefix_length:
                         description:
-                          - Prefix length of the network.
+                          - The prefix length of the network to which this host IPv4 address belongs.
                         type: int
                         required: false
                         default: 32
                   ipv6:
                     description:
-                      - IPv6 address of the remote endpoint.
+                      - IPv6 address.
                     type: dict
                     required: false
                     suboptions:
                       value:
                         description:
-                          - The IPv6 address value.
+                          - The IPv6 address of the host.
                         type: str
                         required: true
                       prefix_length:
                         description:
-                          - Prefix length of the network.
+                          - The prefix length of the network to which this host IPv6 address belongs.
                         type: int
                         required: false
                         default: 128
               should_install_xi_route:
                 description:
-                  - Whether to install Xi routes learned from the remote VPN peer.
+                  - Boolean flag indicating user opt-in for installing Xi LB route in on-prem Prism Central and Prism Element CVMs.
                 type: bool
                 required: false
               ebgp_config:
                 description:
-                  - eBGP configuration used with the remote VPN peer.
+                  - BGP configuration.
                 type: dict
                 required: false
                 suboptions:
                   asn:
                     description:
-                      - Autonomous System Number of the remote peer.
+                      - Autonomous system number.
                     type: int
                     required: false
                   password:
                     description:
-                      - Optional BGP MD5 authentication password.
+                      - BGP password.
                     type: str
                     required: false
                   should_redistribute_routes:
                     description:
-                      - Whether to redistribute learned routes back to the peer.
+                      - Redistribute routes over eBGP.
                     type: bool
                     required: false
               peer_igp_config:
                 description:
-                  - Internal routing protocol configuration used to peer with internal routers.
+                  - Describes the routing protocol configuration spec needed by this gateway to peer and learn routes from internal routers using either iBGP or OSPF.
                 type: dict
                 required: false
                 suboptions:
                   ospf_config:
                     description:
-                      - OSPF configuration for route peering with internal routers.
+                      - OSPF configuration.
                     type: dict
                     required: false
                     suboptions:
                       area_id:
                         description:
-                          - OSPF area ID of this gateway.
+                          - OSPF area id of this gateway.
                         type: str
                         required: false
                       authentication_type:
@@ -813,12 +822,12 @@ options:
                           - MD5
                       password:
                         description:
-                          - Password for OSPF authentication.
+                          - Password for authentication.
                         type: str
                         required: false
                   ibgp_config_list:
                     description:
-                      - List of iBGP peer configurations.
+                      - iBGP configuration.
                     type: list
                     elements: dict
                     required: false
@@ -830,39 +839,39 @@ options:
                         required: false
                       asn:
                         description:
-                          - Autonomous System Number.
+                          - Autonomous system number.
                         type: int
                         required: false
                       password:
                         description:
-                          - Optional BGP MD5 authentication password.
+                          - BGP password.
                         type: str
                         required: false
                       should_redistribute_routes:
                         description:
-                          - Whether to redistribute learned routes back to the peer.
+                          - Redistribute routes over eBGP.
                         type: bool
                         required: false
                   local_prefix_list:
                     description:
-                      - List of local prefixes to advertise over eBGP.
+                      - List of local prefixes to be advertised over eBGP.
                     type: list
                     elements: dict
                     required: false
           remote_vtep_service:
             description:
-              - Remote VTEP service configuration.
+              - VTEP service hosted on this remote gateway.
             type: dict
             required: false
             suboptions:
               vxlan_port:
                 description:
-                  - UDP port used for VXLAN encapsulation.
+                  - VXLAN port.
                 type: int
                 required: false
               vteps:
                 description:
-                  - List of remote VTEP endpoints.
+                  - Remote VXLAN Tunnel Endpoints configuration.
                 type: list
                 elements: dict
                 required: false
@@ -875,47 +884,47 @@ options:
                     suboptions:
                       ipv4:
                         description:
-                          - IPv4 address of the remote VTEP.
+                          - IPv4 address.
                         type: dict
                         required: false
                         suboptions:
                           value:
                             description:
-                              - The IPv4 address value.
+                              - The IPv4 address of the host.
                             type: str
                             required: true
                           prefix_length:
                             description:
-                              - Prefix length of the network.
+                              - The prefix length of the network to which this host IPv4 address belongs.
                             type: int
                             required: false
                             default: 32
                       ipv6:
                         description:
-                          - IPv6 address of the remote VTEP.
+                          - IPv6 address.
                         type: dict
                         required: false
                         suboptions:
                           value:
                             description:
-                              - The IPv6 address value.
+                              - The IPv6 address of the host.
                             type: str
                             required: true
                           prefix_length:
                             description:
-                              - Prefix length of the network.
+                              - The prefix length of the network to which this host IPv6 address belongs.
                             type: int
                             required: false
                             default: 128
           remote_bgp_service:
             description:
-              - Remote BGP service configuration.
+              - BGP service hosted on this remote gateway.
             type: dict
             required: false
             suboptions:
               asn:
                 description:
-                  - Autonomous System Number of the remote BGP gateway.
+                  - Autonomous system number.
                 type: int
                 required: false
               address:
@@ -926,59 +935,59 @@ options:
                 suboptions:
                   ipv4:
                     description:
-                      - IPv4 address of the remote BGP peer.
+                      - IPv4 address.
                     type: dict
                     required: false
                     suboptions:
                       value:
                         description:
-                          - The IPv4 address value.
+                          - The IPv4 address of the host.
                         type: str
                         required: true
                       prefix_length:
                         description:
-                          - Prefix length of the network.
+                          - The prefix length of the network to which this host IPv4 address belongs.
                         type: int
                         required: false
                         default: 32
                   ipv6:
                     description:
-                      - IPv6 address of the remote BGP peer.
+                      - IPv6 address.
                     type: dict
                     required: false
                     suboptions:
                       value:
                         description:
-                          - The IPv6 address value.
+                          - The IPv6 address of the host.
                         type: str
                         required: true
                       prefix_length:
                         description:
-                          - Prefix length of the network.
+                          - The prefix length of the network to which this host IPv6 address belongs.
                         type: int
                         required: false
                         default: 128
   high_availability_group:
     description:
-      - High availability configuration binding this gateway with one or more peered gateways.
+      - High availability group configuration.
     type: dict
     required: false
     suboptions:
       is_ha_enabled:
         description:
-          - Whether HA is enabled for the gateway.
+          - Indicates whether high availability is enabled.
         type: bool
         required: false
       algorithm:
         description:
-          - Algorithm used to select the active peer.
+          - High availability algorithm.
         type: str
         required: false
         choices:
           - ACTIVE_BACKUP
       peered_gateways:
         description:
-          - List of peered gateway references participating in the HA group.
+          - Information about peered gateways in a high availability group.
         type: list
         elements: dict
         required: false
@@ -1100,7 +1109,6 @@ response:
       "gateway_device_vendor": "GENERIC",
       "high_availability_group": null,
       "installed_software_version": null,
-      "is_active": null,
       "links": null,
       "metadata": {
           "category_ids": null,
@@ -1129,7 +1137,6 @@ response:
       "supported_software_version": null,
       "tenant_id": null,
       "vm": null,
-      "vm_reference": null,
       "vpc": null,
       "vpc_reference": "f47927e8-8339-43ad-8dfc-d727c44a5418"
     }
@@ -1612,9 +1619,18 @@ def get_module_spec():
         vpc_reference=dict(type="str"),
         cloud_network_reference=dict(type="str"),
         project_ext_id=dict(type="str"),
-        vm_reference=dict(type="str"),
         gateway_device_vendor=dict(type="str"),
-        is_active=dict(type="bool"),
+        metadata=dict(
+            type="dict",
+            options=dict(
+                owner_reference_id=dict(type="str"),
+                owner_user_name=dict(type="str"),
+                project_reference_id=dict(type="str"),
+                project_name=dict(type="str"),
+                category_ids=dict(type="list", elements="str"),
+            ),
+            obj=networking_sdk.Metadata,
+        ),
         deployment=dict(
             type="dict",
             options=_get_deployment_spec(),
