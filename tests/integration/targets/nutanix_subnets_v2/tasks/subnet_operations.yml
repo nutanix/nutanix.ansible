@@ -208,6 +208,25 @@
 - name: Adding subnet external ID to delete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.ext_id ] }}"
+
+- name: Update VLAN subnet without IPAM
+  nutanix.ncp.ntnx_subnets_v2:
+    state: present
+    name: "{{ subnet_name }}_1_updated"
+    ext_id: "{{ result.ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status for VLAN subnet without IPAM
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.ext_id is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ subnet_name }}_1_updated"
+    fail_msg: " Unable to update VLAN subnet without IPAM "
+    success_msg: " VLAN subnet without IPAM updated successfully "
 ################################################################
 - name: VLAN subnet with IPAM and IP pools
   nutanix.ncp.ntnx_subnets_v2:
