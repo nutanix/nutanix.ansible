@@ -40,6 +40,14 @@ options:
         - The external ID of the VM.
         type: str
         required: false
+    ip_address:
+        description:
+        - IP address to search for. Returns VMs where any NIC reports this IP.
+        - Matches learned IPv4 addresses, configured/static IPv4 address, secondary IPv4 addresses, and learned IPv6 addresses.
+        - Exact match only. No substring or CIDR matching.
+        - This filtering is performed client-side on the VMs returned by the existing list_vms call. Only VMs in the returned page are searched. Pagination (page/limit) is not automatically adjusted.
+        type: str
+        required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
@@ -62,6 +70,23 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     ext_id: 530567f3-abda-4913-b5d0-0ab6758ec1653
+
+- name: Search VMs by IP address (client-side filtering)
+  nutanix.ncp.ntnx_vms_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    ip_address: "10.0.0.1"
+
+- name: Search VMs by IP with additional OData filter
+  nutanix.ncp.ntnx_vms_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter: "name eq 'my-vm'"
+    ip_address: "10.0.0.1"
 """
 RETURN = r"""
 response:
@@ -172,8 +197,47 @@ from ..module_utils.v4.vmm.api_client import get_vm_api_instance  # noqa: E402
 def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str"),
+        ip_address=dict(type="str"),
     )
     return module_args
+
+
+def _extract_vm_ips(vm):
+    """
+    Collect IP addresses reported for the VM's NICs.
+    Mirrors inventory plugin ntnx_prism_vm_inventory_v2._extract_vm_ips logic
+    to ensure consistent matching for learned, configured and secondary addresses.
+    Returns list of string IPs, handles missing/null safely.
+    """
+    ips = []
+
+    def add(value):
+        if value and value not in ips:
+            ips.append(value)
+
+    for nic in vm.get("nics") or []:
+        network_info = nic.get("nic_network_info") or {}
+
+        # inventory skips non-NORMAL_NIC; keep same for consistency
+        # but if nic_type missing, still evaluate IPs (handle legacy)
+        nic_type = network_info.get("nic_type")
+        if nic_type is not None and nic_type != "NORMAL_NIC":
+            continue
+
+        ipv4_info = network_info.get("ipv4_info") or {}
+        for address in ipv4_info.get("learned_ip_addresses") or []:
+            add((address or {}).get("value"))
+
+        ipv4_config = network_info.get("ipv4_config") or {}
+        add((ipv4_config.get("ip_address") or {}).get("value"))
+        for address in ipv4_config.get("secondary_ip_address_list") or []:
+            add((address or {}).get("value"))
+
+        ipv6_info = network_info.get("ipv6_info") or {}
+        for address in ipv6_info.get("learned_ipv6_addresses") or []:
+            add((address or {}).get("value"))
+
+    return ips
 
 
 def get_vm(module, result):
@@ -218,7 +282,17 @@ def get_vms(module, result):
     if resp is None or getattr(resp, "data", None) is None:
         result["response"] = []
     else:
-        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+        data = strip_internal_attributes(resp.to_dict()).get("data") or []
+        # Client-side filtering by ip_address: only VMs returned by the API in
+        # the current page are searched. Pagination is not adjusted.
+        requested_ip = module.params.get("ip_address")
+        if requested_ip:
+            filtered = []
+            for vm in data:
+                if requested_ip in _extract_vm_ips(vm):
+                    filtered.append(vm)
+            data = filtered
+        result["response"] = data
 
 
 def run_module():
@@ -227,6 +301,7 @@ def run_module():
         supports_check_mode=False,
         mutually_exclusive=[
             ("ext_id", "filter"),
+            ("ext_id", "ip_address"),
         ],
     )
     remove_param_with_none_value(module.params)
