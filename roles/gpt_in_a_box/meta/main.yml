@@ -1,0 +1,26 @@
+---
+galaxy_info:
+  role_name: gpt_in_a_box
+  author: Ansible Cloud Team
+  description: >-
+    Provision Nutanix GPT-in-a-Box following the Nutanix Enterprise AI pattern.
+    Deploys NKP (Nutanix Kubernetes Platform), allocates GPU resources, and
+    configures model deployment for turnkey AI infrastructure.
+  company: Red Hat
+  license: GPL-3.0-or-later
+  min_ansible_version: "2.14"
+  platforms:
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+  galaxy_tags:
+    - nutanix
+    - gpu
+    - ai
+    - kubernetes
+    - nkp
+    - gpt
+    - llm
+
+dependencies: []

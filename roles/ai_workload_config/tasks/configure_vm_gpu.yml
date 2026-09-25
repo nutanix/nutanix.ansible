@@ -1,0 +1,53 @@
+---
+- name: "Get VM info for {{ _ai_config_vm_name }}"
+  nutanix.ansible.ntnx_vms_info_v2:
+    nutanix_host: "{{ ai_config_nutanix_host }}"
+    nutanix_username: "{{ ai_config_nutanix_username }}"
+    nutanix_password: "{{ ai_config_nutanix_password }}"
+    validate_certs: "{{ ai_config_nutanix_validate_certs }}"
+  register: _ai_config_all_vms
+
+- name: "Find target VM {{ _ai_config_vm_name }}"
+  ansible.builtin.set_fact:
+    _ai_config_target_vm: >-
+      {{ _ai_config_all_vms.response | default([]) |
+         selectattr('name', 'equalto', _ai_config_vm_name) | first }}
+  failed_when: _ai_config_target_vm is not defined
+
+- name: "Power off VM {{ _ai_config_vm_name }} before GPU config"
+  nutanix.ansible.ntnx_vms_power_actions_v2:
+    nutanix_host: "{{ ai_config_nutanix_host }}"
+    nutanix_username: "{{ ai_config_nutanix_username }}"
+    nutanix_password: "{{ ai_config_nutanix_password }}"
+    validate_certs: "{{ ai_config_nutanix_validate_certs }}"
+    ext_id: "{{ _ai_config_target_vm.ext_id }}"
+    state: power_off
+  when: ai_config_power_off_before
+
+- name: "Update VM {{ _ai_config_vm_name }} with GPU configuration"
+  nutanix.ansible.ntnx_vms_v2:
+    nutanix_host: "{{ ai_config_nutanix_host }}"
+    nutanix_username: "{{ ai_config_nutanix_username }}"
+    nutanix_password: "{{ ai_config_nutanix_password }}"
+    validate_certs: "{{ ai_config_nutanix_validate_certs }}"
+    state: present
+    ext_id: "{{ _ai_config_target_vm.ext_id }}"
+    gpus: >-
+      {{ range(0, ai_config_gpu_count | int) | map('regex_replace', '.*', '{}') |
+         map('combine', {
+           'mode': ai_config_gpu_mode | upper,
+           'vendor': ai_config_gpu_vendor,
+           'name': ai_config_gpu_name
+         }) | list }}
+  register: _ai_config_gpu_result
+  when: ai_config_gpu_name != ''
+
+- name: "Power on VM {{ _ai_config_vm_name }} after GPU config"
+  nutanix.ansible.ntnx_vms_power_actions_v2:
+    nutanix_host: "{{ ai_config_nutanix_host }}"
+    nutanix_username: "{{ ai_config_nutanix_username }}"
+    nutanix_password: "{{ ai_config_nutanix_password }}"
+    validate_certs: "{{ ai_config_nutanix_validate_certs }}"
+    ext_id: "{{ _ai_config_target_vm.ext_id }}"
+    state: power_on
+  when: ai_config_power_on_after

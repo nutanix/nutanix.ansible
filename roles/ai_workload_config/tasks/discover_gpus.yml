@@ -1,0 +1,15 @@
+---
+- name: Get host information for GPU discovery
+  nutanix.ansible.ntnx_hosts_info_v2:
+    nutanix_host: "{{ ai_config_nutanix_host }}"
+    nutanix_username: "{{ ai_config_nutanix_username }}"
+    nutanix_password: "{{ ai_config_nutanix_password }}"
+    validate_certs: "{{ ai_config_nutanix_validate_certs }}"
+  register: _ai_config_hosts
+
+- name: Display available GPU information
+  ansible.builtin.debug:
+    msg: >-
+      Discovered hosts: {{ _ai_config_hosts.response | default([]) | length }}.
+      GPU discovery complete. Use ai_config_gpu_name to specify the GPU device
+      name if not auto-detected.
