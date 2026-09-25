@@ -1,0 +1,545 @@
+---
+# ============================================================================
+# Phases 4–9 — PC-Targeted Operations
+# (Register, Protect, Discover, Create, Update, Cleanup)
+# ============================================================================
+
+- name: "Nutanix Full Lifecycle — Phases 4-9 (PC)"
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+
+  vars_files:
+    - vars/main.yml
+
+  vars:
+    pc_ip: "{{ pc.external_networks.ip_ranges.begin.ipv4 }}"
+
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ pc_ip }}"
+      nutanix_username: "{{ cluster_username }}"
+      nutanix_password: "{{ cluster_password }}"
+      validate_certs: false
+      nutanix_debug: true
+      nutanix_log_file: "{{ playbook_dir }}/nutanix_lifecycle_demo.log"
+
+  tasks:
+
+    - name: "Show PC connection"
+      ansible.builtin.debug:
+        msg: "PC IP set to {{ pc_ip }} — all subsequent operations target Prism Central"
+
+    # ════════════════════════════════════════════════════════════════════
+    #  PHASE 4 — REGISTER PE CLUSTER TO PRISM CENTRAL
+    # ════════════════════════════════════════════════════════════════════
+
+    - name: "========== PHASE 4: REGISTER PE CLUSTER TO PRISM CENTRAL =========="
+      ansible.builtin.debug:
+        msg: "Registering the PE cluster to the newly deployed Prism Central..."
+
+    - name: "4a. List clusters on PC to get Prism Central ext_id"
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: >-
+          config/clusterFunction/any(t:t eq
+          Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')
+      register: pc_clusters_result
+      ignore_errors: true
+
+    - name: "Set Prism Central ext_id"
+      ansible.builtin.set_fact:
+        prism_central_ext_id: "{{ pc_clusters_result.response[0].ext_id }}"
+
+    - name: "Show Prism Central ext_id"
+      ansible.builtin.debug:
+        msg: "Prism Central ext_id: {{ prism_central_ext_id }}"
+
+    - name: "4b. Register PE cluster to Prism Central"
+      nutanix.ncp.ntnx_pc_registration_v2:
+        ext_id: "{{ prism_central_ext_id }}"
+        remote_cluster:
+          aos_remote_cluster:
+            remote_cluster:
+              address:
+                ipv4:
+                  value: "{{ clusters.nodes[0].cvm_ip }}"
+              credentials:
+                authentication:
+                  username: "{{ cluster_username }}"
+                  password: "{{ cluster_password }}"
+      register: registration_result
+      ignore_errors: true
+
+    - name: "Show PE-PC registration output"
+      ansible.builtin.debug:
+        var: registration_result
+
+    - name: ">> Phase 4 Complete — Press Enter to continue to Protection & LCM"
+      ansible.builtin.pause:
+        prompt: >-
+          PE cluster registered to Prism Central.
+          Verify registration in PC, then press Enter to enable backup and run LCM...
+
+    # ════════════════════════════════════════════════════════════════════
+    #  PHASE 5 — PC PROTECTION & LCM INVENTORY
+    # ════════════════════════════════════════════════════════════════════
+
+    - name: "========== PHASE 5: PC PROTECTION & LCM INVENTORY =========="
+      ansible.builtin.debug:
+        msg: "Enabling PC backup protection and performing LCM inventory..."
+
+    # ── 5a. Fetch registered cluster UUID ──────────────────────────────
+    - name: "5a. Fetch registered clusters to get PE cluster UUID"
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: >-
+          config/clusterFunction/any(t:t eq
+          Clustermgmt.Config.ClusterFunctionRef'AOS')
+      register: registered_clusters_result
+      ignore_errors: true
+
+    - name: "Set registered PE cluster UUID"
+      ansible.builtin.set_fact:
+        registered_pe_cluster_uuid: "{{ registered_clusters_result.response[0].ext_id }}"
+
+    # ── 5b. Enable PC Backup ─────────────────────────────────────────
+    - name: "5b. Enable PC Protection — create backup target on PE cluster"
+      nutanix.ncp.ntnx_pc_backup_target_v2:
+        domain_manager_ext_id: "{{ prism_central_ext_id }}"
+        location:
+          cluster_location:
+            config:
+              ext_id: "{{ registered_pe_cluster_uuid }}"
+      register: backup_result
+      ignore_errors: true
+
+    - name: "Show backup target output"
+      ansible.builtin.debug:
+        var: backup_result
+
+    - name: ">> Backup Configured — Press Enter to run LCM Inventory"
+      ansible.builtin.pause:
+        prompt: >-
+          PC backup target created on PE cluster.
+          Press Enter to run LCM inventory...
+
+    # ── 5c. LCM Inventory ───────────────────────────────────────────
+    - name: "5c. Perform LCM Inventory"
+      nutanix.ncp.ntnx_lcm_inventory_v2:
+        cluster_ext_id: "{{ prism_central_ext_id }}"
+      register: lcm_inventory_result
+      ignore_errors: true
+
+    - name: "Show LCM inventory output"
+      ansible.builtin.debug:
+        var: lcm_inventory_result
+
+    - name: "5d. List all LCM entities"
+      nutanix.ncp.ntnx_lcm_entities_info_v2:
+      register: lcm_entities_result
+      ignore_errors: true
+
+    - name: "Show LCM entities"
+      ansible.builtin.debug:
+        msg: "Found {{ lcm_entities_result.response | length }} LCM entities"
+
+    - name: ">> Phase 5 Complete — Press Enter to continue to Infrastructure Discovery"
+      ansible.builtin.pause:
+        prompt: >-
+          LCM inventory complete — {{ lcm_entities_result.response | length }} entities found.
+          Press Enter to discover PC infrastructure for resource creation...
+
+    # ════════════════════════════════════════════════════════════════════
+    #  PHASE 6 — DISCOVER PC INFRASTRUCTURE
+    # ════════════════════════════════════════════════════════════════════
+
+    - name: "========== PHASE 6: DISCOVER PC INFRASTRUCTURE =========="
+      ansible.builtin.debug:
+        msg: "Fetching cluster, virtual switch, and storage container details from PC..."
+
+    # ── 6a. Fetch Clusters ───────────────────────────────────────────
+    - name: "6a. Fetch all clusters from PC"
+      nutanix.ncp.ntnx_clusters_info_v2:
+      register: clusters_result
+
+    - name: "Show discovered clusters"
+      ansible.builtin.debug:
+        msg: >-
+          Cluster: {{ item.name }} | ext_id: {{ item.ext_id }}
+          | functions: {{ item.config.cluster_function }}
+      loop: "{{ clusters_result.response }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: "Set cluster_uuid (first AOS cluster)"
+      ansible.builtin.set_fact:
+        cluster_uuid: >-
+          {{ (clusters_result.response
+          | selectattr('config.cluster_function', 'contains', 'AOS')
+          | first).ext_id }}
+
+    # ── 6b. Fetch Virtual Switches ───────────────────────────────────
+    - name: "6b. Fetch all virtual switches"
+      nutanix.ncp.ntnx_virtual_switches_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+      register: vs_result
+
+    - name: "Show discovered virtual switches"
+      ansible.builtin.debug:
+        msg: "VSwitch: {{ item.name }} | ext_id: {{ item.ext_id }}"
+      loop: "{{ vs_result.response }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: "Set virtual_switch_uuid (default virtual switch)"
+      ansible.builtin.set_fact:
+        virtual_switch_uuid: >-
+          {{ (vs_result.response
+          | selectattr('is_default', 'equalto', true)
+          | first).ext_id }}
+
+    # ── 6c. Fetch Storage Containers ─────────────────────────────────
+    - name: "6c. Fetch all storage containers"
+      nutanix.ncp.ntnx_storage_containers_info_v2:
+      register: storage_result
+
+    - name: "Show discovered storage containers"
+      ansible.builtin.debug:
+        msg: >-
+          Container: {{ item.name }}
+          | ext_id: {{ item.container_ext_id }}
+          | internal: {{ item.is_internal }}
+      loop: "{{ storage_result.response }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: "Set storage_container_uuid (first non-internal container)"
+      ansible.builtin.set_fact:
+        storage_container_uuid: >-
+          {{ (storage_result.response
+          | selectattr('is_internal', 'equalto', false)
+          | first).container_ext_id }}
+
+    # ── 6d. Summary ─────────────────────────────────────────────────
+    - name: "Show resolved PC infrastructure UUIDs"
+      ansible.builtin.debug:
+        msg:
+          - "Cluster UUID:           {{ cluster_uuid }}"
+          - "Virtual Switch UUID:    {{ virtual_switch_uuid }}"
+          - "Storage Container UUID: {{ storage_container_uuid }}"
+
+    - name: ">> Phase 6 Complete — Press Enter to continue to Resource Creation"
+      ansible.builtin.pause:
+        prompt: >-
+          Infrastructure discovery complete.
+          Press Enter to start creating resources on Prism Central...
+
+    # ════════════════════════════════════════════════════════════════════
+    #  PHASE 7 — CREATE RESOURCES ON PC
+    # ════════════════════════════════════════════════════════════════════
+
+    - name: "========== PHASE 7: CREATE RESOURCES ON PC =========="
+      ansible.builtin.debug:
+        msg: "Creating Image, Subnet, Category, and VM on Prism Central..."
+
+    # ── 7a. Create Disk Image ────────────────────────────────────────
+    - name: "7a. Create Disk Image from URL"
+      nutanix.ncp.ntnx_images_v2:
+        state: present
+        name: "{{ image_name }}"
+        description: "CirrOS demo disk image created by Ansible for lifecycle demo"
+        type: DISK_IMAGE
+        source:
+          url_source:
+            url: "{{ image_url }}"
+            should_allow_insecure_url: true
+      register: image_result
+
+    - name: "Show Image creation output"
+      ansible.builtin.debug:
+        var: image_result
+
+    - name: "Set image ext_id"
+      ansible.builtin.set_fact:
+        image_ext_id: "{{ image_result.ext_id }}"
+
+    - name: ">> Image Created — Press Enter to continue"
+      ansible.builtin.pause:
+        prompt: >-
+          Image '{{ image_name }}' created (ext_id: {{ image_ext_id }}).
+          Verify in Prism Central > Images, then press Enter...
+
+    # ── 7b. Create VLAN Subnet ───────────────────────────────────────
+    - name: "7b. Create VLAN Subnet with IPAM"
+      nutanix.ncp.ntnx_subnets_v2:
+        state: present
+        name: "{{ subnet_name }}"
+        description: "Demo VLAN subnet created by Ansible for lifecycle demo"
+        subnet_type: VLAN
+        cluster_reference: "{{ cluster_uuid }}"
+        virtual_switch_reference: "{{ virtual_switch_uuid }}"
+        network_id: "{{ subnet_vlan_id }}"
+        ip_config:
+          - ipv4:
+              ip_subnet:
+                ip:
+                  value: "{{ subnet_ip }}"
+                prefix_length: "{{ subnet_prefix }}"
+              default_gateway_ip:
+                value: "{{ subnet_gateway }}"
+              dhcp_server_address:
+                value: "{{ subnet_dhcp_server }}"
+              pool_list:
+                - start_ip:
+                    value: "{{ subnet_pool_start }}"
+                  end_ip:
+                    value: "{{ subnet_pool_end }}"
+      register: subnet_result
+
+    - name: "Show Subnet creation output"
+      ansible.builtin.debug:
+        var: subnet_result
+
+    - name: "Set subnet ext_id"
+      ansible.builtin.set_fact:
+        subnet_ext_id: "{{ subnet_result.ext_id }}"
+
+    - name: ">> Subnet Created — Press Enter to continue"
+      ansible.builtin.pause:
+        prompt: >-
+          Subnet '{{ subnet_name }}' created (ext_id: {{ subnet_ext_id }}).
+          Verify in Prism Central > Subnets, then press Enter...
+
+    # ── 7c. Create Category ──────────────────────────────────────────
+    - name: "7c. Create Category (key/value)"
+      nutanix.ncp.ntnx_categories_v2:
+        state: present
+        key: "{{ category_key }}"
+        value: "{{ category_value }}"
+        description: "Demo category created by Ansible for lifecycle demo"
+      register: category_result
+
+    - name: "Show Category creation output"
+      ansible.builtin.debug:
+        var: category_result
+
+    - name: "Set category ext_id"
+      ansible.builtin.set_fact:
+        category_ext_id: "{{ category_result.ext_id }}"
+
+    - name: ">> Category Created — Press Enter to continue"
+      ansible.builtin.pause:
+        prompt: >-
+          Category '{{ category_key }}:{{ category_value }}' created.
+          Verify in Prism Central > Categories, then press Enter...
+
+    # ── 7d. Create VM ────────────────────────────────────────────────
+    - name: "7d. Create VM with Image, Subnet, and Category"
+      nutanix.ncp.ntnx_vms_v2:
+        state: present
+        name: "{{ vm_name }}"
+        description: "Demo VM created by Ansible — uses image, subnet, and category"
+        cluster:
+          ext_id: "{{ cluster_uuid }}"
+        num_sockets: "{{ vm_sockets }}"
+        num_cores_per_socket: "{{ vm_cores }}"
+        memory_size_bytes: "{{ vm_memory_bytes }}"
+        disks:
+          - backing_info:
+              vm_disk:
+                disk_size_bytes: 10737418240  # 10 GB
+                data_source:
+                  reference:
+                    image_reference:
+                      image_ext_id: "{{ image_ext_id }}"
+            disk_address:
+              bus_type: SCSI
+              index: 0
+        nics:
+          - network_info:
+              subnet:
+                ext_id: "{{ subnet_ext_id }}"
+        categories:
+          - ext_id: "{{ category_ext_id }}"
+      register: vm_result
+
+    - name: "Show VM creation output"
+      ansible.builtin.debug:
+        var: vm_result
+
+    - name: "Set VM ext_id"
+      ansible.builtin.set_fact:
+        vm_ext_id: "{{ vm_result.ext_id }}"
+
+    - name: ">> Phase 7 Complete — Press Enter to continue to Updates"
+      ansible.builtin.pause:
+        prompt: >-
+          VM '{{ vm_name }}' created (ext_id: {{ vm_ext_id }}).
+          All resources created! Press Enter to update resources...
+
+    # ════════════════════════════════════════════════════════════════════
+    #  PHASE 8 — UPDATE RESOURCES
+    # ════════════════════════════════════════════════════════════════════
+
+    - name: "========== PHASE 8: UPDATE RESOURCES =========="
+      ansible.builtin.debug:
+        msg: "Demonstrating Day-2 operations — updating Category, VM, and Image..."
+
+    # ── 8a. Update Category ──────────────────────────────────────────
+    - name: "8a. Update Category — change value to 'staging'"
+      nutanix.ncp.ntnx_categories_v2:
+        state: present
+        ext_id: "{{ category_ext_id }}"
+        key: "{{ category_key }}"
+        value: "staging"
+        description: "Category updated by Ansible — now staging"
+      register: category_update_result
+
+    - name: "Show Category update output"
+      ansible.builtin.debug:
+        var: category_update_result
+
+    - name: ">> Category Updated — Press Enter to continue"
+      ansible.builtin.pause:
+        prompt: >-
+          Category value changed from 'development' to 'staging'.
+          Verify in Prism Central, then press Enter...
+
+    # ── 8b. Update VM ────────────────────────────────────────────────
+    - name: "8b. Update VM — scale up to 2 sockets and 2 GB memory"
+      nutanix.ncp.ntnx_vms_v2:
+        state: present
+        ext_id: "{{ vm_ext_id }}"
+        name: "{{ vm_name }}-updated"
+        description: "Demo VM updated by Ansible — scaled up to 2 sockets, 2 GB RAM"
+        num_sockets: 2
+        num_cores_per_socket: 1
+        memory_size_bytes: 2147483648  # 2 GB
+      register: vm_update_result
+
+    - name: "Show VM update output"
+      ansible.builtin.debug:
+        var: vm_update_result
+
+    - name: ">> VM Updated — Press Enter to continue"
+      ansible.builtin.pause:
+        prompt: >-
+          VM scaled up: 2 sockets, 2 GB RAM, renamed to '{{ vm_name }}-updated'.
+          Verify in Prism Central, then press Enter...
+
+    # ── 8c. Update Image ────────────────────────────────────────────
+    - name: "8c. Update Image — rename"
+      nutanix.ncp.ntnx_images_v2:
+        state: present
+        ext_id: "{{ image_ext_id }}"
+        name: "{{ image_name }}-updated"
+        description: "Demo image renamed by Ansible"
+        type: DISK_IMAGE
+      register: image_update_result
+
+    - name: "Show Image update output"
+      ansible.builtin.debug:
+        var: image_update_result
+
+    - name: ">> Phase 8 Complete — Press Enter to continue to Cleanup"
+      ansible.builtin.pause:
+        prompt: >-
+          Image renamed to '{{ image_name }}-updated'. All updates complete!
+          Press Enter to begin cleanup (delete resources in reverse order)...
+
+    # ════════════════════════════════════════════════════════════════════
+    #  PHASE 9 — CLEANUP: Delete Resources (reverse order)
+    # ════════════════════════════════════════════════════════════════════
+
+    - name: "========== PHASE 9: CLEANUP — Delete Resources (reverse order) =========="
+      ansible.builtin.debug:
+        msg: "Cleaning up all demo resources in reverse order..."
+
+    # ── 9a. Delete VM ────────────────────────────────────────────────
+    - name: "9a. Delete VM"
+      nutanix.ncp.ntnx_vms_v2:
+        state: absent
+        ext_id: "{{ vm_ext_id }}"
+      register: vm_delete_result
+
+    - name: "Show VM deletion output"
+      ansible.builtin.debug:
+        var: vm_delete_result
+
+    - name: ">> VM Deleted — Press Enter to continue"
+      ansible.builtin.pause:
+        prompt: >-
+          VM deleted. Verify in Prism Central, then press Enter...
+
+    # ── 9b. Delete Category ──────────────────────────────────────────
+    - name: "9b. Delete Category"
+      nutanix.ncp.ntnx_categories_v2:
+        state: absent
+        ext_id: "{{ category_ext_id }}"
+      register: category_delete_result
+
+    - name: "Show Category deletion output"
+      ansible.builtin.debug:
+        var: category_delete_result
+
+    - name: ">> Category Deleted — Press Enter to continue"
+      ansible.builtin.pause:
+        prompt: >-
+          Category deleted. Press Enter to continue...
+
+    # ── 9c. Delete Subnet ────────────────────────────────────────────
+    - name: "9c. Delete Subnet"
+      nutanix.ncp.ntnx_subnets_v2:
+        state: absent
+        ext_id: "{{ subnet_ext_id }}"
+      register: subnet_delete_result
+
+    - name: "Show Subnet deletion output"
+      ansible.builtin.debug:
+        var: subnet_delete_result
+
+    - name: ">> Subnet Deleted — Press Enter to continue"
+      ansible.builtin.pause:
+        prompt: >-
+          Subnet deleted. Press Enter to continue...
+
+    # ── 9d. Delete Image ────────────────────────────────────────────
+    - name: "9d. Delete Image"
+      nutanix.ncp.ntnx_images_v2:
+        state: absent
+        ext_id: "{{ image_ext_id }}"
+      register: image_delete_result
+
+    - name: "Show Image deletion output"
+      ansible.builtin.debug:
+        var: image_delete_result
+
+    - name: ">> Phase 9 Complete — Press Enter to finish"
+      ansible.builtin.pause:
+        prompt: >-
+          All demo resources cleaned up. Press Enter to finish the demo...
+
+    # ════════════════════════════════════════════════════════════════════
+    #  DONE
+    # ════════════════════════════════════════════════════════════════════
+
+    - name: "========== DEMO COMPLETE =========="
+      ansible.builtin.debug:
+        msg:
+          - "========================================================"
+          - "  Nutanix Full Lifecycle Demo — Complete!"
+          - "========================================================"
+          - ""
+          - "  Full lifecycle demonstrated:"
+          - "    Phase 1  Foundation       — Imaged nodes & created cluster"
+          - "    Phase 2  PE Setup         — Reset credentials, created PE subnet"
+          - "    Phase 3  Deploy PC        — Deployed Prism Central"
+          - "    Phase 4  Register         — Registered PE to PC"
+          - "    Phase 5  Protect & LCM    — Enabled backup, ran LCM inventory"
+          - "    Phase 6  Discover         — Discovered clusters, vswitches, storage"
+          - "    Phase 7  Create Resources — Image, Subnet, Category, VM"
+          - "    Phase 8  Update Resources — Modified Category, VM, Image"
+          - "    Phase 9  Cleanup          — Deleted all demo resources"
+          - ""
+          - "  All operations performed via nutanix.ncp Ansible collection."
+          - "========================================================"
