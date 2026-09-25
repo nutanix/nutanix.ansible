@@ -44,6 +44,18 @@ options:
       - This field is only supported for Prism Central.
     type: str
     required: false
+  custom_headers:
+    description:
+      - Custom HTTP headers to add to all API requests. Useful for environments that require
+        additional headers such as Cloudflare Access service tokens.
+      - Headers can also be supplied via environment variables using the C(NUTANIX_HEADER_) prefix
+        (e.g. C(NUTANIX_HEADER_CF_ACCESS_CLIENT_ID) becomes C(Cf-Access-Client-Id)).
+        Config values take precedence over environment variables.
+      - When proxying through Cloudflare, add a cache rule to your Cloudflare zone that preserves
+        C(ETag) response headers. The Nutanix v4 API requires ETags for power actions and updates
+        (via the C(If-Match) request header), and Cloudflare strips them by default.
+    type: dict
+    required: false
   validate_certs:
     description:
         - Set value to C(False) to skip validation for self signed certificates
