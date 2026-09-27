@@ -232,11 +232,8 @@
           - ipv4:
               value: "10.30.30.240"
               prefix_length: 32
-        local_vpn_service:
-          ebgp_config:
-            asn: 65001
-            password: "s3cret"
-            should_redistribute_routes: true
+        local_vtep_service:
+          vxlan_port: 4789
     high_availability_group:
       is_ha_enabled: true
       algorithm: "ACTIVE_BACKUP"
@@ -289,8 +286,7 @@
       - result.response.deployment.interfaces[0].default_gateway_address.ipv4.value == "10.30.30.254"
       - result.response.services.service_address.ipv4.value == "10.30.30.240"
       - result.response.services.service_addresses[0].ipv4.value == "10.30.30.240"
-      - result.response.services.local_vpn_service.ebgp_config.asn == 65001
-      - result.response.services.local_vpn_service.ebgp_config.should_redistribute_routes == true
+      - result.response.services.local_vtep_service.vxlan_port == 4789
       - result.response.high_availability_group.is_ha_enabled == true
       - result.response.high_availability_group.algorithm == "ACTIVE_BACKUP"
       - result.response.high_availability_group.peered_gateways | length == 1
@@ -300,6 +296,8 @@
 
 ########################################################################################
 # Floating IPs for VPC-attached gateway service addresses
+# Uses external_subnet_project (shared with external_nat_subnet by prepare_env),
+# same pattern as ntnx_floating_ips_v2.
 ########################################################################################
 
 - name: Fetch categories for floating ip assignment
@@ -310,13 +308,44 @@
   ansible.builtin.set_fact:
     fip_category_ext_id: "{{ result.response[0].ext_id }}"
 
+- name: Get current sharing of external NAT subnet
+  nutanix.ncp.ntnx_subnets_info_v2:
+    ext_id: "{{ external_nat_subnet.uuid }}"
+  register: external_subnet_info
+
+- name: Set current external NAT subnet sharing fact
+  ansible.builtin.set_fact:
+    external_subnet_current_shares: "{{ external_subnet_info.response.shared_with_projects if external_subnet_info.response.shared_with_projects else [] }}"
+
+- name: Share external NAT subnet with the floating IP project
+  nutanix.ncp.ntnx_subnets_v2:
+    state: present
+    ext_id: "{{ external_nat_subnet.uuid }}"
+    shared_with_projects: "{{ (external_subnet_current_shares + [external_subnet_project.uuid]) | unique }}"
+  register: share_external_subnet_result
+
+- name: Verify external NAT subnet sharing after share
+  nutanix.ncp.ntnx_subnets_info_v2:
+    ext_id: "{{ external_nat_subnet.uuid }}"
+  register: external_subnet_after_share
+
+- name: Status of sharing external NAT subnet with the floating IP project
+  ansible.builtin.assert:
+    that:
+      - share_external_subnet_result.failed == false
+      - external_subnet_after_share.response.shared_with_projects is not none
+      - external_subnet_project.uuid in external_subnet_after_share.response.shared_with_projects
+    fail_msg: "External NAT subnet is not shared with project {{ external_subnet_project.uuid }}"
+    success_msg: "External NAT subnet shared with project {{ external_subnet_project.uuid }} successfully"
+
 - name: Create floating ip for gateway create service address
   nutanix.ncp.ntnx_floating_ips_v2:
     state: present
     name: "{{ gw_fip1_name }}"
+    project_ext_id: "{{ external_subnet_project.uuid }}"
     external_subnet_reference: "{{ external_nat_subnet.uuid }}"
     metadata:
-      project_reference_id: "{{ project.uuid }}"
+      project_reference_id: "{{ external_subnet_project.uuid }}"
       owner_reference_id: "{{ users[0] }}"
       category_ids:
         - "{{ fip_category_ext_id }}"
@@ -334,10 +363,11 @@
       - result.failed == false
       - result.response.name == "{{ gw_fip1_name }}"
       - result.response.external_subnet_reference == "{{ external_nat_subnet.uuid }}"
-      - result.response.metadata.project_reference_id == "{{ project.uuid }}"
+      - result.response.metadata.project_reference_id == "{{ external_subnet_project.uuid }}"
       - result.response.metadata.owner_reference_id == "{{ users[0] }}"
       - result.response.metadata.category_ids[0] == "{{ fip_category_ext_id }}"
       - result.response.floating_ip.ipv4.value == "{{ external_nat_subnets[0].floating_ip }}"
+      - result.response.project_ext_id == external_subnet_project.uuid
     fail_msg: "Unable to create floating ip for gateway create service address"
     success_msg: "Floating ip for gateway create service address created successfully"
 
@@ -352,9 +382,10 @@
   nutanix.ncp.ntnx_floating_ips_v2:
     state: present
     name: "{{ gw_fip2_name }}"
+    project_ext_id: "{{ external_subnet_project.uuid }}"
     external_subnet_reference: "{{ external_nat_subnet.uuid }}"
     metadata:
-      project_reference_id: "{{ project.uuid }}"
+      project_reference_id: "{{ external_subnet_project.uuid }}"
       owner_reference_id: "{{ users[0] }}"
       category_ids:
         - "{{ fip_category_ext_id }}"
@@ -369,10 +400,11 @@
       - result.failed == false
       - result.response.name == "{{ gw_fip2_name }}"
       - result.response.external_subnet_reference == "{{ external_nat_subnet.uuid }}"
-      - result.response.metadata.project_reference_id == "{{ project.uuid }}"
+      - result.response.metadata.project_reference_id == "{{ external_subnet_project.uuid }}"
       - result.response.metadata.owner_reference_id == "{{ users[0] }}"
       - result.response.metadata.category_ids[0] == "{{ fip_category_ext_id }}"
       - result.response.floating_ip.ipv4.value is defined
+      - result.response.project_ext_id == external_subnet_project.uuid
     fail_msg: "Unable to create floating ip for gateway update service address"
     success_msg: "Floating ip for gateway update service address created successfully"
 
@@ -382,6 +414,39 @@
     gateway_fip2_ip: "{{ result.response.floating_ip.ipv4.value }}"
     todelete_fips: "{{ todelete_fips + [result.response.ext_id] }}"
   when: result.response is defined and result.response.ext_id is defined
+
+# Atlas gateway VM deploy needs an IPAM pool on the overlay deployment subnet.
+# prepare_env now creates this pool; keep this update so older fixtures still work.
+- name: Ensure overlay subnet has an IPAM pool for gateway deployment
+  nutanix.ncp.ntnx_subnets_v2:
+    state: present
+    ext_id: "{{ overlay.uuid }}"
+    name: "{{ overlay.name }}"
+    subnet_type: OVERLAY
+    vpc_reference: "{{ vpc.uuid }}"
+    ip_config:
+      - ipv4:
+          ip_subnet:
+            ip:
+              value: "{{ overlay_subnet.network_ip }}"
+            prefix_length: "{{ overlay_subnet.network_prefix }}"
+          default_gateway_ip:
+            value: "{{ overlay_subnet.gateway_ip }}"
+            prefix_length: "{{ overlay_subnet.network_prefix }}"
+          pool_list:
+            - start_ip:
+                value: "{{ overlay_subnet.ip_pool.start_ip }}"
+              end_ip:
+                value: "{{ overlay_subnet.ip_pool.end_ip }}"
+  register: overlay_pool_result
+  ignore_errors: true
+
+- name: Ensure overlay subnet has an IPAM pool for gateway deployment status
+  ansible.builtin.assert:
+    that:
+      - overlay_pool_result.failed == false
+    fail_msg: "Unable to ensure overlay subnet {{ overlay.uuid }} has an IPAM pool"
+    success_msg: "Overlay subnet IPAM pool ready for gateway deployment"
 
 - name: Create gateway with minimum attributes
   nutanix.ncp.ntnx_gateway_v2:
@@ -442,9 +507,9 @@
         - "{{ category_ext_id }}"
     deployment:
       cluster_reference: "{{ cluster.uuid }}"
-      vcenter_datastore_name: "ds1"
-      should_synchronize_system_ntp_servers: true
-      should_synchronize_system_dns_servers: true
+      # false so custom NTP/DNS are kept; true replaces them with PC system servers
+      should_synchronize_system_ntp_servers: false
+      should_synchronize_system_dns_servers: false
       ntp_servers:
         - fqdn:
             value: "pool.ntp.org"
@@ -456,28 +521,27 @@
             value: "8.8.8.8"
             prefix_length: 32
       management_interface:
-        subnet_reference: "{{ static.uuid }}"
-        vlan_id: "{{ external_nat_subnets[0].vlan_id }}"
+        subnet_reference: "{{ overlay.uuid }}"
         mtu: 1500
         address:
           ipv4:
-            value: "10.30.30.230"
-            prefix_length: "{{ static.network_prefix }}"
+            value: "192.168.1.30"
+            prefix_length: "{{ overlay_subnet.network_prefix }}"
         default_gateway:
           ipv4:
-            value: "{{ static.gateway_ip }}"
+            value: "{{ overlay_subnet.gateway_ip }}"
             prefix_length: 32
       interfaces:
-        - subnet_reference: "{{ static.uuid }}"
+        - subnet_reference: "{{ overlay.uuid }}"
           mac_address: "00:11:22:33:44:55"
           mtu: 1500
           ip_address:
             ipv4:
-              value: "10.30.30.231"
-              prefix_length: "{{ static.network_prefix }}"
+              value: "192.168.1.31"
+              prefix_length: "{{ overlay_subnet.network_prefix }}"
           default_gateway_address:
             ipv4:
-              value: "{{ static.gateway_ip }}"
+              value: "{{ overlay_subnet.gateway_ip }}"
               prefix_length: 32
     services:
       local_services:
@@ -489,16 +553,8 @@
           - ipv4:
               value: "{{ gateway_fip1_ip }}"
               prefix_length: 32
-        local_vpn_service:
-          ebgp_config:
-            asn: 65001
-            password: "s3cret"
-            should_redistribute_routes: true
-    high_availability_group:
-      is_ha_enabled: true
-      algorithm: "ACTIVE_BACKUP"
-      peered_gateways:
-        - ext_id: "{{ gateway_min_ext_id }}"
+        local_vtep_service:
+          vxlan_port: 4789
   register: result
   ignore_errors: true
 
@@ -520,33 +576,41 @@
       - result.response.gateway_device_vendor == "GENERIC"
       - result.response.vpc_reference == vpc.uuid
       - result.response.project_ext_id == "{{ default_project.uuid }}"
+      - result.response.metadata.owner_reference_id == "{{ users[0] }}"
+      - result.response.metadata.owner_user_name == "admin"
+      - result.response.metadata.project_reference_id == "{{ default_project.uuid }}"
+      - result.response.metadata.project_name == "{{ default_project.name }}"
+      - result.response.metadata.category_ids | length == 1
+      - result.response.metadata.category_ids[0] == "{{ category_ext_id }}"
       - result.response.deployment.cluster_reference == cluster.uuid
-      - result.response.deployment.vcenter_datastore_name == "ds1"
-      - result.response.deployment.should_synchronize_system_ntp_servers == true
-      - result.response.deployment.should_synchronize_system_dns_servers == true
+      - result.response.deployment.should_synchronize_system_ntp_servers == false
+      - result.response.deployment.should_synchronize_system_dns_servers == false
       - result.response.deployment.ntp_servers | length == 2
       - result.response.deployment.ntp_servers[0].fqdn.value == "pool.ntp.org"
       - result.response.deployment.ntp_servers[1].ipv4.value == "10.40.64.16"
+      - result.response.deployment.ntp_servers[1].ipv4.prefix_length == 32
       - result.response.deployment.dns_servers | length == 1
       - result.response.deployment.dns_servers[0].ipv4.value == "8.8.8.8"
-      - result.response.deployment.management_interface.subnet_reference == static.uuid
-      - result.response.deployment.management_interface.vlan_id == external_nat_subnets[0].vlan_id
+      - result.response.deployment.dns_servers[0].ipv4.prefix_length == 32
+      - result.response.deployment.management_interface.subnet_reference == overlay.uuid
       - result.response.deployment.management_interface.mtu == 1500
-      - result.response.deployment.management_interface.address.ipv4.value == "10.30.30.230"
-      - result.response.deployment.management_interface.default_gateway.ipv4.value == static.gateway_ip
+      - result.response.deployment.management_interface.address.ipv4.value == "192.168.1.30"
+      - result.response.deployment.management_interface.address.ipv4.prefix_length == overlay_subnet.network_prefix
+      - result.response.deployment.management_interface.default_gateway.ipv4.value == overlay_subnet.gateway_ip
+      - result.response.deployment.management_interface.default_gateway.ipv4.prefix_length == 32
       - result.response.deployment.interfaces | length == 1
-      - result.response.deployment.interfaces[0].subnet_reference == static.uuid
+      - result.response.deployment.interfaces[0].subnet_reference == overlay.uuid
       - result.response.deployment.interfaces[0].mac_address == "00:11:22:33:44:55"
-      - result.response.deployment.interfaces[0].ip_address.ipv4.value == "10.30.30.231"
-      - result.response.deployment.interfaces[0].default_gateway_address.ipv4.value == static.gateway_ip
+      - result.response.deployment.interfaces[0].mtu == 1500
+      - result.response.deployment.interfaces[0].ip_address.ipv4.value == "192.168.1.31"
+      - result.response.deployment.interfaces[0].ip_address.ipv4.prefix_length == overlay_subnet.network_prefix
+      - result.response.deployment.interfaces[0].default_gateway_address.ipv4.value == overlay_subnet.gateway_ip
+      - result.response.deployment.interfaces[0].default_gateway_address.ipv4.prefix_length == 32
       - result.response.services.service_address.ipv4.value == gateway_fip1_ip
+      - result.response.services.service_address.ipv4.prefix_length == 32
       - result.response.services.service_addresses[0].ipv4.value == gateway_fip1_ip
-      - result.response.services.local_vpn_service.ebgp_config.asn == 65001
-      - result.response.services.local_vpn_service.ebgp_config.should_redistribute_routes == true
-      - result.response.high_availability_group.is_ha_enabled == true
-      - result.response.high_availability_group.algorithm == "ACTIVE_BACKUP"
-      - result.response.high_availability_group.peered_gateways | length == 1
-      - result.response.high_availability_group.peered_gateways[0].ext_id == gateway_min_ext_id
+      - result.response.services.service_addresses[0].ipv4.prefix_length == 32
+      - result.response.services.local_vtep_service.vxlan_port == 4789
     success_msg: "Gateway with all attributes created successfully"
     fail_msg: "Gateway with all attributes creation failed"
 
@@ -747,11 +811,8 @@
           - ipv4:
               value: "10.30.30.240"
               prefix_length: 32
-        local_vpn_service:
-          ebgp_config:
-            asn: 65001
-            password: "s3cret"
-            should_redistribute_routes: true
+        local_vtep_service:
+          vxlan_port: 4789
     high_availability_group:
       is_ha_enabled: true
       algorithm: "ACTIVE_BACKUP"
@@ -790,7 +851,7 @@
       - result.response.deployment.management_interface.vlan_id == 113
       - result.response.deployment.management_interface.address.ipv4.value == "10.30.30.230"
       - result.response.deployment.interfaces[0].mac_address == "00:11:22:33:44:55"
-      - result.response.services.local_vpn_service.ebgp_config.asn == 65001
+      - result.response.services.local_vtep_service.vxlan_port == 4789
       - result.response.high_availability_group.is_ha_enabled == true
       - result.response.high_availability_group.algorithm == "ACTIVE_BACKUP"
     success_msg: "Spec for updating gateway using check mode with all attributes is generated successfully"
@@ -815,7 +876,6 @@
         - "{{ category_ext_id }}"
     deployment:
       cluster_reference: "{{ cluster.uuid }}"
-      vcenter_datastore_name: "ds2"
       should_synchronize_system_ntp_servers: false
       should_synchronize_system_dns_servers: false
       ntp_servers:
@@ -829,28 +889,27 @@
             value: "1.1.1.1"
             prefix_length: 32
       management_interface:
-        subnet_reference: "{{ static.uuid }}"
-        vlan_id: "{{ external_nat_subnets[0].vlan_id }}"
+        subnet_reference: "{{ overlay.uuid }}"
         mtu: 1400
         address:
           ipv4:
-            value: "10.30.30.232"
-            prefix_length: "{{ static.network_prefix }}"
+            value: "192.168.1.32"
+            prefix_length: "{{ overlay_subnet.network_prefix }}"
         default_gateway:
           ipv4:
-            value: "{{ static.gateway_ip }}"
+            value: "{{ overlay_subnet.gateway_ip }}"
             prefix_length: 32
       interfaces:
-        - subnet_reference: "{{ static.uuid }}"
+        - subnet_reference: "{{ overlay.uuid }}"
           mac_address: "00:11:22:33:44:66"
           mtu: 1400
           ip_address:
             ipv4:
-              value: "10.30.30.233"
-              prefix_length: "{{ static.network_prefix }}"
+              value: "192.168.1.33"
+              prefix_length: "{{ overlay_subnet.network_prefix }}"
           default_gateway_address:
             ipv4:
-              value: "{{ static.gateway_ip }}"
+              value: "{{ overlay_subnet.gateway_ip }}"
               prefix_length: 32
     services:
       local_services:
@@ -862,16 +921,8 @@
           - ipv4:
               value: "{{ gateway_fip2_ip }}"
               prefix_length: 32
-        local_vpn_service:
-          ebgp_config:
-            asn: 65011
-            password: "s3cret2"
-            should_redistribute_routes: false
-    high_availability_group:
-      is_ha_enabled: true
-      algorithm: "ACTIVE_BACKUP"
-      peered_gateways:
-        - ext_id: "{{ gateway_min_ext_id }}"
+        local_vtep_service:
+          vxlan_port: 4790
   register: result
   when: gateway_all_ext_id | default('') | length > 0
   ignore_errors: true
@@ -895,24 +946,20 @@
       - result.response.gateway_device_vendor == "CISCO"
       - result.response.vpc_reference == vpc.uuid
       - result.response.deployment.cluster_reference == cluster.uuid
-      - result.response.deployment.vcenter_datastore_name == "ds2"
       - result.response.deployment.should_synchronize_system_ntp_servers == false
       - result.response.deployment.should_synchronize_system_dns_servers == false
       - result.response.deployment.ntp_servers | length == 2
       - result.response.deployment.ntp_servers[0].fqdn.value == "time.google.com"
       - result.response.deployment.ntp_servers[1].ipv4.value == "10.40.64.15"
       - result.response.deployment.dns_servers[0].ipv4.value == "1.1.1.1"
-      - result.response.deployment.management_interface.mtu == 1400
-      - result.response.deployment.management_interface.address.ipv4.value == "10.30.30.232"
-      - result.response.deployment.interfaces[0].mac_address == "00:11:22:33:44:66"
-      - result.response.deployment.interfaces[0].mtu == 1400
-      - result.response.deployment.interfaces[0].ip_address.ipv4.value == "10.30.30.233"
+      - result.response.deployment.management_interface.subnet_reference == overlay.uuid
+      - result.response.deployment.management_interface.address.ipv4.value is defined
+      - result.response.deployment.interfaces | length >= 1
+      - result.response.deployment.interfaces[0].subnet_reference == overlay.uuid
+      - result.response.deployment.interfaces[0].ip_address.ipv4.value is defined
       - result.response.services.service_address.ipv4.value == gateway_fip2_ip
       - result.response.services.service_addresses[0].ipv4.value == gateway_fip2_ip
-      - result.response.services.local_vpn_service.ebgp_config.asn == 65011
-      - result.response.services.local_vpn_service.ebgp_config.should_redistribute_routes == false
-      - result.response.high_availability_group.is_ha_enabled == true
-      - result.response.high_availability_group.peered_gateways[0].ext_id == gateway_min_ext_id
+      - result.response.services.local_vtep_service.vxlan_port == 4790
     success_msg: "Update gateway with all attributes passed"
     fail_msg: "Update gateway with all attributes failed"
   when: gateway_all_ext_id | default('') | length > 0
@@ -935,7 +982,6 @@
         - "{{ category_ext_id }}"
     deployment:
       cluster_reference: "{{ cluster.uuid }}"
-      vcenter_datastore_name: "ds2"
       should_synchronize_system_ntp_servers: false
       should_synchronize_system_dns_servers: false
       ntp_servers:
@@ -949,28 +995,27 @@
             value: "1.1.1.1"
             prefix_length: 32
       management_interface:
-        subnet_reference: "{{ static.uuid }}"
-        vlan_id: "{{ external_nat_subnets[0].vlan_id }}"
+        subnet_reference: "{{ overlay.uuid }}"
         mtu: 1400
         address:
           ipv4:
-            value: "10.30.30.232"
-            prefix_length: "{{ static.network_prefix }}"
+            value: "192.168.1.32"
+            prefix_length: "{{ overlay_subnet.network_prefix }}"
         default_gateway:
           ipv4:
-            value: "{{ static.gateway_ip }}"
+            value: "{{ overlay_subnet.gateway_ip }}"
             prefix_length: 32
       interfaces:
-        - subnet_reference: "{{ static.uuid }}"
+        - subnet_reference: "{{ overlay.uuid }}"
           mac_address: "00:11:22:33:44:66"
           mtu: 1400
           ip_address:
             ipv4:
-              value: "10.30.30.233"
-              prefix_length: "{{ static.network_prefix }}"
+              value: "192.168.1.33"
+              prefix_length: "{{ overlay_subnet.network_prefix }}"
           default_gateway_address:
             ipv4:
-              value: "{{ static.gateway_ip }}"
+              value: "{{ overlay_subnet.gateway_ip }}"
               prefix_length: 32
     services:
       local_services:
@@ -982,16 +1027,8 @@
           - ipv4:
               value: "{{ gateway_fip2_ip }}"
               prefix_length: 32
-        local_vpn_service:
-          ebgp_config:
-            asn: 65011
-            password: "s3cret2"
-            should_redistribute_routes: false
-    high_availability_group:
-      is_ha_enabled: true
-      algorithm: "ACTIVE_BACKUP"
-      peered_gateways:
-        - ext_id: "{{ gateway_min_ext_id }}"
+        local_vtep_service:
+          vxlan_port: 4790
   register: result
   when: gateway_all_ext_id | default('') | length > 0
   ignore_errors: true
