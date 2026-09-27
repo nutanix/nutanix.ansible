@@ -567,13 +567,17 @@ options:
                     required: false
               peer_igp_config:
                 description:
-                  - Describes the routing protocol configuration spec needed by this gateway to peer and learn routes from internal routers using either iBGP or OSPF.
+                  - Internal routing configuration (Static, OSPF, or iBGP).
+                  - Supported only for VLAN-attached gateways; not supported for VPC-attached gateways
+                    (use external Static or eBGP instead).
+                  - Exactly one of C(ospf_config), C(ibgp_config_list), or C(local_prefix_list) must be specified.
                 type: dict
                 required: false
                 suboptions:
                   ospf_config:
                     description:
                       - OSPF configuration.
+                      - Mutually exclusive with C(ibgp_config_list) and C(local_prefix_list).
                     type: dict
                     required: false
                     suboptions:
@@ -598,6 +602,7 @@ options:
                   ibgp_config_list:
                     description:
                       - iBGP configuration.
+                      - Mutually exclusive with C(ospf_config) and C(local_prefix_list).
                     type: list
                     elements: dict
                     required: false
@@ -624,7 +629,8 @@ options:
                         required: false
                   local_prefix_list:
                     description:
-                      - List of local prefixes to be advertised over eBGP.
+                      - Static local prefixes (static internal routing).
+                      - Mutually exclusive with C(ospf_config) and C(ibgp_config_list).
                     type: list
                     elements: dict
                     required: false
@@ -797,13 +803,17 @@ options:
                     required: false
               peer_igp_config:
                 description:
-                  - Describes the routing protocol configuration spec needed by this gateway to peer and learn routes from internal routers using either iBGP or OSPF.
+                  - Internal routing configuration (Static, OSPF, or iBGP).
+                  - Supported only for VLAN-attached gateways; not supported for VPC-attached gateways
+                    (use external Static or eBGP instead).
+                  - Exactly one of C(ospf_config), C(ibgp_config_list), or C(local_prefix_list) must be specified.
                 type: dict
                 required: false
                 suboptions:
                   ospf_config:
                     description:
                       - OSPF configuration.
+                      - Mutually exclusive with C(ibgp_config_list) and C(local_prefix_list).
                     type: dict
                     required: false
                     suboptions:
@@ -828,6 +838,7 @@ options:
                   ibgp_config_list:
                     description:
                       - iBGP configuration.
+                      - Mutually exclusive with C(ospf_config) and C(local_prefix_list).
                     type: list
                     elements: dict
                     required: false
@@ -854,7 +865,8 @@ options:
                         required: false
                   local_prefix_list:
                     description:
-                      - List of local prefixes to be advertised over eBGP.
+                      - Static local prefixes (static internal routing).
+                      - Mutually exclusive with C(ospf_config) and C(ibgp_config_list).
                     type: list
                     elements: dict
                     required: false
@@ -1229,7 +1241,6 @@ READ_ONLY_FIELDS = (
     "status",
     "vpc",
     "vm",
-    "metadata",
     "links",
     "ext_id",
     "tenant_id",
@@ -1473,6 +1484,9 @@ def _get_local_services_spec():
                     type="dict",
                     options=_get_peer_igp_config_spec(),
                     required=False,
+                    mutually_exclusive=[
+                        ("ospf_config", "ibgp_config_list", "local_prefix_list"),
+                    ],
                     obj=networking_sdk.InternalRoutingConfig,
                 ),
             ),
@@ -1522,6 +1536,9 @@ def _get_remote_services_spec():
                     type="dict",
                     options=_get_peer_igp_config_spec(),
                     required=False,
+                    mutually_exclusive=[
+                        ("ospf_config", "ibgp_config_list", "local_prefix_list"),
+                    ],
                     obj=networking_sdk.InternalRoutingConfig,
                 ),
             ),
