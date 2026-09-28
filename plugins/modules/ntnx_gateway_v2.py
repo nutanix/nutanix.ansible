@@ -131,9 +131,9 @@ options:
     suboptions:
       cluster_reference:
         description:
-          - Cluster reference required to identify which on-prem cluster to deploy the gateway VM on.
+          - Cluster reference used to identify which on-prem cluster to deploy the gateway VM on.
         type: str
-        required: true
+        required: false
       vcenter_datastore_name:
         description:
           - vCenter datastore to which the gateway disks and images will be uploaded during deployment.
@@ -200,7 +200,7 @@ options:
                 description:
                   - The fully qualified domain name of the host.
                 type: str
-                required: true
+                required: false
       dns_servers:
         description:
           - List of DNS servers configured on the gateway.
@@ -1008,7 +1008,7 @@ options:
             description:
               - External ID of the peered gateway.
             type: str
-            required: true
+            required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -1282,7 +1282,7 @@ def _get_ip_address_or_fqdn_spec():
     spec = _get_ip_address_spec()
     spec["fqdn"] = dict(
         type="dict",
-        options=dict(value=dict(type="str", required=True)),
+        options=dict(value=dict(type="str", required=False)),
         required=False,
         obj=networking_sdk.FQDN,
     )
@@ -1331,7 +1331,7 @@ def _get_gateway_interface_spec():
 
 def _get_deployment_spec():
     return dict(
-        cluster_reference=dict(type="str", required=True),
+        cluster_reference=dict(type="str", required=False),
         vcenter_datastore_name=dict(type="str", required=False),
         should_synchronize_system_ntp_servers=dict(type="bool", required=False),
         should_synchronize_system_dns_servers=dict(type="bool", required=False),
@@ -1614,7 +1614,7 @@ def _get_ha_group_spec():
             elements="dict",
             required=False,
             options=dict(
-                ext_id=dict(type="str", required=True),
+                ext_id=dict(type="str", required=False),
             ),
             obj=networking_sdk.PeeredGateway,
         ),

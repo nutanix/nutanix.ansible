@@ -1,0 +1,165 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a remote BGP network gateway with minimum attributes
+# 2. Create a local VTEP network gateway with all applicable attributes
+# 3. Get gateway using ext_id
+# 4. List all gateways
+# 5. List gateways with filter
+# 6. List gateways with limit
+# 7. Update gateway (name / description)
+# 8. Upgrade gateway
+# 9. Delete gateway
+
+- name: Network Gateway v2 playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        gateway_name: "gateway_ansible_example"
+        vpc_uuid: "<vpc_uuid>"
+        project_uuid: "<project_uuid>"
+        project_name: "<project_name>"
+        owner_uuid: "<owner_user_uuid>"
+        cluster_uuid: "<cluster_uuid>"
+        overlay_subnet_uuid: "<overlay_subnet_uuid>"
+        overlay_gateway_ip: "192.168.50.1"
+        floating_ip: "<floating_ip>"
+
+    - name: Create gateway with minimum attributes
+      nutanix.ncp.ntnx_gateway_v2:
+        state: present
+        name: "{{ gateway_name }}_min"
+        services:
+          remote_services:
+            remote_bgp_service:
+              asn: 65001
+              address:
+                ipv4:
+                  value: "192.0.2.10"
+                  prefix_length: 32
+      register: result
+      ignore_errors: true
+
+    - name: Set gateway min ext_id
+      ansible.builtin.set_fact:
+        gateway_min_ext_id: "{{ result.ext_id }}"
+
+    - name: Create gateway with all attributes
+      nutanix.ncp.ntnx_gateway_v2:
+        state: present
+        name: "{{ gateway_name }}_all"
+        description: "Gateway created by Ansible example playbook with all attributes"
+        gateway_device_vendor: "GENERIC"
+        vpc_reference: "{{ vpc_uuid }}"
+        project_ext_id: "{{ project_uuid }}"
+        metadata:
+          owner_reference_id: "{{ owner_uuid }}"
+          owner_user_name: "admin"
+          project_reference_id: "{{ project_uuid }}"
+          project_name: "{{ project_name }}"
+        deployment:
+          cluster_reference: "{{ cluster_uuid }}"
+          should_synchronize_system_ntp_servers: false
+          should_synchronize_system_dns_servers: false
+          ntp_servers:
+            - fqdn:
+                value: "pool.ntp.org"
+            - ipv4:
+                value: "10.40.64.16"
+                prefix_length: 32
+          dns_servers:
+            - ipv4:
+                value: "8.8.8.8"
+                prefix_length: 32
+          management_interface:
+            subnet_reference: "{{ overlay_subnet_uuid }}"
+            default_gateway:
+              ipv4:
+                value: "{{ overlay_gateway_ip }}"
+                prefix_length: 32
+          interfaces:
+            - subnet_reference: "{{ overlay_subnet_uuid }}"
+              default_gateway_address:
+                ipv4:
+                  value: "{{ overlay_gateway_ip }}"
+                  prefix_length: 32
+        services:
+          local_services:
+            service_address:
+              ipv4:
+                value: "{{ floating_ip }}"
+                prefix_length: 32
+            service_addresses:
+              - ipv4:
+                  value: "{{ floating_ip }}"
+                  prefix_length: 32
+            local_vtep_service:
+              vxlan_port: 4789
+      register: result
+      ignore_errors: true
+
+    - name: Set gateway all ext_id
+      ansible.builtin.set_fact:
+        gateway_ext_id: "{{ result.ext_id }}"
+
+    - name: Get gateway using ext_id
+      nutanix.ncp.ntnx_gateways_info_v2:
+        ext_id: "{{ gateway_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all gateways
+      nutanix.ncp.ntnx_gateways_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List gateways with filter
+      nutanix.ncp.ntnx_gateways_info_v2:
+        filter: "name eq '{{ gateway_name }}_all'"
+      register: result
+      ignore_errors: true
+
+    - name: List gateways with limit
+      nutanix.ncp.ntnx_gateways_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Update gateway
+      nutanix.ncp.ntnx_gateway_v2:
+        state: present
+        ext_id: "{{ gateway_ext_id }}"
+        name: "{{ gateway_name }}_all_updated"
+        description: "Updated description for gateway with all attributes"
+      register: result
+      ignore_errors: true
+
+    - name: Upgrade gateway
+      nutanix.ncp.ntnx_gateway_v2:
+        state: present
+        ext_id: "{{ gateway_ext_id }}"
+        upgrade: true
+      register: result
+      ignore_errors: true
+
+    - name: Delete gateway with all attributes
+      nutanix.ncp.ntnx_gateway_v2:
+        state: absent
+        ext_id: "{{ gateway_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete gateway with minimum attributes
+      nutanix.ncp.ntnx_gateway_v2:
+        state: absent
+        ext_id: "{{ gateway_min_ext_id }}"
+      register: result
+      ignore_errors: true
