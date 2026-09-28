@@ -612,6 +612,41 @@ options:
                           - IP address of the iBGP peer.
                         type: dict
                         required: false
+                        suboptions:
+                          ipv4:
+                            description:
+                              - IPv4 address.
+                            type: dict
+                            required: false
+                            suboptions:
+                              value:
+                                description:
+                                  - The IPv4 address of the host.
+                                type: str
+                                required: true
+                              prefix_length:
+                                description:
+                                  - The prefix length of the network to which this host IPv4 address belongs.
+                                type: int
+                                required: false
+                                default: 32
+                          ipv6:
+                            description:
+                              - IPv6 address.
+                            type: dict
+                            required: false
+                            suboptions:
+                              value:
+                                description:
+                                  - The IPv6 address of the host.
+                                type: str
+                                required: true
+                              prefix_length:
+                                description:
+                                  - The prefix length of the network to which this host IPv6 address belongs.
+                                type: int
+                                required: false
+                                default: 128
                       asn:
                         description:
                           - Autonomous system number.
@@ -848,6 +883,41 @@ options:
                           - IP address of the iBGP peer.
                         type: dict
                         required: false
+                        suboptions:
+                          ipv4:
+                            description:
+                              - IPv4 address.
+                            type: dict
+                            required: false
+                            suboptions:
+                              value:
+                                description:
+                                  - The IPv4 address of the host.
+                                type: str
+                                required: true
+                              prefix_length:
+                                description:
+                                  - The prefix length of the network to which this host IPv4 address belongs.
+                                type: int
+                                required: false
+                                default: 32
+                          ipv6:
+                            description:
+                              - IPv6 address.
+                            type: dict
+                            required: false
+                            suboptions:
+                              value:
+                                description:
+                                  - The IPv6 address of the host.
+                                type: str
+                                required: true
+                              prefix_length:
+                                description:
+                                  - The prefix length of the network to which this host IPv6 address belongs.
+                                type: int
+                                required: false
+                                default: 128
                       asn:
                         description:
                           - Autonomous system number.
@@ -870,6 +940,63 @@ options:
                     type: list
                     elements: dict
                     required: false
+                    suboptions:
+                      ipv4:
+                        description:
+                          - IPv4 subnet.
+                        type: dict
+                        required: false
+                        suboptions:
+                          ip:
+                            description:
+                              - IP address of the subnet.
+                            type: dict
+                            required: true
+                            suboptions:
+                              value:
+                                description:
+                                  - The IPv4 address of the host.
+                                type: str
+                                required: true
+                              prefix_length:
+                                description:
+                                  - Prefix length of the IPv4 subnet.
+                                type: int
+                                required: false
+                                default: 32
+                          prefix_length:
+                            description:
+                              - The prefix length of the network to which this host IPv4 address belongs.
+                            type: int
+                            required: true
+                      ipv6:
+                        description:
+                          - IPv6 subnet.
+                        type: dict
+                        required: false
+                        suboptions:
+                          ip:
+                            description:
+                              - IP address of the subnet.
+                            type: dict
+                            required: true
+                            suboptions:
+                              value:
+                                description:
+                                  - The IPv6 address of the host.
+                                type: str
+                                required: true
+                              prefix_length:
+                                description:
+                                  - Prefix length of the IPv6 subnet.
+                                type: int
+                                required: false
+                                default: 128
+                          prefix_length:
+                            description:
+                              - The prefix length of the network to which this host IPv6 address belongs.
+                            type: int
+                            required: true
           remote_vtep_service:
             description:
               - VTEP service hosted on this remote gateway.

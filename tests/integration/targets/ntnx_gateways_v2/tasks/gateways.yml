@@ -1027,8 +1027,8 @@
   when: gateway_all_ext_id | default('') | length > 0
 
 
-# upgrade is failing with this error
-#"Authorization should happen in Atlas only if metadata updates happen in Atlas as well.", "operation": "Update Network Gateway"
+# Upgrade currently fails with NETWORKING-10056:
+# "Authorization should happen in Atlas only if metadata updates happen in Atlas as well."
 - name: Upgrade gateway
   nutanix.ncp.ntnx_gateway_v2:
     state: present
