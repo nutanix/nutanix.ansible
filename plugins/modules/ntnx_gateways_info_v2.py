@@ -67,12 +67,6 @@ EXAMPLES = r"""
   nutanix.ncp.ntnx_gateways_info_v2:
     limit: 1
   register: result
-
-- name: List network gateways with expand and select
-  nutanix.ncp.ntnx_gateways_info_v2:
-    expand: "vpc"
-    select: "name,extId"
-  register: result
 """
 RETURN = r"""
 response:
@@ -87,7 +81,7 @@ response:
       "cloud_network_reference": null,
       "deployment": null,
       "description": null,
-      "ext_id": "8fab225c-3cdc-4eeb-99a5-ff959611eaed",
+      "ext_id": "a0baa9ce-e937-494b-bb0b-fe4da75cceb6",
       "gateway_device_vendor": null,
       "high_availability_group": null,
       "installed_software_version": null,
@@ -100,7 +94,7 @@ response:
           "project_name": "_internal",
           "project_reference_id": "00000000-0000-0000-0000-000000000000"
       },
-      "name": "gw_ansible_WisfNOatNlEf_min",
+      "name": "gw_ansible_lPRuVhwcmNRE_min",
       "project_ext_id": "00000000-0000-0000-0000-000000000000",
       "services": {
           "remote_bgp_service": {

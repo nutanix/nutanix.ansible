@@ -1020,56 +1020,64 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create a local VPN network gateway on an on-prem VLAN subnet
+- name: Create a local VTEP gateway
   nutanix.ncp.ntnx_gateway_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
     state: present
-    name: "gw_local_vpn_ansible"
-    description: "Local VPN gateway created by Ansible"
+    name: "gw_local_vtep_ansible"
+    description: "Local VTEP gateway created by Ansible"
+    gateway_device_vendor: "GENERIC"
+    vpc_reference: "d1111111-1111-1111-1111-111111111111"
+    project_ext_id: "00000000-0000-0000-0000-000000000000"
+    metadata:
+      owner_reference_id: "a7777777-7777-7777-7777-777777777777"
+      owner_user_name: "admin"
+      project_reference_id: "00000000-0000-0000-0000-000000000000"
+      project_name: "default"
     deployment:
       cluster_reference: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
-      should_synchronize_system_ntp_servers: true
-      should_synchronize_system_dns_servers: true
+      should_synchronize_system_ntp_servers: false
+      should_synchronize_system_dns_servers: false
+      ntp_servers:
+        - fqdn:
+            value: "pool.ntp.org"
+        - ipv4:
+            value: "10.40.64.16"
+            prefix_length: 32
+      dns_servers:
+        - ipv4:
+            value: "8.8.8.8"
+            prefix_length: 32
       management_interface:
-        subnet_reference: "9be0a3f9-8fe5-4a83-b3a0-8d1c7c8e2b21"
-        mtu: 1500
-        address:
-          ipv4:
-            value: "10.44.76.230"
-            prefix_length: 24
+        subnet_reference: "c3333333-3333-3333-3333-333333333333"
         default_gateway:
           ipv4:
-            value: "10.44.76.1"
-            prefix_length: 24
+            value: "192.168.50.1"
+            prefix_length: 32
+      interfaces:
+        - subnet_reference: "c3333333-3333-3333-3333-333333333333"
+          default_gateway_address:
+            ipv4:
+              value: "192.168.50.1"
+              prefix_length: 32
     services:
       local_services:
-        local_vpn_service: {}
-  register: result
-
-- name: Create a remote BGP gateway referencing an external ASN
-  nutanix.ncp.ntnx_gateway_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    state: present
-    name: "gw_remote_bgp_ansible"
-    description: "Remote BGP gateway peer"
-    gateway_device_vendor: "GENERIC"
-    services:
-      remote_services:
-        remote_bgp_service:
-          asn: 65001
-          address:
-            ipv4:
-              value: "192.0.2.10"
+        service_address:
+          ipv4:
+            value: "10.44.3.231"
+            prefix_length: 32
+        service_addresses:
+          - ipv4:
+              value: "10.44.3.231"
               prefix_length: 32
+        local_vtep_service:
+          vxlan_port: 4789
   register: result
 
-- name: Update gateway description
+- name: Update gateway name and description
   nutanix.ncp.ntnx_gateway_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -1077,8 +1085,8 @@ EXAMPLES = r"""
     validate_certs: false
     state: present
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
-    name: "gw_local_vpn_ansible"
-    description: "Updated gateway description"
+    name: "gw_local_vtep_ansible_updated"
+    description: "Updated description for gateway with all attributes"
   register: result
 
 - name: Upgrade an existing gateway to the latest supported version
@@ -1115,42 +1123,124 @@ response:
   sample:
     {
       "cloud_network_reference": null,
-      "deployment": null,
+      "deployment": {
+          "cluster_reference": "00065c06-b7be-0e44-784a-7cc25505d491",
+          "dns_servers": [
+              {
+                  "ipv4": {
+                      "prefix_length": 32,
+                      "value": "8.8.8.8"
+                  },
+                  "ipv6": null
+              }
+          ],
+          "interfaces": [
+              {
+                  "default_gateway_address": {
+                      "ipv4": {
+                          "prefix_length": 32,
+                          "value": "192.168.50.1"
+                      },
+                      "ipv6": null
+                  },
+                  "ip_address": {
+                      "ipv4": {
+                          "prefix_length": 32,
+                          "value": "192.168.50.52"
+                      },
+                      "ipv6": null
+                  },
+                  "mac_address": "50:6b:8d:37:00:6e",
+                  "mtu": null,
+                  "subnet_reference": "5a5c6abd-b6c5-4e53-b856-fd1da8b39178"
+              }
+          ],
+          "management_interface": {
+              "address": {
+                  "ipv4": {
+                      "prefix_length": 32,
+                      "value": "192.168.50.52"
+                  },
+                  "ipv6": null
+              },
+              "default_gateway": {
+                  "ipv4": {
+                      "prefix_length": 32,
+                      "value": "192.168.50.1"
+                  },
+                  "ipv6": null
+              },
+              "mtu": null,
+              "subnet_reference": "5a5c6abd-b6c5-4e53-b856-fd1da8b39178",
+              "vlan_id": null
+          },
+          "ntp_servers": [
+              {
+                  "fqdn": {
+                      "value": "pool.ntp.org"
+                  },
+                  "ipv4": null,
+                  "ipv6": null
+              },
+              {
+                  "fqdn": null,
+                  "ipv4": {
+                      "prefix_length": 32,
+                      "value": "10.40.64.16"
+                  },
+                  "ipv6": null
+              }
+          ],
+          "should_synchronize_system_dns_servers": false,
+          "should_synchronize_system_ntp_servers": false,
+          "vcenter_datastore_name": null
+      },
       "description": "Gateway created by Ansible integration tests with all attributes",
-      "ext_id": "a0760ab6-e728-42c3-a5ab-9cf743a45fa5",
+      "ext_id": "452f36ad-1850-4a12-a7aa-dd41d0b8abd5",
       "gateway_device_vendor": "GENERIC",
       "high_availability_group": null,
       "installed_software_version": null,
+      "is_active": true,
       "links": null,
       "metadata": {
           "category_ids": null,
-          "owner_reference_id": "00000000-0000-0000-0000-000000000000",
+          "owner_reference_id": "cddbe7e2-a8e2-539d-a763-a61380e4bc61",
           "owner_user_name": "admin",
           "project_name": "_internal",
           "project_reference_id": "00000000-0000-0000-0000-000000000000"
       },
-      "name": "gw_ansible_WisfNOatNlEf_all",
+      "name": "gw_ansible_lPRuVhwcmNRE_all",
       "project_ext_id": "00000000-0000-0000-0000-000000000000",
       "services": {
-          "remote_bgp_service": {
-              "address": {
+          "local_bgp_service": null,
+          "local_vpn_service": null,
+          "local_vtep_service": {
+              "vxlan_port": 4789
+          },
+          "service_address": {
+              "ipv4": {
+                  "prefix_length": 32,
+                  "value": "10.44.3.237"
+              },
+              "ipv6": null
+          },
+          "service_addresses": [
+              {
                   "ipv4": {
                       "prefix_length": 32,
-                      "value": "192.0.2.11"
+                      "value": "10.44.3.237"
                   },
                   "ipv6": null
-              },
-              "asn": 65001
-          },
-          "remote_vpn_service": null,
-          "remote_vtep_service": null
+              }
+          ]
       },
       "status": null,
       "supported_software_version": null,
       "tenant_id": null,
       "vm": null,
+      "vm_reference": "af438984-bbcf-4e25-b0a6-c43023cdd9bf",
       "vpc": null,
-      "vpc_reference": "f47927e8-8339-43ad-8dfc-d727c44a5418"
+      "vpc_reference": "797ecc5a-e2c5-41f2-a6e9-310bc05d71b1"
     }
 
 task_ext_id:
