@@ -32,7 +32,7 @@ notes:
 options:
   state:
     description:
-      - If C(state) is set to C(present) and C(ext_id) is not provided then the operation will be create LCM bundle.
+      - If C(state) is set to C(present) then the operation will be create LCM bundle.
       - If C(state) is set to C(absent) and C(ext_id) is provided then the operation will be delete LCM bundle.
     type: str
     required: false
@@ -42,38 +42,36 @@ options:
     default: present
   ext_id:
     description:
-      - The external ID of the LCM bundle.
+      - A globally unique identifier of an instance that is suitable for external consumption.
       - Required for delete operations.
     type: str
     required: false
   name:
     description:
-      - Name of the LCM bundle.
-      - This is the file/object name of the uploaded bundle (for example the S3 object key when the
-        bundle is uploaded to the Prism Central Objects Lite C(lcm-bundles) bucket).
-      - Required for create operation.
+      - The display name of the bundle (e.g. "lcm_nos_6.10.tar.gz"). When creating a bundle via the
+        2-step upload flow, this must be the object key used in the S3 PUT request to the objects-lite
+        service in Step 1.
     type: str
     required: false
   size_bytes:
     description:
-      - Size of the LCM bundle in bytes.
+      - The total size of the bundle in bytes.
     type: int
     required: false
   type:
     description:
-      - Type / category of the LCM bundle.
-      - Required for create operation.
-      - The C(FRAMEWORK) bundle must be uploaded and inventoried before other bundle types can be used.
+      - The type of the LCM bundle, indicating what kind of content it contains.
     type: str
     required: false
     choices:
       - FIRMWARE
       - FRAMEWORK
+      - IMAGE_BUNDLE
       - PRODUCT_META
       - SOFTWARE
   vendor:
     description:
-      - Vendor of the LCM bundle.
+      - The vendor or owner that produced the bundle.
       - Required for create operation.
     type: str
     required: false
@@ -82,64 +80,80 @@ options:
       - THIRD_PARTY
   cluster_ext_id:
     description:
-      - External ID of the Prism Element cluster to which the bundle belongs.
-      - When not provided, the bundle is scoped to the Prism Central serving the request.
+      - The cluster UUID on which the resource is present or the operation is being performed.
     type: str
     required: false
+  url_source:
+    description:
+      - Specifies a URL from which LCM should download the bundle content. Use this as an alternative
+        to Step 1 (streaming via S3 PUT) when the bundle is hosted somewhere accessible, such as an
+        external server or the Nutanix Portal.
+    type: dict
+    required: false
+    suboptions:
+      url:
+        description:
+          - The URL from which to download the bundle. For Nutanix bundles, this is typically a
+            pre-signed URL from the Nutanix Portal.
+        type: str
+        required: false
   checksum:
     description:
-      - Checksum used to verify the uploaded LCM bundle.
+      - SHA-256 checksum algorithm.
       - Exactly one of C(md5_sum) or C(sha256_sum) must be provided.
     type: dict
     required: false
     suboptions:
       md5_sum:
         description:
-          - MD5 checksum of the LCM bundle.
+          - An MD5 checksum value used to verify the integrity of a bundle or image file.
         type: dict
         required: false
         suboptions:
           hex_digest:
             description:
-              - Hexadecimal MD5 digest of the LCM bundle.
+              - The hex-encoded digest of the MD5 checksum.
             type: str
             required: true
       sha256_sum:
         description:
-          - SHA-256 checksum of the LCM bundle.
+          - A SHA-256 checksum value used to verify the integrity of a bundle or image file.
         type: dict
         required: false
         suboptions:
           hex_digest:
             description:
-              - Hexadecimal SHA-256 digest of the LCM bundle.
+              - The hex-encoded digest of the SHA-256 checksum.
             type: str
             required: true
   images:
     description:
-      - List of LCM images that make up the bundle.
+      - List of LCM images contained within this bundle. Each image represents an upgrade payload for
+        a specific entity class and model.
     type: list
     elements: dict
     required: false
     suboptions:
       release_notes:
         description:
-          - Release notes for the LCM image.
+          - Release notes for this image, describing the changes, fixes, and improvements included in
+            the update.
         type: str
         required: false
       spec_version:
         description:
-          - Specification version of the LCM image.
+          - The version of the image metadata specification used to describe this image.
         type: str
-        required: false
+        required: true
       is_qualified:
         description:
-          - Whether this LCM image is qualified.
+          - Indicates whether this third-party image version has been qualified (validated) for use
+            with the current cluster configuration.
         type: bool
         required: false
       status:
         description:
-          - Availability / lifecycle status of the LCM image version.
+          - Classification of an available version indicating its release status and priority.
         type: str
         required: false
         choices:
@@ -154,17 +168,19 @@ options:
           - STS
       entity_class:
         description:
-          - LCM entity class (for example C(AOS)).
+          - The class or category of the entity (e.g. "Core Cluster", "Foundation", "Firmware"). The
+            class groups related entity models together.
         type: str
         required: false
       entity_model:
         description:
-          - LCM entity model.
+          - The model or product name of the entity (e.g. "AOS", "NCC", "BMC", "AHV"). Uniquely
+            identifies the specific component within its entity class.
         type: str
         required: false
       entity_type:
         description:
-          - Type of the LCM entity contained in the image.
+          - Classifies whether the entity is a software component or a firmware component.
         type: str
         required: false
         choices:
@@ -172,59 +188,63 @@ options:
           - SOFTWARE
       entity_version:
         description:
-          - Version string of the LCM entity contained in the image.
+          - The currently installed version of the entity on the cluster or node.
         type: str
         required: false
       hardware_family:
         description:
-          - Hardware family for which this image is applicable.
+          - The hardware family designation for an entity (e.g. "dell_gen_12"), identifying the
+            hardware generation and vendor platform the entity is compatible with.
         type: str
         required: false
       cluster_ext_id:
         description:
-          - Cluster external ID for which this image is applicable.
+          - The cluster UUID on which the resource is present or the operation is being performed.
         type: str
         required: false
       files:
         description:
-          - List of files that make up the LCM image.
+          - List of individual binary files contained in this image. Each file entry includes the
+            filename, size, checksum, and storage location.
         type: list
         elements: dict
         required: false
         suboptions:
           file_location_id:
             description:
-              - Image file global catalog item UUID.
+              - The global catalog item UUID for this image file. Used internally by LCM to locate the
+                file in the Nutanix catalog. This is a read-only field.
             type: str
             required: false
           name:
             description:
-              - Name of the image file.
+              - The filename of the image file (e.g. "nos_update.tar.gz", "bmc_fw.bin").
             type: str
             required: false
           size_bytes:
             description:
-              - Size of the image file in bytes.
+              - The size of the image file in bytes.
             type: int
-            required: false
+            required: true
           file_path:
             description:
-              - Path of the image file within the bundle.
+              - The local file path of the image on the cluster. This is a read-only field populated
+                after the image has been downloaded.
             type: str
             required: false
           checksum_type:
             description:
-              - Type of the checksum used for the image file.
+              - The checksum algorithm used for third-party image file verification.
             type: str
-            required: false
+            required: true
             choices:
               - HEX_MD5
               - SHASUM
           checksum:
             description:
-              - Checksum digest of the image file.
+              - The checksum value of the image file, in the format specified by the checksumType field.
             type: str
-            required: false
+            required: true
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -236,15 +256,14 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create an LCM software bundle (minimum required fields)
+- name: Create an LCM software bundle
   nutanix.ncp.ntnx_lcm_bundle_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
     state: present
-    name: "lcm-bundle-ansible.tar.gz"
-    type: "SOFTWARE"
+    vendor: "NUTANIX"
   register: bundle_min
   ignore_errors: true
 
@@ -260,6 +279,8 @@ EXAMPLES = r"""
     type: "FIRMWARE"
     vendor: "NUTANIX"
     cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+    url_source:
+      url: "https://download.nutanix.com/lcm/bundles/lcm_firmware.tar.gz"
     checksum:
       sha256_sum:
         hex_digest: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -370,6 +391,7 @@ from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
+from ..module_utils.v4.constants import Tasks  # noqa: E402
 from ..module_utils.v4.lcm.api_client import get_bundles_api_instance  # noqa: E402
 from ..module_utils.v4.lcm.helpers import get_lcm_bundle  # noqa: E402
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
@@ -426,20 +448,20 @@ def get_module_spec():
     image_file_spec = dict(
         file_location_id=dict(type="str", required=False),
         name=dict(type="str", required=False),
-        size_bytes=dict(type="int", required=False),
+        size_bytes=dict(type="int", required=True),
         file_path=dict(type="str", required=False),
         checksum_type=dict(
             type="str",
-            required=False,
+            required=True,
             choices=["HEX_MD5", "SHASUM"],
             obj=life_cycle_management_sdk.CheckSumType,
         ),
-        checksum=dict(type="str", required=False),
+        checksum=dict(type="str", required=True),
     )
 
     image_spec = dict(
         release_notes=dict(type="str", required=False),
-        spec_version=dict(type="str", required=False),
+        spec_version=dict(type="str", required=True),
         is_qualified=dict(type="bool", required=False),
         status=dict(
             type="str",
@@ -477,14 +499,24 @@ def get_module_spec():
         ),
     )
 
+    url_source_spec = dict(
+        url=dict(type="str", required=False),
+    )
+
     module_args = dict(
         ext_id=dict(type="str"),
         name=dict(type="str"),
         size_bytes=dict(type="int"),
         type=dict(
             type="str",
-            choices=["FIRMWARE", "FRAMEWORK", "PRODUCT_META", "SOFTWARE"],
-            obj=life_cycle_management_sdk.BundleType,
+            choices=[
+                "FIRMWARE",
+                "FRAMEWORK",
+                "IMAGE_BUNDLE",
+                "PRODUCT_META",
+                "SOFTWARE",
+            ],
+            obj=life_cycle_management_sdk.ResourcesBundleType,
         ),
         vendor=dict(
             type="str",
@@ -492,6 +524,11 @@ def get_module_spec():
             obj=life_cycle_management_sdk.BundleVendor,
         ),
         cluster_ext_id=dict(type="str"),
+        url_source=dict(
+            type="dict",
+            options=url_source_spec,
+            obj=life_cycle_management_sdk.BundleUrlSource,
+        ),
         checksum=dict(
             type="dict",
             options=checksum_spec,
@@ -499,54 +536,21 @@ def get_module_spec():
                 "md5_sum": life_cycle_management_sdk.LcmMd5Sum,
                 "sha256_sum": life_cycle_management_sdk.LcmSha256Sum,
             },
+            mutually_exclusive=[("md5_sum", "sha256_sum")],
         ),
         images=dict(
             type="list",
             elements="dict",
             options=image_spec,
-            obj=life_cycle_management_sdk.Image,
+            obj=life_cycle_management_sdk.ResourcesImage,
         ),
     )
     return module_args
 
 
-def _get_existing_bundle_by_name(module, api_instance, name):
-    """Return the first LCM bundle matching the given name, else None."""
-    try:
-        resp = api_instance.list_bundles(_filter="name eq '{0}'".format(name))
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while checking existing LCM bundle by name",
-        )
-    data = getattr(resp, "data", None)
-    if not data:
-        return None
-    return data[0]
-
 
 def create_Bundle(module, result, api_instance):
-    validate_required_params(module, ["name", "type", "vendor"])
-
-    checksum = module.params.get("checksum")
-    if checksum and checksum.get("md5_sum") and checksum.get("sha256_sum"):
-        module.fail_json(
-            msg="parameters are mutually exclusive: checksum.md5_sum|checksum.sha256_sum",
-            **result,
-        )
-
-    name = module.params.get("name")
-    existing = _get_existing_bundle_by_name(module, api_instance, name)
-    if existing is not None:
-        result["ext_id"] = existing.ext_id
-        result["response"] = strip_internal_attributes(existing.to_dict())
-        result["skipped"] = True
-        result["changed"] = False
-        result["msg"] = (
-            "LCM bundle with name '{0}' already exists. Skipping creation.".format(name)
-        )
-        return
+    validate_required_params(module, ["vendor"])
 
     sg = SpecGenerator(module)
     default_spec = life_cycle_management_sdk.Bundle()
@@ -575,7 +579,9 @@ def create_Bundle(module, result, api_instance):
     if task_ext_id and module.params.get("wait"):
         task_data = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_data.to_dict())
-        ext_id = get_entity_ext_id_from_task(task_data)
+        ext_id = get_entity_ext_id_from_task(
+            task_data, rel=Tasks.RelEntityType.LCM_BUNDLE
+        )
         if ext_id:
             result["ext_id"] = ext_id
             resp = get_lcm_bundle(module, api_instance, ext_id)
@@ -622,7 +628,6 @@ def run_module():
         supports_check_mode=True,
         required_if=[
             ("state", "absent", ("ext_id",)),
-            ("state", "present", ("name", "ext_id"), True),
         ],
     )
     if SDK_IMP_ERROR:
@@ -645,16 +650,7 @@ def run_module():
     state = module.params.get("state")
 
     if state == "present":
-        if module.params.get("ext_id"):
-            module.fail_json(
-                msg=(
-                    "Update is not supported for LCM bundles. To modify a bundle, "
-                    "delete the existing bundle with state=absent and re-create it."
-                ),
-                **result,
-            )
-        else:
-            create_Bundle(module, result, api_instance)
+        create_Bundle(module, result, api_instance)
     else:
         delete_Bundle(module, result, api_instance)
 
