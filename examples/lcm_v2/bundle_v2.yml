@@ -1,60 +1,48 @@
 ---
 # Summary:
 # This playbook demonstrates end-to-end usage of the LCM Bundle v4 modules:
-# 1. Create an LCM bundle (with all supported attributes populated).
+# 1. Create an LCM FRAMEWORK bundle from a reachable url_source (with image metadata).
 # 2. Fetch the created bundle by its external ID.
-# 3. List all LCM bundles on the cluster.
+# 3. List all LCM bundles on Prism Central.
 # 4. List LCM bundles filtered by name.
 # 5. List LCM bundles with a limit.
 # 6. Delete the LCM bundle.
-#
-# Notes:
-# - LCM bundles are packaged payloads used to run LCM operations on dark-site /
-#   direct-upload clusters. Uploading a Framework bundle (type=FRAMEWORK)
-#   before other bundle types is required for the cluster to be usable.
-# - The `checksum` field is a discriminated union: provide either `md5_sum`
-#   or `sha256_sum`, never both.
 
 - name: LCM Bundle playbook
   hosts: localhost
   gather_facts: false
   module_defaults:
     group/nutanix.ncp.ntnx:
-      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
-      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
-      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
       validate_certs: false
   tasks:
     - name: Set variables
       ansible.builtin.set_fact:
-        bundle_name: "lcm-bundle-ansible-example.tar.gz"
+        bundle_name: "lcm_dark_site_bundle_name"
+        lcm_dark_site_bundle_url: <bundle_url>
+        entity_version: <entity_version>
 
-    - name: Create an LCM bundle with all attributes
+    - name: Create an LCM bundle
       nutanix.ncp.ntnx_lcm_bundle_v2:
         state: present
         name: "{{ bundle_name }}"
-        size_bytes: 12345678
-        type: "SOFTWARE"
+        type: "FRAMEWORK"
         vendor: "NUTANIX"
-        checksum:
-          sha256_sum:
-            hex_digest: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        url_source:
+          url: "{{ lcm_dark_site_bundle_url }}"
         images:
           - release_notes: "Example LCM image release notes"
             spec_version: "1"
             is_qualified: true
             status: "RECOMMENDED"
-            entity_class: "AOS"
-            entity_model: "AOS"
+            entity_class: "LCM"
+            entity_model: "LCM Framework"
             entity_type: "SOFTWARE"
-            entity_version: "7.0.0"
+            entity_version: "{{ entity_version }}"
             hardware_family: "NX"
-            files:
-              - name: "image.bin"
-                size_bytes: 12345678
-                file_path: "aos/image.bin"
-                checksum_type: "SHASUM"
-                checksum: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        wait: true
       register: bundle_create
       ignore_errors: true
 
@@ -94,6 +82,7 @@
       nutanix.ncp.ntnx_lcm_bundle_v2:
         state: absent
         ext_id: "{{ bundle_ext_id }}"
+        wait: true
       register: bundle_delete
       when: bundle_ext_id is defined
       ignore_errors: true

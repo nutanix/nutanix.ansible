@@ -160,6 +160,30 @@
     bundle_min_ext_id: "{{ result.ext_id }}"
   when: result.ext_id is defined and result.ext_id
 
+- name: Delete LCM bundle created with minimum attributes
+  nutanix.ncp.ntnx_lcm_bundle_v2:
+    state: absent
+    ext_id: "{{ bundle_min_ext_id }}"
+    wait: true
+  register: result
+  ignore_errors: true
+  when: bundle_min_ext_id is defined
+
+- name: Delete LCM bundle created with minimum attributes result
+  ansible.builtin.debug:
+    var: result
+  when: bundle_min_ext_id is defined
+
+- name: Delete LCM bundle created with minimum attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == true
+    success_msg: "Delete LCM bundle created with minimum attributes passed"
+    fail_msg: "Delete LCM bundle created with minimum attributes failed unexpectedly"
+  when: bundle_min_ext_id is defined
+
 - name: Create LCM bundle with all attributes
   nutanix.ncp.ntnx_lcm_bundle_v2:
     state: present
@@ -460,6 +484,34 @@
       - result.failed == true
     success_msg: "Delete LCM bundle with wrong external ID failed as expected"
     fail_msg: "Delete LCM bundle with wrong external ID did not fail as expected"
+
+################################################################################
+# E. Cleanup
+################################################################################
+
+- name: Delete LCM bundle created with all attributes
+  nutanix.ncp.ntnx_lcm_bundle_v2:
+    state: absent
+    ext_id: "{{ bundle_full_ext_id }}"
+    wait: true
+  register: result
+  ignore_errors: true
+  when: bundle_full_ext_id is defined
+
+- name: Delete LCM bundle created with all attributes result
+  ansible.builtin.debug:
+    var: result
+  when: bundle_full_ext_id is defined
+
+- name: Delete LCM bundle created with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == true
+    success_msg: "Delete LCM bundle created with all attributes passed"
+    fail_msg: "Delete LCM bundle created with all attributes failed unexpectedly"
+  when: bundle_full_ext_id is defined
 
 - name: LCM Bundle v2 tests summary
   ansible.builtin.debug:
