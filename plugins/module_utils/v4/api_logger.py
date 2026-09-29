@@ -12,6 +12,7 @@ import warnings
 from datetime import datetime
 
 from ..constants import DEFAULT_LOG_FILE
+from ..utils import get_custom_headers
 
 
 class APILogger:
@@ -30,6 +31,11 @@ class APILogger:
         self.enabled = (
             module.params.get("nutanix_debug", False)
             or os.environ.get("NUTANIX_DEBUG", "false").lower() == "true"
+        )
+        # Custom header values can be credentials (e.g. Cloudflare Access service
+        # tokens) whatever their names, so all of them are redacted.
+        self.custom_header_names = set(
+            name.lower() for name in get_custom_headers(module.params or {})
         )
 
     def log_api_call(
@@ -231,12 +237,18 @@ class APILogger:
             "api_key",
             "secret",
         ]
+
+        def is_sensitive(key_lower):
+            return key_lower in self.custom_header_names or any(
+                sensitive in key_lower for sensitive in sensitive_keys
+            )
+
         # Defensive: handle dict or list header formats
         if isinstance(headers, dict):
             sanitized = {}
             for key, value in headers.items():
                 key_lower = str(key).lower()
-                if any(sensitive in key_lower for sensitive in sensitive_keys):
+                if is_sensitive(key_lower):
                     sanitized[key] = "***REDACTED***"
                 else:
                     sanitized[key] = value
@@ -246,7 +258,7 @@ class APILogger:
             for entry in headers:
                 if isinstance(entry, (list, tuple)) and len(entry) == 2:
                     key_lower = str(entry[0]).lower()
-                    if any(sensitive in key_lower for sensitive in sensitive_keys):
+                    if is_sensitive(key_lower):
                         sanitized.append((entry[0], "***REDACTED***"))
                     else:
                         sanitized.append((entry[0], entry[1]))
