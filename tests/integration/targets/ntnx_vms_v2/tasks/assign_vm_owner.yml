@@ -1,0 +1,363 @@
+---
+# Variables required before running this playbook:
+# - cluster
+# - users (list of user UUIDs)
+
+- name: Start ntnx_vms_v2 assign VM owner tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vms_v2 assign VM owner tests
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{query('community.general.random_string',numbers=false, special=false,length=12)[0]}}"
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_vm_owner_test"
+
+################################################################################
+# Test 0: Generate Spec Create VM with ownership_info using check_mode
+################################################################################
+
+- name: Generate Spec Create VM with ownership_info using check_mode
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "owner_test_vm"
+    cluster:
+      ext_id: "00065706-eb96-06f0-3976-525400774cf3"
+    description: "VM owner test"
+    num_sockets: 1
+    num_cores_per_socket: 1
+    memory_size_bytes: 1073741824
+    ownership_info:
+      owner:
+        ext_id: "8588ccc2-a3a5-561e-bb98-325b3bd6c6cb"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Generate Spec Create VM with ownership_info using check_mode Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "owner_test_vm"
+      - result.response.ownership_info.owner.ext_id == "8588ccc2-a3a5-561e-bb98-325b3bd6c6cb"
+      - result.ext_id is defined
+      - result.response.description == "VM owner test"
+      - result.response.cluster.ext_id == "00065706-eb96-06f0-3976-525400774cf3"
+      - result.response.num_sockets == 1
+      - result.response.num_cores_per_socket == 1
+      - result.response.memory_size_bytes == 1073741824
+    fail_msg: "Unable to create VM with ownership_info"
+    success_msg: "VM with ownership_info created successfully"
+
+################################################################################
+# Test 2: Create VM and assign owner in single task
+################################################################################
+
+- name: Create VM with ownership_info
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    description: "VM owner test"
+    num_sockets: 1
+    num_cores_per_socket: 1
+    memory_size_bytes: 1073741824
+    ownership_info:
+      owner:
+        ext_id: "{{ users[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Create VM with ownership_info Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ vm_name }}"
+      - result.response.ownership_info.owner.ext_id == "{{ users[0] }}"
+      - result.ext_id is defined
+      - result.response.description == "VM owner test"
+      - result.response.cluster.ext_id == "{{ cluster.uuid }}"
+      - result.response.num_sockets == 1
+      - result.response.num_cores_per_socket == 1
+      - result.response.memory_size_bytes == 1073741824
+    fail_msg: "Unable to create VM with ownership_info"
+    success_msg: "VM with ownership_info created successfully"
+
+- name: Set vm_uuid
+  ansible.builtin.set_fact:
+    vm_uuid: '{{ result["ext_id"] }}'
+
+################################################################################
+# Test 3: Generate Spec Update VM owner with check mode
+################################################################################
+
+- name: Generate Spec Update VM owner with check mode
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    ownership_info:
+      owner:
+        ext_id: "8988ccc2-a3a5-561e-bb98-325b3bd6c6cb"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate Spec Update VM owner with check mode Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.ownership_info.owner.ext_id == "8988ccc2-a3a5-561e-bb98-325b3bd6c6cb"
+    fail_msg: "Assign VM owner with check mode failed"
+    success_msg: "Assign VM owner with check mode passed"
+
+################################################################################
+# Test 4: Assign VM owner (actual update)
+################################################################################
+
+- name: Assign VM owner
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    ownership_info:
+      owner:
+        ext_id: "{{ users[1] }}"
+  register: result
+  ignore_errors: true
+
+- name: Assign VM owner Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.ownership_info.owner.ext_id == "{{ users[1] }}"
+      - result.ext_id == "{{ vm_uuid }}"
+    fail_msg: "Unable to assign VM owner"
+    success_msg: "VM owner assigned successfully"
+
+################################################################################
+# Test 5: Assign VM owner idempotency
+################################################################################
+
+- name: Assign VM owner idempotency check
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    ownership_info:
+      owner:
+        ext_id: "{{ users[1] }}"
+  register: result
+  ignore_errors: true
+
+- name: Assign VM owner idempotency Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+      - result.ext_id == "{{ vm_uuid }}"
+    fail_msg: "Assign VM owner idempotency check failed"
+    success_msg: "Assign VM owner idempotency check passed"
+
+################################################################################
+# Test 6: Assign VM owner along with VM field update
+################################################################################
+
+- name: Update VM fields and assign owner simultaneously
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    description: "VM owner test updated"
+    ownership_info:
+      owner:
+        ext_id: "{{ users[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Update VM fields and assign owner simultaneously Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.description == "VM owner test updated"
+      - result.response.ownership_info.owner.ext_id == "{{ users[0] }}"
+    fail_msg: "Update VM fields and assign owner simultaneously failed"
+    success_msg: "Update VM fields and assign owner simultaneously passed"
+
+################################################################################
+# Test 7: Negative - Assign VM owner with invalid UUID format
+################################################################################
+
+- name: Assign VM owner with invalid UUID format
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    ownership_info:
+      owner:
+        ext_id: "not-a-valid-uuid"
+  register: result
+  ignore_errors: true
+
+- name: Assign VM owner with invalid UUID format Status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg == "Api Exception raised while assigning VM owner"
+      - result.error == "BAD REQUEST"
+      - result.status == 400
+      - result.response is defined
+    fail_msg: "Module should have failed with invalid UUID format"
+    success_msg: "Module correctly failed with invalid UUID format"
+
+################################################################################
+# Test 8: Negative - Assign VM owner with non-existent user UUID
+################################################################################
+
+- name: Assign VM owner with non-existent user UUID
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    ownership_info:
+      owner:
+        ext_id: "ffffffff-ffff-ffff-ffff-ffffffffffff"
+  register: result
+  ignore_errors: true
+
+- name: Assign VM owner with non-existent user UUID Status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg == "Task Failed"
+      - result.response is defined
+      - result.response.status == "FAILED"
+      - result.response.error_messages | length > 0
+      - "'VM owner not found' in result.response.legacy_error_message"
+    fail_msg: "Module should have failed with non-existent user UUID"
+    success_msg: "Module correctly failed with non-existent user UUID"
+
+################################################################################
+# Test 9: Verify VM owner is unchanged after failed owner updates
+################################################################################
+
+- name: Fetch VM after failed owner updates
+  nutanix.ncp.ntnx_vms_info_v2:
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify VM owner unchanged after failed owner updates
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.response is defined
+      - result.response.ownership_info.owner.ext_id == "{{ users[0] }}"
+    fail_msg: "VM owner was incorrectly modified after failed owner updates"
+    success_msg: "VM owner correctly unchanged after failed owner updates"
+
+################################################################################
+# Test 10: Negative - Create VM with non-existent owner ext_id
+################################################################################
+
+- name: Create VM with non-existent owner ext_id
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}_negative"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    description: "VM negative owner test"
+    num_sockets: 1
+    num_cores_per_socket: 1
+    memory_size_bytes: 1073741824
+    ownership_info:
+      owner:
+        ext_id: "ffffffff-ffff-ffff-ffff-ffffffffffff"
+  register: negative_result
+  ignore_errors: true
+
+- name: Create VM with non-existent owner ext_id Status
+  ansible.builtin.assert:
+    that:
+      - negative_result.failed == true
+      - negative_result.changed == false
+      - negative_result.msg == "Task Failed"
+      - negative_result.response is defined
+      - negative_result.response.status == "FAILED"
+      - "'VM owner not found' in negative_result.response.legacy_error_message"
+    fail_msg: "Module should have failed with non-existent owner ext_id during creation"
+    success_msg: "Module correctly failed with non-existent owner ext_id during creation"
+
+- name: Find VM created in negative test using name filter
+  nutanix.ncp.ntnx_vms_info_v2:
+    filter: "name eq '{{ vm_name }}_negative'"
+  register: negative_vm_info
+  ignore_errors: true
+
+- name: Find VM created in negative test using name filter Status
+  ansible.builtin.assert:
+    that:
+      - negative_vm_info.failed == false
+      - negative_vm_info.changed == false
+      - negative_vm_info.response is defined
+      - negative_vm_info.response[0].name == "{{ vm_name }}_negative"
+    fail_msg: "Unable to fetch VM created in negative test"
+    success_msg: "VM created in negative test fetched successfully"
+
+- name: Delete VM created in negative test (if it was partially created)
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ negative_vm_info.response[0].ext_id }}"
+  register: cleanup_result
+  ignore_errors: true
+  when:
+    - negative_vm_info.response is defined
+    - negative_vm_info.response | length > 0
+
+- name: Delete VM created in negative test Status
+  ansible.builtin.assert:
+    that:
+      - cleanup_result.response is defined
+      - cleanup_result.changed == true
+      - cleanup_result.failed == false
+      - cleanup_result.ext_id == "{{ negative_vm_info.response[0].ext_id }}"
+      - cleanup_result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to delete VM created in negative test"
+    success_msg: "VM created in negative test deleted successfully"
+  when:
+    - negative_vm_info.response is defined
+    - negative_vm_info.response | length > 0
+
+################################################################################
+# Cleanup
+################################################################################
+
+- name: Delete the VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Deletion Status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ vm_uuid }}"
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Unable to delete VM"
+    success_msg: "VM deleted successfully"

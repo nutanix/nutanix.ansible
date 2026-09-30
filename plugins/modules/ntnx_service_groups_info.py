@@ -12,7 +12,11 @@ DOCUMENTATION = r"""
 module: ntnx_service_groups_info
 short_description: service_group info module
 version_added: 1.4.0
-description: 'Get service_group info'
+description:
+    - Get service_group info
+    - This module is deprecated and will stop working from the Prism Central 7.6 release.
+    - The v3 service group APIs are not supported when the Flow network security next-gen is enabled.
+    - Please use the v4 service group APIs instead i.e. M(nutanix.ncp.ntnx_service_groups_info_v2) module.
 options:
     kind:
       description:
@@ -181,6 +185,14 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         required_together=[("sort_order", "sort_attribute")],
+    )
+    module.deprecate(
+        "This module is deprecated and will stop working from the Prism Central 7.6 release."
+        " The v3 service group APIs are not supported when the Flow network security next-gen"
+        " is enabled. Please use the v4 service group APIs instead"
+        " i.e. ntnx_service_groups_info_v2 module.",
+        date="2027-12-31",
+        collection_name="nutanix.ncp",
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}

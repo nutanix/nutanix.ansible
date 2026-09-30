@@ -1,0 +1,11 @@
+---
+# Remove the throwaway SAML SP keypair tempdir created by setup_sp_keypair.yml.
+
+- name: Remove SAML SP keypair temp dir
+  ansible.builtin.file:
+    path: "{{ sp_tmpdir.path }}"
+    state: absent
+  delegate_to: localhost
+  when:
+    - sp_tmpdir is defined
+    - sp_tmpdir.path is defined

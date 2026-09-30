@@ -58,6 +58,12 @@ options:
             - Required for C(state)=absent for delete.
         type: str
         required: false
+    project_ext_id:
+        description:
+            - External ID (UUID) of the project that owns this volume group.
+            - Update of this field is not supported.
+        type: str
+        required: false
     name:
         description:
             - Name of VG
@@ -187,6 +193,7 @@ EXAMPLES = r"""
     state: "present"
     name: "{{vg1_name}}"
     description: "Volume group 2"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     should_load_balance_vm_attachments: true
     sharing_status: "SHARED"
     target_prefix: "vg1"
@@ -319,6 +326,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 from ..module_utils.v4.volumes.api_client import (  # noqa: E402
@@ -326,7 +334,8 @@ from ..module_utils.v4.volumes.api_client import (  # noqa: E402
     get_vg_api_instance,
 )
 from ..module_utils.v4.volumes.helpers import get_volume_group  # noqa: E402
-from ..module_utils.v4.volumes.spec.volume_group import (  # noqa: E402
+
+from ..module_utils.v4.volumes.spec.volume_group import (  # noqa: E402  # isort: skip
     VGSpecs as vg_specs,
 )
 
@@ -387,6 +396,14 @@ def create_vg(module, result):
             resp = get_volume_group(module, vgs, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Volume Group"
+                ),
+                msg="Failed to get entity ext_id from task for Volume Group",
+            )
 
     result["changed"] = True
 
@@ -407,6 +424,10 @@ def update_vg(module, result):
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
 
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
+
     default_spec = volumes_sdk.VolumeGroup()
     spec, err = sg.generate_spec(obj=default_spec)
 
@@ -414,14 +435,14 @@ def update_vg(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating update volume group spec", **result)
 
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(spec.to_dict())
+        return
+
     # check for idempotency
     if check_idempotency(current_spec, update_spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
-
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(spec.to_dict())
-        return
 
     etag = get_etag(current_spec)
     kwargs = {"if_match": etag}

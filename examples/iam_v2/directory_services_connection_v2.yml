@@ -1,0 +1,31 @@
+---
+# Summary:
+# This playbook will check the connection to an existing directory service using its external ID.
+
+- name: Directory Services Connection playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        directory_service:
+          ext_id: "12345678-1234-1234-1234-123456789012"
+          username: "admin@example.com"
+          password: "password"
+
+    - name: Check connection to directory service
+      nutanix.ncp.ntnx_directory_services_connection_v2:
+        ext_id: "{{ directory_service.ext_id }}"
+        username: "{{ directory_service.username }}"
+        password: "{{ directory_service.password }}"
+      register: connection_result
+
+    - name: Print connection check result
+      ansible.builtin.debug:
+        msg: "{{ connection_result.response }}"
