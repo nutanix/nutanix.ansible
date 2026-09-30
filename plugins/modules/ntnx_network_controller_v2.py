@@ -268,9 +268,7 @@ def get_module_spec():
             options=vpc_global_config_spec,
             obj=networking_sdk.VpcGlobalConfig,
         ),
-        metadata=dict(
-            type="dict", options=metadata_spec, obj=networking_sdk.Metadata
-        ),
+        metadata=dict(type="dict", options=metadata_spec, obj=networking_sdk.Metadata),
     )
     return module_args
 
