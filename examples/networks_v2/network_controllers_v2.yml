@@ -1,0 +1,69 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a network controller (enable Flow Virtual Networking) with all attributes
+# 2. Update the network controller (default VLAN stack and overlapping ERPs)
+# 3. Fetch the network controller using ext_id
+# 4. List all network controllers with/without limit
+# 5. Delete the network controller
+#
+# NOTE: A Prism Central hosts at most one Network Controller. Delete any existing
+# controller before running create, or create will fail.
+
+- name: Network Controllers playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Create network controller
+      nutanix.ncp.ntnx_network_controller_v2:
+        state: present
+        default_vlan_stack: ADVANCED
+        vpc_global_config:
+          is_overlapping_erps_enabled: false
+        metadata:
+          owner_reference_id: "cddbe7e2-a8e2-539d-a763-a61380e4bc61"
+          owner_user_name: "admin"
+          project_reference_id: "bf2099e9-0ba5-45f6-8d5e-aaac44130fde"
+          project_name: "integration_test_project"
+          category_ids:
+            - "66f4d0aa-4e77-5261-94c6-4dc19a857049"
+      register: create_result
+
+    - name: Save network controller ext_id
+      ansible.builtin.set_fact:
+        network_controller_ext_id: "{{ create_result.ext_id }}"
+
+    - name: Update network controller
+      nutanix.ncp.ntnx_network_controller_v2:
+        state: present
+        ext_id: "{{ network_controller_ext_id }}"
+        default_vlan_stack: LEGACY
+        vpc_global_config:
+          is_overlapping_erps_enabled: true
+      register: update_result
+
+    - name: Fetch the network controller using ext_id
+      nutanix.ncp.ntnx_network_controllers_info_v2:
+        ext_id: "{{ network_controller_ext_id }}"
+      register: get_result
+
+    - name: List all network controllers
+      nutanix.ncp.ntnx_network_controllers_info_v2:
+      register: list_all_result
+
+    - name: List network controllers with limit
+      nutanix.ncp.ntnx_network_controllers_info_v2:
+        limit: 1
+      register: list_limit_result
+
+    - name: Delete network controller
+      nutanix.ncp.ntnx_network_controller_v2:
+        state: absent
+        ext_id: "{{ network_controller_ext_id }}"
+      register: delete_result

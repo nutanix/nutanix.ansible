@@ -12,18 +12,19 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_network_controller_v2
 short_description: Create, Update, Delete network controller in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to create, update and delete a network controller in Nutanix Prism Central.
-  - The network controller is the central Flow Virtual Networking (FVN) orchestration engine
-    responsible for advanced networking (VPCs, overlay subnets, floating IPs, NAT gateways).
+  - The Network Controller is the central control-plane component of Flow Virtual Networking (FVN),
+    running as containerized services on Prism Central.
+    It orchestrates virtual-networking operations, including VPCs, overlay subnets, floating IP addresses, and connectivity services such as NAT gateways.
   - This module uses PC v4 APIs based SDKs
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Create/Update/Delete a Network Controller) -
-      Required Roles: Prism Admin, Super Admin
+      Required Roles: Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
@@ -39,14 +40,13 @@ options:
     default: present
   ext_id:
     description:
-      - The external ID (UUID) of the network controller.
+      - The external ID of the network controller.
       - Required for update and delete operations.
     type: str
     required: false
   cloud_substrate:
     description:
-      - Underlying cloud substrate on which the network controller is deployed.
-      - Applicable for Nutanix Cloud Clusters (NC2) deployments.
+      - Cloud substrate of the network controller, for e.g. Azure.
     type: str
     required: false
     choices:
@@ -55,9 +55,7 @@ options:
       - GCP
   default_vlan_stack:
     description:
-      - The default networking stack used when creating new VLAN backed subnets.
-      - C(ADVANCED) enables the OVN based advanced networking stack (required for Flow Virtual Networking features).
-      - C(LEGACY) uses the traditional Acropolis networking stack.
+      - Default VLAN stack(Legacy or Advanced) to instantiate VLAN-backed subnets on if advanced networking is enabled.
     type: str
     required: false
     choices:
@@ -65,16 +63,36 @@ options:
       - LEGACY
   vpc_global_config:
     description:
-      - Global settings applied to all VPCs managed by this network controller.
+      - Global settings for all VPCs within the network controller.
     type: dict
     required: false
     suboptions:
       is_overlapping_erps_enabled:
         description:
           - Option to enable or disable overlapping ERPs (External Routable Prefixes) across VPCs.
-          - Defaults to false when not set on the server side.
         type: bool
         required: false
+        default: false
+  metadata:
+    description: Metadata associated with this resource.
+    type: dict
+    suboptions:
+      owner_reference_id:
+        description: A globally unique identifier that represents the owner of this resource.
+        type: str
+      owner_user_name:
+        description: The userName of the owner of this resource.
+        type: str
+      project_reference_id:
+        description: A globally unique identifier that represents the project this resource belongs to.
+        type: str
+      project_name:
+        description: The name of the project this resource belongs to.
+        type: str
+      category_ids:
+        description: A list of globally unique identifiers that represent all the categories the resource is associated with.
+        type: list
+        elements: str
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -225,6 +243,14 @@ def get_module_spec():
         is_overlapping_erps_enabled=dict(type="bool", required=False),
     )
 
+    metadata_spec = dict(
+        owner_reference_id=dict(type="str"),
+        owner_user_name=dict(type="str"),
+        project_reference_id=dict(type="str"),
+        project_name=dict(type="str"),
+        category_ids=dict(type="list", elements="str"),
+    )
+
     module_args = dict(
         ext_id=dict(type="str"),
         cloud_substrate=dict(
@@ -242,24 +268,21 @@ def get_module_spec():
             options=vpc_global_config_spec,
             obj=networking_sdk.VpcGlobalConfig,
         ),
+        metadata=dict(
+            type="dict", options=metadata_spec, obj=networking_sdk.Metadata
+        ),
     )
     return module_args
 
 
-READ_ONLY_FIELDS = (
-    "controller_status",
-    "controller_version",
-    "minimum_ahv_version",
-    "minimum_nos_version",
-    "metadata",
-    "links",
-    "tenant_id",
-)
-
-
-def _fetch_and_return_controller(module, api_instance, ext_id, result):
-    resp = get_network_controller(module, api_instance, ext_id)
-    result["response"] = strip_internal_attributes(resp.to_dict())
+# READ_ONLY_FIELDS = (
+#     "controller_status",
+#     "controller_version",
+#     "minimum_ahv_version",
+#     "minimum_nos_version",
+#     "links",
+#     "tenant_id",
+# )
 
 
 def create_NetworkController(module, result, api_instance):
@@ -298,7 +321,8 @@ def create_NetworkController(module, result, api_instance):
         )
         if ext_id:
             result["ext_id"] = ext_id
-            _fetch_and_return_controller(module, api_instance, ext_id, result)
+            resp = get_network_controller(module, api_instance, ext_id)
+            result["response"] = strip_internal_attributes(resp.to_dict())
         else:
             raise_api_exception(
                 module=module,
@@ -313,9 +337,9 @@ def create_NetworkController(module, result, api_instance):
 def check_for_idempotency(old_spec_dict, update_spec_dict):
     old = strip_internal_attributes(deepcopy(old_spec_dict))
     new = strip_internal_attributes(deepcopy(update_spec_dict))
-    for field in READ_ONLY_FIELDS:
-        old.pop(field, None)
-        new.pop(field, None)
+    # for field in READ_ONLY_FIELDS:
+    #     old.pop(field, None)
+    #     new.pop(field, None)
     return old == new
 
 
@@ -347,7 +371,7 @@ def update_NetworkController(module, result, api_instance):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
-    strip_read_only_fields(update_spec, fields=READ_ONLY_FIELDS)
+    # strip_read_only_fields(update_spec, fields=READ_ONLY_FIELDS)
 
     resp = None
     try:
@@ -367,7 +391,8 @@ def update_NetworkController(module, result, api_instance):
 
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
-        _fetch_and_return_controller(module, api_instance, ext_id, result)
+        resp = get_network_controller(module, api_instance, ext_id)
+        result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
 
 

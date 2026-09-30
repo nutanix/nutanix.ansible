@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_network_controllers_info_v2
 short_description: Fetch network controllers info in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to fetch information about NetworkController in Nutanix Prism Central.
   - If C(ext_id) is provided, fetch details of the specific NetworkController.
@@ -23,22 +23,27 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get Network Controller by ext_id) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin,
-      Prism Viewer, Project Admin, Super Admin, VPC Admin
+      Required Roles: Prism User, Super Admin
     - >-
       B(Get list of Network Controllers) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin,
-      Prism Viewer, Project Admin, Super Admin, VPC Admin
+      Required Roles: Prism User, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   ext_id:
     description:
-      - The external ID (UUID) of the network controller.
+      - The external ID of the network controller.
       - If provided, only the specific controller is fetched; otherwise all controllers are listed.
     type: str
+  page:
+    description:
+      - The number of page
+    type: int
+  limit:
+    description:
+      - The number of records
+    type: int
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
-  - nutanix.ncp.ntnx_info_v2
   - nutanix.ncp.ntnx_logger
   - nutanix.ncp.ntnx_proxy_v2
 author:
@@ -144,6 +149,8 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        page=dict(type="int"),
+        limit=dict(type="int"),
     )
     return module_args
 
@@ -163,10 +170,6 @@ def get_network_controllers(module, api_instance, result):
         module.fail_json(
             msg="Failed generating network controllers info spec", **result
         )
-
-    kwargs.pop("_filter", None)
-    kwargs.pop("_orderby", None)
-    kwargs.pop("_select", None)
 
     try:
         resp = api_instance.list_network_controllers(**kwargs)
@@ -188,6 +191,7 @@ def get_network_controllers(module, api_instance, result):
 def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
+        skip_info_args=True,
         supports_check_mode=False,
     )
     remove_param_with_none_value(module.params)
