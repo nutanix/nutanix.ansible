@@ -49,33 +49,43 @@ jobs:
           VARS_FILE="tests/integration/targets/prepare_env/vars/main.yml"
           echo "VARS_FILE=$VARS_FILE" >> $GITHUB_ENV
 
-          # Parse arguments: /ok-to-test <regex> [api]
+          # Parse arguments: /ok-to-test <regex> [api] [no-prepare]
+          # Optional flags may appear in any order after the regex.
           args="${{ github.event.client_payload.slash_command.args.all }}"
           flag=""
           use_api_key=false
+          no_prepare=false
+          regex_pattern=""
 
-          # Parse arguments to extract regex and api flag
+          # Parse arguments to extract regex, api, and no-prepare flags
           if [ "$args" = "allow-disabled" ]; then
               flag="--allow-disabled"
           elif [ -n "$args" ]; then
-              # Split args into array
               read -ra arg_array <<< "$args"
+              remaining=()
+              for arg in "${arg_array[@]}"; do
+                  case "$arg" in
+                      api)
+                          use_api_key=true
+                          ;;
+                      no-prepare)
+                          no_prepare=true
+                          ;;
+                      *)
+                          remaining+=("$arg")
+                          ;;
+                  esac
+              done
+              regex_pattern="${remaining[*]}"
 
-              # Check if last argument is "api"
-              if [ "${arg_array[-1]}" = "api" ]; then
-                  use_api_key=true
-                  # Remove "api" from args to get regex pattern
-                  unset 'arg_array[-1]'
-                  regex_pattern="${arg_array[*]}"
-
-                  # Special case: if regex is empty and only "api" was passed, treat as allow-disabled
-                  if [ -z "$regex_pattern" ] && [ "${arg_array[0]}" = "allow-disabled" ]; then
-                      flag="--allow-disabled"
-                  fi
-              else
-                  regex_pattern="$args"
+              # Preserve allow-disabled when combined with optional flags
+              if [ "$regex_pattern" = "allow-disabled" ]; then
+                  flag="--allow-disabled"
+                  regex_pattern=""
               fi
           fi
+
+          echo "NO_PREPARE=${no_prepare}" >> $GITHUB_ENV
 
           # Clean up any existing authentication environment variables
           unset NUTANIX_USERNAME
@@ -145,11 +155,15 @@ jobs:
           fi
 
 
-          echo "===> Preparing environments..."
-          ansible-playbook tests/integration/targets/prepare_env/playbooks/prepare_env.yml
-          ansible-playbook tests/integration/targets/prepare_ndb_env/playbooks/prepare_env.yml
-          ansible-playbook tests/integration/targets/prepare_fc_env/playbooks/prepare_fc_env.yml
-          ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
+          if [ "$no_prepare" = true ]; then
+              echo "===> Skipping prepare environments (no-prepare flag)..."
+          else
+              echo "===> Preparing environments..."
+              ansible-playbook tests/integration/targets/prepare_env/playbooks/prepare_env.yml
+              ansible-playbook tests/integration/targets/prepare_ndb_env/playbooks/prepare_env.yml
+              ansible-playbook tests/integration/targets/prepare_fc_env/playbooks/prepare_fc_env.yml
+              ansible-playbook tests/integration/targets/prepare_foundation_env/playbooks/prepare_foundation_env.yml
+          fi
 
           # Function to run inventory tests from a given directory
           # Handles both: directories with subdirectories (inventory_test, inventory_test_v2, inventory_test_hosts_v2)
@@ -266,7 +280,7 @@ jobs:
           fi
 
       - name: Cleanup Environments
-        if: ${{ always() }}
+        if: ${{ always() && env.NO_PREPARE != 'true' }}
         run: |
           cd /home/${USER}/.ansible/collections/ansible_collections/${{ env.NAMESPACE }}/${{ env.COLLECTION_NAME }}
           echo "🧹 Cleaning up environments..."
@@ -446,6 +460,7 @@ jobs:
           body: |
             > Integration test run status is : ${{ job.status }}
             > Authentication method: ${{ env.AUTH_METHOD == 'api_key' && '🔑 API Key' || '🔐 Username/Password' }}
+            > Prepare/Cleanup: ${{ env.NO_PREPARE == 'true' && '⏭️ Skipped (no-prepare)' || '▶️ Ran' }}
             > Coverage is : ${{ env.TOTAL_COVERAGE }} %
             > Job link: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
@@ -464,6 +479,7 @@ jobs:
           echo "### Integration Test Summary" >> $GITHUB_STEP_SUMMARY
           echo "- Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           echo "- Authentication: ${{ env.AUTH_METHOD == 'api_key' && '🔑 API Key' || '🔐 Username/Password' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Prepare/Cleanup: ${{ env.NO_PREPARE == 'true' && 'Skipped (no-prepare)' || 'Ran' }}" >> $GITHUB_STEP_SUMMARY
           echo "- Coverage: ${{ env.TOTAL_COVERAGE }}%" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Detailed Test Results" >> $GITHUB_STEP_SUMMARY
