@@ -222,7 +222,6 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
-    strip_read_only_fields,
 )
 
 SDK_IMP_ERROR = None
@@ -240,7 +239,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
 
     vpc_global_config_spec = dict(
-        is_overlapping_erps_enabled=dict(type="bool", required=False),
+        is_overlapping_erps_enabled=dict(type="bool", required=False, default=False),
     )
 
     metadata_spec = dict(
@@ -271,16 +270,6 @@ def get_module_spec():
         metadata=dict(type="dict", options=metadata_spec, obj=networking_sdk.Metadata),
     )
     return module_args
-
-
-# READ_ONLY_FIELDS = (
-#     "controller_status",
-#     "controller_version",
-#     "minimum_ahv_version",
-#     "minimum_nos_version",
-#     "links",
-#     "tenant_id",
-# )
 
 
 def create_NetworkController(module, result, api_instance):
@@ -335,9 +324,6 @@ def create_NetworkController(module, result, api_instance):
 def check_for_idempotency(old_spec_dict, update_spec_dict):
     old = strip_internal_attributes(deepcopy(old_spec_dict))
     new = strip_internal_attributes(deepcopy(update_spec_dict))
-    # for field in READ_ONLY_FIELDS:
-    #     old.pop(field, None)
-    #     new.pop(field, None)
     return old == new
 
 
@@ -368,8 +354,6 @@ def update_NetworkController(module, result, api_instance):
     if check_for_idempotency(old_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
-
-    # strip_read_only_fields(update_spec, fields=READ_ONLY_FIELDS)
 
     resp = None
     try:
