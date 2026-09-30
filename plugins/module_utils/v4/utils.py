@@ -15,6 +15,8 @@ except ImportError:
 
     from urlparse import urlparse
 
+from ..utils import get_custom_headers
+
 __metaclass__ = type
 
 
@@ -243,6 +245,22 @@ def validate_required_params(module, required_params):
         )
 
     return missing_params
+
+
+def _apply_custom_headers(client, module):
+    """
+    Apply custom headers from module params and NUTANIX_HEADER_ environment variables
+    to a v4 SDK ApiClient via add_default_header.
+
+    Header values are registered as no_log values, so values taken from the
+    environment are masked in module output like custom_headers itself.
+    """
+    headers = get_custom_headers(module.params)
+    no_log_values = getattr(module, "no_log_values", None)
+    if no_log_values is not None:
+        no_log_values.update(str(value) for value in headers.values() if value)
+    for key, value in headers.items():
+        client.add_default_header(header_name=key, header_value=value)
 
 
 def _get_proxy_url(module=None):
