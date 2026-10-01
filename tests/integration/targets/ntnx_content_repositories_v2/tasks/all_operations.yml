@@ -1,0 +1,802 @@
+---
+- name: Start testing content repository modules
+  ansible.builtin.debug:
+    msg: >-
+      Start testing content repository modules
+
+- name: Generate random content repository name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set suffix name
+  ansible.builtin.set_fact:
+    suffix_name: "ansible-cr-"
+
+- name: Generate content repository names
+  ansible.builtin.set_fact:
+    content_repo_name: "{{ suffix_name }}{{ random_name }}"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+- name: Set default project ext_id
+  ansible.builtin.set_fact:
+    content_repo_project_ext_id: "{{ default_project.uuid }}"
+
+###########################################################
+# CHECK MODE TESTS - CREATE
+###########################################################
+- name: Generate spec for creating content repository using check mode
+  nutanix.ncp.ntnx_content_repository_v2:
+    state: present
+    name: "content_repo_check_mode_1"
+    description: "Check mode content repository"
+    project_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify spec of content repository create using check mode
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "content_repo_check_mode_1"
+      - result.response.description == "Check mode content repository"
+      - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
+    fail_msg: "Unable to generate spec for content repository create using check mode"
+    success_msg: "Spec generated successfully for content repository create using check mode"
+
+###########################################################
+# CREATE OPERATIONS
+###########################################################
+- name: Create content repository with minimum fields
+  nutanix.ncp.ntnx_content_repository_v2:
+    state: present
+    name: "{{ content_repo_name }}1"
+    project_ext_id: "{{ content_repo_project_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify create with minimum fields
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.ext_id is defined
+      - result.ext_id | length > 0
+      - result.task_ext_id is defined
+      - result.response.name == "{{ content_repo_name }}1"
+      - result.response.project_ext_id == content_repo_project_ext_id
+    fail_msg: "Create content repository with minimum fields failed"
+    success_msg: "Create content repository with minimum fields passed"
+
+- name: Adding content repository ext_id to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+- name: Create content repository with all fields
+  nutanix.ncp.ntnx_content_repository_v2:
+    state: present
+    name: "{{ content_repo_name }}2"
+    description: "Content repository with all fields for testing"
+    project_ext_id: "{{ content_repo_project_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify create with all fields
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.ext_id | length > 0
+      - result.task_ext_id is defined
+      - result.response.name == content_repo_name ~ "2"
+      - result.response.description == "Content repository with all fields for testing"
+      - result.response.project_ext_id == content_repo_project_ext_id
+    fail_msg: "Create content repository with all fields failed"
+    success_msg: "Create content repository with all fields passed"
+
+- name: Save content repository ext_id for update tests
+  ansible.builtin.set_fact:
+    content_repo_ext_id: "{{ result.ext_id }}"
+
+- name: Adding content repository ext_id to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+###########################################################
+# CHECK MODE TESTS - UPDATE
+###########################################################
+- name: Generate spec for updating content repository name and description using check mode
+  nutanix.ncp.ntnx_content_repository_v2:
+    state: present
+    ext_id: "{{ content_repo_ext_id }}"
+    name: "Updated name"
+    description: "Updated description check mode"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify spec of content repository update name and description using check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "Updated name"
+      - result.response.description == "Updated description check mode"
+    fail_msg: "Unable to generate spec for content repository update name and description using check mode"
+    success_msg: "Spec generated successfully for content repository update name and description using check mode"
+
+###########################################################
+# UPDATE OPERATIONS
+###########################################################
+- name: Update content repository name and description
+  nutanix.ncp.ntnx_content_repository_v2:
+    state: present
+    ext_id: "{{ content_repo_ext_id }}"
+    name: "{{ content_repo_name }}2_updated"
+    description: "Updated content repository description 2"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify update name and description
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.task_ext_id is defined
+      - result.response.description == "Updated content repository description 2"
+      - result.response.name == content_repo_name ~ "2_updated"
+    fail_msg: "Update content repository name and description failed"
+    success_msg: "Update content repository name and description passed"
+
+###########################################################
+# IDEMPOTENCY TEST
+###########################################################
+- name: Check idempotency - no changes
+  nutanix.ncp.ntnx_content_repository_v2:
+    state: present
+    ext_id: "{{ content_repo_ext_id }}"
+    name: "{{ content_repo_name }}2_updated"
+    description: "Updated content repository description 2"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify idempotency
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: "Idempotency check failed"
+    success_msg: "Idempotency check passed"
+
+###########################################################
+# CHECK MODE TESTS - DELETE
+###########################################################
+- name: Delete content repository with check mode
+  nutanix.ncp.ntnx_content_repository_v2:
+    state: absent
+    ext_id: "{{ content_repo_ext_id }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify check mode delete
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg is defined
+      - result.ext_id == content_repo_ext_id
+      - result.msg == "Content repository with ext_id:{{ content_repo_ext_id }} will be deleted."
+    fail_msg: "Check mode delete failed"
+    success_msg: "Check mode delete passed"
+
+###########################################################
+# INFO OPERATIONS
+###########################################################
+- name: List all content repositories
+  nutanix.ncp.ntnx_content_repositories_info_v2:
+  register: content_repos_list
+  ignore_errors: true
+
+- name: Debug content_repos_list
+  ansible.builtin.debug:
+    var: content_repos_list
+
+- name: Verify list all content repositories
+  ansible.builtin.assert:
+    that:
+      - content_repos_list.failed == false
+      - content_repos_list.changed == false
+      - content_repos_list.response is defined
+      - content_repos_list.response | length >= 2
+      - content_repos_list.total_available_results is defined
+      - content_repos_list.total_available_results >= 2
+    fail_msg: "List all content repositories failed"
+    success_msg: "List all content repositories passed"
+
+- name: Get content repository by ext_id
+  nutanix.ncp.ntnx_content_repositories_info_v2:
+    ext_id: "{{ content_repo_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify get content repository by ext_id
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == content_repo_ext_id
+      - result.response.name == "{{ content_repo_name }}2_updated"
+      - result.response.description == "Updated content repository description 2"
+      - result.response.project_ext_id == content_repo_project_ext_id
+    fail_msg: "Get content repository by ext_id failed"
+    success_msg: "Get content repository by ext_id passed"
+
+- name: List content repositories with filter
+  nutanix.ncp.ntnx_content_repositories_info_v2:
+    filter: "name eq '{{ content_repo_name }}2_updated'"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify list with filter
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == "{{ content_repo_name }}2_updated"
+      - result.response[0].description == "Updated content repository description 2"
+      - result.response[0].project_ext_id == content_repo_project_ext_id
+    fail_msg: "List content repositories with filter failed"
+    success_msg: "List content repositories with filter passed"
+
+- name: List content repositories with limit
+  nutanix.ncp.ntnx_content_repositories_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify list with limit
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    fail_msg: "List content repositories with limit failed"
+    success_msg: "List content repositories with limit passed"
+
+###########################################################
+# LIST ITEMS
+###########################################################
+- name: List content repository items
+  nutanix.ncp.ntnx_content_repository_items_info_v2:
+    ext_id: "{{ content_repo_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify list content repository items
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == content_repo_ext_id
+      - result.total_available_results is defined
+    fail_msg: "List content repository items failed"
+    success_msg: "List content repository items passed"
+
+###########################################################
+# MIGRATE IMAGE (optional - requires existing image)
+###########################################################
+- name: Create disk image for migrate test
+  nutanix.ncp.ntnx_images_v2:
+    state: present
+    type: DISK_IMAGE
+    name: "{{ content_repo_name }}-image"
+    description: "Image for content repository migrate test"
+    source:
+      url_source:
+        url: "{{ disk_image.url }}"
+        should_allow_insecure_url: true
+    cluster_location_ext_ids:
+      - "{{ cluster.uuid }}"
+  register: image_result
+  ignore_errors: true
+
+- name: Debug image_result
+  ansible.builtin.debug:
+    var: image_result
+
+- name: Migrate image to content repository using check mode
+  nutanix.ncp.ntnx_images_migrate_v2:
+    ext_id: "11111111-1111-1111-1111-111111111111"
+    content_repository_ext_id: "22222222-2222-2222-2222-222222222222"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify migrate image check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == "11111111-1111-1111-1111-111111111111"
+      - result.response.content_repository_ext_id == "22222222-2222-2222-2222-222222222222"
+    fail_msg: "Migrate image check mode failed"
+    success_msg: "Migrate image check mode passed"
+
+- name: Migrate image to content repository
+  nutanix.ncp.ntnx_images_migrate_v2:
+    ext_id: "{{ image_result.ext_id }}"
+    content_repository_ext_id: "{{ content_repo_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify migrate image
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined
+      - result.ext_id == image_result.ext_id
+      - result.content_repository_ext_id == content_repo_ext_id
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+      - result.response.progress_percentage == 100
+      - result.response.ext_id == result.task_ext_id
+    fail_msg: "Migrate image failed"
+    success_msg: "Migrate image passed"
+
+- name: List content repository items after migrate
+  nutanix.ncp.ntnx_content_repository_items_info_v2:
+    ext_id: "{{ content_repo_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: image_result.ext_id is defined
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify list content repository items after migrate
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == content_repo_ext_id
+      - result.response is defined
+      - result.response | length == 1
+      - result.total_available_results == 1
+      - result.response[0].ext_id == image_result.ext_id
+      - result.response[0].name == content_repo_name ~ "-image"
+      - result.response[0].description == "Image for content repository migrate test"
+      - result.response[0].type == "IMAGE"
+      - result.response[0].state == "READY"
+    fail_msg: "List content repository items after migrate failed"
+    success_msg: "List content repository items after migrate passed"
+  when: image_result.ext_id is defined and not result.skipped | default(false)
+
+###########################################################
+# SUBSCRIBE / SYNC
+###########################################################
+- name: Subscribe to source content repository using check mode
+  nutanix.ncp.ntnx_content_repository_subscribe_v2:
+    ext_id: "33333333-3333-3333-3333-333333333333"
+    source_domain_manager_ext_id: "44444444-4444-4444-4444-444444444444"
+    project_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify subscribe check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == "33333333-3333-3333-3333-333333333333"
+      - result.response.source_domain_manager_ext_id == "44444444-4444-4444-4444-444444444444"
+      - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
+    fail_msg: "Subscribe check mode failed"
+    success_msg: "Subscribe check mode passed"
+
+- name: Sync content repository using check mode
+  nutanix.ncp.ntnx_content_repository_sync_v2:
+    ext_id: "33333333-3333-3333-3333-333333333333"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify sync check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "33333333-3333-3333-3333-333333333333"
+      - result.msg == "Content repository with ext_id:33333333-3333-3333-3333-333333333333 will be synced."
+    fail_msg: "Sync check mode failed"
+    success_msg: "Sync check mode passed"
+
+- name: List all clusters to get source domain manager (Prism Central) external ID
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+  register: pc_clusters_result
+  ignore_errors: true
+
+- name: Debug pc_clusters_result
+  ansible.builtin.debug:
+    var: pc_clusters_result
+
+- name: Get source domain manager external ID
+  ansible.builtin.set_fact:
+    source_domain_manager_ext_id: "{{ pc_clusters_result.response[0].ext_id }}"
+  when:
+    - pc_clusters_result is succeeded
+    - pc_clusters_result.response is defined
+    - pc_clusters_result.response | length > 0
+
+- name: Subscribe to source content repository on availability zone PC
+  nutanix.ncp.ntnx_content_repository_subscribe_v2:
+    nutanix_host: "{{ availability_zone_pc_ip }}"
+    ext_id: "{{ content_repo_ext_id }}"
+    source_domain_manager_ext_id: "{{ source_domain_manager_ext_id }}"
+    project_ext_id: "{{ content_repo_project_ext_id }}"
+  register: subscribe_result
+  ignore_errors: true
+  when: source_domain_manager_ext_id is defined
+
+- name: Debug subscribe_result
+  ansible.builtin.debug:
+    var: subscribe_result
+
+- name: Verify subscribe on availability zone PC
+  ansible.builtin.assert:
+    that:
+      - subscribe_result.changed == true
+      - subscribe_result.failed == false
+      - subscribe_result.task_ext_id is defined
+      - subscribe_result.ext_id == content_repo_ext_id
+      - subscribe_result.response is defined
+      - subscribe_result.response.ext_id == content_repo_ext_id
+      - subscribe_result.response.name == "{{ content_repo_name }}2_updated"
+      - subscribe_result.response.description == "Updated content repository description 2"
+      - subscribe_result.response.project_ext_id == content_repo_project_ext_id
+      - subscribe_result.response.state == "READY"
+      - subscribe_result.response.publisher is defined
+      - subscribe_result.response.publisher.remote_domain_manager_ext_id == source_domain_manager_ext_id
+      - subscribe_result.response.total_item_count == 1
+    fail_msg: "Subscribe on availability zone PC failed"
+    success_msg: "Subscribe on availability zone PC passed"
+  when: source_domain_manager_ext_id is defined
+
+- name: Sync subscribed content repository on availability zone PC
+  nutanix.ncp.ntnx_content_repository_sync_v2:
+    nutanix_host: "{{ availability_zone_pc_ip }}"
+    ext_id: "{{ content_repo_ext_id }}"
+  register: sync_result
+  ignore_errors: true
+  when:
+    - source_domain_manager_ext_id is defined
+    - subscribe_result is succeeded
+
+- name: Debug sync_result
+  ansible.builtin.debug:
+    var: sync_result
+
+- name: Verify sync on availability zone PC
+  ansible.builtin.assert:
+    that:
+      - sync_result.changed == true
+      - sync_result.failed == false
+      - sync_result.task_ext_id is defined
+      - sync_result.ext_id == content_repo_ext_id
+      - sync_result.response is defined
+      - sync_result.response.ext_id == content_repo_ext_id
+      - sync_result.response.name == "{{ content_repo_name }}2_updated"
+      - sync_result.response.description == "Updated content repository description 2"
+      - sync_result.response.project_ext_id == content_repo_project_ext_id
+      - sync_result.response.state == "READY"
+      - sync_result.response.publisher is defined
+      - sync_result.response.publisher.remote_domain_manager_ext_id == source_domain_manager_ext_id
+    fail_msg: "Sync on availability zone PC failed"
+    success_msg: "Sync on availability zone PC passed"
+  when:
+    - source_domain_manager_ext_id is defined
+    - subscribe_result is succeeded
+
+###########################################################
+# NEGATIVE TESTS
+###########################################################
+- name: Create content repository without name
+  nutanix.ncp.ntnx_content_repository_v2:
+    state: present
+    project_ext_id: "{{ content_repo_project_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify create without name fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "state is present but any of the following are missing: name, ext_id"
+    fail_msg: "Create without name should fail"
+    success_msg: "Create without name failed as expected"
+
+- name: Update content repository with wrong extenral ID
+  nutanix.ncp.ntnx_content_repository_v2:
+    state: present
+    ext_id: "11111111-1111-1111-1111-111111111111"
+    name: "Updated name"
+    description: "Updated description"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify update with wrong ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching content repository using ext_id"
+      - result.response is defined
+      - result.response.data.error | length > 0
+    fail_msg: "Update with wrong ext_id should fail"
+    success_msg: "Update with wrong ext_id failed as expected"
+
+- name: Get content repository with wrong ext_id
+  nutanix.ncp.ntnx_content_repositories_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify get with wrong ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching content repository using ext_id"
+      - result.response is defined
+      - result.response.data.error | length > 0
+    fail_msg: "Get with wrong ext_id should fail"
+    success_msg: "Get with wrong ext_id failed as expected"
+
+- name: Delete content repository with wrong ext_id
+  nutanix.ncp.ntnx_content_repository_v2:
+    state: absent
+    ext_id: "11111111-1111-1111-1111-111111111111"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify delete with wrong ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while deleting content repository"
+      - result.response is defined
+      - result.response.data.error | length > 0
+    fail_msg: "Delete with wrong ext_id should fail"
+    success_msg: "Delete with wrong ext_id failed as expected"
+
+- name: Subscribe to source content repository with wrong source domain manager ext_id
+  nutanix.ncp.ntnx_content_repository_subscribe_v2:
+    ext_id: "{{ content_repo_ext_id }}"
+    source_domain_manager_ext_id: "11111111-1111-1111-1111-111111111111"
+    project_ext_id: "{{ content_repo_project_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify subscribe with wrong source domain manager ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while subscribing to content repository"
+      - result.response is defined
+      - result.response.data.error | length > 0
+    fail_msg: "Subscribe with wrong source domain manager ext_id should fail"
+    success_msg: "Subscribe with wrong source domain manager ext_id failed as expected"
+
+- name: Sync subscribed content repository with wrong source domain manager ext_id
+  nutanix.ncp.ntnx_content_repository_sync_v2:
+    ext_id: "{{ content_repo_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify sync with wrong source domain manager ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while syncing content repository"
+      - result.response is defined
+      - result.response.data.error | length > 0
+    fail_msg: "Sync with wrong source domain manager ext_id should fail"
+    success_msg: "Sync with wrong source domain manager ext_id failed as expected"
+
+###########################################################
+# DELETE OPERATIONS
+###########################################################
+
+- name: Delete subscribed content repository on availability zone PC
+  nutanix.ncp.ntnx_content_repository_v2:
+    nutanix_host: "{{ availability_zone_pc_ip }}"
+    state: absent
+    ext_id: "{{ content_repo_ext_id }}"
+  register: delete_az_subscribe_result
+  ignore_errors: true
+  when:
+    - source_domain_manager_ext_id is defined
+    - subscribe_result is defined
+    - subscribe_result is succeeded
+
+- name: Debug delete_az_subscribe_result
+  ansible.builtin.debug:
+    var: delete_az_subscribe_result
+  when:
+    - source_domain_manager_ext_id is defined
+    - subscribe_result is defined
+    - subscribe_result is succeeded
+
+- name: Verify delete subscribed content repository on availability zone PC
+  ansible.builtin.assert:
+    that:
+      - delete_az_subscribe_result.changed == true
+      - delete_az_subscribe_result.failed == false
+      - delete_az_subscribe_result.task_ext_id is defined
+      - delete_az_subscribe_result.ext_id == content_repo_ext_id
+      - delete_az_subscribe_result.response.status == "SUCCEEDED"
+    fail_msg: "Delete subscribed content repository on availability zone PC failed"
+
+- name: Delete migrate test image
+  nutanix.ncp.ntnx_images_v2:
+    state: absent
+    ext_id: "{{ image_result.ext_id }}"
+  register: delete_image_result
+  ignore_errors: true
+  when: image_result.ext_id is defined
+
+- name: Debug delete_image_result
+  ansible.builtin.debug:
+    var: delete_image_result
+  when: image_result.ext_id is defined
+
+- name: Verify delete migrate test image
+  ansible.builtin.assert:
+    that:
+      - delete_image_result.changed == true
+      - delete_image_result.failed == false
+      - delete_image_result.task_ext_id is defined
+      - delete_image_result.ext_id == image_result.ext_id
+      - delete_image_result.response.status == "SUCCEEDED"
+    fail_msg: "Delete migrate test image failed"
+    success_msg: "Delete migrate test image passed"
+  when: image_result.ext_id is defined
+
+- name: Delete content repositories
+  nutanix.ncp.ntnx_content_repository_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: result
+
+- name: Verify delete content repositories
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.task_ext_id is defined
+      - item.ext_id == item.item
+      - item.response.status == "SUCCEEDED"
+    fail_msg: "Delete content repository failed"
+    success_msg: "Delete content repository passed"
+  loop: "{{ result.results }}"
+  when: result.results is defined
+
+- name: Finished testing content repository modules
+  ansible.builtin.debug:
+    msg: Finished testing content repository modules

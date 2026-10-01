@@ -46,3 +46,23 @@ def get_resource_group(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching resource group using ext_id",
         )
+
+
+def get_content_repository(module, api_instance, ext_id):
+    """
+    Get content repository by ext_id.
+    Args:
+        module: Ansible module
+        api_instance (object): ContentRepositoriesApi instance
+        ext_id (str): External ID of the content repository
+    Returns:
+        content_repository (object): ContentRepository data object
+    """
+    try:
+        return api_instance.get_content_repository_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching content repository using ext_id",
+        )
