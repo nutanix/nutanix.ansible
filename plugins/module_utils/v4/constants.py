@@ -50,6 +50,7 @@ class Tasks:
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
         LOAD_BALANCER_SESSION = "networking:config:load-balancer-session"
         ENTITY_GROUP = "microseg:config:entity-group"
+        NETWORK_CONTROLLER = "networking:config:controller"
         VM_STARTUP_POLICY = "vmm:ahv:policies:vm-startup-policy"
         CATEGORY_MAPPING = "microseg:config:category-mapping"
         DIRECTORY_SERVER_CONFIG = "microseg:config:directory-server-config"
