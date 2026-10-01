@@ -407,12 +407,10 @@ from ..module_utils.v4.utils import (  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
-    import ntnx_lifecycle_py_client as life_cycle_management_sdk  # noqa: E402
+    import ntnx_lifecycle_py_client as lifecycle_sdk  # noqa: E402
 except ImportError:
 
-    from ..module_utils.v4.sdk_mock import (  # noqa: E402
-        mock_sdk as life_cycle_management_sdk,
-    )
+    from ..module_utils.v4.sdk_mock import mock_sdk as lifecycle_sdk  # noqa: E402
 
     SDK_IMP_ERROR = traceback.format_exc()
 
@@ -435,13 +433,13 @@ def get_module_spec():
             type="dict",
             options=md5_checksum_spec,
             required=False,
-            obj=life_cycle_management_sdk.LcmMd5Sum,
+            obj=lifecycle_sdk.LcmMd5Sum,
         ),
         sha256_sum=dict(
             type="dict",
             options=sha256_checksum_spec,
             required=False,
-            obj=life_cycle_management_sdk.LcmSha256Sum,
+            obj=lifecycle_sdk.LcmSha256Sum,
         ),
     )
 
@@ -454,7 +452,7 @@ def get_module_spec():
             type="str",
             required=True,
             choices=["HEX_MD5", "SHASUM"],
-            obj=life_cycle_management_sdk.CheckSumType,
+            obj=lifecycle_sdk.CheckSumType,
         ),
         checksum=dict(type="str", required=True),
     )
@@ -477,7 +475,7 @@ def get_module_spec():
                 "RECOMMENDED",
                 "STS",
             ],
-            obj=life_cycle_management_sdk.AvailableVersionStatus,
+            obj=lifecycle_sdk.AvailableVersionStatus,
         ),
         entity_class=dict(type="str", required=False),
         entity_model=dict(type="str", required=False),
@@ -485,7 +483,7 @@ def get_module_spec():
             type="str",
             required=False,
             choices=["FIRMWARE", "SOFTWARE"],
-            obj=life_cycle_management_sdk.EntityType,
+            obj=lifecycle_sdk.EntityType,
         ),
         entity_version=dict(type="str", required=False),
         hardware_family=dict(type="str", required=False),
@@ -495,7 +493,7 @@ def get_module_spec():
             elements="dict",
             required=False,
             options=image_file_spec,
-            obj=life_cycle_management_sdk.ImageFile,
+            obj=lifecycle_sdk.ImageFile,
         ),
     )
 
@@ -516,25 +514,25 @@ def get_module_spec():
                 "PRODUCT_META",
                 "SOFTWARE",
             ],
-            obj=life_cycle_management_sdk.ResourcesBundleType,
+            obj=lifecycle_sdk.ResourcesBundleType,
         ),
         vendor=dict(
             type="str",
             choices=["NUTANIX", "THIRD_PARTY"],
-            obj=life_cycle_management_sdk.BundleVendor,
+            obj=lifecycle_sdk.BundleVendor,
         ),
         cluster_ext_id=dict(type="str"),
         url_source=dict(
             type="dict",
             options=url_source_spec,
-            obj=life_cycle_management_sdk.BundleUrlSource,
+            obj=lifecycle_sdk.BundleUrlSource,
         ),
         checksum=dict(
             type="dict",
             options=checksum_spec,
             obj={
-                "md5_sum": life_cycle_management_sdk.LcmMd5Sum,
-                "sha256_sum": life_cycle_management_sdk.LcmSha256Sum,
+                "md5_sum": lifecycle_sdk.LcmMd5Sum,
+                "sha256_sum": lifecycle_sdk.LcmSha256Sum,
             },
             mutually_exclusive=[("md5_sum", "sha256_sum")],
         ),
@@ -542,18 +540,17 @@ def get_module_spec():
             type="list",
             elements="dict",
             options=image_spec,
-            obj=life_cycle_management_sdk.ResourcesImage,
+            obj=lifecycle_sdk.ResourcesImage,
         ),
     )
     return module_args
-
 
 
 def create_Bundle(module, result, api_instance):
     validate_required_params(module, ["vendor"])
 
     sg = SpecGenerator(module)
-    default_spec = life_cycle_management_sdk.Bundle()
+    default_spec = lifecycle_sdk.Bundle()
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
