@@ -1,0 +1,1299 @@
+---
+- name: Start Network Gateway tests
+  ansible.builtin.debug:
+    msg: Start Network Gateway v2 tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+    todelete: []
+    todelete_fips: []
+
+- name: Set names for gateway tests
+  ansible.builtin.set_fact:
+    gw_name: "gw_{{ suffix_name }}_{{ random_name }}"
+    gw_fip1_name: "fip1_{{ suffix_name }}_{{ random_name }}"
+    wrong_ext_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    category_key: "{{ random_name }}{{ suffix_name }}gw_key"
+    category_value: "{{ random_name }}{{ suffix_name }}gw_value"
+    # Dedicated fixture networks (not prepare_env vpc/overlay 192.168.1.x / Ext-Nat VLAN 113).
+    # External NAT uses underlay VLAN 206 / 10.44.3.224/27 (distinct from prepare_env 10.44.3.192/27).
+    gw_ext_nat:
+      name: "gw_ext_nat_{{ suffix_name }}_{{ random_name }}"
+      vlan_id: 206
+      network_ip: "10.44.3.224"
+      network_prefix: 27
+      gateway_ip: "10.44.3.225"
+      pool_start: "10.44.3.230"
+      pool_end: "10.44.3.239"
+    gw_overlay_net:
+      name: "gw_overlay_{{ suffix_name }}_{{ random_name }}"
+      network_ip: "192.168.50.0"
+      network_prefix: 24
+      gateway_ip: "192.168.50.1"
+      pool_start: "192.168.50.20"
+      pool_end: "192.168.50.80"
+    gw_vpc_name: "gw_vpc_{{ suffix_name }}_{{ random_name }}"
+
+- name: Create category for gateway tests
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{ category_key }}"
+    value: "{{ category_value }}"
+    description: "ansible gateway test category"
+  register: category_result
+  ignore_errors: true
+
+- name: Create category for gateway tests status
+  ansible.builtin.assert:
+    that:
+      - category_result.response is defined
+      - category_result.response.key == category_key
+      - category_result.response.value == category_value
+      - category_result.response.ext_id is defined
+      - category_result.changed == true
+      - category_result.failed == false
+    success_msg: "Category for gateway tests created successfully"
+    fail_msg: "Unable to create category for gateway tests"
+
+- name: Set category external ID
+  ansible.builtin.set_fact:
+    category_ext_id: "{{ category_result.response.ext_id }}"
+
+########################################################################################
+# Argument-spec / validation tests
+########################################################################################
+
+- name: Create gateway with missing name
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Debug create gateway with missing name result
+  ansible.builtin.debug:
+    var: result
+
+- name: Create gateway with missing name status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "state is present but any of the following are missing: name, ext_id"
+    success_msg: "Create gateway with missing name failed as expected"
+    fail_msg: "Create gateway with missing name did not fail as expected"
+
+- name: Delete gateway with missing ext_id
+  nutanix.ncp.ntnx_gateway_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Debug delete gateway with missing ext_id result
+  ansible.builtin.debug:
+    var: result
+
+- name: Delete gateway with missing ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "state is absent but all of the following are missing: ext_id"
+    success_msg: "Delete gateway with missing ext_id failed as expected"
+    fail_msg: "Delete gateway with missing ext_id did not fail as expected"
+
+- name: Create gateway with vpc_reference and cloud_network_reference together
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    name: "{{ gw_name }}_meX"
+    vpc_reference: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    cloud_network_reference: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+  register: result
+  ignore_errors: true
+
+- name: Debug create gateway with vpc/cloud mutually exclusive result
+  ansible.builtin.debug:
+    var: result
+
+- name: Create gateway with vpc_reference and cloud_network_reference together status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "parameters are mutually exclusive: vpc_reference|cloud_network_reference"
+    success_msg: "vpc_reference + cloud_network_reference is mutually exclusive"
+    fail_msg: "vpc_reference + cloud_network_reference was NOT flagged as mutually exclusive"
+
+- name: Create gateway with local_services and remote_services together
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    name: "{{ gw_name }}_meX"
+    services:
+      local_services:
+        local_bgp_service:
+          asn: 65001
+      remote_services:
+        remote_bgp_service:
+          asn: 65002
+          address:
+            ipv4:
+              value: "192.0.2.10"
+              prefix_length: 32
+  register: result
+  ignore_errors: true
+
+- name: Debug create gateway with local/remote services mutually exclusive result
+  ansible.builtin.debug:
+    var: result
+
+- name: Create gateway with local_services and remote_services together status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "parameters are mutually exclusive: local_services|remote_services found in services"
+    success_msg: "local_services + remote_services is mutually exclusive"
+    fail_msg: "local_services + remote_services was NOT flagged as mutually exclusive"
+
+- name: Upgrade gateway without ext_id
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    name: "{{ gw_name }}_upg"
+    upgrade: true
+  register: result
+  ignore_errors: true
+
+- name: Debug upgrade gateway without ext_id result
+  ansible.builtin.debug:
+    var: result
+
+- name: Upgrade gateway without ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "ext_id is required when upgrade=true"
+    success_msg: "upgrade=true without ext_id correctly rejected"
+    fail_msg: "upgrade=true without ext_id was NOT rejected"
+
+########################################################################################
+# Create Gateway Tests
+########################################################################################
+
+- name: Generate spec for creating gateway using check mode with all attributes
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    name: "gw_ansible_check_full"
+    description: "Gateway created in check mode with all attributes"
+    gateway_device_vendor: "GENERIC"
+    vpc_reference: "d1111111-1111-1111-1111-111111111111"
+    project_ext_id: "00000000-0000-0000-0000-000000000000"
+    metadata:
+      owner_reference_id: "a7777777-7777-7777-7777-777777777777"
+      owner_user_name: "owner_user_name"
+      project_reference_id: "b8888888-8888-8888-8888-888888888888"
+      project_name: "project_name"
+      category_ids:
+        - "c9999999-9999-9999-9999-999999999999"
+    deployment:
+      cluster_reference: "d2222222-2222-2222-2222-222222222222"
+      vcenter_datastore_name: "ds1"
+      should_synchronize_system_ntp_servers: true
+      should_synchronize_system_dns_servers: true
+      ntp_servers:
+        - fqdn:
+            value: "pool.ntp.org"
+        - ipv4:
+            value: "10.40.64.16"
+            prefix_length: 32
+      dns_servers:
+        - ipv4:
+            value: "8.8.8.8"
+            prefix_length: 32
+      management_interface:
+        subnet_reference: "d3333333-3333-3333-3333-333333333333"
+        vlan_id: 113
+        mtu: 1500
+        address:
+          ipv4:
+            value: "10.30.30.230"
+            prefix_length: 24
+        default_gateway:
+          ipv4:
+            value: "10.30.30.254"
+            prefix_length: 32
+      interfaces:
+        - subnet_reference: "d3333333-3333-3333-3333-333333333333"
+          mac_address: "00:11:22:33:44:55"
+          mtu: 1500
+          ip_address:
+            ipv4:
+              value: "10.30.30.231"
+              prefix_length: 24
+          default_gateway_address:
+            ipv4:
+              value: "10.30.30.254"
+              prefix_length: 32
+    services:
+      local_services:
+        service_address:
+          ipv4:
+            value: "10.30.30.240"
+            prefix_length: 32
+        service_addresses:
+          - ipv4:
+              value: "10.30.30.240"
+              prefix_length: 32
+        local_vtep_service:
+          vxlan_port: 4789
+    high_availability_group:
+      is_ha_enabled: true
+      algorithm: "ACTIVE_BACKUP"
+      peered_gateways:
+        - ext_id: "11111111-1111-1111-1111-111111111111"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Debug check mode create with all attributes result
+  ansible.builtin.debug:
+    var: result
+
+- name: Generate spec for creating gateway using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "gw_ansible_check_full"
+      - result.response.description == "Gateway created in check mode with all attributes"
+      - result.response.gateway_device_vendor == "GENERIC"
+      - result.response.vpc_reference == "d1111111-1111-1111-1111-111111111111"
+      - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
+      - result.response.metadata.owner_reference_id == "a7777777-7777-7777-7777-777777777777"
+      - result.response.metadata.owner_user_name == "owner_user_name"
+      - result.response.metadata.project_reference_id == "b8888888-8888-8888-8888-888888888888"
+      - result.response.metadata.project_name == "project_name"
+      - result.response.metadata.category_ids | length == 1
+      - result.response.metadata.category_ids[0] == "c9999999-9999-9999-9999-999999999999"
+      - result.response.deployment.cluster_reference == "d2222222-2222-2222-2222-222222222222"
+      - result.response.deployment.vcenter_datastore_name == "ds1"
+      - result.response.deployment.should_synchronize_system_ntp_servers == true
+      - result.response.deployment.should_synchronize_system_dns_servers == true
+      - result.response.deployment.ntp_servers | length == 2
+      - result.response.deployment.ntp_servers[0].fqdn.value == "pool.ntp.org"
+      - result.response.deployment.ntp_servers[1].ipv4.value == "10.40.64.16"
+      - result.response.deployment.dns_servers | length == 1
+      - result.response.deployment.dns_servers[0].ipv4.value == "8.8.8.8"
+      - result.response.deployment.management_interface.subnet_reference == "d3333333-3333-3333-3333-333333333333"
+      - result.response.deployment.management_interface.vlan_id == 113
+      - result.response.deployment.management_interface.mtu == 1500
+      - result.response.deployment.management_interface.address.ipv4.value == "10.30.30.230"
+      - result.response.deployment.management_interface.default_gateway.ipv4.value == "10.30.30.254"
+      - result.response.deployment.interfaces | length == 1
+      - result.response.deployment.interfaces[0].subnet_reference == "d3333333-3333-3333-3333-333333333333"
+      - result.response.deployment.interfaces[0].mac_address == "00:11:22:33:44:55"
+      - result.response.deployment.interfaces[0].ip_address.ipv4.value == "10.30.30.231"
+      - result.response.deployment.interfaces[0].default_gateway_address.ipv4.value == "10.30.30.254"
+      - result.response.services.service_address.ipv4.value == "10.30.30.240"
+      - result.response.services.service_addresses[0].ipv4.value == "10.30.30.240"
+      - result.response.services.local_vtep_service.vxlan_port == 4789
+      - result.response.high_availability_group.is_ha_enabled == true
+      - result.response.high_availability_group.algorithm == "ACTIVE_BACKUP"
+      - result.response.high_availability_group.peered_gateways | length == 1
+      - result.response.high_availability_group.peered_gateways[0].ext_id == "11111111-1111-1111-1111-111111111111"
+    success_msg: "Spec for creating gateway using check mode with all attributes is generated successfully"
+    fail_msg: "Spec for creating gateway using check mode with all attributes is not generated successfully"
+
+########################################################################################
+# Dedicated NAT external subnet + VPC + overlay for local VTEP gateway (not prepare_env)
+########################################################################################
+
+- name: Fetch categories for floating ip assignment
+  nutanix.ncp.ntnx_categories_info_v2:
+  register: result
+
+- name: Define floating ip category
+  ansible.builtin.set_fact:
+    fip_category_ext_id: "{{ result.response[0].ext_id }}"
+
+- name: Create external NAT VLAN subnet for gateway tests
+  nutanix.ncp.ntnx_subnets_v2:
+    state: present
+    name: "{{ gw_ext_nat.name }}"
+    subnet_type: VLAN
+    cluster_reference: "{{ cluster.uuid }}"
+    network_id: "{{ gw_ext_nat.vlan_id }}"
+    is_external: true
+    is_nat_enabled: true
+    ip_config:
+      - ipv4:
+          ip_subnet:
+            ip:
+              value: "{{ gw_ext_nat.network_ip }}"
+            prefix_length: "{{ gw_ext_nat.network_prefix }}"
+          default_gateway_ip:
+            value: "{{ gw_ext_nat.gateway_ip }}"
+          pool_list:
+            - start_ip:
+                value: "{{ gw_ext_nat.pool_start }}"
+              end_ip:
+                value: "{{ gw_ext_nat.pool_end }}"
+  register: result
+  ignore_errors: true
+
+- name: Create external NAT VLAN subnet for gateway tests status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+      - result.ext_id is defined
+      - result.response.is_external == true
+      - result.response.is_nat_enabled == true
+      - result.response.network_id == gw_ext_nat.vlan_id
+      - result.response.ip_config[0].ipv4.ip_subnet.ip.value == gw_ext_nat.network_ip
+    success_msg: "Gateway external NAT subnet created successfully"
+    fail_msg: "Unable to create gateway external NAT subnet"
+
+- name: Set gateway external NAT subnet facts
+  ansible.builtin.set_fact:
+    gw_ext_nat_ext_id: "{{ result.ext_id }}"
+  when: result.ext_id is defined and result.ext_id | length > 0
+
+- name: Create VPC with NAT external subnet for gateway tests
+  nutanix.ncp.ntnx_vpcs_v2:
+    state: present
+    wait: true
+    name: "{{ gw_vpc_name }}"
+    project_ext_id: "{{ default_project.uuid }}"
+    external_subnets:
+      - subnet_reference: "{{ gw_ext_nat_ext_id }}"
+  register: result
+  when: gw_ext_nat_ext_id | default('') | length > 0
+  ignore_errors: true
+
+- name: Create VPC with NAT external subnet for gateway tests status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+      - result.ext_id is defined
+      - result.response.external_subnets[0].subnet_reference == gw_ext_nat_ext_id
+      - result.response.project_ext_id == default_project.uuid
+    success_msg: "Gateway VPC with NAT external subnet created successfully"
+    fail_msg: "Unable to create gateway VPC with NAT external subnet"
+  when: gw_ext_nat_ext_id | default('') | length > 0
+
+- name: Set gateway VPC facts
+  ansible.builtin.set_fact:
+    gw_vpc_ext_id: "{{ result.ext_id }}"
+  when: result.ext_id is defined and result.ext_id | length > 0
+
+- name: Create overlay subnet in gateway VPC
+  nutanix.ncp.ntnx_subnets_v2:
+    state: present
+    name: "{{ gw_overlay_net.name }}"
+    subnet_type: OVERLAY
+    vpc_reference: "{{ gw_vpc_ext_id }}"
+    project_ext_id: "{{ default_project.uuid }}"
+    ip_config:
+      - ipv4:
+          ip_subnet:
+            ip:
+              value: "{{ gw_overlay_net.network_ip }}"
+            prefix_length: "{{ gw_overlay_net.network_prefix }}"
+          default_gateway_ip:
+            value: "{{ gw_overlay_net.gateway_ip }}"
+            prefix_length: "{{ gw_overlay_net.network_prefix }}"
+          pool_list:
+            - start_ip:
+                value: "{{ gw_overlay_net.pool_start }}"
+              end_ip:
+                value: "{{ gw_overlay_net.pool_end }}"
+  register: result
+  when: gw_vpc_ext_id | default('') | length > 0
+  ignore_errors: true
+
+- name: Create overlay subnet in gateway VPC status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+      - result.ext_id is defined
+      - result.response.subnet_type == "OVERLAY"
+      - result.response.vpc_reference == gw_vpc_ext_id
+      - result.response.ip_config[0].ipv4.default_gateway_ip.value == gw_overlay_net.gateway_ip
+      - result.response.ip_config[0].ipv4.pool_list | length >= 1
+    success_msg: "Gateway overlay subnet created successfully"
+    fail_msg: "Unable to create gateway overlay subnet"
+  when: gw_vpc_ext_id | default('') | length > 0
+
+- name: Set gateway overlay subnet facts
+  ansible.builtin.set_fact:
+    gw_overlay_ext_id: "{{ result.ext_id }}"
+  when: result.ext_id is defined and result.ext_id | length > 0
+
+- name: Create floating ip for gateway create service address
+  nutanix.ncp.ntnx_floating_ips_v2:
+    state: present
+    name: "{{ gw_fip1_name }}"
+    project_ext_id: "{{ default_project.uuid }}"
+    external_subnet_reference: "{{ gw_ext_nat_ext_id }}"
+    metadata:
+      project_reference_id: "{{ default_project.uuid }}"
+      owner_reference_id: "{{ users[0] }}"
+      category_ids:
+        - "{{ fip_category_ext_id }}"
+  register: result
+  when: gw_ext_nat_ext_id | default('') | length > 0
+  ignore_errors: true
+
+- name: Create floating ip for gateway create service address status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ gw_fip1_name }}"
+      - result.response.external_subnet_reference == gw_ext_nat_ext_id
+      - result.response.floating_ip.ipv4.value is defined
+      - result.response.project_ext_id == default_project.uuid
+    fail_msg: "Unable to create floating ip for gateway create service address"
+    success_msg: "Floating ip for gateway create service address created successfully"
+  when: gw_ext_nat_ext_id | default('') | length > 0
+
+- name: Set gateway create floating ip facts
+  ansible.builtin.set_fact:
+    gateway_fip1_ext_id: "{{ result.response.ext_id }}"
+    gateway_fip1_ip: "{{ result.response.floating_ip.ipv4.value }}"
+    todelete_fips: "{{ todelete_fips + [result.response.ext_id] }}"
+  when: result.response is defined and result.response.ext_id is defined
+
+- name: Create gateway with minimum attributes
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    name: "{{ gw_name }}_min"
+    services:
+      remote_services:
+        remote_bgp_service:
+          asn: 65001
+          address:
+            ipv4:
+              value: "192.0.2.10"
+              prefix_length: 32
+  register: result
+  ignore_errors: true
+
+- name: Debug create gateway with minimum attributes result
+  ansible.builtin.debug:
+    var: result
+
+- name: Create gateway with minimum attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == "{{ gw_name }}_min"
+      - result.response.ext_id == result.ext_id
+      - result.response.services.remote_bgp_service.asn == 65001
+      - result.response.services.remote_bgp_service.address.ipv4.value == "192.0.2.10"
+      - result.response.services.remote_bgp_service.address.ipv4.prefix_length == 32
+    success_msg: "Gateway with minimum attributes created successfully"
+    fail_msg: "Gateway with minimum attributes creation failed"
+
+- name: Add gateway min to todelete list
+  ansible.builtin.set_fact:
+    gateway_min_ext_id: "{{ result.ext_id | default('') }}"
+    todelete: "{{ todelete + [result.ext_id] }}"
+  when: result.ext_id is defined and result.ext_id | length > 0
+
+- name: Create gateway with all attributes
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    name: "{{ gw_name }}_all"
+    description: "Gateway created by Ansible integration tests with all attributes"
+    gateway_device_vendor: "GENERIC"
+    vpc_reference: "{{ gw_vpc_ext_id }}"
+    project_ext_id: "{{ default_project.uuid }}"
+    # Omit category_ids: Atlas must authorize metadata it owns; categories cause
+    # NETWORKING-10056 on later upgrade ("Authorization should happen in Atlas...").
+    metadata:
+      owner_reference_id: "{{ users[0] }}"
+      owner_user_name: "admin"
+      project_reference_id: "{{ default_project.uuid }}"
+      project_name: "{{ default_project.name }}"
+    deployment:
+      cluster_reference: "{{ cluster.uuid }}"
+      # false so custom NTP/DNS are kept; true replaces them with PC system servers
+      should_synchronize_system_ntp_servers: false
+      should_synchronize_system_dns_servers: false
+      ntp_servers:
+        - fqdn:
+            value: "pool.ntp.org"
+        - ipv4:
+            value: "10.40.64.16"
+            prefix_length: 32
+      dns_servers:
+        - ipv4:
+            value: "8.8.8.8"
+            prefix_length: 32
+      # Same overlay + same DG for management and data NICs; omit IP/MAC/MTU so Atlas allocates.
+      management_interface:
+        subnet_reference: "{{ gw_overlay_ext_id }}"
+        default_gateway:
+          ipv4:
+            value: "{{ gw_overlay_net.gateway_ip }}"
+            prefix_length: 32
+      interfaces:
+        - subnet_reference: "{{ gw_overlay_ext_id }}"
+          default_gateway_address:
+            ipv4:
+              value: "{{ gw_overlay_net.gateway_ip }}"
+              prefix_length: 32
+    services:
+      local_services:
+        service_address:
+          ipv4:
+            value: "{{ gateway_fip1_ip }}"
+            prefix_length: 32
+        service_addresses:
+          - ipv4:
+              value: "{{ gateway_fip1_ip }}"
+              prefix_length: 32
+        local_vtep_service:
+          vxlan_port: 4789
+  register: result
+  when:
+    - gw_vpc_ext_id | default('') | length > 0
+    - gw_overlay_ext_id | default('') | length > 0
+    - gateway_fip1_ip | default('') | length > 0
+  ignore_errors: true
+
+- name: Debug create gateway with all attributes result
+  ansible.builtin.debug:
+    var: result
+
+- name: Create gateway with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == "{{ gw_name }}_all"
+      - result.response.description == "Gateway created by Ansible integration tests with all attributes"
+      - result.response.gateway_device_vendor == "GENERIC"
+      - result.response.vpc_reference == gw_vpc_ext_id
+      - result.response.project_ext_id == "{{ default_project.uuid }}"
+      - result.response.metadata.owner_reference_id == "{{ users[0] }}"
+      - result.response.metadata.owner_user_name == "admin"
+      - result.response.metadata.project_reference_id == "{{ default_project.uuid }}"
+      - result.response.metadata.project_name == "{{ default_project.name }}"
+      - result.response.deployment.cluster_reference == cluster.uuid
+      - result.response.deployment.should_synchronize_system_ntp_servers == false
+      - result.response.deployment.should_synchronize_system_dns_servers == false
+      - result.response.deployment.ntp_servers | length == 2
+      - result.response.deployment.ntp_servers[0].fqdn.value == "pool.ntp.org"
+      - result.response.deployment.ntp_servers[1].ipv4.value == "10.40.64.16"
+      - result.response.deployment.dns_servers[0].ipv4.value == "8.8.8.8"
+      - result.response.deployment.management_interface.subnet_reference == gw_overlay_ext_id
+      - result.response.deployment.management_interface.address.ipv4.value is defined
+      - result.response.deployment.management_interface.default_gateway.ipv4.value == gw_overlay_net.gateway_ip
+      - result.response.deployment.management_interface.default_gateway.ipv4.prefix_length == 32
+      - result.response.deployment.interfaces | length == 1
+      - result.response.deployment.interfaces[0].subnet_reference == gw_overlay_ext_id
+      - result.response.deployment.interfaces[0].ip_address.ipv4.value is defined
+      - result.response.deployment.interfaces[0].ip_address.ipv4.value == result.response.deployment.management_interface.address.ipv4.value
+      - result.response.deployment.interfaces[0].mac_address is defined
+      - result.response.deployment.interfaces[0].default_gateway_address.ipv4.value == gw_overlay_net.gateway_ip
+      - result.response.deployment.interfaces[0].default_gateway_address.ipv4.prefix_length == 32
+      - result.response.services.service_address.ipv4.value == gateway_fip1_ip
+      - result.response.services.service_addresses[0].ipv4.value == gateway_fip1_ip
+      - result.response.services.local_vtep_service.vxlan_port == 4789
+    success_msg: "Gateway with all attributes created successfully"
+    fail_msg: "Gateway with all attributes creation failed"
+  when:
+    - gw_vpc_ext_id | default('') | length > 0
+    - gw_overlay_ext_id | default('') | length > 0
+    - gateway_fip1_ip | default('') | length > 0
+
+- name: Add gateway all to todelete list
+  ansible.builtin.set_fact:
+    gateway_all_ext_id: "{{ result.ext_id | default('') }}"
+    todelete: "{{ todelete + [result.ext_id] }}"
+  when: result.ext_id is defined and result.ext_id | length > 0
+
+# Atlas allocates NIC IP/MAC on deploy; vnic IP is immutable on update — reuse allocated values.
+- name: Capture allocated gateway NIC address from create response
+  ansible.builtin.set_fact:
+    gateway_nic_ip: "{{ result.response.deployment.management_interface.address.ipv4.value }}"
+    gateway_nic_mac: "{{ result.response.deployment.interfaces[0].mac_address | default('') }}"
+  when:
+    - result.response is defined
+    - result.response.deployment.management_interface.address.ipv4.value is defined
+
+########################################################################################
+# Info module tests
+########################################################################################
+
+- name: List all gateways
+  nutanix.ncp.ntnx_gateways_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Debug list all gateways result
+  ansible.builtin.debug:
+    var: result
+
+- name: List all gateways status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response is iterable
+      - result.total_available_results is defined
+      - result.response | length >= 2
+      - result.total_available_results >= 2
+    success_msg: "List gateways returned a well-formed response"
+    fail_msg: "List gateways did NOT return a well-formed response"
+
+- name: List gateways with limit
+  nutanix.ncp.ntnx_gateways_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Debug list gateways with limit result
+  ansible.builtin.debug:
+    var: result
+
+- name: List gateways with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    success_msg: "limit=1 correctly constrains the response"
+    fail_msg: "limit=1 did NOT constrain the response"
+
+- name: List gateways with filter
+  nutanix.ncp.ntnx_gateways_info_v2:
+    filter: "name eq '{{ gw_name }}_min'"
+  register: result
+  ignore_errors: true
+
+- name: Debug list gateways with filter result
+  ansible.builtin.debug:
+    var: result
+
+- name: List gateways with filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == "{{ gw_name }}_min"
+      - result.response[0].ext_id is defined
+      - result.response[0].services.remote_bgp_service.asn == 65001
+      - result.response[0].services.remote_bgp_service.address.ipv4.value == "192.0.2.10"
+      - result.response[0].services.remote_bgp_service.address.ipv4.prefix_length == 32
+    success_msg: "Filter list gateways succeeded"
+    fail_msg: "Filter list gateways failed"
+
+- name: Get gateway using ext_id
+  nutanix.ncp.ntnx_gateways_info_v2:
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  when: todelete | length > 0
+  ignore_errors: true
+
+- name: Debug get gateway using ext_id result
+  ansible.builtin.debug:
+    var: result
+  when: todelete | length > 0
+
+- name: Get gateway using ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response is defined
+      - result.response.ext_id == todelete[0]
+      - result.response.name == "{{ gw_name }}_min"
+      - result.response.services.remote_bgp_service.asn == 65001
+      - result.response.services.remote_bgp_service.address.ipv4.value == "192.0.2.10"
+      - result.response.services.remote_bgp_service.address.ipv4.prefix_length == 32
+    success_msg: "Get by ext_id succeeded"
+    fail_msg: "Get by ext_id failed"
+  when: todelete | length > 0
+
+- name: Fetch gateway by a wrong ext_id
+  nutanix.ncp.ntnx_gateways_info_v2:
+    ext_id: "{{ wrong_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug fetch gateway by wrong ext_id result
+  ansible.builtin.debug:
+    var: result
+
+- name: Fetch gateway by a wrong ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.error == "NOT FOUND"
+      - result.msg == "Api Exception raised while fetching gateway info using ext_id"
+    success_msg: "Fetching by wrong ext_id fails cleanly"
+    fail_msg: "Fetching by wrong ext_id did NOT fail as expected"
+
+########################################################################################
+# Update Gateway Tests
+########################################################################################
+
+- name: Generate spec for updating gateway using check mode with all attributes
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    ext_id: "{{ gateway_all_ext_id }}"
+    name: "gw_ansible_all_updated"
+    description: "Updated description for gateway with all attributes"
+    gateway_device_vendor: "GENERIC"
+    vpc_reference: "d1111111-1111-1111-1111-111111111111"
+    project_ext_id: "00000000-0000-0000-0000-000000000000"
+    metadata:
+      owner_reference_id: "a7777777-7777-7777-7777-777777777777"
+      owner_user_name: "owner_user_name"
+      project_reference_id: "b8888888-8888-8888-8888-888888888888"
+      project_name: "project_name"
+      category_ids:
+        - "c9999999-9999-9999-9999-999999999999"
+    deployment:
+      cluster_reference: "d2222222-2222-2222-2222-222222222222"
+      vcenter_datastore_name: "ds1"
+      should_synchronize_system_ntp_servers: true
+      should_synchronize_system_dns_servers: true
+      ntp_servers:
+        - fqdn:
+            value: "pool.ntp.org"
+        - ipv4:
+            value: "10.40.64.16"
+            prefix_length: 32
+      dns_servers:
+        - ipv4:
+            value: "8.8.8.8"
+            prefix_length: 32
+      management_interface:
+        subnet_reference: "d3333333-3333-3333-3333-333333333333"
+        vlan_id: 113
+        mtu: 1500
+        address:
+          ipv4:
+            value: "10.30.30.230"
+            prefix_length: 24
+        default_gateway:
+          ipv4:
+            value: "10.30.30.254"
+            prefix_length: 32
+      interfaces:
+        - subnet_reference: "d3333333-3333-3333-3333-333333333333"
+          mac_address: "00:11:22:33:44:55"
+          mtu: 1500
+          ip_address:
+            ipv4:
+              value: "10.30.30.231"
+              prefix_length: 24
+          default_gateway_address:
+            ipv4:
+              value: "10.30.30.254"
+              prefix_length: 32
+    services:
+      local_services:
+        service_address:
+          ipv4:
+            value: "10.30.30.240"
+            prefix_length: 32
+        service_addresses:
+          - ipv4:
+              value: "10.30.30.240"
+              prefix_length: 32
+        local_vtep_service:
+          vxlan_port: 4789
+    high_availability_group:
+      is_ha_enabled: true
+      algorithm: "ACTIVE_BACKUP"
+      peered_gateways:
+        - ext_id: "11111111-1111-1111-1111-111111111111"
+  check_mode: true
+  register: result
+  when: gateway_all_ext_id | default('') | length > 0
+  ignore_errors: true
+
+- name: Debug update gateway check mode result
+  ansible.builtin.debug:
+    var: result
+  when: gateway_all_ext_id | default('') | length > 0
+
+- name: Generate spec for updating gateway using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "gw_ansible_all_updated"
+      - result.response.description == "Updated description for gateway with all attributes"
+      - result.response.gateway_device_vendor == "GENERIC"
+      - result.response.vpc_reference == "d1111111-1111-1111-1111-111111111111"
+      - result.response.project_ext_id == "00000000-0000-0000-0000-000000000000"
+      - result.response.metadata.owner_reference_id == "a7777777-7777-7777-7777-777777777777"
+      - result.response.metadata.owner_user_name == "owner_user_name"
+      - result.response.metadata.project_reference_id == "b8888888-8888-8888-8888-888888888888"
+      - result.response.metadata.project_name == "project_name"
+      - result.response.metadata.category_ids | length == 1
+      - result.response.metadata.category_ids[0] == "c9999999-9999-9999-9999-999999999999"
+      - result.response.deployment.cluster_reference == "d2222222-2222-2222-2222-222222222222"
+      - result.response.deployment.management_interface.subnet_reference == "d3333333-3333-3333-3333-333333333333"
+      - result.response.deployment.management_interface.vlan_id == 113
+      - result.response.deployment.management_interface.address.ipv4.value == "10.30.30.230"
+      - result.response.deployment.interfaces[0].mac_address == "00:11:22:33:44:55"
+      - result.response.services.local_vtep_service.vxlan_port == 4789
+      - result.response.high_availability_group.is_ha_enabled == true
+      - result.response.high_availability_group.algorithm == "ACTIVE_BACKUP"
+    success_msg: "Spec for updating gateway using check mode with all attributes is generated successfully"
+    fail_msg: "Spec for updating gateway using check mode with all attributes is not generated successfully"
+  when: gateway_all_ext_id | default('') | length > 0
+
+# Atlas-managed local VTEP: omit deployment.management_interface / interfaces /
+# cluster_reference, metadata, project_ext_id, and vendor on update. Sending NIC
+# fields (even the allocated IP) triggers NETWORKING-10056 vnic_list is immutable.
+# Module merges params onto GET — do not overwrite server-owned NIC fields.
+
+- name: Update gateway name and description
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    ext_id: "{{ gateway_all_ext_id }}"
+    name: "{{ gw_name }}_all_updated"
+    description: "Updated description for gateway with all attributes"
+  register: result
+  when: gateway_all_ext_id | default('') | length > 0
+  ignore_errors: true
+
+- name: Debug update gateway name and description result
+  ansible.builtin.debug:
+    var: result
+  when: gateway_all_ext_id | default('') | length > 0
+
+- name: Update gateway name and description status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == gateway_all_ext_id
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == "{{ gw_name }}_all_updated"
+      - result.response.description == "Updated description for gateway with all attributes"
+      - result.response.deployment.management_interface.address.ipv4.value == gateway_nic_ip
+      - result.response.deployment.interfaces[0].ip_address.ipv4.value == gateway_nic_ip
+      - result.response.services.service_address.ipv4.value == gateway_fip1_ip
+      - result.response.services.local_vtep_service.vxlan_port == 4789
+    success_msg: "Update gateway name and description passed"
+    fail_msg: "Update gateway name and description failed"
+  when:
+    - gateway_all_ext_id | default('') | length > 0
+    - gateway_nic_ip | default('') | length > 0
+
+- name: Update gateway name and description (idempotency)
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    ext_id: "{{ gateway_all_ext_id }}"
+    name: "{{ gw_name }}_all_updated"
+    description: "Updated description for gateway with all attributes"
+  register: result
+  when: gateway_all_ext_id | default('') | length > 0
+  ignore_errors: true
+
+- name: Debug update gateway name and description idempotency result
+  ansible.builtin.debug:
+    var: result
+  when: gateway_all_ext_id | default('') | length > 0
+
+- name: Update gateway name and description idempotency status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == false
+      - result.msg == "Nothing to change."
+    success_msg: "Name/description update was idempotent (Nothing to change.)"
+    fail_msg: "Name/description update was NOT idempotent"
+  when: gateway_all_ext_id | default('') | length > 0
+
+# NTP/DNS without NIC fields or cluster_reference
+- name: Update gateway NTP and DNS
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    ext_id: "{{ gateway_all_ext_id }}"
+    name: "{{ gw_name }}_all_updated"
+    deployment:
+      should_synchronize_system_ntp_servers: false
+      should_synchronize_system_dns_servers: false
+      ntp_servers:
+        - fqdn:
+            value: "time.google.com"
+        - ipv4:
+            value: "10.40.64.15"
+            prefix_length: 32
+      dns_servers:
+        - ipv4:
+            value: "1.1.1.1"
+            prefix_length: 32
+  register: result
+  when: gateway_all_ext_id | default('') | length > 0
+  ignore_errors: true
+
+- name: Debug update gateway NTP and DNS result
+  ansible.builtin.debug:
+    var: result
+  when: gateway_all_ext_id | default('') | length > 0
+
+- name: Update gateway NTP and DNS status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.deployment.ntp_servers | length == 2
+      - result.response.deployment.ntp_servers[0].fqdn.value == "time.google.com"
+      - result.response.deployment.ntp_servers[1].ipv4.value == "10.40.64.15"
+      - result.response.deployment.dns_servers[0].ipv4.value == "1.1.1.1"
+      - result.response.deployment.management_interface.address.ipv4.value == gateway_nic_ip
+    success_msg: "Update gateway NTP and DNS passed"
+    fail_msg: "Update gateway NTP and DNS failed"
+  when:
+    - gateway_all_ext_id | default('') | length > 0
+    - gateway_nic_ip | default('') | length > 0
+
+########################################################################################
+# Upgrade Gateway Tests
+########################################################################################
+
+- name: Upgrade gateway with check mode
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    ext_id: "{{ gateway_all_ext_id }}"
+    upgrade: true
+  check_mode: true
+  register: result
+  when: gateway_all_ext_id | default('') | length > 0
+  ignore_errors: true
+
+- name: Debug upgrade gateway with check mode result
+  ansible.builtin.debug:
+    var: result
+  when: gateway_all_ext_id | default('') | length > 0
+
+- name: Upgrade gateway with check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == gateway_all_ext_id
+      - result.msg == "Gateway with ext_id:{{ gateway_all_ext_id }} will be upgraded."
+    success_msg: "Upgrade gateway with check mode passed"
+    fail_msg: "Upgrade gateway with check mode failed"
+  when: gateway_all_ext_id | default('') | length > 0
+
+
+# Upgrade currently fails with NETWORKING-10056:
+# "Authorization should happen in Atlas only if metadata updates happen in Atlas as well."
+- name: Upgrade gateway
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    ext_id: "{{ gateway_all_ext_id }}"
+    upgrade: true
+  register: result
+  when: gateway_all_ext_id | default('') | length > 0
+  ignore_errors: true
+
+- name: Debug upgrade gateway result
+  ansible.builtin.debug:
+    var: result
+  when: gateway_all_ext_id | default('') | length > 0
+
+# - name: Upgrade gateway status
+#   ansible.builtin.assert:
+#     that:
+#       - result is defined
+#       - result.failed == false
+#       - result.changed == true
+#       - result.ext_id == gateway_all_ext_id
+#       - result.task_ext_id is defined
+#     success_msg: "Upgrade gateway passed"
+#     fail_msg: "Upgrade gateway failed"
+#   when: gateway_all_ext_id | default('') | length > 0
+
+########################################################################################
+# Delete / negative tests
+########################################################################################
+
+- name: Delete gateway with check mode
+  nutanix.ncp.ntnx_gateway_v2:
+    state: absent
+    ext_id: "{{ wrong_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Debug delete gateway check mode result
+  ansible.builtin.debug:
+    var: result
+
+- name: Delete gateway with check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ wrong_ext_id }}"
+      - result.msg == "Gateway with ext_id:{{ wrong_ext_id }} will be deleted."
+    success_msg: "Delete gateway with check mode passed"
+    fail_msg: "Delete gateway with check mode failed"
+
+- name: Upgrade non-existent gateway
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    ext_id: "{{ wrong_ext_id }}"
+    upgrade: true
+  register: result
+  ignore_errors: true
+
+- name: Debug upgrade non-existent gateway result
+  ansible.builtin.debug:
+    var: result
+
+- name: Upgrade non-existent gateway status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.error == "NOT FOUND"
+      - result.msg == "Api Exception raised while upgrading gateway"
+    success_msg: "Upgrading a non-existent gateway correctly failed"
+    fail_msg: "Upgrading a non-existent gateway did NOT fail"
+
+- name: Update non-existent gateway
+  nutanix.ncp.ntnx_gateway_v2:
+    state: present
+    ext_id: "{{ wrong_ext_id }}"
+    name: "does_not_exist"
+    description: "should fail"
+  register: result
+  ignore_errors: true
+
+- name: Debug update non-existent gateway result
+  ansible.builtin.debug:
+    var: result
+
+- name: Update non-existent gateway status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.error == "NOT FOUND"
+      - result.msg == "Api Exception raised while fetching gateway info using ext_id"
+    success_msg: "Updating a non-existent gateway correctly failed"
+    fail_msg: "Updating a non-existent gateway did NOT fail"
+
+- name: Delete non-existent gateway
+  nutanix.ncp.ntnx_gateway_v2:
+    state: absent
+    ext_id: "{{ wrong_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug delete non-existent gateway result
+  ansible.builtin.debug:
+    var: result
+
+- name: Delete non-existent gateway status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.error == "NOT FOUND"
+      - result.msg == "Api Exception raised while fetching gateway info using ext_id"
+    success_msg: "Deleting a non-existent gateway correctly failed"
+    fail_msg: "Deleting a non-existent gateway did NOT fail"
+
+########################################################################################
+# Cleanup
+########################################################################################
+
+- name: Delete all created gateways
+  nutanix.ncp.ntnx_gateway_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+
+- name: Debug delete all created gateways result
+  ansible.builtin.debug:
+    var: result
+
+- name: Delete all created gateways status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.results is defined
+      - result.results | length == todelete | length
+      - result.changed == true
+      - result.msg == "All items completed"
+    success_msg: "All test gateways cleaned up"
+    fail_msg: "Not all test gateways were cleaned up"
+  when: todelete | length > 0
+
+- name: Check which floating ips still exist before cleanup
+  nutanix.ncp.ntnx_floating_ips_info_v2:
+    ext_id: "{{ item }}"
+  register: fip_exists_check
+  loop: "{{ todelete_fips }}"
+  ignore_errors: true
+  when: todelete_fips | length > 0
+
+- name: Set existing floating ips to delete
+  ansible.builtin.set_fact:
+    existing_fips_to_delete: >-
+      {{
+        fip_exists_check.results
+        | default([])
+        | selectattr('failed', 'equalto', false)
+        | map(attribute='item')
+        | list
+      }}
+  when: todelete_fips | length > 0
+
+- name: Delete existing floating ips
+  nutanix.ncp.ntnx_floating_ips_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  loop: "{{ existing_fips_to_delete }}"
+  ignore_errors: true
+  when: existing_fips_to_delete | default([]) | length > 0
+
+- name: Delete existing floating ips status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.results is defined
+      - result.results | length == existing_fips_to_delete | length
+      - result.results | selectattr('failed', 'defined') | selectattr('failed') | list | length == 0
+    fail_msg: "Unable to delete floating ips"
+    success_msg: "Floating ips deleted successfully"
+  when: existing_fips_to_delete | default([]) | length > 0
+
+- name: Clear floating ips todelete list
+  ansible.builtin.set_fact:
+    todelete_fips: []
+    existing_fips_to_delete: []
+  when: todelete_fips | length > 0
+
+- name: Delete gateway overlay subnet
+  nutanix.ncp.ntnx_subnets_v2:
+    state: absent
+    ext_id: "{{ gw_overlay_ext_id }}"
+  register: result
+  when: gw_overlay_ext_id | default('') | length > 0
+  ignore_errors: true
+
+- name: Delete gateway overlay subnet status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+    success_msg: "Gateway overlay subnet deleted successfully"
+    fail_msg: "Unable to delete gateway overlay subnet"
+  when: gw_overlay_ext_id | default('') | length > 0
+
+- name: Delete gateway VPC
+  nutanix.ncp.ntnx_vpcs_v2:
+    state: absent
+    ext_id: "{{ gw_vpc_ext_id }}"
+  register: result
+  when: gw_vpc_ext_id | default('') | length > 0
+  ignore_errors: true
+
+- name: Delete gateway VPC status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+    success_msg: "Gateway VPC deleted successfully"
+    fail_msg: "Unable to delete gateway VPC"
+  when: gw_vpc_ext_id | default('') | length > 0
+
+- name: Delete gateway external NAT subnet
+  nutanix.ncp.ntnx_subnets_v2:
+    state: absent
+    ext_id: "{{ gw_ext_nat_ext_id }}"
+  register: result
+  when: gw_ext_nat_ext_id | default('') | length > 0
+  ignore_errors: true
+
+- name: Delete gateway external NAT subnet status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+    success_msg: "Gateway external NAT subnet deleted successfully"
+    fail_msg: "Unable to delete gateway external NAT subnet"
+  when: gw_ext_nat_ext_id | default('') | length > 0
+
+- name: Delete created category
+  nutanix.ncp.ntnx_categories_v2:
+    ext_id: "{{ category_ext_id }}"
+    state: absent
+  register: result
+  when: category_ext_id is defined and category_ext_id | length > 0
+  ignore_errors: true
+
+- name: Debug delete created category result
+  ansible.builtin.debug:
+    var: result
+
+- name: Delete created category status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == category_ext_id
+    success_msg: "Category for gateway tests deleted successfully"
+    fail_msg: "Unable to delete category for gateway tests"
+  when: category_ext_id is defined and category_ext_id | length > 0
