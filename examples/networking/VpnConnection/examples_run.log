@@ -1,0 +1,322 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [VPN Connection playbook] *************************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"local_gateway_ext_id": "00000000-0000-0000-0000-000000000001", "remote_gateway_ext_id": "00000000-0000-0000-0000-000000000002", "vpn_connection_name": "vpn_connection_ansible_example"}, "changed": false}
+
+TASK [Create VPN connection with all attributes] *******************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERROR", "msg": "Api Exception raised while creating VPN connection", "response": {"$objectType": "networking.v4.config.GetVpnConnectionApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to create VPN connection vpn_connection_ansible_example as a referenced resource was not found - Application error kNotFound raised: VpnGateway 00000000-0000-0000-0000-000000000001 not found", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/vpn-connections", "rel": "self"}], "totalAvailableResults": 0}}, "status": 500}
+...ignoring
+
+TASK [Show create result] ******************************************************
+ok: [localhost] => {
+    "result": {
+        "changed": false,
+        "error": "INTERNAL SERVER ERROR",
+        "failed": true,
+        "msg": "Api Exception raised while creating VPN connection",
+        "response": {
+            "$objectType": "networking.v4.config.GetVpnConnectionApiResponse",
+            "$reserved": {
+                "$fv": "v4.r4"
+            },
+            "data": {
+                "$objectType": "networking.v4.error.ErrorResponse",
+                "$reserved": {
+                    "$fv": "v4.r4"
+                },
+                "error": [
+                    {
+                        "$objectType": "networking.v4.error.AppMessage",
+                        "$reserved": {
+                            "$fv": "v4.r4"
+                        },
+                        "code": "NETWORKING-10060",
+                        "locale": "en_US",
+                        "message": "Failed to create VPN connection vpn_connection_ansible_example as a referenced resource was not found - Application error kNotFound raised: VpnGateway 00000000-0000-0000-0000-000000000001 not found",
+                        "severity": "ERROR"
+                    }
+                ]
+            },
+            "metadata": {
+                "$objectType": "common.v1.response.ApiResponseMetadata",
+                "$reserved": {
+                    "$fv": "v1.r0"
+                },
+                "flags": [
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "hasError",
+                        "value": true
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isPaginated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isTruncated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isExpandRestricted",
+                        "value": false
+                    }
+                ],
+                "links": [
+                    {
+                        "$objectType": "common.v1.response.ApiLink",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "href": "https://10.44.76.28:9440/api/networking/v4.3/config/vpn-connections",
+                        "rel": "self"
+                    }
+                ],
+                "totalAvailableResults": 0
+            }
+        },
+        "status": 500
+    }
+}
+
+TASK [Get VPN connection using ext_id (fake)] **********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VPN connection info using ext_id", "response": {"$objectType": "networking.v4.config.GetVpnConnectionApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to get VPN connection 00000000-0000-0000-0000-000000000099 as a referenced resource was not found - VPN connection not found.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/vpn-connections/00000000-0000-0000-0000-000000000099", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+TASK [Show info-by-id result] **************************************************
+ok: [localhost] => {
+    "result": {
+        "changed": false,
+        "error": "NOT FOUND",
+        "failed": true,
+        "msg": "Api Exception raised while fetching VPN connection info using ext_id",
+        "response": {
+            "$objectType": "networking.v4.config.GetVpnConnectionApiResponse",
+            "$reserved": {
+                "$fv": "v4.r4"
+            },
+            "data": {
+                "$objectType": "networking.v4.error.ErrorResponse",
+                "$reserved": {
+                    "$fv": "v4.r4"
+                },
+                "error": [
+                    {
+                        "$objectType": "networking.v4.error.AppMessage",
+                        "$reserved": {
+                            "$fv": "v4.r4"
+                        },
+                        "code": "NETWORKING-10060",
+                        "locale": "en_US",
+                        "message": "Failed to get VPN connection 00000000-0000-0000-0000-000000000099 as a referenced resource was not found - VPN connection not found.",
+                        "severity": "ERROR"
+                    }
+                ]
+            },
+            "metadata": {
+                "$objectType": "common.v1.response.ApiResponseMetadata",
+                "$reserved": {
+                    "$fv": "v1.r0"
+                },
+                "flags": [
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "hasError",
+                        "value": true
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isPaginated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isTruncated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isExpandRestricted",
+                        "value": false
+                    }
+                ],
+                "links": [
+                    {
+                        "$objectType": "common.v1.response.ApiLink",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "href": "https://10.44.76.28:9440/api/networking/v4.3/config/vpn-connections/00000000-0000-0000-0000-000000000099",
+                        "rel": "self"
+                    }
+                ],
+                "totalAvailableResults": 0
+            }
+        },
+        "status": 404
+    }
+}
+
+TASK [List all VPN connections] ************************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Show list result] ********************************************************
+ok: [localhost] => {
+    "result": {
+        "changed": false,
+        "failed": false,
+        "response": [],
+        "total_available_results": 0
+    }
+}
+
+TASK [List VPN connections with filter] ****************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Show filter result] ******************************************************
+ok: [localhost] => {
+    "result": {
+        "changed": false,
+        "failed": false,
+        "response": [],
+        "total_available_results": 0
+    }
+}
+
+TASK [List VPN connections with limit] *****************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Show limit result] *******************************************************
+ok: [localhost] => {
+    "result": {
+        "changed": false,
+        "failed": false,
+        "response": [],
+        "total_available_results": 0
+    }
+}
+
+TASK [Delete VPN connection (fake)] ********************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching VPN connection info using ext_id", "response": {"$objectType": "networking.v4.config.GetVpnConnectionApiResponse", "$reserved": {"$fv": "v4.r4"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r4"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r4"}, "code": "NETWORKING-10060", "locale": "en_US", "message": "Failed to get VPN connection 00000000-0000-0000-0000-000000000099 as a referenced resource was not found - VPN connection not found.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.28:9440/api/networking/v4.3/config/vpn-connections/00000000-0000-0000-0000-000000000099", "rel": "self"}], "totalAvailableResults": 0}}, "status": 404}
+...ignoring
+
+TASK [Show delete result] ******************************************************
+ok: [localhost] => {
+    "result": {
+        "changed": false,
+        "error": "NOT FOUND",
+        "failed": true,
+        "msg": "Api Exception raised while fetching VPN connection info using ext_id",
+        "response": {
+            "$objectType": "networking.v4.config.GetVpnConnectionApiResponse",
+            "$reserved": {
+                "$fv": "v4.r4"
+            },
+            "data": {
+                "$objectType": "networking.v4.error.ErrorResponse",
+                "$reserved": {
+                    "$fv": "v4.r4"
+                },
+                "error": [
+                    {
+                        "$objectType": "networking.v4.error.AppMessage",
+                        "$reserved": {
+                            "$fv": "v4.r4"
+                        },
+                        "code": "NETWORKING-10060",
+                        "locale": "en_US",
+                        "message": "Failed to get VPN connection 00000000-0000-0000-0000-000000000099 as a referenced resource was not found - VPN connection not found.",
+                        "severity": "ERROR"
+                    }
+                ]
+            },
+            "metadata": {
+                "$objectType": "common.v1.response.ApiResponseMetadata",
+                "$reserved": {
+                    "$fv": "v1.r0"
+                },
+                "flags": [
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "hasError",
+                        "value": true
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isPaginated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isTruncated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isExpandRestricted",
+                        "value": false
+                    }
+                ],
+                "links": [
+                    {
+                        "$objectType": "common.v1.response.ApiLink",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "href": "https://10.44.76.28:9440/api/networking/v4.3/config/vpn-connections/00000000-0000-0000-0000-000000000099",
+                        "rel": "self"
+                    }
+                ],
+                "totalAvailableResults": 0
+            }
+        },
+        "status": 404
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=13   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=3   
+

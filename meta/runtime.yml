@@ -289,3 +289,5 @@ action_groups:
     - ntnx_resource_groups_info_v2
     - ntnx_role_membership_v2
     - ntnx_role_memberships_info_v2
+    - ntnx_vpn_connection_v2
+    - ntnx_vpn_connections_info_v2
