@@ -292,6 +292,28 @@
 
 ################################################################
 
+- name: Update VLAN subnet with IPAM
+  nutanix.ncp.ntnx_subnets_v2:
+    state: present
+    name: "{{ subnet_name }}_2_updated_ipam"
+    ext_id: "{{ ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status for VLAN subnet with IPAM
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.ext_id is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ subnet_name }}_2_updated_ipam"
+      - result.response.ip_config.0.ipv4.ip_subnet.ip.value == "{{ ip_address_management.network_ip }}"
+    fail_msg: " Unable to update VLAN subnet with IPAM "
+    success_msg: " VLAN subnet with IPAM updated successfully "
+
+################################################################
+
 - name: Update VLAN subnet with check mode enabled
   nutanix.ncp.ntnx_subnets_v2:
     state: present
