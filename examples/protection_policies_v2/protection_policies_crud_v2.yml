@@ -114,6 +114,7 @@
                   remote: 1
               start_time:
               sync_replication_auto_suspend_timeout_seconds: 300
+              latest_recovery_point_retention_seconds: 2592000
           - source_location_label: "ansible-label-{{ label2 }}"
             remote_location_label: "ansible-label-{{ label1 }}"
             schedule:

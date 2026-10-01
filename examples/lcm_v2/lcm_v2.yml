@@ -5,14 +5,15 @@
 # 2. Get the config of LCM
 # 3. Update the config of LCM
 # 4. Perform inventory of LCM
-# 5. List all LCM entities details
-# 6. List all LCM entities details with filter
-# 7. Set LCM entity external ID
-# 8. List all LCM entities details with limit
-# 9. Fetch LCM entity using external ID
-# 10. Get LCM status before doing prechecks
-# 11. Perform LCM prechecks
-# 12. Perform LCM upgrade
+# 5. Perform software-only LCM inventory
+# 6. List all LCM entities details
+# 7. List all LCM entities details with filter
+# 8. Set LCM entity external ID
+# 9. List all LCM entities details with limit
+# 10. Fetch LCM entity using external ID
+# 11. Get LCM status before doing prechecks
+# 12. Perform LCM prechecks
+# 13. Perform LCM upgrade
 # Note: cluster_ext_id is used to get/precheck/upgrade the entities on the specific cluster.
 # If we pass the Prism Element cluster ID, it will get the entities on that cluster. Otherwise, it will get the entities on the Prism Central.
 
@@ -58,6 +59,13 @@
     - name: Perform inventory of LCM
       nutanix.ncp.ntnx_lcm_inventory_v2:
         cluster_ext_id: "{{ prism_central_external_id }}"
+      register: lcm_inventory
+      ignore_errors: true
+
+    - name: Perform software-only LCM inventory
+      nutanix.ncp.ntnx_lcm_inventory_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+        inventory_type: SOFTWARE
       register: lcm_inventory
       ignore_errors: true
 

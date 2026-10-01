@@ -186,6 +186,7 @@
         name: "{{ subnet_name }}"
         subnet_type: OVERLAY
         vpc_reference: "{{ vpc_uuid }}"
+        is_connected: true
         ip_config:
           - ipv4:
               ip_subnet:

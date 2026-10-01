@@ -252,6 +252,120 @@ options:
         type: list
         elements: str
 
+  should_advertise_connected_subnets:
+    description:
+      - When set to True, the system advertises all connected subnet prefixes that are subsets of the VPC's
+        externally routable prefixes (ERPs), instead of the VPC ERPs themselves.
+      - When set to False or unset, only the VPC ERPs are advertised, which is the default behavior.
+    type: bool
+
+  scope:
+    description:
+      - Scope of the VPC.
+    type: str
+    choices:
+      - VMS
+      - CONTAINERS
+      - VMS_AND_CONTAINERS
+
+  supported_multiple_external_subnet_type:
+    description:
+      - Supported multiple external subnet type for the VPC.
+    type: str
+    choices:
+      - NONE
+      - ONLY_NONAT
+      - ONLY_NAT
+      - ALL
+
+  kubernetes_clusters:
+    description:
+      - List of Kubernetes clusters associated with the VPC.
+    type: list
+    elements: dict
+    suboptions:
+      ext_id:
+        description: External ID of the Kubernetes cluster.
+        type: str
+        required: true
+      gateway_nodes_selector:
+        description: Selector used to identify gateway node candidates within the Kubernetes cluster.
+        type: dict
+        suboptions:
+          match_labels:
+            description: Labels used to select the entities within the Kubernetes cluster.
+            type: list
+            elements: dict
+            suboptions:
+              name:
+                description: Label key.
+                type: str
+              value:
+                description: Label value.
+                type: str
+      namespace_selector:
+        description: Selector used to identify namespaces within the Kubernetes cluster.
+        type: dict
+        suboptions:
+          match_labels:
+            description: Labels used to select the entities within the Kubernetes cluster.
+            type: list
+            elements: dict
+            suboptions:
+              name:
+                description: Label key.
+                type: str
+              value:
+                description: Label value.
+                type: str
+      pod_network:
+        description: Pod network of the Kubernetes cluster.
+        type: dict
+        suboptions:
+          cidr:
+            description: CIDR of the pod network.
+            type: dict
+            suboptions:
+              ipv4:
+                description: IPv4 subnet.
+                type: dict
+                suboptions:
+                  ip:
+                    description: IPv4 address.
+                    type: dict
+                    suboptions:
+                      value:
+                        description: The IPv4 address value.
+                        type: str
+                      prefix_length:
+                        description: The prefix length of the IPv4 address.
+                        type: int
+                  prefix_length:
+                    description: The prefix length of the subnet.
+                    type: int
+              ipv6:
+                description: IPv6 subnet.
+                type: dict
+                suboptions:
+                  ip:
+                    description: IPv6 address.
+                    type: dict
+                    suboptions:
+                      value:
+                        description: The IPv6 address value.
+                        type: str
+                      prefix_length:
+                        description: The prefix length of the IPv6 address.
+                        type: int
+                  prefix_length:
+                    description: The prefix length of the subnet.
+                    type: int
+          host_slice:
+            description:
+              - Slice from the pod network CIDR that is allocated to each node.
+              - Must be between 8 and 32. Default in the API is 24.
+            type: int
+
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
@@ -312,6 +426,28 @@ EXAMPLES = r"""
           ipv4:
             value: "{{ dns_servers.1 }}"
             prefix_length: 32
+  register: result
+
+- name: Create VPC with advertised connected subnets and scope
+  nutanix.ncp.ntnx_vpcs_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: present
+    name: vpc_with_k8s_scope
+    should_advertise_connected_subnets: true
+    scope: VMS
+    supported_multiple_external_subnet_type: ALL
+    kubernetes_clusters:
+      - ext_id: "12345678-1234-1234-1234-123456789012"
+        pod_network:
+          cidr:
+            ipv4:
+              ip:
+                value: "10.244.0.0"
+              prefix_length: 16
+          host_slice: 24
   register: result
 
 - name: Delete all created vpcs
@@ -514,6 +650,40 @@ def get_module_spec():
         category_ids=dict(type="list", elements="str"),
     )
 
+    kv_pair_spec = dict(
+        name=dict(type="str"),
+        value=dict(type="str"),
+    )
+
+    kubernetes_entity_selector_spec = dict(
+        match_labels=dict(
+            type="list",
+            elements="dict",
+            options=kv_pair_spec,
+            obj=net_sdk.KVStringPair,
+        ),
+    )
+
+    pod_network_spec = dict(
+        cidr=dict(type="dict", options=ip_subnet_spec, obj=net_sdk.IPSubnet),
+        host_slice=dict(type="int"),
+    )
+
+    kubernetes_cluster_spec = dict(
+        ext_id=dict(type="str", required=True),
+        gateway_nodes_selector=dict(
+            type="dict",
+            options=kubernetes_entity_selector_spec,
+            obj=net_sdk.GatewayNodesSelector,
+        ),
+        namespace_selector=dict(
+            type="dict",
+            options=kubernetes_entity_selector_spec,
+            obj=net_sdk.KubernetesEntitySelector,
+        ),
+        pod_network=dict(type="dict", options=pod_network_spec, obj=net_sdk.PodNetwork),
+    )
+
     module_args = dict(
         ext_id=dict(type="str"),
         project_ext_id=dict(type="str"),
@@ -535,6 +705,23 @@ def get_module_spec():
         ),
         metadata=dict(type="dict", options=metadata_spec, obj=net_sdk.Metadata),
         shared_with_projects=dict(type="list", elements="str"),
+        should_advertise_connected_subnets=dict(type="bool"),
+        scope=dict(
+            type="str",
+            choices=["VMS", "CONTAINERS", "VMS_AND_CONTAINERS"],
+            obj=net_sdk.VpcScope,
+        ),
+        supported_multiple_external_subnet_type=dict(
+            type="str",
+            choices=["NONE", "ONLY_NONAT", "ONLY_NAT", "ALL"],
+            obj=net_sdk.SupportedMultipleExternalSubnetType,
+        ),
+        kubernetes_clusters=dict(
+            type="list",
+            elements="dict",
+            options=kubernetes_cluster_spec,
+            obj=net_sdk.KubernetesCluster,
+        ),
     )
 
     return module_args

@@ -64,7 +64,7 @@ options:
                         description:
                             - Select by field for the allowed entity.
                         type: str
-                        choices: ["IP_VALUES", "EXT_ID", "CATEGORY_EXT_ID", "LABELS", "NAME"]
+                        choices: ["IP_VALUES", "EXT_ID", "CATEGORY_EXT_ID", "LABELS", "NAME", "REGEX", "FQDN_VALUES"]
                     type:
                         description:
                             - Type of allowed entity.
@@ -76,6 +76,16 @@ options:
                             - If the selection type is an external identifier, then it is necessary to specify the reference_ext_ids.
                         type: list
                         elements: str
+                    reference_string:
+                        description:
+                            - String pattern for matching entities in an allowed entity.
+                            - Required when C(select_by) is C(REGEX).
+                        type: str
+                    match_criteria:
+                        description:
+                            - Match criteria for C(reference_string) when C(select_by) is C(REGEX).
+                        type: str
+                        choices: ["CONTAINS", "STARTS_WITH", "ENDS_WITH", "EQUALS"]
                     kube_entities:
                         description:
                             - List of kube entities in an allowed entity.
@@ -120,6 +130,12 @@ options:
                                         description: End address of the IP range.
                                         type: str
                                         required: true
+                    fqdns:
+                        description:
+                            - List of FQDN values in an allowed entity.
+                            - Required when C(select_by) is C(FQDN_VALUES).
+                        type: list
+                        elements: str
     except_config:
         description:
             - Configuration of the except entities in the Entity Group.
@@ -374,7 +390,15 @@ def get_module_spec():
     entities_sub_spec = dict(
         select_by=dict(
             type="str",
-            choices=["IP_VALUES", "EXT_ID", "CATEGORY_EXT_ID", "LABELS", "NAME"],
+            choices=[
+                "IP_VALUES",
+                "EXT_ID",
+                "CATEGORY_EXT_ID",
+                "LABELS",
+                "NAME",
+                "REGEX",
+                "FQDN_VALUES",
+            ],
         ),
         type=dict(
             type="str",
@@ -390,9 +414,15 @@ def get_module_spec():
             ],
         ),
         reference_ext_ids=dict(type="list", elements="str"),
+        reference_string=dict(type="str"),
+        match_criteria=dict(
+            type="str",
+            choices=["CONTAINS", "STARTS_WITH", "ENDS_WITH", "EQUALS"],
+        ),
         kube_entities=dict(type="list", elements="str"),
         addresses=dict(type="dict", options=addresses_sub_spec, obj=mic_sdk.Addresses),
         ip_ranges=dict(type="dict", options=ip_ranges_sub_spec, obj=mic_sdk.IpRange),
+        fqdns=dict(type="list", elements="str"),
     )
     allowed_config_spec = dict(
         entities=dict(

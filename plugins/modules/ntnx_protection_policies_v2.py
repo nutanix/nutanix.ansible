@@ -255,6 +255,15 @@ options:
               - Only 0 RPO schedules support this field.
             type: bool
             required: false
+          latest_recovery_point_retention_seconds:
+            description:
+              - Duration in seconds that the latest recovery point is retained past its expiry time
+                if the entity is unprotected, deleted, or migrated to another location.
+              - When omitted, the latest recovery point is retained for a minimum of 30 days.
+              - Set to 0 if the latest recovery point should not be retained past its expiry time.
+              - Valid range is 0 to 2144448000.
+            type: int
+            required: false
   category_ids:
     description:
       - Specifies the list of external identifiers of categories that must be added to the protection policy.
@@ -627,6 +636,7 @@ def get_module_spec():
         start_time=dict(type="str"),
         sync_replication_auto_suspend_timeout_seconds=dict(type="int"),
         is_replication_paused=dict(type="bool"),
+        latest_recovery_point_retention_seconds=dict(type="int"),
     )
     replication_configurations_spec = dict(
         source_location_label=dict(type="str", required=True),
