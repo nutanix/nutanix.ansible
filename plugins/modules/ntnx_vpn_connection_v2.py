@@ -15,8 +15,9 @@ short_description: Create, Update, Delete VPN connections in Nutanix Prism Centr
 version_added: 2.7.0
 description:
   - This module allows you to create, update, and delete VPN connections in Nutanix Prism Central.
-  - A VPN connection provides secure IKEv2/IPsec point-to-point connectivity between a Nutanix overlay
-    network (VPC) and an external network reachable through a remote VPN gateway.
+  - A VPN connection provides secure, point-to-point IKEv2/IPsec connectivity between a Nutanix VPC and a remote VPN endpoint.
+    The remote endpoint can be another Nutanix VPC or a compatible external VPN gateway.
+  - VPN uses IKEv2/IPsec to establish an encrypted point-to-point tunnel between the local and remote VPN gateways.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -24,13 +25,13 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a VPN Connection) -
-      Required Roles: Network Infra Admin, Prism Admin, Super Admin
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin, Super Admin, Tenant Admin, VPC Admin
     - >-
       B(Update a VPN Connection) -
-      Required Roles: Network Infra Admin, Prism Admin, Super Admin
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin, Super Admin, Tenant Admin, VPC Admin
     - >-
       B(Delete a VPN Connection) -
-      Required Roles: Network Infra Admin, Prism Admin, Super Admin
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin, Super Admin, Tenant Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
@@ -52,30 +53,30 @@ options:
     required: false
   name:
     description:
-      - VPN connection name.
+      - The name of the VPN connection.
       - Required for create operation.
     type: str
     required: false
   description:
     description:
-      - Description of the VPN connection.
+      - The description of the VPN connection.
     type: str
     required: false
   local_gateway_reference:
     description:
-      - External ID of the local (Nutanix side) VPN gateway used for this VPN connection.
+      - The reference of the local VPN gateway.
       - Required for create operation.
     type: str
     required: false
   remote_gateway_reference:
     description:
-      - External ID of the remote peer VPN gateway used for this VPN connection.
+      - The reference of the remote VPN gateway.
       - Required for create operation.
     type: str
     required: false
   local_gateway_role:
     description:
-      - Role of the local gateway during IKE negotiation.
+      - Local gateway role (acceptor or initiator) in the connection.
       - Required for create operation.
     type: str
     required: false
@@ -84,130 +85,166 @@ options:
       - ACCEPTOR
   dynamic_route_priority:
     description:
-      - Priority used to select routes learned dynamically over this VPN connection.
+      - Priority assigned to routes received on this connection over eBGP. A higher priority value indicates that the routes are more preferred.
     type: int
     required: false
+  project_ext_id:
+    description:
+      - UUID of the project that owns this entity.
+    type: str
+    required: false
+  metadata:
+    description:
+      - Metadata associated with this resource.
+    type: dict
+    required: false
+    suboptions:
+      owner_reference_id:
+        description:
+          - A globally unique identifier that represents the owner of this resource.
+        type: str
+        required: false
+      owner_user_name:
+        description:
+          - The userName of the owner of this resource.
+        type: str
+        required: false
+      project_reference_id:
+        description:
+          - A globally unique identifier that represents the project this resource belongs to.
+        type: str
+        required: false
+      project_name:
+        description:
+          - The name of the project this resource belongs to.
+        type: str
+        required: false
+      category_ids:
+        description:
+          - A list of globally unique identifiers that represent all the categories the resource is associated with.
+        type: list
+        elements: str
+        required: false
   ipsec_config:
     description:
-      - IPSec configuration used by the VPN connection.
+      - IPSec configuration.
       - Required for create operation.
     type: dict
     required: false
     suboptions:
       pre_shared_key:
         description:
-          - Shared secret for authentication between the two gateway peers.
-          - This value is never logged.
+          - Shared secret for authentication between gateway peers.
         type: str
         required: false
       local_vti_ip:
         description:
-          - IP address of the local Virtual Tunnel Interface (VTI).
+          - An unique address that identifies a device on the internet or a local network in IPv4 or IPv6 format.
         type: dict
         required: false
         suboptions:
           ipv4:
             description:
-              - IPv4 address value for the local VTI.
+              - An unique address that identifies a device on the internet or a local network in IPv4 format.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv4 address value.
+                  - The IPv4 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the IPv4 address.
+                  - The prefix length of the network to which this host IPv4 address belongs.
                 type: int
                 required: false
                 default: 32
           ipv6:
             description:
-              - IPv6 address value for the local VTI.
+              - An unique address that identifies a device on the internet or a local network in IPv6 format.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv6 address value.
+                  - The IPv6 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the IPv6 address.
+                  - The prefix length of the network to which this host IPv6 address belongs.
                 type: int
                 required: false
                 default: 128
       remote_vti_ip:
         description:
-          - IP address of the remote Virtual Tunnel Interface (VTI).
+          - An unique address that identifies a device on the internet or a local network in IPv4 or IPv6 format.
         type: dict
         required: false
         suboptions:
           ipv4:
             description:
-              - IPv4 address value for the remote VTI.
+              - An unique address that identifies a device on the internet or a local network in IPv4 format.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv4 address value.
+                  - The IPv4 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the IPv4 address.
+                  - The prefix length of the network to which this host IPv4 address belongs.
                 type: int
                 required: false
                 default: 32
           ipv6:
             description:
-              - IPv6 address value for the remote VTI.
+              - An unique address that identifies a device on the internet or a local network in IPv6 format.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv6 address value.
+                  - The IPv6 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the IPv6 address.
+                  - The prefix length of the network to which this host IPv6 address belongs.
                 type: int
                 required: false
                 default: 128
       local_authentication_id:
         description:
-          - IKE authentication identifier used by the local peer.
+          - Local IKE authentication Id used for this connection.
         type: str
         required: false
       remote_authentication_id:
         description:
-          - IKE authentication identifier used by the remote peer.
+          - IKE authentication Id of the remote peer.
         type: str
         required: false
       ike_lifetime_secs:
         description:
-          - Lifetime, in seconds, for the IKE (phase 1) security association.
+          - IKE lifetime (seconds).
         type: int
         required: false
       ipsec_lifetime_secs:
         description:
-          - Lifetime, in seconds, for the IPSec (phase 2) security association.
+          - IPSec lifetime (seconds).
         type: int
         required: false
       esp_pfs_dh_group_number:
         description:
-          - Diffie-Hellman group number used for Perfect Forward Secrecy for ESP.
+          - Diffie-Hellman group value of 14, 19 or 20 to be used for Perfect Forward Secrecy (PFS).
         type: int
         required: false
       ike_encryption_algorithm:
         description:
-          - Encryption algorithm used during IKE (phase 1) negotiation.
+          - Encryption algorithm.
         type: str
         required: false
         choices:
@@ -217,7 +254,7 @@ options:
           - TRIPLE_DES
       ike_authentication_algorithm:
         description:
-          - Authentication algorithm used during IKE (phase 1) negotiation.
+          - Authentication algorithm.
         type: str
         required: false
         choices:
@@ -228,7 +265,7 @@ options:
           - SHA512
       ipsec_encryption_algorithm:
         description:
-          - Encryption algorithm used for IPSec (phase 2).
+          - Encryption algorithm.
         type: str
         required: false
         choices:
@@ -238,7 +275,7 @@ options:
           - TRIPLE_DES
       ipsec_authentication_algorithm:
         description:
-          - Authentication algorithm used for IPSec (phase 2).
+          - Authentication algorithm.
         type: str
         required: false
         choices:
@@ -249,13 +286,13 @@ options:
           - SHA512
   dpd_config:
     description:
-      - Dead Peer Detection (DPD) configuration used to detect stalled tunnels.
+      - Dead peer detection configuration for the VPN connection.
     type: dict
     required: false
     suboptions:
       operation:
         description:
-          - DPD action to take when a peer is found unreachable.
+          - Operation to be performed on detecting a dead peer. The default is HOLD.
         type: str
         required: false
         choices:
@@ -264,28 +301,28 @@ options:
           - RESTART
       interval_secs:
         description:
-          - Interval (in seconds) between DPD probes.
+          - The amount of time the peer waits for traffic before sending a DPD request.
         type: int
         required: false
       timeout_secs:
         description:
-          - Timeout (in seconds) after which the peer is declared dead.
+          - The maximum amount of time to wait for a DPD response before marking the peer as dead.
         type: int
         required: false
   qos_config:
     description:
-      - Quality of Service configuration to shape traffic through the VPN tunnel.
+      - Quality of Service configuration for the VPN IPSec tunnel.
     type: dict
     required: false
     suboptions:
       ingress_limit_mbps:
         description:
-          - Ingress traffic limit in Mbps.
+          - Ingress traffic limit (Mbps).
         type: int
         required: false
       egress_limit_mbps:
         description:
-          - Egress traffic limit in Mbps.
+          - Egress traffic limit (Mbps).
         type: int
         required: false
 extends_documentation_fragment:
@@ -606,6 +643,14 @@ def get_module_spec():
         egress_limit_mbps=dict(type="int", required=False),
     )
 
+    metadata_spec = dict(
+        owner_reference_id=dict(type="str"),
+        owner_user_name=dict(type="str"),
+        project_reference_id=dict(type="str"),
+        project_name=dict(type="str"),
+        category_ids=dict(type="list", elements="str"),
+    )
+
     module_args = dict(
         ext_id=dict(type="str"),
         name=dict(type="str"),
@@ -618,6 +663,12 @@ def get_module_spec():
             obj=networking_sdk.GatewayRole,
         ),
         dynamic_route_priority=dict(type="int"),
+        project_ext_id=dict(type="str"),
+        metadata=dict(
+            type="dict",
+            options=metadata_spec,
+            obj=networking_sdk.Metadata,
+        ),
         ipsec_config=dict(
             type="dict",
             options=ipsec_config_spec,
