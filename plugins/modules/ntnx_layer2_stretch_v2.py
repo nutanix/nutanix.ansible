@@ -251,36 +251,6 @@ options:
                   - The prefix length of the network to which this host IPv6 address belongs.
                 type: int
                 required: false
-      high_availability_group:
-        description:
-          - High availability group configuration for the layer2 stretch.
-        type: dict
-        required: false
-        suboptions:
-          is_ha_enabled:
-            description:
-              - Indicates whether high availability is enabled.
-            type: bool
-            required: false
-          algorithm:
-            description:
-              - High availability algorithm used for the group.
-            type: str
-            required: false
-            choices:
-              - ACTIVE_BACKUP
-          peered_gateways:
-            description:
-              - Information about a peered gateway in a high availability group.
-            type: list
-            elements: dict
-            required: false
-            suboptions:
-              ext_id:
-                description:
-                  - External ID of the peered gateway.
-                type: str
-                required: true
   remote_site_params:
     description:
       - Site-specific stretch configuration parameters.
@@ -416,36 +386,6 @@ options:
                   - The prefix length of the network to which this host IPv6 address belongs.
                 type: int
                 required: false
-      high_availability_group:
-        description:
-          - High availability group configuration for the layer2 stretch.
-        type: dict
-        required: false
-        suboptions:
-          is_ha_enabled:
-            description:
-              - Indicates whether high availability is enabled.
-            type: bool
-            required: false
-          algorithm:
-            description:
-              - High availability algorithm used for the group.
-            type: str
-            required: false
-            choices:
-              - ACTIVE_BACKUP
-          peered_gateways:
-            description:
-              - Information about a peered gateway in a high availability group.
-            type: list
-            elements: dict
-            required: false
-            suboptions:
-              ext_id:
-                description:
-                  - External ID of the peered gateway.
-                type: str
-                required: true
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -478,7 +418,7 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
-- name: Create Layer2 Stretch over VXLAN with HA
+- name: Create Layer2 Stretch over VXLAN
   nutanix.ncp.ntnx_layer2_stretch_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -494,11 +434,6 @@ EXAMPLES = r"""
       pc_cluster_reference: "5ab1b1a2-1111-4e00-9999-0000000000aa"
       stretch_subnet_reference: "8b5df6bc-1111-4e00-9999-0000000000bb"
       connection_reference: "3f9e5c2d-1111-4e00-9999-0000000000cc"
-      high_availability_group:
-        is_ha_enabled: true
-        algorithm: "ACTIVE_BACKUP"
-        peered_gateways:
-          - ext_id: "1a2b3c4d-1111-4e00-9999-000000000011"
     remote_site_params:
       pc_cluster_reference: "6bc2b2b3-2222-4e00-9999-0000000000dd"
       stretch_subnet_reference: "9c6ef7cd-2222-4e00-9999-0000000000ee"
@@ -694,27 +629,6 @@ def get_module_spec():
         ),
     )
 
-    peered_gateway_spec = dict(
-        ext_id=dict(type="str", required=True),
-    )
-
-    high_availability_group_spec = dict(
-        is_ha_enabled=dict(type="bool", required=False),
-        algorithm=dict(
-            type="str",
-            required=False,
-            choices=["ACTIVE_BACKUP"],
-            obj=networking_sdk.HighAvailabilityAlgorithm,
-        ),
-        peered_gateways=dict(
-            type="list",
-            elements="dict",
-            options=peered_gateway_spec,
-            required=False,
-            obj=networking_sdk.PeeredGateway,
-        ),
-    )
-
     site_params_spec = dict(
         pc_cluster_reference=dict(type="str", required=False),
         stretch_subnet_reference=dict(type="str", required=False),
@@ -736,12 +650,6 @@ def get_module_spec():
             options=ip_address_spec,
             required=False,
             obj=networking_sdk.IPAddress,
-        ),
-        high_availability_group=dict(
-            type="dict",
-            options=high_availability_group_spec,
-            required=False,
-            obj=networking_sdk.HighAvailabilityGroup,
         ),
     )
 

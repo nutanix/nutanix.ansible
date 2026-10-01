@@ -64,11 +64,6 @@
         ipv4:
           value: "192.168.10.254"
           prefix_length: 24
-      high_availability_group:
-        is_ha_enabled: true
-        algorithm: "ACTIVE_BACKUP"
-        peered_gateways:
-          - ext_id: "1a2b3c4d-1111-4e00-9999-000000000011"
     remote_site_params:
       pc_cluster_reference: "6bc2b2b3-2222-4e00-9999-0000000000dd"
       stretch_subnet_reference: "9c6ef7cd-2222-4e00-9999-0000000000ee"
@@ -85,11 +80,6 @@
         ipv4:
           value: "192.168.20.254"
           prefix_length: 24
-      high_availability_group:
-        is_ha_enabled: true
-        algorithm: "ACTIVE_BACKUP"
-        peered_gateways:
-          - ext_id: "2b3c4d5e-2222-4e00-9999-000000000022"
   check_mode: true
   register: result
   ignore_errors: true
@@ -112,19 +102,12 @@
       - result.response.local_site_params.stretch_interface_ip_address.ipv4.value == "192.168.10.1"
       - result.response.local_site_params.vpn_interface_ip_address.ipv4.value == "192.168.10.2"
       - result.response.local_site_params.default_gateway_ip_address.ipv4.value == "192.168.10.254"
-      - result.response.local_site_params.high_availability_group.is_ha_enabled == true
-      - result.response.local_site_params.high_availability_group.algorithm == "ACTIVE_BACKUP"
-      - result.response.local_site_params.high_availability_group.peered_gateways | length == 1
-      - result.response.local_site_params.high_availability_group.peered_gateways[0].ext_id == "1a2b3c4d-1111-4e00-9999-000000000011"
       - result.response.remote_site_params.pc_cluster_reference == "6bc2b2b3-2222-4e00-9999-0000000000dd"
       - result.response.remote_site_params.stretch_subnet_reference == "9c6ef7cd-2222-4e00-9999-0000000000ee"
       - result.response.remote_site_params.connection_reference == "4a0f6d3e-2222-4e00-9999-0000000000ff"
       - result.response.remote_site_params.stretch_interface_ip_address.ipv4.value == "192.168.20.1"
       - result.response.remote_site_params.vpn_interface_ip_address.ipv4.value == "192.168.20.2"
       - result.response.remote_site_params.default_gateway_ip_address.ipv4.value == "192.168.20.254"
-      - result.response.remote_site_params.high_availability_group.is_ha_enabled == true
-      - result.response.remote_site_params.high_availability_group.peered_gateways | length == 1
-      - result.response.remote_site_params.high_availability_group.peered_gateways[0].ext_id == "2b3c4d5e-2222-4e00-9999-000000000022"
     success_msg: "check_mode Create spec matches supplied attributes"
     fail_msg: "check_mode Create spec did not match supplied attributes"
 

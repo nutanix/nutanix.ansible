@@ -29,8 +29,6 @@
         remote_pc_cluster_reference: "6bc2b2b3-2222-4e00-9999-0000000000dd"
         remote_stretch_subnet_reference: "9c6ef7cd-2222-4e00-9999-0000000000ee"
         remote_connection_reference: "4a0f6d3e-2222-4e00-9999-0000000000ff"
-        local_peered_gateway_ext_id: "1a2b3c4d-1111-4e00-9999-000000000011"
-        remote_peered_gateway_ext_id: "2b3c4d5e-2222-4e00-9999-000000000022"
 
     - name: Create Layer2 Stretch with all attributes
       nutanix.ncp.ntnx_layer2_stretch_v2:
@@ -56,11 +54,6 @@
             ipv4:
               value: "192.168.10.254"
               prefix_length: 24
-          high_availability_group:
-            is_ha_enabled: true
-            algorithm: "ACTIVE_BACKUP"
-            peered_gateways:
-              - ext_id: "{{ local_peered_gateway_ext_id }}"
         remote_site_params:
           pc_cluster_reference: "{{ remote_pc_cluster_reference }}"
           stretch_subnet_reference: "{{ remote_stretch_subnet_reference }}"
@@ -77,11 +70,6 @@
             ipv4:
               value: "192.168.20.254"
               prefix_length: 24
-          high_availability_group:
-            is_ha_enabled: true
-            algorithm: "ACTIVE_BACKUP"
-            peered_gateways:
-              - ext_id: "{{ remote_peered_gateway_ext_id }}"
       register: create_result
       ignore_errors: true
 
@@ -114,11 +102,6 @@
             ipv4:
               value: "192.168.11.254"
               prefix_length: 24
-          high_availability_group:
-            is_ha_enabled: false
-            algorithm: "ACTIVE_BACKUP"
-            peered_gateways:
-              - ext_id: "{{ local_peered_gateway_ext_id }}"
         remote_site_params:
           pc_cluster_reference: "{{ remote_pc_cluster_reference }}"
           stretch_subnet_reference: "{{ remote_stretch_subnet_reference }}"
@@ -135,11 +118,6 @@
             ipv4:
               value: "192.168.21.254"
               prefix_length: 24
-          high_availability_group:
-            is_ha_enabled: false
-            algorithm: "ACTIVE_BACKUP"
-            peered_gateways:
-              - ext_id: "{{ remote_peered_gateway_ext_id }}"
       register: update_result
       ignore_errors: true
 
