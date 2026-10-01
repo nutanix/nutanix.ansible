@@ -1,0 +1,976 @@
+---
+- name: Start ntnx_directory_server_config_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_directory_server_config_v2 tests
+
+- name: Set suffix_name
+  ansible.builtin.set_fact:
+    suffix_name: ansible-dsc
+
+- name: Generate random suffix for directory service names
+  ansible.builtin.set_fact:
+    ds_random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set test variables
+  ansible.builtin.set_fact:
+    invalid_ext_id: "83cbf00d-782f-4efc-87c8-4129f5942aaa"
+    dsc_first_criteria: "{{ suffix_name }}-first-criteria"
+    dsc_second_criteria: "{{ suffix_name }}-second-criteria"
+    category_mapping_name: "{{ suffix_name }}-category-mapping"
+    selected_category_name: "ADGroup"
+
+- name: Create primary ACTIVE_DIRECTORY service
+  nutanix.ncp.ntnx_directory_services_v2:
+    state: present
+    name: "{{ ds_random_name }}-{{ suffix_name }}-primary"
+    url: "{{ active_directory.url }}"
+    directory_type: ACTIVE_DIRECTORY
+    domain_name: "{{ active_directory.domain_name }}"
+    service_account:
+      username: "{{ active_directory.username }}"
+      password: "{{ active_directory.password }}"
+    white_listed_groups:
+      - "{{ white_listed_groups[0] }}"
+  register: primary_directory_service
+  ignore_errors: true
+
+- name: Assert primary ACTIVE_DIRECTORY service creation status
+  ansible.builtin.assert:
+    that:
+      - primary_directory_service.response is defined
+      - primary_directory_service.changed == true
+      - primary_directory_service.failed == false
+      - primary_directory_service.response.name == "{{ ds_random_name }}-{{ suffix_name }}-primary"
+      - primary_directory_service.response.directory_type == "ACTIVE_DIRECTORY"
+      - primary_directory_service.response.url == "{{ active_directory.url }}"
+      - primary_directory_service.response.domain_name == "{{ active_directory.domain_name }}"
+      - primary_directory_service.ext_id is defined
+      - primary_directory_service.response.ext_id == primary_directory_service.ext_id
+    fail_msg: Unable to create primary ACTIVE_DIRECTORY service
+    success_msg: Primary ACTIVE_DIRECTORY service created successfully
+
+- name: Create secondary ACTIVE_DIRECTORY service
+  nutanix.ncp.ntnx_directory_services_v2:
+    state: present
+    name: "{{ ds_random_name }}-{{ suffix_name }}-secondary"
+    url: "{{ active_directory_secondary.url }}"
+    directory_type: ACTIVE_DIRECTORY
+    domain_name: "{{ active_directory_secondary.domain_name }}"
+    service_account:
+      username: "{{ active_directory_secondary.username }}"
+      password: "{{ active_directory_secondary.password }}"
+    white_listed_groups:
+      - "{{ white_listed_groups[0] }}"
+  register: secondary_directory_service
+  ignore_errors: true
+
+- name: Assert secondary ACTIVE_DIRECTORY service creation status
+  ansible.builtin.assert:
+    that:
+      - secondary_directory_service.response is defined
+      - secondary_directory_service.changed == true
+      - secondary_directory_service.failed == false
+      - secondary_directory_service.response.name == "{{ ds_random_name }}-{{ suffix_name }}-secondary"
+      - secondary_directory_service.response.directory_type == "ACTIVE_DIRECTORY"
+      - secondary_directory_service.response.url == "{{ active_directory_secondary.url }}"
+      - secondary_directory_service.response.domain_name == "{{ active_directory_secondary.domain_name }}"
+      - secondary_directory_service.ext_id is defined
+      - secondary_directory_service.response.ext_id == secondary_directory_service.ext_id
+    fail_msg: Unable to create secondary ACTIVE_DIRECTORY service
+    success_msg: Secondary ACTIVE_DIRECTORY service created successfully
+
+- name: Capture created directory service ext_ids
+  ansible.builtin.set_fact:
+    directory_service_ref_first: "{{ primary_directory_service.response.ext_id }}"
+    directory_service_ref_second: "{{ secondary_directory_service.response.ext_id }}"
+
+- name: Generate random category value suffix
+  ansible.builtin.set_fact:
+    category_value_suffix: "{{ query('community.general.random_string', numbers=true, special=false, upper=false, length=8)[0] }}"
+
+- name: Set ADGroup category value
+  ansible.builtin.set_fact:
+    selected_category_value: "ad-group-{{ category_value_suffix }}"
+
+###################################################################################################
+# Resolve the AD group object GUID dynamically using the directory service search module
+###################################################################################################
+- name: Search directory service for AD group object
+  nutanix.ncp.ntnx_directory_service_search_v2:
+    ext_id: "{{ directory_service_ref_first }}"
+    query: "{{ active_directory_object_name }}"
+    searched_attributes:
+      - name
+      - sAMAccountName
+      - cn
+    returned_attributes:
+      - name
+      - objectGUID
+  register: ad_object_search_result
+
+- name: Assert AD object search returned a matching group
+  ansible.builtin.assert:
+    that:
+      - ad_object_search_result.changed == false
+      - ad_object_search_result.failed == false
+      - ad_object_search_result.ext_id == directory_service_ref_first
+      - ad_object_search_result.response is defined
+      - ad_object_search_result.response.domain_name is defined
+      - ad_object_search_result.response.search_results is defined
+      - ad_object_search_result.response.search_results | length > 0
+      - >-
+        ad_object_search_result.response.search_results
+        | selectattr('entity_type', 'equalto', 'Group')
+        | list | length > 0
+      - >-
+        (ad_object_search_result.response.search_results
+         | selectattr('entity_type', 'equalto', 'Group')
+         | first).attributes
+         | selectattr('name', 'equalto', 'objectGUID')
+         | list | length > 0
+    fail_msg: "Directory service search did not return a matching group object for '{{ active_directory_object_name }}'"
+    success_msg: "Directory service search returned a matching group object for '{{ active_directory_object_name }}'"
+
+- name: Set AD object ext_id from directory service search result
+  ansible.builtin.set_fact:
+    active_directory_object_ext_id: >-
+      {{ ((ad_object_search_result.response.search_results
+           | selectattr('entity_type', 'equalto', 'Group')
+           | first).attributes
+           | selectattr('name', 'equalto', 'objectGUID')
+           | map(attribute='values') | first | first) }}
+
+- name: Assert AD object ext_id was resolved from search
+  ansible.builtin.assert:
+    that:
+      - active_directory_object_ext_id is defined
+      - active_directory_object_ext_id | length > 0
+    fail_msg: "Failed to resolve AD group object ext_id from directory service search"
+    success_msg: "Resolved AD group object ext_id from directory service search: {{ active_directory_object_ext_id }}"
+
+###################################################################################################
+
+###################################################################################################
+# CREATE TESTS
+###################################################################################################
+- name: Generate spec for create directory server config with check mode
+  nutanix.ncp.ntnx_directory_server_config_v2:
+    directory_service_reference: "51179784-3011-4454-a3b5-4025617807a4"
+    matching_criterias:
+      - match_entity: VM
+        match_field: NAME
+        match_type: CONTAINS
+        criteria: "ansible-dsc-second-criteria"
+    is_default_category_enabled: true
+    should_keep_default_category_on_login: false
+    domain_controllers:
+      - ipv4:
+          value: "10.46.1.152"
+          prefix_length: 32
+      - fqdn:
+          value: "systest.nutanix.com"
+  register: create_check_second_result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert generated create directory server config with check mode status
+  ansible.builtin.assert:
+    that:
+      - create_check_second_result.changed == false
+      - create_check_second_result.failed == false
+      - create_check_second_result.response is defined
+      - create_check_second_result.response.directory_service_reference == "51179784-3011-4454-a3b5-4025617807a4"
+      - create_check_second_result.response.is_default_category_enabled == true
+      - create_check_second_result.response.should_keep_default_category_on_login == false
+      - create_check_second_result.response.matching_criterias | length == 1
+      - create_check_second_result.response.matching_criterias[0].match_entity == "VM"
+      - create_check_second_result.response.matching_criterias[0].match_field == "NAME"
+      - create_check_second_result.response.matching_criterias[0].match_type == "CONTAINS"
+      - create_check_second_result.response.matching_criterias[0].criteria == "ansible-dsc-second-criteria"
+      - create_check_second_result.response.domain_controllers | length == 2
+    fail_msg: Generate spec for create directory server config with check mode failed
+    success_msg: Generate spec for create directory server config with check mode passed
+
+- name: Generate spec for create Directory Server category mapping with check mode
+  nutanix.ncp.ntnx_category_mapping_v2:
+    name: "test-ansible-category-mapping-1"
+    category_name: "ADGroup"
+    category_value: "ad-group-12345678"
+    ad_info:
+      directory_service_reference: "954dc8b6-46dd-5fc0-90d6-edb0b8311e3c"
+      object_identifier: "a62ad3f1-6c13-8d47-9302-d4798971b86d"
+  register: create_check_result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert generated create spec with check mode status
+  ansible.builtin.assert:
+    that:
+      - create_check_result.changed == false
+      - create_check_result.failed == false
+      - create_check_result.response is defined
+      - create_check_result.response.name == "test-ansible-category-mapping-1"
+      - create_check_result.response.category_name == "ADGroup"
+      - create_check_result.response.category_value == "ad-group-12345678"
+      - create_check_result.response.ad_info.directory_service_reference == "954dc8b6-46dd-5fc0-90d6-edb0b8311e3c"
+      - create_check_result.response.ad_info.object_identifier == "a62ad3f1-6c13-8d47-9302-d4798971b86d"
+    fail_msg: "Generate spec for create Directory Server category mapping with check mode enabled failed"
+    success_msg: "Generate spec for create Directory Server category mapping with check mode enabled passed"
+
+- name: Create directory server config
+  nutanix.ncp.ntnx_directory_server_config_v2:
+    directory_service_reference: "{{ directory_service_ref_first }}"
+    matching_criterias:
+      - match_entity: VM
+        match_field: NAME
+        match_type: CONTAINS
+        criteria: "{{ dsc_first_criteria }}"
+    is_default_category_enabled: true
+    should_keep_default_category_on_login: true
+  register: directory_server_config
+  ignore_errors: true
+
+- name: Assert create directory server config status
+  ansible.builtin.assert:
+    that:
+      - directory_server_config.changed == true
+      - directory_server_config.failed == false
+      - directory_server_config.response is defined
+      - directory_server_config.ext_id is defined
+      - directory_server_config.task_ext_id is defined
+      - directory_server_config.response.ext_id == directory_server_config.ext_id
+      - directory_server_config.response.directory_service_reference == directory_service_ref_first
+      - directory_server_config.response.is_default_category_enabled == true
+      - directory_server_config.response.should_keep_default_category_on_login == true
+      - directory_server_config.response.matching_criterias | length == 1
+      - directory_server_config.response.matching_criterias[0].match_type == "CONTAINS"
+      - directory_server_config.response.matching_criterias[0].criteria == dsc_first_criteria
+    fail_msg: Create directory server config failed
+    success_msg: Create directory server config passed
+
+- name: Create Directory Server category mapping
+  nutanix.ncp.ntnx_category_mapping_v2:
+    name: "{{ category_mapping_name }}"
+    category_name: "{{ selected_category_name }}"
+    category_value: "{{ selected_category_value }}"
+    ad_info:
+      directory_service_reference: "{{ directory_service_ref_first }}"
+      object_identifier: "{{ active_directory_object_ext_id }}"
+  register: create_result
+  ignore_errors: true
+
+- name: Assert create Directory Server category mapping status
+  ansible.builtin.assert:
+    that:
+      - create_result.changed == true
+      - create_result.failed == false
+      - create_result.response is defined
+      - create_result.response.name == "{{ category_mapping_name }}"
+      - create_result.response.category_name == selected_category_name
+      - create_result.response.category_value == selected_category_value
+      - create_result.response.ad_info.directory_service_reference == "{{ directory_service_ref_first }}"
+      - create_result.response.ad_info.object_identifier == "{{ active_directory_object_ext_id }}"
+      - create_result.response.ad_info.object_path is defined
+      - create_result.response.ad_info.object_path | length > 0
+    fail_msg: Create Directory Server category mapping failed
+    success_msg: Create Directory Server category mapping passed
+
+- name: Set category mapping ext_id
+  ansible.builtin.set_fact:
+    category_mapping_ext_id: "{{ create_result.response.ext_id }}"
+
+###################################################################################################
+# Negative Test - Create directory server category mapping without name
+###################################################################################################
+- name: Create directory server category mapping without name
+  nutanix.ncp.ntnx_category_mapping_v2:
+    category_name: "ADGroup"
+    category_value: "ad-group-12345678"
+    ad_info:
+      directory_service_reference: "954dc8b6-46dd-5fc0-90d6-edb0b8311e3c"
+      object_identifier: "a62ad3f1-6c13-8d47-9302-d4798971b86d"
+  register: create_result
+  ignore_errors: true
+
+- name: Assert create directory server category mapping without required fields status
+  ansible.builtin.assert:
+    that:
+      - create_result.changed == false
+      - create_result.failed == true
+      - create_result.msg == "state is present but any of the following are missing: name, ext_id"
+    fail_msg: Create directory server category mapping without name failed
+    success_msg: Create directory server category mapping without name passed
+
+###################################################################################################
+# Negative Test - Create directory server category mapping without required fields
+###################################################################################################
+- name: Create directory server category mapping without required fields
+  nutanix.ncp.ntnx_category_mapping_v2:
+    name: "test-ansible-category-mapping-1"
+  register: create_result
+  ignore_errors: true
+
+- name: Assert create directory server category mapping without required fields status
+  ansible.builtin.assert:
+    that:
+      - create_result.changed == false
+      - create_result.failed == true
+      - create_result.msg == "Missing required parameter(s): category_name, category_value, ad_info"
+    fail_msg: Create directory server category mapping without required fields failed
+    success_msg: Create directory server category mapping without required fields passed
+
+###################################################################################################
+# Negative Test - Create second directory server config
+###################################################################################################
+- name: Create directory server config while another directory server already exists
+  nutanix.ncp.ntnx_directory_server_config_v2:
+    directory_service_reference: "{{ directory_service_ref_second }}"
+    matching_criterias:
+      - match_entity: VM
+        match_field: NAME
+        match_type: CONTAINS
+        criteria: "{{ dsc_second_criteria }}"
+    is_default_category_enabled: true
+    should_keep_default_category_on_login: false
+  register: create_second_result
+  ignore_errors: true
+
+- name: Assert create directory server config while another directory server already exists status
+  ansible.builtin.assert:
+    that:
+      - create_second_result.changed == false
+      - create_second_result.failed == true
+      - create_second_result.msg == "Task Failed"
+      - create_second_result.response is defined
+      - create_second_result.response.error_messages is defined
+      - create_second_result.response.error_messages | length > 0
+    fail_msg: Create directory server config while another directory server already exists failed
+    success_msg: Create directory server config while another directory server already exists passed
+
+###################################################################################################
+# UPDATE TESTS
+###################################################################################################
+
+- name: Generate spec for update directory server config with check mode
+  nutanix.ncp.ntnx_directory_server_config_v2:
+    ext_id: "{{ directory_server_config.ext_id }}"
+    directory_service_reference: "d42d42d4-2d42-4d42-4d42-2d42d42d42d4"
+    matching_criterias:
+      - match_entity: VM
+        match_field: NAME
+        match_type: CONTAINS
+        criteria: "ansible-dsc-update-criteria"
+    is_default_category_enabled: true
+    should_keep_default_category_on_login: false
+    domain_controllers:
+      - ipv4:
+          value: "10.46.1.153"
+          prefix_length: 32
+      - fqdn:
+          value: "systest-updated.nutanix.com"
+  register: update_result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert generated update spec with check mode
+  ansible.builtin.assert:
+    that:
+      - update_result.changed == false
+      - update_result.failed == false
+      - update_result.response is defined
+      - update_result.response.directory_service_reference == "d42d42d4-2d42-4d42-4d42-2d42d42d42d4"
+      - update_result.response.matching_criterias | length == 1
+      - update_result.response.matching_criterias[0].match_type == "CONTAINS"
+      - update_result.response.matching_criterias[0].criteria == "ansible-dsc-update-criteria"
+      - update_result.response.domain_controllers | length == 2
+      - update_result.response.domain_controllers[0].ipv4.value == "10.46.1.153"
+      - update_result.response.domain_controllers[0].ipv4.prefix_length == 32
+      - update_result.response.domain_controllers[1].fqdn.value == "systest-updated.nutanix.com"
+    fail_msg: Generate spec for update directory server config with check mode failed
+    success_msg: Generate spec for update directory server config with check mode passed
+
+- name: Update directory server config
+  nutanix.ncp.ntnx_directory_server_config_v2:
+    ext_id: "{{ directory_server_config.ext_id }}"
+    directory_service_reference: "{{ directory_service_ref_second }}"
+    matching_criterias:
+      - match_entity: VM
+        match_field: NAME
+        match_type: ALL
+    is_default_category_enabled: false
+    should_keep_default_category_on_login: false
+  register: update_result
+  ignore_errors: true
+
+- name: Assert update directory server config status
+  ansible.builtin.assert:
+    that:
+      - update_result.changed == true
+      - update_result.failed == false
+      - update_result.response is defined
+      - update_result.ext_id == directory_server_config.ext_id
+      - update_result.task_ext_id is defined
+      - update_result.response.directory_service_reference == directory_service_ref_second
+      - update_result.response.is_default_category_enabled == false
+      - update_result.response.should_keep_default_category_on_login == false
+      - update_result.response.matching_criterias | length == 1
+      - update_result.response.matching_criterias[0].match_type == "ALL"
+    fail_msg: Update directory server config failed
+    success_msg: Update directory server config passed
+
+- name: Generate spec for update Directory Server category mapping with check mode
+  nutanix.ncp.ntnx_category_mapping_v2:
+    state: present
+    ext_id: "{{ category_mapping_ext_id }}"
+    name: "test-ansible-category-mapping-2"
+    category_name: "ADGroup"
+    category_value: "category-value-2"
+    ad_info:
+      directory_service_reference: "954dc8b6-46dd-5fc0-90d6-edb0b8311e3c"
+      object_identifier: "a62ad3f1-6c13-8d47-9302-d4798971b86d"
+  register: update_result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert generated update spec with check mode status
+  ansible.builtin.assert:
+    that:
+      - update_result.changed == false
+      - update_result.failed == false
+      - update_result.response is defined
+      - update_result.response.name == "test-ansible-category-mapping-2"
+      - update_result.response.category_name == selected_category_name
+      - update_result.response.category_value == "category-value-2"
+      - update_result.response.ad_info.directory_service_reference == "954dc8b6-46dd-5fc0-90d6-edb0b8311e3c"
+      - update_result.response.ad_info.object_identifier == "a62ad3f1-6c13-8d47-9302-d4798971b86d"
+    fail_msg: "Generate spec for update Directory Server category mapping with check mode enabled failed"
+    success_msg: "Generate spec for update Directory Server category mapping with check mode enabled passed"
+
+- name: Update Directory Server category mapping
+  nutanix.ncp.ntnx_category_mapping_v2:
+    state: present
+    ext_id: "{{ category_mapping_ext_id }}"
+    name: "{{ category_mapping_name }}_updated"
+    category_name: "{{ selected_category_name }}"
+    category_value: "{{ selected_category_value }}_updated"
+    ad_info:
+      directory_service_reference: "{{ directory_service_ref_second }}"
+      object_identifier: "{{ active_directory_object_ext_id }}"
+  register: update_result
+  ignore_errors: true
+
+- name: Assert update Directory Server category mapping status
+  ansible.builtin.assert:
+    that:
+      - update_result.changed == true
+      - update_result.failed == false
+      - update_result.response is defined
+      - update_result.response.name == "{{ category_mapping_name }}_updated"
+      - update_result.response.category_name == selected_category_name
+      - update_result.response.category_value == "{{ selected_category_value }}_updated"
+      - update_result.response.ad_info.directory_service_reference == "{{ directory_service_ref_second }}"
+      - update_result.response.ad_info.object_identifier == "{{ active_directory_object_ext_id }}"
+      - update_result.response.ad_info.object_path is defined
+      - update_result.response.ad_info.object_path | length > 0
+      - update_result.response.ad_info.status == "USABLE"
+    fail_msg: Update Directory Server category mapping failed
+    success_msg: Update Directory Server category mapping passed
+
+###################################################################################################
+# IDEMPOTENCY TEST
+###################################################################################################
+- name: Update directory server config with identical payload for idempotency
+  nutanix.ncp.ntnx_directory_server_config_v2:
+    ext_id: "{{ directory_server_config.ext_id }}"
+    directory_service_reference: "{{ directory_service_ref_second }}"
+    matching_criterias:
+      - match_entity: VM
+        match_field: NAME
+        match_type: ALL
+    is_default_category_enabled: false
+    should_keep_default_category_on_login: false
+  register: idempotency_result
+  ignore_errors: true
+
+- name: Assert idempotency for directory server config update status
+  ansible.builtin.assert:
+    that:
+      - idempotency_result.changed == false
+      - idempotency_result.failed == false
+      - idempotency_result.skipped == true
+      - idempotency_result.msg == "Nothing to change."
+    fail_msg: Idempotency check for directory server config update failed
+    success_msg: Idempotency check for directory server config update passed
+
+- name: Update Directory Server category mapping with identical payload for idempotency
+  nutanix.ncp.ntnx_category_mapping_v2:
+    state: present
+    ext_id: "{{ category_mapping_ext_id }}"
+    name: "{{ category_mapping_name }}_updated"
+    category_name: "{{ selected_category_name }}"
+    category_value: "{{ selected_category_value }}_updated"
+    ad_info:
+      directory_service_reference: "{{ directory_service_ref_second }}"
+      object_identifier: "{{ active_directory_object_ext_id }}"
+  register: idempotency_result
+  ignore_errors: true
+
+- name: Assert idempotency for Directory Server category mapping update status
+  ansible.builtin.assert:
+    that:
+      - idempotency_result.changed == false
+      - idempotency_result.failed == false
+      - idempotency_result.skipped == true
+      - idempotency_result.msg == "Nothing to change."
+    fail_msg: Idempotency check for Directory Server category mapping update failed
+    success_msg: Idempotency check for Directory Server category mapping update passed
+
+###################################################################################################
+# READ TESTS
+###################################################################################################
+- name: Get directory server config using ext_id
+  nutanix.ncp.ntnx_directory_server_configs_info_v2:
+    ext_id: "{{ directory_server_config.ext_id }}"
+  register: get_result
+  ignore_errors: true
+
+- name: Assert get directory server config using ext_id status
+  ansible.builtin.assert:
+    that:
+      - get_result.changed == false
+      - get_result.failed == false
+      - get_result.response is defined
+      - get_result.response.ext_id == directory_server_config.ext_id
+      - get_result.response.directory_service_reference == directory_service_ref_second
+      - get_result.response.is_default_category_enabled == false
+      - get_result.response.should_keep_default_category_on_login == false
+      - get_result.response.matching_criterias | length == 1
+      - get_result.response.matching_criterias[0].match_type == "ALL"
+    fail_msg: Get directory server config using ext_id failed
+    success_msg: Get directory server config using ext_id passed
+
+- name: List all directory server configs
+  nutanix.ncp.ntnx_directory_server_configs_info_v2:
+  register: list_all_result
+  ignore_errors: true
+
+- name: Assert list all directory server configs status
+  ansible.builtin.assert:
+    that:
+      - list_all_result.changed == false
+      - list_all_result.failed == false
+      - list_all_result.response is defined
+      # total_available_results is not available in the response
+      # - list_all_result.total_available_results is defined
+      # - list_all_result.total_available_results >= 1
+      - list_all_result.response | length >= 1
+      - (list_all_result.response | selectattr('ext_id', 'equalto', directory_server_config.ext_id) | list | length) == 1
+    fail_msg: List all directory server configs failed
+    success_msg: List all directory server configs passed
+
+- name: Get Directory Server category mapping using ext_id
+  nutanix.ncp.ntnx_category_mappings_info_v2:
+    ext_id: "{{ category_mapping_ext_id }}"
+  register: get_result
+  ignore_errors: true
+
+- name: Assert get Directory Server category mapping using ext_id status
+  ansible.builtin.assert:
+    that:
+      - get_result.changed == false
+      - get_result.failed == false
+      - get_result.response is defined
+      - get_result.response.ext_id == category_mapping_ext_id
+      - get_result.response.name == "{{ category_mapping_name }}_updated"
+      - get_result.response.category_name == selected_category_name
+      - get_result.response.category_value == "{{ selected_category_value }}_updated"
+      - get_result.response.ad_info.directory_service_reference == "{{ directory_service_ref_second }}"
+      - get_result.response.ad_info.object_identifier == "{{ active_directory_object_ext_id }}"
+      - get_result.response.ad_info.object_path is defined
+      - get_result.response.ad_info.object_path | length > 0
+      - get_result.response.ad_info.status == "USABLE"
+    fail_msg: Get Directory Server category mapping using ext_id failed
+    success_msg: Get Directory Server category mapping using ext_id passed
+
+- name: List all Directory Server category mappings
+  nutanix.ncp.ntnx_category_mappings_info_v2:
+  register: list_all_result
+  ignore_errors: true
+
+- name: Assert list all Directory Server category mappings status
+  ansible.builtin.assert:
+    that:
+      - list_all_result.changed == false
+      - list_all_result.failed == false
+      - list_all_result.response is defined
+      - list_all_result.response | length >= 1
+      - list_all_result.total_available_results >= 1
+      - list_all_result.response[0].ad_info.object_path is defined
+      - list_all_result.response[0].ad_info.object_path | length > 0
+      - list_all_result.response[0].ad_info.status == "USABLE"
+    fail_msg: List all Directory Server category mappings failed
+    success_msg: List all Directory Server category mappings passed
+
+- name: List Directory Server category mappings with filter
+  nutanix.ncp.ntnx_category_mappings_info_v2:
+    filter: "name eq '{{ category_mapping_name }}_updated'"
+  register: list_with_filter_result
+  ignore_errors: true
+
+- name: Assert list Directory Server category mappings with filter status
+  ansible.builtin.assert:
+    that:
+      - list_with_filter_result.changed == false
+      - list_with_filter_result.failed == false
+      - list_with_filter_result.response is defined
+      - list_with_filter_result.response | length == 1
+      - list_with_filter_result.response[0].name == "{{ category_mapping_name }}_updated"
+      - list_with_filter_result.response[0].ad_info.object_path is defined
+      - list_with_filter_result.response[0].ad_info.object_path | length > 0
+      - list_with_filter_result.response[0].ad_info.status == "USABLE"
+    fail_msg: List Directory Server category mappings with filter failed
+    success_msg: List Directory Server category mappings with filter passed
+
+- name: List Directory Server category mappings with limit
+  nutanix.ncp.ntnx_category_mappings_info_v2:
+    limit: 1
+  register: list_with_limit_result
+  ignore_errors: true
+
+- name: Assert list Directory Server category mappings with limit status
+  ansible.builtin.assert:
+    that:
+      - list_with_limit_result.changed == false
+      - list_with_limit_result.failed == false
+      - list_with_limit_result.response is defined
+      - list_with_limit_result.response | length == 1
+      - list_with_limit_result.response[0].ad_info.object_path is defined
+      - list_with_limit_result.response[0].ad_info.object_path | length > 0
+      - list_with_limit_result.response[0].ad_info.status == "USABLE"
+    fail_msg: List Directory Server category mappings with limit failed
+    success_msg: List Directory Server category mappings with limit passed
+
+###################################################################################################
+# DELETE TESTS
+###################################################################################################
+
+- name: Delete Directory Server category mapping with check mode
+  nutanix.ncp.ntnx_category_mapping_v2:
+    state: absent
+    ext_id: "d21d21d2-1d21-4d21-4d21-1d21d21d21d2"
+  register: delete_result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert delete Directory Server category mapping with check mode status
+  ansible.builtin.assert:
+    that:
+      - delete_result.changed == false
+      - delete_result.failed == false
+      - delete_result.ext_id == "d21d21d2-1d21-4d21-4d21-1d21d21d21d2"
+      - delete_result.msg == "Category Mapping with ext_id:d21d21d2-1d21-4d21-4d21-1d21d21d21d2 will be deleted."
+    fail_msg: Delete Directory Server category mapping with check mode failed
+    success_msg: Delete Directory Server category mapping with check mode passed
+
+- name: Delete Directory Server category mapping
+  nutanix.ncp.ntnx_category_mapping_v2:
+    state: absent
+    ext_id: "{{ category_mapping_ext_id }}"
+  register: delete_result
+  ignore_errors: true
+
+- name: Assert delete Directory Server category mapping status
+  ansible.builtin.assert:
+    that:
+      - delete_result.changed == true
+      - delete_result.failed == false
+      - delete_result.response is defined
+      - delete_result.ext_id == category_mapping_ext_id
+      - delete_result.task_ext_id is defined
+      - delete_result.response.status == "SUCCEEDED"
+    fail_msg: Delete Directory Server category mapping failed
+    success_msg: Delete Directory Server category mapping passed
+
+- name: Delete directory server config
+  nutanix.ncp.ntnx_directory_server_config_v2:
+    ext_id: "{{ directory_server_config.ext_id }}"
+    state: absent
+  register: delete_result
+  ignore_errors: true
+
+- name: Assert delete directory server config status
+  ansible.builtin.assert:
+    that:
+      - delete_result.changed == true
+      - delete_result.failed == false
+      - delete_result.response is defined
+      - delete_result.ext_id == directory_server_config.ext_id
+      - delete_result.task_ext_id is defined
+      - delete_result.response.status == "SUCCEEDED"
+    fail_msg: Delete directory server config failed
+    success_msg: Delete directory server config passed
+
+###################################################################################################
+# NEGATIVE TESTS
+###################################################################################################
+- name: Create directory server config with conflicting default-category flags
+  nutanix.ncp.ntnx_directory_server_config_v2:
+    state: present
+    directory_service_reference: "{{ directory_service_ref_first }}"
+    matching_criterias:
+      - match_entity: VM
+        match_field: NAME
+        match_type: ALL
+    is_default_category_enabled: false
+    should_keep_default_category_on_login: true
+  register: create_conflicting_flags_result
+  ignore_errors: true
+
+- name: Assert create directory server config with conflicting default-category flags status
+  ansible.builtin.assert:
+    that:
+      - create_conflicting_flags_result.changed == false
+      - create_conflicting_flags_result.failed == true
+      - create_conflicting_flags_result.msg == "Task Failed"
+      - create_conflicting_flags_result.response.error_messages is defined
+      - create_conflicting_flags_result.response.error_messages | length > 0
+    fail_msg: Create directory server config with conflicting default-category flags did not fail as expected
+    success_msg: Create directory server config with conflicting default-category flags failed as expected
+
+- name: Create directory server config without directory_service_reference
+  nutanix.ncp.ntnx_directory_server_config_v2:
+    state: present
+    matching_criterias:
+      - match_entity: VM
+        match_field: NAME
+        match_type: ALL
+  register: create_missing_required_result
+  ignore_errors: true
+
+- name: Assert create directory server config without required parameter status
+  ansible.builtin.assert:
+    that:
+      - create_missing_required_result.changed == false
+      - create_missing_required_result.failed == true
+      - 'create_missing_required_result.msg == "state is present but any of the following are missing: directory_service_reference, ext_id"'
+    fail_msg: Create directory server config without required parameter did not fail as expected
+    success_msg: Create directory server config without required parameter failed as expected
+
+- name: Create directory server config with invalid match_type
+  nutanix.ncp.ntnx_directory_server_config_v2:
+    state: present
+    directory_service_reference: "{{ directory_service_ref_first }}"
+    matching_criterias:
+      - match_entity: VM
+        match_field: NAME
+        match_type: INVALID_TYPE
+        criteria: "{{ dsc_first_criteria }}"
+  register: create_invalid_input_result
+  ignore_errors: true
+
+- name: Assert create directory server config with invalid input status
+  ansible.builtin.assert:
+    that:
+      - create_invalid_input_result.changed == false
+      - create_invalid_input_result.failed == true
+      - 'create_invalid_input_result.msg == "value of match_type must be one of: ALL, CONTAINS, got: INVALID_TYPE found in matching_criterias"'
+    fail_msg: Create directory server config with invalid input did not fail as expected
+    success_msg: Create directory server config with invalid input failed as expected
+
+- name: Get directory server config using wrong ext_id
+  nutanix.ncp.ntnx_directory_server_configs_info_v2:
+    ext_id: "{{ invalid_ext_id }}"
+  register: get_wrong_ext_id_result
+  ignore_errors: true
+
+- name: Assert get directory server config using wrong ext_id status
+  ansible.builtin.assert:
+    that:
+      - get_wrong_ext_id_result.changed == false
+      - get_wrong_ext_id_result.failed == true
+      - get_wrong_ext_id_result.error is defined
+      - get_wrong_ext_id_result.msg == "Api Exception raised while fetching directory server config info using ext_id"
+      - get_wrong_ext_id_result.response.data.error is defined
+    fail_msg: Get directory server config using wrong ext_id did not fail as expected
+    success_msg: Get directory server config using wrong ext_id failed as expected
+
+- name: Update directory server config using wrong ext_id
+  nutanix.ncp.ntnx_directory_server_config_v2:
+    state: present
+    ext_id: "{{ invalid_ext_id }}"
+    directory_service_reference: "{{ directory_service_ref_second }}"
+    matching_criterias:
+      - match_entity: VM
+        match_field: NAME
+        match_type: ALL
+  register: update_wrong_ext_id_result
+  ignore_errors: true
+
+- name: Assert update directory server config using wrong ext_id status
+  ansible.builtin.assert:
+    that:
+      - update_wrong_ext_id_result.changed == false
+      - update_wrong_ext_id_result.failed == true
+      - update_wrong_ext_id_result.error is defined
+      - update_wrong_ext_id_result.msg == "Api Exception raised while fetching directory server config info using ext_id"
+      - update_wrong_ext_id_result.response.data.error is defined
+    fail_msg: Update directory server config using wrong ext_id did not fail as expected
+    success_msg: Update directory server config using wrong ext_id failed as expected
+
+- name: Delete directory server config using wrong ext_id
+  nutanix.ncp.ntnx_directory_server_config_v2:
+    ext_id: "{{ invalid_ext_id }}"
+    state: absent
+  register: delete_wrong_ext_id_result
+  ignore_errors: true
+
+- name: Assert delete directory server config using wrong ext_id status
+  ansible.builtin.assert:
+    that:
+      - delete_wrong_ext_id_result.changed == false
+      - delete_wrong_ext_id_result.failed == true
+      - delete_wrong_ext_id_result.error is defined
+      - delete_wrong_ext_id_result.msg == "Api Exception raised while fetching directory server config info using ext_id"
+      - delete_wrong_ext_id_result.response.data.error is defined
+    fail_msg: Delete directory server config using wrong ext_id did not fail as expected
+    success_msg: Delete directory server config using wrong ext_id failed as expected
+
+- name: Create Directory Server category mapping with invalid category name
+  nutanix.ncp.ntnx_category_mapping_v2:
+    state: present
+    category_name: "INVALID_CATEGORY_NAME"
+    category_value: "ad-group-12345678"
+    ad_info:
+      directory_service_reference: "{{ directory_service_ref_first }}"
+      object_identifier: "{{ active_directory_object_ext_id }}"
+  register: create_invalid_category_name_result
+  ignore_errors: true
+
+- name: Assert create Directory Server category mapping with invalid category name status
+  ansible.builtin.assert:
+    that:
+      - create_invalid_category_name_result.changed == false
+      - create_invalid_category_name_result.failed == true
+    fail_msg: Create Directory Server category mapping with invalid category name did not fail as expected
+    success_msg: Create Directory Server category mapping with invalid category name failed as expected
+
+- name: Create Directory Server category mapping with invalid directory service reference
+  nutanix.ncp.ntnx_category_mapping_v2:
+    state: present
+    category_name: "ADGroup"
+    category_value: "ad-group-12345678"
+    ad_info:
+      directory_service_reference: "{{ invalid_ext_id }}"
+      object_identifier: "{{ active_directory_object_ext_id }}"
+  register: create_invalid_directory_service_reference_result
+  ignore_errors: true
+
+- name: Assert create Directory Server category mapping with invalid directory service reference status
+  ansible.builtin.assert:
+    that:
+      - create_invalid_directory_service_reference_result.changed == false
+      - create_invalid_directory_service_reference_result.failed == true
+    fail_msg: Create Directory Server category mapping with invalid directory service reference did not fail as expected
+    success_msg: Create Directory Server category mapping with invalid directory service reference failed as expected
+
+- name: Create Directory Server category mapping with invalid object identifier
+  nutanix.ncp.ntnx_category_mapping_v2:
+    state: present
+    category_name: "ADGroup"
+    category_value: "ad-group-12345678"
+    ad_info:
+      directory_service_reference: "{{ directory_service_ref_first }}"
+      object_identifier: "{{ invalid_ext_id }}"
+  register: create_invalid_object_identifier_result
+  ignore_errors: true
+
+- name: Assert create Directory Server category mapping with invalid object identifier status
+  ansible.builtin.assert:
+    that:
+      - create_invalid_object_identifier_result.changed == false
+      - create_invalid_object_identifier_result.failed == true
+    fail_msg: Create Directory Server category mapping with invalid object identifier did not fail as expected
+    success_msg: Create Directory Server category mapping with invalid object identifier failed as expected
+
+- name: Update Directory Server category mapping using wrong ext_id
+  nutanix.ncp.ntnx_category_mapping_v2:
+    state: present
+    ext_id: "{{ invalid_ext_id }}"
+    category_name: "ADGroup"
+    category_value: "ad-group-12345678"
+    ad_info:
+      directory_service_reference: "{{ directory_service_ref_first }}"
+      object_identifier: "{{ active_directory_object_ext_id }}"
+  register: update_wrong_ext_id_result
+  ignore_errors: true
+
+- name: Assert update Directory Server category mapping using wrong ext_id status
+  ansible.builtin.assert:
+    that:
+      - update_wrong_ext_id_result.changed == false
+      - update_wrong_ext_id_result.failed == true
+      - update_wrong_ext_id_result.error is defined
+      - >-
+        update_wrong_ext_id_result.msg ==
+        "Api Exception raised while fetching Category Mapping info using ext_id"
+      - update_wrong_ext_id_result.response.data.error is defined
+    fail_msg: Update Directory Server category mapping using wrong ext_id did not fail as expected
+    success_msg: Update Directory Server category mapping using wrong ext_id failed as expected
+
+- name: Delete Directory Server category mapping using wrong ext_id
+  nutanix.ncp.ntnx_category_mapping_v2:
+    ext_id: "{{ invalid_ext_id }}"
+    state: absent
+  register: delete_wrong_ext_id_result
+  ignore_errors: true
+
+- name: Assert delete Directory Server category mapping using wrong ext_id status
+  ansible.builtin.assert:
+    that:
+      - delete_wrong_ext_id_result.changed == false
+      - delete_wrong_ext_id_result.failed == true
+      - delete_wrong_ext_id_result.msg == "Task Failed"
+      - delete_wrong_ext_id_result.response is defined
+      - delete_wrong_ext_id_result.response.error_messages is defined
+      - delete_wrong_ext_id_result.response.error_messages | length > 0
+    fail_msg: Delete Directory Server category mapping using wrong ext_id did not fail as expected
+    success_msg: Delete Directory Server category mapping using wrong ext_id failed as expected
+
+###################################################################################################
+- name: Delete secondary ACTIVE_DIRECTORY service
+  nutanix.ncp.ntnx_directory_services_v2:
+    state: absent
+    ext_id: "{{ directory_service_ref_second }}"
+  register: delete_secondary_directory_service
+  ignore_errors: true
+
+- name: Assert secondary ACTIVE_DIRECTORY service deletion status
+  ansible.builtin.assert:
+    that:
+      - delete_secondary_directory_service.changed == true
+      - delete_secondary_directory_service.failed == false
+      - delete_secondary_directory_service.ext_id == directory_service_ref_second
+      - >-
+        delete_secondary_directory_service.msg ==
+        "Directory Service with ext_id: {{ directory_service_ref_second }} deleted successfully"
+    fail_msg: Unable to delete secondary ACTIVE_DIRECTORY service
+    success_msg: Secondary ACTIVE_DIRECTORY service deleted successfully
+
+- name: Delete primary ACTIVE_DIRECTORY service
+  nutanix.ncp.ntnx_directory_services_v2:
+    state: absent
+    ext_id: "{{ directory_service_ref_first }}"
+  register: delete_primary_directory_service
+  ignore_errors: true
+
+- name: Assert primary ACTIVE_DIRECTORY service deletion status
+  ansible.builtin.assert:
+    that:
+      - delete_primary_directory_service.changed == true
+      - delete_primary_directory_service.failed == false
+      - delete_primary_directory_service.ext_id == directory_service_ref_first
+      - >-
+        delete_primary_directory_service.msg ==
+        "Directory Service with ext_id: {{ directory_service_ref_first }} deleted successfully"
+    fail_msg: Unable to delete primary ACTIVE_DIRECTORY service
+    success_msg: Primary ACTIVE_DIRECTORY service deleted successfully

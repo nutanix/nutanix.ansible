@@ -47,6 +47,11 @@ options:
     description:
       - External ID of the Flow Network Security Policy.
     type: str
+  project_ext_id:
+    description:
+      - External ID (UUID) of the project that owns this network security policy.
+      - Update of this field is not supported.
+    type: str
   name:
     description:
       - Name of the Flow Network Security Policy.
@@ -121,6 +126,11 @@ options:
           - External ID of the rule.
         required: false
         type: str
+      name:
+        description:
+          - Name of the rule.
+        required: false
+        type: str
       description:
         description:
           - Description of rule
@@ -137,6 +147,11 @@ options:
           - INTRA_GROUP
           - MULTI_ENV_ISOLATION
           - SHARED_SERVICE
+      is_logging_enabled:
+        description:
+          - Specifies whether hit log is enabled for the rule.
+        required: false
+        type: bool
       spec:
         description:
           - The specification of the rule.
@@ -253,6 +268,19 @@ options:
                     description:
                       - The prefix length of the source subnet.
                     type: int
+              src_ipv6_subnet:
+                description:
+                  - An unique address that identifies a device on the internet or a local network in IPv6 format.
+                type: dict
+                suboptions:
+                  value:
+                    description:
+                      - The IPv6 address of the host.
+                    type: str
+                  prefix_length:
+                    description:
+                      - The prefix length of the network to which this host IPv6 address belongs.
+                    type: int
               dest_subnet:
                 description:
                   - The destination subnet/IP specification.
@@ -265,6 +293,19 @@ options:
                   prefix_length:
                     description:
                       - The prefix length of the destination subnet.
+                    type: int
+              dest_ipv6_subnet:
+                description:
+                  - An unique address that identifies a device on the internet or a local network in IPv6 format.
+                type: dict
+                suboptions:
+                  value:
+                    description:
+                      - The IPv6 address of the host.
+                    type: str
+                  prefix_length:
+                    description:
+                      - The prefix length of the network to which this host IPv6 address belongs.
                     type: int
               src_address_group_references:
                 description:
@@ -332,6 +373,24 @@ options:
                   code:
                     description:
                       - Icmp service Code. Ignore this field if Code has to be ANY.
+                    type: int
+              icmp_v6_services:
+                description:
+                  - ICMPv6 Type Code List.
+                type: list
+                elements: dict
+                suboptions:
+                  is_all_allowed:
+                    description:
+                      - Set this field to true if both Type and Code is ANY.
+                    type: bool
+                  type:
+                    description:
+                      - ICMP service Type. Ignore this field if Type has to be ANY.
+                    type: int
+                  code:
+                    description:
+                      - ICMP service Code. Ignore this field if Code has to be ANY.
                     type: int
               network_function_chain_reference:
                 description:
@@ -428,6 +487,24 @@ options:
                     description:
                       - Icmp service Code. Ignore this field if Code has to be ANY.
                     type: int
+              icmp_v6_services:
+                description:
+                  - ICMPv6 Type Code List.
+                type: list
+                elements: dict
+                suboptions:
+                  is_all_allowed:
+                    description:
+                      - Set this field to true if both Type and Code is ANY.
+                    type: bool
+                  type:
+                    description:
+                      - ICMP service Type. Ignore this field if Type has to be ANY.
+                    type: int
+                  code:
+                    description:
+                      - ICMP service Code. Ignore this field if Code has to be ANY.
+                    type: int
           multi_env_isolation_rule_spec:
             description:
               - The specification of the multi environment isolation rule.
@@ -489,6 +566,7 @@ EXAMPLES = r"""
     nutanix_password: "<pc_password>"
     name: "rule1"
     description: "Ansible created rule"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     type: "APPLICATION"
     policy_state: "ENFORCE"
     scope: "ALL_VLAN"
@@ -745,6 +823,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -813,8 +892,14 @@ def get_module_spec():
         src_subnet=dict(
             type="dict", options=ip_address_sub_spec, obj=mic_sdk.IPv4Address
         ),
+        src_ipv6_subnet=dict(
+            type="dict", options=ip_address_sub_spec, obj=mic_sdk.IPv6Address
+        ),
         dest_subnet=dict(
             type="dict", options=ip_address_sub_spec, obj=mic_sdk.IPv4Address
+        ),
+        dest_ipv6_subnet=dict(
+            type="dict", options=ip_address_sub_spec, obj=mic_sdk.IPv6Address
         ),
         src_address_group_references=dict(type="list", elements="str"),
         dest_address_group_references=dict(type="list", elements="str"),
@@ -837,6 +922,12 @@ def get_module_spec():
             elements="dict",
             options=icmp_service_spec,
             obj=mic_sdk.IcmpTypeCodeSpec,
+        ),
+        icmp_v6_services=dict(
+            type="list",
+            elements="dict",
+            options=icmp_service_spec,
+            obj=mic_sdk.IcmpV6TypeCodeSpec,
         ),
         network_function_chain_reference=dict(type="str"),
         network_function_reference=dict(type="str"),
@@ -866,6 +957,12 @@ def get_module_spec():
             elements="dict",
             options=icmp_service_spec,
             obj=mic_sdk.IcmpTypeCodeSpec,
+        ),
+        icmp_v6_services=dict(
+            type="list",
+            elements="dict",
+            options=icmp_service_spec,
+            obj=mic_sdk.IcmpV6TypeCodeSpec,
         ),
     )
 
@@ -914,6 +1011,7 @@ def get_module_spec():
 
     policy_rule = dict(
         ext_id=dict(type="str"),
+        name=dict(type="str"),
         description=dict(type="str"),
         type=dict(
             type="str",
@@ -926,6 +1024,7 @@ def get_module_spec():
                 "SHARED_SERVICE",
             ],
         ),
+        is_logging_enabled=dict(type="bool"),
         spec=dict(
             type="dict",
             options=rule_spec,
@@ -943,6 +1042,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         type=dict(
@@ -1017,8 +1117,27 @@ def create_network_security_policy(module, result):
             )
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Security Policy"
+                ),
+                msg="Failed to get entity ext_id from task for Security Policy",
+            )
 
     result["changed"] = True
+
+
+def default_rule_logging(old_spec, update_spec):
+    if not update_spec.get("rules"):
+        return
+
+    for i in range(len(update_spec["rules"])):
+        if update_spec["rules"][i].get("is_logging_enabled") is None:
+            update_spec["rules"][i]["is_logging_enabled"] = False
+        if old_spec["rules"][i].get("is_logging_enabled") is None:
+            old_spec["rules"][i]["is_logging_enabled"] = False
 
 
 def check_network_security_policies_idempotency(old_spec, update_spec):
@@ -1026,6 +1145,8 @@ def check_network_security_policies_idempotency(old_spec, update_spec):
     # check if numbers of rules are same
     if len(old_spec.get("rules", [])) != len(update_spec.get("rules", [])):
         return False
+
+    default_rule_logging(old_spec, update_spec)
 
     # remove external ID from older spec's each rule.
     # since update will overlap all existing rules
@@ -1082,6 +1203,10 @@ def update_network_security_policy(module, result):
         module.fail_json(
             msg="Failed generating network_security_policies update spec", **result
         )
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     # due to conflict of spec.state with module state
     if module.params.get("policy_state"):
