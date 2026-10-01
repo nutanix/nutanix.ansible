@@ -41,7 +41,7 @@
 ########################################################################
 
 - name: Generate spec for creating Layer2 Stretch using check mode with all attributes
-  nutanix.ncp.ntnx_layer2_stretche_v2:
+  nutanix.ncp.ntnx_layer2_stretch_v2:
     state: present
     name: "check_mode_l2s_full"
     description: "Layer2 Stretch created in check mode with all attributes"
@@ -133,7 +133,7 @@
 ########################################################################
 
 - name: Generate spec for updating Layer2 Stretch using check mode with all attributes
-  nutanix.ncp.ntnx_layer2_stretche_v2:
+  nutanix.ncp.ntnx_layer2_stretch_v2:
     state: present
     ext_id: "{{ fake_ext_id }}"
     name: "check_mode_l2s_updated"
@@ -170,7 +170,7 @@
 ########################################################################
 
 - name: Generate spec for deleting Layer2 Stretch using check mode
-  nutanix.ncp.ntnx_layer2_stretche_v2:
+  nutanix.ncp.ntnx_layer2_stretch_v2:
     state: absent
     ext_id: "{{ fake_ext_id }}"
   check_mode: true
@@ -194,7 +194,7 @@
 ########################################################################
 
 - name: Create Layer2 Stretch without required name
-  nutanix.ncp.ntnx_layer2_stretche_v2:
+  nutanix.ncp.ntnx_layer2_stretch_v2:
     state: present
     description: "missing name field"
     connection_type: "VPN"
@@ -217,7 +217,7 @@
 ########################################################################
 
 - name: Create Layer2 Stretch with invalid connection_type enum
-  nutanix.ncp.ntnx_layer2_stretche_v2:
+  nutanix.ncp.ntnx_layer2_stretch_v2:
     state: present
     name: "{{ l2s_name }}_badenum"
     connection_type: "INVALID_TYPE"
@@ -319,7 +319,7 @@
 ########################################################################
 
 - name: Delete Layer2 Stretch using unknown ext_id
-  nutanix.ncp.ntnx_layer2_stretche_v2:
+  nutanix.ncp.ntnx_layer2_stretch_v2:
     state: absent
     ext_id: "{{ fake_ext_id }}"
   register: delete_bad_result
@@ -352,7 +352,7 @@
     - l2_stretch_prereqs.remote_connection_reference is defined
   block:
     - name: Create Layer2 Stretch with minimum attributes
-      nutanix.ncp.ntnx_layer2_stretche_v2:
+      nutanix.ncp.ntnx_layer2_stretch_v2:
         state: present
         name: "{{ l2s_name }}_min"
         connection_type: "VPN"
@@ -380,7 +380,7 @@
         fail_msg: "Layer2 Stretch creation with minimum attributes failed"
 
     - name: Update Layer2 Stretch description
-      nutanix.ncp.ntnx_layer2_stretche_v2:
+      nutanix.ncp.ntnx_layer2_stretch_v2:
         state: present
         ext_id: "{{ create_min_result.ext_id }}"
         name: "{{ l2s_name }}_min_upd"
@@ -409,7 +409,7 @@
         fail_msg: "Layer2 Stretch update failed"
 
     - name: Update Layer2 Stretch again with same attributes (idempotency)
-      nutanix.ncp.ntnx_layer2_stretche_v2:
+      nutanix.ncp.ntnx_layer2_stretch_v2:
         state: present
         ext_id: "{{ create_min_result.ext_id }}"
         name: "{{ l2s_name }}_min_upd"
@@ -454,7 +454,7 @@
         fail_msg: "Get by ext_id did not return the expected entity"
 
     - name: Delete Layer2 Stretch
-      nutanix.ncp.ntnx_layer2_stretche_v2:
+      nutanix.ncp.ntnx_layer2_stretch_v2:
         state: absent
         ext_id: "{{ create_min_result.ext_id }}"
       register: delete_lifecycle_result

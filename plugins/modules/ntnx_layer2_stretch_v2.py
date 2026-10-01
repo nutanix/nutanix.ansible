@@ -10,13 +10,13 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_layer2_stretche_v2
+module: ntnx_layer2_stretch_v2
 short_description: Create, Update, Delete Layer2 Stretch configurations in Nutanix Prism Central
 version_added: 2.7.0
 description:
   - This module allows you to create, update, and delete Layer2 Stretch configurations in Nutanix Prism Central.
   - Layer2 Stretch (also known as L2 Network Extension) extends a Layer 2 domain across two Prism Central sites.
-  - The stretch can be created over a VPN tunnel or a VXLAN tunnel between VTEP gateways.
+  - The extension can use VXLAN over an IPsec VPN for encrypted point-to-point connectivity, or VXLAN through VTEP gateways for VTEP-based connectivity.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -24,13 +24,13 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a Layer2 Stretch) -
-      Required Roles: Prism Admin, Super Admin, VPC Admin, Network Infra Admin
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin, Super Admin, Tenant Admin, VPC Admin
     - >-
       B(Update a Layer2 Stretch) -
-      Required Roles: Prism Admin, Super Admin, VPC Admin, Network Infra Admin
+      Required Roles: Network Infra Admin, Prism Admin, Project Admin, Super Admin, Tenant Admin, VPC Admin
     - >-
       B(Delete a Layer2 Stretch) -
-      Required Roles: Prism Admin, Super Admin, VPC Admin, Network Infra Admin
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin, Super Admin, Tenant Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
@@ -46,21 +46,19 @@ options:
     default: present
   ext_id:
     description:
-      - The external ID of the Layer2 Stretch configuration.
+      - A globally unique identifier of an instance that is suitable for external consumption.
       - Required for update and delete operations.
     type: str
     required: false
   name:
     description:
-      - Layer2 Stretch configuration name.
+      - Layer2 stretch configuration name.
       - Required for create operation.
-      - Maximum 128 characters.
     type: str
     required: false
   description:
     description:
       - Layer2 stretch configuration details between subnets on two sites.
-      - Maximum 1000 characters.
     type: str
     required: false
   connection_type:
@@ -74,153 +72,188 @@ options:
   mtu:
     description:
       - The MTU size setting for the VXLAN session.
-      - Valid range is 500-8950.
     type: int
     required: false
   vni:
     description:
       - The VXLAN network identifier used to uniquely identify the VXLAN tunnel.
-      - Valid range is 1-16777215.
     type: int
     required: false
+  project_ext_id:
+    description:
+      - UUID of the project that owns this entity.
+    type: str
+    required: false
+  metadata:
+    description:
+      - Metadata associated with this resource.
+    type: dict
+    required: false
+    suboptions:
+      owner_reference_id:
+        description:
+          - A globally unique identifier that represents the owner of this resource.
+        type: str
+        required: false
+      owner_user_name:
+        description:
+          - The userName of the owner of this resource.
+        type: str
+        required: false
+      project_reference_id:
+        description:
+          - A globally unique identifier that represents the project this resource belongs to.
+        type: str
+        required: false
+      project_name:
+        description:
+          - The name of the project this resource belongs to.
+        type: str
+        required: false
+      category_ids:
+        description:
+          - A list of globally unique identifiers that represent all the categories the resource is associated with.
+        type: list
+        elements: str
+        required: false
   local_site_params:
     description:
-      - Site-specific stretch configuration parameters for the local site.
+      - Site-specific stretch configuration parameters.
     type: dict
     required: false
     suboptions:
       pc_cluster_reference:
         description:
-          - Prism Central cluster reference for the local site.
+          - Prism Central cluster reference.
         type: str
         required: false
       stretch_subnet_reference:
         description:
-          - Reference to the local subnet that is being stretched.
+          - Subnet reference.
         type: str
         required: false
       connection_reference:
         description:
-          - The VPN connection or network gateway (with VTEP service) used for this Layer2 stretch on the local site.
+          - The VPN connection or network gateway with VTEP service used for this Layer2 stretch.
         type: str
         required: false
       stretch_interface_ip_address:
         description:
-          - IP address configuration for the local stretch interface.
+          - An unique address that identifies a device on the internet or a local network in IPv4 or IPv6 format.
         type: dict
         required: false
         suboptions:
           ipv4:
             description:
-              - IPv4 address configuration.
+              - An unique address that identifies a device on the internet or a local network in IPv4 format.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv4 address value.
+                  - The IPv4 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the IPv4 address.
+                  - The prefix length of the network to which this host IPv4 address belongs.
                 type: int
                 required: false
           ipv6:
             description:
-              - IPv6 address configuration.
+              - An unique address that identifies a device on the internet or a local network in IPv6 format.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv6 address value.
+                  - The IPv6 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the IPv6 address.
+                  - The prefix length of the network to which this host IPv6 address belongs.
                 type: int
                 required: false
       vpn_interface_ip_address:
         description:
-          - IP address of the VPN interface used by the local site for the stretch.
+          - An unique address that identifies a device on the internet or a local network in IPv4 or IPv6 format.
         type: dict
         required: false
         suboptions:
           ipv4:
             description:
-              - IPv4 address configuration.
+              - An unique address that identifies a device on the internet or a local network in IPv4 format.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv4 address value.
+                  - The IPv4 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the IPv4 address.
+                  - The prefix length of the network to which this host IPv4 address belongs.
                 type: int
                 required: false
           ipv6:
             description:
-              - IPv6 address configuration.
+              - An unique address that identifies a device on the internet or a local network in IPv6 format.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv6 address value.
+                  - The IPv6 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the IPv6 address.
+                  - The prefix length of the network to which this host IPv6 address belongs.
                 type: int
                 required: false
       default_gateway_ip_address:
         description:
-          - Default gateway IP address for the local stretched subnet.
+          - An unique address that identifies a device on the internet or a local network in IPv4 or IPv6 format.
         type: dict
         required: false
         suboptions:
           ipv4:
             description:
-              - IPv4 address configuration.
+              - An unique address that identifies a device on the internet or a local network in IPv4 format.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv4 address value.
+                  - The IPv4 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the IPv4 address.
+                  - The prefix length of the network to which this host IPv4 address belongs.
                 type: int
                 required: false
           ipv6:
             description:
-              - IPv6 address configuration.
+              - An unique address that identifies a device on the internet or a local network in IPv6 format.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv6 address value.
+                  - The IPv6 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the IPv6 address.
+                  - The prefix length of the network to which this host IPv6 address belongs.
                 type: int
                 required: false
       high_availability_group:
         description:
-          - High availability group configuration for the local site.
+          - High availability group configuration for the layer2 stretch.
         type: dict
         required: false
         suboptions:
@@ -231,14 +264,14 @@ options:
             required: false
           algorithm:
             description:
-              - High availability algorithm type used for the group.
+              - High availability algorithm used for the group.
             type: str
             required: false
             choices:
               - ACTIVE_BACKUP
           peered_gateways:
             description:
-              - List of peered gateways in the high availability group.
+              - Information about a peered gateway in a high availability group.
             type: list
             elements: dict
             required: false
@@ -250,142 +283,142 @@ options:
                 required: true
   remote_site_params:
     description:
-      - Site-specific stretch configuration parameters for the remote site.
+      - Site-specific stretch configuration parameters.
     type: dict
     required: false
     suboptions:
       pc_cluster_reference:
         description:
-          - Prism Central cluster reference for the remote site.
+          - Prism Central cluster reference.
         type: str
         required: false
       stretch_subnet_reference:
         description:
-          - Reference to the remote subnet that is being stretched.
+          - Subnet reference.
         type: str
         required: false
       connection_reference:
         description:
-          - The VPN connection or network gateway (with VTEP service) used for this Layer2 stretch on the remote site.
+          - The VPN connection or network gateway with VTEP service used for this Layer2 stretch.
         type: str
         required: false
       stretch_interface_ip_address:
         description:
-          - IP address configuration for the remote stretch interface.
+          - An unique address that identifies a device on the internet or a local network in IPv4 or IPv6 format.
         type: dict
         required: false
         suboptions:
           ipv4:
             description:
-              - IPv4 address configuration.
+              - An unique address that identifies a device on the internet or a local network in IPv4 format.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv4 address value.
+                  - The IPv4 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the IPv4 address.
+                  - The prefix length of the network to which this host IPv4 address belongs.
                 type: int
                 required: false
           ipv6:
             description:
-              - IPv6 address configuration.
+              - An unique address that identifies a device on the internet or a local network in IPv6 format.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv6 address value.
+                  - The IPv6 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the IPv6 address.
+                  - The prefix length of the network to which this host IPv6 address belongs.
                 type: int
                 required: false
       vpn_interface_ip_address:
         description:
-          - IP address of the VPN interface used by the remote site for the stretch.
+          - An unique address that identifies a device on the internet or a local network in IPv4 or IPv6 format.
         type: dict
         required: false
         suboptions:
           ipv4:
             description:
-              - IPv4 address configuration.
+              - An unique address that identifies a device on the internet or a local network in IPv4 format.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv4 address value.
+                  - The IPv4 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the IPv4 address.
+                  - The prefix length of the network to which this host IPv4 address belongs.
                 type: int
                 required: false
           ipv6:
             description:
-              - IPv6 address configuration.
+              - An unique address that identifies a device on the internet or a local network in IPv6 format.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv6 address value.
+                  - The IPv6 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the IPv6 address.
+                  - The prefix length of the network to which this host IPv6 address belongs.
                 type: int
                 required: false
       default_gateway_ip_address:
         description:
-          - Default gateway IP address for the remote stretched subnet.
+          - An unique address that identifies a device on the internet or a local network in IPv4 or IPv6 format.
         type: dict
         required: false
         suboptions:
           ipv4:
             description:
-              - IPv4 address configuration.
+              - An unique address that identifies a device on the internet or a local network in IPv4 format.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv4 address value.
+                  - The IPv4 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the IPv4 address.
+                  - The prefix length of the network to which this host IPv4 address belongs.
                 type: int
                 required: false
           ipv6:
             description:
-              - IPv6 address configuration.
+              - An unique address that identifies a device on the internet or a local network in IPv6 format.
             type: dict
             required: false
             suboptions:
               value:
                 description:
-                  - The IPv6 address value.
+                  - The IPv6 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the IPv6 address.
+                  - The prefix length of the network to which this host IPv6 address belongs.
                 type: int
                 required: false
       high_availability_group:
         description:
-          - High availability group configuration for the remote site.
+          - High availability group configuration for the layer2 stretch.
         type: dict
         required: false
         suboptions:
@@ -396,14 +429,14 @@ options:
             required: false
           algorithm:
             description:
-              - High availability algorithm type used for the group.
+              - High availability algorithm used for the group.
             type: str
             required: false
             choices:
               - ACTIVE_BACKUP
           peered_gateways:
             description:
-              - List of peered gateways in the high availability group.
+              - Information about a peered gateway in a high availability group.
             type: list
             elements: dict
             required: false
@@ -425,7 +458,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create Layer2 Stretch over VPN
-  nutanix.ncp.ntnx_layer2_stretche_v2:
+  nutanix.ncp.ntnx_layer2_stretch_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -446,7 +479,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Create Layer2 Stretch over VXLAN with HA
-  nutanix.ncp.ntnx_layer2_stretche_v2:
+  nutanix.ncp.ntnx_layer2_stretch_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -474,7 +507,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Update Layer2 Stretch description
-  nutanix.ncp.ntnx_layer2_stretche_v2:
+  nutanix.ncp.ntnx_layer2_stretch_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -488,7 +521,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Delete Layer2 Stretch
-  nutanix.ncp.ntnx_layer2_stretche_v2:
+  nutanix.ncp.ntnx_layer2_stretch_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -623,15 +656,15 @@ except ImportError:
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
-# Read-only fields returned by the API that must never be sent back on update
-READ_ONLY_FIELDS = (
-    "stretch_status",
-    "remote_stretch_status",
-    "high_availability_status",
-    "metadata",
-    "links",
-    "tenant_id",
-)
+# # Read-only fields returned by the API that must never be sent back on update
+# READ_ONLY_FIELDS = (
+#     "stretch_status",
+#     "remote_stretch_status",
+#     "high_availability_status",
+#     "metadata",
+#     "links",
+#     "tenant_id",
+# )
 
 
 def get_module_spec():
@@ -712,6 +745,14 @@ def get_module_spec():
         ),
     )
 
+    metadata_spec = dict(
+        owner_reference_id=dict(type="str"),
+        owner_user_name=dict(type="str"),
+        project_reference_id=dict(type="str"),
+        project_name=dict(type="str"),
+        category_ids=dict(type="list", elements="str"),
+    )
+
     module_args = dict(
         ext_id=dict(type="str"),
         name=dict(type="str"),
@@ -723,6 +764,12 @@ def get_module_spec():
         ),
         mtu=dict(type="int"),
         vni=dict(type="int"),
+        project_ext_id=dict(type="str"),
+        metadata=dict(
+            type="dict",
+            options=metadata_spec,
+            obj=networking_sdk.Metadata,
+        ),
         local_site_params=dict(
             type="dict",
             options=site_params_spec,
@@ -786,9 +833,9 @@ def create_layer2_stretche(module, result, api_instance):
 def check_for_idempotency(old_spec_dict, update_spec_dict):
     old_spec_dict = strip_internal_attributes(deepcopy(old_spec_dict))
     update_spec_dict = strip_internal_attributes(deepcopy(update_spec_dict))
-    for field in READ_ONLY_FIELDS:
-        old_spec_dict.pop(field, None)
-        update_spec_dict.pop(field, None)
+    # for field in READ_ONLY_FIELDS:
+    #     old_spec_dict.pop(field, None)
+    #     update_spec_dict.pop(field, None)
     return old_spec_dict == update_spec_dict
 
 
@@ -817,11 +864,11 @@ def update_layer2_stretche(module, result, api_instance):
     if check_for_idempotency(old_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
         module.exit_json(
-            msg="Nothing to change. Layer2 Stretch is already in the desired state.",
+            msg="Nothing to change.",
             **result,
         )
 
-    strip_read_only_fields(update_spec, fields=READ_ONLY_FIELDS)
+    # strip_read_only_fields(update_spec, fields=READ_ONLY_FIELDS)
 
     resp = None
     try:
@@ -852,13 +899,9 @@ def delete_layer2_stretche(module, result, api_instance):
         result["msg"] = "Layer2 Stretch with ext_id:{0} will be deleted.".format(ext_id)
         return
 
-    old_spec = get_layer2_stretch(module, api_instance, ext_id)
-    etag = get_etag(data=old_spec)
-    kwargs = {"if_match": etag} if etag else {}
-
     resp = None
     try:
-        resp = api_instance.delete_layer2_stretch_by_id(extId=ext_id, **kwargs)
+        resp = api_instance.delete_layer2_stretch_by_id(extId=ext_id)
     except Exception as e:
         raise_api_exception(
             module=module,

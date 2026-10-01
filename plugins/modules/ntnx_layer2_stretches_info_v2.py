@@ -23,10 +23,10 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get Layer2 Stretch by ext_id) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Super Admin, VPC Admin
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Prism Viewer, Project Admin, Super Admin, Tenant Admin, User, VPC Admin
     - >-
       B(Get list of Layer2 Stretches) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Super Admin, VPC Admin
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Prism Viewer, Project Admin, Super Admin, Tenant Admin, User, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   ext_id:

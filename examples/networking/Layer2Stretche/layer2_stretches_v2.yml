@@ -33,7 +33,7 @@
         remote_peered_gateway_ext_id: "2b3c4d5e-2222-4e00-9999-000000000022"
 
     - name: Create Layer2 Stretch with all attributes
-      nutanix.ncp.ntnx_layer2_stretche_v2:
+      nutanix.ncp.ntnx_layer2_stretch_v2:
         state: present
         name: "{{ l2_stretch_name }}"
         description: "Layer2 Stretch created by Ansible with all attributes"
@@ -90,7 +90,7 @@
         l2_stretch_ext_id: "{{ create_result.ext_id | default('2e40ff57-20aa-4d2b-b179-298db969c20d') }}"
 
     - name: Update Layer2 Stretch with all attributes
-      nutanix.ncp.ntnx_layer2_stretche_v2:
+      nutanix.ncp.ntnx_layer2_stretch_v2:
         state: present
         ext_id: "{{ l2_stretch_ext_id }}"
         name: "{{ l2_stretch_name }}_updated"
@@ -167,7 +167,7 @@
       ignore_errors: true
 
     - name: Delete Layer2 Stretch
-      nutanix.ncp.ntnx_layer2_stretche_v2:
+      nutanix.ncp.ntnx_layer2_stretch_v2:
         state: absent
         ext_id: "{{ l2_stretch_ext_id }}"
       register: delete_result
