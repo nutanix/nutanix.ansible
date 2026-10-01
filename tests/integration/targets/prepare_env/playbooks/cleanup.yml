@@ -70,10 +70,27 @@
       loop:
         - "{{ external_nat_subnet.uuid }}"
         - "{{ static.uuid }}"
-
-    - name: Delete downloaded disk file
+    - name: Delete fixture project for external subnet tests
+      register: result
+      ignore_errors: true
+      nutanix.ncp.ntnx_project_v2:
+        state: absent
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username | default(omit) }}"
+        nutanix_password: "{{ password | default(omit) }}"
+        nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
+        nutanix_debug: "{{ nutanix_debug | default(omit) }}"
+        nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
+        validate_certs: false
+        ext_id: "{{ external_subnet_project.uuid }}"
+    - name: Delete downloaded test files
       ignore_errors: true
       register: result
       ansible.builtin.file:
-        path: "{{ disk_image.dest }}"
+        path: "{{ item }}"
         state: absent
+      loop:
+        - "{{ cirros_image.dest }}"
+        - "{{ disk_image.dest }}"
+        - "{{ xml_content.dest }}"
+        - "{{ unattendxml.dest }}"

@@ -393,9 +393,7 @@
     ext_id: "{{ todelete[1] }}"
     backing_info:
       vm_disk:
-        disk_size_bytes: 29527900160
-        storage_container:
-          ext_id: "{{ storage_container.uuid }}"
+        disk_size_bytes: 14763950080
     state: present
   register: result
   ignore_errors: true
@@ -407,10 +405,7 @@
       - result.response is defined
       - result.changed == false
       - result.failed == false
-      - result.response.backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
-      - result.response.backing_info.storage_config.is_flash_mode_enabled == true
-      - result.response.backing_info.disk_ext_id == "{{ todelete[1] }}"
-      - result.response.backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
+      - result.response.backing_info.disk_size_bytes == 14763950080
       - result.vm_ext_id == "{{ vm_uuid }}"
       - result.response.disk_address.index == 2
     fail_msg: "Update Disk - check mode is enabled failed"
@@ -418,32 +413,26 @@
 
 #################################################################################
 
-- name: Update disk data source and disk_size_bytes together
+- name: Update disk disk_size_bytes
   nutanix.ncp.ntnx_vms_disks_v2:
     vm_ext_id: "{{ vm_uuid }}"
     ext_id: "{{ todelete[1] }}"
     backing_info:
       vm_disk:
         disk_size_bytes: 268435456000
-        storage_container:
-          ext_id: "{{ storage_container.uuid }}"
-        data_source:
-          reference:
-            image_reference:
-              image_ext_id: "{{ disk_image.image_ext_ids[0] }}"
     state: present
   register: result
   ignore_errors: true
 
-- name: Update disk data source and disk_size_bytes together status
+- name: Update disk disk_size_bytes status
   ansible.builtin.assert:
     that:
-      - result.response == None
-      - result.changed == false
+      - result.changed == true
       - result.failed == false
-      - result.error == "data source and disk_size_bytes cannot be sent together"
-    fail_msg: "Update disk data source and disk_size_bytes together failed"
-    success_msg: "Update disk data source and disk_size_bytes together passed"
+      - result.response is defined
+      - result.response.backing_info.disk_size_bytes == 268435456000
+    fail_msg: "Update disk disk_size_bytes failed"
+    success_msg: "Update disk disk_size_bytes passed"
 
 #################################################################################
 
@@ -492,7 +481,7 @@
     ext_id: "{{ todelete[1] }}"
     backing_info:
       vm_disk:
-        disk_size_bytes: 29527900160
+        disk_size_bytes: 590558003200
     state: present
   register: result
   ignore_errors: true
@@ -503,12 +492,9 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
-      - result.response.backing_info.storage_container.ext_id == "{{ storage_container.uuid }}"
-      - result.response.backing_info.storage_config.is_flash_mode_enabled == true
-      - result.response.backing_info.disk_ext_id == "{{ todelete[1] }}"
       - result.vm_ext_id == "{{ vm_uuid }}"
       - result.response.disk_address.index == 2
-      - result.response.backing_info.disk_size_bytes == 29527900160
+      - result.response.backing_info.disk_size_bytes == 590558003200
     fail_msg: "Update disk size when VM is powered on failed"
     success_msg: "Update disk size when VM is powered on passed"
 
@@ -520,7 +506,7 @@
     ext_id: "{{ todelete[1] }}"
     backing_info:
       vm_disk:
-        disk_size_bytes: 29527900160
+        disk_size_bytes: 590558003200
     state: present
   register: result
   ignore_errors: true

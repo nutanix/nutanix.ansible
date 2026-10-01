@@ -120,6 +120,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_internal_attributes,
 )
 from ..module_utils.v4.vmm.api_client import get_image_api_instance  # noqa: E402
+from ..module_utils.v4.vmm.helpers import get_image  # noqa: E402
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -132,26 +133,14 @@ def get_module_spec():
     return module_args
 
 
-def get_image(module, result):
-    images = get_image_api_instance(module)
+def get_image_using_ext_id(module, images, result):
     ext_id = module.params.get("ext_id")
-
-    try:
-        resp = images.get_image_by_id(ext_id)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching image info",
-        )
-
+    resp = get_image(module, images, ext_id)
     result["ext_id"] = ext_id
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    result["response"] = strip_internal_attributes(resp.to_dict())
 
 
-def get_images(module, result):
-    images = get_image_api_instance(module)
-
+def get_images(module, images, result):
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
 
@@ -184,10 +173,11 @@ def run_module():
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
+    images = get_image_api_instance(module)
     if module.params.get("ext_id"):
-        get_image(module, result)
+        get_image_using_ext_id(module, images, result)
     else:
-        get_images(module, result)
+        get_images(module, images, result)
 
     module.exit_json(**result)
 

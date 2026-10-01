@@ -21,11 +21,13 @@
         vg_name: "vg1"
         cluster_reference: "00057b8b-1b1b-1b1b-1b1b-1b1b1b1b1b1b1"
         vg1_uuid: "d1b1b3b1-1b1b-1b1b-1b1b-1b1b1b1b1b1b"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
 
     - name: Create Volume group
       nutanix.ncp.ntnx_volume_groups_v2:
         name: "{{ vg_name }}"
         description: "Volume group description"
+        project_ext_id: "{{ project_ext_id }}"
         should_load_balance_vm_attachments: true
         sharing_status: "SHARED"
         target_prefix: "vg1"

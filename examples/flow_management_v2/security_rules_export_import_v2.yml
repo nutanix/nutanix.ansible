@@ -1,0 +1,58 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Export specific network security policies and download them to a file
+# 2. Export all network security policies and download them to a file
+# 3. Dry-run import of all network security policies
+# 4. Import network security policies from a file
+# 5. Import network security policies and purge existing ones
+
+- name: Network Security Policies export/import playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        policy_ext_id: "d6b453b6-2c21-4672-9c16-a4b320e8bbeb"
+        export_file_path_specific: "/tmp/network_security_policies_export_specific.flw"
+        export_file_path_all: "/tmp/network_security_policies_export_all.flw"
+
+    - name: Export specific network security policies and download them to a file
+      nutanix.ncp.ntnx_security_rules_export_v2:
+        policy_references:
+          - "{{ policy_ext_id }}"
+        path: "{{ export_file_path_specific }}"
+      register: result
+      ignore_errors: true
+
+    - name: Export all network security policies and download them to a file
+      nutanix.ncp.ntnx_security_rules_export_v2:
+        path: "{{ export_file_path_all }}"
+      register: result
+      ignore_errors: true
+
+    - name: Dry-run import of all network security policies
+      nutanix.ncp.ntnx_security_rules_import_v2:
+        path: "{{ export_file_path_all }}"
+        dryrun: true
+      register: result_dryrun_all
+      ignore_errors: true
+
+    - name: Import network security policies from a file
+      nutanix.ncp.ntnx_security_rules_import_v2:
+        path: "{{ export_file_path_specific }}"
+      register: result
+      ignore_errors: true
+
+    - name: Import network security policies and purge existing ones
+      nutanix.ncp.ntnx_security_rules_import_v2:
+        path: "{{ export_file_path_all }}"
+        purge_policies: true
+      register: result
+      ignore_errors: true

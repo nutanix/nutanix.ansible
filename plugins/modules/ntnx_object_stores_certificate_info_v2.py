@@ -26,11 +26,12 @@ notes:
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=objects)"
 options:
     object_store_ext_id:
-        description: object store external ID
+        description: Object store External ID
         type: str
         required: true
     ext_id:
-        description: external ID of certificate to fetch
+        description:
+            - External ID of certificate to fetch
         type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
@@ -53,6 +54,7 @@ EXAMPLES = r"""
     object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
     ext_id: "f3197423-f486-4037-6037-95442e58484e"
   register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
