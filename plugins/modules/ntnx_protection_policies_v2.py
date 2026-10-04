@@ -261,7 +261,6 @@ options:
                 if the entity is unprotected, deleted, or migrated to another location.
               - When omitted, the latest recovery point is retained for a minimum of 30 days.
               - Set to 0 if the latest recovery point should not be retained past its expiry time.
-              - Valid range is 0 to 2144448000.
             type: int
             required: false
   category_ids:

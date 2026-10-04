@@ -442,7 +442,7 @@ def create_image(module, result):
     if vm_disk_source.get("ext_id") and not vm_disk_source.get("vm_ext_id"):
         module.deprecate(
             "Providing source.vm_disk_source.ext_id without source.vm_disk_source.vm_ext_id is deprecated and will not be supported in a future release.",
-            version="3.0.0",
+            version="2.7.0",
         )
 
     if module.check_mode:

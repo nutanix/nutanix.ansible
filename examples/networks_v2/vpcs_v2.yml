@@ -46,7 +46,6 @@
         name: "{{ vpc_name }}_adv"
         should_advertise_connected_subnets: true
         scope: VMS
-        supported_multiple_external_subnet_type: ALL
       register: result
       ignore_errors: true
 

@@ -268,16 +268,6 @@ options:
       - CONTAINERS
       - VMS_AND_CONTAINERS
 
-  supported_multiple_external_subnet_type:
-    description:
-      - Supported multiple external subnet type for the VPC.
-    type: str
-    choices:
-      - NONE
-      - ONLY_NONAT
-      - ONLY_NAT
-      - ALL
-
   kubernetes_clusters:
     description:
       - List of Kubernetes clusters associated with the VPC.
@@ -710,11 +700,6 @@ def get_module_spec():
             type="str",
             choices=["VMS", "CONTAINERS", "VMS_AND_CONTAINERS"],
             obj=net_sdk.VpcScope,
-        ),
-        supported_multiple_external_subnet_type=dict(
-            type="str",
-            choices=["NONE", "ONLY_NONAT", "ONLY_NAT", "ALL"],
-            obj=net_sdk.SupportedMultipleExternalSubnetType,
         ),
         kubernetes_clusters=dict(
             type="list",

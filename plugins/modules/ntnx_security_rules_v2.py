@@ -706,10 +706,6 @@ options:
                   - IPV4
                   - IPV6
                   - IPV4_IPV6
-              is_system_rule:
-                description:
-                  - A flag indicating whether the flex rule is system-defined or not.
-                type: bool
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -1219,7 +1215,6 @@ def get_module_spec():
             type="str",
             choices=["IPV4", "IPV6", "IPV4_IPV6"],
         ),
-        is_system_rule=dict(type="bool"),
     )
 
     rule_spec = dict(
