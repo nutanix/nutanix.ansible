@@ -662,9 +662,9 @@
   ansible.builtin.assert:
     that:
       - result.response is defined
-      - result.response | length == 2
+      - result.response | length == 3
       - result.total_available_results is defined
-      - result.total_available_results == 2
+      - result.total_available_results == 3
     fail_msg: "List all routes failed "
     success_msg: "List all routes passed "
 
