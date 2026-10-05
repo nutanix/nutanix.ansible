@@ -1,7 +1,8 @@
 ---
 # Variables required before running this playbook (set up by prepare_env):
-# - external_nat_subnets
-# - external_subnet_project  (project permanently shared with the external NAT subnet)
+# - external_nat_subnets  (VLAN IDs used to pick unused VLANs for this test)
+# - external_subnet_project  (project permanently shared with the fixture NAT subnet)
+# - cluster
 
 - name: Start testing ntnx_routes_v2
   ansible.builtin.debug:
@@ -13,7 +14,7 @@
 
 - name: Set VPC name
   ansible.builtin.set_fact:
-    vpc_name: "{{ random_name }}_vpc_test"
+    vpc_name: "{{ random_name }}_ansible_vpc_test"
 
 ############################################################################################
 # Use the fixture project that prepare_env created and permanently shared with
@@ -28,26 +29,85 @@
       uuid: "{{ external_subnet_project.uuid }}"
 
 ############################################################################################
+# Two VLAN external no-NAT subnets for this playbook. A VPC may attach at most
+# one NAT external subnet, so multi-nexthop EXTERNAL_SUBNET tests use no-NAT.
 
-- name: List subnets using subnet name and define external subnet variable
-  nutanix.ncp.ntnx_subnets_info_v2:
-    filter: name eq '{{ external_nat_subnet.name }}'
-    limit: 1
+- name: Create two VLAN external no-NAT subnets
+  nutanix.ncp.ntnx_subnets:
+    state: present
+    name: "{{ random_name }}_ansible_ext_nonat_{{ ansible_loop.index }}"
+    external_subnet:
+      vlan_id: "{{ (external_nat_subnets[0].vlan_id | int) + (item.vlan_offset | int) }}"
+      enable_nat: false
+      cluster:
+        name: "{{ cluster.name }}"
+      ipam:
+        network_ip: "{{ item.network_ip }}"
+        network_prefix: "{{ item.network_prefix }}"
+        gateway_ip: "{{ item.gateway_ip_address }}"
+        ip_pools:
+          - start_ip: "{{ item.dhcp.start_address }}"
+            end_ip: "{{ item.dhcp.end_address }}"
+  loop: "{{ external_nonat_subnets }}"
+  loop_control:
+    extended: true
+  register: nonat_subnets
+  ignore_errors: true
+
+- name: Create two VLAN external no-NAT subnets Status
+  ansible.builtin.assert:
+    that:
+      - nonat_subnets.results | length == 2
+      - nonat_subnets.results[0].failed == false
+      - nonat_subnets.results[1].failed == false
+      - nonat_subnets.results[0].response.status.name == "{{ random_name }}_ansible_ext_nonat_1"
+      - nonat_subnets.results[1].response.status.name == "{{ random_name }}_ansible_ext_nonat_2"
+      - nonat_subnets.results[0].response.status.resources.vlan_id == ((external_nat_subnets[0].vlan_id | int) + (external_nonat_subnets[0].vlan_offset | int))
+      - nonat_subnets.results[1].response.status.resources.vlan_id == ((external_nat_subnets[0].vlan_id | int) + (external_nonat_subnets[1].vlan_offset | int))
+      - nonat_subnets.results[0].response.status.resources.enable_nat == false
+      - nonat_subnets.results[1].response.status.resources.enable_nat == false
+      - nonat_subnets.results[0].response.status.resources.ip_config.subnet_ip == external_nonat_subnets[0].network_ip
+      - nonat_subnets.results[1].response.status.resources.ip_config.subnet_ip == external_nonat_subnets[1].network_ip
+      - nonat_subnets.results[0].response.status.resources.ip_config.prefix_length == (external_nonat_subnets[0].network_prefix | int)
+      - nonat_subnets.results[1].response.status.resources.ip_config.prefix_length == (external_nonat_subnets[1].network_prefix | int)
+      - nonat_subnets.results[0].response.status.resources.ip_config.default_gateway_ip == external_nonat_subnets[0].gateway_ip_address
+      - nonat_subnets.results[1].response.status.resources.ip_config.default_gateway_ip == external_nonat_subnets[1].gateway_ip_address
+      - nonat_subnets.results[0].response.status.resources.ip_config.pool_list[0].range == (external_nonat_subnets[0].dhcp.start_address ~ " " ~ external_nonat_subnets[0].dhcp.end_address)
+      - nonat_subnets.results[1].response.status.resources.ip_config.pool_list[0].range == (external_nonat_subnets[1].dhcp.start_address ~ " " ~ external_nonat_subnets[1].dhcp.end_address)
+    fail_msg: "Create two VLAN external no-NAT subnets failed "
+    success_msg: "Create two VLAN external no-NAT subnets passed "
+
+- name: Set no-NAT external subnet UUIDs
+  ansible.builtin.set_fact:
+    external_subnet_uuid: "{{ nonat_subnets.results[0].subnet_uuid }}"
+    external_subnet_uuid_2: "{{ nonat_subnets.results[1].subnet_uuid }}"
+
+- name: Share no-NAT external subnets with the fixture project
+  nutanix.ncp.ntnx_subnets_v2:
+    state: present
+    ext_id: "{{ item }}"
+    shared_with_projects:
+      - "{{ project1.uuid }}"
+  loop:
+    - "{{ external_subnet_uuid }}"
+    - "{{ external_subnet_uuid_2 }}"
   register: result
   ignore_errors: true
 
-- name: Listing Status
+- name: Share no-NAT external subnets with the fixture project Status
   ansible.builtin.assert:
     that:
-      - result.response is defined
-      - result.response | length >= 1
-      - result.response[0].name == "{{ external_nat_subnet.name }}"
-    fail_msg: "List subnets using subnet name and define external subnet variable failed "
-    success_msg: "List subnets using subnet name and define external subnet variable passed "
-
-- name: Define variable
-  ansible.builtin.set_fact:
-    external_subnet_uuid: "{{ result.response[0].ext_id }}"
+      - result.results | length == 2
+      - result.results[0].failed == false
+      - result.results[1].failed == false
+      - result.results[0].ext_id == external_subnet_uuid
+      - result.results[1].ext_id == external_subnet_uuid_2
+      - result.results[0].response.ext_id == external_subnet_uuid
+      - result.results[1].response.ext_id == external_subnet_uuid_2
+      - result.results[0].response.shared_with_projects == [project1.uuid]
+      - result.results[1].response.shared_with_projects == [project1.uuid]
+    fail_msg: "Share no-NAT external subnets with the fixture project failed "
+    success_msg: "Share no-NAT external subnets with the fixture project passed "
 
 ############################################################################################
 
@@ -58,6 +118,7 @@
     project_ext_id: "{{ project1.uuid }}"
     external_subnets:
       - subnet_reference: "{{ external_subnet_uuid }}"
+      - subnet_reference: "{{ external_subnet_uuid_2 }}"
   register: result
   ignore_errors: true
 
@@ -67,9 +128,11 @@
       - result.response is defined
       - result.ext_id is defined
       - result.response.ext_id is defined
-      - result.response.external_subnets | length == 1
+      - result.response.external_subnets | length == 2
       - result.response.external_subnets[0].external_ips[0].ipv4.value is defined
       - result.response.external_subnets[0].subnet_reference == "{{ external_subnet_uuid }}"
+      - result.response.external_subnets[1].external_ips[0].ipv4.value is defined
+      - result.response.external_subnets[1].subnet_reference == "{{ external_subnet_uuid_2 }}"
       - result.response.vpc_type == "REGULAR"
       - result.response.name == "{{ vpc_name }}_1"
       - result.task_ext_id is defined
@@ -194,6 +257,7 @@
       - result.ext_id is defined
       - result.response.name == "route_test"
       - result.response.description == "Route for testing"
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
       - result.response.vpc_reference == "54228821-52b9-4862-a623-05b28ce93a92"
       - result.response.route_type == "STATIC"
       - result.response.destination.ipv4.ip.value == "10.0.0.1"
@@ -246,6 +310,10 @@
       - result.response.destination.ipv4.prefix_length == 32
       - result.response.nexthop.nexthop_type == "EXTERNAL_SUBNET"
       - result.response.nexthop.nexthop_reference == "{{ external_subnet_uuid }}"
+      - result.response.nexthops | length == 1
+      - result.response.nexthops[0].nexthop_type == "EXTERNAL_SUBNET"
+      - result.response.nexthops[0].nexthop_reference == "{{ external_subnet_uuid }}"
+      - result.response.route_table_reference == "{{ route_table_external_id_1 }}"
       - result.response.metadata.owner_reference_id == "{{ vpc_uuid_1 }}"
       - result.response.metadata.project_reference_id == "{{ project1.uuid }}"
       - result.task_ext_id is defined
@@ -297,6 +365,10 @@
       - result.response.destination.ipv4.prefix_length == 32
       - result.response.nexthop.nexthop_type == "EXTERNAL_SUBNET"
       - result.response.nexthop.nexthop_reference == "{{ external_subnet_uuid }}"
+      - result.response.nexthops | length == 1
+      - result.response.nexthops[0].nexthop_type == "EXTERNAL_SUBNET"
+      - result.response.nexthops[0].nexthop_reference == "{{ external_subnet_uuid }}"
+      - result.response.route_table_reference == "{{ route_table_external_id_1 }}"
       - result.response.metadata.owner_reference_id == "{{ vpc_uuid_1 }}"
       - result.response.metadata.project_reference_id == "{{ project1.uuid }}"
       - result.task_ext_id is defined
@@ -420,6 +492,136 @@
 
 ###########################################################################################################
 
+- name: Create route with multiple nexthops
+  nutanix.ncp.ntnx_routes_v2:
+    state: present
+    name: "{{ random_name }}_route_nexthops"
+    description: "Route with multiple nexthops"
+    project_ext_id: "{{ project1.uuid }}"
+    vpc_reference: "{{ vpc_uuid_1 }}"
+    route_table_ext_id: "{{ route_table_external_id_1 }}"
+    route_type: STATIC
+    destination:
+      ipv4:
+        ip:
+          value: "10.0.0.0"
+        prefix_length: 24
+    nexthops:
+      - nexthop_type: "EXTERNAL_SUBNET"
+        nexthop_reference: "{{ external_subnet_uuid }}"
+      - nexthop_type: "EXTERNAL_SUBNET"
+        nexthop_reference: "{{ external_subnet_uuid_2 }}"
+    metadata:
+      owner_reference_id: "{{ vpc_uuid_1 }}"
+      project_reference_id: "{{ project1.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Create route with multiple nexthops Status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.response.name == "{{ random_name }}_route_nexthops"
+      - result.response.description == "Route with multiple nexthops"
+      - result.response.project_ext_id == project1.uuid
+      - result.response.vpc_reference == "{{ vpc_uuid_1 }}"
+      - result.response.route_type == "STATIC"
+      - result.response.destination.ipv4.ip.value == "10.0.0.0"
+      - result.response.destination.ipv4.prefix_length == 24
+      - result.response.nexthops | length == 2
+      - result.response.nexthops | map(attribute='nexthop_type') | list | unique == ["EXTERNAL_SUBNET"]
+      - result.response.nexthops | map(attribute='nexthop_reference') | list | sort == [external_subnet_uuid, external_subnet_uuid_2] | sort
+      - result.response.route_table_reference == "{{ route_table_external_id_1 }}"
+      - result.response.metadata.owner_reference_id == "{{ vpc_uuid_1 }}"
+      - result.response.metadata.project_reference_id == "{{ project1.uuid }}"
+    fail_msg: "Create route with multiple nexthops failed "
+    success_msg: "Create route with multiple nexthops passed "
+
+- name: Set route external ID for nexthops route
+  ansible.builtin.set_fact:
+    nexthops_route_external_id: "{{ result.response.ext_id }}"
+
+###########################################################################################################
+
+- name: Verify deprecation warning when using nexthop instead of nexthops
+  nutanix.ncp.ntnx_routes_v2:
+    state: present
+    name: "{{ random_name }}_route_deprecated"
+    description: "Route for testing deprecated nexthop"
+    project_ext_id: "{{ project1.uuid }}"
+    vpc_reference: "{{ vpc_uuid_1 }}"
+    route_table_ext_id: "{{ route_table_external_id_1 }}"
+    route_type: STATIC
+    destination:
+      ipv4:
+        ip:
+          value: "10.0.0.6"
+        prefix_length: 32
+    nexthop:
+      nexthop_type: "EXTERNAL_SUBNET"
+      nexthop_reference: "{{ external_subnet_uuid }}"
+    metadata:
+      owner_reference_id: "{{ vpc_uuid_1 }}"
+      project_reference_id: "{{ project1.uuid }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify deprecation warning status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.deprecations is defined
+      - "'deprecated' in result.deprecations[0].msg | lower"
+      - "'nexthops' in result.deprecations[0].msg | lower"
+      - result.response.name == "{{ random_name }}_route_deprecated"
+      - result.response.description == "Route for testing deprecated nexthop"
+      - result.response.project_ext_id == project1.uuid
+      - result.response.vpc_reference == "{{ vpc_uuid_1 }}"
+      - result.response.route_type == "STATIC"
+      - result.response.destination.ipv4.ip.value == "10.0.0.6"
+      - result.response.destination.ipv4.prefix_length == 32
+      - result.response.nexthop.nexthop_type == "EXTERNAL_SUBNET"
+      - result.response.nexthop.nexthop_reference == "{{ external_subnet_uuid }}"
+      - result.response.metadata.owner_reference_id == "{{ vpc_uuid_1 }}"
+      - result.response.metadata.project_reference_id == "{{ project1.uuid }}"
+    fail_msg: "Deprecation warning for nexthop not found"
+    success_msg: "Deprecation warning for nexthop correctly raised"
+
+###########################################################################################################
+
+- name: Verify mutual exclusivity of nexthop and nexthops
+  nutanix.ncp.ntnx_routes_v2:
+    state: present
+    name: "{{ random_name }}_route_mutex"
+    description: "Route with both nexthop and nexthops"
+    vpc_reference: "{{ vpc_uuid_1 }}"
+    route_table_ext_id: "{{ route_table_external_id_1 }}"
+    route_type: STATIC
+    destination:
+      ipv4:
+        ip:
+          value: "10.0.0.7"
+        prefix_length: 32
+    nexthop:
+      nexthop_type: "EXTERNAL_SUBNET"
+      nexthop_reference: "{{ external_subnet_uuid }}"
+    nexthops:
+      - nexthop_type: "EXTERNAL_SUBNET"
+        nexthop_reference: "{{ external_subnet_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify mutual exclusivity of nexthop and nexthops status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'mutually exclusive' in result.msg | lower"
+    fail_msg: "Mutual exclusivity check for nexthop and nexthops failed"
+    success_msg: "Mutual exclusivity check for nexthop and nexthops passed"
+
+###########################################################################################################
+
 - name: Fetch route by external ID
   nutanix.ncp.ntnx_routes_info_v2:
     ext_id: "{{ static_route_external_id_1 }}"
@@ -497,6 +699,10 @@
     that:
       - result.response is defined
       - result.response | length == 1
+      - result.total_available_results == 1
+      - result.route_table_ext_id == route_table_external_id_1
+      - result.response[0].name == "{{ random_name }}_route_updated"
+      - result.response[0].ext_id == static_route_external_id_1
     fail_msg: "List all routes with filter failed "
     success_msg: "List all routes with filter passed "
 
@@ -619,6 +825,7 @@
       - result.changed == false
       - result.failed == false
       - result.ext_id == "{{ static_route_external_id_1 }}"
+      - result.route_table_ext_id == "{{ route_table_external_id_1 }}"
       - result.msg == "Route table with ext_id:{{ static_route_external_id_1 }} will be deleted."
     fail_msg: "Delete static route with check mode enabled failed "
     success_msg: "Delete static route with check mode enabled passed "
@@ -673,6 +880,30 @@
 
 ###########################################################################################################
 
+- name: Delete route with multiple nexthops
+  nutanix.ncp.ntnx_routes_v2:
+    state: absent
+    ext_id: "{{ nexthops_route_external_id }}"
+    route_table_ext_id: "{{ route_table_external_id_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete route with multiple nexthops Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined
+      - result.ext_id == "{{ nexthops_route_external_id }}"
+      - result.route_table_ext_id == "{{ route_table_external_id_1 }}"
+      - result.response is defined
+      - result.response.ext_id is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: "Delete route with multiple nexthops failed "
+    success_msg: "Delete route with multiple nexthops passed "
+
+###########################################################################################################
+
 - name: Delete first VPC
   nutanix.ncp.ntnx_vpcs_v2:
     state: absent
@@ -688,6 +919,7 @@
       - result.failed == false
       - result.ext_id == "{{ vpc_uuid_1 }}"
       - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
     fail_msg: " Unable to Delete first VPC"
     success_msg: "First VPC has been deleted successfully"
 
@@ -708,9 +940,37 @@
       - result.failed == false
       - result.ext_id == "{{ vpc_uuid_2 }}"
       - result.task_ext_id is defined
+      - result.response.status == "SUCCEEDED"
     fail_msg: " Unable to Delete second VPC"
     success_msg: "second VPC has been deleted successfully"
+############################################################################################
 
+- name: Delete VLAN external no-NAT subnets
+  nutanix.ncp.ntnx_subnets:
+    state: absent
+    subnet_uuid: "{{ item }}"
+  loop:
+    - "{{ external_subnet_uuid }}"
+    - "{{ external_subnet_uuid_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete VLAN external no-NAT subnets Status
+  ansible.builtin.assert:
+    that:
+      - result.results | length == 2
+      - result.results[0].failed == false
+      - result.results[1].failed == false
+      - result.results[0].changed == true
+      - result.results[1].changed == true
+      - result.results[0].subnet_uuid == external_subnet_uuid
+      - result.results[1].subnet_uuid == external_subnet_uuid_2
+      - result.results[0].item == external_subnet_uuid
+      - result.results[1].item == external_subnet_uuid_2
+      - result.results[0].response.status == "SUCCEEDED"
+      - result.results[1].response.status == "SUCCEEDED"
+    fail_msg: "Delete VLAN external no-NAT subnets failed "
+    success_msg: "Delete VLAN external no-NAT subnets passed "
 ############################################################################################
 # The fixture project and the external NAT subnet's project-share are owned by
 # prepare_env and are intentionally left in place (the subnet cannot be
