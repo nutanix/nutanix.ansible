@@ -72,8 +72,10 @@
       - nonat_subnets.results[1].response.status.resources.ip_config.prefix_length == (external_nonat_subnets[1].network_prefix | int)
       - nonat_subnets.results[0].response.status.resources.ip_config.default_gateway_ip == external_nonat_subnets[0].gateway_ip_address
       - nonat_subnets.results[1].response.status.resources.ip_config.default_gateway_ip == external_nonat_subnets[1].gateway_ip_address
-      - nonat_subnets.results[0].response.status.resources.ip_config.pool_list[0].range == (external_nonat_subnets[0].dhcp.start_address ~ " " ~ external_nonat_subnets[0].dhcp.end_address)
-      - nonat_subnets.results[1].response.status.resources.ip_config.pool_list[0].range == (external_nonat_subnets[1].dhcp.start_address ~ " " ~ external_nonat_subnets[1].dhcp.end_address)
+      - nonat_subnets.results[0].response.status.resources.ip_config.pool_list[0].range
+        == (external_nonat_subnets[0].dhcp.start_address ~ " " ~ external_nonat_subnets[0].dhcp.end_address)
+      - nonat_subnets.results[1].response.status.resources.ip_config.pool_list[0].range
+        == (external_nonat_subnets[1].dhcp.start_address ~ " " ~ external_nonat_subnets[1].dhcp.end_address)
     fail_msg: "Create two VLAN external no-NAT subnets failed "
     success_msg: "Create two VLAN external no-NAT subnets passed "
 
