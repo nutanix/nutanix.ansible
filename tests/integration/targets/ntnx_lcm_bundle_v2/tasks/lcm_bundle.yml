@@ -276,7 +276,7 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - "missing required arguments: spec_version found in images"
+      - "'missing required arguments: spec_version found in images' in result.msg"
     success_msg: "Create LCM bundle image missing spec_version in image spec failed as expected"
     fail_msg: "Create LCM bundle image missing spec_version in image spec did not fail as expected"
 
