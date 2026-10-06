@@ -285,6 +285,26 @@
     fail_msg: "Unable to fetch disks"
     success_msg: "Disks fetched successfully"
 
+- name: List volume group disks with external storage info expanded
+  nutanix.ncp.ntnx_volume_groups_disks_info_v2:
+    volume_group_ext_id: "{{ vg1_uuid }}"
+    expand: "externalStorageInfo"
+  register: result
+  ignore_errors: true
+
+- name: List volume group disks with external storage info expanded status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.volume_group_ext_id == "{{vg1_uuid}}"
+      - result.response is defined
+      - result.response | length >= 0
+      - result.total_available_results is defined
+      - result.total_available_results == result.response | length
+    fail_msg: "Failed to list volume group disks with external storage info expanded"
+    success_msg: "Successfully listed volume group disks with external storage info expanded"
+
 - name: Fetch certain VG disk
   nutanix.ncp.ntnx_volume_groups_disks_info_v2:
     volume_group_ext_id: "{{ vg1_uuid }}"
