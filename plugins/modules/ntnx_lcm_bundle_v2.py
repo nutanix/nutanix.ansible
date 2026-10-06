@@ -61,6 +61,11 @@ options:
   type:
     description:
       - The type of the LCM bundle, indicating what kind of content it contains.
+      - C(SOFTWARE) - Software entity type. Includes components such as AOS, NCC, AHV, and LCM framework.
+      - C(FIRMWARE) - Firmware entity type. Includes components such as BMC, BIOS, disk controller, and NIC firmware.
+      - C(PRODUCT_META) - A Product Meta compatibility bundle containing metadata that LCM uses to determine which updates are compatible with the current cluster configuration.
+      - C(FRAMEWORK) - An LCM framework bundle containing an update to the LCM framework itself.
+      - C(IMAGE_BUNDLE) - A Nutanix image bundle for centralized uploads. Use this type when uploading Nutanix image bundles that should be distributed across multiple clusters.
     type: str
     required: false
     choices:
@@ -72,6 +77,8 @@ options:
   vendor:
     description:
       - The vendor or owner that produced the bundle.
+      - C(NUTANIX) - A Nutanix-created bundle containing official Nutanix software or firmware updates.
+      - C(THIRD_PARTY) - A third-party bundle containing updates from a hardware or software vendor other than Nutanix.
       - Required for create operation.
     type: str
     required: false
@@ -151,9 +158,19 @@ options:
             with the current cluster configuration.
         type: bool
         required: false
+        default: false
       status:
         description:
           - Classification of an available version indicating its release status and priority.
+          - C(AVAILABLE) - Available version. A general-availability release that can be applied.
+          - C(CRITICAL) - Critical version. Addresses critical bugs or security vulnerabilities and should be applied urgently.
+          - C(DEPRECATED) - Deprecated version. No longer supported and should be replaced with a newer version.
+          - C(EMERGENCY) - Emergency version. An urgent release addressing a critical issue that requires immediate action.
+          - C(ESTS) - Extended short-term supported (ESTS) version. Receives updates for an extended support window beyond standard STS.
+          - C(LATEST) - Latest version. The most recent release available.
+          - C(LTS) - Long-term supported (LTS) version. Receives extended maintenance and security updates.
+          - C(RECOMMENDED) - Recommended version. The vendor-recommended update for production use.
+          - C(STS) - Short-term supported (STS) version. Receives updates for a limited support window.
         type: str
         required: false
         choices:
@@ -181,6 +198,8 @@ options:
       entity_type:
         description:
           - Classifies whether the entity is a software component or a firmware component.
+          - C(SOFTWARE) - Software entity type. Includes components such as AOS, NCC, AHV, and LCM framework.
+          - C(FIRMWARE) - Firmware entity type. Includes components such as BMC, BIOS, disk controller, and NIC firmware.
         type: str
         required: false
         choices:
@@ -197,54 +216,6 @@ options:
             hardware generation and vendor platform the entity is compatible with.
         type: str
         required: false
-      cluster_ext_id:
-        description:
-          - The cluster UUID on which the resource is present or the operation is being performed.
-        type: str
-        required: false
-      files:
-        description:
-          - List of individual binary files contained in this image. Each file entry includes the
-            filename, size, checksum, and storage location.
-        type: list
-        elements: dict
-        required: false
-        suboptions:
-          file_location_id:
-            description:
-              - The global catalog item UUID for this image file. Used internally by LCM to locate the
-                file in the Nutanix catalog. This is a read-only field.
-            type: str
-            required: false
-          name:
-            description:
-              - The filename of the image file (e.g. "nos_update.tar.gz", "bmc_fw.bin").
-            type: str
-            required: false
-          size_bytes:
-            description:
-              - The size of the image file in bytes.
-            type: int
-            required: true
-          file_path:
-            description:
-              - The local file path of the image on the cluster. This is a read-only field populated
-                after the image has been downloaded.
-            type: str
-            required: false
-          checksum_type:
-            description:
-              - The checksum algorithm used for third-party image file verification.
-            type: str
-            required: true
-            choices:
-              - HEX_MD5
-              - SHASUM
-          checksum:
-            description:
-              - The checksum value of the image file, in the format specified by the checksumType field.
-            type: str
-            required: true
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -294,14 +265,6 @@ EXAMPLES = r"""
         entity_type: "FIRMWARE"
         entity_version: "7.0.0"
         hardware_family: "NX"
-        cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
-        files:
-          - file_location_id: "b7c3f61e-0f4b-4c1c-8a52-4f8f2e7e2e3f"
-            name: "firmware.bin"
-            size_bytes: 12345678
-            file_path: "firmware/firmware.bin"
-            checksum_type: "SHASUM"
-            checksum: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   register: bundle_full
   ignore_errors: true
 
@@ -443,24 +406,10 @@ def get_module_spec():
         ),
     )
 
-    image_file_spec = dict(
-        file_location_id=dict(type="str", required=False),
-        name=dict(type="str", required=False),
-        size_bytes=dict(type="int", required=True),
-        file_path=dict(type="str", required=False),
-        checksum_type=dict(
-            type="str",
-            required=True,
-            choices=["HEX_MD5", "SHASUM"],
-            obj=lifecycle_sdk.CheckSumType,
-        ),
-        checksum=dict(type="str", required=True),
-    )
-
     image_spec = dict(
         release_notes=dict(type="str", required=False),
         spec_version=dict(type="str", required=True),
-        is_qualified=dict(type="bool", required=False),
+        is_qualified=dict(type="bool", required=False, default=False),
         status=dict(
             type="str",
             required=False,
@@ -487,14 +436,6 @@ def get_module_spec():
         ),
         entity_version=dict(type="str", required=False),
         hardware_family=dict(type="str", required=False),
-        cluster_ext_id=dict(type="str", required=False),
-        files=dict(
-            type="list",
-            elements="dict",
-            required=False,
-            options=image_file_spec,
-            obj=lifecycle_sdk.ImageFile,
-        ),
     )
 
     url_source_spec = dict(

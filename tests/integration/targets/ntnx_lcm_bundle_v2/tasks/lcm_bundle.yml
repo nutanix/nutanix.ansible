@@ -14,8 +14,6 @@
 
 - name: Set names for LCM bundle tests
   ansible.builtin.set_fact:
-    bundle_min_name: "{{ lcm_dark_site_bundle_name }}"
-    bundle_full_name: "lcm_bundle_{{ suffix_name }}_{{ random_name }}_full.tar.gz"
     fake_ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
     sha256_hex: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     md5_hex: "d41d8cd98f00b204e9800998ecf8427e"
@@ -47,13 +45,6 @@
         entity_type: "SOFTWARE"
         entity_version: "7.0.0"
         hardware_family: "NX"
-        cluster_ext_id: "cae459ec-08db-475e-a5e5-151e390c9484"
-        files:
-          - name: "image.bin"
-            size_bytes: 12345678
-            file_path: "aos/image.bin"
-            checksum_type: "SHASUM"
-            checksum: "{{ sha256_hex }}"
   check_mode: true
   register: result
   ignore_errors: true
@@ -88,13 +79,6 @@
       - result.response.images[0].entity_type == "SOFTWARE"
       - result.response.images[0].entity_version == "7.0.0"
       - result.response.images[0].hardware_family == "NX"
-      - result.response.images[0].cluster_ext_id == "cae459ec-08db-475e-a5e5-151e390c9484"
-      - result.response.images[0].files | length == 1
-      - result.response.images[0].files[0].name == "image.bin"
-      - result.response.images[0].files[0].size_bytes == 12345678
-      - result.response.images[0].files[0].file_path == "aos/image.bin"
-      - result.response.images[0].files[0].checksum_type == "SHASUM"
-      - result.response.images[0].files[0].checksum == sha256_hex
     success_msg: "Spec for creating LCM bundle using check mode with all attributes is generated successfully"
     fail_msg: "Spec for creating LCM bundle using check mode with all attributes is not generated successfully"
 
@@ -116,8 +100,7 @@
       - result is defined
       - result.changed == false
       - result.failed == false
-      - "'will be deleted' in result.msg"
-      - result.ext_id == fake_ext_id
+      - result.msg == "LCM bundle with ext_id:{{ fake_ext_id }} will be deleted."
     success_msg: "Delete LCM bundle with check mode passed"
     fail_msg: "Delete LCM bundle with check mode failed"
 
@@ -125,23 +108,21 @@
 # B. Real API tests
 ################################################################################
 
-- name: Create LCM bundle with minimum attributes
+- name: Create IMAGE LCM bundle
   nutanix.ncp.ntnx_lcm_bundle_v2:
-    state: present
-    name: "{{ bundle_min_name }}"
-    type: "FRAMEWORK"
+    name: "{{ lcm_dark_site_bundle_name }}"
+    type: "IMAGE_BUNDLE"
     vendor: "NUTANIX"
     url_source:
       url: "{{ lcm_dark_site_bundle_url }}"
-    wait: true
   register: result
   ignore_errors: true
 
-- name: Create LCM bundle with minimum attributes result
+- name: Create IMAGE LCM bundle result
   ansible.builtin.debug:
     var: result
 
-- name: Create LCM bundle with minimum attributes status
+- name: Create IMAGE LCM bundle status
   ansible.builtin.assert:
     that:
       - result is defined
@@ -152,81 +133,13 @@
       - result.response is defined
       - result.ext_id is defined
       - result.ext_id | length > 0
-    success_msg: "LCM bundle create with minimum attributes passed"
-    fail_msg: "LCM bundle create with minimum attributes failed unexpectedly"
-
-- name: Save minimum LCM bundle ext_id
-  ansible.builtin.set_fact:
-    bundle_min_ext_id: "{{ result.ext_id }}"
-  when: result.ext_id is defined and result.ext_id
-
-- name: Delete LCM bundle created with minimum attributes
-  nutanix.ncp.ntnx_lcm_bundle_v2:
-    state: absent
-    ext_id: "{{ bundle_min_ext_id }}"
-    wait: true
-  register: result
-  ignore_errors: true
-  when: bundle_min_ext_id is defined
-
-- name: Delete LCM bundle created with minimum attributes result
-  ansible.builtin.debug:
-    var: result
-  when: bundle_min_ext_id is defined
-
-- name: Delete LCM bundle created with minimum attributes status
-  ansible.builtin.assert:
-    that:
-      - result is defined
-      - result.failed == false
-      - result.changed == true
-    success_msg: "Delete LCM bundle created with minimum attributes passed"
-    fail_msg: "Delete LCM bundle created with minimum attributes failed unexpectedly"
-  when: bundle_min_ext_id is defined
-
-- name: Create LCM bundle with all attributes
-  nutanix.ncp.ntnx_lcm_bundle_v2:
-    state: present
-    name: "{{ bundle_full_name }}"
-    type: "FRAMEWORK"
-    vendor: "NUTANIX"
-    url_source:
-      url: "{{ lcm_dark_site_bundle_url }}"
-    images:
-      - release_notes: "Integration test release notes"
-        spec_version: "1"
-        is_qualified: true
-        status: "RECOMMENDED"
-        entity_class: "LCM"
-        entity_model: "LCM Framework"
-        entity_type: "SOFTWARE"
-        entity_version: "2026.9.42544"
-        hardware_family: "NX"
-    wait: true
-  register: result
-  ignore_errors: true
-
-- name: Create LCM bundle with all attributes result
-  ansible.builtin.debug:
-    var: result
-
-- name: Create LCM bundle with all attributes status
-  ansible.builtin.assert:
-    that:
-      - result is defined
-      - result.failed == false
-      - result.changed == true
-      - result.task_ext_id is defined
-      - result.task_ext_id | length > 0
-      - result.response is defined
-      - result.ext_id is defined
-      - result.ext_id | length > 0
-    success_msg: "LCM bundle create with all attributes passed"
-    fail_msg: "LCM bundle create with all attributes failed unexpectedly"
+      - result.response.name == "{{ lcm_dark_site_bundle_name }}"
+    success_msg: "IMAGE LCM bundle create passed"
+    fail_msg: "IMAGE LCM bundle create failed unexpectedly"
 
 - name: Save full LCM bundle ext_id
   ansible.builtin.set_fact:
-    bundle_full_ext_id: "{{ result.ext_id }}"
+    bundle_ext_id: "{{ result.ext_id }}"
   when: result.ext_id is defined and result.ext_id
 
 ################################################################################
@@ -249,7 +162,7 @@
       - result.changed == false
       - result.failed == false
       - result.response is defined
-      - result.response is iterable
+      - result.response | length > 0
       - result.total_available_results is defined
       - result.total_available_results >= 0
     success_msg: "List all LCM bundles passed"
@@ -293,7 +206,7 @@
       - result.changed == false
       - result.failed == false
       - result.response is defined
-      - result.response | length <= 1
+      - result.response | length == 1
     success_msg: "List LCM bundles with limit passed"
     fail_msg: "List LCM bundles with limit failed"
 
@@ -344,56 +257,29 @@
     success_msg: "Create LCM bundle with missing vendor failed as expected"
     fail_msg: "Create LCM bundle with missing vendor did not fail as expected"
 
-- name: Create LCM bundle image missing spec_version
+- name: Create LCM bundle image missing spec_version in image spec
   nutanix.ncp.ntnx_lcm_bundle_v2:
     state: present
-    vendor: "NUTANIX"
+    vendor: "THIRD_PARTY"
     images:
-      - entity_class: "AOS"
+      - entity_class: "Hypervisor"
   register: result
   ignore_errors: true
 
-- name: Create LCM bundle image missing spec_version result
+- name: Create LCM bundle image missing spec_version in image spec result
   ansible.builtin.debug:
     var: result
 
-- name: Create LCM bundle image missing spec_version status
+- name: Create LCM bundle image missing spec_version in image spec status
   ansible.builtin.assert:
     that:
       - result is defined
       - result.changed == false
       - result.failed == true
-      - "'spec_version' in result.msg"
-    success_msg: "Create LCM bundle image missing spec_version failed as expected"
-    fail_msg: "Create LCM bundle image missing spec_version did not fail as expected"
+      - "missing required arguments: spec_version found in images"
+    success_msg: "Create LCM bundle image missing spec_version in image spec failed as expected"
+    fail_msg: "Create LCM bundle image missing spec_version in image spec did not fail as expected"
 
-- name: Create LCM bundle image file missing required fields
-  nutanix.ncp.ntnx_lcm_bundle_v2:
-    state: present
-    vendor: "NUTANIX"
-    images:
-      - spec_version: "1"
-        files:
-          - name: "image.bin"
-  register: result
-  ignore_errors: true
-
-- name: Create LCM bundle image file missing required fields result
-  ansible.builtin.debug:
-    var: result
-
-- name: Create LCM bundle image file missing required fields status
-  ansible.builtin.assert:
-    that:
-      - result is defined
-      - result.changed == false
-      - result.failed == true
-      - >-
-        ('size_bytes' in result.msg) or
-        ('checksum_type' in result.msg) or
-        ('checksum' in result.msg)
-    success_msg: "Create LCM bundle image file missing required fields failed as expected"
-    fail_msg: "Create LCM bundle image file missing required fields did not fail as expected"
 - name: Create LCM bundle with invalid type value
   nutanix.ncp.ntnx_lcm_bundle_v2:
     state: present
@@ -413,7 +299,7 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - "'value of type must be one of' in result.msg"
+      - "'value of type must be one of: FIRMWARE, FRAMEWORK, IMAGE_BUNDLE, PRODUCT_META, SOFTWARE, got: NOT_A_VALID_TYPE' in result.msg"
     success_msg: "Create LCM bundle with invalid type value failed as expected"
     fail_msg: "Create LCM bundle with invalid type value did not fail as expected"
 
@@ -441,7 +327,7 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - "'mutually exclusive' in result.msg"
+      - "'parameters are mutually exclusive: md5_sum|sha256_sum found in checksum' in result.msg"
     success_msg: "Mutually exclusive checksum failed as expected"
     fail_msg: "Mutually exclusive checksum did not fail as expected"
 
@@ -482,6 +368,10 @@
       - result is defined
       - result.changed == false
       - result.failed == true
+      - result.msg == "Task Failed"
+      - result.response is defined
+      - result.response.error_messages | length > 0
+      - result.response.status == "FAILED"
     success_msg: "Delete LCM bundle with wrong external ID failed as expected"
     fail_msg: "Delete LCM bundle with wrong external ID did not fail as expected"
 
@@ -489,29 +379,31 @@
 # E. Cleanup
 ################################################################################
 
-- name: Delete LCM bundle created with all attributes
+- name: Delete LCM bundle
   nutanix.ncp.ntnx_lcm_bundle_v2:
     state: absent
-    ext_id: "{{ bundle_full_ext_id }}"
+    ext_id: "{{ bundle_ext_id }}"
     wait: true
   register: result
   ignore_errors: true
-  when: bundle_full_ext_id is defined
+  when: bundle_ext_id is defined
 
-- name: Delete LCM bundle created with all attributes result
+- name: Delete IMAGE LCM bundle result
   ansible.builtin.debug:
     var: result
-  when: bundle_full_ext_id is defined
+  when: bundle_ext_id is defined
 
-- name: Delete LCM bundle created with all attributes status
+- name: Delete IMAGE LCM bundle status
   ansible.builtin.assert:
     that:
       - result is defined
       - result.failed == false
       - result.changed == true
-    success_msg: "Delete LCM bundle created with all attributes passed"
-    fail_msg: "Delete LCM bundle created with all attributes failed unexpectedly"
-  when: bundle_full_ext_id is defined
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "Delete IMAGE LCM bundle passed"
+    fail_msg: "Delete IMAGE LCM bundle failed unexpectedly"
+  when: bundle_ext_id is defined
 
 - name: LCM Bundle v2 tests summary
   ansible.builtin.debug:

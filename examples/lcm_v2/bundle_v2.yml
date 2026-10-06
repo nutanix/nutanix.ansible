@@ -20,7 +20,7 @@
   tasks:
     - name: Set variables
       ansible.builtin.set_fact:
-        bundle_name: "lcm_dark_site_bundle_name"
+        bundle_name: <bundle_name>
         lcm_dark_site_bundle_url: <bundle_url>
         entity_version: <entity_version>
 
@@ -28,21 +28,10 @@
       nutanix.ncp.ntnx_lcm_bundle_v2:
         state: present
         name: "{{ bundle_name }}"
-        type: "FRAMEWORK"
+        type: "IMAGE_BUNDLE"
         vendor: "NUTANIX"
         url_source:
           url: "{{ lcm_dark_site_bundle_url }}"
-        images:
-          - release_notes: "Example LCM image release notes"
-            spec_version: "1"
-            is_qualified: true
-            status: "RECOMMENDED"
-            entity_class: "LCM"
-            entity_model: "LCM Framework"
-            entity_type: "SOFTWARE"
-            entity_version: "{{ entity_version }}"
-            hardware_family: "NX"
-        wait: true
       register: bundle_create
       ignore_errors: true
 
@@ -62,7 +51,7 @@
       ignore_errors: true
 
     - name: List all LCM bundles
-      nutanix.ncp.ntnx_lcm_bundles_info_v2: {}
+      nutanix.ncp.ntnx_lcm_bundles_info_v2:
       register: bundles_all
       ignore_errors: true
 
@@ -82,7 +71,6 @@
       nutanix.ncp.ntnx_lcm_bundle_v2:
         state: absent
         ext_id: "{{ bundle_ext_id }}"
-        wait: true
       register: bundle_delete
       when: bundle_ext_id is defined
       ignore_errors: true
