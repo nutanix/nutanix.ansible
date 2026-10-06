@@ -63,9 +63,11 @@ options:
       - The type of the LCM bundle, indicating what kind of content it contains.
       - C(SOFTWARE) - Software entity type. Includes components such as AOS, NCC, AHV, and LCM framework.
       - C(FIRMWARE) - Firmware entity type. Includes components such as BMC, BIOS, disk controller, and NIC firmware.
-      - C(PRODUCT_META) - A Product Meta compatibility bundle containing metadata that LCM uses to determine which updates are compatible with the current cluster configuration.
+      - C(PRODUCT_META) - A Product Meta compatibility bundle containing metadata that LCM uses to determine
+        which updates are compatible with the current cluster configuration.
       - C(FRAMEWORK) - An LCM framework bundle containing an update to the LCM framework itself.
-      - C(IMAGE_BUNDLE) - A Nutanix image bundle for centralized uploads. Use this type when uploading Nutanix image bundles that should be distributed across multiple clusters.
+      - C(IMAGE_BUNDLE) - A Nutanix image bundle for centralized uploads. Use this type when uploading
+        Nutanix image bundles that should be distributed across multiple clusters.
     type: str
     required: false
     choices:
@@ -293,14 +295,36 @@ response:
     {
       "checksum": null,
       "cluster_ext_id": null,
-      "ext_id": "9c0a9f4a-2b7e-4f10-8f34-2b3c7a1e9a5c",
-      "images": null,
+      "created_time": "2026-10-06T08:37:09.827497+00:00",
+      "ext_id": "ed047cf5-09f2-4afc-b9d4-b917462dfa07",
+      "images": [
+          {
+              "cluster_ext_id": "7f923276-990e-4b13-9cde-77634101bf69",
+              "entity_class": "AHV Driver",
+              "entity_model": "AHV NVIDIA vGPU",
+              "entity_type": null,
+              "entity_version": "12.0-2178",
+              "ext_id": "3d7a2c00-e527-4b07-a9fe-d013610cecee",
+              "files": null,
+              "hardware_family": null,
+              "isStub": false,
+              "is_qualified": null,
+              "links": null,
+              "release_notes": null,
+              "spec_version": null,
+              "status": null,
+              "tenant_id": null
+          }
+      ],
       "links": null,
-      "name": "lcm-bundle-ansible.tar.gz",
-      "size_bytes": null,
+      "name": "lcm.tar.gz",
+      "size_bytes": 86190508,
       "tenant_id": null,
       "type": "SOFTWARE",
-      "vendor": "NUTANIX"
+      "unqualified_entities_detail": null,
+      "upload_mode": "CENTRALIZED",
+      "url_source": null,
+      "vendor": null
     }
 
 task_ext_id:

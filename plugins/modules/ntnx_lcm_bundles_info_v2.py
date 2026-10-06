@@ -95,14 +95,36 @@ response:
     {
       "checksum": null,
       "cluster_ext_id": null,
-      "ext_id": "9c0a9f4a-2b7e-4f10-8f34-2b3c7a1e9a5c",
-      "images": null,
+      "created_time": "2026-10-06T08:42:46.738231+00:00",
+      "ext_id": "b382e098-b1f3-43ac-8a43-76b5bba24cfa",
+      "images": [
+          {
+              "cluster_ext_id": "7f923276-990e-4b13-9cde-77634101bf69",
+              "entity_class": "AHV Driver",
+              "entity_model": "AHV NVIDIA vGPU",
+              "entity_type": null,
+              "entity_version": "12.0-2178",
+              "ext_id": "3d7a2c00-e527-4b07-a9fe-d013610cecee",
+              "files": null,
+              "hardware_family": null,
+              "isStub": false,
+              "is_qualified": null,
+              "links": null,
+              "release_notes": null,
+              "spec_version": null,
+              "status": null,
+              "tenant_id": null
+          }
+      ],
       "links": null,
-      "name": "lcm-bundle-ansible.tar.gz",
-      "size_bytes": null,
+      "name": "lcm.tar.gz",
+      "size_bytes": 86190508,
       "tenant_id": null,
       "type": "SOFTWARE",
-      "vendor": "NUTANIX"
+      "unqualified_entities_detail": null,
+      "upload_mode": "CENTRALIZED",
+      "url_source": null,
+      "vendor": null
     }
 
 changed:

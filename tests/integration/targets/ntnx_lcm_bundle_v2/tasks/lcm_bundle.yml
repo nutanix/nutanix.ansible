@@ -210,6 +210,27 @@
     success_msg: "List LCM bundles with limit passed"
     fail_msg: "List LCM bundles with limit failed"
 
+- name: Fetch LCM bundle using external ID
+  nutanix.ncp.ntnx_lcm_bundles_info_v2:
+    ext_id: "{{ bundle_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch LCM bundle using external ID result
+  ansible.builtin.debug:
+    var: result
+
+- name: Fetch LCM bundle using external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "{{ lcm_dark_site_bundle_name }}"
+    success_msg: "Fetch LCM bundle using external ID passed"
+    fail_msg: "Fetch LCM bundle using external ID failed"
+
 - name: Fetch LCM bundle using wrong external ID
   nutanix.ncp.ntnx_lcm_bundles_info_v2:
     ext_id: "{{ fake_ext_id }}"
