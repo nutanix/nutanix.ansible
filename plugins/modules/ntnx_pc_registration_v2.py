@@ -276,6 +276,7 @@ options:
                                                 - The prefix length of the IPv4 address.
                                             type: int
                                             required: false
+                                            default: 32
                                 ipv6:
                                     description:
                                         - The IPv6 address of the remote cluster.
@@ -291,6 +292,7 @@ options:
                                                 - The prefix length of the IPv6 address.
                                             type: int
                                             required: false
+                                            default: 128
                                 fqdn:
                                     description:
                                         - The FQDN of the remote cluster.

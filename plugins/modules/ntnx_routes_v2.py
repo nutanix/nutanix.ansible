@@ -577,6 +577,7 @@ def _deprecate_nexthop_if_used(module):
         module.deprecate(
             "The 'nexthop' option is deprecated. Use 'nexthops' instead to support multiple nexthops.",
             version="2.7.0",
+            collection_name="nutanix.ncp",
         )
 
 

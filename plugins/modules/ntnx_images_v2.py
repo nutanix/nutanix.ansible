@@ -443,6 +443,7 @@ def create_image(module, result):
         module.deprecate(
             "Providing source.vm_disk_source.ext_id without source.vm_disk_source.vm_ext_id is deprecated and will not be supported in a future release.",
             version="2.7.0",
+            collection_name="nutanix.ncp",
         )
 
     if module.check_mode:
