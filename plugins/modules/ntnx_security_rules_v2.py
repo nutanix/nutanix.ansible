@@ -60,10 +60,12 @@ options:
   is_ipv6_traffic_allowed:
     description:
       - If Ipv6 Traffic needs to be allowed.
+      - Not supported for policies that use C(FLEX) rules.
     type: bool
   is_hitlog_enabled:
     description:
       - If Hitlog needs to be enabled.
+      - Not supported for policies that use C(FLEX) rules.
     type: bool
   description:
     description:
@@ -105,6 +107,11 @@ options:
       - SAVE
       - MONITOR
       - ENFORCE
+  priority:
+    description:
+      - Priority for the policy. Lower numbers indicate higher priority.
+    required: false
+    type: int
   scope:
     description:
       - Defines the scope of the policy. Currently, ALL_VLAN, VPC_LIST, GLOBAL, and VPC_AS_CATEGORY are supported.
@@ -133,6 +140,7 @@ options:
       name:
         description:
           - Name of the rule.
+          - Mandatory for C(FLEX) rules.
         required: false
         type: str
       description:
@@ -1279,6 +1287,7 @@ def get_module_spec():
             ],
         ),
         policy_state=dict(type="str", choices=["SAVE", "MONITOR", "ENFORCE"]),
+        priority=dict(type="int"),
         rules=dict(
             type="list",
             elements="dict",
