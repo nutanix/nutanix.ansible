@@ -659,6 +659,13 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self._read_config_data(path)
 
         # Get configuration options from inventory file or environment variables
+        
+        # Read and template auth options
+        for opt in ("nutanix_host", "nutanix_username", "nutanix_password", "nutanix_api_key", "nutanix_port"):
+            val = self.get_option(opt)
+            if self.templar.is_template(val):
+                self.set_option(opt, self.templar.template(val))
+
         self.nutanix_host = (
             self.get_option("nutanix_host")
             or os.environ.get("NUTANIX_HOSTNAME")
