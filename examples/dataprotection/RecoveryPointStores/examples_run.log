@@ -1,0 +1,23 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Recovery Point Stores info playbook] *************************************
+
+TASK [List all recovery point stores] ******************************************
+ok: [localhost] => {"changed": false, "error": null, "response": [], "total_available_results": 0}
+
+TASK [List recovery point stores with filter] **********************************
+ok: [localhost] => {"changed": false, "error": null, "response": [], "total_available_results": 0}
+
+TASK [List recovery point stores with limit] ***********************************
+ok: [localhost] => {"changed": false, "error": null, "response": [], "total_available_results": 0}
+
+TASK [Get recovery point store using ext_id] ***********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching recovery point store info using ext_id", "response": {"$dataItemDiscriminator": "dataprotection.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<dataprotection.v4.error.AppMessage>", "$objectType": "dataprotection.v4.error.ErrorResponse", "error": [{"$objectType": "dataprotection.v4.error.AppMessage", "argumentsMap": {"reason": "recovery point store with id 1ca2963d-77b6-453a-ae23-2c19e7a954a3 not found"}, "code": "DP-10400", "errorGroup": "DATAPROTECTION_ENTITY_NON_EXISTENT_ERROR", "locale": "en-US", "message": "The request failed as one or more entities do not exist - recovery point store with id 1ca2963d-77b6-453a-ae23-2c19e7a954a3 not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+

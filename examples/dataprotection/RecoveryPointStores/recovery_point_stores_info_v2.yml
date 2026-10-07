@@ -1,0 +1,64 @@
+---
+# Summary:
+# This playbook will do:
+# 1. List all recovery point stores
+# 2. List recovery point stores with a filter
+# 3. List recovery point stores with a limit
+# 4. Get a recovery point store using ext_id
+#
+# A recovery point store references object storage used to hold recovery points with
+# Multicloud Snapshot Technology (MST). It can use any S3-compatible backend, including
+# Nutanix Objects and hyperscaler offerings such as Amazon S3 and Microsoft Azure Blob Storage.
+# This module talks to Prism Central (PC).
+
+- name: Recovery Point Stores info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: List all recovery point stores
+      nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+      register: result
+      ignore_errors: true
+    # response is a list of recovery point stores, for example:
+    # {"changed": false, "error": null, "response": [], "total_available_results": 0}
+    # On a cluster with configured stores each list element looks like:
+    # {
+    #   "bucket": {"bucket_name": "...", "provider": "NUTANIX_OBJECTS", "provider_config": {...}},
+    #   "current_logical_usage_bytes": 0,
+    #   "ext_id": "1ca2963d-77b6-453a-ae23-2c19e7a954a3",
+    #   "is_healthy": true,
+    #   "name": "recovery_point_store_ansible",
+    #   "owner_ext_id": "00000000-0000-0000-0000-000000000000"
+    # }
+
+    - name: List recovery point stores with filter
+      nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+        filter: "name eq 'recovery_point_store_ansible'"
+      register: result
+      ignore_errors: true
+    # response is a filtered list, for example:
+    # {"changed": false, "error": null, "response": [], "total_available_results": 0}
+
+    - name: List recovery point stores with limit
+      nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+    # response is a list limited to the requested number of entries, for example:
+    # {"changed": false, "error": null, "response": [], "total_available_results": 0}
+
+    - name: Get recovery point store using ext_id
+      nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+        ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
+      register: result
+      ignore_errors: true
+    # response is a single recovery point store. When the ext_id does not exist the
+    # module fails with a 404, for example:
+    # {"changed": false, "status": 404, "error": "NOT FOUND",
+    #  "msg": "Api Exception raised while fetching recovery point store info using ext_id"}
