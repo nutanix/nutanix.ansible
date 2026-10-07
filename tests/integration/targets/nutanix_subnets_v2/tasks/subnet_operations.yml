@@ -19,8 +19,8 @@
 
 - name: Set Subnet and VPC name
   ansible.builtin.set_fact:
-    subnet_name: "{{ random_name }}_subnet_test"
-    vpc_name: "{{ random_name }}_vpc_test"
+    subnet_name: "{{ random_name }}_ansible_subnet_test"
+    vpc_name: "{{ random_name }}_ansible_vpc_test"
 
 - name: Set todelete list
   ansible.builtin.set_fact:
@@ -108,6 +108,7 @@
       boot_file_name: "{{ dhcp_settings.boot_file }}"
     is_external: true
     is_nat_enabled: true
+    is_connected: true
     network_function_chain_reference: "00061663-9fa0-28ca-185b-ac1f6b6f97e1"
     is_advanced_networking: true
     metadata:
@@ -141,6 +142,7 @@
       - result.response.dhcp_options.domain_name_servers.1.ipv4.value == "{{ dhcp_settings.dns_servers.1 }}"
       - result.response.is_external == true
       - result.response.is_nat_enabled == true
+      - result.response.is_connected == true
       - result.response.metadata.project_reference_id == "00061663-9fa0-28ca-185b-ac1f6b6f97e2"
       - result.response.metadata.owner_reference_id == "00061663-9fa0-28ca-185b-ac1f6b6f97e3"
       - result.response.metadata.category_ids.0 == "00061663-9fa0-28ca-185b-ac1f6b6f97e4"
@@ -762,6 +764,7 @@
     name: "{{ subnet_name }}_6"
     subnet_type: OVERLAY
     vpc_reference: "{{ vpc_uuid }}"
+    is_connected: true
     ip_config:
       - ipv4:
           ip_subnet:
@@ -786,6 +789,7 @@
       - result.response.ip_config.0.ipv4.ip_subnet.prefix_length == {{ ip_address_management.network_prefix }}
       - result.response.ip_config.0.ipv4.ip_subnet.ip.value == "{{ ip_address_management.network_ip }}"
       - result.response.project_ext_id == "{{ project1.uuid }}"
+      - result.response.is_connected == true
     fail_msg: " Unable to create Overlay Subnet with minimum requirements "
     success_msg: " Overlay Subnet with minimum requirements created successfully "
 
@@ -928,6 +932,7 @@
     subnet_type: OVERLAY
     vpc_reference: "{{ vpc_uuid }}"
     project_ext_id: "{{ project1.uuid }}"
+    is_connected: false
     ip_config:
       - ipv4:
           ip_subnet:
@@ -966,6 +971,7 @@
       - result.response.vpc_reference == "{{ vpc_uuid }}"
       - result.response.ip_config.0.ipv4.default_gateway_ip.value == "{{ ip_address_management.gateway_ip_address }}"
       - result.response.ip_config.0.ipv4.ip_subnet.prefix_length == {{ ip_address_management.network_prefix }}
+      - result.response.is_connected == false
     fail_msg: " Unable to create Overlay Subnet with IP_pools and DHCP "
     success_msg: " Overlay Subnet with IP_pools and DHCP created successfully "
 

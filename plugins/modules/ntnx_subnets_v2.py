@@ -355,6 +355,7 @@ options:
       - Indicates whether the subnet is in a connected or disconnected state.
       - When omitted, the API default of True is used.
     type: bool
+    default: true
   network_function_chain_reference:
     description:
       - Network function chain external ID
@@ -737,7 +738,7 @@ def get_module_spec():
         vpc_reference=dict(type="str"),
         is_nat_enabled=dict(type="bool"),
         is_external=dict(type="bool"),
-        is_connected=dict(type="bool"),
+        is_connected=dict(type="bool", default=True),
         network_function_chain_reference=dict(type="str"),
         is_advanced_networking=dict(type="bool"),
         hypervisor_type=dict(type="str"),
