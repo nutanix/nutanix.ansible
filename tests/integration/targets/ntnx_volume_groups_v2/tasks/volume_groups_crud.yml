@@ -392,13 +392,22 @@
     fail_msg: "Unable to fetch all volume groups"
     success_msg: "All volume groups fetched successfully"
 
-- name: Fetch volume groups with stats expanded
+- name: Set time window for volume group stats expand
+  ansible.builtin.set_fact:
+    vg_stats_start_time: '{{ lookup(''pipe'', ''date -u -d "30 minutes ago" +%Y-%m-%dT%H:%M:%S.000Z'') }}'
+    vg_stats_end_time: '{{ lookup(''pipe'', ''date -u -d "10 minutes ago" +%Y-%m-%dT%H:%M:%S.000Z'') }}'
+
+- name: Fetch volume groups with expand volumeGroupStats
   nutanix.ncp.ntnx_volume_groups_info_v2:
-    expand: "volumeGroupStats"
+    expand: volumeGroupStats
+    start_time: "{{ vg_stats_start_time }}"
+    end_time: "{{ vg_stats_end_time }}"
+    sampling_interval: 30
+    stat_type: AVG
   register: result
   ignore_errors: true
 
-- name: Fetch volume groups with stats expanded status
+- name: Fetch volume groups with expand volumeGroupStats status
   ansible.builtin.assert:
     that:
       - result.failed == false
@@ -407,8 +416,8 @@
       - result.response | length > 0
       - result.total_available_results is defined
       - result.total_available_results == result.response | length
-    fail_msg: "Failed to fetch volume groups with stats expanded"
-    success_msg: "Successfully fetched volume groups with stats expanded"
+    fail_msg: "Failed to fetch volume groups with expand volumeGroupStats"
+    success_msg: "Successfully fetched volume groups with expand volumeGroupStats"
 
 - name: Verify update of project_ext_id is not supported
   nutanix.ncp.ntnx_volume_groups_v2:

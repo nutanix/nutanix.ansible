@@ -238,10 +238,9 @@ def _build_stats_expand(module, result):
 def get_vg(module, result):
     vgs = get_vg_api_instance(module)
     ext_id = module.params.get("ext_id")
-    expand = _build_stats_expand(module, result)
 
     try:
-        resp = vgs.get_volume_group_by_id(extId=ext_id, _expand=expand)
+        resp = vgs.get_volume_group_by_id(extId=ext_id)
     except Exception as e:
         raise_api_exception(
             module=module,
