@@ -398,10 +398,10 @@
             ip:
               value: "{{ ip_address_management.network_ip }}"
             prefix_length: "{{ ip_address_management.network_prefix }}"
-          dhcp_server_address:
-            value: "{{ ip_address_management.dhcp_server_address }}"
           default_gateway_ip:
             value: "{{ ip_address_management.gateway_ip_address }}"
+          dhcp_server_address:
+            value: "{{ ip_address_management.dhcp_server_address }}"
           pool_list:
             - start_ip:
                 value: "{{ ip_address_pools.start_address }}"
@@ -413,6 +413,9 @@
                 value: "{{ ip_address_pools.end_address_2 }}"
   register: result
   ignore_errors: true
+
+- debug:
+    var: result
 
 - name: Update Status
   ansible.builtin.assert:
