@@ -9,7 +9,7 @@
 
 - name: Set service group name
   ansible.builtin.set_fact:
-    service_group_name: service_group_{{ random_name }}
+    service_group_name: service_group_ansible_{{ random_name }}
 
 - name: Set todelete list
   ansible.builtin.set_fact:

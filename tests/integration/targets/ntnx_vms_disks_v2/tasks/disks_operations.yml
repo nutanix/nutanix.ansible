@@ -14,8 +14,8 @@
 
 - name: Set VM and VG Names
   ansible.builtin.set_fact:
-    vm_name: "{{ random_name }}_vm_test"
-    vg_name: "{{ random_name }}_vg_test"
+    vm_name: "{{ random_name }}_ansible_vm_test"
+    vg_name: "{{ random_name }}_ansible_vg_test"
 
 - name: Set todelete list
   ansible.builtin.set_fact:

@@ -14,9 +14,9 @@
 
 - name: Generate random floating ip name
   ansible.builtin.set_fact:
-    fip1_name: "{{query('community.general.random_string',numbers=false, special=false,length=8).0}}"
-    fip2_name: "{{query('community.general.random_string',numbers=false, special=false,length=8).0}}"
-    fip3_name: "{{query('community.general.random_string',numbers=false, special=false,length=8).0}}"
+    fip1_name: "ansible_fip1_{{query('community.general.random_string',numbers=false, special=false,length=8).0}}"
+    fip2_name: "ansible_fip2_{{query('community.general.random_string',numbers=false, special=false,length=8).0}}"
+    fip3_name: "ansible_fip3_{{query('community.general.random_string',numbers=false, special=false,length=8).0}}"
 
 - name: Fetch vm nic reference for tests
   nutanix.ncp.ntnx_vms_info:
