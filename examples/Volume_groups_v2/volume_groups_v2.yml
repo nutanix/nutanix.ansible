@@ -52,6 +52,10 @@
     - name: Fetch volume groups with stats expanded
       nutanix.ncp.ntnx_volume_groups_info_v2:
         expand: volumeGroupStats
+        start_time: "2024-01-01T00:00:00.000Z"
+        end_time: "2024-01-31T23:59:59.999Z"
+        sampling_interval: 30
+        stat_type: AVG
       register: result
       ignore_errors: true
 
