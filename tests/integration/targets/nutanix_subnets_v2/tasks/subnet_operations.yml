@@ -414,9 +414,6 @@
   register: result
   ignore_errors: true
 
-- debug:
-    var: result
-
 - name: Update Status
   ansible.builtin.assert:
     that:
