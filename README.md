@@ -308,6 +308,68 @@ ansible-playbook <playbook_name>
 ansible-playbook examples/iaas/iaas.yml
 ```
 
+# Authentication
+
+## Username and Password
+
+The standard authentication method uses `nutanix_username` and `nutanix_password`:
+
+```yaml
+module_defaults:
+  group/nutanix.ncp.ntnx:
+    nutanix_host: <pc_ip>
+    nutanix_username: <user>
+    nutanix_password: <pass>
+    validate_certs: true
+```
+
+## API Key
+
+All v2 modules and inventory plugins support API key authentication as an alternative to username and password. Set `nutanix_api_key` in your playbook or inventory config, or export the `NUTANIX_API_KEY` environment variable:
+
+```yaml
+module_defaults:
+  group/nutanix.ncp.ntnx:
+    nutanix_host: <pc_ip>
+    nutanix_api_key: <api_key>
+    validate_certs: true
+```
+
+```bash
+export NUTANIX_API_KEY=<api_key>
+```
+
+## Custom Headers
+
+The v2 modules (names ending in `_v2`) and the v2 inventory plugins support injecting custom HTTP headers into every API request. The `ntnx_ext_id` lookup sends headers from `NUTANIX_HEADER_*` environment variables only. This is useful in environments that sit behind a proxy or access gateway requiring additional headers (e.g. Cloudflare Access service tokens).
+
+Headers can be set in two ways:
+
+**1. In your playbook or inventory config** (takes precedence):
+```yaml
+module_defaults:
+  group/nutanix.ncp.ntnx:
+    nutanix_host: <pc_ip>
+    nutanix_api_key: <api_key>
+    validate_certs: true
+    custom_headers:
+      CF-Access-Client-Id: <client-id>
+      CF-Access-Client-Secret: <client-secret>
+```
+
+**2. Via environment variables** using the `NUTANIX_HEADER_` prefix:
+
+The prefix is stripped, underscores are converted to hyphens, and each segment is title-cased. For example:
+- `NUTANIX_HEADER_CF_ACCESS_CLIENT_ID` → `Cf-Access-Client-Id`
+- `NUTANIX_HEADER_CF_ACCESS_CLIENT_SECRET` → `Cf-Access-Client-Secret`
+
+```bash
+export NUTANIX_HEADER_CF_ACCESS_CLIENT_ID=<client-id>
+export NUTANIX_HEADER_CF_ACCESS_CLIENT_SECRET=<client-secret>
+```
+
+> **Cloudflare ETag note:** The Nutanix v4 API requires `ETag` response headers for power actions and updates (sent back in the `If-Match` request header). Cloudflare can weaken or remove strong `ETag` headers, for example when it compresses a response. If you are proxying through Cloudflare, enable **Respect Strong ETags** in a Cache Rule for the Prism Central hostname, otherwise these operations can fail.
+
 # Included Content
 
 Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on prism central v4 APIs.

@@ -44,6 +44,21 @@ options:
       - This field is only supported for Prism Central.
     type: str
     required: false
+  custom_headers:
+    description:
+      - Custom HTTP headers to add to API requests. Useful for environments that require
+        additional headers such as Cloudflare Access service tokens.
+      - Only applies to modules that use the v4 APIs (module names ending in C(_v2)); other
+        modules accept the option but do not send the headers.
+      - Headers can also be supplied via environment variables using the C(NUTANIX_HEADER_) prefix
+        (e.g. C(NUTANIX_HEADER_CF_ACCESS_CLIENT_ID) becomes C(Cf-Access-Client-Id)).
+        Config values take precedence over environment variables, whatever the case of the name.
+      - The v4 API requires C(ETag) response headers for power actions and updates (sent back in
+        the C(If-Match) request header). If a proxy in front of Prism Central removes or weakens
+        them, configure it to preserve them (in Cloudflare, enable Respect Strong ETags in a
+        Cache Rule).
+    type: dict
+    required: false
   validate_certs:
     description:
         - Set value to C(False) to skip validation for self signed certificates
