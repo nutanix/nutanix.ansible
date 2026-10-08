@@ -118,6 +118,46 @@
     fail_msg: "Failed to update LCM config"
     success_msg: "LCM config is updated successfully"
 
+- name: Get hosts to find node UUID for LCM inventory
+  nutanix.ncp.ntnx_hosts_info_v2:
+  register: hosts_info
+  ignore_errors: true
+
+- name: Get LCM status before doing node-only inventory
+  nutanix.ncp.ntnx_lcm_status_info_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+  register: lcm_status_pre_node
+  ignore_errors: true
+
+- name: Wait for LCM to be ready before node-only inventory
+  ansible.builtin.assert:
+    that:
+      - lcm_status_pre_node.response is defined
+      - lcm_status_pre_node.failed == false
+      - lcm_status_pre_node.response.in_progress_operation.operation_id == none
+      - lcm_status_pre_node.response.in_progress_operation.operation_type == none
+    fail_msg: "LCM is not ready for node-only inventory"
+    success_msg: "LCM is ready for node-only inventory"
+
+- name: Perform node-only LCM inventory
+  nutanix.ncp.ntnx_lcm_inventory_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    inventory_type: NODE
+    node_list:
+      - "{{ hosts_info.response[0].ext_id }}"
+  register: lcm_inventory_node
+  ignore_errors: true
+
+- name: Perform node-only LCM inventory status
+  ansible.builtin.assert:
+    that:
+      - lcm_inventory_node.response is defined
+      - lcm_inventory_node.changed == true
+      - lcm_inventory_node.failed == false
+      - lcm_inventory_node.response.status == "SUCCEEDED"
+    fail_msg: "Failed to perform node-only LCM inventory"
+    success_msg: "Node-only LCM inventory is performed successfully"
+
 - name: Get LCM status before doing inventory
   nutanix.ncp.ntnx_lcm_status_info_v2:
     cluster_ext_id: "{{ prism_central_external_id }}"

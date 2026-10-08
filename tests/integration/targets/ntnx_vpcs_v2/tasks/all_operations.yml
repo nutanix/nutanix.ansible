@@ -433,6 +433,55 @@
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  result.ext_id ] }}"
 ###########################################################
+- name: Create VPC with kubernetes cluster
+  nutanix.ncp.ntnx_vpcs_v2:
+    state: present
+    name: "{{vpc_name}}_adv"
+    should_advertise_connected_subnets: true
+    scope: VMS_AND_CONTAINERS
+    kubernetes_clusters:
+      - ext_id: "{{ kubernetes_cluster_ext_id }}"
+        gateway_nodes_selector:
+          match_labels:
+            - name: "vpc-gateway"
+              value: "true"
+        namespace_selector:
+          match_labels:
+            - name: "nutanix.com/vpc-name"
+              value: "nkp-cluster-01-vpc"
+        pod_network:
+          cidr:
+            ipv4:
+              ip:
+                value: "172.20.0.0"
+                prefix_length: 32
+              prefix_length: 16
+          host_slice: 24
+  register: result
+  ignore_errors: true
+
+- name: Create VPC with kubernetes cluster Status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id is defined
+      - result.response.name == "{{vpc_name}}_adv"
+      - result.response.should_advertise_connected_subnets == true
+      - result.response.scope == "VMS_AND_CONTAINERS"
+      - result.response.kubernetes_clusters | length == 1
+      - result.response.kubernetes_clusters[0].ext_id == kubernetes_cluster_ext_id
+      - result.response.kubernetes_clusters[0].pod_network.cidr.ipv4.ip.value == "172.20.0.0"
+      - result.response.kubernetes_clusters[0].pod_network.cidr.ipv4.prefix_length == 16
+      - result.response.kubernetes_clusters[0].pod_network.host_slice == 24
+    fail_msg: " Unable to create vpc with kubernetes cluster "
+    success_msg: " VPC with kubernetes cluster created successfully "
+
+- name: Adding VPC with kubernetes cluster to delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [  result.ext_id ] }}"
+###########################################################
 - name: Delete all created vpcs
   nutanix.ncp.ntnx_vpcs_v2:
     state: absent

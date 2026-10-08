@@ -26,8 +26,8 @@
 
 - name: Ensure Pattern Compliance
   ansible.builtin.set_fact:
-    role_1_name: role_name_{{ raw_role_1_name | regex_replace('[^a-zA-Z0-9]', '') }}
-    role_2_name: role_name_{{ raw_role_2_name | regex_replace('[^a-zA-Z0-9]', '') }}
+    role_1_name: role_name_ansible_{{ raw_role_1_name | regex_replace('[^a-zA-Z0-9]', '') }}
+    role_2_name: role_name_ansible_{{ raw_role_2_name | regex_replace('[^a-zA-Z0-9]', '') }}
 
 - name: Generate random project name
   ansible.builtin.set_fact:

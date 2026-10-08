@@ -13,7 +13,7 @@
 
 - name: Set VM name
   ansible.builtin.set_fact:
-    vm_name: "{{ random_name }}_vm_owner_test"
+    vm_name: "{{ random_name }}_ansible_vm_owner_test"
 
 ################################################################################
 # Test 0: Generate Spec Create VM with ownership_info using check_mode

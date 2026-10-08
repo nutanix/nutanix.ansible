@@ -39,6 +39,16 @@
           - subnet_reference: "{{ external_nat_subnet_uuid }}"
       register: result
 
+    - name: Create VPC with advertised connected subnets and scope
+      nutanix.ncp.ntnx_vpcs_v2:
+        state: present
+        wait: true
+        name: "{{ vpc_name }}_adv"
+        should_advertise_connected_subnets: true
+        scope: VMS
+      register: result
+      ignore_errors: true
+
     - name: Update VPC to share with specific projects
       nutanix.ncp.ntnx_vpcs_v2:
         state: present

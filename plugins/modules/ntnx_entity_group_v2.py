@@ -46,6 +46,11 @@ options:
         description:
             - A user defined description for an Entity Group.
         type: str
+    project_ext_id:
+        description:
+            - External ID (UUID) of the project that owns this entity group.
+            - Update of this field is not supported.
+        type: str
     allowed_config:
         description:
             - Configuration of the allowed entities in the Entity Group.
@@ -64,7 +69,7 @@ options:
                         description:
                             - Select by field for the allowed entity.
                         type: str
-                        choices: ["IP_VALUES", "EXT_ID", "CATEGORY_EXT_ID", "LABELS", "NAME"]
+                        choices: ["IP_VALUES", "EXT_ID", "CATEGORY_EXT_ID", "LABELS", "NAME", "REGEX", "FQDN_VALUES"]
                     type:
                         description:
                             - Type of allowed entity.
@@ -76,6 +81,16 @@ options:
                             - If the selection type is an external identifier, then it is necessary to specify the reference_ext_ids.
                         type: list
                         elements: str
+                    reference_string:
+                        description:
+                            - String pattern for matching entities in an allowed entity.
+                            - Required when C(select_by) is C(REGEX).
+                        type: str
+                    match_criteria:
+                        description:
+                            - Match criteria for C(reference_string) when C(select_by) is C(REGEX).
+                        type: str
+                        choices: ["CONTAINS", "STARTS_WITH", "ENDS_WITH", "EQUALS"]
                     kube_entities:
                         description:
                             - List of kube entities in an allowed entity.
@@ -120,6 +135,12 @@ options:
                                         description: End address of the IP range.
                                         type: str
                                         required: true
+                    fqdns:
+                        description:
+                            - List of FQDN values in an allowed entity.
+                            - Required when C(select_by) is C(FQDN_VALUES).
+                        type: list
+                        elements: str
     except_config:
         description:
             - Configuration of the except entities in the Entity Group.
@@ -210,6 +231,7 @@ EXAMPLES = r"""
     state: present
     name: "ansible-entity-group"
     description: "ansible-entity-group-desc"
+    project_ext_id: "79298789-1234-1111-2222-6788222f17b8"
     allowed_config:
       entities:
         - select_by: CATEGORY_EXT_ID
@@ -329,6 +351,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -374,7 +397,15 @@ def get_module_spec():
     entities_sub_spec = dict(
         select_by=dict(
             type="str",
-            choices=["IP_VALUES", "EXT_ID", "CATEGORY_EXT_ID", "LABELS", "NAME"],
+            choices=[
+                "IP_VALUES",
+                "EXT_ID",
+                "CATEGORY_EXT_ID",
+                "LABELS",
+                "NAME",
+                "REGEX",
+                "FQDN_VALUES",
+            ],
         ),
         type=dict(
             type="str",
@@ -390,9 +421,15 @@ def get_module_spec():
             ],
         ),
         reference_ext_ids=dict(type="list", elements="str"),
+        reference_string=dict(type="str"),
+        match_criteria=dict(
+            type="str",
+            choices=["CONTAINS", "STARTS_WITH", "ENDS_WITH", "EQUALS"],
+        ),
         kube_entities=dict(type="list", elements="str"),
         addresses=dict(type="dict", options=addresses_sub_spec, obj=mic_sdk.Addresses),
         ip_ranges=dict(type="dict", options=ip_ranges_sub_spec, obj=mic_sdk.IpRange),
+        fqdns=dict(type="list", elements="str"),
     )
     allowed_config_spec = dict(
         entities=dict(
@@ -427,6 +464,7 @@ def get_module_spec():
         ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
+        project_ext_id=dict(type="str"),
         allowed_config=dict(
             type="dict",
             options=allowed_config_spec,
@@ -514,6 +552,10 @@ def update_entity_group(module, entity_group, result):
         module.fail_json(
             msg="Failed generating entity group update spec from current spec", **result
         )
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     # for update spec
     sg2 = SpecGenerator(module)

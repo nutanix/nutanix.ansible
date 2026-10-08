@@ -12,7 +12,7 @@
 
 - name: Set VM and nics names
   ansible.builtin.set_fact:
-    vm_name: "{{ random_name }}_vm_test"
+    vm_name: "{{ random_name }}_ansible_vm_test"
 
 - name: Create VM
   nutanix.ncp.ntnx_vms_v2:

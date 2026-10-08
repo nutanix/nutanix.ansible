@@ -73,6 +73,8 @@ options:
       - "PULSE_CONFIG"
       - "NAME_SERVER_CONFIG"
       - "RSYSLOG_SERVER_CONFIG"
+      - "REBUILD_RESERVATION_CONFIG"
+      - "RESILIENT_CAPACITY_WARNING_THRESHOLD_CONFIG"
   name_server_ip_list:
     description:
       - List of name servers on a cluster.
@@ -640,6 +642,31 @@ options:
         choices:
           - "ALL"
           - "DEFAULT"
+  rebuild_reservation_config:
+    description:
+      - Rebuild capacity reservation configuration.
+      - Enable rebuild capacity reservation to maintain free space for fault tolerance recovery operations.
+    type: dict
+    required: false
+    suboptions:
+      is_rebuild_reservation_enabled:
+        description:
+          - Enable rebuild capacity reservation.
+        type: bool
+        required: false
+  resilient_capacity_warning_threshold_config:
+    description:
+      - Resilient capacity warning threshold configuration.
+    type: dict
+    required: false
+    suboptions:
+      resilient_capacity_warning_threshold_percentage:
+        description:
+          - Warning threshold percentage for resilient storage capacity.
+          - Valid range is 0 to 100.
+          - When omitted, the API default is used.
+        type: int
+        required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2

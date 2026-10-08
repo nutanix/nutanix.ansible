@@ -795,6 +795,73 @@
   ansible.builtin.set_fact:
     policy_ext_id2: "{{ result.ext_id }}"
 
+###################################################################################################
+
+- name: Generate spec for FLEX rule using check mode
+  nutanix.ncp.ntnx_security_rules_v2:
+    name: "{{ rule_name_1 }}-flex"
+    description: "FLEX rule test"
+    project_ext_id: "{{ project1.uuid }}"
+    type: CRITICAL
+    policy_state: SAVE
+    priority: 10
+    scope: ALL_VPC
+    rules:
+      - name: "flex-rule-check"
+        description: "Flex rule for testing"
+        type: FLEX
+        spec:
+          flex_rule_spec:
+            action: ALLOW
+            direction: IN_OUT
+            should_allow_any_src: true
+            should_allow_any_dst: true
+            service_group_references:
+              - "{{ service_group_id }}"
+            tcp_services:
+              - start_port: 80
+                end_port: 443
+            udp_services:
+              - start_port: 53
+                end_port: 54
+            icmp_services:
+              - is_all_allowed: true
+            priority: 100
+            ip_version: IPV4
+  check_mode: true
+  ignore_errors: true
+  register: result
+
+- name: Generate spec for FLEX rule using check mode status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.type == "CRITICAL"
+      - result.response.priority == 10
+      - result.response.project_ext_id == "{{ project1.uuid }}"
+      - result.response.state == "SAVE"
+      - result.response.scope == "ALL_VPC"
+      - result.response.rules | length == 1
+      - result.response.rules[0].name == "flex-rule-check"
+      - result.response.rules[0].description == "Flex rule for testing"
+      - result.response.rules[0].type == "FLEX"
+      - result.response.rules[0].spec.action == "ALLOW"
+      - result.response.rules[0].spec.direction == "IN_OUT"
+      - result.response.rules[0].spec.should_allow_any_src == true
+      - result.response.rules[0].spec.should_allow_any_dst == true
+      - result.response.rules[0].spec.service_group_references[0] == "{{ service_group_id }}"
+      - result.response.rules[0].spec.tcp_services[0].start_port == 80
+      - result.response.rules[0].spec.tcp_services[0].end_port == 443
+      - result.response.rules[0].spec.udp_services[0].start_port == 53
+      - result.response.rules[0].spec.udp_services[0].end_port == 54
+      - result.response.rules[0].spec.icmp_services[0].is_all_allowed == true
+      - result.response.rules[0].spec.priority == 100
+      - result.response.rules[0].spec.ip_version == "IPV4"
+    fail_msg: "Failed to generate spec for FLEX rule"
+    success_msg: "Successfully generated spec for FLEX rule"
+
 ######################################### Update tests #########################################
 
 - name: Generate spec to update the policy using check mode
@@ -1452,7 +1519,6 @@
     fail_msg: Failed to delete category
     success_msg: Successfully deleted category
   loop: "{{ result.results }}"
-
 # The external_subnet_project fixture and the external NAT subnet's project
 # share are owned by prepare_env and intentionally left in place (the subnet
 # cannot be unshared while a fixture VPC is attached), so there is no
