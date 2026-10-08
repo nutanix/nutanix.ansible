@@ -1111,7 +1111,8 @@
         {{ cluster_profiles[0].rsyslog_server_list[0].modules[1].should_log_monitor_files }}
       - result.response.pulse_status.is_enabled == {{ cluster_profiles[0].pulse_status.is_enabled }}
       - result.response.pulse_status.pii_scrubbing_level == "{{ cluster_profiles[0].pulse_status.pii_scrubbing_level }}"
-      - result.response.rebuild_reservation_config.is_rebuild_reservation_enabled == {{ cluster_profiles[0].rebuild_reservation_config.is_rebuild_reservation_enabled }}
+      - result.response.rebuild_reservation_config.is_rebuild_reservation_enabled ==
+        {{ cluster_profiles[0].rebuild_reservation_config.is_rebuild_reservation_enabled }}
       - result.response.resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage == {{ cluster_profiles[0].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}
       - result.task_ext_id is defined
     fail_msg: "Update cluster profile with all attributes failed"
