@@ -823,7 +823,7 @@
                 end_port: 443
             udp_services:
               - start_port: 53
-                end_port: 53
+                end_port: 54
             icmp_services:
               - is_all_allowed: true
             priority: 100
@@ -840,9 +840,14 @@
       - result.failed == false
       - result.response.type == "CRITICAL"
       - result.response.priority == 10
+      - result.response.project_ext_id == "{{ project1.uuid }}"
+      - result.response.state == "SAVE"
+      - result.response.scope == "ALL_VPC"
       - result.response.rules | length == 1
       - result.response.rules[0].name == "flex-rule-check"
+      - result.response.rules[0].description == "Flex rule for testing"
       - result.response.rules[0].type == "FLEX"
+      - result.response.rules[0].spec.action == "ALLOW"
       - result.response.rules[0].spec.direction == "IN_OUT"
       - result.response.rules[0].spec.should_allow_any_src == true
       - result.response.rules[0].spec.should_allow_any_dst == true
@@ -850,7 +855,7 @@
       - result.response.rules[0].spec.tcp_services[0].start_port == 80
       - result.response.rules[0].spec.tcp_services[0].end_port == 443
       - result.response.rules[0].spec.udp_services[0].start_port == 53
-      - result.response.rules[0].spec.udp_services[0].end_port == 53
+      - result.response.rules[0].spec.udp_services[0].end_port == 54
       - result.response.rules[0].spec.icmp_services[0].is_all_allowed == true
       - result.response.rules[0].spec.priority == 100
       - result.response.rules[0].spec.ip_version == "IPV4"
