@@ -1,0 +1,123 @@
+---
+# ============================================================================
+# Nutanix Full Lifecycle Demo — Shared Variables
+# ============================================================================
+
+# ── Credentials ──────────────────────────────────────────────────────────────
+cluster_username: "admin"
+cluster_password: "Nutanix.123"
+nutanix_default:
+  username: "nutanix"
+  password: "nutanix/4u"
+
+# ── EULA Acceptance ─────────────────────────────────────────────────────────
+eula_user_name: "admin"
+eula_login_id: "admin"
+eula_job_title: "Administrator"
+eula_company_name: "Nutanix"
+
+# ── PE Cluster ───────────────────────────────────────────────────────────────
+pe_ip: "10.42.125.40"
+pe_dsip: "10.42.125.41"
+clusters:
+  pe_username: "nutanix"
+  pe_password: "nutanix/4u"
+  nodes:
+    - cvm_ip: "10.0.0.1"
+
+# ── Foundation ───────────────────────────────────────────────────────────────
+foundation_host: "10.42.125.53"
+foundation_timeout: 4500
+cvm_gateway: "10.42.125.1"
+cvm_netmask: "255.255.255.128"
+hypervisor_gateway: "10.42.125.1"
+hypervisor_netmask: "255.255.255.128"
+default_ipmi_user: "ADMIN"
+nos_package: "nutanix_installer_package-release-fraser-6.0.1.7-stable-927717a4d1e8b021d465bd5bdfa314183c40608e-x86_64.tar.gz"
+hypervisor_iso:
+  kvm:
+    filename: "AHV-DVD-x86_64-el7.nutanix.20201105.2175.iso"
+
+# ── Foundation Node(s) ───────────────────────────────────────────────────────
+foundation_block_id: "18SM6H230002"
+foundation_nodes:
+  - cvm_ip: "10.42.125.30"
+    cvm_gb_ram: 64
+    hypervisor_hostname: "superman1"
+    ipmi_netmask: "255.255.255.128"
+    ipmi_gateway: "10.42.125.1"
+    ipmi_ip: "10.42.125.34"
+    ipmi_password: "nutanix/4u"
+    hypervisor: "kvm"
+    hypervisor_ip: "10.42.125.26"
+    node_position: "A"
+  - cvm_ip: "10.42.125.31"
+    cvm_gb_ram: 64
+    hypervisor_hostname: "superman2"
+    ipmi_netmask: "255.255.255.128"
+    ipmi_gateway: "10.42.125.1"
+    ipmi_ip: "10.42.125.35"
+    ipmi_password: "nutanix/4u"
+    hypervisor: "kvm"
+    hypervisor_ip: "10.42.125.27"
+    node_position: "B"
+  - cvm_ip: "10.42.125.32"
+    cvm_gb_ram: 64
+    hypervisor_hostname: "superman3"
+    ipmi_netmask: "255.255.255.128"
+    ipmi_gateway: "10.42.125.1"
+    ipmi_ip: "10.42.125.36"
+    ipmi_password: "nutanix/4u"
+    hypervisor: "kvm"
+    hypervisor_ip: "10.42.125.28"
+    node_position: "C"
+
+# ── PC Deployment ────────────────────────────────────────────────────────────
+pc:
+  name: "test"
+  size: "SMALL"
+  build_info:
+    version: "pc.2024.3"
+  external_networks:
+    network_ext_id: "ba416f8d-00f2-499d-bc4c-19da8d104af9"
+    default_gateway:
+      ipv4: "10.33.232.1"
+    subnet_mask:
+      ipv4: "255.255.252.0"
+    ip_ranges:
+      begin:
+        ipv4: "10.33.232.10"
+      end:
+        ipv4: "10.33.232.10"
+  name_servers:
+    ipv4: ["10.10.10.10", "10.10.10.11"]
+  ntp_servers:
+    fqdn: ["2.example.org", "3.example.org"]
+
+# ── PE Subnet ────────────────────────────────────────────────────────────────
+pe_subnet_name: "demo-pe-subnet"
+pe_subnet_vlan_id: 112
+pe_subnet_ip: "192.168.112.0"
+pe_subnet_prefix: 24
+pe_subnet_gateway: "192.168.112.1"
+
+# ── PC Resources ─────────────────────────────────────────────────────────────
+image_name: "lifecycle-demo-image"
+image_url: "https://download.cirros-cloud.net/0.6.2/cirros-0.6.2-x86_64-disk.img"
+
+subnet_name: "lifecycle-demo-subnet"
+subnet_vlan_id: 200
+subnet_ip: "192.168.200.0"
+subnet_prefix: 24
+subnet_gateway: "192.168.200.1"
+subnet_dhcp_server: "192.168.200.2"
+subnet_pool_start: "192.168.200.100"
+subnet_pool_end: "192.168.200.200"
+
+category_key: "demo-env"
+category_value: "development"
+
+vm_name: "lifecycle-demo-vm"
+vm_sockets: 1
+vm_cores: 1
+vm_memory_bytes: 1073741824  # 1 GB
