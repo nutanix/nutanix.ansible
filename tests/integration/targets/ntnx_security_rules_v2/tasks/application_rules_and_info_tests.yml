@@ -832,9 +832,6 @@
   ignore_errors: true
   register: result
 
-- ansible.builtin.debug:
-    var: result
-
 - name: Generate spec for FLEX rule using check mode status
   ansible.builtin.assert:
     that:

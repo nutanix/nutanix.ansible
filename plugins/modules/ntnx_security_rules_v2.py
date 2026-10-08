@@ -60,12 +60,10 @@ options:
   is_ipv6_traffic_allowed:
     description:
       - If Ipv6 Traffic needs to be allowed.
-      - Not supported for policies that use C(FLEX) rules.
     type: bool
   is_hitlog_enabled:
     description:
       - If Hitlog needs to be enabled.
-      - Not supported for policies that use C(FLEX) rules.
     type: bool
   description:
     description:
@@ -562,7 +560,6 @@ options:
           flex_rule_spec:
             description:
               - The specification of a FLEX rule.
-              - Used when rule C(type) is C(FLEX) for CRITICAL, COREINFRASTRUCTURE, ZONE, or WORKLOAD policies.
             required: false
             type: dict
             suboptions:
