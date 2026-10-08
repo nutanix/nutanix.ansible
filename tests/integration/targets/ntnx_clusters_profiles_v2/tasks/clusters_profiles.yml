@@ -251,6 +251,8 @@
     description: "Cluster profile description"
     allowed_overrides:
       - "NTP_SERVER_CONFIG"
+      - "REBUILD_RESERVATION_CONFIG"
+      - "RESILIENT_CAPACITY_WARNING_THRESHOLD_CONFIG"
     name_server_ip_list:
       - ipv4:
           value: "240.29.254.170"
@@ -275,6 +277,10 @@
         encryption_algorithm: "SHA256"
         encryption_key: "0x9f8e7d6c5b4a"
         encryption_key_id: 1
+    rebuild_reservation_config:
+      is_rebuild_reservation_enabled: true
+    resilient_capacity_warning_threshold_config:
+      resilient_capacity_warning_threshold_percentage: 80
     smtp_server:
       email_address: "email@example.com"
       server:
@@ -397,6 +403,11 @@
       - result.response.rsyslog_server_list[0].modules[1].should_log_monitor_files == false
       - result.response.pulse_status.is_enabled == true
       - result.response.pulse_status.pii_scrubbing_level == "DEFAULT"
+      - result.response.allowed_overrides[0] == "NTP_SERVER_CONFIG"
+      - result.response.allowed_overrides[1] == "REBUILD_RESERVATION_CONFIG"
+      - result.response.allowed_overrides[2] == "RESILIENT_CAPACITY_WARNING_THRESHOLD_CONFIG"
+      - result.response.rebuild_reservation_config.is_rebuild_reservation_enabled == true
+      - result.response.resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage == 80
     fail_msg: "Failed to generate spec for creating cluster profile using check mode"
     success_msg: "Successfully generated spec for creating cluster profile using check mode"
 
@@ -406,6 +417,8 @@
     description: "Cluster profile description"
     allowed_overrides:
       - "{{ cluster_profiles[0].allowed_overrides[0] }}"
+      - "{{ cluster_profiles[0].allowed_overrides[1] }}"
+      - "{{ cluster_profiles[0].allowed_overrides[2] }}"
     name_server_ip_list:
       - ipv4:
           value: "{{ cluster_profiles[0].name_server_ip_list[0].ipv4.value }}"
@@ -475,6 +488,10 @@
     pulse_status:
       is_enabled: "{{ cluster_profiles[0].pulse_status.is_enabled }}"
       pii_scrubbing_level: "{{ cluster_profiles[0].pulse_status.pii_scrubbing_level }}"
+    rebuild_reservation_config:
+      is_rebuild_reservation_enabled: "{{ cluster_profiles[0].rebuild_reservation_config.is_rebuild_reservation_enabled }}"
+    resilient_capacity_warning_threshold_config:
+      resilient_capacity_warning_threshold_percentage: "{{ cluster_profiles[0].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}"
   register: result
   ignore_errors: true
 
@@ -486,6 +503,8 @@
       - result.response.name == "{{ cluster_profiles[0].name }}"
       - result.response.description == "Cluster profile description"
       - result.response.allowed_overrides[0] == "{{ cluster_profiles[0].allowed_overrides[0] }}"
+      - result.response.allowed_overrides[1] == "{{ cluster_profiles[0].allowed_overrides[1] }}"
+      - result.response.allowed_overrides[2] == "{{ cluster_profiles[0].allowed_overrides[2] }}"
       - result.response.name_server_ip_list[0].ipv4.value == "{{ cluster_profiles[0].name_server_ip_list[0].ipv4.value }}"
       - result.response.name_server_ip_list[0].ipv4.prefix_length == {{ cluster_profiles[0].name_server_ip_list[0].ipv4.prefix_length | int }}
       - result.response.ntp_server_ip_list[0].ipv4.value == "{{ cluster_profiles[0].ntp_server_ip_list[0].ipv4.value }}"
@@ -534,6 +553,8 @@
         {{ cluster_profiles[0].rsyslog_server_list[0].modules[1].should_log_monitor_files }}
       - result.response.pulse_status.is_enabled == {{ cluster_profiles[0].pulse_status.is_enabled }}
       - result.response.pulse_status.pii_scrubbing_level == "{{ cluster_profiles[0].pulse_status.pii_scrubbing_level }}"
+      - result.response.rebuild_reservation_config.is_rebuild_reservation_enabled == {{ cluster_profiles[0].rebuild_reservation_config.is_rebuild_reservation_enabled }}
+      - result.response.resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage == {{ cluster_profiles[0].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}
       - result.task_ext_id is defined
     fail_msg: "Failed to create first cluster profile"
     success_msg: "First cluster profile is created successfully"
@@ -920,6 +941,10 @@
     rsyslog_server_list: []
     pulse_status:
       is_enabled: "{{ cluster_profiles[1].pulse_status.is_enabled }}"
+    rebuild_reservation_config:
+      is_rebuild_reservation_enabled: "{{ cluster_profiles[1].rebuild_reservation_config.is_rebuild_reservation_enabled }}"
+    resilient_capacity_warning_threshold_config:
+      resilient_capacity_warning_threshold_percentage: "{{ cluster_profiles[1].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}"
   register: result
   ignore_errors: true
 
@@ -939,6 +964,8 @@
       - result.response.snmp_config.users[0].auth_type == "{{ cluster_profiles[1].snmp_config.users[0].auth_type }}"
       - result.response.rsyslog_server_list == None
       - result.response.pulse_status.is_enabled == {{ cluster_profiles[1].pulse_status.is_enabled }}
+      - result.response.rebuild_reservation_config.is_rebuild_reservation_enabled == {{ cluster_profiles[1].rebuild_reservation_config.is_rebuild_reservation_enabled }}
+      - result.response.resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage == {{ cluster_profiles[1].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}
       - result.task_ext_id is defined
     fail_msg: "Update some attributes in cluster profile failed"
     success_msg: "Update some attributes in cluster profile passed"
@@ -1020,6 +1047,10 @@
     pulse_status:
       is_enabled: "{{ cluster_profiles[0].pulse_status.is_enabled }}"
       pii_scrubbing_level: "{{ cluster_profiles[0].pulse_status.pii_scrubbing_level }}"
+    rebuild_reservation_config:
+      is_rebuild_reservation_enabled: "{{ cluster_profiles[0].rebuild_reservation_config.is_rebuild_reservation_enabled }}"
+    resilient_capacity_warning_threshold_config:
+      resilient_capacity_warning_threshold_percentage: "{{ cluster_profiles[0].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}"
   register: result
   ignore_errors: true
 
@@ -1080,6 +1111,8 @@
         {{ cluster_profiles[0].rsyslog_server_list[0].modules[1].should_log_monitor_files }}
       - result.response.pulse_status.is_enabled == {{ cluster_profiles[0].pulse_status.is_enabled }}
       - result.response.pulse_status.pii_scrubbing_level == "{{ cluster_profiles[0].pulse_status.pii_scrubbing_level }}"
+      - result.response.rebuild_reservation_config.is_rebuild_reservation_enabled == {{ cluster_profiles[0].rebuild_reservation_config.is_rebuild_reservation_enabled }}
+      - result.response.resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage == {{ cluster_profiles[0].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}
       - result.task_ext_id is defined
     fail_msg: "Update cluster profile with all attributes failed"
     success_msg: "Update cluster profile with all attributes succeeded"
@@ -1161,6 +1194,10 @@
     pulse_status:
       is_enabled: "{{ cluster_profiles[0].pulse_status.is_enabled }}"
       pii_scrubbing_level: "{{ cluster_profiles[0].pulse_status.pii_scrubbing_level }}"
+    rebuild_reservation_config:
+      is_rebuild_reservation_enabled: "{{ cluster_profiles[0].rebuild_reservation_config.is_rebuild_reservation_enabled }}"
+    resilient_capacity_warning_threshold_config:
+      resilient_capacity_warning_threshold_percentage: "{{ cluster_profiles[0].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}"
   register: result
   ignore_errors: true
 
