@@ -901,26 +901,27 @@
 
 ###################################################################################################
 
-- name: Delete project created for tests
-  nutanix.ncp.ntnx_project_v2:
-    state: absent
-    ext_id: "{{ project1.uuid }}"
-  register: delete_project_result
+- name: Unshare categories from all projects before delete
+  nutanix.ncp.ntnx_categories_v2:
+    state: present
+    ext_id: "{{ item }}"
+    shared_with_projects: []
+  loop: "{{ todelete_categories }}"
+  register: unshare_categories_result
   ignore_errors: true
 
-- name: Status of project deletion for tests
+- name: Status of unshare categories from all projects
   ansible.builtin.assert:
     that:
-      - delete_project_result.changed == true
-      - delete_project_result.failed == false
-      - delete_project_result.ext_id == project1.uuid
-      - delete_project_result.response is defined
-      - delete_project_result.response.status == "SUCCEEDED"
-      - delete_project_result.task_ext_id is defined
-    fail_msg: "Unable to delete project created for tests"
-    success_msg: "Project created for tests deleted successfully"
-
-###################################################################################################
+      - item.failed == false
+      - item.changed == true
+      - item.response.shared_with_projects is none or item.response.shared_with_projects | length == 0
+      - item.ext_id in todelete_categories
+      - unshare_categories_result.changed == true
+      - unshare_categories_result.msg == "All items completed"
+    fail_msg: "Unshare categories from all projects failed"
+    success_msg: "Unshare categories from all projects completed"
+  loop: "{{ unshare_categories_result.results }}"
 
 - name: Delete Created categories
   nutanix.ncp.ntnx_categories_v2:
@@ -941,3 +942,24 @@
     fail_msg: "Unable to delete categories"
     success_msg: "Categories deleted successfully"
   loop: "{{ result.results }}"
+
+###################################################################################################
+
+- name: Delete project created for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: absent
+    ext_id: "{{ project1.uuid }}"
+  register: delete_project_result
+  ignore_errors: true
+
+- name: Status of project deletion for tests
+  ansible.builtin.assert:
+    that:
+      - delete_project_result.changed == true
+      - delete_project_result.failed == false
+      - delete_project_result.ext_id == project1.uuid
+      - delete_project_result.response is defined
+      - delete_project_result.response.status == "SUCCEEDED"
+      - delete_project_result.task_ext_id is defined
+    fail_msg: "Unable to delete project created for tests"
+    success_msg: "Project created for tests deleted successfully"
