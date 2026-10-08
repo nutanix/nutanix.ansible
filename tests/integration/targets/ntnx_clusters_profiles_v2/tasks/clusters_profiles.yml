@@ -491,7 +491,8 @@
     rebuild_reservation_config:
       is_rebuild_reservation_enabled: "{{ cluster_profiles[0].rebuild_reservation_config.is_rebuild_reservation_enabled }}"
     resilient_capacity_warning_threshold_config:
-      resilient_capacity_warning_threshold_percentage: "{{ cluster_profiles[0].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}"
+      resilient_capacity_warning_threshold_percentage:
+        "{{ cluster_profiles[0].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}"
   register: result
   ignore_errors: true
 
@@ -553,8 +554,10 @@
         {{ cluster_profiles[0].rsyslog_server_list[0].modules[1].should_log_monitor_files }}
       - result.response.pulse_status.is_enabled == {{ cluster_profiles[0].pulse_status.is_enabled }}
       - result.response.pulse_status.pii_scrubbing_level == "{{ cluster_profiles[0].pulse_status.pii_scrubbing_level }}"
-      - result.response.rebuild_reservation_config.is_rebuild_reservation_enabled == {{ cluster_profiles[0].rebuild_reservation_config.is_rebuild_reservation_enabled }}
-      - result.response.resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage == {{ cluster_profiles[0].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}
+      - result.response.rebuild_reservation_config.is_rebuild_reservation_enabled ==
+        {{ cluster_profiles[0].rebuild_reservation_config.is_rebuild_reservation_enabled }}
+      - result.response.resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage ==
+        {{ cluster_profiles[0].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}
       - result.task_ext_id is defined
     fail_msg: "Failed to create first cluster profile"
     success_msg: "First cluster profile is created successfully"
@@ -944,7 +947,8 @@
     rebuild_reservation_config:
       is_rebuild_reservation_enabled: "{{ cluster_profiles[1].rebuild_reservation_config.is_rebuild_reservation_enabled }}"
     resilient_capacity_warning_threshold_config:
-      resilient_capacity_warning_threshold_percentage: "{{ cluster_profiles[1].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}"
+      resilient_capacity_warning_threshold_percentage:
+        "{{ cluster_profiles[1].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}"
   register: result
   ignore_errors: true
 
@@ -964,8 +968,10 @@
       - result.response.snmp_config.users[0].auth_type == "{{ cluster_profiles[1].snmp_config.users[0].auth_type }}"
       - result.response.rsyslog_server_list == None
       - result.response.pulse_status.is_enabled == {{ cluster_profiles[1].pulse_status.is_enabled }}
-      - result.response.rebuild_reservation_config.is_rebuild_reservation_enabled == {{ cluster_profiles[1].rebuild_reservation_config.is_rebuild_reservation_enabled }}
-      - result.response.resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage == {{ cluster_profiles[1].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}
+      - result.response.rebuild_reservation_config.is_rebuild_reservation_enabled ==
+        {{ cluster_profiles[1].rebuild_reservation_config.is_rebuild_reservation_enabled }}
+      - result.response.resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage ==
+        {{ cluster_profiles[1].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}
       - result.task_ext_id is defined
     fail_msg: "Update some attributes in cluster profile failed"
     success_msg: "Update some attributes in cluster profile passed"
@@ -1050,7 +1056,8 @@
     rebuild_reservation_config:
       is_rebuild_reservation_enabled: "{{ cluster_profiles[0].rebuild_reservation_config.is_rebuild_reservation_enabled }}"
     resilient_capacity_warning_threshold_config:
-      resilient_capacity_warning_threshold_percentage: "{{ cluster_profiles[0].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}"
+      resilient_capacity_warning_threshold_percentage:
+        "{{ cluster_profiles[0].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}"
   register: result
   ignore_errors: true
 
@@ -1113,7 +1120,8 @@
       - result.response.pulse_status.pii_scrubbing_level == "{{ cluster_profiles[0].pulse_status.pii_scrubbing_level }}"
       - result.response.rebuild_reservation_config.is_rebuild_reservation_enabled ==
         {{ cluster_profiles[0].rebuild_reservation_config.is_rebuild_reservation_enabled }}
-      - result.response.resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage == {{ cluster_profiles[0].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}
+      - result.response.resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage ==
+        {{ cluster_profiles[0].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}
       - result.task_ext_id is defined
     fail_msg: "Update cluster profile with all attributes failed"
     success_msg: "Update cluster profile with all attributes succeeded"
@@ -1198,7 +1206,8 @@
     rebuild_reservation_config:
       is_rebuild_reservation_enabled: "{{ cluster_profiles[0].rebuild_reservation_config.is_rebuild_reservation_enabled }}"
     resilient_capacity_warning_threshold_config:
-      resilient_capacity_warning_threshold_percentage: "{{ cluster_profiles[0].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}"
+      resilient_capacity_warning_threshold_percentage:
+        "{{ cluster_profiles[0].resilient_capacity_warning_threshold_config.resilient_capacity_warning_threshold_percentage | int }}"
   register: result
   ignore_errors: true
 
