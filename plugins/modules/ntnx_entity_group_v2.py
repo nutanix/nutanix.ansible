@@ -46,6 +46,11 @@ options:
         description:
             - A user defined description for an Entity Group.
         type: str
+    project_ext_id:
+        description:
+            - External ID (UUID) of the project that owns this entity group.
+            - Update of this field is not supported.
+        type: str
     allowed_config:
         description:
             - Configuration of the allowed entities in the Entity Group.
@@ -226,6 +231,7 @@ EXAMPLES = r"""
     state: present
     name: "ansible-entity-group"
     description: "ansible-entity-group-desc"
+    project_ext_id: "79298789-1234-1111-2222-6788222f17b8"
     allowed_config:
       entities:
         - select_by: CATEGORY_EXT_ID
@@ -345,6 +351,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -457,6 +464,7 @@ def get_module_spec():
         ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
+        project_ext_id=dict(type="str"),
         allowed_config=dict(
             type="dict",
             options=allowed_config_spec,
@@ -544,6 +552,10 @@ def update_entity_group(module, entity_group, result):
         module.fail_json(
             msg="Failed generating entity group update spec from current spec", **result
         )
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     # for update spec
     sg2 = SpecGenerator(module)
