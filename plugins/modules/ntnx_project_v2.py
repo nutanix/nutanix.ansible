@@ -14,6 +14,8 @@ module: ntnx_project_v2
 short_description: Manage projects in Nutanix Prism Central using v4 APIs
 version_added: "2.6.0"
 description:
+    - This module is in Beta because the underlying Nutanix SDK API is currently in Beta.
+    - The module and its behavior may change in future releases as the SDK API evolves.
     - Create, update, and delete projects in Nutanix Prism Central.
     - Projects are logical grouping constructs that organize resources across the Nutanix platform.
     - This module uses PC v4 APIs based SDKs.

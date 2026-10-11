@@ -62,6 +62,39 @@
       name: "{{ random_name }}-ansible-project"
       uuid: "{{ create_project_result.ext_id }}"
 
+- name: Generate random project name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+###################################################################################################
+
+- name: Create project for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: present
+    name: "{{ random_name }}-ansible-project"
+    project_id: "{{ random_name }}-ansible-project-id"
+  register: create_project_result
+  ignore_errors: true
+
+- name: Status of project creation for tests
+  ansible.builtin.assert:
+    that:
+      - create_project_result.changed == true
+      - create_project_result.failed == false
+      - create_project_result.response is defined
+      - create_project_result.ext_id is defined
+      - create_project_result.ext_id | length > 0
+      - create_project_result.task_ext_id is defined
+      - create_project_result.response.state == "ACTIVE"
+    fail_msg: "Unable to create project for tests"
+    success_msg: "Project for tests created successfully"
+
+- name: Set project fact for tests
+  ansible.builtin.set_fact:
+    project1:
+      name: "{{ random_name }}-ansible-project"
+      uuid: "{{ create_project_result.ext_id }}"
+
 ###################################################################################################
 
 - name: Create roles with operations in check mode

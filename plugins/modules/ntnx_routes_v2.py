@@ -648,6 +648,12 @@ def update_route_table(module, route_api_instance, result):
     # GET returns both singular nexthop and plural nexthops; the API rejects both
     # on update. Drop the unused representation before generating the spec.
     _drop_conflicting_nexthop_fields(module, current_spec)
+    # The API returns both the singular `nexthop` and the server-managed plural
+    # `nexthops` on GET, but rejects an update body that contains both.
+    # The module only manages `nexthop`, so drop the
+    # server-only `nexthops` field before building and comparing the update spec.
+    if getattr(current_spec, "nexthops", None) is not None:
+        current_spec.nexthops = None
 
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
@@ -655,6 +661,10 @@ def update_route_table(module, route_api_instance, result):
         result["error"] = err
         module.fail_json(msg="Failed generating update route spec", **result)
     _drop_conflicting_nexthop_fields(module, update_spec)
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     raise_unsupported_update_fields(
         module, current_spec, update_spec, ["project_ext_id"]
