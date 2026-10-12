@@ -37,10 +37,6 @@
   check_mode: true
   ignore_errors: true
 
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify spec of content repository create using check mode
   ansible.builtin.assert:
     that:
@@ -63,10 +59,6 @@
     project_ext_id: "{{ content_repo_project_ext_id }}"
   register: result
   ignore_errors: true
-
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify create with minimum fields
   ansible.builtin.assert:
@@ -93,10 +85,6 @@
     project_ext_id: "{{ content_repo_project_ext_id }}"
   register: result
   ignore_errors: true
-
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify create with all fields
   ansible.builtin.assert:
@@ -134,10 +122,6 @@
   check_mode: true
   ignore_errors: true
 
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify spec of content repository update name and description using check mode
   ansible.builtin.assert:
     that:
@@ -160,10 +144,6 @@
     description: "Updated content repository description 2"
   register: result
   ignore_errors: true
-
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify update name and description
   ansible.builtin.assert:
@@ -189,10 +169,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify idempotency
   ansible.builtin.assert:
     that:
@@ -214,10 +190,6 @@
   check_mode: true
   ignore_errors: true
 
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify check mode delete
   ansible.builtin.assert:
     that:
@@ -237,10 +209,6 @@
   register: content_repos_list
   ignore_errors: true
 
-- name: Debug content_repos_list
-  ansible.builtin.debug:
-    var: content_repos_list
-
 - name: Verify list all content repositories
   ansible.builtin.assert:
     that:
@@ -258,10 +226,6 @@
     ext_id: "{{ content_repo_ext_id }}"
   register: result
   ignore_errors: true
-
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify get content repository by ext_id
   ansible.builtin.assert:
@@ -282,10 +246,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify list with filter
   ansible.builtin.assert:
     that:
@@ -305,10 +265,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify list with limit
   ansible.builtin.assert:
     that:
@@ -327,10 +283,6 @@
     ext_id: "{{ content_repo_ext_id }}"
   register: result
   ignore_errors: true
-
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify list content repository items
   ansible.builtin.assert:
@@ -361,10 +313,6 @@
   register: image_result
   ignore_errors: true
 
-- name: Debug image_result
-  ansible.builtin.debug:
-    var: image_result
-
 - name: Migrate image to content repository using check mode
   nutanix.ncp.ntnx_images_migrate_v2:
     ext_id: "11111111-1111-1111-1111-111111111111"
@@ -372,10 +320,6 @@
   register: result
   check_mode: true
   ignore_errors: true
-
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify migrate image check mode
   ansible.builtin.assert:
@@ -394,10 +338,6 @@
     content_repository_ext_id: "{{ content_repo_ext_id }}"
   register: result
   ignore_errors: true
-
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify migrate image
   ansible.builtin.assert:
@@ -420,10 +360,6 @@
   register: result
   ignore_errors: true
   when: image_result.ext_id is defined
-
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify list content repository items after migrate
   ansible.builtin.assert:
@@ -455,10 +391,6 @@
   check_mode: true
   ignore_errors: true
 
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify subscribe check mode
   ansible.builtin.assert:
     that:
@@ -478,10 +410,6 @@
   check_mode: true
   ignore_errors: true
 
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify sync check mode
   ansible.builtin.assert:
     that:
@@ -497,10 +425,6 @@
     filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
   register: pc_clusters_result
   ignore_errors: true
-
-- name: Debug pc_clusters_result
-  ansible.builtin.debug:
-    var: pc_clusters_result
 
 - name: Get source domain manager external ID
   ansible.builtin.set_fact:
@@ -519,10 +443,6 @@
   register: subscribe_result
   ignore_errors: true
   when: source_domain_manager_ext_id is defined
-
-- name: Debug subscribe_result
-  ansible.builtin.debug:
-    var: subscribe_result
 
 - name: Verify subscribe on availability zone PC
   ansible.builtin.assert:
@@ -553,10 +473,6 @@
   when:
     - source_domain_manager_ext_id is defined
     - subscribe_result is succeeded
-
-- name: Debug sync_result
-  ansible.builtin.debug:
-    var: sync_result
 
 - name: Verify sync on availability zone PC
   ansible.builtin.assert:
@@ -589,10 +505,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify create without name fails
   ansible.builtin.assert:
     that:
@@ -611,10 +523,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify update with wrong ext_id fails
   ansible.builtin.assert:
     that:
@@ -631,10 +539,6 @@
     ext_id: "00000000-0000-0000-0000-000000000000"
   register: result
   ignore_errors: true
-
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify get with wrong ext_id fails
   ansible.builtin.assert:
@@ -653,10 +557,6 @@
     ext_id: "11111111-1111-1111-1111-111111111111"
   register: result
   ignore_errors: true
-
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify delete with wrong ext_id fails
   ansible.builtin.assert:
@@ -677,10 +577,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
-
 - name: Verify subscribe with wrong source domain manager ext_id fails
   ansible.builtin.assert:
     that:
@@ -697,10 +593,6 @@
     ext_id: "{{ content_repo_ext_id }}"
   register: result
   ignore_errors: true
-
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify sync with wrong source domain manager ext_id fails
   ansible.builtin.assert:
@@ -729,14 +621,6 @@
     - subscribe_result is defined
     - subscribe_result is succeeded
 
-- name: Debug delete_az_subscribe_result
-  ansible.builtin.debug:
-    var: delete_az_subscribe_result
-  when:
-    - source_domain_manager_ext_id is defined
-    - subscribe_result is defined
-    - subscribe_result is succeeded
-
 - name: Verify delete subscribed content repository on availability zone PC
   ansible.builtin.assert:
     that:
@@ -753,11 +637,6 @@
     ext_id: "{{ image_result.ext_id }}"
   register: delete_image_result
   ignore_errors: true
-  when: image_result.ext_id is defined
-
-- name: Debug delete_image_result
-  ansible.builtin.debug:
-    var: delete_image_result
   when: image_result.ext_id is defined
 
 - name: Verify delete migrate test image
@@ -779,10 +658,6 @@
   loop: "{{ todelete }}"
   register: result
   ignore_errors: true
-
-- name: Debug result
-  ansible.builtin.debug:
-    var: result
 
 - name: Verify delete content repositories
   ansible.builtin.assert:
