@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -27,6 +27,15 @@ notes:
       Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=multidomain)"
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will subscribe to a source content repository.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     ext_id:
         description:
             - The external identifier of a Content Repository.
@@ -155,6 +164,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         source_domain_manager_ext_id=dict(type="str", required=True),
         project_ext_id=dict(type="str", required=True),

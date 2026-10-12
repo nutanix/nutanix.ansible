@@ -25,6 +25,15 @@ notes:
       Required Roles: Prism Admin, Project Admin, Project Manager, Super Admin, Tenant Admin, Virtual Machine Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
+    state:
+        description:
+            - State of the module.
+            - If state is present, the module will migrate the image to a content repository.
+            - If state is not present, the module will fail.
+        type: str
+        choices:
+            - present
+        default: present
     ext_id:
         description:
             - The external identifier of the image to migrate.
@@ -155,6 +164,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         content_repository_ext_id=dict(type="str", required=True),
     )
@@ -216,7 +226,6 @@ def run_module():
     result = {
         "changed": False,
         "failed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
     }
