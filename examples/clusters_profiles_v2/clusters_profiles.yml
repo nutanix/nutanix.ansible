@@ -351,6 +351,11 @@
       nutanix.ncp.ntnx_clusters_profiles_info_v2:
       register: result
 
+    - name: List all with fetch_all (ntnx_clusters_profiles_info_v2)
+      nutanix.ncp.ntnx_clusters_profiles_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_clusters_profiles_info_v2
+
     - name: List all cluster profiles with filter
       nutanix.ncp.ntnx_clusters_profiles_info_v2:
         filter: name eq '{{ cluster_profiles[1].name }}'

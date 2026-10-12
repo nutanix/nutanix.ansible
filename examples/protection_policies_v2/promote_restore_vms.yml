@@ -246,6 +246,11 @@
       nutanix.ncp.ntnx_vms_info_v2:
       register: result
 
+    - name: List all with fetch_all (ntnx_vms_info_v2)
+      nutanix.ncp.ntnx_vms_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_vms_info_v2
+
     - name: Filter only protected VMs on local cluster
       ansible.builtin.set_fact:
         protected_vms: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vm') | list }}"

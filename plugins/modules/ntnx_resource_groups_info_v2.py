@@ -93,6 +93,14 @@ EXAMPLES = r"""
     validate_certs: false
     limit: 5
   register: result
+
+- name: Fetch all entities using fetch_all
+  nutanix.ncp.ntnx_resource_groups_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -190,6 +198,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    list_entities,
 )
 
 # Suppress the InsecureRequestWarning
@@ -232,7 +241,11 @@ def get_resource_groups_list(module, resource_groups, result):
         module.fail_json(msg="Failed generating list resource groups spec", **result)
 
     try:
-        resp = resource_groups.list_resource_groups(**kwargs)
+        resp = list_entities(
+            resource_groups.list_resource_groups,
+            kwargs=kwargs,
+            fetch_all=module.params.get("fetch_all"),
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

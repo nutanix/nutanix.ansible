@@ -50,6 +50,14 @@ EXAMPLES = r"""
     nutanix_password: <pass>
     ext_id: "3c196eac-e1d5-1b8a-9b01-c133f6907ca2"
   register: lcm_entity
+
+- name: Fetch all entities using fetch_all
+  nutanix.ncp.ntnx_lcm_entities_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -136,6 +144,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    list_entities,
 )
 
 # Suppress the InsecureRequestWarning

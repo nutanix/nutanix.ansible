@@ -39,20 +39,40 @@
         filter: name eq '{{ cluster_name }}'
       register: clusters_info
 
+    - name: List all with fetch_all (ntnx_clusters_info_v2)
+      nutanix.ncp.ntnx_clusters_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_clusters_info_v2
+
     - name: Fetch subnet info with given name
       nutanix.ncp.ntnx_subnets_info_v2:
         filter: name eq '{{ subnet_name }}'
       register: subnets_info
+
+    - name: List all with fetch_all (ntnx_subnets_info_v2)
+      nutanix.ncp.ntnx_subnets_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_subnets_info_v2
 
     - name: Get vm image info
       nutanix.ncp.ntnx_images_info_v2:
         filter: name eq '{{ image_name }}'
       register: image_info
 
+    - name: List all with fetch_all (ntnx_images_info_v2)
+      nutanix.ncp.ntnx_images_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_images_info_v2
+
     - name: Fetch category key value
       nutanix.ncp.ntnx_categories_info_v2:
         filter: key eq '{{ category_key }}' and value eq '{{ category_value }}'
       register: category_info
+
+    - name: List all with fetch_all (ntnx_categories_info_v2)
+      nutanix.ncp.ntnx_categories_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_categories_info_v2
 
     - name: Read clould init script and encode it
       ansible.builtin.set_fact:

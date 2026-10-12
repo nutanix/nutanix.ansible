@@ -119,6 +119,11 @@
       register: result
       ignore_errors: true
 
+    - name: List all with fetch_all (ntnx_network_functions_info_v2)
+      nutanix.ncp.ntnx_network_functions_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_network_functions_info_v2
+
     - name: List all network functions with filter
       nutanix.ncp.ntnx_network_functions_info_v2:
         filter: "name eq '{{ network_function_name }}_inline_active_passive_updated'"

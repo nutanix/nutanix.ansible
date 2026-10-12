@@ -132,6 +132,25 @@
     fail_msg: "Failed to fetch first VPC route table with filter and set route table external ID"
     success_msg: "Successfully fetched first VPC route table with filter and set route table external ID"
 
+
+########################################################################
+
+- name: List entities with fetch_all (ntnx_route_tables_info_v2)
+  nutanix.ncp.ntnx_route_tables_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_route_tables_info_v2
+  ignore_errors: true
+
+- name: Status of list with fetch_all (ntnx_route_tables_info_v2)
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_route_tables_info_v2.failed == false
+      - fetch_all_ntnx_route_tables_info_v2.response is defined
+      - fetch_all_ntnx_route_tables_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_route_tables_info_v2.response | default([]) | length) == (fetch_all_ntnx_route_tables_info_v2.total_available_results | int)
+    fail_msg: "Unable to list with fetch_all for ntnx_route_tables_info_v2"
+    success_msg: "Listed with fetch_all successfully for ntnx_route_tables_info_v2"
+
 - name: Set route table external ID
   ansible.builtin.set_fact:
     route_table_external_id_1: "{{ route_tables_filter_1.response[0].ext_id }}"
@@ -449,6 +468,26 @@
     success_msg: "Fetch route by external ID passed "
 
 ###########################################################################################################
+
+
+########################################################################
+
+- name: List entities with fetch_all (ntnx_routes_info_v2)
+  nutanix.ncp.ntnx_routes_info_v2:
+    route_table_ext_id: "{{ route_table_external_id_1 }}"
+    fetch_all: true
+  register: fetch_all_ntnx_routes_info_v2
+  ignore_errors: true
+
+- name: Status of list with fetch_all (ntnx_routes_info_v2)
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_routes_info_v2.failed == false
+      - fetch_all_ntnx_routes_info_v2.response is defined
+      - fetch_all_ntnx_routes_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_routes_info_v2.response | default([]) | length) == (fetch_all_ntnx_routes_info_v2.total_available_results | int)
+    fail_msg: "Unable to list with fetch_all for ntnx_routes_info_v2"
+    success_msg: "Listed with fetch_all successfully for ntnx_routes_info_v2"
 
 - name: List all routes
   nutanix.ncp.ntnx_routes_info_v2:

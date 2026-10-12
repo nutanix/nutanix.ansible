@@ -58,6 +58,14 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
+
+- name: Fetch all entities using fetch_all
+  nutanix.ncp.ntnx_image_placement_policies_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 
@@ -122,6 +130,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    list_entities,
 )
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_image_placement_policy_api_instance,
@@ -168,7 +177,11 @@ def get_policies(module, result):
         )
 
     try:
-        resp = policies.list_placement_policies(**kwargs)
+        resp = list_entities(
+            policies.list_placement_policies,
+            kwargs=kwargs,
+            fetch_all=module.params.get("fetch_all"),
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

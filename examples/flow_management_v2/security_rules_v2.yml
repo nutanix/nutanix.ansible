@@ -82,6 +82,11 @@
       register: result
       ignore_errors: true
 
+    - name: List all with fetch_all (ntnx_security_policy_rules_info_v2)
+      nutanix.ncp.ntnx_security_policy_rules_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_security_policy_rules_info_v2
+
     - name: List security policy rules using intra group filter
       nutanix.ncp.ntnx_security_policy_rules_info_v2:
         policy_ext_id: "{{ security_rule_uuid }}"
@@ -301,6 +306,17 @@
       nutanix.ncp.ntnx_security_rules_info_v2:
         ext_id: "{{ security_rule_uuid }}"
       register: result
+
+    - name: List all (ntnx_security_rules_info_v2)
+      nutanix.ncp.ntnx_security_rules_info_v2:
+      register: list_ntnx_security_rules_info_v2
+      ignore_errors: true
+
+    - name: List all with fetch_all (ntnx_security_rules_info_v2)
+      nutanix.ncp.ntnx_security_rules_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_security_rules_info_v2
+      ignore_errors: true
 
     - name: Delete security rule
       nutanix.ncp.ntnx_security_rules_v2:

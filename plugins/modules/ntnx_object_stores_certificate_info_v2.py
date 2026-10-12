@@ -55,6 +55,14 @@ EXAMPLES = r"""
     ext_id: "f3197423-f486-4037-6037-95442e58484e"
   register: result
   ignore_errors: true
+
+- name: Fetch all entities using fetch_all
+  nutanix.ncp.ntnx_object_stores_certificate_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -133,6 +141,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    list_entities,
 )
 
 # Suppress the InsecureRequestWarning
@@ -168,8 +177,11 @@ def get_object_store_certificates(module, object_stores_api, result):
             msg="Failed generating object store certificates info Spec", **result
         )
     try:
-        resp = object_stores_api.list_certificates_by_objectstore_id(
-            objectStoreExtId=object_store_ext_id, **kwargs
+        resp = list_entities(
+            object_stores_api.list_certificates_by_objectstore_id,
+            kwargs=kwargs,
+            fetch_all=module.params.get("fetch_all"),
+            objectStoreExtId=object_store_ext_id,
         )
     except Exception as e:
         raise_api_exception(

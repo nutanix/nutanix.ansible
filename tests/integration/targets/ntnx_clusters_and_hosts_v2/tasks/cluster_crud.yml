@@ -63,6 +63,25 @@
   register: result
   ignore_errors: true
 
+
+########################################################################
+
+- name: List entities with fetch_all (ntnx_clusters_info_v2)
+  nutanix.ncp.ntnx_clusters_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_clusters_info_v2
+  ignore_errors: true
+
+- name: Status of list with fetch_all (ntnx_clusters_info_v2)
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_clusters_info_v2.failed == false
+      - fetch_all_ntnx_clusters_info_v2.response is defined
+      - fetch_all_ntnx_clusters_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_clusters_info_v2.response | default([]) | length) == (fetch_all_ntnx_clusters_info_v2.total_available_results | int)
+    fail_msg: "Unable to list with fetch_all for ntnx_clusters_info_v2"
+    success_msg: "Listed with fetch_all successfully for ntnx_clusters_info_v2"
+
 - name: Get prism central external ID
   ansible.builtin.set_fact:
     prism_central_external_id: "{{ result.response[0].ext_id }}"
@@ -1437,6 +1456,25 @@
       - result.total_available_results >= 2
     fail_msg: Failed listing hosts
     success_msg: Listed hosts successfully
+
+
+########################################################################
+
+- name: List entities with fetch_all (ntnx_hosts_info_v2)
+  nutanix.ncp.ntnx_hosts_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_hosts_info_v2
+  ignore_errors: true
+
+- name: Status of list with fetch_all (ntnx_hosts_info_v2)
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_hosts_info_v2.failed == false
+      - fetch_all_ntnx_hosts_info_v2.response is defined
+      - fetch_all_ntnx_hosts_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_hosts_info_v2.response | default([]) | length) == (fetch_all_ntnx_hosts_info_v2.total_available_results | int)
+    fail_msg: "Unable to list with fetch_all for ntnx_hosts_info_v2"
+    success_msg: "Listed with fetch_all successfully for ntnx_hosts_info_v2"
 
 - name: Set host related variables
   ansible.builtin.set_fact:

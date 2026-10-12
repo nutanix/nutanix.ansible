@@ -31,6 +31,11 @@
       register: result
       ignore_errors: true
 
+    - name: List all with fetch_all (ntnx_pc_tasks_info_v2)
+      nutanix.ncp.ntnx_pc_tasks_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_pc_tasks_info_v2
+
     - name: Get all the tasks using filters
       nutanix.ncp.ntnx_pc_tasks_info_v2:
         filter: "operation eq 'kImageCreate'"

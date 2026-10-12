@@ -70,6 +70,11 @@
       register: result
       ignore_errors: true
 
+    - name: List all with fetch_all (ntnx_projects_info_v2)
+      nutanix.ncp.ntnx_projects_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_projects_info_v2
+
     - name: List projects with name filter
       nutanix.ncp.ntnx_projects_info_v2:
         filter: "name eq '{{ project_name }}-full'"

@@ -76,6 +76,19 @@
       register: result
       ignore_errors: true
 
+    - name: List all (ntnx_routes_info_v2)
+      nutanix.ncp.ntnx_routes_info_v2:
+        route_table_ext_id: "{{ route_table_external_id }}"
+      register: list_ntnx_routes_info_v2
+      ignore_errors: true
+
+    - name: List all with fetch_all (ntnx_routes_info_v2)
+      nutanix.ncp.ntnx_routes_info_v2:
+        route_table_ext_id: "{{ route_table_external_id }}"
+        fetch_all: true
+      register: fetch_all_ntnx_routes_info_v2
+      ignore_errors: true
+
     - name: Delete static route
       nutanix.ncp.ntnx_routes_v2:
         state: absent

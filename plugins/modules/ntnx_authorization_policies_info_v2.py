@@ -73,6 +73,14 @@ EXAMPLES = r"""
     filter: "displayName eq 'acp1'"
   register: result
   ignore_errors: true
+
+- name: Fetch all entities using fetch_all
+  nutanix.ncp.ntnx_authorization_policies_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 RETURN = r"""
 response:
@@ -161,6 +169,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    list_entities,
 )
 
 # Suppress the InsecureRequestWarning
@@ -208,7 +217,11 @@ def get_authorization_policies(module, api_instance, result):
         )
 
     try:
-        resp = api_instance.list_authorization_policies(**kwargs)
+        resp = list_entities(
+            api_instance.list_authorization_policies,
+            kwargs=kwargs,
+            fetch_all=module.params.get("fetch_all"),
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

@@ -422,6 +422,25 @@
 
 ########################################################################################
 
+
+########################################################################
+
+- name: List entities with fetch_all (ntnx_image_rate_limit_policies_info_v2)
+  nutanix.ncp.ntnx_image_rate_limit_policies_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_image_rate_limit_policies_info_v2
+  ignore_errors: true
+
+- name: Status of list with fetch_all (ntnx_image_rate_limit_policies_info_v2)
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_image_rate_limit_policies_info_v2.failed == false
+      - fetch_all_ntnx_image_rate_limit_policies_info_v2.response is defined
+      - fetch_all_ntnx_image_rate_limit_policies_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_image_rate_limit_policies_info_v2.response | default([]) | length) == (fetch_all_ntnx_image_rate_limit_policies_info_v2.total_available_results | int)
+    fail_msg: "Unable to list with fetch_all for ntnx_image_rate_limit_policies_info_v2"
+    success_msg: "Listed with fetch_all successfully for ntnx_image_rate_limit_policies_info_v2"
+
 - name: List image rate limit policies with filter
   nutanix.ncp.ntnx_image_rate_limit_policies_info_v2:
     filter: "name eq '{{ policy_name }}_updated'"

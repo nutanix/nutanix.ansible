@@ -40,3 +40,14 @@
         ext_id: "{{ iscsi_client_uuid }}"
         state: absent
       register: result
+
+    - name: List all (ntnx_volume_groups_iscsi_clients_info_v2)
+      nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
+      register: list_ntnx_volume_groups_iscsi_clients_info_v2
+      ignore_errors: true
+
+    - name: List all with fetch_all (ntnx_volume_groups_iscsi_clients_info_v2)
+      nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_volume_groups_iscsi_clients_info_v2
+      ignore_errors: true

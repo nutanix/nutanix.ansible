@@ -44,6 +44,11 @@
       register: user_groups
       ignore_errors: true
 
+    - name: List all with fetch_all (ntnx_user_groups_info_v2)
+      nutanix.ncp.ntnx_user_groups_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_user_groups_info_v2
+
     - name: List user groups using filter criteria
       nutanix.ncp.ntnx_user_groups_info_v2:
         filter: name eq '{{ new_saml_user_group }}'

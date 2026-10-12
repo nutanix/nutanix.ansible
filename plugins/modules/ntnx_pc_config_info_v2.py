@@ -56,6 +56,14 @@ EXAMPLES = r"""
     nutanix_password: <pass>
     ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
   register: result
+
+- name: Fetch all entities using fetch_all
+  nutanix.ncp.ntnx_pc_config_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -251,6 +259,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    list_entities,
 )
 
 # Suppress the InsecureRequestWarning
@@ -279,7 +288,11 @@ def get_pc_configs(module, domain_manager_api, result):
         result["error"] = err
         module.fail_json(msg="Failed generating PC Configuration info Spec", **result)
     try:
-        resp = domain_manager_api.list_domain_managers(**kwargs)
+        resp = list_entities(
+            domain_manager_api.list_domain_managers,
+            kwargs=kwargs,
+            fetch_all=module.params.get("fetch_all"),
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

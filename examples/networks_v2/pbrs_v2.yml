@@ -72,6 +72,18 @@
       register: result
       ignore_errors: true
 
+
+    - name: List all (ntnx_pbrs_info_v2)
+      nutanix.ncp.ntnx_pbrs_info_v2:
+      register: list_ntnx_pbrs_info_v2
+      ignore_errors: true
+
+    - name: List all with fetch_all (ntnx_pbrs_info_v2)
+      nutanix.ncp.ntnx_pbrs_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_pbrs_info_v2
+      ignore_errors: true
+
     - name: Delete PBR
       nutanix.ncp.ntnx_pbrs_v2:
         state: absent

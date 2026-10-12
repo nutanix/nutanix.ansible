@@ -65,6 +65,11 @@
       register: result
       ignore_errors: true
 
+    - name: List all with fetch_all (ntnx_clusters_info_v2)
+      nutanix.ncp.ntnx_clusters_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_clusters_info_v2
+
     - name: Get prism central external ID
       ansible.builtin.set_fact:
         domain_manager_ext_id: "{{ result.response[0].ext_id }}"
@@ -84,6 +89,12 @@
         domain_manager_ext_id: "{{ domain_manager_ext_id }}"
       register: backup_result
       ignore_errors: true
+
+    - name: List all with fetch_all (ntnx_pc_backup_target_info_v2)
+      nutanix.ncp.ntnx_pc_backup_target_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        fetch_all: true
+      register: fetch_all_ntnx_pc_backup_target_info_v2
 
     - name: Get external ID of the backup target cluster
       ansible.builtin.set_fact:
@@ -123,6 +134,11 @@
       register: result
       ignore_errors: true
 
+    - name: List all with fetch_all (ntnx_pc_config_info_v2)
+      nutanix.ncp.ntnx_pc_config_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_pc_config_info_v2
+
     - name: Fetch PC details using external ID
       nutanix.ncp.ntnx_pc_config_info_v2:
         ext_id: "{{ domain_manager_ext_id }}"
@@ -133,6 +149,11 @@
       nutanix.ncp.ntnx_vms_info_v2:
       register: result
       ignore_errors: true
+
+    - name: List all with fetch_all (ntnx_vms_info_v2)
+      nutanix.ncp.ntnx_vms_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_vms_info_v2
 
     - name: Get PC VMs
       ansible.builtin.set_fact:
@@ -211,6 +232,11 @@
       register: result
       ignore_errors: true
 
+    - name: List all with fetch_all (ntnx_pc_restorable_domain_managers_info_v2)
+      nutanix.ncp.ntnx_pc_restorable_domain_managers_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_pc_restorable_domain_managers_info_v2
+
     - name: Get restorable domain manager external ID
       ansible.builtin.set_fact:
         domain_manager_details: "{{ result.response | selectattr('ext_id', 'equalto', domain_manager_ext_id) | list }}"
@@ -222,6 +248,11 @@
         restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
       register: result
       ignore_errors: true
+
+    - name: List all with fetch_all (ntnx_pc_restore_points_info_v2)
+      nutanix.ncp.ntnx_pc_restore_points_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_pc_restore_points_info_v2
 
     - name: Set restore point external ID
       ansible.builtin.set_fact:

@@ -29,6 +29,11 @@
       register: result
       ignore_errors: true
 
+    - name: List all with fetch_all (ntnx_clusters_info_v2)
+      nutanix.ncp.ntnx_clusters_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_clusters_info_v2
+
     - name: Get prism central external ID
       ansible.builtin.set_fact:
         domain_manager_ext_id: "{{ result.response[0].ext_id }}"

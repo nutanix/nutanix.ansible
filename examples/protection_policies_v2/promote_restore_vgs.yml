@@ -264,6 +264,11 @@
       nutanix.ncp.ntnx_volume_groups_info_v2:
       register: result
 
+    - name: List all with fetch_all (ntnx_volume_groups_info_v2)
+      nutanix.ncp.ntnx_volume_groups_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_volume_groups_info_v2
+
     - name: Filter only protected VGs on local cluster
       ansible.builtin.set_fact:
         protected_vgs: "{{ result.response | selectattr('name', 'search', random_name ~ '_ansible_protected_vg') | list }}"

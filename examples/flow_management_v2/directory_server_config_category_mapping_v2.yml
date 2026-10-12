@@ -94,6 +94,11 @@
       register: result
       ignore_errors: true
 
+    - name: List all with fetch_all (ntnx_directory_server_configs_info_v2)
+      nutanix.ncp.ntnx_directory_server_configs_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_directory_server_configs_info_v2
+
     - name: Get directory server config using ext_id
       nutanix.ncp.ntnx_directory_server_configs_info_v2:
         ext_id: "{{ directory_server_config_ext_id }}"
@@ -133,6 +138,11 @@
       nutanix.ncp.ntnx_category_mappings_info_v2:
       register: result
       ignore_errors: true
+
+    - name: List all with fetch_all (ntnx_category_mappings_info_v2)
+      nutanix.ncp.ntnx_category_mappings_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_category_mappings_info_v2
 
     - name: List Directory Server category mappings using filter
       nutanix.ncp.ntnx_category_mappings_info_v2:

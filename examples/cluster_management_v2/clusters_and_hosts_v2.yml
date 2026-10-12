@@ -82,6 +82,11 @@
       register: result
       ignore_errors: true
 
+    - name: List all with fetch_all (ntnx_clusters_info_v2)
+      nutanix.ncp.ntnx_clusters_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_clusters_info_v2
+
     # here we set the prism central external ID
     - name: Get prism central external ID
       ansible.builtin.set_fact:
@@ -244,6 +249,10 @@
       register: result
       ignore_errors: true
 
+    - name: List all with fetch_all (ntnx_hosts_info_v2)
+      nutanix.ncp.ntnx_hosts_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_hosts_info_v2
     - name: List all hosts using filter
       nutanix.ncp.ntnx_hosts_info_v2:
         filter: hostName eq '{{ host_name }}'

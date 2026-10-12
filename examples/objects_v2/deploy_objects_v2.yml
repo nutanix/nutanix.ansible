@@ -101,6 +101,12 @@
         object_store_ext_id: "{{ object_store_ext_id }}"
       register: result
 
+    - name: List all with fetch_all (ntnx_object_stores_certificate_info_v2)
+      nutanix.ncp.ntnx_object_stores_certificate_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        fetch_all: true
+      register: fetch_all_ntnx_object_stores_certificate_info_v2
+
     - name: Set certificate external ID
       ansible.builtin.set_fact:
         certificate_ext_id: "{{ result.response[0].ext_id }}"
@@ -128,6 +134,11 @@
       nutanix.ncp.ntnx_object_stores_info_v2:
       register: result
 
+    - name: List all with fetch_all (ntnx_object_stores_info_v2)
+      nutanix.ncp.ntnx_object_stores_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_object_stores_info_v2
+
     - name: Set object store name
       ansible.builtin.set_fact:
         object_store_name: "{{ result.response[0].name }}"
@@ -150,7 +161,7 @@
 
     - name: Set time window for object store statistics
       ansible.builtin.set_fact:
-        stats_start_time: "{{ lookup('pipe', 'date -u -d \"1 hour ago\" +%Y-%m-%dT%H:%M:%S.000+00:00') }}"
+        stats_start_time: '{{ lookup(''pipe'', ''date -u -d "1 hour ago" +%Y-%m-%dT%H:%M:%S.000+00:00'') }}'
         stats_end_time: "{{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%S.000+00:00') }}"
 
     - name: Fetch object store statistics for the time window

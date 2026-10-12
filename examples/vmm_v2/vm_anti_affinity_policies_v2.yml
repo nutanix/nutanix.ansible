@@ -65,6 +65,11 @@
       nutanix.ncp.ntnx_vm_anti_affinity_policies_info_v2:
       register: list_result
 
+    - name: List all with fetch_all (ntnx_vm_anti_affinity_policies_info_v2)
+      nutanix.ncp.ntnx_vm_anti_affinity_policies_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_vm_anti_affinity_policies_info_v2
+
     - name: Print list result
       ansible.builtin.debug:
         var: list_result
@@ -87,6 +92,12 @@
       nutanix.ncp.ntnx_vm_anti_affinity_policy_compliance_info_v2:
         ext_id: "{{ policy_ext_id }}"
       register: compliance_result
+
+    - name: List all with fetch_all (ntnx_vm_anti_affinity_policy_compliance_info_v2)
+      nutanix.ncp.ntnx_vm_anti_affinity_policy_compliance_info_v2:
+        ext_id: "{{ policy_ext_id }}"
+        fetch_all: true
+      register: fetch_all_ntnx_vm_anti_affinity_policy_compliance_info_v2
 
     - name: Print compliance result
       ansible.builtin.debug:

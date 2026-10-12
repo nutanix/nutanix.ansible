@@ -73,6 +73,11 @@
       register: list_result
       ignore_errors: true
 
+    - name: List all with fetch_all (ntnx_key_management_server_info_v2)
+      nutanix.ncp.ntnx_key_management_server_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_key_management_server_info_v2
+
     - name: Delete key management server
       nutanix.ncp.ntnx_key_management_server_v2:
         ext_id: "{{ kms_ext_id }}"

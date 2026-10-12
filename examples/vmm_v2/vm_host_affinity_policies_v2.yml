@@ -59,6 +59,11 @@
       nutanix.ncp.ntnx_vm_host_affinity_policies_info_v2:
       register: list_result
 
+    - name: List all with fetch_all (ntnx_vm_host_affinity_policies_info_v2)
+      nutanix.ncp.ntnx_vm_host_affinity_policies_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_vm_host_affinity_policies_info_v2
+
     - name: List all VM host affinity policies with filter
       nutanix.ncp.ntnx_vm_host_affinity_policies_info_v2:
         filter: "name eq '{{ policy_name }}'"

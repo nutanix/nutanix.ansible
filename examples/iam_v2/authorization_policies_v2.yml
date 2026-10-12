@@ -128,6 +128,11 @@
       register: result
       ignore_errors: true
 
+    - name: List all with fetch_all (ntnx_authorization_policies_info_v2)
+      nutanix.ncp.ntnx_authorization_policies_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_authorization_policies_info_v2
+
     - name: Get specific auth policy
       nutanix.ncp.ntnx_authorization_policies_info_v2:
         ext_id: "{{ policy_ext_id }}"

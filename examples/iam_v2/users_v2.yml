@@ -83,6 +83,11 @@
       register: users
       ignore_errors: true
 
+    - name: List all with fetch_all (ntnx_users_info_v2)
+      nutanix.ncp.ntnx_users_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_users_info_v2
+
     - name: Fetch user info using user ext_id criteria
       nutanix.ncp.ntnx_users_info_v2:
         ext_id: "{{ user_ext_id }}"

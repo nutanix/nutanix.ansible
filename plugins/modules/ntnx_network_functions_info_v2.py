@@ -79,6 +79,14 @@ EXAMPLES = r"""
     validate_certs: false
     ext_id: "a3265671-de53-41be-af9b-f06241b95356"
   register: result
+
+- name: Fetch all entities using fetch_all
+  nutanix.ncp.ntnx_network_functions_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -165,6 +173,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    list_entities,
 )
 
 
@@ -196,7 +205,11 @@ def get_network_functions(module, network_functions, result):
         module.fail_json(msg="Failed generating network functions info Spec", **result)
 
     try:
-        resp = network_functions.list_network_functions(**kwargs)
+        resp = list_entities(
+            network_functions.list_network_functions,
+            kwargs=kwargs,
+            fetch_all=module.params.get("fetch_all"),
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

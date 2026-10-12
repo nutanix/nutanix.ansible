@@ -59,6 +59,11 @@
         filter: displayName eq '{{ create_vm_role_name }}'
       register: roles_info
 
+    - name: List all with fetch_all (ntnx_roles_info_v2)
+      nutanix.ncp.ntnx_roles_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_roles_info_v2
+
     - name: Create local user
       nutanix.ncp.ntnx_users_v2:
         user_type: LOCAL
@@ -76,10 +81,20 @@
         filter: name eq '{{ cluster_name }}'
       register: clusters_info
 
+    - name: List all with fetch_all (ntnx_clusters_info_v2)
+      nutanix.ncp.ntnx_clusters_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_clusters_info_v2
+
     - name: Fetch subnet info with given name
       nutanix.ncp.ntnx_subnets_info_v2:
         filter: name eq '{{ subnet_name }}'
       register: subnets_info
+
+    - name: List all with fetch_all (ntnx_subnets_info_v2)
+      nutanix.ncp.ntnx_subnets_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_subnets_info_v2
 
     - name: Assign given role to user and give access to specific entities
       nutanix.ncp.ntnx_authorization_policies_v2:

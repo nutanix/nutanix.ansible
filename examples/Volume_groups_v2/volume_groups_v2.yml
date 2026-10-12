@@ -54,6 +54,11 @@
       register: result
       ignore_errors: true
 
+    - name: List all with fetch_all (ntnx_volume_groups_info_v2)
+      nutanix.ncp.ntnx_volume_groups_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_volume_groups_info_v2
+
     - name: Delete Volume group
       nutanix.ncp.ntnx_volume_groups_v2:
         state: absent

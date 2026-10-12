@@ -77,6 +77,14 @@ EXAMPLES = r"""
     validate_certs: false
     ext_id: "a3265671-de53-41be-af9b-f06241b95356"
   register: result
+
+- name: Fetch all entities using fetch_all
+  nutanix.ncp.ntnx_vm_guest_customization_profiles_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -178,6 +186,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    list_entities,
 )
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_vm_guest_customization_profiles_api_instance,
@@ -216,7 +225,11 @@ def get_profiles(module, profiles, result):
         )
 
     try:
-        resp = profiles.list_vm_guest_customization_profiles(**kwargs)
+        resp = list_entities(
+            profiles.list_vm_guest_customization_profiles,
+            kwargs=kwargs,
+            fetch_all=module.params.get("fetch_all"),
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

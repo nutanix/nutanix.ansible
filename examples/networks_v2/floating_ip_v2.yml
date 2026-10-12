@@ -66,6 +66,18 @@
       register: result
       ignore_errors: true
 
+
+    - name: List all (ntnx_floating_ips_info_v2)
+      nutanix.ncp.ntnx_floating_ips_info_v2:
+      register: list_ntnx_floating_ips_info_v2
+      ignore_errors: true
+
+    - name: List all with fetch_all (ntnx_floating_ips_info_v2)
+      nutanix.ncp.ntnx_floating_ips_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_floating_ips_info_v2
+      ignore_errors: true
+
     - name: Delete floating ip
       nutanix.ncp.ntnx_floating_ips_v2:
         state: absent

@@ -15,7 +15,6 @@
 # 12. Delete an image
 # 13. Delete the VM
 
-
 - name: Images crud playbook
   hosts: localhost
   gather_facts: false
@@ -73,6 +72,11 @@
     - name: List all categories and define variables
       nutanix.ncp.ntnx_categories_info_v2:
       register: result
+
+    - name: List all with fetch_all (ntnx_categories_info_v2)
+      nutanix.ncp.ntnx_categories_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_categories_info_v2
 
     - name: Set variables
       ansible.builtin.set_fact:
@@ -169,6 +173,13 @@
     - name: Retrieve all images with limit 2
       nutanix.ncp.ntnx_images_info_v2:
         limit: 2
+      register: result
+
+    #################################################################################
+
+    - name: Retrieve all images with fetch_all
+      nutanix.ncp.ntnx_images_info_v2:
+        fetch_all: true
       register: result
 
     #################################################################################

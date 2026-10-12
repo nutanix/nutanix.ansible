@@ -17,6 +17,11 @@
         limit: 1
       register: vs_info
 
+    - name: List all with fetch_all (ntnx_virtual_switches_info_v2)
+      nutanix.ncp.ntnx_virtual_switches_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_virtual_switches_info_v2
+
     - name: Set virtual switch UUID from first available switch
       ansible.builtin.set_fact:
         virtual_switch_uuid: "{{ vs_info.response[0].ext_id }}"
@@ -34,6 +39,11 @@
       nutanix.ncp.ntnx_clusters_info_v2:
         limit: 1
       register: cluster_info
+
+    - name: List all with fetch_all (ntnx_clusters_info_v2)
+      nutanix.ncp.ntnx_clusters_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_clusters_info_v2
 
     - name: Set cluster UUID
       ansible.builtin.set_fact:
@@ -93,6 +103,11 @@
       nutanix.ncp.ntnx_vpc_virtual_switch_mappings_info_v2:
       register: list_result
       ignore_errors: true
+
+    - name: List all with fetch_all (ntnx_vpc_virtual_switch_mappings_info_v2)
+      nutanix.ncp.ntnx_vpc_virtual_switch_mappings_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_vpc_virtual_switch_mappings_info_v2
 
     ############################################################################
     # Restore mapping to original state

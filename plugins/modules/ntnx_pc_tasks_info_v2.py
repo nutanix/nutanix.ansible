@@ -62,6 +62,14 @@ EXAMPLES = r"""
     limit: 1
   register: result
   ignore_errors: true
+
+- name: Fetch all entities using fetch_all
+  nutanix.ncp.ntnx_pc_tasks_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -165,6 +173,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    list_entities,
 )
 
 # Suppress the InsecureRequestWarning
@@ -193,7 +202,11 @@ def get_tasks_details(module, tasks_api, result):
         result["error"] = err
         module.fail_json(msg="Failed generating list tasks info Spec", **result)
     try:
-        resp = tasks_api.list_tasks(**kwargs)
+        resp = list_entities(
+            tasks_api.list_tasks,
+            kwargs=kwargs,
+            fetch_all=module.params.get("fetch_all"),
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

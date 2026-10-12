@@ -72,6 +72,19 @@
       register: result
       ignore_errors: true
 
+    - name: List all (ntnx_vms_cd_rom_info_v2)
+      nutanix.ncp.ntnx_vms_cd_rom_info_v2:
+        vm_ext_id: "{{ vm_uuid }}"
+      register: list_ntnx_vms_cd_rom_info_v2
+      ignore_errors: true
+
+    - name: List all with fetch_all (ntnx_vms_cd_rom_info_v2)
+      nutanix.ncp.ntnx_vms_cd_rom_info_v2:
+        vm_ext_id: "{{ vm_uuid }}"
+        fetch_all: true
+      register: fetch_all_ntnx_vms_cd_rom_info_v2
+      ignore_errors: true
+
     - name: Delete CD ROM
       nutanix.ncp.ntnx_vms_cd_rom_v2:
         state: absent

@@ -64,6 +64,11 @@
       register: result
       ignore_errors: true
 
+    - name: List all with fetch_all (ntnx_resource_groups_info_v2)
+      nutanix.ncp.ntnx_resource_groups_info_v2:
+        fetch_all: true
+      register: fetch_all_ntnx_resource_groups_info_v2
+
     - name: List resource groups with name filter
       nutanix.ncp.ntnx_resource_groups_info_v2:
         filter: "name eq '{{ rg_name }}-updated'"

@@ -540,3 +540,103 @@ def normalize_oneof_marker_values(params, marker_keys):
             elif isinstance(value, list):
                 for item in value:
                     normalize_oneof_marker_values(item, marker_keys)
+
+
+class _ListEntitiesMetadata(object):
+    """Minimal metadata stand-in for paginated V4 list responses."""
+
+    def __init__(self, total_available_results):
+        self.total_available_results = total_available_results
+
+
+class ListEntitiesResponse(object):
+    """SDK-like list response used when C(fetch_all) aggregates multiple pages.
+
+    Supports the two access patterns used by V2 info modules:
+      - ``resp.metadata.total_available_results``
+      - ``resp.to_dict().get("data")`` / ``.get("metadata")``
+    """
+
+    def __init__(self, data, total_available_results):
+        self.data = data if data is not None else []
+        self.metadata = _ListEntitiesMetadata(total_available_results)
+
+    def to_dict(self):
+        data = []
+        for item in self.data:
+            if hasattr(item, "to_dict"):
+                data.append(item.to_dict())
+            else:
+                data.append(item)
+        return {
+            "data": data,
+            "metadata": {
+                "total_available_results": self.metadata.total_available_results
+            },
+        }
+
+
+def list_entities(
+    list_fn, kwargs=None, fetch_all=False, default_page_size=100, **fixed_kwargs
+):
+    """Call a V4 list API once, or paginate when C(fetch_all) is true.
+
+    Args:
+        list_fn (callable): SDK list method (e.g. ``images.list_images``).
+        kwargs (dict | None): Query kwargs from ``SpecGenerator.get_info_spec``
+            (``_page``, ``_limit``, ``_filter``, ...).
+        fetch_all (bool): When true, page through the API until all entities
+            are collected. ``_page`` is ignored; ``_limit`` (if set) is the
+            page size, otherwise ``default_page_size`` is used.
+        default_page_size (int): Page size used when fetch_all and no limit.
+        **fixed_kwargs: Extra keyword args always passed to ``list_fn``
+            (e.g. parent ext ids for nested lists).
+
+    Returns:
+        The raw SDK response when C(fetch_all) is false, otherwise a
+        :class:`ListEntitiesResponse` aggregating all pages.
+    """
+    kwargs = dict(kwargs or {})
+    call_kwargs = dict(fixed_kwargs)
+    call_kwargs.update(kwargs)
+
+    if not fetch_all:
+        return list_fn(**call_kwargs)
+
+    page_size = kwargs.get("_limit") or default_page_size
+    base_kwargs = {
+        key: value
+        for key, value in kwargs.items()
+        if key not in ("_page", "_limit")
+    }
+    entities = []
+    total_available = 0
+    current_page = 0
+
+    while True:
+        page_kwargs = dict(fixed_kwargs)
+        page_kwargs.update(base_kwargs)
+        page_kwargs["_page"] = current_page
+        page_kwargs["_limit"] = page_size
+
+        resp = list_fn(**page_kwargs)
+        page_data = getattr(resp, "data", None) if resp is not None else None
+        if page_data:
+            entities.extend(page_data)
+
+        metadata = getattr(resp, "metadata", None) if resp is not None else None
+        total_available = getattr(metadata, "total_available_results", None)
+        if total_available is None and resp is not None and hasattr(resp, "to_dict"):
+            total_available = (
+                (resp.to_dict() or {})
+                .get("metadata", {})
+                .get("total_available_results")
+            )
+        if total_available is None:
+            total_available = len(entities)
+
+        if len(entities) >= total_available or not page_data:
+            break
+        current_page += 1
+
+    return ListEntitiesResponse(entities, total_available)

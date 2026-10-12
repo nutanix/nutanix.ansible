@@ -40,6 +40,14 @@ options:
         type: int
         required: false
         default: 30000
+    fetch_all:
+        description:
+            - When C(true), paginate through the list API until all available entities are returned.
+            - When C(false), return a single page (API default limit).
+            - Does not apply when fetching a single entity by C(ext_id).
+        type: bool
+        required: false
+        default: false
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_logger
@@ -64,6 +72,14 @@ EXAMPLES = r"""
     validate_certs: false
     ext_id: "13a6657d-fa96-49e3-7307-87e93a1fec3d"
   register: result
+
+- name: Fetch all entities using fetch_all
+  nutanix.ncp.ntnx_key_management_server_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -126,6 +142,7 @@ from ..module_utils.v4.security.helpers import get_kms_by_ext_id  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    list_entities,
 )
 
 # Suppress the InsecureRequestWarning
@@ -135,6 +152,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str"),
+        fetch_all=dict(type="bool", required=False, default=False),
     )
     return module_args
 
@@ -148,7 +166,10 @@ def get_kms_using_ext_id(module, kms_api_instance, result):
 def get_all_kms(module, kms_api_instance, result):
     resp = None
     try:
-        resp = kms_api_instance.list_key_management_servers()
+        resp = list_entities(
+            kms_api_instance.list_key_management_servers,
+            fetch_all=module.params.get("fetch_all"),
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
