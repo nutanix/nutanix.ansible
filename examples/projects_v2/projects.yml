@@ -29,6 +29,7 @@
     ###########################################################
     # CREATE OPERATIONS
     ###########################################################
+
     - name: Create a project with all fields
       nutanix.ncp.ntnx_project_v2:
         state: present
@@ -48,6 +49,7 @@
     ###########################################################
     # UPDATE OPERATIONS
     ###########################################################
+
     - name: Update project description
       nutanix.ncp.ntnx_project_v2:
         state: present
@@ -59,6 +61,7 @@
     ###########################################################
     # INFO OPERATIONS
     ###########################################################
+
     - name: Fetch project using external ID
       nutanix.ncp.ntnx_projects_info_v2:
         ext_id: "{{ project_ext_id }}"
@@ -70,10 +73,11 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all (ntnx_projects_info_v2)
+    - name: List all with fetch_all
       nutanix.ncp.ntnx_projects_info_v2:
         fetch_all: true
-      register: fetch_all_ntnx_projects_info_v2
+      register: result
+      ignore_errors: true
 
     - name: List projects with name filter
       nutanix.ncp.ntnx_projects_info_v2:
@@ -90,6 +94,7 @@
     ###########################################################
     # DELETE OPERATIONS
     ###########################################################
+
     - name: Delete project
       nutanix.ncp.ntnx_project_v2:
         state: absent

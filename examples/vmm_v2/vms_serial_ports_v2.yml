@@ -37,11 +37,12 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all (ntnx_vms_serial_port_info_v2)
+    - name: List all with fetch_all
       nutanix.ncp.ntnx_vms_serial_port_info_v2:
         vm_ext_id: "{{ vm_uuid }}"
         fetch_all: true
-      register: fetch_all_ntnx_vms_serial_port_info_v2
+      register: result
+      ignore_errors: true
 
     - name: Update Serial Port connection
       nutanix.ncp.ntnx_vms_serial_port_v2:

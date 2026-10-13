@@ -49,17 +49,17 @@
       register: result
       ignore_errors: true
 
-    - name: List all (ntnx_volume_groups_disks_info_v2)
+    - name: List all
       nutanix.ncp.ntnx_volume_groups_disks_info_v2:
         volume_group_ext_id: "{{ vg1_uuid }}"
-      register: list_ntnx_volume_groups_disks_info_v2
+      register: result
       ignore_errors: true
 
-    - name: List all with fetch_all (ntnx_volume_groups_disks_info_v2)
+    - name: List all with fetch_all
       nutanix.ncp.ntnx_volume_groups_disks_info_v2:
         volume_group_ext_id: "{{ vg1_uuid }}"
         fetch_all: true
-      register: fetch_all_ntnx_volume_groups_disks_info_v2
+      register: result
       ignore_errors: true
 
     - name: Delete disk

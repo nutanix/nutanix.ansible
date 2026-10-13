@@ -52,10 +52,11 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all (ntnx_saml_identity_providers_info_v2)
+    - name: List all with fetch_all
       nutanix.ncp.ntnx_saml_identity_providers_info_v2:
         fetch_all: true
-      register: fetch_all_ntnx_saml_identity_providers_info_v2
+      register: result
+      ignore_errors: true
 
     - name: Update saml to share with specific projects
       nutanix.ncp.ntnx_saml_identity_providers_v2:

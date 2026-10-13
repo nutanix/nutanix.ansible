@@ -218,10 +218,11 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all (ntnx_directory_services_info_v2)
+    - name: List all with fetch_all
       nutanix.ncp.ntnx_directory_services_info_v2:
         fetch_all: true
-      register: fetch_all_ntnx_directory_services_info_v2
+      register: result
+      ignore_errors: true
 
     - name: List all directory services with filter using active directory name
       nutanix.ncp.ntnx_directory_services_info_v2:

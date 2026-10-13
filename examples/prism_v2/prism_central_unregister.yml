@@ -29,10 +29,11 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all (ntnx_clusters_info_v2)
+    - name: List all with fetch_all
       nutanix.ncp.ntnx_clusters_info_v2:
         fetch_all: true
-      register: fetch_all_ntnx_clusters_info_v2
+      register: result
+      ignore_errors: true
 
     - name: Get prism central external ID
       ansible.builtin.set_fact:

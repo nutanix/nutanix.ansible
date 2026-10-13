@@ -62,10 +62,11 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all (ntnx_recovery_points_info_v2)
+    - name: List all with fetch_all
       nutanix.ncp.ntnx_recovery_points_info_v2:
         fetch_all: true
-      register: fetch_all_ntnx_recovery_points_info_v2
+      register: result
+      ignore_errors: true
 
     - name: Get recovery point details
       nutanix.ncp.ntnx_recovery_points_info_v2:

@@ -63,6 +63,7 @@
       register: result
 
     ############################################ log catchup ######################################
+
     - name: Perform log catchup for restore
       nutanix.ncp.ntnx_ndb_database_log_catchup:
         time_machine_uuid: "{{ time_machine_uuid }}"

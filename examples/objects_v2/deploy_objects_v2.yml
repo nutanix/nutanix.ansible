@@ -101,11 +101,12 @@
         object_store_ext_id: "{{ object_store_ext_id }}"
       register: result
 
-    - name: List all with fetch_all (ntnx_object_stores_certificate_info_v2)
+    - name: List all with fetch_all
       nutanix.ncp.ntnx_object_stores_certificate_info_v2:
         object_store_ext_id: "{{ object_store_ext_id }}"
         fetch_all: true
-      register: fetch_all_ntnx_object_stores_certificate_info_v2
+      register: result
+      ignore_errors: true
 
     - name: Set certificate external ID
       ansible.builtin.set_fact:
@@ -134,10 +135,11 @@
       nutanix.ncp.ntnx_object_stores_info_v2:
       register: result
 
-    - name: List all with fetch_all (ntnx_object_stores_info_v2)
+    - name: List all with fetch_all
       nutanix.ncp.ntnx_object_stores_info_v2:
         fetch_all: true
-      register: fetch_all_ntnx_object_stores_info_v2
+      register: result
+      ignore_errors: true
 
     - name: Set object store name
       ansible.builtin.set_fact:

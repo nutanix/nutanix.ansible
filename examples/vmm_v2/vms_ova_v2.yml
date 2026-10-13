@@ -98,10 +98,11 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all (ntnx_ova_info_v2)
+    - name: List all with fetch_all
       nutanix.ncp.ntnx_ova_info_v2:
         fetch_all: true
-      register: fetch_all_ntnx_ova_info_v2
+      register: result
+      ignore_errors: true
 
     - name: List Ovas with filter
       nutanix.ncp.ntnx_ova_info_v2:
@@ -124,6 +125,7 @@
     # This will give a path from where you can get the path to download the Ova file
     # .tmp directory will be deleted automatically after the execution of the playbook
     # If needed, get the file from there before the playbook ends
+
     - name: Download Ova using ext id
       nutanix.ncp.ntnx_ova_download_v2:
         ova_ext_id: "{{ ova_ext_id }}"

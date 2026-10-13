@@ -29,6 +29,7 @@
     ###########################################################
     # CREATE OPERATIONS
     ###########################################################
+
     - name: Create a resource group with placement targets
       nutanix.ncp.ntnx_resource_group_v2:
         state: present
@@ -42,6 +43,7 @@
     ###########################################################
     # UPDATE OPERATIONS
     ###########################################################
+
     - name: Update resource group name
       nutanix.ncp.ntnx_resource_group_v2:
         state: present
@@ -53,6 +55,7 @@
     ###########################################################
     # INFO OPERATIONS
     ###########################################################
+
     - name: Fetch resource group using external ID
       nutanix.ncp.ntnx_resource_groups_info_v2:
         ext_id: "{{ rg_ext_id }}"
@@ -64,10 +67,11 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all (ntnx_resource_groups_info_v2)
+    - name: List all with fetch_all
       nutanix.ncp.ntnx_resource_groups_info_v2:
         fetch_all: true
-      register: fetch_all_ntnx_resource_groups_info_v2
+      register: result
+      ignore_errors: true
 
     - name: List resource groups with name filter
       nutanix.ncp.ntnx_resource_groups_info_v2:
@@ -84,6 +88,7 @@
     ###########################################################
     # DELETE OPERATIONS
     ###########################################################
+
     - name: Delete resource group
       nutanix.ncp.ntnx_resource_group_v2:
         state: absent

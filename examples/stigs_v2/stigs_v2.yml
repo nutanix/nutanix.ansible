@@ -19,10 +19,11 @@
       nutanix.ncp.ntnx_stigs_info_v2:
       register: result
 
-    - name: List all with fetch_all (ntnx_stigs_info_v2)
+    - name: List all with fetch_all
       nutanix.ncp.ntnx_stigs_info_v2:
         fetch_all: true
-      register: fetch_all_ntnx_stigs_info_v2
+      register: result
+      ignore_errors: true
 
     - name: Fetch detailed STIG control information for each cluster with filter set to HIGH
       nutanix.ncp.ntnx_stigs_info_v2:

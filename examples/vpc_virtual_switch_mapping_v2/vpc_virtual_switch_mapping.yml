@@ -12,15 +12,17 @@
     ############################################################################
     # List existing virtual switches to get a virtual_switch_uuid
     ############################################################################
+
     - name: List virtual switches
       nutanix.ncp.ntnx_virtual_switches_info_v2:
         limit: 1
       register: vs_info
 
-    - name: List all with fetch_all (ntnx_virtual_switches_info_v2)
+    - name: List all with fetch_all
       nutanix.ncp.ntnx_virtual_switches_info_v2:
         fetch_all: true
-      register: fetch_all_ntnx_virtual_switches_info_v2
+      register: result
+      ignore_errors: true
 
     - name: Set virtual switch UUID from first available switch
       ansible.builtin.set_fact:
@@ -35,15 +37,17 @@
     ############################################################################
     # List existing clusters to get cluster UUID
     ############################################################################
+
     - name: List clusters
       nutanix.ncp.ntnx_clusters_info_v2:
         limit: 1
       register: cluster_info
 
-    - name: List all with fetch_all (ntnx_clusters_info_v2)
+    - name: List all with fetch_all
       nutanix.ncp.ntnx_clusters_info_v2:
         fetch_all: true
-      register: fetch_all_ntnx_clusters_info_v2
+      register: result
+      ignore_errors: true
 
     - name: Set cluster UUID
       ansible.builtin.set_fact:
@@ -53,6 +57,7 @@
     ############################################################################
     # Create/Set VPC virtual switch mapping with is_all_traffic_permitted=true
     ############################################################################
+
     - name: Create VPC virtual switch mapping
       nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
         state: present
@@ -66,6 +71,7 @@
     ############################################################################
     # Idempotency check - same request should skip
     ############################################################################
+
     - name: Create same mapping again (idempotency check)
       nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
         state: present
@@ -86,6 +92,7 @@
     ############################################################################
     # Update mapping - change is_all_traffic_permitted to false
     ############################################################################
+
     - name: Update VPC virtual switch mapping
       nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
         state: present
@@ -99,19 +106,21 @@
     ############################################################################
     # List all VPC virtual switch mappings
     ############################################################################
+
     - name: List all VPC virtual switch mappings
       nutanix.ncp.ntnx_vpc_virtual_switch_mappings_info_v2:
       register: list_result
       ignore_errors: true
 
-    - name: List all with fetch_all (ntnx_vpc_virtual_switch_mappings_info_v2)
+    - name: List all with fetch_all
       nutanix.ncp.ntnx_vpc_virtual_switch_mappings_info_v2:
         fetch_all: true
-      register: fetch_all_ntnx_vpc_virtual_switch_mappings_info_v2
-
     ############################################################################
     # Restore mapping to original state
     ############################################################################
+      register: result
+      ignore_errors: true
+
     - name: Restore original mapping
       nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:
         state: present

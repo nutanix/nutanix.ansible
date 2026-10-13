@@ -76,23 +76,26 @@
           /home/nutanix/prism/cli/ncli user reset-password user-name={{ cluster_username }} password={{ cluster_password }}
 
     # we use this to get prism central external ID to use it to register the cluster
+
     - name: List all clusters to get prism central external ID
       nutanix.ncp.ntnx_clusters_info_v2:
         filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all (ntnx_clusters_info_v2)
+    - name: List all with fetch_all
       nutanix.ncp.ntnx_clusters_info_v2:
         fetch_all: true
-      register: fetch_all_ntnx_clusters_info_v2
-
     # here we set the prism central external ID
+      register: result
+      ignore_errors: true
+
     - name: Get prism central external ID
       ansible.builtin.set_fact:
         prism_central_external_id: "{{ result.response[0].ext_id }}"
 
     # before creating cluster, we need to make sure that the cluster is not already created
+
     - name: Discover unconfigured node
       nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
         address_type: "IPV4"
@@ -180,6 +183,7 @@
       changed_when: result.rc != 0
 
     # here we register the cluster to prism central
+
     - name: Run PE PC registration
       nutanix.ncp.ntnx_pc_registration_v2:
         ext_id: "{{ prism_central_external_id }}"
@@ -249,10 +253,12 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all (ntnx_hosts_info_v2)
+    - name: List all with fetch_all
       nutanix.ncp.ntnx_hosts_info_v2:
         fetch_all: true
-      register: fetch_all_ntnx_hosts_info_v2
+      register: result
+      ignore_errors: true
+
     - name: List all hosts using filter
       nutanix.ncp.ntnx_hosts_info_v2:
         filter: hostName eq '{{ host_name }}'

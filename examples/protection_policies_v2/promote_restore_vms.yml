@@ -197,6 +197,7 @@
         vm_ext_id_2: "{{ result.response.ext_id }}"
 
     # Wait for the first VM to be protected
+
     - name: Fetch first VM using ext_id
       nutanix.ncp.ntnx_vms_info_v2:
         ext_id: "{{ vm_ext_id_1 }}"
@@ -206,6 +207,7 @@
       delay: 10
 
     # Wait for the second VM to be protected
+
     - name: Fetch second VM using ext_id
       nutanix.ncp.ntnx_vms_info_v2:
         ext_id: "{{ vm_ext_id_2 }}"
@@ -246,10 +248,11 @@
       nutanix.ncp.ntnx_vms_info_v2:
       register: result
 
-    - name: List all with fetch_all (ntnx_vms_info_v2)
+    - name: List all with fetch_all
       nutanix.ncp.ntnx_vms_info_v2:
         fetch_all: true
-      register: fetch_all_ntnx_vms_info_v2
+      register: result
+      ignore_errors: true
 
     - name: Filter only protected VMs on local cluster
       ansible.builtin.set_fact:
