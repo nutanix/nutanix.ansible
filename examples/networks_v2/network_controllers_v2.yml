@@ -4,8 +4,9 @@
 # 1. Create a network controller (enable Flow Virtual Networking) with all attributes
 # 2. Update the network controller (default VLAN stack and overlapping ERPs)
 # 3. Fetch the network controller using ext_id
-# 4. List all network controllers with/without limit
-# 5. Delete the network controller
+# 4. List all network controllers
+# 5. List all network controllers with limit
+# 6. Delete the network controller
 #
 # NOTE: A Prism Central hosts at most one Network Controller. Delete any existing
 # controller before running create, or create will fail.

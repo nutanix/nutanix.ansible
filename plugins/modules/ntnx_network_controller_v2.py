@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -24,7 +24,7 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Create/Update/Delete a Network Controller) -
-      Required Roles: Super Admin
+      Required Roles: Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
@@ -42,6 +42,12 @@ options:
     description:
       - The external ID of the network controller.
       - Required for update and delete operations.
+    type: str
+    required: false
+  project_ext_id:
+    description:
+      - External ID (UUID) of the project that owns this network controller.
+      - Update of this field is not supported.
     type: str
     required: false
   cloud_substrate:
@@ -109,6 +115,7 @@ EXAMPLES = r"""
     default_vlan_stack: ADVANCED
     vpc_global_config:
       is_overlapping_erps_enabled: false
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
   register: result
   ignore_errors: true
 
@@ -150,6 +157,7 @@ response:
       "metadata": null,
       "minimum_ahv_version": "11.2",
       "minimum_nos_version": "7.0",
+      "project_ext_id": "12345678-1234-1234-1234-123456789012",
       "tenant_id": null,
       "vpc_global_config": {
           "is_overlapping_erps_enabled": false
@@ -169,6 +177,13 @@ ext_id:
   returned: always
   type: str
   sample: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
+
+project_ext_id:
+  description:
+    - The external ID of the project that owns this network controller.
+  returned: always
+  type: str
+  sample: "12345678-1234-1234-1234-123456789012"
 
 changed:
   description: This indicates whether the task resulted in any changes
@@ -221,6 +236,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -252,6 +268,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         cloud_substrate=dict(
             type="str",
             choices=["AWS", "AZURE", "GCP"],
@@ -350,6 +367,8 @@ def update_NetworkController(module, result, api_instance):
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
+
+    raise_unsupported_update_fields(module, old_spec, update_spec, ["project_ext_id"])
 
     if check_for_idempotency(old_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True

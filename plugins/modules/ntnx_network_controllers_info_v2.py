@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -23,10 +23,10 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get Network Controller by ext_id) -
-      Required Roles: Prism User, Super Admin
+      Required Roles: Prism Admin, Prism User, Super Admin
     - >-
       B(Get list of Network Controllers) -
-      Required Roles: Prism User, Super Admin
+      Required Roles: Prism Admin, Prism User, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   ext_id:
