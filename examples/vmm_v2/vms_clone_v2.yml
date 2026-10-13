@@ -3,7 +3,7 @@
 # This playbook will do:
 # 1. Clone VM with same attributes values
 # 2. Clone VM with different attributes values
-# 3. Clone VM with a VM Guest Customization Profile reference and per-clone overrides
+# 3. Clone VM with Guest Customization Profile
 #    (registered owner/organization, static IP). Requires NGT installed on the
 #    source VM; otherwise the clone API rejects the request.
 

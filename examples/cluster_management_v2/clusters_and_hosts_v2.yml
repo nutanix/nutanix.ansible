@@ -1,19 +1,23 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a cluster
-# 2. Reset username and password
-# 3. Register the cluster to Prism Central
-# 4. Fetch cluster using name
-# 5. Fetch cluster info using external ID
-# 6. Associate categories with cluster
-# 7. Update ntp servers, dns servers and smtp servers in cluster
-# 8. List all hosts
-# 9. List all hosts using filter
-# 10. Verify fetching host using external ID
-# 11. Fetch hosts of particular cluster
-# 12. Disassociate categories from cluster
-# 13. Destroy the cluster
+# 1. List all clusters to get prism central external ID
+# 2. List all clusters to get prism central external ID with fetch_all
+# 3. Discover unconfigured node
+# 4. Run cluster create prechecks
+# 5. Create cluster
+# 6. Reset username and password
+# 7. Run PE PC registration
+# 8. Fetch cluster using name
+# 9. Fetch cluster info using external ID
+# 10. Associate categories with cluster
+# 11. Update ntp servers, dns servers and smtp servers in cluster
+# 12. List all hosts
+# 13. List all hosts with fetch_all
+# 14. List all hosts using filter
+# 15. Fetch hosts of particular cluster
+# 16. Disassociate categories from cluster
+# 17. Destroy the cluster
 
 - name: Clusters CRUD playbook
   hosts: localhost

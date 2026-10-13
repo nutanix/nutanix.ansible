@@ -1,13 +1,14 @@
 ---
 # Summary:
 # This playbook will do the following:
-# 1. Create a storage policy with all attributes
-# 2. Update the storage policy with all attributes
-# 3. Fetch the storage policy using external ID
+# 1. Create storage policy with all attributes
+# 2. Update storage policy with all attributes
+# 3. Fetch storage policy using external ID
 # 4. List all storage policies
-# 5. List all storage policies with filter
-# 6. List all storage policies with limit
-# 7. Delete the storage policy
+# 5. List all storage policies with fetch_all
+# 6. List storage policies with filter
+# 7. List storage policies with limit
+# 8. Delete storage policy
 # Pre-requisites:
 # Set the following variables:
 # - category_ext_id_1

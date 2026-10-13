@@ -1,20 +1,21 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Deploy an object store with one worker node
-# 3. Create a temporary JSON file for certificate details
-# 4. Create a certificate for an object store
-# 5. List all certificates for an object store
-# 5. Fetch certificate details using external ID
-# 6. Download the certificate authority (CA) of a certificate to a destination path
-# 7. Download the certificate authority (CA) of a certificate to the default location
-# 8. List all object stores
-# 9. List all object stores with filter
-# 10. List object stores with limit
-# 11. Fetch object store details using external ID
-# 12. Fetch object store statistics for a time window
-# 13. Delete bucket in object store
-# 14. Delete object store
+# 1. Deploy object store with one worker node
+# 2. Create a temporary JSON file for certificate details
+# 3. Create certificate for an object store
+# 4. List all certificates for an object store
+# 5. List all certificates for an object store with fetch_all
+# 6. Fetch certificate details using external ID
+# 7. Download the certificate authority (CA) of a certificate to a destination path
+# 8. Download the certificate authority (CA) of a certificate to the default location
+# 9. List all object stores
+# 10. List all object stores with fetch_all
+# 11. List all object stores with filter
+# 12. List object stores with limit
+# 13. Fetch object store details using external ID
+# 14. Fetch object store statistics for the time window
+# 15. Delete object store
 
 - name: Deploy objects playbook
   hosts: localhost

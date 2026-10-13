@@ -1,11 +1,15 @@
 ---
 # This playbook will setup Prism Central(PC) with required entities
-# 1. Upload local image to PC
-# 2. Create categories that can be attached to the user vm
-# 3. Fetch roles info
-# 4. Create local user
-# 5. Fetch cluster and subnet info
-# 6. Assign given role to user and give access to image, cluster, subnet and category
+# 1. Create ubuntu image from local workstation
+# 2. Create category key & value
+# 3. Fetch roles info with given name
+# 4. List all roles with fetch_all
+# 5. Create local user
+# 6. Fetch cluster info with given name
+# 7. List all clusters with fetch_all
+# 8. Fetch subnet info with given name
+# 9. List all subnets with fetch_all
+# 10. Assign given role to user and give access to specific entities
 
 # This playbook should be run with user having permissions to create above entities on PC
 # Tested on PC version 2024.3

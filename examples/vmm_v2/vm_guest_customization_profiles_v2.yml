@@ -1,12 +1,16 @@
 ---
 # Summary:
 # This playbook will:
-# 1. Create a VM Guest Customization Profile using sysprep parameters (Workgroup, DHCP).
-# 2. Create a VM Guest Customization Profile using a pre-built unattend XML answer file.
-# 3. Update an existing profile to use a domain join and a must-provide-during-deployment IP config.
-# 4. Fetch a single profile by external ID.
-# 5. List profiles using a filter and a limit.
-# 6. Delete the created profiles.
+# 1. Create VM Guest Customization Profile with sysprep params (Workgroup,DHCP)
+# 2. Create VM Guest Customization Profile using an unattend XML answer file
+# 3. Update profile to use domain settings
+# 4. Fetch VM Guest Customization Profile by ext id
+# 5. List all VM Guest Customization Profiles
+# 6. List all VM Guest Customization Profiles with fetch_all
+# 7. List VM Guest Customization Profiles using filter
+# 8. List VM Guest Customization Profiles with limit
+# 9. Delete the workgroup/domain profile
+# 10. Delete the answer file profile
 
 - name: VM Guest Customization Profile playbook
   hosts: localhost

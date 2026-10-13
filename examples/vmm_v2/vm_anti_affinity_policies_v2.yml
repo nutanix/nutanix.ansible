@@ -2,13 +2,16 @@
 # Summary:
 # This playbook will do:
 # 1. Create VM-VM anti-affinity policy
-# 2. Update VM-VM anti-affinity policy
-# 3. Fetch VM-VM anti-affinity policy by ext_id
-# 4. List all VM-VM anti-affinity policies
+# 2. Fetch VM-VM anti-affinity policy by ext id
+# 3. List all VM-VM anti-affinity policies
+# 4. List all VM-VM anti-affinity policies with fetch_all
 # 5. List all VM-VM anti-affinity policies with filter
 # 6. List all VM-VM anti-affinity policies with limit
 # 7. List VM-VM anti-affinity policy compliance states
-# 8. Delete VM-VM anti-affinity policy
+# 8. List all vm anti affinity policy compliance with fetch_all
+# 9. List VM-VM anti-affinity policy compliance states with limit
+# 10. Update VM-VM anti-affinity policy
+# 11. Delete VM-VM anti-affinity policy
 
 - name: VM-VM anti-affinity policy CRUD playbook
   hosts: localhost

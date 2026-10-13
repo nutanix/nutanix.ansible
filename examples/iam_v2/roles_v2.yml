@@ -1,11 +1,13 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a role with operations
-# 2. Update the role
-# 3. List all roles
-# 4. Fetch the role using external ID
-# 5. Delete the role
+# 1. Create roles with operations
+# 2. Update roles in check mode
+# 3. Update roles
+# 4. List all roles
+# 5. List all roles with fetch_all
+# 6. Fetch role using external ID
+# 7. Delete role
 
 - name: Roles playbook
   hosts: localhost

@@ -1,6 +1,20 @@
 ---
 # Summary:
 # This playbook will do:
+# 1. Create snapshot with minimal spec
+# 2. Create snapshot with expiry
+# 3. Rename snapshot
+# 4. Update expiry
+# 5. Remove expiry schedule
+# 6. Add expiry schedule and rename
+# 7. Perform log catchup for restore
+# 8. Perform log catchup
+# 9. Perform using pitr timestamp
+# 10. Perform restore using latest snapshot
+# 11. Perform restore using snapshot UUID
+# 12. Extend database storage for scaling database
+# 13. Add databases in database instance
+# 14. Remove databases in database instance
 #   1. Create snapshot
 #   2. Update and delete snapshots
 #   3. Perform log catchup on database

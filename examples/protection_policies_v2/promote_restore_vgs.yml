@@ -8,14 +8,25 @@
 
 # Summary:
 # This playbook will do the following:
-# 1. Create two categories.
-# 2. Create two protection policies with auto retention and synchronous replication configurations.
-# 3. Create two volume groups and associate them with the categories.
-# 4. Promote the first volume group and restore the second volume group.
-# 5. Disassociate the categories from the volume groups.
-# 6. Cleanup: Delete the volume groups.
-# 7. Cleanup: Delete the protection policies.
-# 8. Cleanup: Delete the categories.
+# 1. Create categories for protection policies
+# 2. Create auto retention protection policy
+# 3. Create Synchronous replication protection policy for VG using category2
+# 4. Create Volume group to be promoted
+# 5. Create Volume group to be restored
+# 6. Associate category with first VG
+# 7. Associate category with second VG
+# 8. Get a protected resource
+# 9. Promote VG
+# 10. Restore VG
+# 11. Disassociate category from first VG
+# 12. Disassociate category from second VG
+# 13. Fetch all VGs on local cluster
+# 14. List all volume groups with fetch_all
+# 15. Delete all Created VGs on local cluster
+# 16. Fetch all VGs on remote cluster
+# 17. Delete Created VG on remote cluster
+# 18. Delete all protection policies
+# 19. Delete Created categories
 
 - name: Protection policies playbook
   hosts: localhost

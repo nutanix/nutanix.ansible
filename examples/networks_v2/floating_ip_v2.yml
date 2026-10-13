@@ -1,10 +1,12 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a floating IP with external subnet uuid
-# 2. Update the floating IP name and private IP
-# 3. Fetch the floating IP details using ext_id
-# 4. Delete the floating IP
+# 1. Create floating ip with external subnet UUID
+# 2. Update floating ip name and private IP
+# 3. Get floating ips using ext id
+# 4. List all floating ips
+# 5. List all floating ips with fetch_all
+# 6. Delete floating ip
 
 - name: Floating IP playbook
   hosts: localhost

@@ -1,19 +1,20 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a VM with minimum requirements
-# 2. Create a VM with full requirements
-# 3. Create a VM with different disks, using ubuntu image , with cdrom
-# 4. Create a VM with multiple serial port, and categories
-# 5. Create a VM with nics,cloud_init script
-# 6. Create a VM with windows unattend xml file
-# 7. Create a VM with vtpm enabled
+# 1. Create VM with minimum requirements
+# 2. Create VM with full requirements
+# 3. Create vm with different disks, using ubuntu image , with cdrom
+# 4. Create vm with multiple serial port, and categories
+# 5. Create vm with nics,cloud init script
+# 6. Create vm with windows unattend xml file
+# 7. Create VM with vtpm enabled
 # 8. Update VM
 # 9. List all VMs
 # 10. List all VMs with limit
-# 11. Get vm using filter name
-# 12. Fetch VM
-# 13. Delete VM
+# 11. List all VMs with fetch_all
+# 12. Get vm using filter name
+# 13. Fetch VM
+# 14. Delete VM
 
 - name: VM crud playbook
   hosts: localhost

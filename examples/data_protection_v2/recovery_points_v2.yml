@@ -1,15 +1,16 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a recovery point for multiple VMs or VGs
+# 1. Create recovery point with multiple VMs and VGs
 # 2. List all recovery points
-# 3. Fetch a particular recovery point
-# 4. Update Expiration time for a recovery point
-# 5. Restore a recovery point
-# 6. Revrt a VM
-# 7. Replicate Recovery points
-# 8. Get VM Recovery Point info
-# 9. Delete a recovery point
+# 3. List all recovery points with fetch_all
+# 4. Get recovery point details
+# 5. Update recovery point expiration time
+# 6. Restore recovery point for multiple VMs and VGs
+# 7. Revert a VM recovery point
+# 8. Replicate Recovery point
+# 9. Get a VM recovery point details
+# 10. Delete recovery point
 
 - name: Recovery Points playbook
   hosts: localhost

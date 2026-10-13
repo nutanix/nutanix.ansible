@@ -1,11 +1,13 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create CD ROM for a VM
+# 1. Create CD ROM with all attributes
 # 2. Inject ISO in CD ROM of a VM
 # 3. Get CD ROM details
 # 4. Eject ISO from CD ROM of a VM
-# 5. Delete CD ROM
+# 5. List all vms cd rom
+# 6. List all vms cd rom with fetch_all
+# 7. Delete CD ROM
 
 - name: VM cd rom playbook
   hosts: localhost

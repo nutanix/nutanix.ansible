@@ -1,11 +1,12 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a key management server
-# 2. Update the key management server
-# 3. Fetch the key management server details
+# 1. Create key management server
+# 2. Update key management server
+# 3. Fetch key management server using external ID
 # 4. List all key management servers
-# 5. Delete the key management server
+# 5. List all key management servers with fetch_all
+# 6. Delete key management server
 
 - name: Key Management Server playbook
   hosts: localhost

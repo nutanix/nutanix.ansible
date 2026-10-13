@@ -1,11 +1,16 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a cluster with 3 nodes
-# 2. Register the cluster with Prism Central
-# 3. Expand the cluster by adding a node
-# 4. Remove the node from the cluster
-# 5. Destroy the cluster
+# 1. Create 3 nodes cluster with minimum spec
+# 2. List all clusters to get prism central external ID
+# 3. List all clusters to get prism central external ID with fetch_all
+# 4. Run PE PC registration
+# 5. Fetch cluster using name
+# 6. Discover unconfigured node
+# 7. Get network info of unconfigured node
+# 8. Expand cluster by adding a node
+# 9. Remove node from cluster
+# 10. Destroy the cluster
 
 - name: Cluster expanding playbook
   hosts: localhost

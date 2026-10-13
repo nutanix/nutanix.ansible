@@ -1,14 +1,15 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a project with all fields (name, project_id, description)
-# 2. Create a project without setting project_id
-# 3. Update the project description
-# 4. Fetch a project using external ID
+# 1. Create a project with all fields
+# 2. Create a project without setting project id
+# 3. Update project description
+# 4. Fetch project using external ID
 # 5. List all projects
-# 6. List projects with name filter
-# 7. List projects with limit
-# 8. Delete the project
+# 6. List all projects with fetch_all
+# 7. List projects with name filter
+# 8. List projects with limit
+# 9. Delete project
 
 - name: Projects playbook
   hosts: localhost

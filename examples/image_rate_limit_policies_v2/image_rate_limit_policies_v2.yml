@@ -1,13 +1,14 @@
 ---
 # Summary:
 # This playbook will do the following:
-# 1. Create an image rate limit policy
-# 2. Update the image rate limit policy
-# 3. Fetch the image rate limit policy using external ID
+# 1. Create image rate limit policy
+# 2. Update image rate limit policy
+# 3. Fetch image rate limit policy using external ID
 # 4. List all image rate limit policies
-# 5. List image rate limit policies with filter
-# 6. List image rate limit policies with limit
-# 7. Delete the image rate limit policy
+# 5. List all image rate limit policies with fetch_all
+# 6. List image rate limit policies with filter
+# 7. List image rate limit policies with limit
+# 8. Delete image rate limit policy
 # Pre-requisites:
 # Set the following variables:
 # - category_ext_id_1

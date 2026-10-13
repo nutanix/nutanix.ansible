@@ -1,13 +1,14 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a VM startup policy with guest_bootup criteria
-# 2. Get the VM startup policy using ext_id
+# 1. Create a VM startup policy
+# 2. Get VM startup policy using ext id
 # 3. List all VM startup policies
-# 4. List VM startup policies with filter
-# 5. List VM startup policies with limit
-# 6. Update the VM startup policy (switch to power_on criteria)
-# 7. Delete the VM startup policy
+# 4. List all VM startup policies with fetch_all
+# 5. List VM startup policies with filter
+# 6. List VM startup policies with limit
+# 7. Update VM startup policy
+# 8. Delete VM startup policy
 
 - name: VM Startup Policies playbook
   hosts: localhost

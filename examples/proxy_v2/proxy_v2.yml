@@ -1,6 +1,7 @@
 ---
 # Summary:
 # This playbook demonstrates how to use proxy configuration with Nutanix v4 API modules.
+# The task examples also include fetch_all list calls through proxy-backed info modules.
 # Proxy settings can be configured via:
 #   1. Module parameters (highest priority, lowercase)
 #   2. Environment variables (fallback, uppercase)

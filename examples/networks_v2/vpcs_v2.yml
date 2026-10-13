@@ -1,12 +1,12 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a VPC with external_nat_subnet uuid shared with projects
+# 1. Create min VPC with external nat subnet UUID shared with projects
 # 2. Update VPC to share with specific projects
 # 3. Update VPC to unshare from specific projects
-# 4. Update the VPC name
+# 4. Update vpc name
 # 5. Fetch VPC info
-# 6. Delete the VPC
+# 6. Delete VPC
 
 - name: VPCs playbook
   hosts: localhost

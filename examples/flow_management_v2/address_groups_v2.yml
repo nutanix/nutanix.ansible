@@ -1,10 +1,12 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create an address group
-# 2. Update the address group
-# 3. Fetch the address group info
-# 4. Delete the address group
+# 1. Create address group
+# 2. Update address group with the given UUID
+# 3. Fetch address group info
+# 4. List all address groups
+# 5. List all address groups with fetch_all
+# 6. Delete address group
 
 - name: Address groups playbook
   hosts: localhost
