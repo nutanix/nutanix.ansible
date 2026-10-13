@@ -1,3 +1,4 @@
+---
 - name: Inputs for static routes task
   ansible.builtin.include_tasks: static_route.yml
   with_items:

@@ -542,7 +542,8 @@
       - fetch_all_ntnx_pc_restorable_domain_managers_info_v2.failed == false
       - fetch_all_ntnx_pc_restorable_domain_managers_info_v2.response is defined
       - fetch_all_ntnx_pc_restorable_domain_managers_info_v2.total_available_results is defined
-      - (fetch_all_ntnx_pc_restorable_domain_managers_info_v2.response | default([]) | length) == (fetch_all_ntnx_pc_restorable_domain_managers_info_v2.total_available_results | int)
+      - (fetch_all_ntnx_pc_restorable_domain_managers_info_v2.response | default([]) | length) ==
+        (fetch_all_ntnx_pc_restorable_domain_managers_info_v2.total_available_results | int)
     fail_msg: "Unable to list with fetch_all"
     success_msg: "Listed with fetch_all successfully"
 
