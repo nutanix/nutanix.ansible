@@ -542,24 +542,11 @@ def normalize_oneof_marker_values(params, marker_keys):
                     normalize_oneof_marker_values(item, marker_keys)
 
 
-class _ListEntitiesMetadata(object):
-    """Minimal metadata stand-in for paginated V4 list responses."""
-
-    def __init__(self, total_available_results):
-        self.total_available_results = total_available_results
-
-
 class ListEntitiesResponse(object):
-    """SDK-like list response used when C(fetch_all) aggregates multiple pages.
 
-    Supports the two access patterns used by V2 info modules:
-      - ``resp.metadata.total_available_results``
-      - ``resp.to_dict().get("data")`` / ``.get("metadata")``
-    """
-
-    def __init__(self, data, total_available_results):
+    def __init__(self, data, metadata):
         self.data = data if data is not None else []
-        self.metadata = _ListEntitiesMetadata(total_available_results)
+        self.metadata = metadata
 
     def to_dict(self):
         data = []
@@ -568,10 +555,11 @@ class ListEntitiesResponse(object):
                 data.append(item.to_dict())
             else:
                 data.append(item)
+        total = getattr(self.metadata, "total_available_results", None)
         return {
             "data": data,
             "metadata": {
-                "total_available_results": self.metadata.total_available_results
+                "total_available_results": total,
             },
         }
 
@@ -586,9 +574,11 @@ def list_entities(
         kwargs (dict | None): Query kwargs from ``SpecGenerator.get_info_spec``
             (``_page``, ``_limit``, ``_filter``, ...).
         fetch_all (bool): When true, page through the API until all entities
-            are collected. ``_page`` is ignored; ``_limit`` (if set) is the
-            page size, otherwise ``default_page_size`` is used.
-        default_page_size (int): Page size used when fetch_all and no limit.
+            are collected. ``_page`` and ``_limit`` are ignored; each request
+            uses ``default_page_size`` (API max page size, 100), matching
+            inventory ``fetch_all_vms`` behavior.
+        default_page_size (int): Page size used for each request when
+            C(fetch_all) is true (default 100).
         **fixed_kwargs: Extra keyword args always passed to ``list_fn``
             (e.g. parent ext ids for nested lists).
 
@@ -603,14 +593,14 @@ def list_entities(
     if not fetch_all:
         return list_fn(**call_kwargs)
 
-    page_size = kwargs.get("_limit") or default_page_size
+    page_size = default_page_size
     base_kwargs = {
         key: value
         for key, value in kwargs.items()
         if key not in ("_page", "_limit")
     }
     entities = []
-    total_available = 0
+    metadata = None
     current_page = 0
 
     while True:
@@ -624,19 +614,16 @@ def list_entities(
         if page_data:
             entities.extend(page_data)
 
+        # Keep API metadata as-is (do not invent total_available_results).
         metadata = getattr(resp, "metadata", None) if resp is not None else None
         total_available = getattr(metadata, "total_available_results", None)
-        if total_available is None and resp is not None and hasattr(resp, "to_dict"):
-            total_available = (
-                (resp.to_dict() or {})
-                .get("metadata", {})
-                .get("total_available_results")
-            )
-        if total_available is None:
-            total_available = len(entities)
 
-        if len(entities) >= total_available or not page_data:
+        if not page_data:
+            break
+        if total_available is not None and len(entities) >= total_available:
+            break
+        if len(page_data) < page_size:
             break
         current_page += 1
 
-    return ListEntitiesResponse(entities, total_available)
+    return ListEntitiesResponse(entities, metadata)

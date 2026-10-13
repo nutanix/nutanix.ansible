@@ -40,6 +40,7 @@ options:
     fetch_all:
         description:
             - When C(true), paginate through the list API until all available entities are returned.
+              C(page) and C(limit) are ignored; each request uses the maximum page size (100).
             - When C(false), return a single page (API default limit).
             - Does not apply when fetching a single entity by C(ext_id).
         type: bool

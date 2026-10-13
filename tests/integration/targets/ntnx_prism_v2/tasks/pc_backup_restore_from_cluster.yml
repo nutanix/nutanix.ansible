@@ -85,22 +85,23 @@
 
 ########################################################################
 
-- name: List entities with fetch_all (ntnx_pc_backup_target_info_v2)
+- name: List entities with fetch_all
   nutanix.ncp.ntnx_pc_backup_target_info_v2:
     domain_manager_ext_id: "{{ domain_manager_ext_id }}"
     fetch_all: true
   register: fetch_all_ntnx_pc_backup_target_info_v2
   ignore_errors: true
 
-- name: Status of list with fetch_all (ntnx_pc_backup_target_info_v2)
+- name: Status of list with fetch_all
   ansible.builtin.assert:
     that:
+      - fetch_all_ntnx_pc_backup_target_info_v2.changed == false
       - fetch_all_ntnx_pc_backup_target_info_v2.failed == false
       - fetch_all_ntnx_pc_backup_target_info_v2.response is defined
       - fetch_all_ntnx_pc_backup_target_info_v2.total_available_results is defined
       - (fetch_all_ntnx_pc_backup_target_info_v2.response | default([]) | length) == (fetch_all_ntnx_pc_backup_target_info_v2.total_available_results | int)
-    fail_msg: "Unable to list with fetch_all for ntnx_pc_backup_target_info_v2"
-    success_msg: "Listed with fetch_all successfully for ntnx_pc_backup_target_info_v2"
+    fail_msg: "Unable to list with fetch_all"
+    success_msg: "Listed with fetch_all successfully"
 
 - name: Initialize backup_target_cluster_ext_id
   ansible.builtin.set_fact:
@@ -267,21 +268,22 @@
 
 ########################################################################
 
-- name: List entities with fetch_all (ntnx_pc_config_info_v2)
+- name: List entities with fetch_all
   nutanix.ncp.ntnx_pc_config_info_v2:
     fetch_all: true
   register: fetch_all_ntnx_pc_config_info_v2
   ignore_errors: true
 
-- name: Status of list with fetch_all (ntnx_pc_config_info_v2)
+- name: Status of list with fetch_all
   ansible.builtin.assert:
     that:
+      - fetch_all_ntnx_pc_config_info_v2.changed == false
       - fetch_all_ntnx_pc_config_info_v2.failed == false
       - fetch_all_ntnx_pc_config_info_v2.response is defined
       - fetch_all_ntnx_pc_config_info_v2.total_available_results is defined
       - (fetch_all_ntnx_pc_config_info_v2.response | default([]) | length) == (fetch_all_ntnx_pc_config_info_v2.total_available_results | int)
-    fail_msg: "Unable to list with fetch_all for ntnx_pc_config_info_v2"
-    success_msg: "Listed with fetch_all successfully for ntnx_pc_config_info_v2"
+    fail_msg: "Unable to list with fetch_all"
+    success_msg: "Listed with fetch_all successfully"
 
 - name: Fetch PC details using external ID
   nutanix.ncp.ntnx_pc_config_info_v2:
@@ -522,7 +524,7 @@
 
 ########################################################################
 
-- name: List entities with fetch_all (ntnx_pc_restorable_domain_managers_info_v2)
+- name: List entities with fetch_all
   nutanix.ncp.ntnx_pc_restorable_domain_managers_info_v2:
     nutanix_host: "{{ ip_pe }}"
     nutanix_username: "{{ username_for_tests }}"
@@ -533,15 +535,16 @@
   register: fetch_all_ntnx_pc_restorable_domain_managers_info_v2
   ignore_errors: true
 
-- name: Status of list with fetch_all (ntnx_pc_restorable_domain_managers_info_v2)
+- name: Status of list with fetch_all
   ansible.builtin.assert:
     that:
+      - fetch_all_ntnx_pc_restorable_domain_managers_info_v2.changed == false
       - fetch_all_ntnx_pc_restorable_domain_managers_info_v2.failed == false
       - fetch_all_ntnx_pc_restorable_domain_managers_info_v2.response is defined
       - fetch_all_ntnx_pc_restorable_domain_managers_info_v2.total_available_results is defined
       - (fetch_all_ntnx_pc_restorable_domain_managers_info_v2.response | default([]) | length) == (fetch_all_ntnx_pc_restorable_domain_managers_info_v2.total_available_results | int)
-    fail_msg: "Unable to list with fetch_all for ntnx_pc_restorable_domain_managers_info_v2"
-    success_msg: "Listed with fetch_all successfully for ntnx_pc_restorable_domain_managers_info_v2"
+    fail_msg: "Unable to list with fetch_all"
+    success_msg: "Listed with fetch_all successfully"
 
 - name: Get restorable domain manager using filter
   nutanix.ncp.ntnx_pc_restorable_domain_managers_info_v2:
@@ -588,7 +591,7 @@
 
 ########################################################################
 
-- name: List entities with fetch_all (ntnx_pc_restore_points_info_v2)
+- name: List entities with fetch_all
   nutanix.ncp.ntnx_pc_restore_points_info_v2:
     nutanix_host: "{{ ip_pe }}"
     nutanix_username: "{{ username_for_tests }}"
@@ -600,15 +603,16 @@
   register: fetch_all_ntnx_pc_restore_points_info_v2
   ignore_errors: true
 
-- name: Status of list with fetch_all (ntnx_pc_restore_points_info_v2)
+- name: Status of list with fetch_all
   ansible.builtin.assert:
     that:
+      - fetch_all_ntnx_pc_restore_points_info_v2.changed == false
       - fetch_all_ntnx_pc_restore_points_info_v2.failed == false
       - fetch_all_ntnx_pc_restore_points_info_v2.response is defined
       - fetch_all_ntnx_pc_restore_points_info_v2.total_available_results is defined
       - (fetch_all_ntnx_pc_restore_points_info_v2.response | default([]) | length) == (fetch_all_ntnx_pc_restore_points_info_v2.total_available_results | int)
-    fail_msg: "Unable to list with fetch_all for ntnx_pc_restore_points_info_v2"
-    success_msg: "Listed with fetch_all successfully for ntnx_pc_restore_points_info_v2"
+    fail_msg: "Unable to list with fetch_all"
+    success_msg: "Listed with fetch_all successfully"
 
 - name: Set restore point external ID
   ansible.builtin.set_fact:

@@ -36,9 +36,10 @@ options:
   fetch_all:
     description:
       - When C(true), paginate through the list API until all available entities
-        are returned (ignores C(page); C(limit) is used as the page size when set).
+        are returned. C(page) and C(limit) are ignored; each request uses the
+        maximum page size (100).
       - When C(false), return a single page using the API default page size (50)
-        unless C(limit)/C(page) are set — this is the current listing behavior.
+        unless C(limit)/C(page) are set.
       - Does not apply when fetching a single entity by C(ext_id).
     type: bool
     required: false

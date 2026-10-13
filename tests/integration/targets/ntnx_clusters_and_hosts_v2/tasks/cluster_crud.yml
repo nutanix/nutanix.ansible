@@ -66,21 +66,22 @@
 
 ########################################################################
 
-- name: List entities with fetch_all (ntnx_clusters_info_v2)
+- name: List entities with fetch_all
   nutanix.ncp.ntnx_clusters_info_v2:
     fetch_all: true
   register: fetch_all_ntnx_clusters_info_v2
   ignore_errors: true
 
-- name: Status of list with fetch_all (ntnx_clusters_info_v2)
+- name: Status of list with fetch_all
   ansible.builtin.assert:
     that:
+      - fetch_all_ntnx_clusters_info_v2.changed == false
       - fetch_all_ntnx_clusters_info_v2.failed == false
       - fetch_all_ntnx_clusters_info_v2.response is defined
       - fetch_all_ntnx_clusters_info_v2.total_available_results is defined
       - (fetch_all_ntnx_clusters_info_v2.response | default([]) | length) == (fetch_all_ntnx_clusters_info_v2.total_available_results | int)
-    fail_msg: "Unable to list with fetch_all for ntnx_clusters_info_v2"
-    success_msg: "Listed with fetch_all successfully for ntnx_clusters_info_v2"
+    fail_msg: "Unable to list with fetch_all"
+    success_msg: "Listed with fetch_all successfully"
 
 - name: Get prism central external ID
   ansible.builtin.set_fact:
@@ -1460,21 +1461,22 @@
 
 ########################################################################
 
-- name: List entities with fetch_all (ntnx_hosts_info_v2)
+- name: List entities with fetch_all
   nutanix.ncp.ntnx_hosts_info_v2:
     fetch_all: true
   register: fetch_all_ntnx_hosts_info_v2
   ignore_errors: true
 
-- name: Status of list with fetch_all (ntnx_hosts_info_v2)
+- name: Status of list with fetch_all
   ansible.builtin.assert:
     that:
+      - fetch_all_ntnx_hosts_info_v2.changed == false
       - fetch_all_ntnx_hosts_info_v2.failed == false
       - fetch_all_ntnx_hosts_info_v2.response is defined
       - fetch_all_ntnx_hosts_info_v2.total_available_results is defined
       - (fetch_all_ntnx_hosts_info_v2.response | default([]) | length) == (fetch_all_ntnx_hosts_info_v2.total_available_results | int)
-    fail_msg: "Unable to list with fetch_all for ntnx_hosts_info_v2"
-    success_msg: "Listed with fetch_all successfully for ntnx_hosts_info_v2"
+    fail_msg: "Unable to list with fetch_all"
+    success_msg: "Listed with fetch_all successfully"
 
 - name: Set host related variables
   ansible.builtin.set_fact:
