@@ -49,10 +49,6 @@
   register: result
   ignore_errors: true
 
-- name: Generate spec for creating LCM bundle using check mode with all attributes result
-  ansible.builtin.debug:
-    var: result
-
 - name: Generate spec for creating LCM bundle using check mode with all attributes status
   ansible.builtin.assert:
     that:
@@ -90,10 +86,6 @@
   register: result
   ignore_errors: true
 
-- name: Delete LCM bundle with check mode result
-  ansible.builtin.debug:
-    var: result
-
 - name: Delete LCM bundle with check mode status
   ansible.builtin.assert:
     that:
@@ -117,10 +109,6 @@
       url: "{{ lcm_dark_site_bundle_url }}"
   register: result
   ignore_errors: true
-
-- name: Create IMAGE LCM bundle result
-  ansible.builtin.debug:
-    var: result
 
 - name: Create IMAGE LCM bundle status
   ansible.builtin.assert:
@@ -151,10 +139,6 @@
   register: result
   ignore_errors: true
 
-- name: List all LCM bundles result
-  ansible.builtin.debug:
-    var: result
-
 - name: List all LCM bundles status
   ansible.builtin.assert:
     that:
@@ -174,10 +158,6 @@
   register: result
   ignore_errors: true
 
-- name: List LCM bundles with a filter that matches nothing result
-  ansible.builtin.debug:
-    var: result
-
 - name: List LCM bundles with filter status
   ansible.builtin.assert:
     that:
@@ -194,10 +174,6 @@
     limit: 1
   register: result
   ignore_errors: true
-
-- name: List LCM bundles with limit=1 result
-  ansible.builtin.debug:
-    var: result
 
 - name: List LCM bundles with limit status
   ansible.builtin.assert:
@@ -216,10 +192,6 @@
   register: result
   ignore_errors: true
 
-- name: Fetch LCM bundle using external ID result
-  ansible.builtin.debug:
-    var: result
-
 - name: Fetch LCM bundle using external ID status
   ansible.builtin.assert:
     that:
@@ -236,10 +208,6 @@
     ext_id: "{{ fake_ext_id }}"
   register: result
   ignore_errors: true
-
-- name: Fetch LCM bundle using wrong external ID result
-  ansible.builtin.debug:
-    var: result
 
 - name: Fetch LCM bundle using wrong external ID status
   ansible.builtin.assert:
@@ -263,10 +231,6 @@
   register: result
   ignore_errors: true
 
-- name: Create LCM bundle with missing vendor result
-  ansible.builtin.debug:
-    var: result
-
 - name: Create LCM bundle with missing vendor status
   ansible.builtin.assert:
     that:
@@ -287,10 +251,6 @@
   register: result
   ignore_errors: true
 
-- name: Create LCM bundle image missing spec_version in image spec result
-  ansible.builtin.debug:
-    var: result
-
 - name: Create LCM bundle image missing spec_version in image spec status
   ansible.builtin.assert:
     that:
@@ -309,10 +269,6 @@
     vendor: "NUTANIX"
   register: result
   ignore_errors: true
-
-- name: Create LCM bundle with invalid type value result
-  ansible.builtin.debug:
-    var: result
 
 - name: Create LCM bundle with invalid type value status
   ansible.builtin.assert:
@@ -338,10 +294,6 @@
   register: result
   ignore_errors: true
 
-- name: Create LCM bundle with both md5_sum and sha256_sum (mutually exclusive) result
-  ansible.builtin.debug:
-    var: result
-
 - name: Mutually exclusive checksum status
   ansible.builtin.assert:
     that:
@@ -357,10 +309,6 @@
     state: absent
   register: result
   ignore_errors: true
-
-- name: Delete LCM bundle with missing external ID result
-  ansible.builtin.debug:
-    var: result
 
 - name: Delete LCM bundle with missing external ID status
   ansible.builtin.assert:
@@ -378,10 +326,6 @@
     state: absent
   register: result
   ignore_errors: true
-
-- name: Delete LCM bundle with wrong external ID result
-  ansible.builtin.debug:
-    var: result
 
 - name: Delete LCM bundle with wrong external ID status
   ansible.builtin.assert:
@@ -409,11 +353,6 @@
   ignore_errors: true
   when: bundle_ext_id is defined
 
-- name: Delete IMAGE LCM bundle result
-  ansible.builtin.debug:
-    var: result
-  when: bundle_ext_id is defined
-
 - name: Delete IMAGE LCM bundle status
   ansible.builtin.assert:
     that:
@@ -425,7 +364,3 @@
     success_msg: "Delete IMAGE LCM bundle passed"
     fail_msg: "Delete IMAGE LCM bundle failed unexpectedly"
   when: bundle_ext_id is defined
-
-- name: LCM Bundle v2 tests summary
-  ansible.builtin.debug:
-    msg: "All LCM Bundle v2 tests completed."

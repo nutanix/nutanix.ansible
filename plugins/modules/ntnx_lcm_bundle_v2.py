@@ -347,12 +347,6 @@ changed:
   type: bool
   sample: true
 
-skipped:
-  description: This indicates whether the task was skipped
-  returned: always
-  type: bool
-  sample: false
-
 error:
   description: This indicates the error message if any error occurred
   returned: When an error occurs
@@ -366,7 +360,7 @@ failed:
 
 msg:
   description: This indicates the message if any message occurred
-  returned: When there is an error, module is idempotent or check mode (in delete operation)
+  returned: When there is an error or check mode (in delete operation)
   type: str
   sample: "Api Exception raised while creating LCM bundle"
 """
@@ -605,7 +599,6 @@ def run_module():
         "failed": False,
         "ext_id": None,
         "task_ext_id": None,
-        "skipped": False,
     }
 
     api_instance = get_bundles_api_instance(module)
