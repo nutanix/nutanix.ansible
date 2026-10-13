@@ -59,6 +59,7 @@ class Tasks:
         VM_ANTI_AFFINITY_POLICY = "vmm:ahv:policies:vm-anti-affinity-policy"
         PROJECT = "multidomain:config:Project"
         RESOURCE_GROUP = "multidomain:config:nutanix-resource-group"
+        CONTENT_REPOSITORY = "multidomain:content:content-repository"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
