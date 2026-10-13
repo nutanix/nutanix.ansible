@@ -595,9 +595,7 @@ def list_entities(
 
     page_size = default_page_size
     base_kwargs = {
-        key: value
-        for key, value in kwargs.items()
-        if key not in ("_page", "_limit")
+        key: value for key, value in kwargs.items() if key not in ("_page", "_limit")
     }
     entities = []
     metadata = None

@@ -188,9 +188,9 @@ from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
-    list_entities,
 )
 
 # Suppress the InsecureRequestWarning
@@ -231,7 +231,7 @@ def get_restore_points(module, domain_manager_backups_api, result):
             fetch_all=module.params.get("fetch_all"),
             restoreSourceExtId=restore_source_ext_id,
             restorableDomainManagerExtId=restorable_domain_manager_ext_id,
-            **kwargs  # fmt: skip,
+            **kwargs,  # fmt: skip,
         )
     except Exception as e:
         raise_api_exception(

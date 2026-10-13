@@ -229,10 +229,7 @@ import warnings  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
-from ..module_utils.v4.utils import (  # noqa: E402
-    raise_api_exception,
-    list_entities,
-)
+from ..module_utils.v4.utils import list_entities, raise_api_exception  # noqa: E402
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_vm_anti_affinity_policies_api_instance,
 )

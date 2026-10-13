@@ -185,9 +185,9 @@ from ..module_utils.v4.multidomain.api_client import (  # noqa: E402
 from ..module_utils.v4.multidomain.helpers import get_project  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
-    list_entities,
 )
 
 # Suppress the InsecureRequestWarning

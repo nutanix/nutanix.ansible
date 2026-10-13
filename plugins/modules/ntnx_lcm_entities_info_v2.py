@@ -142,9 +142,9 @@ from ..module_utils.v4.lcm.api_client import get_entity_api_instance  # noqa: E4
 from ..module_utils.v4.lcm.helpers import get_lcm_entity  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
-    list_entities,
 )
 
 # Suppress the InsecureRequestWarning
@@ -176,7 +176,11 @@ def get_entities(module, api_instance, result):
         module.fail_json(msg="Failed to generate info spec for entities", **result)
 
     try:
-        resp = api_instance.list_entities(**kwargs)
+        resp = list_entities(
+            api_instance.list_entities,
+            kwargs=kwargs,
+            fetch_all=module.params.get("fetch_all"),
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

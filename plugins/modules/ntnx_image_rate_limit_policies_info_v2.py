@@ -146,9 +146,9 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
-    list_entities,
 )
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_image_rate_limit_policy_api_instance,

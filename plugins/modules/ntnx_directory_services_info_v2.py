@@ -156,9 +156,9 @@ from ..module_utils.v4.iam.api_client import (  # noqa: E402
 from ..module_utils.v4.iam.helpers import get_directory_service  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
-    list_entities,
 )
 
 # Suppress the InsecureRequestWarning

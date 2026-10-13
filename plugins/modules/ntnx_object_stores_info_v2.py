@@ -190,9 +190,9 @@ from ..module_utils.v4.objects.api_client import get_objects_api_instance  # noq
 from ..module_utils.v4.objects.helpers import get_object_store  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
-    list_entities,
 )
 
 # Suppress the InsecureRequestWarning

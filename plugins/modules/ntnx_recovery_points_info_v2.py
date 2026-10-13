@@ -172,9 +172,9 @@ from ..module_utils.v4.data_protection.api_client import (  # noqa: E402
 from ..module_utils.v4.data_protection.helpers import get_recovery_point  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
-    list_entities,
 )
 
 # Suppress the InsecureRequestWarning

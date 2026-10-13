@@ -189,9 +189,9 @@ from ..module_utils.v4.iam.api_client import get_entity_api_instance  # noqa: E4
 from ..module_utils.v4.iam.helpers import get_entity  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
-    list_entities,
 )
 
 # Suppress the InsecureRequestWarning
@@ -220,7 +220,11 @@ def get_entities(module, entities, result):
         module.fail_json(msg="Failed generating entities info Spec", **result)
 
     try:
-        resp = entities.list_entities(**kwargs)
+        resp = list_entities(
+            entities.list_entities,
+            kwargs=kwargs,
+            fetch_all=module.params.get("fetch_all"),
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
