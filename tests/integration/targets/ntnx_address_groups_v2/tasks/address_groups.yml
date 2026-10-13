@@ -257,10 +257,7 @@
     fail_msg: Unable to list all address groups
     success_msg: address groups info obtained successfully
 
-###################################################################################################
-
-
-########################################################################
+#######################################################################################
 
 - name: List entities with fetch_all
   nutanix.ncp.ntnx_address_groups_info_v2:

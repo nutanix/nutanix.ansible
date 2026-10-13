@@ -4,22 +4,16 @@
 # 1. Create new template from a vm
 # 2. Fetch template info using ext id
 # 3. Update template description & name
-# 4. Retrieve the Template Version details for the given Template Version
+# 4. Retrieve the Template Version details for the given Template Version identifier.
 # 5. Publish template version as active version
-# 6. List all templates
-# 7. List all templates with fetch_all
-# 8. List all templates versions
-# 9. List all templates versions with fetch_all
-# 10. Delete Template Version
-# 11. Deploy VM from template
-# 12. Initiate guest os update
-# 13. Finish guest os update
-# 14. 
-# 15. Delete Template
+# 6. Delete Template Version
+# 7. Deploy VM
+# 8. Initiate_guest_os_update
+# 9. Finish guest_os_update
+# 10. Deploy VM from template with a VM Guest Customization Profile reference and
 #     per-VM overrides (workgroup join, DHCP). Requires NGT installed on the
 #     source VM the template was captured from; otherwise the deploy API rejects
 #     the request.
-# 11. Delete Template
 
 - name: VM templates playbook
   hosts: localhost

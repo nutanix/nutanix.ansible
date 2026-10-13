@@ -132,7 +132,6 @@
     fail_msg: "Failed to fetch first VPC route table with filter and set route table external ID"
     success_msg: "Successfully fetched first VPC route table with filter and set route table external ID"
 
-
 ########################################################################
 
 - name: List entities with fetch_all
@@ -468,10 +467,7 @@
     fail_msg: "Fetch route by external ID failed "
     success_msg: "Fetch route by external ID passed "
 
-###########################################################################################################
-
-
-########################################################################
+###############################################################################################
 
 - name: List entities with fetch_all
   nutanix.ncp.ntnx_routes_info_v2:
@@ -751,7 +747,6 @@
       - result.task_ext_id is defined
     fail_msg: " Unable to Delete second VPC"
     success_msg: "second VPC has been deleted successfully"
-
 ############################################################################################
 # The fixture project and the external NAT subnet's project-share are owned by
 # prepare_env and are intentionally left in place (the subnet cannot be

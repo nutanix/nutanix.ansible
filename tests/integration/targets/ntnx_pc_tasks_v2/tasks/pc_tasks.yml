@@ -1,5 +1,4 @@
 ---
-
 - name: "Start ntnx_pc_tasks_v2 PC tasks tests"
   ansible.builtin.debug:
     msg: "Start ntnx_pc_tasks_v2 PC tasks tests"
@@ -115,10 +114,7 @@
     fail_msg: "Unable to list all the tasks "
     success_msg: "All tasks are listed successfully"
 
-################################################################################
-
-
-########################################################################
+####################################################################
 
 - name: List entities with fetch_all
   nutanix.ncp.ntnx_pc_tasks_info_v2:

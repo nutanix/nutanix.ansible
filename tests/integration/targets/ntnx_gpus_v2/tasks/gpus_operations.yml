@@ -275,10 +275,7 @@
     fail_msg: "Unable to list GPUs attached to the VM  "
     success_msg: "List GPUs attached to the VM is successful  "
 
-##################################################################################
-
-
-########################################################################
+######################################################################
 
 - name: List entities with fetch_all
   nutanix.ncp.ntnx_gpus_info_v2:

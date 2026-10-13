@@ -532,10 +532,7 @@
     fail_msg: "Unable to get nic info "
     success_msg: "nic info fetched successfully "
 
-###############################################################################
-
-
-########################################################################
+###################################################################
 
 - name: List entities with fetch_all
   nutanix.ncp.ntnx_vms_nics_info_v2:

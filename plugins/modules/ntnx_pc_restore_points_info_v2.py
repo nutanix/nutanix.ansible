@@ -114,11 +114,11 @@ EXAMPLES = r"""
 
 - name: Fetch all entities using fetch_all
   nutanix.ncp.ntnx_pc_restore_points_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    fetch_all: true
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+      fetch_all: true
 """
 
 RETURN = r"""

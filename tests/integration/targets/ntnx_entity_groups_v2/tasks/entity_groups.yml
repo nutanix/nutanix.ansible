@@ -205,7 +205,6 @@
     fail_msg: Create entity group with check mode enabled with multiple allowed entities failed
     success_msg: Create entity group with check mode enabled with multiple allowed entities passed
 
-
 ###################################################################################################
 
 - name: Create entity group
@@ -608,10 +607,7 @@
     fail_msg: List all entity groups failed
     success_msg: All entity groups listed successfully
 
-###################################################################################################
-
-
-########################################################################
+#######################################################################################
 
 - name: List entities with fetch_all
   nutanix.ncp.ntnx_entity_groups_info_v2:

@@ -237,10 +237,7 @@
     fail_msg: "Unable to get CD ROM details "
     success_msg: "CD ROM details are fetched successfully "
 
-################################################################################
-
-
-########################################################################
+####################################################################
 
 - name: List entities with fetch_all
   nutanix.ncp.ntnx_vms_cd_rom_info_v2:
