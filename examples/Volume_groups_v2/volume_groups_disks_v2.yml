@@ -4,6 +4,7 @@
 # 1. Create disks
 # 2. Create disk from previously created vdisk
 # 3. Delete disk
+# 4. List volume group disks with external storage info expanded
 
 - name: Volume groups disks playbook
   hosts: localhost
@@ -55,3 +56,10 @@
         volume_group_ext_id: "{{ vg1_uuid }}"
         ext_id: "{{ result.ext_id }}"
       register: result
+
+    - name: List volume group disks with external storage info expanded
+      nutanix.ncp.ntnx_volume_groups_disks_info_v2:
+        volume_group_ext_id: "{{ vg1_uuid }}"
+        expand: externalStorageInfo
+      register: result
+      ignore_errors: true

@@ -379,6 +379,7 @@
               remote: 1
           start_time: "13h:11m"
           sync_replication_auto_suspend_timeout_seconds: 300
+          latest_recovery_point_retention_seconds: 3600
       - source_location_label: "ansible-label-{{label2}}"
         remote_location_label: "ansible-label-{{label1}}"
         schedule:
@@ -390,6 +391,7 @@
               remote: 1
           start_time: "13h:11m"
           sync_replication_auto_suspend_timeout_seconds: 300
+          latest_recovery_point_retention_seconds: 3600
     category_ids:
       - "00000000-0000-0000-0000-000000000000"
   register: result
@@ -426,28 +428,32 @@
         and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 3600
         and result.response.replication_configurations[0].schedule.retention.local == 1
         and result.response.replication_configurations[0].schedule.retention.remote == 1
-        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300
+        and result.response.replication_configurations[0].schedule.latest_recovery_point_retention_seconds == 3600)
         or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}"
         and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}"
         and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
         and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 3600
         and result.response.replication_configurations[0].schedule.retention.local == 1
         and result.response.replication_configurations[0].schedule.retention.remote == 1
-        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300
+        and result.response.replication_configurations[0].schedule.latest_recovery_point_retention_seconds == 3600)
       - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}"
         and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}"
         and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
         and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 3600
         and result.response.replication_configurations[1].schedule.retention.local == 1
         and result.response.replication_configurations[1].schedule.retention.remote == 1
-        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300
+        and result.response.replication_configurations[1].schedule.latest_recovery_point_retention_seconds == 3600)
         or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}"
         and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}"
         and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
         and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 3600
         and result.response.replication_configurations[1].schedule.retention.local == 1
         and result.response.replication_configurations[1].schedule.retention.remote == 1
-        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300
+        and result.response.replication_configurations[1].schedule.latest_recovery_point_retention_seconds == 3600)
       - result.response.replication_locations[0] != result.response.replication_locations[1]
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "00000000-0000-0000-0000-000000000000"
@@ -486,6 +492,7 @@
               local: 1
               remote: 1
           sync_replication_auto_suspend_timeout_seconds: 300
+          latest_recovery_point_retention_seconds: 3600
       - source_location_label: "ansible-label-{{label2}}"
         remote_location_label: "ansible-label-{{label1}}"
         schedule:
@@ -496,6 +503,7 @@
               local: 1
               remote: 1
           sync_replication_auto_suspend_timeout_seconds: 300
+          latest_recovery_point_retention_seconds: 3600
     category_ids:
       - "{{category_ext_id_1}}"
   register: result
@@ -532,28 +540,32 @@
         and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 3600
         and result.response.replication_configurations[0].schedule.retention.local == 1
         and result.response.replication_configurations[0].schedule.retention.remote == 1
-        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300
+        and result.response.replication_configurations[0].schedule.latest_recovery_point_retention_seconds == 3600)
         or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}"
         and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}"
         and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
         and result.response.replication_configurations[0].schedule.recovery_point_objective_time_seconds == 3600
         and result.response.replication_configurations[0].schedule.retention.local == 1
         and result.response.replication_configurations[0].schedule.retention.remote == 1
-        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300
+        and result.response.replication_configurations[0].schedule.latest_recovery_point_retention_seconds == 3600)
       - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}"
         and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}"
         and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
         and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 3600
         and result.response.replication_configurations[1].schedule.retention.local == 1
         and result.response.replication_configurations[1].schedule.retention.remote == 1
-        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300
+        and result.response.replication_configurations[1].schedule.latest_recovery_point_retention_seconds == 3600)
         or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}"
         and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}"
         and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
         and result.response.replication_configurations[1].schedule.recovery_point_objective_time_seconds == 3600
         and result.response.replication_configurations[1].schedule.retention.local == 1
         and result.response.replication_configurations[1].schedule.retention.remote == 1
-        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300
+        and result.response.replication_configurations[1].schedule.latest_recovery_point_retention_seconds == 3600)
       - result.response.replication_locations[0] != result.response.replication_locations[1]
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_1}}"
@@ -600,6 +612,7 @@
                 snapshot_interval_type: "DAILY"
                 frequency: 1
           sync_replication_auto_suspend_timeout_seconds: 300
+          latest_recovery_point_retention_seconds: 7200
       - source_location_label: "ansible-label-{{label2}}"
         remote_location_label: "ansible-label-{{label1}}"
         schedule:
@@ -614,6 +627,7 @@
                 snapshot_interval_type: "DAILY"
                 frequency: 1
           sync_replication_auto_suspend_timeout_seconds: 300
+          latest_recovery_point_retention_seconds: 7200
     category_ids:
       - "{{category_ext_id_2}}"
   register: result
@@ -652,7 +666,8 @@
         and result.response.replication_configurations[0].schedule.retention.local.frequency == 1
         and result.response.replication_configurations[0].schedule.retention.remote.snapshot_interval_type == "DAILY"
         and result.response.replication_configurations[0].schedule.retention.remote.frequency == 1
-        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300
+        and result.response.replication_configurations[0].schedule.latest_recovery_point_retention_seconds == 7200)
         or (result.response.replication_configurations[0].source_location_label == "ansible-label-{{label2}}"
         and result.response.replication_configurations[0].remote_location_label == "ansible-label-{{label1}}"
         and result.response.replication_configurations[0].schedule.recovery_point_type == "CRASH_CONSISTENT"
@@ -661,7 +676,8 @@
         and result.response.replication_configurations[0].schedule.retention.local.frequency == 1
         and result.response.replication_configurations[0].schedule.retention.remote.snapshot_interval_type == "DAILY"
         and result.response.replication_configurations[0].schedule.retention.remote.frequency == 1
-        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        and result.response.replication_configurations[0].schedule.sync_replication_auto_suspend_timeout_seconds == 300
+        and result.response.replication_configurations[0].schedule.latest_recovery_point_retention_seconds == 7200)
       - (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label1}}"
         and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label2}}"
         and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
@@ -670,7 +686,8 @@
         and result.response.replication_configurations[1].schedule.retention.local.frequency == 1
         and result.response.replication_configurations[1].schedule.retention.remote.snapshot_interval_type == "DAILY"
         and result.response.replication_configurations[1].schedule.retention.remote.frequency == 1
-        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300
+        and result.response.replication_configurations[1].schedule.latest_recovery_point_retention_seconds == 7200)
         or (result.response.replication_configurations[1].source_location_label == "ansible-label-{{label2}}"
         and result.response.replication_configurations[1].remote_location_label == "ansible-label-{{label1}}"
         and result.response.replication_configurations[1].schedule.recovery_point_type == "CRASH_CONSISTENT"
@@ -679,7 +696,8 @@
         and result.response.replication_configurations[1].schedule.retention.local.frequency == 1
         and result.response.replication_configurations[1].schedule.retention.remote.snapshot_interval_type == "DAILY"
         and result.response.replication_configurations[1].schedule.retention.remote.frequency == 1
-        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300)
+        and result.response.replication_configurations[1].schedule.sync_replication_auto_suspend_timeout_seconds == 300
+        and result.response.replication_configurations[1].schedule.latest_recovery_point_retention_seconds == 7200)
       - result.response.replication_locations[0] != result.response.replication_locations[1]
       - result.response.replication_configurations[0] != result.response.replication_configurations[1]
       - result.response.category_ids[0] == "{{category_ext_id_2}}"

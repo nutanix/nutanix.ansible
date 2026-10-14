@@ -2,12 +2,14 @@
 # Summary:
 # This playbook will do:
 # 1. Create an entity group
-# 2. Update the entity group
-# 3. List all entity groups
-# 4. List entity groups using filter
-# 5. List entity groups using limit
-# 6. Get entity group using ext_id
-# 7. Delete the entity group
+# 2. Create an entity group using REGEX select_by
+# 3. Create an entity group using FQDN_VALUES select_by
+# 4. Update the entity group
+# 5. List all entity groups
+# 6. List entity groups using filter
+# 7. List entity groups using limit
+# 8. Get entity group using ext_id
+# 9. Delete the entity group
 
 - name: Entity groups playbook
   hosts: localhost
@@ -45,6 +47,35 @@
     - name: Store entity group ext_id
       ansible.builtin.set_fact:
         entity_group_ext_id: "{{ result.ext_id }}"
+
+    - name: Create entity group using REGEX select_by
+      nutanix.ncp.ntnx_entity_group_v2:
+        state: present
+        name: "{{ entity_group_name }}_regex"
+        description: "{{ entity_group_description }}_regex"
+        allowed_config:
+          entities:
+            - select_by: REGEX
+              type: VM
+              reference_string: "ansible-vm"
+              match_criteria: CONTAINS
+      register: result
+      ignore_errors: true
+
+    - name: Create entity group using FQDN_VALUES select_by
+      nutanix.ncp.ntnx_entity_group_v2:
+        state: present
+        name: "{{ entity_group_name }}_fqdn"
+        description: "{{ entity_group_description }}_fqdn"
+        allowed_config:
+          entities:
+            - select_by: FQDN_VALUES
+              type: ADDRESS_GROUP
+              fqdns:
+                - "app.example.com"
+                - "db.example.com"
+      register: result
+      ignore_errors: true
 
     - name: Update entity group
       nutanix.ncp.ntnx_entity_group_v2:
