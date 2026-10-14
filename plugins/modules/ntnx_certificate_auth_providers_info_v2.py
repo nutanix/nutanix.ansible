@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_certificate_auth_providers_info_v2
 short_description: Fetch information about certificate-based authentication provider(s)
-version_added: "2.5.0"
+version_added: "2.7.0"
 description:
   - This module fetches information about Nutanix certificate-based authentication provider(s).
   - Fetch specific certificate authentication provider using external ID.
@@ -34,11 +34,17 @@ options:
     description:
       - The number of records
     type: int
-author:
+  read_timeout:
+      description: Read timeout in milliseconds for API calls.
+      type: int
+      required: false
+      default: 30000
+author
   - George Ghawali (@george-ghawali)
 extends_documentation_fragment:
-  - nutanix.ncp.ntnx_credentials
-  - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_credentials
+      - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 """
 
 EXAMPLES = r"""
