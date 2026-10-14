@@ -58,27 +58,32 @@ options:
       - Name of the uploaded CA chain file.
       - The original filename of the clientCaChain you uploaded.
     type: str
-  is_ocsp_enabled:
+  cert_revocation_info:
     description:
-      - Flag to enable/disable Online Certificate Status Protocol (OCSP) revocation check.
-    type: bool
-  ocsp_responder:
-    description:
-      - URL of the OCSP responder used to override the URL from AIA extension.
-    type: str
-  is_crl_enabled:
-    description:
-      - Flag to enable/disable Certificate Revocation List (CRL) checking.
-    type: bool
-  crl_dps:
-    description:
-      - List of CRL Distribution Points URLs where the CRL file can be downloaded.
-    type: list
-    elements: str
-  global_crl_refresh_interval:
-    description:
-      - Interval in seconds at which the CRL should be fetched from the CRL Distribution Points.
-    type: int
+      - Certificate revocation configuration (OCSP/CRL).
+    type: dict
+    suboptions:
+      is_ocsp_enabled:
+        description:
+          - Flag to enable/disable Online Certificate Status Protocol (OCSP) revocation check.
+        type: bool
+      ocsp_responder:
+        description:
+          - URL of the OCSP responder used to override the URL from AIA extension.
+        type: str
+      is_crl_enabled:
+        description:
+          - Flag to enable/disable Certificate Revocation List (CRL) checking.
+        type: bool
+      crl_dps:
+        description:
+          - List of CRL Distribution Points URLs where the CRL file can be downloaded.
+        type: list
+        elements: str
+      global_crl_refresh_interval:
+        description:
+          - Interval in seconds at which the CRL should be fetched from the CRL Distribution Points.
+        type: int
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -102,6 +107,13 @@ EXAMPLES = r"""
     is_cert_auth_enabled: true
     is_cac_enabled: true
     dir_svc_ext_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    cert_revocation_info:
+      is_ocsp_enabled: true
+      ocsp_responder: "http://ocsp.example.com"
+      is_crl_enabled: true
+      crl_dps:
+        - "http://crl.example.com/ca.crl"
+      global_crl_refresh_interval: 120
   register: result
   ignore_errors: true
 
@@ -227,6 +239,13 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
+    cert_revocation_info_spec = dict(
+        is_ocsp_enabled=dict(type="bool"),
+        ocsp_responder=dict(type="str"),
+        is_crl_enabled=dict(type="bool"),
+        crl_dps=dict(type="list", elements="str"),
+        global_crl_refresh_interval=dict(type="int"),
+    )
     module_args = dict(
         ext_id=dict(type="str"),
         name=dict(type="str"),
@@ -235,11 +254,11 @@ def get_module_spec():
         is_cac_enabled=dict(type="bool"),
         dir_svc_ext_id=dict(type="str"),
         ca_cert_file_name=dict(type="str"),
-        is_ocsp_enabled=dict(type="bool"),
-        ocsp_responder=dict(type="str"),
-        is_crl_enabled=dict(type="bool"),
-        crl_dps=dict(type="list", elements="str"),
-        global_crl_refresh_interval=dict(type="int"),
+        cert_revocation_info=dict(
+            type="dict",
+            options=cert_revocation_info_spec,
+            obj=iam_sdk.CertRevocationInfo,
+        ),
     )
     return module_args
 
