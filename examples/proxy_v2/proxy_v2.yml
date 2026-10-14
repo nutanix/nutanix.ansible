@@ -1,6 +1,7 @@
 ---
 # Summary:
 # This playbook demonstrates how to use proxy configuration with Nutanix v4 API modules.
+# The task examples also include fetch_all list calls through proxy-backed info modules.
 # Proxy settings can be configured via:
 #   1. Module parameters (highest priority, lowercase)
 #   2. Environment variables (fallback, uppercase)
@@ -50,9 +51,16 @@
     # =========================================================================
     # Example 1: List VMs through proxy (VMM SDK)
     # =========================================================================
+
     - name: List VMs using proxy configured in module_defaults
       nutanix.ncp.ntnx_vms_info_v2:
       register: vms_result
+
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_vms_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
 
     - name: Display VMs count
       ansible.builtin.debug:
@@ -61,10 +69,17 @@
     # =========================================================================
     # Example 2: Override proxy for specific module
     # =========================================================================
+
     - name: List clusters with different proxy
       nutanix.ncp.ntnx_clusters_info_v2:
         https_proxy: "http://altuser:altpass@alt-proxy.example.com:8080"
       register: clusters_result
+
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_clusters_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
 
     - name: Display clusters count
       ansible.builtin.debug:
@@ -73,10 +88,17 @@
     # =========================================================================
     # Example 3: Bypass proxy for specific host using no_proxy
     # =========================================================================
+
     - name: List categories bypassing proxy for pc ip
       nutanix.ncp.ntnx_categories_info_v2:
         no_proxy: "{{ pc_ip }}"
       register: categories_result
+
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_categories_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
 
     - name: Display categories count
       ansible.builtin.debug:
@@ -85,12 +107,19 @@
     # =========================================================================
     # Example 4: Use separate proxy credentials
     # =========================================================================
+
     - name: List VPCs with separate proxy credentials
       nutanix.ncp.ntnx_vpcs_info_v2:
         https_proxy: "http://proxy.example.com:3128"
         proxy_username: "myproxyuser"
         proxy_password: "myproxypassword"
       register: vpcs_result
+
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_vpcs_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
 
     - name: Display VPCs count
       ansible.builtin.debug:
@@ -99,10 +128,17 @@
     # =========================================================================
     # Example 5: Disable proxy for specific module
     # =========================================================================
+
     - name: List users without proxy (direct connection)
       nutanix.ncp.ntnx_users_info_v2:
         https_proxy: ""
       register: users_result
+
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_users_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
 
     - name: Display users count
       ansible.builtin.debug:

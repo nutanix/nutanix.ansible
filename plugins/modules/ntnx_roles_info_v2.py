@@ -71,6 +71,14 @@ EXAMPLES = r"""
     validate_certs: false
     filter: "displayName eq 'Display_Name_Test'"
   register: result
+
+- name: Fetch all entities using fetch_all
+  nutanix.ncp.ntnx_roles_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -151,6 +159,7 @@ from ..module_utils.v4.iam.api_client import get_role_api_instance  # noqa: E402
 from ..module_utils.v4.iam.helpers import get_role  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -180,7 +189,11 @@ def get_roles(module, roles, result):
         module.fail_json(msg="Failed generating roles info Spec", **result)
 
     try:
-        resp = roles.list_roles(**kwargs)
+        resp = list_entities(
+            roles.list_roles,
+            kwargs=kwargs,
+            fetch_all=module.params.get("fetch_all"),
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

@@ -62,6 +62,14 @@ EXAMPLES = r"""
     domain_manager_ext_id: "18553f0f-8547-4115-9696-2f698fbe7117"
     ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
   register: backup_result
+
+- name: Fetch all entities using fetch_all
+  nutanix.ncp.ntnx_pc_backup_target_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -128,6 +136,7 @@ from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -160,8 +169,11 @@ def get_backup_targets(module, domain_manager_backups_api, result):
         result["error"] = err
         module.fail_json(msg="Failed generating backup targets info Spec", **result)
     try:
-        resp = domain_manager_backups_api.list_backup_targets(
-            domainManagerExtId=domain_manager_ext_id, **kwargs
+        resp = list_entities(
+            domain_manager_backups_api.list_backup_targets,
+            kwargs=kwargs,
+            fetch_all=module.params.get("fetch_all"),
+            domainManagerExtId=domain_manager_ext_id,
         )
     except Exception as e:
         raise_api_exception(

@@ -1,8 +1,8 @@
 ---
 # Summary:
-# 1. Get Task status
-# 2. Get all the tasks
-# 3. Get task details using filters
+# 1. Get all the tasks
+# 2. List all pc tasks with fetch_all
+# 3. Get all the tasks using filters
 # 4. Get task details using limit
 # 5. Abort a task
 
@@ -28,6 +28,12 @@
 
     - name: Get all the tasks
       nutanix.ncp.ntnx_pc_tasks_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_pc_tasks_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 

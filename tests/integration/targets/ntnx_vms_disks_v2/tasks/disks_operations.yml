@@ -546,7 +546,25 @@
     fail_msg: "Get disk info failed"
     success_msg: "Get disk info passed"
 
-#################################################################################
+#####################################################################
+
+- name: List entities with fetch_all
+  nutanix.ncp.ntnx_vms_disks_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    fetch_all: true
+  register: fetch_all_ntnx_vms_disks_info_v2
+  ignore_errors: true
+
+- name: Status of list with fetch_all
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_vms_disks_info_v2.changed == false
+      - fetch_all_ntnx_vms_disks_info_v2.failed == false
+      - fetch_all_ntnx_vms_disks_info_v2.response is defined
+      - fetch_all_ntnx_vms_disks_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_vms_disks_info_v2.response | default([]) | length) == (fetch_all_ntnx_vms_disks_info_v2.total_available_results | int)
+    fail_msg: "Unable to list with fetch_all"
+    success_msg: "Listed with fetch_all successfully"
 
 - name: Get disk info that does not exist
   nutanix.ncp.ntnx_vms_disks_info_v2:

@@ -68,6 +68,14 @@ EXAMPLES = r"""
     nutanix_password: <pass>
     restore_source_ext_id: "d4e44c2b-944c-48b0-8de1-b0adae3d54c6"
   register: result
+
+- name: Fetch all entities using fetch_all
+  nutanix.ncp.ntnx_pc_restorable_domain_managers_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -154,6 +162,7 @@ from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -188,8 +197,11 @@ def get_restorable_domain_managers(module, domain_manager_backups_api, result):
             msg="Failed generating restorable domain managers info Spec", **result
         )
     try:
-        resp = domain_manager_backups_api.list_restorable_domain_managers(
-            restoreSourceExtId=restore_source_ext_id, **kwargs
+        resp = list_entities(
+            domain_manager_backups_api.list_restorable_domain_managers,
+            kwargs=kwargs,
+            fetch_all=module.params.get("fetch_all"),
+            restoreSourceExtId=restore_source_ext_id,
         )
     except Exception as e:
         raise_api_exception(

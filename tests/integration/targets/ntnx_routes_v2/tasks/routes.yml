@@ -132,6 +132,25 @@
     fail_msg: "Failed to fetch first VPC route table with filter and set route table external ID"
     success_msg: "Successfully fetched first VPC route table with filter and set route table external ID"
 
+########################################################################
+
+- name: List entities with fetch_all
+  nutanix.ncp.ntnx_route_tables_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_route_tables_info_v2
+  ignore_errors: true
+
+- name: Status of list with fetch_all
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_route_tables_info_v2.changed == false
+      - fetch_all_ntnx_route_tables_info_v2.failed == false
+      - fetch_all_ntnx_route_tables_info_v2.response is defined
+      - fetch_all_ntnx_route_tables_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_route_tables_info_v2.response | default([]) | length) == (fetch_all_ntnx_route_tables_info_v2.total_available_results | int)
+    fail_msg: "Unable to list with fetch_all"
+    success_msg: "Listed with fetch_all successfully"
+
 - name: Set route table external ID
   ansible.builtin.set_fact:
     route_table_external_id_1: "{{ route_tables_filter_1.response[0].ext_id }}"
@@ -448,7 +467,25 @@
     fail_msg: "Fetch route by external ID failed "
     success_msg: "Fetch route by external ID passed "
 
-###########################################################################################################
+###############################################################################################
+
+- name: List entities with fetch_all
+  nutanix.ncp.ntnx_routes_info_v2:
+    route_table_ext_id: "{{ route_table_external_id_1 }}"
+    fetch_all: true
+  register: fetch_all_ntnx_routes_info_v2
+  ignore_errors: true
+
+- name: Status of list with fetch_all
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_routes_info_v2.changed == false
+      - fetch_all_ntnx_routes_info_v2.failed == false
+      - fetch_all_ntnx_routes_info_v2.response is defined
+      - fetch_all_ntnx_routes_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_routes_info_v2.response | default([]) | length) == (fetch_all_ntnx_routes_info_v2.total_available_results | int)
+    fail_msg: "Unable to list with fetch_all"
+    success_msg: "Listed with fetch_all successfully"
 
 - name: List all routes
   nutanix.ncp.ntnx_routes_info_v2:
@@ -710,7 +747,6 @@
       - result.task_ext_id is defined
     fail_msg: " Unable to Delete second VPC"
     success_msg: "second VPC has been deleted successfully"
-
 ############################################################################################
 # The fixture project and the external NAT subnet's project-share are owned by
 # prepare_env and are intentionally left in place (the subnet cannot be

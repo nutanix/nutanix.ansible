@@ -3,7 +3,9 @@
 # This playbook will do:
 # 1. Create disks
 # 2. Create disk from previously created vdisk
-# 3. Delete disk
+# 3. List all volume groups disks
+# 4. List all volume groups disks with fetch_all
+# 5. Delete disk
 
 - name: Volume groups disks playbook
   hosts: localhost
@@ -46,6 +48,19 @@
         disk_data_source_reference:
           entity_type: "VOLUME_DISK"
           ext_id: "{{ disk1_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all
+      nutanix.ncp.ntnx_volume_groups_disks_info_v2:
+        volume_group_ext_id: "{{ vg1_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_volume_groups_disks_info_v2:
+        volume_group_ext_id: "{{ vg1_uuid }}"
+        fetch_all: true
       register: result
       ignore_errors: true
 

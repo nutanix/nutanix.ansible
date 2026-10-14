@@ -80,6 +80,14 @@ EXAMPLES = r"""
     validate_certs: false
     limit: 1
   register: result
+
+- name: Fetch all entities using fetch_all
+  nutanix.ncp.ntnx_vm_anti_affinity_policies_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 
@@ -156,6 +164,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -194,7 +203,11 @@ def get_policies(module, api_instance, result):
         )
 
     try:
-        resp = api_instance.list_vm_anti_affinity_policies(**kwargs)
+        resp = list_entities(
+            api_instance.list_vm_anti_affinity_policies,
+            kwargs=kwargs,
+            fetch_all=module.params.get("fetch_all"),
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

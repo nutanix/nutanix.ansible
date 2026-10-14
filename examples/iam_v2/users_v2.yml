@@ -6,9 +6,10 @@
 # 3. Create LDAP user
 # 4. Update local user
 # 5. List all users
-# 6. Fetch user info using user ext_id criteria
-# 7. List users with specific username
-# 8. Delete created user
+# 6. List all users with fetch_all
+# 7. Fetch user info using user ext id criteria
+# 8. List users with specific username
+# 9. Delete created user
 
 - name: Users playbook
   hosts: localhost
@@ -81,6 +82,12 @@
     - name: List all users
       nutanix.ncp.ntnx_users_info_v2:
       register: users
+      ignore_errors: true
+
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_users_info_v2:
+        fetch_all: true
+      register: result
       ignore_errors: true
 
     - name: Fetch user info using user ext_id criteria

@@ -2,9 +2,10 @@
 # Summary:
 # This playbook will do:
 # 1. List all entities
-# 2. List entities using filter
-# 3. List entities using limit
-# 4. Fetch entity using external ID
+# 2. List all entities with fetch_all
+# 3. List entities using filter
+# 4. List entities using limit
+# 5. Fetch entity using external ID
 
 - name: Entities playbook
   hosts: localhost
@@ -23,6 +24,12 @@
 
     - name: List all entities
       nutanix.ncp.ntnx_iam_entities_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_iam_entities_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 

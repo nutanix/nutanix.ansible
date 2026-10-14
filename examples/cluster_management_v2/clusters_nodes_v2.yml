@@ -1,11 +1,16 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a cluster with 3 nodes
-# 2. Register the cluster with Prism Central
-# 3. Expand the cluster by adding a node
-# 4. Remove the node from the cluster
-# 5. Destroy the cluster
+# 1. Create 3 nodes cluster with minimum spec
+# 2. List all clusters to get prism central external ID
+# 3. List all clusters to get prism central external ID with fetch_all
+# 4. Run PE PC registration
+# 5. Fetch cluster using name
+# 6. Discover unconfigured node
+# 7. Get network info of unconfigured node
+# 8. Expand cluster by adding a node
+# 9. Remove node from cluster
+# 10. Destroy the cluster
 
 - name: Cluster expanding playbook
   hosts: localhost
@@ -63,6 +68,7 @@
               type: "SMTP"
 
     # to expand cluster, we need to create one with three nodes
+
     - name: Create 3 nodes cluster with minimum spec
       nutanix.ncp.ntnx_clusters_v2:
         name: "{{ clusters[0].name }}"
@@ -88,13 +94,20 @@
       ignore_errors: true
 
     # we use this to get prism central external ID to use it to register the cluster
+
     - name: List all clusters to get prism central external ID
       nutanix.ncp.ntnx_clusters_info_v2:
         filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
       register: result
       ignore_errors: true
 
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_clusters_info_v2:
+        fetch_all: true
     # here we set the prism central external ID
+      register: result
+      ignore_errors: true
+
     - name: Get prism central external ID
       ansible.builtin.set_fact:
         prism_central_external_id: "{{ result.response[0].ext_id }}"
@@ -116,6 +129,7 @@
       ignore_errors: true
 
     # here we fetch the cluster using the name
+
     - name: Fetch cluster using name
       nutanix.ncp.ntnx_clusters_info_v2:
         filter: name eq '{{ cluster_name }}'
@@ -123,11 +137,13 @@
       ignore_errors: true
 
     # here we set the cluster external ID
+
     - name: Set cluster external ID
       ansible.builtin.set_fact:
         cluster_ext_id: "{{ result.response[0].ext_id }}"
 
     # here we discover the unconfigured node which we want to add to the cluster
+
     - name: Discover unconfigured node
       nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
@@ -139,6 +155,7 @@
       ignore_errors: true
 
     # here we get the network info of the unconfigured node
+
     - name: Get network info of unconfigured node
       nutanix.ncp.ntnx_nodes_network_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
@@ -154,6 +171,7 @@
       ignore_errors: true
 
     # here we expand the cluster by adding the unconfigured node
+
     - name: Expand cluster by adding a node
       nutanix.ncp.ntnx_clusters_nodes_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
@@ -208,6 +226,7 @@
       ignore_errors: true
 
     # here we remove the node from the cluster
+
     - name: Remove node from cluster
       nutanix.ncp.ntnx_clusters_nodes_v2:
         state: absent

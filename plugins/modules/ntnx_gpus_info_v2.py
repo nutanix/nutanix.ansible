@@ -80,6 +80,14 @@ EXAMPLES = r"""
     filter: "mode eq 'PASSTHROUGH_COMPUTE'"
     vm_ext_id: "9a1aa5ca-20ff-4703-672a-f41ad0a401b9"
   register: result
+
+- name: Fetch all entities using fetch_all
+  nutanix.ncp.ntnx_gpus_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -132,6 +140,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -163,7 +172,12 @@ def get_gpus(module, gpus, result):
         module.fail_json(msg="Failed generating GPUs list Spec", **result)
 
     try:
-        resp = gpus.list_gpus_by_vm_id(vmExtId=module.params.get("vm_ext_id"), **kwargs)
+        resp = list_entities(
+            gpus.list_gpus_by_vm_id,
+            kwargs=kwargs,
+            fetch_all=module.params.get("fetch_all"),
+            vmExtId=module.params.get("vm_ext_id"),
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

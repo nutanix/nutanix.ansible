@@ -28,7 +28,7 @@
 
 - name: Get current time in ISO-8601 format and set expiration time after a month
   ansible.builtin.set_fact:
-    expiration_time: "{{ lookup('pipe', 'date -d \"+1 month\" +%Y-%m-%dT%H:%M:%S%:z') }}"
+    expiration_time: '{{ lookup(''pipe'', ''date -d "+1 month" +%Y-%m-%dT%H:%M:%S%:z'') }}'
 
 ########################################################################################################
 # Create a project to be used for project_ext_id tests
@@ -126,7 +126,7 @@
 
 - name: Store project owned VM ext_id (cleaned up separately to keep todelete ordering)
   ansible.builtin.set_fact:
-    vm_ext_id_project: "{{ result[\"ext_id\"] }}"
+    vm_ext_id_project: '{{ result["ext_id"] }}'
 
 - name: Create recovery point owned by the test project
   nutanix.ncp.ntnx_recovery_points_v2:
@@ -156,7 +156,7 @@
 
 - name: Store project owned recovery point ext_id (cleaned up separately)
   ansible.builtin.set_fact:
-    recovery_point_ext_id_project: "{{ result[\"ext_id\"] }}"
+    recovery_point_ext_id_project: '{{ result["ext_id"] }}'
 
 ########################################################################################################
 
@@ -183,8 +183,8 @@
 
 - name: Adding VM to todelete list
   ansible.builtin.set_fact:
-    vm_todelete: "{{ vm_todelete + [result[\"ext_id\"]] }}"
-    vm_ext_id_1: "{{ result[\"ext_id\"] }}"
+    vm_todelete: '{{ vm_todelete + [result["ext_id"]] }}'
+    vm_ext_id_1: '{{ result["ext_id"] }}'
 
 ########################################################################################################
 
@@ -211,8 +211,8 @@
 
 - name: Adding VM to todelete list
   ansible.builtin.set_fact:
-    vm_todelete: "{{ vm_todelete + [result[\"ext_id\"]] }}"
-    vm_ext_id_2: "{{ result[\"ext_id\"] }}"
+    vm_todelete: '{{ vm_todelete + [result["ext_id"]] }}'
+    vm_ext_id_2: '{{ result["ext_id"] }}'
 
 ########################################################################################################
 
@@ -243,8 +243,8 @@
 
 - name: Adding VG to todelete list
   ansible.builtin.set_fact:
-    vg_todelete: "{{ vg_todelete + [result[\"ext_id\"]] }}"
-    vg_ext_id_1: "{{ result[\"ext_id\"] }}"
+    vg_todelete: '{{ vg_todelete + [result["ext_id"]] }}'
+    vg_ext_id_1: '{{ result["ext_id"] }}'
 
 ########################################################################################################
 
@@ -275,8 +275,8 @@
 
 - name: Adding VG to todelete list
   ansible.builtin.set_fact:
-    vg_todelete: "{{ vg_todelete + [result[\"ext_id\"]] }}"
-    vg_ext_id_2: "{{ result[\"ext_id\"] }}"
+    vg_todelete: '{{ vg_todelete + [result["ext_id"]] }}'
+    vg_ext_id_2: '{{ result["ext_id"] }}'
 
 ########################################################################################################
 
@@ -363,8 +363,8 @@
 
 - name: Add recovery point to todelete list
   ansible.builtin.set_fact:
-    recovery_point_todelete: "{{ recovery_point_todelete + [result[\"ext_id\"]] }}"
-    recovery_point_ext_id_1: "{{ result[\"ext_id\"] }}"
+    recovery_point_todelete: '{{ recovery_point_todelete + [result["ext_id"]] }}'
+    recovery_point_ext_id_1: '{{ result["ext_id"] }}'
 
 ########################################################################################################
 
@@ -405,8 +405,8 @@
 
 - name: Add recovery point to todelete list
   ansible.builtin.set_fact:
-    recovery_point_todelete: "{{ recovery_point_todelete + [result[\"ext_id\"]] }}"
-    recovery_point_ext_id_2: "{{ result[\"ext_id\"] }}"
+    recovery_point_todelete: '{{ recovery_point_todelete + [result["ext_id"]] }}'
+    recovery_point_ext_id_2: '{{ result["ext_id"] }}'
 
 ########################################################################################################
 
@@ -444,8 +444,8 @@
 
 - name: Add recovery point to todelete list
   ansible.builtin.set_fact:
-    recovery_point_todelete: "{{ recovery_point_todelete + [result[\"ext_id\"]] }}"
-    recovery_point_ext_id_3: "{{ result[\"ext_id\"] }}"
+    recovery_point_todelete: '{{ recovery_point_todelete + [result["ext_id"]] }}'
+    recovery_point_ext_id_3: '{{ result["ext_id"] }}'
 
 ########################################################################################################
 
@@ -486,8 +486,8 @@
 
 - name: Add recovery point to todelete list
   ansible.builtin.set_fact:
-    recovery_point_todelete: "{{ recovery_point_todelete + [result[\"ext_id\"]] }}"
-    recovery_point_ext_id_4: "{{ result[\"ext_id\"] }}"
+    recovery_point_todelete: '{{ recovery_point_todelete + [result["ext_id"]] }}'
+    recovery_point_ext_id_4: '{{ result["ext_id"] }}'
 
 ########################################################################################################
 
@@ -536,15 +536,16 @@
 
 - name: Add recovery point to todelete list
   ansible.builtin.set_fact:
-    recovery_point_todelete: "{{ recovery_point_todelete + [result[\"ext_id\"]] }}"
-    recovery_point_ext_id_5: "{{ result[\"ext_id\"] }}"
+    recovery_point_todelete: '{{ recovery_point_todelete + [result["ext_id"]] }}'
+    recovery_point_ext_id_5: '{{ result["ext_id"] }}'
 
 ########################################################################################################
 
-- name: Get current time in ISO-8601 format and set updated expiration time after
+- name:
+    Get current time in ISO-8601 format and set updated expiration time after
     two months
   ansible.builtin.set_fact:
-    expiration_time_updated: "{{ lookup('pipe', 'date -d \"+2 month\" +%Y-%m-%dT%H:%M:%S%:z') }}"
+    expiration_time_updated: '{{ lookup(''pipe'', ''date -d "+2 month" +%Y-%m-%dT%H:%M:%S%:z'') }}'
 
 - name: Update recovery point expiration time with check mode enabled
   nutanix.ncp.ntnx_recovery_points_v2:
@@ -594,7 +595,8 @@
 
 #######################################################################################################
 
-- name: Check idempotency by updating recovery point expiration time with the same
+- name:
+    Check idempotency by updating recovery point expiration time with the same
     value
   nutanix.ncp.ntnx_recovery_points_v2:
     ext_id: "{{ recovery_point_ext_id_1 }}"
@@ -602,7 +604,8 @@
   register: result
   ignore_errors: true
 
-- name: Check idempotency by updating recovery point expiration time with the same
+- name:
+    Check idempotency by updating recovery point expiration time with the same
     value status
   ansible.builtin.assert:
     that:
@@ -614,10 +617,11 @@
 
 #######################################################################################################
 
-- name: Get current time in ISO-8601 format and set updated expiration time after
+- name:
+    Get current time in ISO-8601 format and set updated expiration time after
     three months
   ansible.builtin.set_fact:
-    expiration_time_updated: "{{ lookup('pipe', 'date -d \"+3 month\" +%Y-%m-%dT%H:%M:%S%:z') }}"
+    expiration_time_updated: '{{ lookup(''pipe'', ''date -d "+3 month" +%Y-%m-%dT%H:%M:%S%:z'') }}'
 
 - name: Check if expiration time is updated but name is same
   nutanix.ncp.ntnx_recovery_points_v2:
@@ -686,7 +690,8 @@
 
 #######################################################################################################
 
-- name: Get recovery point details and set recovery point restore external ID for
+- name:
+    Get recovery point details and set recovery point restore external ID for
     one VM
   nutanix.ncp.ntnx_recovery_points_info_v2:
     ext_id: "{{ recovery_point_ext_id_1 }}"
@@ -722,7 +727,7 @@
 
 - name: Add Newly created VM to todelete list
   ansible.builtin.set_fact:
-    vm_todelete: "{{ vm_todelete + [result[\"vms_ext_ids\"]] }}"
+    vm_todelete: '{{ vm_todelete + [result["vms_ext_ids"]] }}'
 
 - name: Restore recovery point for one VM status
   ansible.builtin.assert:
@@ -741,7 +746,8 @@
 
 ########################################################################################################
 # Testing the restore module for multiple VMs
-- name: Get recovery point details and set recovery point restore external ID for
+- name:
+    Get recovery point details and set recovery point restore external ID for
     multiple VMs
   nutanix.ncp.ntnx_recovery_points_info_v2:
     ext_id: "{{ recovery_point_ext_id_2 }}"
@@ -803,7 +809,8 @@
 
 ########################################################################################################
 
-- name: Get recovery point details and set recovery point restore external ID for
+- name:
+    Get recovery point details and set recovery point restore external ID for
     one VG
   nutanix.ncp.ntnx_recovery_points_info_v2:
     ext_id: "{{ recovery_point_ext_id_3 }}"
@@ -841,7 +848,7 @@
 
 - name: Add Newly created VG to todelete list
   ansible.builtin.set_fact:
-    vg_todelete: "{{ vg_todelete + [result[\"vgs_ext_ids\"]] }}"
+    vg_todelete: '{{ vg_todelete + [result["vgs_ext_ids"]] }}'
 
 - name: Restore recovery point for one VG status
   ansible.builtin.assert:
@@ -860,7 +867,8 @@
 
 ########################################################################################################
 
-- name: Get recovery point details and set recovery point restore external ID for
+- name:
+    Get recovery point details and set recovery point restore external ID for
     multiple VGs
   nutanix.ncp.ntnx_recovery_points_info_v2:
     ext_id: "{{ recovery_point_ext_id_4 }}"
@@ -925,7 +933,8 @@
 
 ########################################################################################################
 
-- name: Get recovery point details and set recovery point restore external ID for
+- name:
+    Get recovery point details and set recovery point restore external ID for
     multiple VMs and VGs
   nutanix.ncp.ntnx_recovery_points_info_v2:
     ext_id: "{{ recovery_point_ext_id_5 }}"
@@ -1143,7 +1152,24 @@
     fail_msg: "List all recovery points failed"
     success_msg: "List all recovery points passed"
 
-########################################################################################################
+############################################################################################
+
+- name: List entities with fetch_all
+  nutanix.ncp.ntnx_recovery_points_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_recovery_points_info_v2
+  ignore_errors: true
+
+- name: Status of list with fetch_all
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_recovery_points_info_v2.changed == false
+      - fetch_all_ntnx_recovery_points_info_v2.failed == false
+      - fetch_all_ntnx_recovery_points_info_v2.response is defined
+      - fetch_all_ntnx_recovery_points_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_recovery_points_info_v2.response | default([]) | length) == (fetch_all_ntnx_recovery_points_info_v2.total_available_results | int)
+    fail_msg: "Unable to list with fetch_all"
+    success_msg: "Listed with fetch_all successfully"
 
 - name: List all recovery points with filter
   nutanix.ncp.ntnx_recovery_points_info_v2:

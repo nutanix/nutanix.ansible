@@ -1,13 +1,16 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a storage container
-# 2. Update the storage container
-# 3. Fetch storage container configurations
-# 4. Fetch storage container stats
-# 5. Fetch storage container stats with interval defined
-# 6. Fetch all storage containers
-# 7. Delete the storage container
+# 1. Get current time minus 5 minutes in the required format
+# 2. Get current time in the required format
+# 3. Create storage container
+# 4. Update storage container
+# 5. Fetch storage container configurations
+# 6. Fetch storage container stats
+# 7. Fetch storage container stats with interval defined
+# 8. Fetch all storage containers
+# 9. List all storage containers with fetch_all
+# 10. Delete storage container
 
 - name: Storage container playbook
   hosts: localhost
@@ -102,6 +105,12 @@
 
     - name: Fetch all storage containers
       nutanix.ncp.ntnx_storage_containers_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_storage_containers_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 

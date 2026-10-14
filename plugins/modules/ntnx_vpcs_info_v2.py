@@ -71,6 +71,14 @@ EXAMPLES = r"""
     validate_certs: false
     ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
   register: result
+
+- name: Fetch all entities using fetch_all
+  nutanix.ncp.ntnx_vpcs_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 RETURN = r"""
 response:
@@ -180,6 +188,7 @@ from ..module_utils.v4.network.api_client import get_vpc_api_instance  # noqa: E
 from ..module_utils.v4.network.helpers import get_vpc  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -208,7 +217,11 @@ def get_vpcs(module, result):
         module.fail_json(msg="Failed generating vpcs info Spec", **result)
 
     try:
-        resp = vpcs.list_vpcs(**kwargs)
+        resp = list_entities(
+            vpcs.list_vpcs,
+            kwargs=kwargs,
+            fetch_all=module.params.get("fetch_all"),
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

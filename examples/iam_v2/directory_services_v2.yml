@@ -1,21 +1,23 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create ACTIVE_DIRECTORY service
-# 2. Create ACTIVE_DIRECTORY service shared with all projects
-# 3. Create ACTIVE_DIRECTORY service shared with specific projects
-# 4. Create OPEN_LDAP service
-# 5. Update ACTIVE_DIRECTORY service
-# 6. Update OPEN_LDAP service
+# 1. Create ACTIVE DIRECTORY service
+# 2. Create ACTIVE DIRECTORY service shared with all projects
+# 3. Create ACTIVE DIRECTORY service shared with specific projects
+# 4. Create OPEN LDAP service
+# 5. Update ACTIVE DIRECTORY service
+# 6. Update OPEN LDAP service
 # 7. Update directory service to share with all projects
 # 8. Update directory service to share with specific projects
 # 9. Update directory service to unshare from all projects
 # 10. Update directory service to unshare from specific projects
-# 11. Fetch ACTIVE_DIRECTORY service info using ext id
-# 12. Fetch OPEN_LDAP service info using ext id
+# 11. Fetch active directory service info using ext id
+# 12. Fetch open ldap service info using ext id
 # 13. List all directory services
-# 14. List all directory services with filter
-# 15. Delete ACTIVE_DIRECTORY service
+# 14. List all directory services with fetch_all
+# 15. List all directory services with filter using active directory name
+# 16. List all directory services with filter using open ldap name
+# 17. Delete directory service
 
 - name: Directory Services playbook
   hosts: localhost
@@ -215,6 +217,12 @@
 
     - name: List all directory services
       nutanix.ncp.ntnx_directory_services_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_directory_services_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 

@@ -73,6 +73,14 @@ EXAMPLES = r"""
     nutanix_password: <pass>
     filter: "name eq 'cluster1'"
   register: result
+
+- name: Fetch all entities using fetch_all
+  nutanix.ncp.ntnx_clusters_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -250,6 +258,7 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.helpers import get_cluster  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -283,7 +292,11 @@ def get_clusters(module, result):
         module.fail_json("Failed creating query parameters for fetching clusters info")
     resp = None
     try:
-        resp = clusters.list_clusters(**kwargs)
+        resp = list_entities(
+            clusters.list_clusters,
+            kwargs=kwargs,
+            fetch_all=module.params.get("fetch_all"),
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

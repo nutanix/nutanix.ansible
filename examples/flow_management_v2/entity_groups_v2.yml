@@ -1,13 +1,14 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create an entity group
-# 2. Update the entity group
+# 1. Create entity group
+# 2. Update entity group
 # 3. List all entity groups
-# 4. List entity groups using filter
-# 5. List entity groups using limit
-# 6. Get entity group using ext_id
-# 7. Delete the entity group
+# 4. List all entity groups with fetch_all
+# 5. List entity groups using filter
+# 6. List entity groups using limit
+# 7. Get entity group using ext id
+# 8. Delete entity group
 
 - name: Entity groups playbook
   hosts: localhost
@@ -57,6 +58,12 @@
 
     - name: List all entity groups
       nutanix.ncp.ntnx_entity_groups_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_entity_groups_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 

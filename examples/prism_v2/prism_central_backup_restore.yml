@@ -1,26 +1,30 @@
 ---
 # Summary:
 # This playbook will do the following:
-# 1. Create a backup target cluster
-# 2. Get the backup target cluster external ID
-# 3. List all backup targets
-# 4. Fetch backup target details using external ID until last_sync_time is not none
-# 5. List all PCs
-# 6. Fetch PC details using external ID
-# 7. List all VMs and get PC VM external ID
-# 8. Power off PC VM (We need to power off the PC VM before restoring the PC)
-# 9. Sleep for 2 minutes after powering off VM
-# 10. Create restore source cluster for restoring PC to test delete operation
-# 11. Delete restore source cluster
-# 12. Create restore source cluster for restoring PC using restore point in that cluster
-# 13. Get restore source cluster
-# 14. Get all restorable domain managers
-# 15. Get restorable domain manager external ID
-# 16. List all restore points
-# 17. Set restore point external ID
-# 18. Get restore point using external ID
-# 19. Restore PC
-# 20. Delete backup target cluster
+# 1. List all clusters to get prism central external ID
+# 2. List all clusters to get prism central external ID with fetch_all
+# 3. Create backup target cluster
+# 4. List all backup targets and set backup target external ID
+# 5. List all backup targets and set backup target external ID with fetch_all
+# 6. List all backup targets
+# 7. Fetch backup target details using external ID until last sync time is not none
+# 8. List all PCs
+# 9. List all PCs with fetch_all
+# 10. Fetch PC details using external ID
+# 11. List all VMs and get PC VM external ID
+# 12. List all VMs and get PC VM external ID with fetch_all
+# 13. Create restore source cluster for restoring PC to test delete operation
+# 14. Delete restore source cluster
+# 15. Create restore source cluster for restoring PC using restore point in that cluster
+# 16. Get restore source cluster
+# 17. Get all restorable domain managers
+# 18. List all pc restorable domain managers with fetch_all
+# 19. List all restore points
+# 20. List all restore points with fetch_all
+# 21. Get restore point using external ID
+# 22. Power off PC VM
+# 23. Restore PC
+# 24. Delete backup target cluster
 
 - name: Prism playbook
   hosts: localhost
@@ -65,6 +69,12 @@
       register: result
       ignore_errors: true
 
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_clusters_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
+
     - name: Get prism central external ID
       ansible.builtin.set_fact:
         domain_manager_ext_id: "{{ result.response[0].ext_id }}"
@@ -83,6 +93,13 @@
       nutanix.ncp.ntnx_pc_backup_target_info_v2:
         domain_manager_ext_id: "{{ domain_manager_ext_id }}"
       register: backup_result
+      ignore_errors: true
+
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_pc_backup_target_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        fetch_all: true
+      register: result
       ignore_errors: true
 
     - name: Get external ID of the backup target cluster
@@ -108,6 +125,7 @@
       ignore_errors: true
 
     # Retry until last_sync_time is not none so that restore points are created successfully
+
     - name: Fetch backup target details using external ID until last_sync_time is not none
       nutanix.ncp.ntnx_pc_backup_target_info_v2:
         domain_manager_ext_id: "{{ domain_manager_ext_id }}"
@@ -123,6 +141,12 @@
       register: result
       ignore_errors: true
 
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_pc_config_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
+
     - name: Fetch PC details using external ID
       nutanix.ncp.ntnx_pc_config_info_v2:
         ext_id: "{{ domain_manager_ext_id }}"
@@ -131,6 +155,12 @@
 
     - name: List all VMs and get PC VM external ID
       nutanix.ncp.ntnx_vms_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_vms_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 
@@ -211,6 +241,12 @@
       register: result
       ignore_errors: true
 
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_pc_restorable_domain_managers_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
+
     - name: Get restorable domain manager external ID
       ansible.builtin.set_fact:
         domain_manager_details: "{{ result.response | selectattr('ext_id', 'equalto', domain_manager_ext_id) | list }}"
@@ -220,6 +256,12 @@
         nutanix_host: "{{ ip_pe }}"
         restore_source_ext_id: "{{ restore_source_ext_id }}"
         restorable_domain_manager_ext_id: "{{ domain_manager_details[0].ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_pc_restore_points_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 

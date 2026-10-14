@@ -44,6 +44,15 @@ options:
         type: int
         required: false
         default: 30000
+    fetch_all:
+        description:
+            - When C(true), paginate through the list API until all available entities are returned.
+              C(page) and C(limit) are ignored; each request uses the maximum page size (100).
+            - When C(false), return a single page (API default limit).
+            - Does not apply when fetching a single entity by C(ext_id).
+        type: bool
+        required: false
+        default: false
 author:
     - Abhinav Bansal (@abhinavbansal29)
     - George Ghawali (@george-ghawali)
@@ -71,6 +80,16 @@ EXAMPLES = r"""
     validate_certs: false
     ext_id: "54fe0ed5-02d8-4588-b10b-3b9736bf3d06"
     limit: 1
+  register: result
+
+- name: Fetch all VM compliance states using fetch_all
+  nutanix.ncp.ntnx_vm_anti_affinity_policy_compliance_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    ext_id: "54fe0ed5-02d8-4588-b10b-3b9736bf3d06"
+    fetch_all: true
   register: result
 """
 
@@ -210,7 +229,7 @@ import warnings  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
-from ..module_utils.v4.utils import raise_api_exception  # noqa: E402
+from ..module_utils.v4.utils import list_entities, raise_api_exception  # noqa: E402
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_vm_anti_affinity_policies_api_instance,
 )
@@ -223,6 +242,7 @@ def get_module_spec():
         ext_id=dict(type="str", required=True),
         page=dict(type="int"),
         limit=dict(type="int"),
+        fetch_all=dict(type="bool", required=False, default=False),
     )
     return module_args
 
@@ -241,8 +261,11 @@ def get_policy_vm_compliance_states(module, api_instance, result):
         )
 
     try:
-        resp = api_instance.list_vm_anti_affinity_policy_vm_compliance_states(
-            vmAntiAffinityPolicyExtId=ext_id, **kwargs
+        resp = list_entities(
+            api_instance.list_vm_anti_affinity_policy_vm_compliance_states,
+            kwargs=kwargs,
+            fetch_all=module.params.get("fetch_all"),
+            vmAntiAffinityPolicyExtId=ext_id,
         )
     except Exception as e:
         raise_api_exception(

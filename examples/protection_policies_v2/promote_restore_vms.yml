@@ -1,13 +1,22 @@
 # Summary:
 # This playbook will do the following:
-# 1. Create two categories
-# 2. Create two protection policies
-# 3. Create two VMs and assign them to the categories
-# 4. Promote one VM
-# 5. Restore the other VM
-# 6. Delete all created VMs
-# 7. Delete all created protection policies
-# 8. Delete all created categories
+# 1. Create categories for protection policies
+# 2. Create auto retention protection policy
+# 3. Create Synchronous replication protection policy for VM using category2
+# 4. Create a Protected VM to be promoted
+# 5. Create a Protected VM to be restored
+# 6. Fetch first VM using ext id
+# 7. Fetch second VM using ext id
+# 8. Get a protected resource
+# 9. Promote VM
+# 10. Restore VM
+# 11. Fetch all VMs on local cluster
+# 12. List all vms with fetch_all
+# 13. Delete all Created VMs on local cluster
+# 14. Fetch all VMs on remote cluster
+# 15. Delete all Created VMs on remote cluster
+# 16. Delete all protection policies
+# 17. Delete Created categories
 
 - name: Protection policies playbook
   hosts: localhost
@@ -197,6 +206,7 @@
         vm_ext_id_2: "{{ result.response.ext_id }}"
 
     # Wait for the first VM to be protected
+
     - name: Fetch first VM using ext_id
       nutanix.ncp.ntnx_vms_info_v2:
         ext_id: "{{ vm_ext_id_1 }}"
@@ -206,6 +216,7 @@
       delay: 10
 
     # Wait for the second VM to be protected
+
     - name: Fetch second VM using ext_id
       nutanix.ncp.ntnx_vms_info_v2:
         ext_id: "{{ vm_ext_id_2 }}"
@@ -245,6 +256,12 @@
     - name: Fetch all VMs on local cluster
       nutanix.ncp.ntnx_vms_info_v2:
       register: result
+
+    - name: List all with fetch_all
+      nutanix.ncp.ntnx_vms_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
 
     - name: Filter only protected VMs on local cluster
       ansible.builtin.set_fact:
