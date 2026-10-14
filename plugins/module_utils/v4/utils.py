@@ -542,6 +542,27 @@ def normalize_oneof_marker_values(params, marker_keys):
                     normalize_oneof_marker_values(item, marker_keys)
 
 
+def snake_to_camel(snake_str, special_cases=None):
+    """
+    Convert snake_case string to camelCase.
+
+    Args:
+        snake_str: The snake_case string to convert
+        special_cases: Optional dict mapping snake_case keys to their camelCase equivalents
+                      for cases where standard conversion doesn't apply
+                      (e.g., {'dir_svc_ext_id': 'dirSvcExtID'} for uppercase acronyms)
+
+    Returns:
+        str: The camelCase version of the input string
+    """
+    if special_cases and snake_str in special_cases:
+        return special_cases[snake_str]
+
+    # Standard snake_case to camelCase conversion
+    components = snake_str.split("_")
+    return components[0] + "".join(x.title() for x in components[1:])
+
+
 def get_api_params_from_spec(
     spec, module_spec, exclude_params=None, special_cases=None
 ):
