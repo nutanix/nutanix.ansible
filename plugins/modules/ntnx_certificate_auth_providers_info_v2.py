@@ -35,11 +35,11 @@ options:
       - The number of records
     type: int
   read_timeout:
-      description: Read timeout in milliseconds for API calls.
-      type: int
-      required: false
-      default: 30000
-author
+    description: Read timeout in milliseconds for API calls.
+    type: int
+    required: false
+    default: 30000
+author:
   - George Ghawali (@george-ghawali)
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
