@@ -18,6 +18,20 @@ description:
   - For floating IP  create and delete, module will return tasks status in response after operation.
   - For floating IP update, module will return floating IP info if C(wait) is true, else task status.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a floating IP) -
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
+    - >-
+      B(Delete the floating IP corresponding to the extId) -
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
+    - >-
+      B(Update the floating IP for this extId) -
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
     description:
@@ -31,6 +45,11 @@ options:
     description:
       - Subnet external ID
       - Required only for updating or deleting the subnet.
+    type: str
+  project_ext_id:
+    description:
+      - External ID (UUID) of the project that owns this floating IP.
+      - Update of this field is not supported.
     type: str
   association:
     description: Spec to associating Floating IP with either VM NIC or Private IP
@@ -139,6 +158,7 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
       - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
@@ -154,6 +174,7 @@ EXAMPLES = r"""
     state: present
     vpc_reference: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
     name: "test"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     association:
       private_ip_association:
         private_ip:
@@ -250,8 +271,8 @@ from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.network.api_client import (  # noqa: E402
     get_etag,
@@ -265,6 +286,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -333,6 +355,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         association=dict(
@@ -389,6 +412,14 @@ def create_floating_ip(module, result):
             resp = get_floating_ip(module, floating_ips, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Floating IP"
+                ),
+                msg="Failed to get entity ext_id from task for Floating IP",
+            )
     result["changed"] = True
 
 
@@ -410,6 +441,10 @@ def update_floating_ip(module, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating floating_ips update spec", **result)
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     # handle update of association type
     if getattr(current_spec, "association", None):
@@ -500,7 +535,7 @@ def delete_floating_ip(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[

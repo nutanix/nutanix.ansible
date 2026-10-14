@@ -14,6 +14,20 @@ module: ntnx_service_groups_v2
 short_description: "Create, Update, Delete service groups"
 version_added: 2.0.0
 description: "Create, Update, Delete service groups"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a Service Group) -
+      Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
+    - >-
+      B(Delete a Service Group by ExtID) -
+      Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
+    - >-
+      B(Update a Service Group by ExtID) -
+      Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:
   state:
     description:
@@ -29,6 +43,12 @@ options:
     description:
       - Service group External ID.
       - Required for updating or deleting service group.
+    type: str
+
+  project_ext_id:
+    description:
+      - External ID (UUID) of the project that owns this service group.
+      - Update of this field is not supported.
     type: str
 
   name:
@@ -92,6 +112,7 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
       - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
@@ -107,6 +128,7 @@ EXAMPLES = r"""
     validate_certs: false
     name: tcp_service_group
     description: desc
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     tcp_services:
       - start_port: 10
         end_port: 50
@@ -241,8 +263,8 @@ from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.flow.api_client import (  # noqa: E402
     get_etag,
@@ -259,6 +281,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -289,6 +312,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         tcp_services=dict(
@@ -352,6 +376,14 @@ def create_service_group(module, result):
             resp = get_service_group(module, service_groups, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Service Group"
+                ),
+                msg="Failed to get entity ext_id from task for Service Group",
+            )
 
     result["changed"] = True
 
@@ -376,6 +408,10 @@ def update_service_group(module, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating service_groups update spec", **result)
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
@@ -452,7 +488,7 @@ def delete_service_group(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[

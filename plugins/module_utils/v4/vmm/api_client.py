@@ -12,6 +12,7 @@ from ansible.module_utils.basic import missing_required_lib
 
 from ...constants import ALLOW_VERSION_NEGOTIATION
 from ..api_logger import setup_api_logging
+from ..utils import _apply_proxy_from_env
 
 SDK_IMP_ERROR = None
 try:
@@ -33,8 +34,18 @@ def get_api_client(module):
     config = ntnx_vmm_py_client.Configuration()
     config.host = module.params.get("nutanix_host")
     config.port = module.params.get("nutanix_port")
-    config.username = module.params.get("nutanix_username")
-    config.password = module.params.get("nutanix_password")
+    api_key = module.params.get("nutanix_api_key")
+    nutanix_username = module.params.get("nutanix_username")
+    nutanix_password = module.params.get("nutanix_password")
+    if (not nutanix_username or not nutanix_password) and not (api_key):
+        module.fail_json(
+            msg="Either nutanix_username and nutanix_password or nutanix_api_key is required"
+        )
+    if api_key:
+        config.set_api_key(api_key)
+    else:
+        config.username = nutanix_username
+        config.password = nutanix_password
     config.verify_ssl = module.params.get("validate_certs")
     try:
         client = ntnx_vmm_py_client.ApiClient(
@@ -42,14 +53,20 @@ def get_api_client(module):
         )
     except TypeError:
         client = ntnx_vmm_py_client.ApiClient(configuration=config)
+    config.read_timeout = module.params.get("read_timeout")
+    _apply_proxy_from_env(config, module)
+    client = ntnx_vmm_py_client.ApiClient(
+        configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
+    )
 
-    cred = "{0}:{1}".format(config.username, config.password)
-    try:
-        encoded_cred = b64encode(bytes(cred, encoding="ascii")).decode("ascii")
-    except BaseException:
-        encoded_cred = b64encode(bytes(cred).encode("ascii")).decode("ascii")
-    auth_header = "Basic " + encoded_cred
-    client.add_default_header(header_name="Authorization", header_value=auth_header)
+    if not api_key:
+        cred = "{0}:{1}".format(config.username, config.password)
+        try:
+            encoded_cred = b64encode(bytes(cred, encoding="ascii")).decode("ascii")
+        except BaseException:
+            encoded_cred = b64encode(bytes(cred).encode("ascii")).decode("ascii")
+        auth_header = "Basic " + encoded_cred
+        client.add_default_header(header_name="Authorization", header_value=auth_header)
 
     # Setup API logging if debug is enabled
     setup_api_logging(module, client)
@@ -106,6 +123,18 @@ def get_etag(data):
     return ntnx_vmm_py_client.ApiClient.get_etag(data)
 
 
+def get_image_rate_limit_policy_api_instance(module):
+    """
+    This method will return Image Rate Limit Policy API instance.
+    Args:
+        module: Ansible module instance
+    Returns:
+        ImageRateLimitPoliciesApi: v4 Image rate limit policies api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.ImageRateLimitPoliciesApi(api_client=api_client)
+
+
 def get_ova_api_instance(module):
     """
     This method will return OVA API instance
@@ -114,3 +143,59 @@ def get_ova_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_vmm_py_client.OvasApi(api_client=api_client)
+
+
+def get_vm_startup_policies_api_instance(module):
+    """
+    This method will return VM Startup Policies API instance.
+    Args:
+        module (obj): Ansible module instance
+    Returns:
+        VmStartupPoliciesApi: v4 VM startup policies api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.VmStartupPoliciesApi(api_client=api_client)
+
+
+def get_template_placement_policy_api_instance(module):
+    """
+    This method will return Template Placement Policy API instance.
+    Args:
+        api_instance (obj): v4 Template Placement Policy api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.TemplatePlacementPoliciesApi(api_client=api_client)
+
+
+def get_vm_guest_customization_profiles_api_instance(module):
+    """
+    This method will return VM Guest Customization Profiles API instance
+    Args:
+        api_instance (obj): v4 VM Guest Customization Profiles api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.VmGuestCustomizationProfilesApi(api_client=api_client)
+
+
+def get_vm_host_affinity_policies_api_instance(module):
+    """
+    This method will return VM Host Affinity Policies API instance.
+    Args:
+        module (obj): Ansible module object with connection parameters
+    Returns:
+        VmHostAffinityPoliciesApi: v4 VM Host Affinity Policies api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.VmHostAffinityPoliciesApi(api_client=api_client)
+
+
+def get_vm_anti_affinity_policies_api_instance(module):
+    """
+    This method will return VM Anti-Affinity Policies API instance.
+    Args:
+        module (obj): Ansible module object with connection parameters
+    Returns:
+        VmAntiAffinityPoliciesApi: v4 VM Anti-Affinity Policies api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.VmAntiAffinityPoliciesApi(api_client=api_client)

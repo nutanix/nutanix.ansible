@@ -1,0 +1,862 @@
+---
+- name: Start read_timeout tests for all SDK clients
+  ansible.builtin.debug:
+    msg: "Start testing read_timeout parameter across all 13 SDK clients"
+
+###########################################################
+# 1. PRISM SDK (ntnx_prism_py_client) - categories_info
+###########################################################
+- name: "Prism SDK - List categories with default read_timeout (30000ms)"
+  nutanix.ncp.ntnx_categories_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: "Prism SDK - Verify default read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.total_available_results is defined
+      - result.total_available_results > 0
+      - result.response.0.key is defined
+      - result.response.0.ext_id is defined
+    fail_msg: "Prism SDK - list categories with default read_timeout failed"
+    success_msg: "Prism SDK - default read_timeout (30000ms) passed"
+
+- name: "Prism SDK - List categories with custom read_timeout (60000ms)"
+  nutanix.ncp.ntnx_categories_info_v2:
+    limit: 1
+    read_timeout: 60000
+  register: result_custom
+  ignore_errors: true
+
+- name: "Prism SDK - Verify custom read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result_custom.changed == false
+      - result_custom.failed == false
+      - result_custom.response is defined
+      - result_custom.response | length == 1
+      - result_custom.total_available_results is defined
+      - result_custom.total_available_results > 0
+      - result_custom.response.0.key is defined
+      - result_custom.response.0.ext_id is defined
+    fail_msg: "Prism SDK - list categories with custom read_timeout (60000ms) failed"
+    success_msg: "Prism SDK - custom read_timeout (60000ms) passed"
+
+- name: "Prism SDK - Verify default and custom return same data"
+  ansible.builtin.assert:
+    that:
+      - result.total_available_results == result_custom.total_available_results
+    fail_msg: "Prism SDK - default and custom read_timeout returned different total_available_results"
+    success_msg: "Prism SDK - default and custom read_timeout returned consistent data"
+
+- name: "Prism SDK - List categories with very low read_timeout (1ms - negative test)"
+  nutanix.ncp.ntnx_categories_info_v2:
+    limit: 1
+    read_timeout: 1
+  register: result_timeout
+  ignore_errors: true
+
+- name: "Prism SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _prism_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
+- name: "Prism SDK - Verify low read_timeout causes ReadTimeoutError"
+  ansible.builtin.assert:
+    that:
+      - result_timeout.changed == false
+      - result_timeout.failed == true
+      - "'Read timed out' in _prism_err"
+      - "'ReadTimeoutError' in _prism_err"
+      - "'read timeout=0.001' in _prism_err"
+    fail_msg: "Prism SDK - low read_timeout did not cause expected timeout (err={{ _prism_err }})"
+    success_msg: "Prism SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
+
+###########################################################
+# 2. IAM SDK (ntnx_iam_py_client) - roles_info
+###########################################################
+- name: "IAM SDK - List roles with default read_timeout (30000ms)"
+  nutanix.ncp.ntnx_roles_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: "IAM SDK - Verify default read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.total_available_results is defined
+      - result.total_available_results > 0
+      - result.response.0.ext_id is defined
+      - result.response.0.display_name is defined
+    fail_msg: "IAM SDK - list roles with default read_timeout failed"
+    success_msg: "IAM SDK - default read_timeout (30000ms) passed"
+
+- name: "IAM SDK - List roles with custom read_timeout (60000ms)"
+  nutanix.ncp.ntnx_roles_info_v2:
+    limit: 1
+    read_timeout: 60000
+  register: result_custom
+  ignore_errors: true
+
+- name: "IAM SDK - Verify custom read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result_custom.changed == false
+      - result_custom.failed == false
+      - result_custom.response is defined
+      - result_custom.response | length == 1
+      - result_custom.total_available_results is defined
+      - result_custom.total_available_results > 0
+      - result_custom.response.0.ext_id is defined
+      - result_custom.response.0.display_name is defined
+    fail_msg: "IAM SDK - list roles with custom read_timeout (60000ms) failed"
+    success_msg: "IAM SDK - custom read_timeout (60000ms) passed"
+
+- name: "IAM SDK - Verify default and custom return same data"
+  ansible.builtin.assert:
+    that:
+      - result.total_available_results == result_custom.total_available_results
+    fail_msg: "IAM SDK - default and custom read_timeout returned different total_available_results"
+    success_msg: "IAM SDK - default and custom read_timeout returned consistent data"
+
+- name: "IAM SDK - List roles with very low read_timeout (1ms - negative test)"
+  nutanix.ncp.ntnx_roles_info_v2:
+    limit: 1
+    read_timeout: 1
+  register: result_timeout
+  ignore_errors: true
+
+- name: "IAM SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _iam_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
+- name: "IAM SDK - Verify low read_timeout causes ReadTimeoutError"
+  ansible.builtin.assert:
+    that:
+      - result_timeout.changed == false
+      - result_timeout.failed == true
+      - "'Read timed out' in _iam_err"
+      - "'ReadTimeoutError' in _iam_err"
+      - "'read timeout=0.001' in _iam_err"
+    fail_msg: "IAM SDK - low read_timeout did not cause expected timeout (err={{ _iam_err }})"
+    success_msg: "IAM SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
+
+###########################################################
+# 3. NETWORK SDK (ntnx_networking_py_client) - vpcs_info
+###########################################################
+- name: "Network SDK - List VPCs with default read_timeout (30000ms)"
+  nutanix.ncp.ntnx_vpcs_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: "Network SDK - Verify default read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results is defined
+    fail_msg: "Network SDK - list VPCs with default read_timeout failed"
+    success_msg: "Network SDK - default read_timeout (30000ms) passed"
+
+- name: "Network SDK - List VPCs with custom read_timeout (60000ms)"
+  nutanix.ncp.ntnx_vpcs_info_v2:
+    limit: 1
+    read_timeout: 60000
+  register: result_custom
+  ignore_errors: true
+
+- name: "Network SDK - Verify custom read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result_custom.changed == false
+      - result_custom.failed == false
+      - result_custom.response is defined
+      - result_custom.total_available_results is defined
+    fail_msg: "Network SDK - list VPCs with custom read_timeout (60000ms) failed"
+    success_msg: "Network SDK - custom read_timeout (60000ms) passed"
+
+- name: "Network SDK - Verify default and custom return same data"
+  ansible.builtin.assert:
+    that:
+      - result.total_available_results == result_custom.total_available_results
+    fail_msg: "Network SDK - default and custom read_timeout returned different total_available_results"
+    success_msg: "Network SDK - default and custom read_timeout returned consistent data"
+
+- name: "Network SDK - List VPCs with very low read_timeout (1ms - negative test)"
+  nutanix.ncp.ntnx_vpcs_info_v2:
+    limit: 1
+    read_timeout: 1
+  register: result_timeout
+  ignore_errors: true
+
+- name: "Network SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _net_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
+- name: "Network SDK - Verify low read_timeout causes ReadTimeoutError"
+  ansible.builtin.assert:
+    that:
+      - result_timeout.changed == false
+      - result_timeout.failed == true
+      - "'Read timed out' in _net_err"
+      - "'ReadTimeoutError' in _net_err"
+      - "'read timeout=0.001' in _net_err"
+    fail_msg: "Network SDK - low read_timeout did not cause expected timeout (err={{ _net_err }})"
+    success_msg: "Network SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
+
+###########################################################
+# 4. FLOW SDK (ntnx_microseg_py_client) - address_groups_info
+###########################################################
+- name: "Flow SDK - List address groups with default read_timeout (30000ms)"
+  nutanix.ncp.ntnx_address_groups_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: "Flow SDK - Verify default read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results is defined
+    fail_msg: "Flow SDK - list address groups with default read_timeout failed"
+    success_msg: "Flow SDK - default read_timeout (30000ms) passed"
+
+- name: "Flow SDK - List address groups with custom read_timeout (60000ms)"
+  nutanix.ncp.ntnx_address_groups_info_v2:
+    limit: 1
+    read_timeout: 60000
+  register: result_custom
+  ignore_errors: true
+
+- name: "Flow SDK - Verify custom read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result_custom.changed == false
+      - result_custom.failed == false
+      - result_custom.response is defined
+      - result_custom.total_available_results is defined
+    fail_msg: "Flow SDK - list address groups with custom read_timeout (60000ms) failed"
+    success_msg: "Flow SDK - custom read_timeout (60000ms) passed"
+
+- name: "Flow SDK - Verify default and custom return same data"
+  ansible.builtin.assert:
+    that:
+      - result.total_available_results == result_custom.total_available_results
+    fail_msg: "Flow SDK - default and custom read_timeout returned different total_available_results"
+    success_msg: "Flow SDK - default and custom read_timeout returned consistent data"
+
+- name: "Flow SDK - List address groups with very low read_timeout (1ms - negative test)"
+  nutanix.ncp.ntnx_address_groups_info_v2:
+    limit: 1
+    read_timeout: 1
+  register: result_timeout
+  ignore_errors: true
+
+- name: "Flow SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _flow_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
+- name: "Flow SDK - Verify low read_timeout causes ReadTimeoutError"
+  ansible.builtin.assert:
+    that:
+      - result_timeout.changed == false
+      - result_timeout.failed == true
+      - "'Read timed out' in _flow_err"
+      - "'ReadTimeoutError' in _flow_err"
+      - "'read timeout=0.001' in _flow_err"
+    fail_msg: "Flow SDK - low read_timeout did not cause expected timeout (err={{ _flow_err }})"
+    success_msg: "Flow SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
+
+###########################################################
+# 5. VMM SDK (ntnx_vmm_py_client) - images_info
+###########################################################
+- name: "VMM SDK - List images with default read_timeout (30000ms)"
+  nutanix.ncp.ntnx_images_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: "VMM SDK - Verify default read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.total_available_results is defined
+      - result.total_available_results > 0
+      - result.response.0.ext_id is defined
+      - result.response.0.name is defined
+    fail_msg: "VMM SDK - list images with default read_timeout failed"
+    success_msg: "VMM SDK - default read_timeout (30000ms) passed"
+
+- name: "VMM SDK - List images with custom read_timeout (60000ms)"
+  nutanix.ncp.ntnx_images_info_v2:
+    limit: 1
+    read_timeout: 60000
+  register: result_custom
+  ignore_errors: true
+
+- name: "VMM SDK - Verify custom read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result_custom.changed == false
+      - result_custom.failed == false
+      - result_custom.response is defined
+      - result_custom.response | length == 1
+      - result_custom.total_available_results is defined
+      - result_custom.total_available_results > 0
+      - result_custom.response.0.ext_id is defined
+      - result_custom.response.0.name is defined
+    fail_msg: "VMM SDK - list images with custom read_timeout (60000ms) failed"
+    success_msg: "VMM SDK - custom read_timeout (60000ms) passed"
+
+- name: "VMM SDK - Verify default and custom return same data"
+  ansible.builtin.assert:
+    that:
+      - result.total_available_results == result_custom.total_available_results
+    fail_msg: "VMM SDK - default and custom read_timeout returned different total_available_results"
+    success_msg: "VMM SDK - default and custom read_timeout returned consistent data"
+
+- name: "VMM SDK - List images with very low read_timeout (1ms - negative test)"
+  nutanix.ncp.ntnx_images_info_v2:
+    limit: 1
+    read_timeout: 1
+  register: result_timeout
+  ignore_errors: true
+
+- name: "VMM SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _vmm_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
+- name: "VMM SDK - Verify low read_timeout causes ReadTimeoutError"
+  ansible.builtin.assert:
+    that:
+      - result_timeout.changed == false
+      - result_timeout.failed == true
+      - "'Read timed out' in _vmm_err"
+      - "'ReadTimeoutError' in _vmm_err"
+      - "'read timeout=0.001' in _vmm_err"
+    fail_msg: "VMM SDK - low read_timeout did not cause expected timeout (err={{ _vmm_err }})"
+    success_msg: "VMM SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
+
+###########################################################
+# 6. VOLUMES SDK (ntnx_volumes_py_client) - volume_groups_info
+###########################################################
+- name: "Volumes SDK - List volume groups with default read_timeout (30000ms)"
+  nutanix.ncp.ntnx_volume_groups_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: "Volumes SDK - Verify default read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.total_available_results is defined
+      - result.total_available_results > 0
+      - result.response.0.ext_id is defined
+      - result.response.0.name is defined
+    fail_msg: "Volumes SDK - list volume groups with default read_timeout failed"
+    success_msg: "Volumes SDK - default read_timeout (30000ms) passed"
+
+- name: "Volumes SDK - List volume groups with custom read_timeout (60000ms)"
+  nutanix.ncp.ntnx_volume_groups_info_v2:
+    limit: 1
+    read_timeout: 60000
+  register: result_custom
+  ignore_errors: true
+
+- name: "Volumes SDK - Verify custom read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result_custom.changed == false
+      - result_custom.failed == false
+      - result_custom.response is defined
+      - result_custom.response | length == 1
+      - result_custom.total_available_results is defined
+      - result_custom.total_available_results > 0
+      - result_custom.response.0.ext_id is defined
+      - result_custom.response.0.name is defined
+    fail_msg: "Volumes SDK - list volume groups with custom read_timeout (60000ms) failed"
+    success_msg: "Volumes SDK - custom read_timeout (60000ms) passed"
+
+- name: "Volumes SDK - Verify default and custom return same data"
+  ansible.builtin.assert:
+    that:
+      - result.total_available_results == result_custom.total_available_results
+    fail_msg: "Volumes SDK - default and custom read_timeout returned different total_available_results"
+    success_msg: "Volumes SDK - default and custom read_timeout returned consistent data"
+
+- name: "Volumes SDK - List volume groups with very low read_timeout (1ms - negative test)"
+  nutanix.ncp.ntnx_volume_groups_info_v2:
+    limit: 1
+    read_timeout: 1
+  register: result_timeout
+  ignore_errors: true
+
+- name: "Volumes SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _vol_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
+- name: "Volumes SDK - Verify low read_timeout causes ReadTimeoutError"
+  ansible.builtin.assert:
+    that:
+      - result_timeout.changed == false
+      - result_timeout.failed == true
+      - "'Read timed out' in _vol_err"
+      - "'ReadTimeoutError' in _vol_err"
+      - "'read timeout=0.001' in _vol_err"
+    fail_msg: "Volumes SDK - low read_timeout did not cause expected timeout (err={{ _vol_err }})"
+    success_msg: "Volumes SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
+
+###########################################################
+# 7. CLUSTERS MGMT SDK (ntnx_clustermgmt_py_client) - hosts_info
+###########################################################
+- name: "Clusters Mgmt SDK tests"
+  block:
+    - name: "Clusters Mgmt SDK - List hosts with default read_timeout (30000ms)"
+      nutanix.ncp.ntnx_hosts_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: "Clusters Mgmt SDK - Verify default read_timeout works"
+      ansible.builtin.assert:
+        that:
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response | length == 1
+          - result.total_available_results is defined
+          - result.total_available_results > 0
+        fail_msg: "Clusters Mgmt SDK - list hosts with default read_timeout failed"
+        success_msg: "Clusters Mgmt SDK - default read_timeout (30000ms) passed"
+
+    - name: "Clusters Mgmt SDK - List hosts with custom read_timeout (60000ms)"
+      nutanix.ncp.ntnx_hosts_info_v2:
+        limit: 1
+        read_timeout: 60000
+      register: result_custom
+      ignore_errors: true
+
+    - name: "Clusters Mgmt SDK - Verify custom read_timeout works"
+      ansible.builtin.assert:
+        that:
+          - result_custom.changed == false
+          - result_custom.failed == false
+          - result_custom.response is defined
+          - result_custom.response | length == 1
+          - result_custom.total_available_results is defined
+          - result_custom.total_available_results > 0
+        fail_msg: "Clusters Mgmt SDK - list hosts with custom read_timeout (60000ms) failed"
+        success_msg: "Clusters Mgmt SDK - custom read_timeout (60000ms) passed"
+
+    - name: "Clusters Mgmt SDK - Verify default and custom return same data"
+      ansible.builtin.assert:
+        that:
+          - result.total_available_results == result_custom.total_available_results
+        fail_msg: "Clusters Mgmt SDK - default and custom read_timeout returned different total_available_results"
+        success_msg: "Clusters Mgmt SDK - default and custom read_timeout returned consistent data"
+
+    - name: "Clusters Mgmt SDK - List hosts with very low read_timeout (1ms - negative test)"
+      nutanix.ncp.ntnx_hosts_info_v2:
+        limit: 1
+        read_timeout: 1
+      register: result_timeout
+      ignore_errors: true
+
+    - name: "Clusters Mgmt SDK - Build combined error output"
+      ansible.builtin.set_fact:
+        _clust_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
+    - name: "Clusters Mgmt SDK - Verify low read_timeout causes ReadTimeoutError"
+      ansible.builtin.assert:
+        that:
+          - result_timeout.changed == false
+          - result_timeout.failed == true
+          - "'Read timed out' in _clust_err"
+          - "'ReadTimeoutError' in _clust_err"
+          - "'read timeout=0.001' in _clust_err"
+        fail_msg: "Clusters Mgmt SDK - low read_timeout did not cause expected timeout (err={{ _clust_err }})"
+        success_msg: "Clusters Mgmt SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
+
+  rescue:
+    - name: "Clusters Mgmt SDK - API not available on this PC version"
+      ansible.builtin.debug:
+        msg: "Clusters Mgmt SDK - API not available on this PC. Skipping. (msg={{ ansible_failed_result.msg | default('N/A') }})"
+
+###########################################################
+# 8. SECURITY SDK (ntnx_security_py_client) - kms_info
+###########################################################
+- name: "Security SDK - List KMS with default read_timeout (30000ms)"
+  nutanix.ncp.ntnx_key_management_server_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: "Security SDK - Verify default read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "Security SDK - list KMS with default read_timeout failed (msg={{ result.msg | default('N/A') }})"
+    success_msg: "Security SDK - default read_timeout (30000ms) passed"
+
+- name: "Security SDK - List KMS with custom read_timeout (60000ms)"
+  nutanix.ncp.ntnx_key_management_server_info_v2:
+    read_timeout: 60000
+  register: result_custom
+  ignore_errors: true
+
+- name: "Security SDK - Verify custom read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result_custom.changed == false
+      - result_custom.failed == false
+      - result_custom.response is defined
+    fail_msg: "Security SDK - list KMS with custom read_timeout (60000ms) failed (msg={{ result_custom.msg | default('N/A') }})"
+    success_msg: "Security SDK - custom read_timeout (60000ms) passed"
+
+- name: "Security SDK - List KMS with very low read_timeout (1ms - negative test)"
+  nutanix.ncp.ntnx_key_management_server_info_v2:
+    read_timeout: 1
+  register: result_timeout
+  ignore_errors: true
+
+- name: "Security SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _sec_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
+- name: "Security SDK - Verify low read_timeout causes ReadTimeoutError"
+  ansible.builtin.assert:
+    that:
+      - result_timeout.changed == false
+      - result_timeout.failed == true
+      - "'Read timed out' in _sec_err"
+      - "'ReadTimeoutError' in _sec_err"
+      - "'read timeout=0.001' in _sec_err"
+    fail_msg: "Security SDK - low read_timeout did not cause expected timeout (err={{ _sec_err }})"
+    success_msg: "Security SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
+
+###########################################################
+# 9. LICENSING SDK (ntnx_licensing_py_client) - eula_info
+###########################################################
+- name: "Licensing SDK - Get EULA with default read_timeout (30000ms)"
+  nutanix.ncp.ntnx_eula_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: "Licensing SDK - Verify default read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.content is defined
+      - result.response.acceptances is defined
+    fail_msg: "Licensing SDK - get EULA with default read_timeout failed (msg={{ result.msg | default('N/A') }})"
+    success_msg: "Licensing SDK - default read_timeout (30000ms) passed"
+
+- name: "Licensing SDK - Get EULA with custom read_timeout (60000ms)"
+  nutanix.ncp.ntnx_eula_info_v2:
+    read_timeout: 60000
+  register: result_custom
+  ignore_errors: true
+
+- name: "Licensing SDK - Verify custom read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result_custom.changed == false
+      - result_custom.failed == false
+      - result_custom.response is defined
+      - result_custom.response.content is defined
+      - result_custom.response.acceptances is defined
+    fail_msg: "Licensing SDK - get EULA with custom read_timeout (60000ms) failed (msg={{ result_custom.msg | default('N/A') }})"
+    success_msg: "Licensing SDK - custom read_timeout (60000ms) passed"
+
+- name: "Licensing SDK - Verify default and custom return same content"
+  ansible.builtin.assert:
+    that:
+      - result.response.content == result_custom.response.content
+    fail_msg: "Licensing SDK - default and custom read_timeout returned different EULA content"
+    success_msg: "Licensing SDK - default and custom read_timeout returned consistent EULA content"
+
+- name: "Licensing SDK - Get EULA with very low read_timeout (1ms - negative test)"
+  nutanix.ncp.ntnx_eula_info_v2:
+    read_timeout: 1
+  register: result_timeout
+  ignore_errors: true
+
+- name: "Licensing SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _lic_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
+- name: "Licensing SDK - Verify low read_timeout causes ReadTimeoutError"
+  ansible.builtin.assert:
+    that:
+      - result_timeout.changed == false
+      - result_timeout.failed == true
+      - "'Read timed out' in _lic_err"
+      - "'ReadTimeoutError' in _lic_err"
+      - "'read timeout=0.001' in _lic_err"
+    fail_msg: "Licensing SDK - low read_timeout did not cause expected timeout (err={{ _lic_err }})"
+    success_msg: "Licensing SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
+
+###########################################################
+# 10. OBJECTS SDK (ntnx_objects_py_client) - object_stores_info
+###########################################################
+- name: "Objects SDK - List object stores with default read_timeout (30000ms)"
+  nutanix.ncp.ntnx_object_stores_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: "Objects SDK - Verify default read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "Objects SDK - list object stores with default read_timeout failed (msg={{ result.msg | default('N/A') }})"
+    success_msg: "Objects SDK - default read_timeout (30000ms) passed"
+
+- name: "Objects SDK - List object stores with custom read_timeout (60000ms)"
+  nutanix.ncp.ntnx_object_stores_info_v2:
+    read_timeout: 60000
+  register: result_custom
+  ignore_errors: true
+
+- name: "Objects SDK - Verify custom read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result_custom.changed == false
+      - result_custom.failed == false
+      - result_custom.response is defined
+    fail_msg: "Objects SDK - list object stores with custom read_timeout (60000ms) failed (msg={{ result_custom.msg | default('N/A') }})"
+    success_msg: "Objects SDK - custom read_timeout (60000ms) passed"
+
+- name: "Objects SDK - List object stores with very low read_timeout (1ms - negative test)"
+  nutanix.ncp.ntnx_object_stores_info_v2:
+    read_timeout: 1
+  register: result_timeout
+  ignore_errors: true
+
+- name: "Objects SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _obj_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
+- name: "Objects SDK - Verify low read_timeout causes ReadTimeoutError"
+  ansible.builtin.assert:
+    that:
+      - result_timeout.changed == false
+      - result_timeout.failed == true
+      - "'Read timed out' in _obj_err"
+      - "'ReadTimeoutError' in _obj_err"
+      - "'read timeout=0.001' in _obj_err"
+    fail_msg: "Objects SDK - low read_timeout did not cause expected timeout (err={{ _obj_err }})"
+    success_msg: "Objects SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
+
+###########################################################
+# 11. LCM SDK (ntnx_lifecycle_py_client) - lcm_status_info
+###########################################################
+- name: "LCM SDK - Get LCM status with default read_timeout (30000ms)"
+  nutanix.ncp.ntnx_lcm_status_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: "LCM SDK - Verify default read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "LCM SDK - get LCM status with default read_timeout failed (msg={{ result.msg | default('N/A') }})"
+    success_msg: "LCM SDK - default read_timeout (30000ms) passed"
+
+- name: "LCM SDK - Get LCM status with custom read_timeout (60000ms)"
+  nutanix.ncp.ntnx_lcm_status_info_v2:
+    read_timeout: 60000
+  register: result_custom
+  ignore_errors: true
+
+- name: "LCM SDK - Verify custom read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result_custom.changed == false
+      - result_custom.failed == false
+      - result_custom.response is defined
+    fail_msg: "LCM SDK - get LCM status with custom read_timeout (60000ms) failed (msg={{ result_custom.msg | default('N/A') }})"
+    success_msg: "LCM SDK - custom read_timeout (60000ms) passed"
+
+- name: "LCM SDK - Get LCM status with very low read_timeout (1ms - negative test)"
+  nutanix.ncp.ntnx_lcm_status_info_v2:
+    read_timeout: 1
+  register: result_timeout
+  ignore_errors: true
+
+- name: "LCM SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _lcm_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
+- name: "LCM SDK - Verify low read_timeout causes ReadTimeoutError"
+  ansible.builtin.assert:
+    that:
+      - result_timeout.changed == false
+      - result_timeout.failed == true
+      - "'Read timed out' in _lcm_err"
+      - "'ReadTimeoutError' in _lcm_err"
+      - "'read timeout=0.001' in _lcm_err"
+    fail_msg: "LCM SDK - low read_timeout did not cause expected timeout (err={{ _lcm_err }})"
+    success_msg: "LCM SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
+
+###########################################################
+# 12. DATA PROTECTION SDK (ntnx_dataprotection_py_client) - recovery_points_info
+###########################################################
+- name: "Data Protection SDK - List recovery points with default read_timeout (30000ms)"
+  nutanix.ncp.ntnx_recovery_points_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: "Data Protection SDK - Verify default read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results is defined
+    fail_msg: "Data Protection SDK - list recovery points with default read_timeout failed (msg={{ result.msg | default('N/A') }})"
+    success_msg: "Data Protection SDK - default read_timeout (30000ms) passed"
+
+- name: "Data Protection SDK - List recovery points with custom read_timeout (60000ms)"
+  nutanix.ncp.ntnx_recovery_points_info_v2:
+    limit: 1
+    read_timeout: 60000
+  register: result_custom
+  ignore_errors: true
+
+- name: "Data Protection SDK - Verify custom read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result_custom.changed == false
+      - result_custom.failed == false
+      - result_custom.response is defined
+      - result_custom.total_available_results is defined
+    fail_msg: "Data Protection SDK - list recovery points with custom read_timeout (60000ms) failed (msg={{ result_custom.msg | default('N/A') }})"
+    success_msg: "Data Protection SDK - custom read_timeout (60000ms) passed"
+
+- name: "Data Protection SDK - Verify default and custom return same data"
+  ansible.builtin.assert:
+    that:
+      - result.total_available_results == result_custom.total_available_results
+    fail_msg: "Data Protection SDK - default and custom read_timeout returned different total_available_results"
+    success_msg: "Data Protection SDK - default and custom read_timeout returned consistent data"
+
+- name: "Data Protection SDK - List recovery points with very low read_timeout (1ms - negative test)"
+  nutanix.ncp.ntnx_recovery_points_info_v2:
+    limit: 1
+    read_timeout: 1
+  register: result_timeout
+  ignore_errors: true
+
+- name: "Data Protection SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _dp_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
+- name: "Data Protection SDK - Verify low read_timeout causes ReadTimeoutError"
+  ansible.builtin.assert:
+    that:
+      - result_timeout.changed == false
+      - result_timeout.failed == true
+      - "'Read timed out' in _dp_err"
+      - "'ReadTimeoutError' in _dp_err"
+      - "'read timeout=0.001' in _dp_err"
+    fail_msg: "Data Protection SDK - low read_timeout did not cause expected timeout (err={{ _dp_err }})"
+    success_msg: "Data Protection SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
+
+###########################################################
+# 13. DATA POLICIES SDK (ntnx_datapolicies_py_client) - protection_policies_info
+###########################################################
+- name: "Data Policies SDK - List protection policies with default read_timeout (30000ms)"
+  nutanix.ncp.ntnx_protection_policies_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: "Data Policies SDK - Verify default read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results is defined
+    fail_msg: "Data Policies SDK - list protection policies with default read_timeout failed (msg={{ result.msg | default('N/A') }})"
+    success_msg: "Data Policies SDK - default read_timeout (30000ms) passed"
+
+- name: "Data Policies SDK - List protection policies with custom read_timeout (60000ms)"
+  nutanix.ncp.ntnx_protection_policies_info_v2:
+    limit: 1
+    read_timeout: 60000
+  register: result_custom
+  ignore_errors: true
+
+- name: "Data Policies SDK - Verify custom read_timeout works"
+  ansible.builtin.assert:
+    that:
+      - result_custom.changed == false
+      - result_custom.failed == false
+      - result_custom.response is defined
+      - result_custom.total_available_results is defined
+    fail_msg: "Data Policies SDK - list protection policies with custom read_timeout (60000ms) failed (msg={{ result_custom.msg | default('N/A') }})"
+    success_msg: "Data Policies SDK - custom read_timeout (60000ms) passed"
+
+- name: "Data Policies SDK - Verify default and custom return same data"
+  ansible.builtin.assert:
+    that:
+      - result.total_available_results == result_custom.total_available_results
+    fail_msg: "Data Policies SDK - default and custom read_timeout returned different total_available_results"
+    success_msg: "Data Policies SDK - default and custom read_timeout returned consistent data"
+
+- name: "Data Policies SDK - List protection policies with very low read_timeout (1ms - negative test)"
+  nutanix.ncp.ntnx_protection_policies_info_v2:
+    limit: 1
+    read_timeout: 1
+  register: result_timeout
+  ignore_errors: true
+
+- name: "Data Policies SDK - Build combined error output"
+  ansible.builtin.set_fact:
+    _dpol_err: "{{ result_timeout.msg | default('') }} {{ result_timeout.module_stderr | default('') }}"
+
+- name: "Data Policies SDK - Verify low read_timeout causes ReadTimeoutError"
+  ansible.builtin.assert:
+    that:
+      - result_timeout.changed == false
+      - result_timeout.failed == true
+      - "'Read timed out' in _dpol_err"
+      - "'ReadTimeoutError' in _dpol_err"
+      - "'read timeout=0.001' in _dpol_err"
+    fail_msg: "Data Policies SDK - low read_timeout did not cause expected timeout (err={{ _dpol_err }})"
+    success_msg: "Data Policies SDK - low read_timeout (1ms) correctly caused ReadTimeoutError"
+
+###########################################################
+# Summary
+###########################################################
+- name: "All read_timeout SDK client tests completed"
+  ansible.builtin.debug:
+    msg: "All 13 SDK client read_timeout tests completed successfully"

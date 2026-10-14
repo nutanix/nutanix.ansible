@@ -17,6 +17,14 @@ description:
     - This module stages guest customization configuration for a Nutanix VM.
     - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Stage guest customization configuration details) -
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User,
+      Virtual Machine Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     state:
         description:
@@ -61,7 +69,12 @@ options:
                                 suboptions:
                                     value:
                                         description:
-                                            - The value of the unattend.xml file.
+                                            - The contents of the unattend.xml file.
+                                            - The API requires this value to be base64 encoded.
+                                            - You can either pass an already-encoded string, or pass the raw
+                                              unattend.xml content and let Ansible encode it using the
+                                              C(b64encode) filter, e.g.
+                                              C("{{ unattend_xml_content | b64encode }}").
                                         type: str
                             custom_key_values:
                                 description:
@@ -110,7 +123,12 @@ options:
                                 suboptions:
                                     value:
                                         description:
-                                            - base64 encoded cloud init script.
+                                            - The cloud-init user-data script.
+                                            - The API requires this value to be base64 encoded.
+                                            - You can either pass an already-encoded string, or pass the raw
+                                              cloud-init script and let Ansible encode it using the
+                                              C(b64encode) filter, e.g.
+                                              C("{{ cloud_init_content | b64encode }}").
                                         type: str
                                         required: true
                             custom_key_values:
@@ -138,6 +156,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 """
 EXAMPLES = r"""
 - name: Update guest script
@@ -149,6 +168,17 @@ EXAMPLES = r"""
         cloud_init_script:
           user_data:
             value: I2Nsb3VkLWNvbmZpZwpkaXNhYmxlX3Jvb3Q6IGZhbHNlCnNzaF9wd2F1dGg6ICAgdHJ1ZQ==
+  register: result
+
+- name: Stage cloud-init guest customization (encoded at task time)
+  nutanix.ncp.ntnx_vms_stage_guest_customization_v2:
+    ext_id: "7334f142-9653-4c84-7287-3c758d1a0aeb"
+    config:
+      cloudinit:
+        datasource_type: CONFIG_DRIVE_V2
+        cloud_init_script:
+          user_data:
+            value: "{{ vm_cloud_init_user_data | b64encode }}"
   register: result
 """
 
@@ -240,8 +270,8 @@ import warnings  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
@@ -328,7 +358,7 @@ def stage_customize_guest(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )

@@ -15,6 +15,20 @@ description:
     - This module allows you to create, update, and delete roles.
     - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create role) -
+      Required Roles: Nutanix Central Admin, Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Delete role) -
+      Required Roles: Nutanix Central Admin, Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Update role) -
+      Required Roles: Nutanix Central Admin, Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
     state:
         description:
@@ -28,6 +42,12 @@ options:
         description:
             - Role External ID.
             - Required for updating or deleting the role.
+        type: str
+        required: false
+    project_ext_id:
+        description:
+            - External ID (UUID) of the project that owns this role.
+            - Update of this field is not supported.
         type: str
         required: false
     display_name:
@@ -52,6 +72,12 @@ options:
         type: list
         elements: str
         required: false
+    is_global:
+        description:
+            - Flag to indicate if the entity is global or not.
+            - This field is supported in 7.6 and above.
+        required: false
+        type: bool
     wait:
         description:
             - Wait for the task to complete.
@@ -62,6 +88,7 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
       - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
  - Alaa Bishtawi (@alaa-bish)
@@ -78,6 +105,7 @@ EXAMPLES = r"""
     state: present
     display_name: "Display_Name_Test"
     description: test-ansible-role-1-desc
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     operations:
       - "251d4a4f-244f-4c84-70a9-8c8f68f9dff0"
       - "0194fbfd-a5d1-49f8-46f4-e4b01d0abe47"
@@ -177,8 +205,8 @@ from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.iam.api_client import (  # noqa: E402
     get_etag,
     get_role_api_instance,
@@ -187,6 +215,7 @@ from ..module_utils.v4.iam.helpers import get_role  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -206,10 +235,12 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         display_name=dict(type="str"),
         description=dict(type="str"),
         client_name=dict(type="str"),
         operations=dict(type="list", elements="str"),
+        is_global=dict(type="bool"),
     )
     return module_args
 
@@ -223,6 +254,9 @@ def create_role(module, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating create Roles Spec", **result)
+
+    if not module.params.get("is_global"):
+        spec.is_global = None
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
@@ -264,6 +298,10 @@ def update_role(module, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating roles update spec", **result)
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     # check for idempotency
     if check_roles_idempotency(current_spec.to_dict(), update_spec.to_dict()):
@@ -320,7 +358,7 @@ def delete_role(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[

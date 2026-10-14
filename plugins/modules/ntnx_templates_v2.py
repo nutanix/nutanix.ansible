@@ -15,6 +15,20 @@ description:
     - This module allows you to create, update, and delete Nutanix AHV templates.
     - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create template from a VM) -
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
+    - >-
+      B(Delete a template and its associated versions) -
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
+    - >-
+      B(Update a template) -
+      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     state:
         description:
@@ -24,6 +38,11 @@ options:
     ext_id:
         description:
             - A globally unique identifier of an instance that is suitable for external consumption.
+        type: str
+    project_ext_id:
+        description:
+            - External ID (UUID) of the project that owns this template.
+            - Update of this field is not supported.
         type: str
     template_name:
         description:
@@ -657,12 +676,18 @@ options:
                                 type: str
                                 required: True
                     project:
-                        description: Reference to a project.
+                        description:
+                            - Reference to a project.
+                            - This field is deprecated and will be removed in a future release.
+                            - Use project_ext_id instead.
                         type: dict
                         suboptions:
                             ext_id:
                                 description: The globally unique identifier of a project. It should be of type UUID.
                                 type: str
+                    project_ext_id:
+                        description: The globally unique identifier of a project. It should be of type UUID.
+                        type: str
                     host:
                         description: Reference to a host.
                         type: dict
@@ -1574,6 +1599,7 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
       - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
@@ -1589,6 +1615,7 @@ EXAMPLES = r"""
     validate_certs: false
     template_name: "{{ template_name }}"
     template_description: "ansible test"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     template_version_spec:
       version_source:
         template_vm_reference:
@@ -1824,8 +1851,8 @@ from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
     get_entity_ext_id_from_task,
@@ -1834,6 +1861,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
@@ -1929,6 +1957,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         template_name=dict(type="str"),
         template_description=dict(type="str"),
         template_version_spec=dict(
@@ -1980,6 +2009,14 @@ def create_template(module, result):
             resp = get_template(module, templates, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Template"
+                ),
+                msg="Failed to get entity ext_id from task for Template",
+            )
 
     result["changed"] = True
 
@@ -1992,6 +2029,10 @@ def update_template(module, result):
     current_spec = get_template(module, templates, ext_id)
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     if not update_spec.created_by.user_type:
         update_spec.created_by.user_type = "LOCAL"
@@ -2070,7 +2111,7 @@ def delete_template(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[

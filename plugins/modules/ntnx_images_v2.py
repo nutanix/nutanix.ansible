@@ -18,6 +18,22 @@ description:
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create an image) -
+      Required Roles: Account Owner, Administrator, Consumer, CSI System, Developer, Kubernetes Data Services System, Kubernetes Infrastructure Provision,
+      NCM Connector, Prism Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Delete an image) -
+      Required Roles: Account Owner, Administrator, CSI System, Kubernetes Data Services System, Kubernetes Infrastructure Provision, Prism Admin,
+      Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Update an image) -
+      Required Roles: Account Owner, Administrator, Prism Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     state:
         description:
@@ -163,6 +179,12 @@ options:
         type: list
         elements: str
         required: false
+    project_ext_id:
+        description:
+            - External ID (UUID) of the project that owns this image.
+            - Update of this field is not supported.
+        type: str
+        required: false
     tenant_id:
         description:
             - The tenant ID to be associated with the image.
@@ -172,6 +194,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 """
 
 EXAMPLES = r"""
@@ -194,6 +217,7 @@ EXAMPLES = r"""
         basic_auth:
           username: myuser
           password: mypassword
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     category_ext_ids:
       - category1
       - category2
@@ -289,8 +313,8 @@ from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.constants import Tasks  # noqa: E402
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
     get_entity_ext_id_from_task,
@@ -299,12 +323,14 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_etag,
     get_image_api_instance,
 )
+from ..module_utils.v4.vmm.helpers import get_image  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
@@ -355,6 +381,7 @@ def get_module_spec():
     )
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         type=dict(type="str", choices=["DISK_IMAGE", "ISO_IMAGE"]),
@@ -377,17 +404,6 @@ def get_module_spec():
         tenant_id=dict(type="str"),
     )
     return module_args
-
-
-def get_image(module, api_instance, ext_id):
-    try:
-        return api_instance.get_image_by_id(extId=ext_id).data
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching image info using ext_id",
-        )
 
 
 def create_image(module, result):
@@ -425,6 +441,12 @@ def create_image(module, result):
             resp = get_image(module, images, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception("Failed to get entity ext_id from task for Image"),
+                msg="Failed to get entity ext_id from task for Image",
+            )
 
     result["changed"] = True
 
@@ -448,14 +470,18 @@ def update_image(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating image update spec", **result)
 
-    # check for idempotency
-    if check_idempotency(current_spec, update_spec):
-        result["skipped"] = True
-        module.exit_json(msg="Nothing to change.", **result)
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
+
+    # check for idempotency
+    if check_idempotency(current_spec, update_spec):
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.", **result)
 
     resp = None
     try:
@@ -514,7 +540,7 @@ def delete_image(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[

@@ -16,6 +16,23 @@ version_added: 2.0.0
 description:
     - Create, Update Expiry Date, Delete recovery points
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a recovery point) -
+      Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Kubernetes Data Services System, NCM Connector, Prism Admin, Project Manager,
+      Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Delete a recovery point) -
+      Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Kubernetes Data Services System, NCM Connector, Prism Admin, Project Manager,
+      Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Set the expiration time of the recovery point) -
+      Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Kubernetes Data Services System, NCM Connector, Prism Admin, Project Manager,
+      Super Admin, Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection)"
 options:
     state:
         description:
@@ -29,6 +46,11 @@ options:
         description:
             - External ID of the top level recovery point.
             - Required for updating expiry date and deleting recovery point.
+        type: str
+    project_ext_id:
+        description:
+            - External ID (UUID) of the project that owns this recovery point.
+            - Update of this field is not supported.
         type: str
 
     name:
@@ -113,6 +135,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
     - Pradeepsingh Bhati (@bhati-pradeep)
@@ -129,6 +152,7 @@ EXAMPLES = r"""
     expiration_time: "2024-09-30T14:15:22Z"
     status: "COMPLETE"
     recovery_point_type: "CRASH_CONSISTENT"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     vm_recovery_points:
       - vm_ext_id: "ac5aff0c-6c68-4948-9088-b903e2be0ce7"
       - vm_ext_id: "3f50a1b2-4c3d-4e6a-9b8e-1a2b3c4d5e6f"
@@ -240,8 +264,8 @@ from datetime import datetime  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.data_protection.api_client import (  # noqa: E402
     get_etag,
@@ -255,6 +279,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -304,6 +329,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         state=dict(type="str", choices=["present", "absent"], default="present"),
         name=dict(type="str"),
         expiration_time=dict(type="str"),
@@ -363,6 +389,14 @@ def create_recovery_point(module, result):
             resp = get_recovery_point(module, recovery_points, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Recovery Point"
+                ),
+                msg="Failed to get entity ext_id from task for Recovery Point",
+            )
     result["changed"] = True
 
 
@@ -388,6 +422,8 @@ def update_expiry_date_recovery_point(module, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating update recovery point Spec", **result)
+
+    raise_unsupported_update_fields(module, old_spec, update_spec, ["project_ext_id"])
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
@@ -485,7 +521,7 @@ def delete_recovery_point(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[

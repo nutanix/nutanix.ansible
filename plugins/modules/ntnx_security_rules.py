@@ -13,33 +13,6 @@ short_description: security_rule module which supports security_rule CRUD operat
 version_added: 1.3.0
 description: 'Create, Update, Delete security_rule'
 options:
-  nutanix_host:
-    description:
-      - PC hostname or IP address
-    type: str
-    required: true
-  nutanix_port:
-    description:
-      - PC port
-    type: str
-    default: "9440"
-    required: false
-  nutanix_username:
-    description:
-      - PC username
-    type: str
-    required: true
-  nutanix_password:
-    description:
-      - PC password;
-    required: true
-    type: str
-  validate_certs:
-    description:
-      - Set value to C(False) to skip validation for self signed certificates
-      - This is not recommended for production setup
-    type: bool
-    default: true
   state:
     description:
       - Specify state of security_rule

@@ -286,7 +286,8 @@ options:
                                     uplinks:
                                         description:
                                             - MAC Addresses of NICs in a team/bond
-                                        type: str
+                                        type: list
+                                        elements: str
                                         required: false
                                     mtu:
                                         description:
@@ -540,7 +541,8 @@ options:
                                     uplinks:
                                         description:
                                             - MAC Addresses of NICs in a team/bond
-                                        type: str
+                                        type: list
+                                        elements: str
                                         required: false
                                     mtu:
                                         description:
@@ -1011,7 +1013,7 @@ def get_module_spec():
         lacp=dict(type="str", required=False),
         bond_mode=dict(type="str", required=False, choices=["static", "dynamic"]),
         name=dict(type="str", required=False),
-        uplinks=dict(type="str", required=False),
+        uplinks=dict(type="list", elements="str", required=False),
         mtu=dict(type="int", required=False),
         other_config=dict(type="list", elements="str", required=False),
     )

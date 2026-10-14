@@ -1,0 +1,45 @@
+---
+# Summary:
+# This playbook will do:
+# 1. List all entities
+# 2. List entities using filter
+# 3. List entities using limit
+# 4. Fetch entity using external ID
+
+- name: Entities playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        entity_name: test-ansible-entity-1
+        entity_external_id: 00000000-0000-0000-0000-000000000003 # Example external ID
+
+    - name: List all entities
+      nutanix.ncp.ntnx_iam_entities_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List entities using filter
+      nutanix.ncp.ntnx_iam_entities_info_v2:
+        filter: "name eq '{{ entity_name }}'"
+      register: result
+      ignore_errors: true
+
+    - name: List entities using limit
+      nutanix.ncp.ntnx_iam_entities_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Fetch entity using external ID
+      nutanix.ncp.ntnx_iam_entities_info_v2:
+        ext_id: "{{ entity_external_id }}"
+      register: result
+      ignore_errors: true

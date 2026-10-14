@@ -16,6 +16,20 @@ version_added: 2.0.0
 description:
     - Create, Update, Delete address groups
     - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create an Address Group) -
+      Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
+    - >-
+      B(Delete an Address Group) -
+      Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
+    - >-
+      B(Update an Address Group) -
+      Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:
   state:
     description:
@@ -29,6 +43,12 @@ options:
     description:
         - Address group External ID.
         - Required for updating or deleting address group.
+    type: str
+
+  project_ext_id:
+    description:
+        - External ID (UUID) of the project that owns this address group.
+        - Update of this field is not supported.
     type: str
 
   name:
@@ -73,6 +93,7 @@ extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
       - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 author:
  - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
  - Alaa Bishtawi (@alaa-bish)
@@ -88,6 +109,7 @@ EXAMPLES = r"""
     state: present
     name: "{{ag1}}"
     description: test-ansible-group-1-desc
+    project_ext_id: "79298789-1234-1111-2222-6788222f17b8"
     ipv4_addresses:
       - value: "10.1.1.0"
         prefix_length: 24
@@ -170,8 +192,8 @@ from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.flow.api_client import (  # noqa: E402
     get_address_groups_api_instance,
@@ -185,6 +207,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -214,6 +237,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         ipv4_addresses=dict(
@@ -268,6 +292,14 @@ def create_address_group(module, result):
             resp = get_address_group(module, address_groups, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Address Group"
+                ),
+                msg="Failed to get entity ext_id from task for Address Group",
+            )
 
     result["changed"] = True
 
@@ -293,6 +325,10 @@ def update_address_group(module, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating address_groups update spec", **result)
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
@@ -365,7 +401,7 @@ def delete_address_group(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[

@@ -75,8 +75,8 @@
   ansible.builtin.uri:
     url: "{{ delete_bucket_api }}"
     method: DELETE
-    user: "{{ username }}"
-    password: "{{ password }}"
+    user: "{{ username_for_tests }}"
+    password: "{{ password_for_tests }}"
     force_basic_auth: true
     validate_certs: false
     headers:
@@ -119,8 +119,8 @@
   ansible.builtin.uri:
     url: "{{ delete_bucket_api }}"
     method: DELETE
-    user: "{{ username }}"
-    password: "{{ password }}"
+    user: "{{ username_for_tests }}"
+    password: "{{ password_for_tests }}"
     force_basic_auth: true
     validate_certs: false
     headers:

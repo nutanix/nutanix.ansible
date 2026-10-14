@@ -68,6 +68,27 @@ def get_address_group(module, api_instance, ext_id):
         )
 
 
+def get_entity_group(module, api_instance, ext_id):
+    """
+    This method will return entity group info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: EntityGroupsApi instance from ntnx_microseg_py_client sdk
+        ext_id (str): entity group info external ID
+    return:
+        entity_group_info (object): entity group info
+    """
+
+    try:
+        return api_instance.get_entity_group_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching entity group info using ext_id",
+        )
+
+
 def strip_service_group_extra_attributes(obj):
     """
     This method will remove antivirus object's extra fields from given object.
@@ -81,3 +102,43 @@ def strip_service_group_extra_attributes(obj):
         setattr(obj, field, None)
 
     return obj
+
+
+def get_category_mapping(module, api_instance, ext_id):
+    """
+    This method will return Category Mapping info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: CategoryMappingsApi instance from ntnx_microseg_py_client sdk
+        ext_id (str): Category Mapping external ID
+    Returns:
+        category_mapping (object): Category Mapping info
+    """
+    try:
+        return api_instance.get_ds_category_mapping_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Category Mapping info using ext_id",
+        )
+
+
+def get_directory_server_config(module, api_instance, ext_id):
+    """
+    This method will return directory server config info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: DirectoryServerConfigsApi instance from ntnx_microseg_py_client sdk
+        ext_id (str): directory server config external ID
+    Returns:
+        directory_server_config (object): directory server config info
+    """
+    try:
+        return api_instance.get_directory_server_config_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching directory server config info using ext_id",
+        )

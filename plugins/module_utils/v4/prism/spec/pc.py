@@ -98,11 +98,7 @@ class PrismSpecs:
             required=True,
         ),
         ip_ranges=dict(
-            type="list",
-            elements="dict",
-            options=ip_ranges_spec,
-            obj=prism_sdk.IpRange,
-            required=True,
+            type="list", elements="dict", options=ip_ranges_spec, obj=prism_sdk.IpRange
         ),
     )
 

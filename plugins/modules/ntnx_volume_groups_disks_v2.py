@@ -18,6 +18,19 @@ description:
 version_added: "2.0.0"
 author:
  - Pradeepsingh Bhati (@bhati-pradeep)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Creates a new Volume Disk) -
+      Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin,
+      Self-Service Admin (deprecated)
+    - >-
+      B(Delete a Volume Disk) -
+      Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin,
+      Self-Service Admin (deprecated)
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:
     state:
         description:
@@ -99,6 +112,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
 """
 
 EXAMPLES = r"""
@@ -228,8 +242,8 @@ import warnings  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
     get_entity_ext_id_from_task,
@@ -244,7 +258,8 @@ from ..module_utils.v4.volumes.api_client import (  # noqa: E402
     get_etag,
     get_vg_api_instance,
 )
-from ..module_utils.v4.volumes.spec.volume_group import (  # noqa: E402
+
+from ..module_utils.v4.volumes.spec.volume_group import (  # noqa: E402  # isort: skip
     VGSpecs as vg_specs,
 )
 
@@ -350,6 +365,14 @@ def create_disk(module, result):
             resp = get_volume_group_disk(module, vgs, ext_id, volume_group_ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Volume Group Disk"
+                ),
+                msg="Failed to get entity ext_id from task for Volume Group Disk",
+            )
 
     result["changed"] = True
 
@@ -389,7 +412,7 @@ def delete_disk(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[

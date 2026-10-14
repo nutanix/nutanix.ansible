@@ -16,6 +16,20 @@ description:
     - This module allows you to create, update, and delete authorization policies in Nutanix PC.
     - This module uses PC v4 APIs based SDKs
 version_added: "2.0.0"
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create authorization policy) -
+      Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
+    - >-
+      B(Delete authorization policy) -
+      Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
+    - >-
+      B(Update authorization policy) -
+      Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
     state:
         description:
@@ -30,6 +44,12 @@ options:
             - Required for updating or deleting the auth policy.
         type: str
         required: false
+    project_ext_id:
+        description:
+            - External ID (UUID) of the project that owns this authorization policy.
+            - Update of this field is not supported.
+        required: false
+        type: str
     display_name:
         description:
             - The display name for the Authorization Policy.
@@ -73,10 +93,17 @@ options:
             - Wait for the task to complete.
             - Not supported for this module.
         required: false
+    is_global:
+        description:
+            - Flag to indicate if the entity is global or not.
+            - This field is supported in 7.6 and above.
+        required: false
+        type: bool
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
       - nutanix.ncp.ntnx_logger
+      - nutanix.ncp.ntnx_proxy_v2
 author:
   - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
   - Alaa Bishtawi (@alaa-bish)
@@ -94,6 +121,7 @@ EXAMPLES = r"""
     description: "ansible created acps"
     role: "ebbfbd38-122b-5529-adcc-dcb6b4177382"
     authorization_policy_type: "USER_DEFINED"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     entities:
       - "images":
           "*":
@@ -237,8 +265,8 @@ from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.iam.api_client import (  # noqa: E402
     get_authorization_policy_api_instance,
     get_etag,
@@ -247,6 +275,7 @@ from ..module_utils.v4.iam.helpers import get_authorization_policy  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -265,6 +294,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         display_name=dict(type="str"),
         description=dict(type="str"),
         identities=dict(type="list", elements="dict"),
@@ -275,6 +305,7 @@ def get_module_spec():
             choices=["USER_DEFINED"],
             default="USER_DEFINED",
         ),
+        is_global=dict(type="bool"),
     )
     return module_args
 
@@ -315,6 +346,9 @@ def create_authorization_policy(module, result):
         module.fail_json(
             msg="Failed generating create authorization policy spec", **result
         )
+
+    if not module.params.get("is_global"):
+        spec.is_global = None
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
@@ -358,6 +392,10 @@ def update_authorization_policy(module, result):
         module.fail_json(
             msg="Failed generating authorization policy update spec", **result
         )
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     # handling identities and entities spec creation separately as their dicts are to be passed in $reserved
     identities = module.params.get("identities")
@@ -444,7 +482,7 @@ def delete_authorization_policy(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[

@@ -16,6 +16,20 @@ description:
   - This module allows you to create, update, and delete network security policies in Nutanix Prism Central.
   - During update, the rules provided under C(rules) will replace existing rules.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a Network Security Policy) -
+      Required Roles: Flow Admin, Prism Admin, Super Admin
+    - >-
+      B(Delete a Network Security Policy by ExtID) -
+      Required Roles: Flow Admin, Prism Admin, Super Admin
+    - >-
+      B(Update a Network Security Policy by ExtID) -
+      Required Roles: Flow Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:
   wait:
     description:
@@ -32,6 +46,11 @@ options:
   ext_id:
     description:
       - External ID of the Flow Network Security Policy.
+    type: str
+  project_ext_id:
+    description:
+      - External ID (UUID) of the project that owns this network security policy.
+      - Update of this field is not supported.
     type: str
   name:
     description:
@@ -57,6 +76,12 @@ options:
     required: false
     type: list
     elements: str
+  scope_references:
+    description:
+      - A list of external ids for scope references, used only when the scope of policy is a list of scope references.
+    required: false
+    type: list
+    elements: str
   type:
     description:
       - Defines the type of rules that can be used in a policy.
@@ -66,6 +91,7 @@ options:
       - QUARANTINE
       - ISOLATION
       - APPLICATION
+      - SHAREDSERVICE
   policy_state:
     description:
       - Whether the policy is just to be saved, applied, monitored.
@@ -77,14 +103,16 @@ options:
       - ENFORCE
   scope:
     description:
-      - Defines the scope of the policy. Currently, only ALL_VLAN and VPC_LIST are supported.
-        If scope is not provided, the default is set based on whether vpcReferences field is provided or not.
+      - Defines the scope of the policy. Currently, ALL_VLAN, VPC_LIST, GLOBAL, and VPC_AS_CATEGORY are supported.
+        If a scope is not provided, the default value is determined by the presence or absence of the vpcReferences or scopeReferences fields.
     required: false
     type: str
     choices:
       - ALL_VLAN
       - ALL_VPC
       - VPC_LIST
+      - GLOBAL
+      - VPC_AS_CATEGORY
   rules:
     description:
       - A list of rules that form a policy. For isolation policies, use isolation rules
@@ -96,6 +124,11 @@ options:
       ext_id:
         description:
           - External ID of the rule.
+        required: false
+        type: str
+      name:
+        description:
+          - Name of the rule.
         required: false
         type: str
       description:
@@ -113,6 +146,12 @@ options:
           - APPLICATION
           - INTRA_GROUP
           - MULTI_ENV_ISOLATION
+          - SHARED_SERVICE
+      is_logging_enabled:
+        description:
+          - Specifies whether hit log is enabled for the rule.
+        required: false
+        type: bool
       spec:
         description:
           - The specification of the rule.
@@ -229,6 +268,19 @@ options:
                     description:
                       - The prefix length of the source subnet.
                     type: int
+              src_ipv6_subnet:
+                description:
+                  - An unique address that identifies a device on the internet or a local network in IPv6 format.
+                type: dict
+                suboptions:
+                  value:
+                    description:
+                      - The IPv6 address of the host.
+                    type: str
+                  prefix_length:
+                    description:
+                      - The prefix length of the network to which this host IPv6 address belongs.
+                    type: int
               dest_subnet:
                 description:
                   - The destination subnet/IP specification.
@@ -241,6 +293,19 @@ options:
                   prefix_length:
                     description:
                       - The prefix length of the destination subnet.
+                    type: int
+              dest_ipv6_subnet:
+                description:
+                  - An unique address that identifies a device on the internet or a local network in IPv6 format.
+                type: dict
+                suboptions:
+                  value:
+                    description:
+                      - The IPv6 address of the host.
+                    type: str
+                  prefix_length:
+                    description:
+                      - The prefix length of the network to which this host IPv6 address belongs.
                     type: int
               src_address_group_references:
                 description:
@@ -309,6 +374,24 @@ options:
                     description:
                       - Icmp service Code. Ignore this field if Code has to be ANY.
                     type: int
+              icmp_v6_services:
+                description:
+                  - ICMPv6 Type Code List.
+                type: list
+                elements: dict
+                suboptions:
+                  is_all_allowed:
+                    description:
+                      - Set this field to true if both Type and Code is ANY.
+                    type: bool
+                  type:
+                    description:
+                      - ICMP service Type. Ignore this field if Type has to be ANY.
+                    type: int
+                  code:
+                    description:
+                      - ICMP service Code. Ignore this field if Code has to be ANY.
+                    type: int
               network_function_chain_reference:
                 description:
                   - A reference to the network function chain in the rule.
@@ -335,6 +418,7 @@ options:
                 choices:
                   - ALLOW
                   - DENY
+                required: true
               secured_group_category_associated_entity_type:
                 description:
                   - The type of entity associated with the secured group category.
@@ -403,6 +487,24 @@ options:
                     description:
                       - Icmp service Code. Ignore this field if Code has to be ANY.
                     type: int
+              icmp_v6_services:
+                description:
+                  - ICMPv6 Type Code List.
+                type: list
+                elements: dict
+                suboptions:
+                  is_all_allowed:
+                    description:
+                      - Set this field to true if both Type and Code is ANY.
+                    type: bool
+                  type:
+                    description:
+                      - ICMP service Type. Ignore this field if Type has to be ANY.
+                    type: int
+                  code:
+                    description:
+                      - ICMP service Code. Ignore this field if Code has to be ANY.
+                    type: int
           multi_env_isolation_rule_spec:
             description:
               - The specification of the multi environment isolation rule.
@@ -424,16 +526,31 @@ options:
                           - The list of isolation groups.
                         type: list
                         elements: dict
+                        required: true
                         suboptions:
+                          group_category_associated_entity_type:
+                            description:
+                              - The type of entity associated with the group category.
+                            type: str
+                            choices:
+                              - VM
+                              - SUBNET
+                              - VPC
+                            default: VM
                           group_category_references:
                             description:
                               - The list of group category references.
                             type: list
                             elements: str
+                          group_entity_group_reference:
+                            description:
+                              - The reference to the group entity group.
+                            type: str
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
   - nutanix.ncp.ntnx_logger
+  - nutanix.ncp.ntnx_proxy_v2
 author:
   - Gevorg Khachatryan (@Gevorg-Khachatryan-97)
   - Alaa Bishtawi (@alaa-bish)
@@ -449,6 +566,7 @@ EXAMPLES = r"""
     nutanix_password: "<pc_password>"
     name: "rule1"
     description: "Ansible created rule"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     type: "APPLICATION"
     policy_state: "ENFORCE"
     scope: "ALL_VLAN"
@@ -690,8 +808,8 @@ from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
-from ..module_utils.base_module import BaseModule  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.flow.api_client import (  # noqa: E402
     get_etag,
@@ -705,6 +823,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -773,8 +892,14 @@ def get_module_spec():
         src_subnet=dict(
             type="dict", options=ip_address_sub_spec, obj=mic_sdk.IPv4Address
         ),
+        src_ipv6_subnet=dict(
+            type="dict", options=ip_address_sub_spec, obj=mic_sdk.IPv6Address
+        ),
         dest_subnet=dict(
             type="dict", options=ip_address_sub_spec, obj=mic_sdk.IPv4Address
+        ),
+        dest_ipv6_subnet=dict(
+            type="dict", options=ip_address_sub_spec, obj=mic_sdk.IPv6Address
         ),
         src_address_group_references=dict(type="list", elements="str"),
         dest_address_group_references=dict(type="list", elements="str"),
@@ -798,12 +923,18 @@ def get_module_spec():
             options=icmp_service_spec,
             obj=mic_sdk.IcmpTypeCodeSpec,
         ),
+        icmp_v6_services=dict(
+            type="list",
+            elements="dict",
+            options=icmp_service_spec,
+            obj=mic_sdk.IcmpV6TypeCodeSpec,
+        ),
         network_function_chain_reference=dict(type="str"),
         network_function_reference=dict(type="str"),
     )
     entity_group_rule_spec = dict(
         secured_group_category_references=dict(type="list", elements="str"),
-        secured_group_action=dict(type="str", choices=["ALLOW", "DENY"]),
+        secured_group_action=dict(type="str", choices=["ALLOW", "DENY"], required=True),
         secured_group_category_associated_entity_type=dict(
             type="str", choices=["VM", "SUBNET", "VPC"], default="VM"
         ),
@@ -827,10 +958,20 @@ def get_module_spec():
             options=icmp_service_spec,
             obj=mic_sdk.IcmpTypeCodeSpec,
         ),
+        icmp_v6_services=dict(
+            type="list",
+            elements="dict",
+            options=icmp_service_spec,
+            obj=mic_sdk.IcmpV6TypeCodeSpec,
+        ),
     )
 
     isolation_groups_spec = dict(
-        group_category_references=dict(type="list", elements="str")
+        group_category_references=dict(type="list", elements="str"),
+        group_category_associated_entity_type=dict(
+            type="str", choices=["VM", "SUBNET", "VPC"], default="VM"
+        ),
+        group_entity_group_reference=dict(type="str"),
     )
 
     all_to_all_spec = dict(
@@ -839,6 +980,7 @@ def get_module_spec():
             elements="dict",
             obj=mic_sdk.IsolationGroup,
             options=isolation_groups_spec,
+            required=True,
         )
     )
 
@@ -869,6 +1011,7 @@ def get_module_spec():
 
     policy_rule = dict(
         ext_id=dict(type="str"),
+        name=dict(type="str"),
         description=dict(type="str"),
         type=dict(
             type="str",
@@ -878,8 +1021,10 @@ def get_module_spec():
                 "APPLICATION",
                 "INTRA_GROUP",
                 "MULTI_ENV_ISOLATION",
+                "SHARED_SERVICE",
             ],
         ),
+        is_logging_enabled=dict(type="bool"),
         spec=dict(
             type="dict",
             options=rule_spec,
@@ -897,9 +1042,13 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
-        type=dict(type="str", choices=["QUARANTINE", "ISOLATION", "APPLICATION"]),
+        type=dict(
+            type="str",
+            choices=["QUARANTINE", "ISOLATION", "APPLICATION", "SHAREDSERVICE"],
+        ),
         policy_state=dict(type="str", choices=["SAVE", "MONITOR", "ENFORCE"]),
         rules=dict(
             type="list",
@@ -907,8 +1056,12 @@ def get_module_spec():
             options=policy_rule,
             obj=mic_sdk.NetworkSecurityPolicyRule,
         ),
-        scope=dict(type="str", choices=["ALL_VLAN", "ALL_VPC", "VPC_LIST"]),
+        scope=dict(
+            type="str",
+            choices=["ALL_VLAN", "ALL_VPC", "VPC_LIST", "GLOBAL", "VPC_AS_CATEGORY"],
+        ),
         vpc_references=dict(type="list", elements="str"),
+        scope_references=dict(type="list", elements="str"),
         is_ipv6_traffic_allowed=dict(type="bool"),
         is_hitlog_enabled=dict(type="bool"),
     )
@@ -964,8 +1117,27 @@ def create_network_security_policy(module, result):
             )
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Security Policy"
+                ),
+                msg="Failed to get entity ext_id from task for Security Policy",
+            )
 
     result["changed"] = True
+
+
+def default_rule_logging(old_spec, update_spec):
+    if not update_spec.get("rules"):
+        return
+
+    for i in range(len(update_spec["rules"])):
+        if update_spec["rules"][i].get("is_logging_enabled") is None:
+            update_spec["rules"][i]["is_logging_enabled"] = False
+        if old_spec["rules"][i].get("is_logging_enabled") is None:
+            old_spec["rules"][i]["is_logging_enabled"] = False
 
 
 def check_network_security_policies_idempotency(old_spec, update_spec):
@@ -973,6 +1145,8 @@ def check_network_security_policies_idempotency(old_spec, update_spec):
     # check if numbers of rules are same
     if len(old_spec.get("rules", [])) != len(update_spec.get("rules", [])):
         return False
+
+    default_rule_logging(old_spec, update_spec)
 
     # remove external ID from older spec's each rule.
     # since update will overlap all existing rules
@@ -1030,6 +1204,10 @@ def update_network_security_policy(module, result):
             msg="Failed generating network_security_policies update spec", **result
         )
 
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
+
     # due to conflict of spec.state with module state
     if module.params.get("policy_state"):
         update_spec.state = module.params.get("policy_state")
@@ -1037,9 +1215,9 @@ def update_network_security_policy(module, result):
         update_spec.state = current_spec.state
 
     # check for idempotency
-    if check_network_security_policies_idempotency(
-        current_spec.to_dict(), update_spec.to_dict()
-    ):
+    current_spec_dict = strip_internal_attributes(current_spec.to_dict())
+    update_spec_dict = strip_internal_attributes(update_spec.to_dict())
+    if check_network_security_policies_idempotency(current_spec_dict, update_spec_dict):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
@@ -1117,7 +1295,7 @@ def delete_network_security_policy(module, result):
 
 
 def run_module():
-    module = BaseModule(
+    module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
