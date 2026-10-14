@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_rsyslog_server_v2
 short_description: Create, Update, Delete RSYSLOG server configurations in Nutanix cluster.
-version_added: 2.6.0
+version_added: 2.7.0
 description:
   - This module allows you to create, update, and delete RSYSLOG server configurations on a Nutanix cluster.
   - RSYSLOG is used for collecting, filtering, parsing, and forwarding logs from Nutanix components such as CVMs and PCVMs to external remote rsyslog servers.

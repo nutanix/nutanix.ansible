@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_rsyslog_servers_info_v2
 short_description: Fetch RSYSLOG server configuration info from a Nutanix cluster
-version_added: 2.6.0
+version_added: 2.7.0
 description:
   - This module allows you to fetch RSYSLOG server configurations from a Nutanix cluster.
   - If C(ext_id) is provided, fetches a particular RSYSLOG server using its external ID.
