@@ -25,6 +25,7 @@
         external_subnet_uuid: "78965412-1234-5555-9865-6788222f17b8"
         user_uuid: "7c62834e-43f0-4c20-a5d4-cbf36b9a142b"
         project_uuid: "d7419d65-100e-4c99-a666-ec1431516bbe"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
         ip1: "10.0.0.1"
         ip2: "10.0.0.2"
 
@@ -33,6 +34,7 @@
         state: present
         name: "{{ route_name }}"
         description: "Route for testing"
+        project_ext_id: "{{ project_ext_id }}"
         vpc_reference: "{{ vpc_uuid }}"
         route_table_ext_id: "{{ route_table_external_id }}"
         route_type: STATIC

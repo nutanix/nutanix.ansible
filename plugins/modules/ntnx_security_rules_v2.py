@@ -47,6 +47,11 @@ options:
     description:
       - External ID of the Flow Network Security Policy.
     type: str
+  project_ext_id:
+    description:
+      - External ID (UUID) of the project that owns this network security policy.
+      - Update of this field is not supported.
+    type: str
   name:
     description:
       - Name of the Flow Network Security Policy.
@@ -147,7 +152,6 @@ options:
           - Specifies whether hit log is enabled for the rule.
         required: false
         type: bool
-        default: false
       spec:
         description:
           - The specification of the rule.
@@ -562,6 +566,7 @@ EXAMPLES = r"""
     nutanix_password: "<pc_password>"
     name: "rule1"
     description: "Ansible created rule"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     type: "APPLICATION"
     policy_state: "ENFORCE"
     scope: "ALL_VLAN"
@@ -818,6 +823,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -1018,7 +1024,7 @@ def get_module_spec():
                 "SHARED_SERVICE",
             ],
         ),
-        is_logging_enabled=dict(type="bool", default=False),
+        is_logging_enabled=dict(type="bool"),
         spec=dict(
             type="dict",
             options=rule_spec,
@@ -1036,6 +1042,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         type=dict(
@@ -1110,8 +1117,27 @@ def create_network_security_policy(module, result):
             )
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Security Policy"
+                ),
+                msg="Failed to get entity ext_id from task for Security Policy",
+            )
 
     result["changed"] = True
+
+
+def default_rule_logging(old_spec, update_spec):
+    if not update_spec.get("rules"):
+        return
+
+    for i in range(len(update_spec["rules"])):
+        if update_spec["rules"][i].get("is_logging_enabled") is None:
+            update_spec["rules"][i]["is_logging_enabled"] = False
+        if old_spec["rules"][i].get("is_logging_enabled") is None:
+            old_spec["rules"][i]["is_logging_enabled"] = False
 
 
 def check_network_security_policies_idempotency(old_spec, update_spec):
@@ -1119,6 +1145,8 @@ def check_network_security_policies_idempotency(old_spec, update_spec):
     # check if numbers of rules are same
     if len(old_spec.get("rules", [])) != len(update_spec.get("rules", [])):
         return False
+
+    default_rule_logging(old_spec, update_spec)
 
     # remove external ID from older spec's each rule.
     # since update will overlap all existing rules
@@ -1175,6 +1203,10 @@ def update_network_security_policy(module, result):
         module.fail_json(
             msg="Failed generating network_security_policies update spec", **result
         )
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     # due to conflict of spec.state with module state
     if module.params.get("policy_state"):

@@ -7,6 +7,13 @@
 # 4. Create a VM with multiple serial port, and categories
 # 5. Create a VM with nics,cloud_init script
 # 6. Create a VM with windows unattend xml file
+# 7. Create a VM with vtpm enabled
+# 8. Update VM
+# 9. List all VMs
+# 10. List all VMs with limit
+# 11. Get vm using filter name
+# 12. Fetch VM
+# 13. Delete VM
 
 - name: VM crud playbook
   hosts: localhost
@@ -31,7 +38,8 @@
           uuid: "1a2c7de1-7c12-4d04-a79c-703a2f8bff50"
         network:
           dhcp:
-            uuid: "ac70d801-0e5d-450f-bb76-adf3234e0530"
+            uuid: "11254788-3333-2321-0000-000000022f54"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
         category_ext_id_1: "66f4d0aa-4e77-5261-94c6-4dc19a857049"
         category_ext_id_2: "594bb16c-3498-5706-bd9d-301dea6a6bcb"
         xml_file_content: "{{ lookup('ansible.builtin.file', 'unattend_xml_content.xml') }}"
@@ -55,6 +63,7 @@
         description: ansible test
         cluster:
           ext_id: "{{ cluster.uuid }}"
+        project_ext_id: "{{ project_ext_id }}"
         num_sockets: 1
         num_cores_per_socket: 1
         num_threads_per_core: 1

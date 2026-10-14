@@ -51,7 +51,6 @@
   nutanix.ncp.ntnx_project_v2:
     state: present
     name: "{{ project_name }}1"
-    project_id: "{{ project_name }}-id-1"
   register: result
   ignore_errors: true
 
@@ -63,8 +62,8 @@
       - result.ext_id | length > 0
       - result.task_ext_id is defined
       - result.changed == true
-      - result.response.name == project_name ~ "1"
-      - result.response.id == project_name ~ "-id-1"
+      - result.response.name == "{{ project_name }}1"
+      - result.response.id == "{{ project_name }}1"
       - result.response.state == "ACTIVE"
     fail_msg: "Create project with minimum fields failed"
     success_msg: "Create project with minimum fields passed"
@@ -304,22 +303,6 @@
       - "'state is present but any of the following are missing: name, ext_id' in result.msg"
     fail_msg: "Negative test - create without name should fail"
     success_msg: "Negative test - create without name correctly failed"
-
-- name: "Negative: Create project without project_id"
-  nutanix.ncp.ntnx_project_v2:
-    state: present
-    name: "no-project-id-project"
-  register: result
-  ignore_errors: true
-
-- name: Verify create without project_id fails
-  ansible.builtin.assert:
-    that:
-      - result.failed == true
-      - result.changed == false
-      - "'Missing required parameter(s): project_id' in result.msg"
-    fail_msg: "Negative test - create without project_id should fail"
-    success_msg: "Negative test - create without project_id correctly failed"
 
 - name: "Negative: Update project with wrong ext_id"
   nutanix.ncp.ntnx_project_v2:

@@ -1,7 +1,7 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create virtual switch
+# 1. Create virtual switch owned by a project
 # 2. Create virtual switch from an existing bridge
 # 3. Update virtual switch
 # 4. Get virtual switch using ext_id
@@ -32,12 +32,14 @@
         category_ids:
           - "66f4d0aa-4e77-5261-94c6-4dc19a857049"
           - "594bb16c-3498-5706-bd9d-301dea6a6bcb"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
 
-    - name: Create virtual switch
+    - name: Create virtual switch owned by a project
       nutanix.ncp.ntnx_virtual_switch_v2:
         state: present
         name: "{{ virtual_switch_name }}"
         description: "Virtual switch created by Ansible"
+        project_ext_id: "{{ project_ext_id }}"
         bond_mode: "NONE"
         mtu: 1500
         is_default: false

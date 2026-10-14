@@ -39,6 +39,12 @@ options:
       - The external ID of the category.
     required: false
     type: str
+  project_ext_id:
+    description:
+      - External ID (UUID) of the project that owns this category.
+      - Update of this field is not supported.
+    required: false
+    type: str
   key:
     description:
       - The key of the category.
@@ -67,6 +73,14 @@ options:
       - The description of the category.
     required: false
     type: str
+  shared_with_projects:
+    description:
+      - List of project external IDs to share the category with.
+      - Projects not in the list will be unshared during update.
+      - During create operations, this parameter requires C(wait) to be C(true) (default). If C(wait) is set to C(false), this parameter will be ignored.
+    required: false
+    type: list
+    elements: str
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
@@ -86,6 +100,9 @@ EXAMPLES = r"""
     key: "key1"
     value: "val1"
     description: "ansible test"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
+    shared_with_projects:
+      - "12345678-1234-1234-1234-123456789012"
 
 - name: Update category value and description
   nutanix.ncp.ntnx_categories_v2:
@@ -173,9 +190,13 @@ from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
     get_categories_api_instance,
     get_etag,
 )
+from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    get_task_ext_id_from_response,
     raise_api_exception,
+    raise_unsupported_update_fields,
+    reconcile_sharing,
     strip_internal_attributes,
 )
 
@@ -195,17 +216,105 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         key=dict(type="str", no_log=False),
         value=dict(type="str"),
         type=dict(type="str", choices=["USER"], default="USER"),
         owner_uuid=dict(type="str"),
         description=dict(type="str"),
+        shared_with_projects=dict(type="list", elements="str"),
     )
 
     return module_args
 
 
+def _get_etag_for_sharing(module, category):
+    etag = get_etag(data=category)
+    if not etag:
+        module.fail_json(msg="Unable to fetch etag for category sharing operation")
+    return etag
+
+
+def _share_with_project(module, categories, ext_id, project_ext_id):
+    category = get_category(module, categories, ext_id)
+    etag = _get_etag_for_sharing(module, category)
+    try:
+        share_req = prism_sdk.ShareCategoryRequest()
+        share_req.project_ext_id = project_ext_id
+        resp = categories.share_category(
+            categoryExtId=ext_id, body=share_req, if_match=etag
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while sharing category with project {0}".format(
+                project_ext_id
+            ),
+        )
+    task_ext_id = get_task_ext_id_from_response(resp)
+    wait_for_completion(module, task_ext_id)
+
+
+def _unshare_from_project(module, categories, ext_id, project_ext_id):
+    category = get_category(module, categories, ext_id)
+    etag = _get_etag_for_sharing(module, category)
+    try:
+        unshare_req = prism_sdk.UnshareCategoryRequest()
+        unshare_req.project_ext_id = project_ext_id
+        resp = categories.unshare_category(
+            categoryExtId=ext_id, body=unshare_req, if_match=etag
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while unsharing category from project {0}".format(
+                project_ext_id
+            ),
+        )
+    task_ext_id = get_task_ext_id_from_response(resp)
+    wait_for_completion(module, task_ext_id)
+
+
+def _reconcile_sharing(module, categories, ext_id, shared_with_projects):
+    """Drive the category's project sharing towards the desired state.
+
+    A category cannot be shared with its own owning project: the API rejects it
+    and the owner already has full access. We therefore drop the
+    owner from the desired set so that input is treated as a no-op instead of a
+    hard failure. Delegates to the shared ``reconcile_sharing`` helper, which
+    diffs once and applies each share/unshare one by one; every call blocks on
+    its task via ``wait_for_completion``, so a single pass reaches the desired
+    state.
+    """
+    if shared_with_projects is not None:
+        owner_project_ext_id = getattr(
+            get_category(module, categories, ext_id=ext_id), "project_ext_id", None
+        )
+        if owner_project_ext_id is not None:
+            shared_with_projects = [
+                pid for pid in shared_with_projects if pid != owner_project_ext_id
+            ]
+
+    def read_current(current_module, current_ext_id):
+        return get_category(current_module, categories, current_ext_id)
+
+    return reconcile_sharing(
+        module=module,
+        api_instance=categories,
+        ext_id=ext_id,
+        read_fn=read_current,
+        share_fn=_share_with_project,
+        unshare_fn=_unshare_from_project,
+        shared_with_projects=shared_with_projects,
+        resource_label="category",
+    )
+
+
 def create_category(module, categories, result):
+    shared_with_projects = module.params.pop("shared_with_projects", None)
+
     sg = SpecGenerator(module)
     default_spec = prism_sdk.Category()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -215,7 +324,13 @@ def create_category(module, categories, result):
         module.fail_json(msg="Failed generating create categories Spec", **result)
 
     if module.check_mode:
-        result["response"] = strip_internal_attributes(spec.to_dict())
+        response = strip_internal_attributes(spec.to_dict())
+        # shared_with_projects is applied via a separate share API (not the create
+        # body), so it is popped before spec generation. Reflect the requested
+        # value here so check mode does not mislead about the resulting sharing.
+        if shared_with_projects is not None:
+            response["shared_with_projects"] = shared_with_projects
+        result["response"] = response
         return
 
     resp = None
@@ -229,7 +344,12 @@ def create_category(module, categories, result):
         )
 
     result["ext_id"] = resp.data.ext_id
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if shared_with_projects:
+        _reconcile_sharing(module, categories, result["ext_id"], shared_with_projects)
+        current = get_category(module, categories, ext_id=result["ext_id"])
+        result["response"] = strip_internal_attributes(current.to_dict())
+    else:
+        result["response"] = strip_internal_attributes(resp.data.to_dict())
     result["changed"] = True
 
 
@@ -247,6 +367,7 @@ def check_categories_idempotency(old_spec, update_spec):
 def update_category(module, categories, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+    shared_with_projects = module.params.pop("shared_with_projects", None)
 
     current_spec = get_category(module, categories, ext_id=ext_id)
     sg = SpecGenerator(module)
@@ -256,25 +377,45 @@ def update_category(module, categories, result):
         result["error"] = err
         module.fail_json(msg="Failed generating categories update spec", **result)
 
-    # check for idempotency
-    if check_categories_idempotency(current_spec.to_dict(), update_spec.to_dict()):
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
+
+    if module.check_mode:
+        response = strip_internal_attributes(update_spec.to_dict())
+        # shared_with_projects is reconciled via a separate share API, so it is
+        # popped before spec generation and update_spec still carries the current
+        # value. Reflect the requested value so check mode shows the intended
+        # sharing rather than the existing one.
+        if shared_with_projects is not None:
+            response["shared_with_projects"] = shared_with_projects
+        result["response"] = response
+        return
+
+    spec_changed = not check_categories_idempotency(
+        current_spec.to_dict(), update_spec.to_dict()
+    )
+    sharing_changed = False
+    if shared_with_projects is not None:
+        sharing_changed = _reconcile_sharing(
+            module, categories, ext_id, shared_with_projects
+        )
+
+    if not spec_changed and not sharing_changed:
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(update_spec.to_dict())
-        return
-
     resp = None
-    try:
-        resp = categories.update_category_by_id(extId=ext_id, body=update_spec)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while updating category",
-        )
-    result["response"] = strip_internal_attributes(resp.data[0].to_dict())
+    if spec_changed:
+        try:
+            resp = categories.update_category_by_id(extId=ext_id, body=update_spec)
+        except Exception as e:
+            raise_api_exception(
+                module=module,
+                exception=e,
+                msg="Api Exception raised while updating category",
+            )
+        result["response"] = strip_internal_attributes(resp.data[0].to_dict())
 
     try:
         resp = categories.get_category_by_id(ext_id)

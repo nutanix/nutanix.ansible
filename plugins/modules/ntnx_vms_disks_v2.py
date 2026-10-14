@@ -407,6 +407,14 @@ def create_disk(module, result):
             resp = get_disk(module, vmm, ext_id, vm_ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for VM Disk"
+                ),
+                msg="Failed to get entity ext_id from task for VM Disk",
+            )
 
     result["changed"] = True
 
@@ -434,6 +442,10 @@ def update_disk(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating vm disk update spec", **result)
 
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(update_spec.to_dict())
+        return
+
     # check for idempotency
     if check_idempotency(current_spec, update_spec):
         result["skipped"] = True
@@ -451,9 +463,6 @@ def update_disk(module, result):
     )
     if storage_container:
         update_spec.backing_info.storage_container = None
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(update_spec.to_dict())
-        return
 
     resp = None
     try:

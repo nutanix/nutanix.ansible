@@ -14,6 +14,8 @@ module: ntnx_projects_info_v2
 short_description: Fetch projects info from Nutanix Prism Central using v4 APIs
 version_added: "2.6.0"
 description:
+    - This module is in Beta because the underlying Nutanix SDK API is currently in Beta.
+    - The module and its behavior may change in future releases as the SDK API evolves.
     - This module fetches information about Nutanix projects.
     - The module retrieves information about a single project by external ID or
         lists all projects with optional filters and limit.
