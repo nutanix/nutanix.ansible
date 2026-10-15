@@ -1,0 +1,122 @@
+---
+# Test plan for ntnx_scale_up_domain_manager_by_id_v2 (Scale up a Prism Central cluster)
+# 1. check_mode: build the scale-up spec with a valid size; assert changed false, skipped true,
+#    size present in the response spec and no API call is made.
+# 2. check_mode: exercise each valid enum size value (STARTER, SMALL, LARGE, EXTRALARGE).
+# 3. Negative: omit the required ext_id -> module must fail.
+# 4. Negative: omit the required size -> module must fail.
+# 5. Negative: pass an invalid size enum -> spec validation must reject it.
+# 6. Optional real scale-up guarded by `run_destructive_scale_up`.
+
+- name: Start ntnx_scale_up_domain_manager_by_id_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_scale_up_domain_manager_by_id_v2 tests
+
+- name: Scale up domain manager - check mode
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    ext_id: "{{ domain_manager_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    size: "LARGE"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Scale up domain manager - check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.response is defined
+      - result.response.size == "LARGE"
+      - result.ext_id == (domain_manager_ext_id | default('00000000-0000-0000-0000-000000000000'))
+    fail_msg: "Scale up domain manager check mode failed"
+    success_msg: "Scale up domain manager check mode passed"
+
+- name: Scale up domain manager - check mode for every valid size
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    ext_id: "{{ domain_manager_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    size: "{{ item }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+  loop:
+    - "STARTER"
+    - "SMALL"
+    - "LARGE"
+    - "EXTRALARGE"
+
+- name: Scale up domain manager - check mode for every valid size status
+  ansible.builtin.assert:
+    that:
+      - item.changed == false
+      - item.failed == false
+      - item.skipped == true
+      - item.response.size == item.item
+    fail_msg: "Scale up domain manager check mode enum {{ item.item }} failed"
+    success_msg: "Scale up domain manager check mode enum {{ item.item }} passed"
+  loop: "{{ result.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Scale up without ext_id - negative
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    size: "LARGE"
+  register: result
+  ignore_errors: true
+
+- name: Scale up without ext_id - negative status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    fail_msg: "Scale up without ext_id should have failed"
+    success_msg: "Scale up without ext_id failed as expected"
+
+- name: Scale up without size - negative
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    ext_id: "{{ domain_manager_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+  register: result
+  ignore_errors: true
+
+- name: Scale up without size - negative status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'size' in result.msg"
+    fail_msg: "Scale up without size should have failed"
+    success_msg: "Scale up without size failed as expected"
+
+- name: Scale up with invalid size enum - negative
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    ext_id: "{{ domain_manager_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    size: "HUGE"
+  register: result
+  ignore_errors: true
+
+- name: Scale up with invalid size enum - negative status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'size' in result.msg"
+    fail_msg: "Scale up with invalid size should have failed"
+    success_msg: "Scale up with invalid size failed as expected"
+
+- name: Scale up domain manager (destructive, guarded)
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    ext_id: "{{ domain_manager_ext_id }}"
+    size: "{{ scale_up_target_size | default('LARGE') }}"
+  register: result
+  ignore_errors: true
+  when: run_destructive_scale_up | default(false) | bool
+
+- name: Scale up domain manager status (destructive, guarded)
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+      - result.task_ext_id is defined
+    fail_msg: "Scale up domain manager failed"
+    success_msg: "Scale up domain manager passed"
+  when: run_destructive_scale_up | default(false) | bool

@@ -1,0 +1,100 @@
+---
+# Test plan for ntnx_unregister_v2 (Unregister a remote cluster from the local cluster)
+# 1. check_mode: build the ClusterReference body (remote_cluster_ext_id + name); assert changed
+#    false, skipped true, response reflects the ext_id and no API call is made.
+# 2. check_mode: build the body with only the required remote_cluster_ext_id.
+# 3. Negative: omit the required ext_id -> module must fail.
+# 4. Negative: omit the required remote_cluster_ext_id -> module must fail.
+# 5. Optional real unregister guarded by `run_destructive_unregister`.
+
+- name: Start ntnx_unregister_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_unregister_v2 tests
+
+- name: Unregister remote cluster with all fields - check mode
+  nutanix.ncp.ntnx_unregister_v2:
+    ext_id: "{{ domain_manager_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    remote_cluster_ext_id: "86b54161-3214-5874-9632-89afcd365004"
+    name: "remote-pc"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Unregister remote cluster with all fields - check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.response is defined
+      - result.response.ext_id == "86b54161-3214-5874-9632-89afcd365004"
+      - result.response.name == "remote-pc"
+      - result.ext_id == (domain_manager_ext_id | default('00000000-0000-0000-0000-000000000000'))
+    fail_msg: "Unregister remote cluster with all fields check mode failed"
+    success_msg: "Unregister remote cluster with all fields check mode passed"
+
+- name: Unregister remote cluster with required fields only - check mode
+  nutanix.ncp.ntnx_unregister_v2:
+    ext_id: "{{ domain_manager_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    remote_cluster_ext_id: "86b54161-3214-5874-9632-89afcd365004"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Unregister remote cluster with required fields only - check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.response.ext_id == "86b54161-3214-5874-9632-89afcd365004"
+    fail_msg: "Unregister remote cluster with required fields only check mode failed"
+    success_msg: "Unregister remote cluster with required fields only check mode passed"
+
+- name: Unregister without ext_id - negative
+  nutanix.ncp.ntnx_unregister_v2:
+    remote_cluster_ext_id: "86b54161-3214-5874-9632-89afcd365004"
+  register: result
+  ignore_errors: true
+
+- name: Unregister without ext_id - negative status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    fail_msg: "Unregister without ext_id should have failed"
+    success_msg: "Unregister without ext_id failed as expected"
+
+- name: Unregister without remote_cluster_ext_id - negative
+  nutanix.ncp.ntnx_unregister_v2:
+    ext_id: "{{ domain_manager_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+  register: result
+  ignore_errors: true
+
+- name: Unregister without remote_cluster_ext_id - negative status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'remote_cluster_ext_id' in result.msg"
+    fail_msg: "Unregister without remote_cluster_ext_id should have failed"
+    success_msg: "Unregister without remote_cluster_ext_id failed as expected"
+
+- name: Unregister remote cluster (destructive, guarded)
+  nutanix.ncp.ntnx_unregister_v2:
+    ext_id: "{{ domain_manager_ext_id }}"
+    remote_cluster_ext_id: "{{ remote_cluster_ext_id_to_unregister }}"
+  register: result
+  ignore_errors: true
+  when: run_destructive_unregister | default(false) | bool
+
+- name: Unregister remote cluster status (destructive, guarded)
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+      - result.task_ext_id is defined
+    fail_msg: "Unregister remote cluster failed"
+    success_msg: "Unregister remote cluster passed"
+  when: run_destructive_unregister | default(false) | bool
