@@ -134,7 +134,7 @@
       - result.response.cert_revocation_info.is_ocsp_enabled == true
       - result.response.cert_revocation_info.ocsp_responder == "{{ certificate_authentication_provider.ocsp_responder }}"
       - result.response.cert_revocation_info.is_crl_enabled == true
-      - result.response.cert_revocation_info.crl_dps == "{{ certificate_authentication_provider.crl_dps }}"
+      - result.response.cert_revocation_info.crl_dps == certificate_authentication_provider.crl_dps
       - result.response.cert_revocation_info.global_crl_refresh_interval == 120
     fail_msg: "Creating certificate authentication provider with CAC enabled failed"
     success_msg: "Creating certificate authentication provider with CAC enabled passed"
@@ -312,7 +312,12 @@
 - name: Update certificate authentication provider - disable CAC
   nutanix.ncp.ntnx_certificate_auth_provider_v2:
     ext_id: "{{ cert_auth_provider_ext_id }}"
+    is_cert_auth_enabled: false
     is_cac_enabled: false
+    dir_svc_ext_id: "{{ directory_service_ext_id }}"
+    cert_revocation_info:
+      is_ocsp_enabled: false
+      is_crl_enabled: false
   register: result
   ignore_errors: true
 
@@ -327,16 +332,26 @@
       - result.failed == false
       - result.response is defined
       - result.response.is_cac_enabled == false
-      - result.response.is_cert_auth_enabled == true
-      - result.response.ca_cert_file_name == "ca_cert_chain.pem"
-      - result.response.dir_svc_ext_id == "{{ directory_service_ext_id }}"
+      - result.response.is_cert_auth_enabled == false
+      - result.response.cert_revocation_info is defined
+      - result.response.cert_revocation_info.is_ocsp_enabled == false
+      - result.response.cert_revocation_info.is_crl_enabled == false
     fail_msg: "Updating certificate authentication provider - disable CAC failed"
     success_msg: "Updating certificate authentication provider - disable CAC passed with expected values"
 
 - name: Update certificate authentication provider - enable CAC back
   nutanix.ncp.ntnx_certificate_auth_provider_v2:
     ext_id: "{{ cert_auth_provider_ext_id }}"
+    is_cert_auth_enabled: true
     is_cac_enabled: true
+    dir_svc_ext_id: "{{ directory_service_ext_id }}"
+    cert_revocation_info:
+      is_ocsp_enabled: true
+      ocsp_responder: "{{ certificate_authentication_provider.ocsp_responder }}"
+      is_crl_enabled: true
+      crl_dps:
+        - "{{ certificate_authentication_provider.crl_dps[0] }}"
+      global_crl_refresh_interval: 180
   register: result
   ignore_errors: true
 
@@ -350,10 +365,14 @@
       - result.changed == true
       - result.failed == false
       - result.response is defined
-      - result.response.is_cac_enabled == true
       - result.response.is_cert_auth_enabled == true
-      - result.response.ca_cert_file_name == "ca_cert_chain.pem"
-      - result.response.dir_svc_ext_id == "{{ directory_service_ext_id }}"
+      - result.response.is_cac_enabled == true
+      - result.response.cert_revocation_info is defined
+      - result.response.cert_revocation_info.is_ocsp_enabled == true
+      - result.response.cert_revocation_info.ocsp_responder == "{{ certificate_authentication_provider.ocsp_responder }}"
+      - result.response.cert_revocation_info.is_crl_enabled == true
+      - result.response.cert_revocation_info.crl_dps == ["{{ certificate_authentication_provider.crl_dps[0] }}"]
+      - result.response.cert_revocation_info.global_crl_refresh_interval == 180
     fail_msg: "Updating certificate authentication provider - enable CAC back failed"
     success_msg: "Updating certificate authentication provider - enable CAC back passed with expected values"
 
@@ -364,7 +383,16 @@
 - name: Update certificate authentication provider with same values (idempotency check)
   nutanix.ncp.ntnx_certificate_auth_provider_v2:
     ext_id: "{{ cert_auth_provider_ext_id }}"
+    is_cert_auth_enabled: true
     is_cac_enabled: true
+    dir_svc_ext_id: "{{ directory_service_ext_id }}"
+    cert_revocation_info:
+      is_ocsp_enabled: true
+      ocsp_responder: "{{ certificate_authentication_provider.ocsp_responder }}"
+      is_crl_enabled: true
+      crl_dps:
+        - "{{ certificate_authentication_provider.crl_dps[0] }}"
+      global_crl_refresh_interval: 180
   register: result
   ignore_errors: true
 
@@ -485,8 +513,8 @@
       - result.response.cert_revocation_info.is_ocsp_enabled == true
       - result.response.cert_revocation_info.ocsp_responder == "{{ certificate_authentication_provider.ocsp_responder }}"
       - result.response.cert_revocation_info.is_crl_enabled == true
-      - result.response.cert_revocation_info.crl_dps == "{{ certificate_authentication_provider.crl_dps }}"
-      - result.response.cert_revocation_info.global_crl_refresh_interval == 120
+      - result.response.cert_revocation_info.crl_dps == ["{{ certificate_authentication_provider.crl_dps[0] }}"]
+      - result.response.cert_revocation_info.global_crl_refresh_interval == 180
     fail_msg: "Fetch certificate authentication provider using ext_id failed"
     success_msg: "Fetch certificate authentication provider using ext_id passed"
 
