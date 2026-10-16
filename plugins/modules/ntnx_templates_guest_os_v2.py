@@ -38,7 +38,7 @@ options:
     template_ext_id:
         description:
             - The identifier of a Template.
-            - requited for all states.
+            - Required for all states.
         type: str
         required: true
     version_id:
