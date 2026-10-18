@@ -3,36 +3,6 @@
   ansible.builtin.debug:
     msg: start ntnx_registered_clients_info_v2 tests
 
-- name: List registered clients via raw v4 endpoint to discover a real ext_id
-  ansible.builtin.uri:
-    url: "https://{{ ip }}:{{ port | default(9440) }}/api/iam/v4.1.b2/authz/clients?$limit=5"
-    method: GET
-    user: "{{ username }}"
-    password: "{{ password }}"
-    force_basic_auth: true
-    validate_certs: "{{ validate_certs | default(false) }}"
-    return_content: true
-    status_code: [200, 401, 403, 404]
-  register: raw_clients_list
-  ignore_errors: true
-
-- name: Fail early if the list endpoint returned no data
-  ansible.builtin.assert:
-    that:
-      - raw_clients_list.status == 200
-      - raw_clients_list.json is defined
-      - raw_clients_list.json.data is defined
-      - raw_clients_list.json.data | length > 0
-    fail_msg: >-
-      Cannot bootstrap the RegisteredClient tests — the /authz/clients list
-      endpoint did not return any clients (status={{ raw_clients_list.status | default('?') }}).
-    success_msg: RegisteredClient list bootstrap succeeded
-
-- name: Cache the discovered ext_id and name
-  ansible.builtin.set_fact:
-    registered_client_ext_id: "{{ raw_clients_list.json.data[0].extId }}"
-    registered_client_name: "{{ raw_clients_list.json.data[0].name }}"
-
 - name: Fetch registered client using a valid external ID
   nutanix.ncp.ntnx_registered_clients_info_v2:
     ext_id: "{{ registered_client_ext_id }}"
