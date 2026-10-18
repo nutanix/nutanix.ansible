@@ -15,10 +15,42 @@
   ansible.builtin.set_fact:
     todelete: []
 
+################################################################
+
+- name: Create project for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: present
+    name: "{{ random_name }}-ansible-project"
+    project_id: "{{ random_name }}-ansible-project-id"
+  register: create_project_result
+  ignore_errors: true
+
+- name: Status of project creation for tests
+  ansible.builtin.assert:
+    that:
+      - create_project_result.changed == true
+      - create_project_result.failed == false
+      - create_project_result.response is defined
+      - create_project_result.ext_id is defined
+      - create_project_result.ext_id | length > 0
+      - create_project_result.task_ext_id is defined
+      - create_project_result.response.state == "ACTIVE"
+    fail_msg: "Unable to create project for tests"
+    success_msg: "Project for tests created successfully"
+
+- name: Set project fact for tests
+  ansible.builtin.set_fact:
+    project1:
+      name: "{{ random_name }}-ansible-project"
+      uuid: "{{ create_project_result.ext_id }}"
+
+################################################################
+
 - name: Create tcp service group with check mode enabled
   nutanix.ncp.ntnx_service_groups_v2:
     name: "{{ service_group_name }}_1"
     description: desc
+    project_ext_id: 83083083-0000-0000-0000-000000000000
     tcp_services:
       - start_port: 10
         end_port: 50
@@ -40,6 +72,7 @@
       - result.changed == false
       - result.response.name == "{{ service_group_name }}_1"
       - result.response.description == "desc"
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
       - result.response.tcp_services[0].start_port == 10
       - result.response.tcp_services[0].end_port == 50
       - result.response.tcp_services[1].start_port == 60
@@ -55,6 +88,7 @@
   nutanix.ncp.ntnx_service_groups_v2:
     name: "{{ service_group_name }}_1"
     description: desc
+    project_ext_id: "{{ project1.uuid }}"
     tcp_services:
       - start_port: 10
         end_port: 50
@@ -90,6 +124,7 @@
       - result.response.tcp_services[2].end_port == 98
       - result.response.tcp_services[3].start_port == 99
       - result.response.tcp_services[3].end_port == 99
+      - result.response.project_ext_id == project1.uuid
     fail_msg: "Fail: Unable to create tcp service group  "
     success_msg: "Pass: tcp service group  created successfully"
 
@@ -366,6 +401,24 @@
     success_msg: "Pass : return as expected "
 ################################################################
 
+- name: Verify update of project_ext_id is not supported
+  nutanix.ncp.ntnx_service_groups_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    project_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Verify update of project_ext_id is blocked status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
+    fail_msg: "Update of project_ext_id should have been blocked"
+    success_msg: "Update of project_ext_id is correctly blocked"
+################################################################
+
 - name: Delete service group with check mode enabled
   nutanix.ncp.ntnx_service_groups_v2:
     state: absent
@@ -406,3 +459,24 @@
 - name: Set todelete to empty list
   ansible.builtin.set_fact:
     todelete: []
+
+################################################################
+
+- name: Delete project created for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: absent
+    ext_id: "{{ project1.uuid }}"
+  register: delete_project_result
+  ignore_errors: true
+
+- name: Status of project deletion for tests
+  ansible.builtin.assert:
+    that:
+      - delete_project_result.changed == true
+      - delete_project_result.failed == false
+      - delete_project_result.ext_id == project1.uuid
+      - delete_project_result.response is defined
+      - delete_project_result.response.status == "SUCCEEDED"
+      - delete_project_result.task_ext_id is defined
+    fail_msg: "Unable to delete project created for tests"
+    success_msg: "Project created for tests deleted successfully"

@@ -6,12 +6,15 @@
 # 4. Create a certificate for an object store
 # 5. List all certificates for an object store
 # 5. Fetch certificate details using external ID
-# 6. List all object stores
-# 7. List all object stores with filter
-# 8. List object stores with limit
-# 9. Fetch object store details using external ID
-# 10. Delete bucket in object store
-# 11. Delete object store
+# 6. Download the certificate authority (CA) of a certificate to a destination path
+# 7. Download the certificate authority (CA) of a certificate to the default location
+# 8. List all object stores
+# 9. List all object stores with filter
+# 10. List object stores with limit
+# 11. Fetch object store details using external ID
+# 12. Fetch object store statistics for a time window
+# 13. Delete bucket in object store
+# 14. Delete object store
 
 - name: Deploy objects playbook
   hosts: localhost
@@ -108,6 +111,19 @@
         ext_id: "{{ certificate_ext_id }}"
       register: result
 
+    - name: Download the certificate authority (CA) of a certificate to a destination path
+      nutanix.ncp.ntnx_object_stores_certificate_download_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        ext_id: "{{ certificate_ext_id }}"
+        dest: "/tmp/object_store_ca.pem"
+      register: result
+
+    - name: Download the certificate authority (CA) of a certificate to the default location
+      nutanix.ncp.ntnx_object_stores_certificate_download_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        ext_id: "{{ certificate_ext_id }}"
+      register: result
+
     - name: List all object stores
       nutanix.ncp.ntnx_object_stores_info_v2:
       register: result
@@ -130,6 +146,20 @@
     - name: Fetch object store details using external ID
       nutanix.ncp.ntnx_object_stores_info_v2:
         ext_id: "{{ object_store_ext_id }}"
+      register: result
+
+    - name: Set time window for object store statistics
+      ansible.builtin.set_fact:
+        stats_start_time: "{{ lookup('pipe', 'date -u -d \"1 hour ago\" +%Y-%m-%dT%H:%M:%S.000+00:00') }}"
+        stats_end_time: "{{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%S.000+00:00') }}"
+
+    - name: Fetch object store statistics for the time window
+      nutanix.ncp.ntnx_object_stores_stats_info_v2:
+        ext_id: "{{ object_store_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+        sampling_interval: 300
+        stat_type: "SUM"
       register: result
 
     # for deleting an object store, you need to delete the bucket first
