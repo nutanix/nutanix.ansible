@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -18,15 +18,10 @@ description:
       Nutanix Prism Central using the v4 IAM APIs.
     - It supports two mutually exclusive operations.
     - When C(ext_id) is provided, the module performs an administrative
-      B(reset) of that user's password (equivalent to the SDK
-      C(UsersApi.reset_user_password) call). The B(new_password) field is
+      B(reset) of that user's password. The B(new_password) field is
       required for this operation. The caller must have admin permissions.
     - When C(username) is provided (along with C(old_password) and
-      C(new_password)), the module performs a self-serve password B(change)
-      (equivalent to the SDK C(UsersApi.change_user_password) call). A user
-      can only change their own password using this API - even administrators
-      receive a 403 FORBIDDEN if they attempt to change the password of a
-      different user.
+      C(new_password)), the module performs a self-serve password B(change).
     - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -35,7 +30,7 @@ notes:
       operation being performed.
     - >-
       B(Reset user password) -
-      Required Roles: Nutanix Central Admin, Prism Admin, Super Admin.
+      Required Roles: Nutanix Central Admin, Super Admin.
       Requires the C(Reset_User_Password) operation permission on the C(user)
       entity type (maps to legacy operations C(Prism:Reset_Password) and
       C(Prism:Reset_User_Password)).
@@ -63,8 +58,7 @@ options:
         type: str
     username:
         description:
-            - Username (email-form identifier) of the user whose password
-              should be changed.
+            - Username of the user whose password should be changed.
             - When set, the module performs a self-serve password B(change)
               action - only the owning user can invoke this.
             - Required together with C(old_password).
@@ -104,18 +98,18 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     ext_id: "27892065-1d1b-5d66-ab17-a26038088b17"
-    new_password: "N3wStr0ng!Password123"
+    new_password: "new_password_value"
   register: reset_result
 
 - name: Change your own password (self-serve, needs current password)
   nutanix.ncp.ntnx_user_password_v2:
     nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ target_username }}"
-    nutanix_password: "{{ target_current_password }}"
+    nutanix_username: "username"
+    nutanix_password: "password"
     validate_certs: false
-    username: "{{ target_username }}"
-    old_password: "{{ target_current_password }}"
-    new_password: "N3wStr0ng!Password123"
+    username: "username"
+    old_password: "old_password_value"
+    new_password: "new_password_value"
   register: change_result
 """
 
@@ -139,7 +133,7 @@ changed:
 
 msg:
     description: This indicates the message if any message occurred.
-    returned: When there is an error or in check mode operation
+    returned: When there is an error
     type: str
     sample: "Api Exception raised while resetting user password"
 
@@ -149,7 +143,6 @@ error:
           errors that occurred during the task execution.
     returned: when an error occurs
     type: str
-    sample: "Forbidden"
 
 failed:
     description: This field typically holds information about if the task has failed.
@@ -157,21 +150,12 @@ failed:
     type: bool
     sample: false
 
-task_ext_id:
-    description:
-        - The external ID of the task.
-        - The password change/reset actions do not create a long running task
-          in PC, so this field is C(None).
-    returned: always
-    type: str
-    sample: null
-
 ext_id:
     description:
         - The external identifier of the user whose password was reset.
         - Only populated when the reset operation was invoked (C(ext_id) was
           supplied).
-    returned: always
+    returned: when the reset operation was invoked
     type: str
     sample: "27892065-1d1b-5d66-ab17-a26038088b17"
 """
@@ -184,6 +168,7 @@ from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.iam.api_client import get_user_api_instance  # noqa: E402
+from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
@@ -215,19 +200,19 @@ def get_module_spec():
 
 def reset_user_password(module, users_api, result):
     ext_id = module.params.get("ext_id")
-    new_password = module.params.get("new_password")
     result["ext_id"] = ext_id
 
     validate_required_params(module, ["ext_id", "new_password"])
 
-    spec = iam_sdk.PasswordResetRequest(new_password=new_password)
+    sg = SpecGenerator(module)
+    default_spec = iam_sdk.PasswordResetRequest()
+    spec, err = sg.generate_spec(obj=default_spec)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating reset user password spec", **result)
 
     if module.check_mode:
-        result["response"] = {
-            "message": (
-                "Password for user with ext_id '{0}' will be reset.".format(ext_id)
-            )
-        }
+        result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
     resp = None
@@ -240,32 +225,28 @@ def reset_user_password(module, users_api, result):
             msg="Api Exception raised while resetting user password",
         )
 
-    if resp is not None and getattr(resp, "data", None) is not None:
-        result["response"] = strip_internal_attributes(resp.data.to_dict())
-    else:
-        result["response"] = {
-            "message": "Password reset successful for user '{0}'.".format(ext_id)
-        }
+    if resp is None or getattr(resp, "data", None) is None:
+        module.fail_json(
+            msg="Empty response received while resetting user password",
+            **result,
+        )
+
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
     result["changed"] = True
 
 
 def change_user_password(module, users_api, result):
-    username = module.params.get("username")
-    old_password = module.params.get("old_password")
-    new_password = module.params.get("new_password")
-
     validate_required_params(module, ["username", "old_password", "new_password"])
 
-    spec = iam_sdk.PasswordChangeRequest(
-        username=username,
-        old_password=old_password,
-        new_password=new_password,
-    )
+    sg = SpecGenerator(module)
+    default_spec = iam_sdk.PasswordChangeRequest()
+    spec, err = sg.generate_spec(obj=default_spec)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating change user password spec", **result)
 
     if module.check_mode:
-        result["response"] = {
-            "message": ("Password for user '{0}' will be changed.".format(username))
-        }
+        result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
     resp = None
@@ -278,12 +259,13 @@ def change_user_password(module, users_api, result):
             msg="Api Exception raised while changing user password",
         )
 
-    if resp is not None and getattr(resp, "data", None) is not None:
-        result["response"] = strip_internal_attributes(resp.data.to_dict())
-    else:
-        result["response"] = {
-            "message": "Password change successful for user '{0}'.".format(username)
-        }
+    if resp is None or getattr(resp, "data", None) is None:
+        module.fail_json(
+            msg="Empty response received while changing user password",
+            **result,
+        )
+
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
     result["changed"] = True
 
 
@@ -306,10 +288,8 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
-        "task_ext_id": None,
     }
     users_api = get_user_api_instance(module)
 
