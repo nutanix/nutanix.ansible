@@ -3,7 +3,6 @@
 # - users: List of user UUIDs (used as users[0], users[1])
 # - user_groups: List of user group UUIDs (used as user_groups[0])
 # - directory_service_uuid: Directory service UUID (used in entities)
-# - project: Project object with 'uuid' field (used as project.uuid)
 
 - name: Start authorization CRUD tests
   ansible.builtin.debug:
@@ -17,6 +16,36 @@
   ansible.builtin.set_fact:
     acp_name: "{{ random_name }}-ansible-ag"
     todelete: []
+
+###################################################################################################
+# Create a project to be used for project_ext_id tests
+###################################################################################################
+- name: Create project for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: present
+    name: "{{ random_name }}-ansible-project"
+    project_id: "{{ random_name }}-ansible-project-id"
+  register: create_project_result
+  ignore_errors: true
+
+- name: Status of project creation for tests
+  ansible.builtin.assert:
+    that:
+      - create_project_result.changed == true
+      - create_project_result.failed == false
+      - create_project_result.response is defined
+      - create_project_result.ext_id is defined
+      - create_project_result.ext_id | length > 0
+      - create_project_result.task_ext_id is defined
+      - create_project_result.response.state == "ACTIVE"
+    fail_msg: "Unable to create project for tests"
+    success_msg: "Project for tests created successfully"
+
+- name: Set project fact for tests
+  ansible.builtin.set_fact:
+    project1:
+      name: "{{ random_name }}-ansible-project"
+      uuid: "{{ create_project_result.ext_id }}"
 
 ######################################################################## Test setup ########################################################################
 
@@ -65,6 +94,8 @@
     description: ansible created acps
     role: "{{ role_ext_id }}"
     authorization_policy_type: USER_DEFINED
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
+    is_global: true
     entities:
       - images:
           "*":
@@ -102,6 +133,8 @@
       - result.response.description == "ansible created acps"
       - result.response.role == "{{ role_ext_id }}"
       - result.response.authorization_policy_type == "USER_DEFINED"
+      - result.response.is_global == true
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
       - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
       - result.response.entities[1].entity_filter.directory_service.uuid.anyof | length == 2
       - result.response.entities[1].entity_filter.directory_service.uuid.anyof[0] == "ebbfbd38-794b-5529-adcc-dcb6b4177382"
@@ -123,6 +156,7 @@
     description: ansible created acps
     role: "{{ role_ext_id }}"
     authorization_policy_type: USER_DEFINED
+    project_ext_id: "{{ project1.uuid }}"
     entities:
       - images:
           "*":
@@ -159,6 +193,7 @@
       - result.response.description == "ansible created acps"
       - result.response.role == "{{ role_ext_id }}"
       - result.response.authorization_policy_type == "USER_DEFINED"
+      - result.response.project_ext_id == project1.uuid
       - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
       - result.response.entities[1].entity_filter.directory_service.uuid.anyof | length == 1
       - result.response.entities[1].entity_filter.directory_service.uuid.anyof[0] == "{{ directory_service_uuid }}"
@@ -231,7 +266,7 @@
       - "*":
           project_uuid:
             anyof:
-              - "{{ project.uuid }}"
+              - "{{ project1.uuid }}"
   register: result
   ignore_errors: true
   check_mode: true
@@ -246,7 +281,7 @@
       - result.response.entities | length == 3
       - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
       - result.response.entities[1].entity_filter.marketplace_item.owner_uuid.eq == "SELF_OWNED"
-      - result.response.entities[2].entity_filter["*"].project_uuid.anyof[0] == "{{ project.uuid }}"
+      - result.response.entities[2].entity_filter["*"].project_uuid.anyof[0] == "{{ project1.uuid }}"
       - result.response.identities | length == 1
       - result.response.identities[0].identity_filter.user.group.anyof | length == 1
       - result.response.identities[0].identity_filter.user.group.anyof[0] == "{{ user_groups[0] }}"
@@ -267,7 +302,7 @@
       - "*":
           project_uuid:
             anyof:
-              - "{{ project.uuid }}"
+              - "{{ project1.uuid }}"
   register: result
   ignore_errors: true
 
@@ -281,7 +316,7 @@
       - result.response.entities | length == 3
       - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
       - result.response.entities[1].entity_filter.marketplace_item.owner_uuid.eq == "SELF_OWNED"
-      - result.response.entities[2].entity_filter["*"].project_uuid.anyof[0] == "{{ project.uuid }}"
+      - result.response.entities[2].entity_filter["*"].project_uuid.anyof[0] == "{{ project1.uuid }}"
       - result.response.identities | length == 1
       - result.response.identities[0].identity_filter.user.group.anyof | length == 1
       - result.response.identities[0].identity_filter.user.group.anyof[0] == "{{ user_groups[0] }}"
@@ -311,7 +346,7 @@
       - result.response.entities | length == 3
       - result.response.entities[0].entity_filter.images["*"]["eq"] == "*"
       - result.response.entities[1].entity_filter.marketplace_item.owner_uuid.eq == "SELF_OWNED"
-      - result.response.entities[2].entity_filter["*"].project_uuid.anyof[0] == "{{ project.uuid }}"
+      - result.response.entities[2].entity_filter["*"].project_uuid.anyof[0] == "{{ project1.uuid }}"
       - result.response.identities | length == 1
       - result.response.identities[0].identity_filter.user.uuid.anyof | length == 2
       - result.response.identities[0].identity_filter.user.uuid.anyof[0] == "{{ users[0] }}"
@@ -338,7 +373,7 @@
   register: result
   ignore_errors: true
 
-- name: Verify update  status
+- name: Verify update status
   ansible.builtin.assert:
     that:
       - result.response is defined
@@ -467,6 +502,26 @@
       - result.response[0].ext_id == "{{ policy_ext_id }}"
     fail_msg: Unable to fetch using filters
     success_msg: Fetched using filters successfully
+###################################################### Negative test: update project_ext_id ########################################################
+
+- name: Verify update of project_ext_id is not supported
+  nutanix.ncp.ntnx_authorization_policies_v2:
+    state: present
+    ext_id: "{{ policy_ext_id }}"
+    display_name: "{{ acp_name }}2-updated"
+    project_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Verify update of project_ext_id is blocked status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
+    fail_msg: "Update of project_ext_id should have been blocked"
+    success_msg: "Update of project_ext_id is correctly blocked"
+
 ###################################################### Delete Tests ########################################################
 
 - name: Delete auth policy with check mode enabled
@@ -534,3 +589,24 @@
       - result.failed == False
     fail_msg: Unable to delete roles
     success_msg: Roles deleted successfully
+
+###################################################################################################
+# Delete the project created for tests
+###################################################################################################
+- name: Delete project created for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: absent
+    ext_id: "{{ project1.uuid }}"
+  register: delete_project_result
+  ignore_errors: true
+
+- name: Status of project deletion for tests
+  ansible.builtin.assert:
+    that:
+      - delete_project_result.changed == true
+      - delete_project_result.failed == false
+      - delete_project_result.ext_id == project1.uuid
+      - delete_project_result.task_ext_id is defined
+      - delete_project_result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to delete project created for tests"
+    success_msg: "Project created for tests deleted successfully"
