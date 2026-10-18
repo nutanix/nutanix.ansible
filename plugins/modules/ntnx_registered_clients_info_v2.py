@@ -69,12 +69,14 @@ response:
   sample:
     {
       "created_by": null,
-      "created_time": "2026-06-29T07:20:18.080897+00:00",
-      "deployment_list": ["onPrem"],
+      "created_time": "2026-10-14T10:48:02.781775+00:00",
+      "deployment_list": [
+          "onPrem"
+      ],
       "description": "description",
       "display_name": "CatalogService",
       "ext_id": "21bc5e8e-5854-5bd4-8dcc-924f24b0ddf4",
-      "last_updated_time": "2026-06-29T07:20:18.080897+00:00",
+      "last_updated_time": "2026-10-14T10:48:02.781775+00:00",
       "links": null,
       "name": "CatalogService",
       "tenant_id": null
