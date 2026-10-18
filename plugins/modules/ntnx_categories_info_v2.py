@@ -123,28 +123,19 @@ total_available_results:
     sample: 125
 """
 
-import traceback  # noqa: E402
 import warnings  # noqa: E402
-
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
-from ..module_utils.v4.prism.pc_api_client import get_pc_api_client  # noqa: E402
+from ..module_utils.v4.prism.helpers import get_category  # noqa: E402
+from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
+    get_categories_api_instance,
+)
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-
-SDK_IMP_ERROR = None
-try:
-    import ntnx_prism_py_client as prism_sdk  # noqa: E402
-except ImportError:
-
-    from ..module_utils.v4.sdk_mock import mock_sdk as prism_sdk  # noqa: E402
-
-    SDK_IMP_ERROR = traceback.format_exc()
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -159,32 +150,17 @@ def get_module_spec():
     return module_args
 
 
-def get_category_api_instance(module):
-    api_client = get_pc_api_client(module)
-    return prism_sdk.CategoriesApi(api_client=api_client)
-
-
-def get_category(module, result):
-    categories = get_category_api_instance(module)
+def get_category_with_ext_id(module, categories, result):
     ext_id = module.params.get("ext_id")
     expand = module.params.get("expand")
 
-    try:
-        resp = categories.get_category_by_id(ext_id, expand)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching category info",
-        )
+    resp = get_category(module, categories, ext_id, expand)
 
     result["ext_id"] = ext_id
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    result["response"] = strip_internal_attributes(resp.to_dict())
 
 
-def get_categories(module, result):
-    categories = get_category_api_instance(module)
-
+def get_categories(module, categories, result):
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params, extra_params=["expand"])
 
@@ -215,17 +191,14 @@ def run_module():
             ("ext_id", "filter"),
         ],
     )
-    if SDK_IMP_ERROR:
-        module.fail_json(
-            msg=missing_required_lib("ntnx_prism_py_client"), exception=SDK_IMP_ERROR
-        )
 
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
+    categories = get_categories_api_instance(module)
     if module.params.get("ext_id"):
-        get_category(module, result)
+        get_category_with_ext_id(module, categories, result)
     else:
-        get_categories(module, result)
+        get_categories(module, categories, result)
 
     module.exit_json(**result)
 
