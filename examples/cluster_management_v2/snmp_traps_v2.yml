@@ -1,0 +1,111 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create an SNMP V2 trap
+# 2. Create an SNMP V3 trap
+# 3. Fetch SNMP trap by ext_id
+# 4. Update SNMP trap port
+# 5. Delete SNMP trap
+
+- name: SNMP traps playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        trap_v2_ip: "10.0.0.100"
+        trap_v3_ip: "10.0.0.101"
+        snmp_username: "snmp_user"
+        cluster_ext_id: "913fa076-d385-4dd8-b549-0e628e645569"
+
+    - name: Create SNMP V2 trap
+      nutanix.ncp.ntnx_snmp_trap_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        state: present
+        address:
+          ipv4:
+            value: "{{ trap_v2_ip }}"
+        version: V2
+        community_string: "public"
+        port: 162
+        protocol: UDP
+      register: result
+      ignore_errors: true
+
+    - name: Extract V2 trap ext_id
+      ansible.builtin.set_fact:
+        trap_v2_ext_id: "{{ item.ext_id }}"
+      loop: "{{ result.response.traps }}"
+      when: >
+        item.version is defined and item.version == "V2"
+        and item.address is defined
+        and item.address.ipv4 is defined
+        and item.address.ipv4.value == trap_v2_ip
+
+    - name: Create SNMP V3 trap
+      nutanix.ncp.ntnx_snmp_trap_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        state: present
+        address:
+          ipv4:
+            value: "{{ trap_v3_ip }}"
+        version: V3
+        username: "{{ snmp_username }}"
+        port: 162
+        protocol: UDP
+      register: result
+      ignore_errors: true
+
+    - name: Extract V3 trap ext_id
+      ansible.builtin.set_fact:
+        trap_v3_ext_id: "{{ item.ext_id }}"
+      loop: "{{ result.response.traps }}"
+      when: >
+        item.version is defined and item.version == "V3"
+        and item.address is defined
+        and item.address.ipv4 is defined
+        and item.address.ipv4.value == trap_v3_ip
+
+    - name: Fetch SNMP trap by ext_id
+      nutanix.ncp.ntnx_snmp_trap_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ trap_v2_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update SNMP V2 trap port
+      nutanix.ncp.ntnx_snmp_trap_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        state: present
+        ext_id: "{{ trap_v2_ext_id }}"
+        address:
+          ipv4:
+            value: "{{ trap_v2_ip }}"
+        version: V2
+        community_string: "public"
+        port: 163
+        protocol: UDP
+      register: result
+      ignore_errors: true
+
+    - name: Delete SNMP V2 trap
+      nutanix.ncp.ntnx_snmp_trap_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        state: absent
+        ext_id: "{{ trap_v2_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete SNMP V3 trap
+      nutanix.ncp.ntnx_snmp_trap_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        state: absent
+        ext_id: "{{ trap_v3_ext_id }}"
+      register: result
+      ignore_errors: true
