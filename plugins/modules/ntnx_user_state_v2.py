@@ -73,7 +73,7 @@ RETURN = r"""
 response:
     description:
         - Response for updating the active state of a user.
-        - Contains the C(UserStateUpdateResponse) returned by the C(change-state) action API.
+        - Contains the C(message) returned by the underlying API on success.
     returned: always
     type: dict
     sample:
