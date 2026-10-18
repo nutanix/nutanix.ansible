@@ -530,10 +530,6 @@
   ignore_errors: true
   check_mode: true
 
-- name: Print deactivate user with check mode result
-  ansible.builtin.debug:
-    var: result
-
 - name: Deactivate user with check mode status
   ansible.builtin.assert:
     that:
@@ -550,10 +546,6 @@
     ext_id: "{{ state_user_ext_id }}"
   register: result
   ignore_errors: true
-
-- name: Print confirm user still ACTIVE after deactivate check mode result
-  ansible.builtin.debug:
-    var: result
 
 - name: Confirm user still ACTIVE after deactivate check mode status
   ansible.builtin.assert:
@@ -573,10 +565,6 @@
   ignore_errors: true
   check_mode: true
 
-- name: Print activate user with check mode result
-  ansible.builtin.debug:
-    var: result
-
 - name: Activate user with check mode status
   ansible.builtin.assert:
     that:
@@ -595,10 +583,6 @@
   register: result
   ignore_errors: true
 
-- name: Print deactivate local user result
-  ansible.builtin.debug:
-    var: result
-
 - name: Deactivate local user status
   ansible.builtin.assert:
     that:
@@ -615,10 +599,6 @@
     ext_id: "{{ state_user_ext_id }}"
   register: result
   ignore_errors: true
-
-- name: Print fetch user after deactivate result
-  ansible.builtin.debug:
-    var: result
 
 - name: Fetch user after deactivate status
   ansible.builtin.assert:
@@ -637,10 +617,6 @@
   register: result
   ignore_errors: true
 
-- name: Print deactivate already INACTIVE user result
-  ansible.builtin.debug:
-    var: result
-
 - name: Deactivate already INACTIVE user status
   ansible.builtin.assert:
     that:
@@ -658,10 +634,6 @@
   register: result
   ignore_errors: true
 
-- name: Print confirm user still INACTIVE after idempotent deactivate result
-  ansible.builtin.debug:
-    var: result
-
 - name: Confirm user still INACTIVE after idempotent deactivate status
   ansible.builtin.assert:
     that:
@@ -677,10 +649,6 @@
     status: ACTIVE
   register: result
   ignore_errors: true
-
-- name: Print reactivate local user result
-  ansible.builtin.debug:
-    var: result
 
 - name: Reactivate local user status
   ansible.builtin.assert:
@@ -698,10 +666,6 @@
   register: result
   ignore_errors: true
 
-- name: Print fetch user after reactivate result
-  ansible.builtin.debug:
-    var: result
-
 - name: Fetch user after reactivate status
   ansible.builtin.assert:
     that:
@@ -718,10 +682,6 @@
     status: INACTIVE
   register: result
   ignore_errors: true
-
-- name: Print change state with non-existent ext_id result
-  ansible.builtin.debug:
-    var: result
 
 - name: Change state with non-existent ext_id status
   ansible.builtin.assert:
@@ -741,10 +701,6 @@
   register: result
   ignore_errors: true
 
-- name: Print change state with invalid status result
-  ansible.builtin.debug:
-    var: result
-
 - name: Change state with invalid status status
   ansible.builtin.assert:
     that:
@@ -761,10 +717,6 @@
   register: result
   ignore_errors: true
 
-- name: Print change state without ext_id result
-  ansible.builtin.debug:
-    var: result
-
 - name: Change state without ext_id status
   ansible.builtin.assert:
     that:
@@ -779,10 +731,6 @@
     ext_id: "{{ state_user_ext_id }}"
   register: result
   ignore_errors: true
-
-- name: Print change state without status result
-  ansible.builtin.debug:
-    var: result
 
 - name: Change state without status status
   ansible.builtin.assert:
@@ -803,10 +751,6 @@
   loop: "{{ todelete }}"
   register: result
   ignore_errors: true
-
-- name: Print delete created users result
-  ansible.builtin.debug:
-    var: result
 
 - name: Delete created users status
   ansible.builtin.assert:
