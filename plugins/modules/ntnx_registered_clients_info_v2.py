@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -17,8 +17,7 @@ description:
   - This module allows you to fetch information about RegisteredClient in Nutanix Prism Central.
   - If C(ext_id) is provided, fetch details of the specific RegisteredClient.
   - The Nutanix IAM v4 API for RegisteredClient only supports get-by-id;
-    listing multiple registered clients is not exposed by the SDK for this
-    version. C(ext_id) is therefore required.
+    listing multiple registered clients is not supported. C(ext_id) is therefore required.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -26,7 +25,8 @@ notes:
     user performing the operation.
   - >-
     B(Get registered client by ext_id) -
-    Required Roles: Super Admin, Prism Admin, Prism Viewer.
+    Required Roles: Account Owner, Administrator, NCM Admin, Nutanix Central Admin, Prism Admin,
+      Prism Viewer, Project Manager, Self-Service AdminDeprecated, Super Admin, User
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
   ext_id:
@@ -55,7 +55,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "6f8e020d-c59a-5052-afd7-5e547f8a3282"
   register: result
 """
 
@@ -85,19 +85,6 @@ changed:
   returned: always
   type: bool
   sample: false
-
-msg:
-  description: This indicates the message if any message occurred.
-  returned: When there is an error
-  type: str
-  sample: "Api Exception raised while fetching registered client info using ext_id"
-
-error:
-  description:
-    - This field typically holds information about if the task have errors that
-      occurred during the task execution.
-  type: str
-  returned: When an error occurs
 
 failed:
   description: This field typically holds information about if the task have failed.
