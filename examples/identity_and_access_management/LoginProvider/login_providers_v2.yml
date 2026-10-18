@@ -4,17 +4,16 @@
 # ntnx_login_providers_info_v2 module. LoginProvider is a read-only IAM v4
 # resource in Prism Central - it exposes the list of authentication back-ends
 # (LOCAL, SAML, LDAP, CERT, SERVICE_ACCOUNT) that the PC login page presents
-# to end users. No create / update / delete operations exist for this entity
-# so this playbook only covers list and get-by-ext_id.
+# to end users. No create / update / delete / get-by-id operations exist for
+# this entity, so this playbook only covers list (with optional filter /
+# pagination / orderby / select).
 #
 # Operations covered:
 # 1. List all login providers
-# 2. Get a single login provider by ext_id (resolved via list-with-filter
-#    because the SDK does not expose a GetById endpoint)
-# 3. Filter login providers by name
-# 4. Paginate login providers with limit
-# 5. Sort login providers with orderby
-# 6. Select a subset of properties per login provider
+# 2. Filter login providers by name
+# 3. Paginate login providers with limit
+# 4. Sort login providers with orderby
+# 5. Select a subset of properties per login provider
 
 - name: LoginProvider info playbook
   hosts: localhost
@@ -34,25 +33,6 @@
     - name: Show all login providers
       ansible.builtin.debug:
         var: all_providers
-
-    - name: Capture ext_id of the first provider (used for get-by-ext_id demo)
-      ansible.builtin.set_fact:
-        first_provider_ext_id: "{{ all_providers.response[0].ext_id }}"
-      when:
-        - all_providers.response is defined
-        - all_providers.response | length > 0
-
-    - name: Get a single login provider by ext_id
-      nutanix.ncp.ntnx_login_providers_info_v2:
-        ext_id: "{{ first_provider_ext_id }}"
-      register: single_provider
-      ignore_errors: true
-      when: first_provider_ext_id is defined
-
-    - name: Show single login provider result
-      ansible.builtin.debug:
-        var: single_provider
-      when: first_provider_ext_id is defined
 
     - name: Filter login providers by name (fetch the built-in 'local' provider)
       nutanix.ncp.ntnx_login_providers_info_v2:

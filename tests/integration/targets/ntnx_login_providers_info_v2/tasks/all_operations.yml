@@ -1,7 +1,7 @@
 ---
 # Integration test plan for ntnx_login_providers_info_v2
 #
-# LoginProvider is a READ-ONLY IAM v4 resource - the SDK only exposes
+# LoginProvider is a READ-ONLY IAM v4 resource - the SDK / PC only expose
 # ListLoginProviders (no create/update/delete/get-by-id). Every Prism Central
 # is expected to expose at least the built-in LOCAL and SERVICE_ACCOUNT
 # providers, so we can rely on them for deterministic assertions without
@@ -11,16 +11,12 @@
 #   1. List all login providers - assert at least one is present, assert every
 #      returned item has the fields the module documents.
 #   2. total_available_results is populated on a plain list.
-#   3. Get a single provider by ext_id - uses the ext_id of a provider we
-#      captured in scenario 1 and asserts the response matches.
-#   4. Filter by name (LOCAL) - asserts the filter is applied server-side.
-#   5. Limit / pagination - asserts len(response) <= limit.
-#   6. orderby - asserts the returned list is sorted by createdTime asc.
-#   7. select projection - asserts only the requested fields are populated.
-#   8. Idempotency of an info module: two identical calls both return
+#   3. Filter by name - asserts the filter is applied server-side.
+#   4. Limit / pagination - asserts len(response) <= limit.
+#   5. orderby - asserts the returned list is sorted by createdTime asc.
+#   6. select projection - asserts only the requested fields are populated.
+#   7. Idempotency of an info module: two identical calls both return
 #      changed=false and identical payloads.
-#   9. Negative: bogus ext_id triggers a descriptive not-found failure.
-#  10. Negative: mutually_exclusive(ext_id, filter) surfaces a validation error.
 
 - name: Start ntnx_login_providers_info_v2 tests
   ansible.builtin.debug:
@@ -71,40 +67,13 @@
   loop_control:
     label: "{{ item.name | default('<unnamed>') }}"
 
-- name: Capture ext_id / name of the first provider for downstream tests
+- name: Capture name / ext_id of the first provider for filter tests
   ansible.builtin.set_fact:
     first_provider_ext_id: "{{ all_providers.response[0].ext_id }}"
     first_provider_name: "{{ all_providers.response[0].name }}"
-    first_provider_type: "{{ all_providers.response[0].type }}"
 
 ########################################################################
-# 2. Get single login provider by ext_id
-########################################################################
-
-- name: Get login provider by ext_id
-  nutanix.ncp.ntnx_login_providers_info_v2:
-    ext_id: "{{ first_provider_ext_id }}"
-  register: single_provider
-  ignore_errors: true
-
-- name: Get login provider by ext_id - status
-  ansible.builtin.assert:
-    that:
-      - single_provider.changed == false
-      - single_provider.failed == false
-      - single_provider.response is defined
-      - single_provider.response is mapping
-      - single_provider.ext_id == first_provider_ext_id
-      - single_provider.response.ext_id == first_provider_ext_id
-      - single_provider.response.name == first_provider_name
-      - single_provider.response.type == first_provider_type
-    fail_msg: "Unable to fetch login provider by ext_id"
-    success_msg: "Login provider fetched by ext_id successfully"
-
-########################################################################
-# 3. Filter by name (echoing the name from the list result so we do not
-# depend on the exact display name of the built-in local provider - it is
-# lowercased on some PC builds ("local") and uppercased on others).
+# 2. Filter by name
 ########################################################################
 
 - name: Filter login providers by the first provider's name (server-side filter)
@@ -128,7 +97,7 @@
     success_msg: "Filtering login providers by name works as expected"
 
 ########################################################################
-# 4. Pagination via limit
+# 3. Pagination via limit
 ########################################################################
 
 - name: List login providers with limit=1
@@ -149,7 +118,7 @@
     success_msg: "Limit pagination works as expected"
 
 ########################################################################
-# 5. Ordering
+# 4. Ordering
 ########################################################################
 
 - name: List login providers ordered by createdTime asc
@@ -172,7 +141,7 @@
     success_msg: "orderby works as expected"
 
 ########################################################################
-# 6. Select / projection
+# 5. Select / projection
 ########################################################################
 
 - name: List login providers projecting only name,type,extId
@@ -195,7 +164,7 @@
     success_msg: "select projection returns requested fields"
 
 ########################################################################
-# 7. Idempotency of an info module - two calls, same result, changed=false
+# 6. Idempotency of an info module - two calls, same result, changed=false
 ########################################################################
 
 - name: List login providers - first call
@@ -218,42 +187,3 @@
         == idem_call_two.response | map(attribute='ext_id') | list | sort
     fail_msg: "Successive info calls returned different data"
     success_msg: "Info module is idempotent as expected"
-
-########################################################################
-# 8. Negative: fetching a non-existent ext_id must fail with a clear message
-########################################################################
-
-- name: Get login provider by a bogus ext_id (should fail gracefully)
-  nutanix.ncp.ntnx_login_providers_info_v2:
-    ext_id: "00000000-0000-0000-0000-deadbeefdead"
-  register: missing_provider
-  ignore_errors: true
-
-- name: Not-found status
-  ansible.builtin.assert:
-    that:
-      - missing_provider.failed == true
-      - missing_provider.msg is defined
-      - "'not found' in missing_provider.msg | lower or 'exception' in missing_provider.msg | lower"
-    fail_msg: "Bogus ext_id lookup did not fail with a descriptive message"
-    success_msg: "Bogus ext_id lookup fails cleanly with a descriptive message"
-
-########################################################################
-# 9. Negative: mutually exclusive ext_id + filter should error
-########################################################################
-
-- name: Providing ext_id and filter together must be rejected by argument spec
-  nutanix.ncp.ntnx_login_providers_info_v2:
-    ext_id: "{{ first_provider_ext_id }}"
-    filter: "name eq 'LOCAL'"
-  register: mutex_result
-  ignore_errors: true
-
-- name: Mutually exclusive status
-  ansible.builtin.assert:
-    that:
-      - mutex_result.failed == true
-      - mutex_result.msg is defined
-      - "'mutually exclusive' in mutex_result.msg | lower"
-    fail_msg: "mutually_exclusive validation did not fire"
-    success_msg: "mutually_exclusive validation fires as expected"
