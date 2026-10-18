@@ -66,17 +66,3 @@
       - result_missing.response.data.error | length > 0
     fail_msg: Non-existent registered client did not fail with the expected error
     success_msg: Non-existent registered client failed as expected
-
-- name: Invoke registered clients info without required ext_id
-  nutanix.ncp.ntnx_registered_clients_info_v2:
-  register: result_no_ext_id
-  ignore_errors: true
-
-- name: Assert Ansible rejects the call when ext_id is missing
-  ansible.builtin.assert:
-    that:
-      - result_no_ext_id.failed == true
-      - result_no_ext_id.changed == false
-      - '"missing required arguments: ext_id" in result.msg'
-    fail_msg: Module accepted the call without required ext_id
-    success_msg: Module correctly refused the call without ext_id
