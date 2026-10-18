@@ -23,6 +23,69 @@
     todelete: []
     vm_name: "{{ random_name }}{{ suffix_name }}vm"
 
+- name: Create project for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: present
+    name: "{{ random_name }}-ansible-project"
+    project_id: "{{ random_name }}-ansible-project-id"
+  register: create_project_result
+  ignore_errors: true
+
+- name: Status of project creation for tests
+  ansible.builtin.assert:
+    that:
+      - create_project_result.changed == true
+      - create_project_result.failed == false
+      - create_project_result.response is defined
+      - create_project_result.ext_id is defined
+      - create_project_result.ext_id | length > 0
+      - create_project_result.task_ext_id is defined
+      - create_project_result.response.state == "ACTIVE"
+    fail_msg: "Unable to create project for tests"
+    success_msg: "Project for tests created successfully"
+
+- name: Set project fact for tests
+  ansible.builtin.set_fact:
+    project1:
+      name: "{{ random_name }}-ansible-project"
+      uuid: "{{ create_project_result.ext_id }}"
+
+# A project needs a Resource Group (placement targets) before VMs can be created
+# in it via the v4 API; without one, v4 CreateVm fails with VMM-10000. Create
+# the resource group so the project-scoped VM below succeeds.
+- name: Create resource group for the test project
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: present
+    name: "{{ random_name }}-ansible-rg"
+    project_ext_id: "{{ project1.uuid }}"
+    placement_targets:
+      - cluster_ext_id: "{{ cluster.uuid }}"
+        storage_containers:
+          - ext_id: "{{ storage_container.uuid }}"
+  register: create_rg_result
+  ignore_errors: true
+
+- name: Status of resource group creation for tests
+  ansible.builtin.assert:
+    that:
+      - create_rg_result.changed == true
+      - create_rg_result.failed == false
+      - create_rg_result.response is defined
+      - create_rg_result.ext_id is defined
+      - create_rg_result.ext_id | length > 0
+      - create_rg_result.response.project_ext_id == project1.uuid
+      - create_rg_result.response.name == "{{ random_name }}-ansible-rg"
+      - create_rg_result.response.placement_targets | length == 1
+      - create_rg_result.response.placement_targets[0].cluster_ext_id == "{{ cluster.uuid }}"
+      - create_rg_result.response.placement_targets[0].storage_containers | length == 1
+      - create_rg_result.response.placement_targets[0].storage_containers[0].ext_id == "{{ storage_container.uuid }}"
+    fail_msg: "Unable to create resource group for tests"
+    success_msg: "Resource group for tests created successfully"
+
+- name: Set resource group fact for tests
+  ansible.builtin.set_fact:
+    resource_group_ext_id: "{{ create_rg_result.ext_id }}"
+
 - name: Create VM with full requirements with check_mode
   nutanix.ncp.ntnx_vms_v2:
     name: "{{ vm_name }}"
@@ -165,8 +228,7 @@
         index: 0
       - is_connected: true
         index: 3
-    project:
-      ext_id: "798b8f0c-2d3e-4f1a-9c5b-6d7e8f9a0b1c"
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
     host:
       ext_id: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
   register: result
@@ -261,7 +323,7 @@
       - result.response.boot_config.nvram_device.backing_storage_info.storage_container.ext_id == "{{ storage_container.uuid }}"
       - result.response.boot_config.nvram_device.backing_storage_info.data_source.reference.image_ext_id == "{{ disk_image.image_ext_ids[0] }}"
       - result.response.boot_config.nvram_device.backing_storage_info.disk_size_bytes == 26843545600
-      - result.response.project.ext_id == "798b8f0c-2d3e-4f1a-9c5b-6d7e8f9a0b1c"
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
       - result.response.host.ext_id == "f47ac10b-58cc-4372-a567-0e02b2c3d479"
     fail_msg: " Create VM with full requirements with check_mode failed"
     success_msg: "Create VM with full requirements with check_mode passed"
@@ -340,8 +402,7 @@
       is_apc_enabled: false
     vtpm_config:
       is_vtpm_enabled: false
-    project:
-      ext_id: "{{ project.uuid }}"
+    project_ext_id: "{{ project1.uuid }}"
   register: result
   ignore_errors: true
 
@@ -371,7 +432,7 @@
       - result.response.is_agent_vm == false
       - result.response.apc_config.is_apc_enabled == false
       - result.response.vtpm_config.is_vtpm_enabled == false
-      - result.response.project.ext_id == "{{ project.uuid }}"
+      - result.response.project_ext_id == "{{ project1.uuid }}"
     fail_msg: " Unable to create VM with full requirements "
     success_msg: " VM with full requirements created successfully "
 
@@ -736,7 +797,7 @@
 
 - name: Read content from file
   ansible.builtin.set_fact:
-    xml_file_content: "{{ lookup('file', unattendxml.dest + '/unattendxml.txt') }}"
+    xml_file_content: "{{ lookup('file', unattendxml.dest) | b64encode }}"
 
 - name: Create vm with windows unattend xml file
   nutanix.ncp.ntnx_vms_v2:
@@ -910,3 +971,41 @@
 - name: Reset to delete list
   ansible.builtin.set_fact:
     todelete: []
+
+########################################################################
+
+- name: Delete resource group created for tests
+  nutanix.ncp.ntnx_resource_group_v2:
+    state: absent
+    ext_id: "{{ resource_group_ext_id }}"
+  register: delete_rg_result
+  ignore_errors: true
+
+- name: Status of resource group deletion for tests
+  ansible.builtin.assert:
+    that:
+      - delete_rg_result.changed == true
+      - delete_rg_result.failed == false
+      - delete_rg_result.ext_id == resource_group_ext_id
+      - delete_rg_result.response.status == "SUCCEEDED"
+    fail_msg: "Unable to delete resource group created for tests"
+    success_msg: "Resource group created for tests deleted successfully"
+
+- name: Delete project created for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: absent
+    ext_id: "{{ project1.uuid }}"
+  register: delete_project_result
+  ignore_errors: true
+
+- name: Status of project deletion for tests
+  ansible.builtin.assert:
+    that:
+      - delete_project_result.changed == true
+      - delete_project_result.failed == false
+      - delete_project_result.ext_id == project1.uuid
+      - delete_project_result.response is defined
+      - delete_project_result.response.status == "SUCCEEDED"
+      - delete_project_result.task_ext_id is defined
+    fail_msg: "Unable to delete project created for tests"
+    success_msg: "Project created for tests deleted successfully"
