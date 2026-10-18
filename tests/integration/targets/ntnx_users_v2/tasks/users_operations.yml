@@ -23,7 +23,7 @@
 - name: Set users variable
   ansible.builtin.set_fact:
     users:
-      - "{{ random }}_username_1"
+      - "{{ random }}_ansible_username_1"
       - "{{ new_user }}"
       - "{{ new_saml_user }}"
 
@@ -513,6 +513,287 @@
 
     fail_msg: Unable to list users using limit
     success_msg: users listed successfully using limit
+
+##################################################
+# ntnx_user_state_v2 — activate / deactivate against the first local user
+##################################################
+
+- name: Set local user ext_id for state tests
+  ansible.builtin.set_fact:
+    state_user_ext_id: "{{ todelete[0] }}"
+
+- name: Deactivate user with check mode
+  nutanix.ncp.ntnx_user_state_v2:
+    ext_id: "{{ state_user_ext_id }}"
+    status: INACTIVE
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Print deactivate user with check mode result
+  ansible.builtin.debug:
+    var: result
+
+- name: Deactivate user with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == state_user_ext_id
+      - result.response is defined
+      - result.response.status == "INACTIVE"
+    fail_msg: Deactivate user with check mode failed
+    success_msg: Deactivate user with check mode passed
+
+- name: Confirm user still ACTIVE after deactivate check mode
+  nutanix.ncp.ntnx_users_info_v2:
+    ext_id: "{{ state_user_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Print confirm user still ACTIVE after deactivate check mode result
+  ansible.builtin.debug:
+    var: result
+
+- name: Confirm user still ACTIVE after deactivate check mode status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.response.status == "ACTIVE"
+      - result.response.ext_id == state_user_ext_id
+    fail_msg: Deactivate check mode mutated user on server
+    success_msg: Deactivate check mode left user ACTIVE
+
+- name: Activate user with check mode
+  nutanix.ncp.ntnx_user_state_v2:
+    ext_id: "{{ state_user_ext_id }}"
+    status: ACTIVE
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Print activate user with check mode result
+  ansible.builtin.debug:
+    var: result
+
+- name: Activate user with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == state_user_ext_id
+      - result.response is defined
+      - result.response.status == "ACTIVE"
+    fail_msg: Activate user with check mode failed
+    success_msg: Activate user with check mode passed
+
+- name: Deactivate local user
+  nutanix.ncp.ntnx_user_state_v2:
+    ext_id: "{{ state_user_ext_id }}"
+    status: INACTIVE
+  register: result
+  ignore_errors: true
+
+- name: Print deactivate local user result
+  ansible.builtin.debug:
+    var: result
+
+- name: Deactivate local user status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == state_user_ext_id
+      - result.response is defined
+      - result.response.message == "User State update successful."
+    fail_msg: Deactivate local user failed
+    success_msg: Deactivate local user passed
+
+- name: Fetch user after deactivate
+  nutanix.ncp.ntnx_users_info_v2:
+    ext_id: "{{ state_user_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Print fetch user after deactivate result
+  ansible.builtin.debug:
+    var: result
+
+- name: Fetch user after deactivate status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.response.status == "INACTIVE"
+      - result.response.ext_id == state_user_ext_id
+    fail_msg: User status did not become INACTIVE
+    success_msg: User status is INACTIVE
+
+- name: Deactivate already INACTIVE user
+  nutanix.ncp.ntnx_user_state_v2:
+    ext_id: "{{ state_user_ext_id }}"
+    status: INACTIVE
+  register: result
+  ignore_errors: true
+
+- name: Print deactivate already INACTIVE user result
+  ansible.builtin.debug:
+    var: result
+
+- name: Deactivate already INACTIVE user status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg == "Api Exception raised while updating user state"
+      - result.response is defined
+      - result.response.data.error | length > 0
+    fail_msg: Idempotent deactivate failed
+    success_msg: Idempotent deactivate passed
+
+- name: Confirm user still INACTIVE after idempotent deactivate
+  nutanix.ncp.ntnx_users_info_v2:
+    ext_id: "{{ state_user_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Print confirm user still INACTIVE after idempotent deactivate result
+  ansible.builtin.debug:
+    var: result
+
+- name: Confirm user still INACTIVE after idempotent deactivate status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.response.status == "INACTIVE"
+      - result.response.ext_id == state_user_ext_id
+    fail_msg: User state changed unexpectedly on repeat deactivate
+    success_msg: User remained INACTIVE after idempotent deactivate
+
+- name: Reactivate local user
+  nutanix.ncp.ntnx_user_state_v2:
+    ext_id: "{{ state_user_ext_id }}"
+    status: ACTIVE
+  register: result
+  ignore_errors: true
+
+- name: Print reactivate local user result
+  ansible.builtin.debug:
+    var: result
+
+- name: Reactivate local user status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.message == "User State update successful."
+    fail_msg: Reactivate local user failed
+    success_msg: Reactivate local user passed
+
+- name: Fetch user after reactivate
+  nutanix.ncp.ntnx_users_info_v2:
+    ext_id: "{{ state_user_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Print fetch user after reactivate result
+  ansible.builtin.debug:
+    var: result
+
+- name: Fetch user after reactivate status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.response.status == "ACTIVE"
+      - result.response.ext_id == state_user_ext_id
+    fail_msg: User status did not become ACTIVE
+    success_msg: User status is ACTIVE
+
+- name: Change state with non-existent ext_id
+  nutanix.ncp.ntnx_user_state_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    status: INACTIVE
+  register: result
+  ignore_errors: true
+
+- name: Print change state with non-existent ext_id result
+  ansible.builtin.debug:
+    var: result
+
+- name: Change state with non-existent ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - result.msg == "Api Exception raised while updating user state"
+      - result.response.data.error | length > 0
+    fail_msg: Non-existent ext_id did not fail as expected
+    success_msg: Non-existent ext_id rejected as expected
+
+- name: Change state with invalid status
+  nutanix.ncp.ntnx_user_state_v2:
+    ext_id: "{{ state_user_ext_id }}"
+    status: SUSPENDED
+  register: result
+  ignore_errors: true
+
+- name: Print change state with invalid status result
+  ansible.builtin.debug:
+    var: result
+
+- name: Change state with invalid status status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - '"value of status must be one of: ACTIVE, INACTIVE, got: SUSPENDED" in result.msg'
+    fail_msg: Invalid status was not rejected by argument spec
+    success_msg: Invalid status rejected as expected
+
+- name: Change state without ext_id
+  nutanix.ncp.ntnx_user_state_v2:
+    status: INACTIVE
+  register: result
+  ignore_errors: true
+
+- name: Print change state without ext_id result
+  ansible.builtin.debug:
+    var: result
+
+- name: Change state without ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - '"missing required arguments: ext_id" in result.msg'
+    fail_msg: Missing ext_id was not rejected
+    success_msg: Missing ext_id rejected as expected
+
+- name: Change state without status
+  nutanix.ncp.ntnx_user_state_v2:
+    ext_id: "{{ state_user_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Print change state without status result
+  ansible.builtin.debug:
+    var: result
+
+- name: Change state without status status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - '"missing required arguments: status" in result.msg'
+    fail_msg: Missing status was not rejected
+    success_msg: Missing status rejected as expected
+
 ##################################################
 # Use the V3 delete API to remove users, as the V4 delete API is not available for user deletion.
 - name: Delete created users
@@ -522,6 +803,10 @@
   loop: "{{ todelete }}"
   register: result
   ignore_errors: true
+
+- name: Print delete created users result
+  ansible.builtin.debug:
+    var: result
 
 - name: Delete created users status
   ansible.builtin.assert:

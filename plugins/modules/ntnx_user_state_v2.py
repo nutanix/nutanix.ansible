@@ -15,30 +15,25 @@ short_description: Update the active state of a user in Nutanix Prism Central
 version_added: 2.7.0
 description:
     - This module allows you to change the active state (C(ACTIVE)/C(INACTIVE)) of a user in Nutanix Prism Central.
-    - It wraps the IAM v4 C(UpdateUserState) action endpoint (POST /api/iam/v4.1.b2/authn/users/{extId}/$actions/change-state).
-    - The endpoint is idempotent - setting the state to the current value is a no-op on the server.
-    - Internal (predefined) users cannot be disabled through this endpoint.
     - This module uses PC v4 APIs based SDKs
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Update active state of user) -
-      Required Roles: Nutanix Central Admin, Prism Admin, Super Admin
+      Required Roles: Nutanix Central Admin, Super Admin, Tenant Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
     state:
         description:
-            - State of the module.
-            - If C(state) is C(present), the module will update the active state of the user.
-            - The C(status) option controls whether the user becomes C(ACTIVE) or C(INACTIVE).
+          - state is not supported for this module.
+          - It will always be present.
         type: str
-        choices:
-            - present
+        choices: ['present']
         default: present
     ext_id:
         description:
-            - The external identifier (UUID) of the user whose active state is to be updated.
+            - The external identifier of the user whose active state is to be updated.
         type: str
         required: true
     status:
@@ -110,14 +105,8 @@ failed:
     type: bool
     sample: false
 
-task_ext_id:
-    description: The external ID of the task, if the action is asynchronous.
-    returned: when the API returns a task
-    type: str
-    sample: "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1"
-
 ext_id:
-    description: The external identifier (UUID) of the user whose state was updated.
+    description: The external ID of the User.
     returned: always
     type: str
     sample: "27892065-1d1b-5d66-ab17-a26038088b17"
@@ -191,23 +180,13 @@ def update_user_state(module, users_api, result):
             exception=e,
             msg="Api Exception raised while updating user state",
         )
+    if resp is None or getattr(resp, "data", None) is None:
+        module.fail_json(
+            msg="Empty response received while updating user state",
+            **result,
+        )
 
-    task_ext_id = getattr(getattr(resp, "data", None), "ext_id", None)
-    if task_ext_id:
-        result["task_ext_id"] = task_ext_id
-        if module.params.get("wait"):
-            task = wait_for_completion(module, task_ext_id)
-            result["response"] = strip_internal_attributes(task.to_dict())
-        else:
-            result["response"] = strip_internal_attributes(resp.data.to_dict())
-    else:
-        # Synchronous response - typically a UserStateUpdateResponse with a `message`.
-        response_body = getattr(resp, "data", None)
-        if response_body is not None and hasattr(response_body, "to_dict"):
-            result["response"] = strip_internal_attributes(response_body.to_dict())
-        else:
-            result["response"] = None
-
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
     result["changed"] = True
 
 
@@ -226,7 +205,6 @@ def run_module():
         "changed": False,
         "response": None,
         "ext_id": None,
-        "task_ext_id": None,
     }
     users_api = get_user_api_instance(module)
     update_user_state(module, users_api, result)
