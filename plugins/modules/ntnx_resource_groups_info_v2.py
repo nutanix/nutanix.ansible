@@ -244,7 +244,7 @@ def get_resource_groups_list(module, resource_groups, result):
         resp = list_entities(
             resource_groups.list_resource_groups,
             kwargs=kwargs,
-            fetch_all=module.params.get("fetch_all"),
+            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

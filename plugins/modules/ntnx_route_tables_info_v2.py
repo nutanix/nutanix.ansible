@@ -183,7 +183,7 @@ def get_route_tables(module, route_table_api_instance, result):
         resp = list_entities(
             route_table_api_instance.list_route_tables,
             kwargs=kwargs,
-            fetch_all=module.params.get("fetch_all"),
+            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

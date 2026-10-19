@@ -224,7 +224,7 @@ def get_object_stores(module, object_stores_api, result):
         resp = list_entities(
             object_stores_api.list_objectstores,
             kwargs=kwargs,
-            fetch_all=module.params.get("fetch_all"),
+            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

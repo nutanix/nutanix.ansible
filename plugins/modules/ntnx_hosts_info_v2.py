@@ -233,13 +233,13 @@ def get_hosts(module, result):
             resp = list_entities(
                 clusters.list_hosts,
                 kwargs=kwargs,
-                fetch_all=module.params.get("fetch_all"),
+                fetch_all=sg.fetch_all,
             )
         else:
             resp = list_entities(
                 clusters.list_hosts_by_cluster_id,
                 kwargs=kwargs,
-                fetch_all=module.params.get("fetch_all"),
+                fetch_all=sg.fetch_all,
                 clusterExtId=cluster_ext_id,
             )
     except Exception as e:

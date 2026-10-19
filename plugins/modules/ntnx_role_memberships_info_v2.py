@@ -221,7 +221,7 @@ def get_role_memberships_list(module, role_memberships, result):
         resp = list_entities(
             role_memberships.list_role_memberships,
             kwargs=kwargs,
-            fetch_all=module.params.get("fetch_all"),
+            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

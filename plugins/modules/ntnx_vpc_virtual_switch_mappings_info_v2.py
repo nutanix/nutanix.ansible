@@ -158,7 +158,7 @@ def get_vpc_virtual_switch_mappings(module, api_instance, result):
         resp = list_entities(
             api_instance.list_vpc_virtual_switch_mappings,
             kwargs=kwargs,
-            fetch_all=module.params.get("fetch_all"),
+            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

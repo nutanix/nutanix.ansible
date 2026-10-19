@@ -228,7 +228,7 @@ def get_profiles(module, profiles, result):
         resp = list_entities(
             profiles.list_vm_guest_customization_profiles,
             kwargs=kwargs,
-            fetch_all=module.params.get("fetch_all"),
+            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

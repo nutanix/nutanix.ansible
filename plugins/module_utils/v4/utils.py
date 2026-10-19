@@ -574,9 +574,10 @@ def list_entities(
         kwargs (dict | None): Query kwargs from ``SpecGenerator.get_info_spec``
             (``_page``, ``_limit``, ``_filter``, ...).
         fetch_all (bool): When true, page through the API until all entities
-            are collected. ``_page`` and ``_limit`` are ignored; each request
-            uses ``default_page_size`` (API max page size, 100), matching
-            inventory ``fetch_all_vms`` behavior.
+            are collected (typically ``sg.fetch_all`` from
+            ``SpecGenerator.get_info_spec``). ``_page`` and ``_limit`` are
+            ignored; each request uses ``default_page_size`` (API max page
+            size, 100), matching inventory ``fetch_all_vms`` behavior.
         default_page_size (int): Page size used for each request when
             C(fetch_all) is true (default 100).
         **fixed_kwargs: Extra keyword args always passed to ``list_fn``

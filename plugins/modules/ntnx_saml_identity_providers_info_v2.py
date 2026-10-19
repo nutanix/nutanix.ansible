@@ -186,7 +186,7 @@ def get_identity_providers(module, identity_providers, result):
         resp = list_entities(
             identity_providers.list_saml_identity_providers,
             kwargs=kwargs,
-            fetch_all=module.params.get("fetch_all"),
+            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

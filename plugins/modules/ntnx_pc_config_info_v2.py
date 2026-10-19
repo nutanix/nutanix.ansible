@@ -291,7 +291,7 @@ def get_pc_configs(module, domain_manager_api, result):
         resp = list_entities(
             domain_manager_api.list_domain_managers,
             kwargs=kwargs,
-            fetch_all=module.params.get("fetch_all"),
+            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

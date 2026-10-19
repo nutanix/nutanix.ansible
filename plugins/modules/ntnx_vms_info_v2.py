@@ -216,7 +216,7 @@ def get_vms(module, result):
         resp = list_entities(
             vmm.list_vms,
             kwargs=kwargs,
-            fetch_all=module.params.get("fetch_all"),
+            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

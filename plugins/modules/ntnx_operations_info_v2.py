@@ -183,7 +183,7 @@ def get_operations(module, operations, result):
         resp = list_entities(
             operations.list_operations,
             kwargs=kwargs,
-            fetch_all=module.params.get("fetch_all"),
+            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

@@ -161,7 +161,7 @@ def get_images(module, images, result):
         resp = list_entities(
             images.list_images,
             kwargs=kwargs,
-            fetch_all=module.params.get("fetch_all"),
+            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

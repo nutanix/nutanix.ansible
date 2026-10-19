@@ -206,7 +206,7 @@ def get_policies(module, api_instance, result):
         resp = list_entities(
             api_instance.list_vm_anti_affinity_policies,
             kwargs=kwargs,
-            fetch_all=module.params.get("fetch_all"),
+            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

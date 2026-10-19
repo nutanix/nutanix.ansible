@@ -228,10 +228,10 @@ def get_restore_points(module, domain_manager_backups_api, result):
     try:
         resp = list_entities(
             domain_manager_backups_api.list_restore_points,
-            fetch_all=module.params.get("fetch_all"),
+            kwargs=kwargs,
+            fetch_all=sg.fetch_all,
             restoreSourceExtId=restore_source_ext_id,
             restorableDomainManagerExtId=restorable_domain_manager_ext_id,
-            **kwargs,  # fmt: skip,
         )
     except Exception as e:
         raise_api_exception(

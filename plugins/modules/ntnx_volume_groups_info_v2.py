@@ -191,7 +191,7 @@ def get_vgs(module, result):
         resp = list_entities(
             vgs.list_volume_groups,
             kwargs=kwargs,
-            fetch_all=module.params.get("fetch_all"),
+            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

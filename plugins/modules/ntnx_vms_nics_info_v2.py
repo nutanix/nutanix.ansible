@@ -196,7 +196,7 @@ def get_nics(module, result):
         resp = list_entities(
             vms.list_nics_by_vm_id,
             kwargs=kwargs,
-            fetch_all=module.params.get("fetch_all"),
+            fetch_all=sg.fetch_all,
             vmExtId=vm_ext_id,
         )
     except Exception as e:

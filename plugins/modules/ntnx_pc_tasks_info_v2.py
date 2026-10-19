@@ -205,7 +205,7 @@ def get_tasks_details(module, tasks_api, result):
         resp = list_entities(
             tasks_api.list_tasks,
             kwargs=kwargs,
-            fetch_all=module.params.get("fetch_all"),
+            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

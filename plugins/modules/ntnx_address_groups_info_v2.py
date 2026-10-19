@@ -173,7 +173,7 @@ def get_address_groups(module, result):
         resp = list_entities(
             address_groups.list_address_groups,
             kwargs=kwargs,
-            fetch_all=module.params.get("fetch_all"),
+            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(
