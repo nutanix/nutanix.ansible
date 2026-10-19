@@ -9,7 +9,9 @@
 # 6. Update SAML identity provider
 # 7. Get specific SAML identity provider
 # 8. List all SAML identity providers
-# 9. Delete created SAML identity provider
+# 9. Get SAML SP metadata
+# 10. Download SAML IdP SP metadata
+# 11. Delete created SAML identity provider
 
 - name: SAML identity provider playbook
   hosts: localhost
@@ -97,6 +99,30 @@
 
     - name: List all identity providers
       nutanix.ncp.ntnx_saml_identity_providers_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Get SAML SP metadata
+      nutanix.ncp.ntnx_saml_sp_metadata_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Get SAML SP metadata to a destination path
+      nutanix.ncp.ntnx_saml_sp_metadata_info_v2:
+        dest: "/tmp/saml_sp_metadata.xml"
+      register: result
+      ignore_errors: true
+
+    - name: Download SAML IdP SP metadata
+      nutanix.ncp.ntnx_saml_identity_providers_sp_metadata_download_v2:
+        ext_id: "{{ saml_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Download SAML IdP SP metadata to a destination path
+      nutanix.ncp.ntnx_saml_identity_providers_sp_metadata_download_v2:
+        ext_id: "{{ saml_ext_id }}"
+        dest: "/tmp/saml_idp_sp_metadata.xml"
       register: result
       ignore_errors: true
 
