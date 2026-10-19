@@ -200,3 +200,25 @@ def get_rsyslog_server(module, api_instance, cluster_ext_id, ext_id):
             exception=e,
             msg="Api Exception raised while fetching rsyslog server info using ext_id",
         )
+
+
+def list_rsyslog_servers(module, api_instance, cluster_ext_id):
+    """
+    List RSYSLOG servers for a cluster.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+    return:
+        ListRsyslogServersByClusterIdApiResponse instance
+    """
+    try:
+        return api_instance.list_rsyslog_servers_by_cluster_id(
+            clusterExtId=cluster_ext_id
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching RSYSLOG servers info",
+        )

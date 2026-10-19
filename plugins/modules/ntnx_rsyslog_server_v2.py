@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -18,6 +18,7 @@ description:
   - RSYSLOG is used for collecting, filtering, parsing, and forwarding logs from Nutanix components such as CVMs and PCVMs to external remote rsyslog servers.
   - It allows users to specify exactly which Nutanix modules (such as AUDIT, CALM, PRISM, etc.)
     should forward their logs and filter them by specific severity levels (such as EMERGENCY, NOTICE, INFO, etc.).
+  - Only one RSYSLOG server can be configured on a cluster at a time.
   - This module uses PC v4 APIs based SDKs
 notes:
     - >-
@@ -47,25 +48,25 @@ options:
     default: present
   cluster_ext_id:
     description:
-      - The external ID of the cluster on which to manage the RSYSLOG server.
+      - Indicates the UUID of a cluster.
       - Required for all operations.
     type: str
     required: true
   ext_id:
     description:
-      - The external ID of the RSYSLOG server.
+      - RSYSLOG server UUID.
       - Required for update and delete operations.
     type: str
     required: false
   server_name:
     description:
-      - The name of the RSYSLOG server.
+      - RSYSLOG server name.
       - Required for create operation.
     type: str
     required: false
   ip_address:
     description:
-      - The IP address of the RSYSLOG server.
+      - IP address of the RSYSLOG server.
       - Required for create operation.
     type: dict
     required: false
@@ -83,7 +84,7 @@ options:
             required: true
           prefix_length:
             description:
-              - Prefix length of the network.
+              - The prefix length of the network to which this host IPv4 address belongs.
             type: int
             required: false
             default: 32
@@ -100,19 +101,19 @@ options:
             required: true
           prefix_length:
             description:
-              - Prefix length of the IPv6 network.
+              - The prefix length of the network to which this host IPv6 address belongs.
             type: int
             required: false
             default: 128
   port:
     description:
-      - The port of the RSYSLOG server.
+      - RSYSLOG server port.
       - Required for create operation.
     type: int
     required: false
   network_protocol:
     description:
-      - The network protocol to use for the RSYSLOG server.
+      - RSYSLOG server protocol type.
       - Required for create operation.
     type: str
     required: false
@@ -122,14 +123,14 @@ options:
       - RELP
   modules:
     description:
-      - List of module items to forward logs for.
+      - List of modules registered to RSYSLOG server.
     type: list
     elements: dict
     required: false
     suboptions:
       name:
         description:
-          - The name of the module.
+          - RSYSLOG module name.
         type: str
         required: true
         choices:
@@ -156,7 +157,7 @@ options:
           - ZOOKEEPER
       log_severity_level:
         description:
-          - The log severity level for the module.
+          - RSYSLOG module log severity level.
         type: str
         required: true
         choices:
@@ -170,7 +171,7 @@ options:
           - DEBUG
       should_log_monitor_files:
         description:
-          - Whether to log monitor files for the module.
+          - Option to log, monitor/output files of a module.
         type: bool
         default: true
         required: false
@@ -243,8 +244,8 @@ RETURN = r"""
 response:
   description:
     - Response for creating, updating, or deleting an RSYSLOG server.
-    - If the operation is create or delete and C(wait) is true, it will return the task details.
-    - If the operation is update and C(wait) is true, it will return the RSYSLOG server details.
+    - If the operation is create or update and C(wait) is true, it will return the RSYSLOG server details.
+    - If the operation is delete or C(wait) is false, it will return the task details.
   returned: always
   type: dict
   sample:
@@ -274,7 +275,7 @@ response:
 ext_id:
   description:
     - The external ID of the RSYSLOG server.
-  returned: when the RSYSLOG server is created or updated
+  returned: always
   type: str
   sample: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
 
@@ -317,8 +318,12 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_clusters_api_instance,
+    get_etag,
 )
-from ..module_utils.v4.clusters_mgmt.helpers import get_rsyslog_server  # noqa: E402
+from ..module_utils.v4.clusters_mgmt.helpers import (  # noqa: E402
+    get_rsyslog_server,
+    list_rsyslog_servers,
+)
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
@@ -441,6 +446,20 @@ def get_module_spec():
     return module_args
 
 
+def _set_created_rsyslog_from_list(module, api_instance, cluster_ext_id, result):
+    """Resolve created RSYSLOG ext_id/details via list (only one allowed per cluster)."""
+    resp = list_rsyslog_servers(module, api_instance, cluster_ext_id)
+    servers = strip_internal_attributes(resp.to_dict()).get("data")
+    if not servers:
+        module.fail_json(
+            msg="Unable to locate created RSYSLOG server after create",
+            **result,
+        )
+    server = servers[0]
+    result["ext_id"] = server.get("ext_id")
+    result["response"] = server
+
+
 def create_rsyslog_server(module, api_instance, cluster_ext_id, result):
     validate_required_params(
         module, ["server_name", "ip_address", "port", "network_protocol"]
@@ -471,8 +490,8 @@ def create_rsyslog_server(module, api_instance, cluster_ext_id, result):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
 
     if task_ext_id and module.params.get("wait"):
-        resp = wait_for_completion(module, task_ext_id)
-        result["response"] = strip_internal_attributes(resp.to_dict())
+        wait_for_completion(module, task_ext_id)
+        _set_created_rsyslog_from_list(module, api_instance, cluster_ext_id, result)
 
     result["changed"] = True
 
@@ -488,6 +507,14 @@ def update_rsyslog_server(module, api_instance, cluster_ext_id, result):
     result["ext_id"] = ext_id
 
     old_spec = get_rsyslog_server(module, api_instance, cluster_ext_id, ext_id)
+    etag = get_etag(data=old_spec)
+    if not etag:
+        return module.fail_json(
+            msg="Unable to fetch etag for updating RSYSLOG server", **result
+        )
+
+    kwargs = {"if_match": etag}
+
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(old_spec))
     if err:
@@ -500,11 +527,14 @@ def update_rsyslog_server(module, api_instance, cluster_ext_id, result):
 
     if check_idempotency(old_spec, update_spec):
         result["skipped"] = True
-        module.exit_json(msg="Nothing to change.")
+        module.exit_json(msg="Nothing to change.", **result)
 
     try:
         resp = api_instance.update_rsyslog_server_by_id(
-            clusterExtId=cluster_ext_id, extId=ext_id, body=update_spec
+            clusterExtId=cluster_ext_id,
+            extId=ext_id,
+            body=update_spec,
+            **kwargs,
         )
     except Exception as e:
         raise_api_exception(

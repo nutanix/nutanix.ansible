@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -17,6 +17,7 @@ description:
   - This module allows you to fetch RSYSLOG server configurations from a Nutanix cluster.
   - If C(ext_id) is provided, fetches a particular RSYSLOG server using its external ID.
   - If C(ext_id) is not provided, fetches all RSYSLOG servers for the given cluster.
+  - Only one RSYSLOG server can be configured on a cluster at a time.
   - This module uses PC v4 APIs based SDKs
 notes:
     - >-
@@ -33,13 +34,13 @@ notes:
 options:
   cluster_ext_id:
     description:
-      - The external ID of the cluster from which to fetch RSYSLOG server configurations.
+      - Indicates the UUID of a cluster.
       - Required for all operations.
     type: str
     required: true
   ext_id:
     description:
-      - The external ID of the RSYSLOG server.
+      - RSYSLOG server UUID.
       - If provided, fetches a specific RSYSLOG server by its external ID.
     type: str
     required: false
@@ -149,11 +150,11 @@ from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_clusters_api_instance,
 )
-from ..module_utils.v4.clusters_mgmt.helpers import get_rsyslog_server  # noqa: E402
-from ..module_utils.v4.utils import (  # noqa: E402
-    raise_api_exception,
-    strip_internal_attributes,
+from ..module_utils.v4.clusters_mgmt.helpers import (  # noqa: E402
+    get_rsyslog_server,
+    list_rsyslog_servers,
 )
+from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
@@ -174,17 +175,7 @@ def get_rsyslog_server_using_ext_id(module, api_instance, cluster_ext_id, result
 
 
 def get_rsyslog_servers(module, api_instance, cluster_ext_id, result):
-    try:
-        resp = api_instance.list_rsyslog_servers_by_cluster_id(
-            clusterExtId=cluster_ext_id
-        )
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching RSYSLOG servers info",
-        )
-
+    resp = list_rsyslog_servers(module, api_instance, cluster_ext_id)
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
     resp = strip_internal_attributes(resp.to_dict()).get("data")
