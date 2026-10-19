@@ -15,13 +15,15 @@ short_description: Fetch login providers info in Nutanix Prism Central
 version_added: 2.7.0
 description:
   - This module allows you to list LoginProvider entities in Nutanix Prism Central.
+  - The IAM LoginProviders API exposes list only; there is no get-by-ext_id
+    endpoint on Prism Central.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(List login providers) -
-      Required Roles: Not Documented
+      Required Roles: Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
@@ -59,6 +61,15 @@ EXAMPLES = r"""
     validate_certs: false
     limit: 2
   register: limited_providers
+
+- name: Fetch all login providers using fetch_all
+  nutanix.ncp.ntnx_login_providers_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
+  register: all_providers
 """
 
 RETURN = r"""
@@ -123,6 +134,7 @@ from ..module_utils.v4.iam.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -138,7 +150,11 @@ def get_login_providers(module, login_providers_api, result):
         module.fail_json(msg="Failed generating login providers info spec", **result)
 
     try:
-        resp = login_providers_api.list_login_providers(**kwargs)
+        resp = list_entities(
+            login_providers_api.list_login_providers,
+            kwargs=kwargs,
+            fetch_all=module.params.get("fetch_all"),
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
