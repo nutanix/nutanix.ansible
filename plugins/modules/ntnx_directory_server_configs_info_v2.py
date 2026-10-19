@@ -37,15 +37,6 @@ options:
         type: int
         required: false
         default: 30000
-    fetch_all:
-        description:
-            - When C(true), paginate through the list API until all available entities are returned.
-              C(page) and C(limit) are ignored; each request uses the maximum page size (100).
-            - When C(false), return a single page (API default limit).
-            - Does not apply when fetching a single entity by C(ext_id).
-        type: bool
-        required: false
-        default: false
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_logger
@@ -72,14 +63,6 @@ EXAMPLES = r"""
     nutanix_password: <pass>
     validate_certs: false
   register: result
-
-- name: Fetch all entities using fetch_all
-  nutanix.ncp.ntnx_directory_server_configs_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    fetch_all: true
 """
 
 RETURN = r"""
@@ -153,7 +136,6 @@ from ..module_utils.v4.flow.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.flow.helpers import get_directory_server_config  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
-    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -166,7 +148,6 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
-        fetch_all=dict(type="bool", required=False, default=False),
     )
 
     return module_args
@@ -186,11 +167,7 @@ def get_directory_server_configs(module, api_instance, result):
         kwargs["_select"] = module.params["select"]
 
     try:
-        resp = list_entities(
-            api_instance.list_directory_server_configs,
-            kwargs=kwargs,
-            fetch_all=module.params.get("fetch_all"),
-        )
+        resp = api_instance.list_directory_server_configs(**kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
