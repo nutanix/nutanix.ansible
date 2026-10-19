@@ -375,13 +375,13 @@
 # List Anti-Affinity Policies with filter
 ######################################################################
 
-- name: List entities with fetch_all
+- name: List all VM anti affinity policies with fetch_all
   nutanix.ncp.ntnx_vm_anti_affinity_policies_info_v2:
     fetch_all: true
   register: fetch_all_ntnx_vm_anti_affinity_policies_info_v2
   ignore_errors: true
 
-- name: Status of list with fetch_all
+- name: List all VM anti affinity policies with fetch_all status
   ansible.builtin.assert:
     that:
       - fetch_all_ntnx_vm_anti_affinity_policies_info_v2.changed == false
@@ -390,8 +390,8 @@
       - fetch_all_ntnx_vm_anti_affinity_policies_info_v2.total_available_results is defined
       - (fetch_all_ntnx_vm_anti_affinity_policies_info_v2.response | default([]) | length) ==
         (fetch_all_ntnx_vm_anti_affinity_policies_info_v2.total_available_results | int)
-    fail_msg: "Unable to list with fetch_all"
-    success_msg: "Listed with fetch_all successfully"
+    fail_msg: "Unable to list all VM anti affinity policies with fetch_all"
+    success_msg: "Listed all VM anti affinity policies with fetch_all successfully"
 
 - name: List VM-VM anti-affinity policies with filter by name
   nutanix.ncp.ntnx_vm_anti_affinity_policies_info_v2:
@@ -644,14 +644,14 @@
 
 ########################################################################
 
-- name: List entities with fetch_all
+- name: List all VM anti affinity policy compliance with fetch_all
   nutanix.ncp.ntnx_vm_anti_affinity_policy_compliance_info_v2:
     ext_id: "{{ todelete[1] }}"
     fetch_all: true
   register: fetch_all_ntnx_vm_anti_affinity_policy_compliance_info_v2
   ignore_errors: true
 
-- name: Status of list with fetch_all
+- name: List all VM anti affinity policy compliance with fetch_all status
   ansible.builtin.assert:
     that:
       - fetch_all_ntnx_vm_anti_affinity_policy_compliance_info_v2.changed == false
@@ -660,8 +660,8 @@
       - fetch_all_ntnx_vm_anti_affinity_policy_compliance_info_v2.total_available_results is defined
       - (fetch_all_ntnx_vm_anti_affinity_policy_compliance_info_v2.response | default([]) | length) ==
         (fetch_all_ntnx_vm_anti_affinity_policy_compliance_info_v2.total_available_results | int)
-    fail_msg: "Unable to list with fetch_all"
-    success_msg: "Listed with fetch_all successfully"
+    fail_msg: "Unable to list all VM anti affinity policy compliance with fetch_all"
+    success_msg: "Listed all VM anti affinity policy compliance with fetch_all successfully"
 
 - name: Delete all 2 created VMs
   nutanix.ncp.ntnx_vms_v2:
