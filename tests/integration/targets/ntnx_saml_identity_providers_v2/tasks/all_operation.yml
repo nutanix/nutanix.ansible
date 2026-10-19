@@ -455,7 +455,8 @@
       - result.ext_id == "18bb7b89-b297-44dc-abb6-b478c3276e82"
       - result.response is defined
       - result.response.path == "/tmp/ansible_saml_idp_sp_metadata_check.xml"
-      - result.msg == "SAML IdP SP metadata for identity provider with ext_id:18bb7b89-b297-44dc-abb6-b478c3276e82 will be downloaded to destination path:/tmp/ansible_saml_idp_sp_metadata_check.xml"
+      - result.msg == "SAML IdP SP metadata for identity provider with ext_id:18bb7b89-b297-44dc-abb6-b478c3276e82
+        will be downloaded to destination path:/tmp/ansible_saml_idp_sp_metadata_check.xml"
     success_msg: "Download SAML IdP SP metadata using check mode passed"
     fail_msg: "Download SAML IdP SP metadata using check mode failed"
 
