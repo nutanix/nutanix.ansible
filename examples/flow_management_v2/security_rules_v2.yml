@@ -85,7 +85,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all security policy rules with fetch_all
       nutanix.ncp.ntnx_security_policy_rules_info_v2:
         fetch_all: true
       register: result
@@ -311,12 +311,12 @@
         ext_id: "{{ security_rule_uuid }}"
       register: result
 
-    - name: List all
+    - name: List all security rules
       nutanix.ncp.ntnx_security_rules_info_v2:
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all security rules with fetch_all
       nutanix.ncp.ntnx_security_rules_info_v2:
         fetch_all: true
       register: result
