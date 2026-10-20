@@ -212,11 +212,6 @@ def get_entity(module, api_instance, ext_id):
 def get_welcome_banner(module, api_instance):
     """
     This method will return the welcome banner configuration.
-
-    The welcome banner is a singleton resource in Prism Central (there is no
-    ext_id/id — the resource is accessed directly via a single URL), so this
-    helper takes no external identifier.
-
     Args:
         module (object): Ansible module object.
         api_instance (object): Welcome banner api instance from
