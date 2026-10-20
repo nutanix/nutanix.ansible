@@ -427,7 +427,7 @@
 - name: Verify downloaded SAML SP metadata file is removed status
   ansible.builtin.assert:
     that:
-      - not saml_sp_metadata_stat_after_removal.stat.exists
+      - not saml_sp_metadata_file_stat_after_removal.stat.exists
     success_msg: "Downloaded SAML SP metadata file is removed successfully"
     fail_msg: "Downloaded SAML SP metadata file is not removed successfully"
 
