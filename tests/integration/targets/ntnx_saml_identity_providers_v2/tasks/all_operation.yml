@@ -354,14 +354,14 @@
 ########################################################################
 # SAML SP metadata info and IdP SP metadata download
 ########################################################################
-- name: Get SAML SP metadata using check mode
+- name: Get SAML SP metadata with dest path using check mode
   nutanix.ncp.ntnx_saml_sp_metadata_info_v2:
     dest: "/tmp/ansible_saml_sp_metadata_check.xml"
   register: result
   check_mode: true
   ignore_errors: true
 
-- name: Get SAML SP metadata using check mode status
+- name: Get SAML SP metadata with dest path using check mode status
   ansible.builtin.assert:
     that:
       - result.changed is false
@@ -369,8 +369,23 @@
       - result.response is defined
       - result.response.path == "/tmp/ansible_saml_sp_metadata_check.xml"
       - result.msg == "SAML SP metadata will be downloaded to destination path:/tmp/ansible_saml_sp_metadata_check.xml"
-    success_msg: "Get SAML SP metadata using check mode passed"
-    fail_msg: "Get SAML SP metadata using check mode failed"
+    success_msg: "Get SAML SP metadata with dest path using check mode passed"
+    fail_msg: "Get SAML SP metadata with dest path using check mode failed"
+
+- name: Get SAML SP metadata without dest path using check mode
+  nutanix.ncp.ntnx_saml_sp_metadata_info_v2:
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Get SAML SP metadata without dest path using check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is false
+      - result.msg == "SAML SP metadata will be downloaded."
+    success_msg: "Get SAML SP metadata without dest path using check mode passed"
+    fail_msg: "Get SAML SP metadata without dest path using check mode failed"
 
 - name: Get SAML SP metadata to a destination path
   nutanix.ncp.ntnx_saml_sp_metadata_info_v2:
@@ -403,10 +418,33 @@
     state: absent
   failed_when: false
 
+- name: Stat the downloaded SAML SP metadata file after removal
+  ansible.builtin.stat:
+    path: "/tmp/ansible_saml_sp_metadata.xml"
+  register: saml_sp_metadata_file_stat_after_removal
+  failed_when: false
+
+- name: Verify downloaded SAML SP metadata file is removed status
+  ansible.builtin.assert:
+    that:
+      - not saml_sp_metadata_stat_after_removal.stat.exists
+    success_msg: "Downloaded SAML SP metadata file is removed successfully"
+    fail_msg: "Downloaded SAML SP metadata file is not removed successfully"
+
 - name: Get SAML SP metadata without a destination path
   nutanix.ncp.ntnx_saml_sp_metadata_info_v2:
   register: result
   ignore_errors: true
+
+- name: Get SAML SP metadata without a destination path status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is false
+      - result.response is defined
+      - result.response.path is defined
+    success_msg: "SAML SP metadata is downloaded successfully to the default location"
+    fail_msg: "SAML SP metadata is not downloaded successfully to the default location"
 
 - name: Set the default location SAML SP metadata file path
   ansible.builtin.set_fact:
@@ -439,7 +477,20 @@
   when: saml_sp_metadata_default_path is defined
   failed_when: false
 
-- name: Download SAML IdP SP metadata using check mode
+- name: Stat the downloaded SAML SP metadata file after removal
+  ansible.builtin.stat:
+    path: "{{ saml_sp_metadata_default_path }}"
+  register: saml_sp_metadata_file_stat_after_removal
+  failed_when: false
+
+- name: Verify downloaded SAML SP metadata file is removed status
+  ansible.builtin.assert:
+    that:
+      - not saml_sp_metadata_file_stat_after_removal.stat.exists
+    success_msg: "Downloaded SAML SP metadata file is removed successfully"
+    fail_msg: "Downloaded SAML SP metadata file is not removed successfully"
+
+- name: Download SAML IdP SP metadata with dest path using check mode
   nutanix.ncp.ntnx_saml_identity_providers_sp_metadata_download_v2:
     ext_id: "18bb7b89-b297-44dc-abb6-b478c3276e82"
     dest: "/tmp/ansible_saml_idp_sp_metadata_check.xml"
@@ -447,7 +498,7 @@
   check_mode: true
   ignore_errors: true
 
-- name: Download SAML IdP SP metadata using check mode status
+- name: Download SAML IdP SP metadata with dest path using check mode status
   ansible.builtin.assert:
     that:
       - result.changed is false
@@ -457,8 +508,25 @@
       - result.response.path == "/tmp/ansible_saml_idp_sp_metadata_check.xml"
       - result.msg == "SAML IdP SP metadata for identity provider with ext_id:18bb7b89-b297-44dc-abb6-b478c3276e82
         will be downloaded to destination path:/tmp/ansible_saml_idp_sp_metadata_check.xml"
-    success_msg: "Download SAML IdP SP metadata using check mode passed"
-    fail_msg: "Download SAML IdP SP metadata using check mode failed"
+    success_msg: "Download SAML IdP SP metadata with dest path using check mode passed"
+    fail_msg: "Download SAML IdP SP metadata with dest path using check mode failed"
+
+- name: Download SAML IdP SP metadata without dest path using check mode
+  nutanix.ncp.ntnx_saml_identity_providers_sp_metadata_download_v2:
+    ext_id: "18bb7b89-b297-44dc-abb6-b478c3276e82"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Download SAML IdP SP metadata without dest path using check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is false
+      - result.ext_id == "18bb7b89-b297-44dc-abb6-b478c3276e82"
+      - result.msg == "SAML IdP SP metadata for identity provider with ext_id:18bb7b89-b297-44dc-abb6-b478c3276e82 will be downloaded."
+    success_msg: "Download SAML IdP SP metadata without dest path using check mode passed"
+    fail_msg: "Download SAML IdP SP metadata without dest path using check mode failed"
 
 - name: Download SAML IdP SP metadata to a destination path
   nutanix.ncp.ntnx_saml_identity_providers_sp_metadata_download_v2:
@@ -493,11 +561,35 @@
     state: absent
   failed_when: false
 
+- name: Stat the downloaded SAML IdP SP metadata file after removal
+  ansible.builtin.stat:
+    path: "/tmp/ansible_saml_idp_sp_metadata.xml"
+  register: saml_idp_sp_metadata_file_stat_after_removal
+  failed_when: false
+
+- name: Verify downloaded SAML IdP SP metadata file is removed status
+  ansible.builtin.assert:
+    that:
+      - not saml_idp_sp_metadata_file_stat_after_removal.stat.exists
+    success_msg: "Downloaded SAML IdP SP metadata file is removed successfully"
+    fail_msg: "Downloaded SAML IdP SP metadata file is not removed successfully"
+
 - name: Download SAML IdP SP metadata without a destination path
   nutanix.ncp.ntnx_saml_identity_providers_sp_metadata_download_v2:
     ext_id: "{{ todelete[-1] }}"
   register: result
   ignore_errors: true
+
+- name: Download SAML IdP SP metadata without a destination path status
+  ansible.builtin.assert:
+    that:
+      - result.changed is false
+      - result.failed is false
+      - result.ext_id == "{{ todelete[-1] }}"
+      - result.response is defined
+      - result.response.path is defined
+    success_msg: "SAML IdP SP metadata is downloaded successfully to the default location"
+    fail_msg: "SAML IdP SP metadata is not downloaded successfully to the default location"
 
 - name: Set the default location SAML IdP SP metadata file path
   ansible.builtin.set_fact:
@@ -530,6 +622,19 @@
     state: absent
   when: saml_idp_sp_metadata_default_path is defined
   failed_when: false
+
+- name: Stat the downloaded SAML IdP SP metadata file after removal
+  ansible.builtin.stat:
+    path: "{{ saml_idp_sp_metadata_default_path }}"
+  register: saml_idp_sp_metadata_file_stat_after_removal
+  failed_when: false
+
+- name: Verify downloaded SAML IdP SP metadata file is removed status
+  ansible.builtin.assert:
+    that:
+      - not saml_idp_sp_metadata_file_stat_after_removal.stat.exists
+    success_msg: "Downloaded SAML IdP SP metadata file is removed successfully"
+    fail_msg: "Downloaded SAML IdP SP metadata file is not removed successfully"
 
 - name: Download SAML IdP SP metadata without ext_id
   nutanix.ncp.ntnx_saml_identity_providers_sp_metadata_download_v2:

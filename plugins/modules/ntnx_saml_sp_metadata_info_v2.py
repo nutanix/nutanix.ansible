@@ -76,12 +76,7 @@ msg:
     description: Message returned when an error occurs or in check mode.
     returned: When there is an error or in check mode
     type: str
-    sample: "Api Exception raised while fetching SAML SP metadata"
-
-error:
-    description: Details about errors that occurred during task execution.
-    returned: When an error occurs
-    type: str
+    sample: "Failed to determine the downloaded SAML SP metadata content"
 
 failed:
     description: This field indicates whether the task failed.
@@ -90,9 +85,6 @@ failed:
     sample: false
 """
 
-import os  # noqa: E402
-import shutil  # noqa: E402
-import tempfile  # noqa: E402
 import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
@@ -101,6 +93,7 @@ from ..module_utils.v4.iam.api_client import (  # noqa: E402
     get_identity_provider_api_instance,
 )
 from ..module_utils.v4.iam.helpers import get_saml_sp_metadata  # noqa: E402
+from ..module_utils.v4.utils import save_bytes_to_file  # noqa: E402
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -111,53 +104,6 @@ def get_module_spec():
         dest=dict(type="path"),
     )
     return module_args
-
-
-def _normalize_metadata_content(data):
-    if isinstance(data, dict):
-        return None, data.get("path")
-    if hasattr(data, "path") and getattr(data, "path", None) is not None:
-        return None, getattr(data, "path")
-    if isinstance(data, (bytes, bytearray)):
-        return bytes(data), None
-    if isinstance(data, str):
-        return data.encode("utf-8"), None
-    return None, None
-
-
-def _save_metadata(module, data, dest, result):
-    content, downloaded_path = _normalize_metadata_content(data)
-
-    if downloaded_path:
-        downloaded_path = str(downloaded_path)
-        if dest and os.path.abspath(downloaded_path) != os.path.abspath(dest):
-            dest_dir = os.path.dirname(os.path.abspath(dest))
-            if dest_dir and not os.path.isdir(dest_dir):
-                os.makedirs(dest_dir)
-            shutil.move(downloaded_path, dest)
-            downloaded_path = dest
-        result["response"] = {"path": downloaded_path}
-        return
-
-    if content is None:
-        module.fail_json(
-            msg="Failed to determine the downloaded SAML SP metadata content",
-            **result,
-        )
-
-    if dest:
-        dest_dir = os.path.dirname(os.path.abspath(dest))
-        if dest_dir and not os.path.isdir(dest_dir):
-            os.makedirs(dest_dir)
-        with open(dest, "wb") as f:
-            f.write(content)
-        result["response"] = {"path": dest}
-        return
-
-    fd, temp_path = tempfile.mkstemp(suffix=".xml", prefix="saml_sp_metadata_")
-    with os.fdopen(fd, "wb") as f:
-        f.write(content)
-    result["response"] = {"path": temp_path}
 
 
 def get_saml_sp_metadata_info(module, identity_providers_api, result):
@@ -176,7 +122,15 @@ def get_saml_sp_metadata_info(module, identity_providers_api, result):
         return
 
     resp = get_saml_sp_metadata(module, identity_providers_api)
-    _save_metadata(module, resp.data, dest, result)
+    save_bytes_to_file(
+        module,
+        resp.data,
+        dest,
+        result,
+        fail_msg="Failed to determine the downloaded SAML SP metadata content",
+        temp_prefix="saml_sp_metadata_",
+        temp_suffix=".xml",
+    )
 
 
 def run_module():
