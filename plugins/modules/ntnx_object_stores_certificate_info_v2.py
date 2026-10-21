@@ -180,7 +180,6 @@ def get_object_store_certificates(module, object_stores_api, result):
         resp = list_entities(
             object_stores_api.list_certificates_by_objectstore_id,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
             objectStoreExtId=object_store_ext_id,
         )
     except Exception as e:

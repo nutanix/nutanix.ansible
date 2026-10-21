@@ -220,7 +220,6 @@ def get_virtual_switches(module, virtual_switches, result):
         resp = list_entities(
             virtual_switches.list_virtual_switches,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

@@ -181,7 +181,6 @@ def get_disks(module, vmm, result):
         resp = list_entities(
             vmm.list_disks_by_vm_id,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
             vmExtId=vm_ext_id,
         )
     except Exception as e:

@@ -229,7 +229,6 @@ def get_restore_points(module, domain_manager_backups_api, result):
         resp = list_entities(
             domain_manager_backups_api.list_restore_points,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
             restoreSourceExtId=restore_source_ext_id,
             restorableDomainManagerExtId=restorable_domain_manager_ext_id,
         )

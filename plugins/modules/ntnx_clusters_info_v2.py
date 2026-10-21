@@ -295,7 +295,6 @@ def get_clusters(module, result):
         resp = list_entities(
             clusters.list_clusters,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

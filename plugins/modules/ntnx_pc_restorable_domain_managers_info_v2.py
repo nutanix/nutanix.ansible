@@ -200,7 +200,6 @@ def get_restorable_domain_managers(module, domain_manager_backups_api, result):
         resp = list_entities(
             domain_manager_backups_api.list_restorable_domain_managers,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
             restoreSourceExtId=restore_source_ext_id,
         )
     except Exception as e:

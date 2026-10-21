@@ -199,7 +199,6 @@ def get_pbrs(module, result):
         resp = list_entities(
             pbrs.list_routing_policies,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

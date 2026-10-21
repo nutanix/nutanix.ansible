@@ -258,7 +258,6 @@ def get_template_versions(module, result):
         resp = list_entities(
             lambda **kw: templates.list_template_versions(template_ext_id, **kw),
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

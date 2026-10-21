@@ -572,12 +572,13 @@ def list_entities(
     Args:
         list_fn (callable): SDK list method (e.g. ``images.list_images``).
         kwargs (dict | None): Query kwargs from ``SpecGenerator.get_info_spec``
-            (``_page``, ``_limit``, ``_filter``, ...).
+            (``_page``, ``_limit``, ``_filter``, ``_fetch_all``, ...).
         fetch_all (bool): When true, page through the API until all entities
-            are collected (typically ``sg.fetch_all`` from
-            ``SpecGenerator.get_info_spec``). ``_page`` and ``_limit`` are
-            ignored; each request uses ``default_page_size`` (API max page
-            size, 100), matching inventory ``fetch_all_vms`` behavior.
+            are collected. Prefer ``_fetch_all`` from C(kwargs) when present
+            (set by ``get_info_spec``); it is stripped before the SDK call.
+            ``_page`` and ``_limit`` are ignored when paginating; each request
+            uses ``default_page_size`` (API max page size, 100), matching
+            inventory ``fetch_all_vms`` behavior.
         default_page_size (int): Page size used for each request when
             C(fetch_all) is true (default 100).
         **fixed_kwargs: Extra keyword args always passed to ``list_fn``
@@ -588,6 +589,7 @@ def list_entities(
         :class:`ListEntitiesResponse` aggregating all pages.
     """
     kwargs = dict(kwargs or {})
+    fetch_all = bool(kwargs.pop("_fetch_all", fetch_all))
     call_kwargs = dict(fixed_kwargs)
     call_kwargs.update(kwargs)
 

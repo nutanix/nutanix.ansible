@@ -220,7 +220,6 @@ def get_vpcs(module, result):
         resp = list_entities(
             vpcs.list_vpcs,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

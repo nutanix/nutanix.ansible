@@ -181,7 +181,6 @@ def get_serial_ports(module, result):
         resp = list_entities(
             vmm.list_serial_ports_by_vm_id,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
             vmExtId=vm_ext_id,
         )
     except Exception as e:

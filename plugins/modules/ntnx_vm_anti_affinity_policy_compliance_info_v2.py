@@ -264,7 +264,6 @@ def get_policy_vm_compliance_states(module, api_instance, result):
         resp = list_entities(
             api_instance.list_vm_anti_affinity_policy_vm_compliance_states,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
             vmAntiAffinityPolicyExtId=ext_id,
         )
     except Exception as e:

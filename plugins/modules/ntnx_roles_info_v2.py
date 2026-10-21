@@ -192,7 +192,6 @@ def get_roles(module, roles, result):
         resp = list_entities(
             roles.list_roles,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

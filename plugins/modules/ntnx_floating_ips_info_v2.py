@@ -175,7 +175,6 @@ def get_floating_ips(module, result):
         resp = list_entities(
             floating_ips.list_floating_ips,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

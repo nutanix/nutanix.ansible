@@ -213,7 +213,6 @@ def get_vm_startup_policies(module, policies, result):
         resp = list_entities(
             policies.list_vm_startup_policies,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

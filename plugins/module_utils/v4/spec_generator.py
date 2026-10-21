@@ -13,7 +13,6 @@ class SpecGenerator(object):
 
     def __init__(self, module):
         self.module = module
-        self.fetch_all = False
 
     def generate_spec(self, obj, attr=None, **kwargs):
         """
@@ -107,36 +106,26 @@ class SpecGenerator(object):
     def get_info_spec(self, attr=None, extra_params=None):
         """Build list-API query kwargs from module params.
 
-        Reads ``fetch_all`` from module params and exposes it as
-        ``SpecGenerator.fetch_all``. ``fetch_all`` is only allowed when both
-        ``page`` and ``limit`` are in the module argument_spec. When
-        ``fetch_all`` is true, ``page``/``limit`` are omitted from the returned
-        query kwargs because pagination is handled by the list helper.
+        Includes ``_fetch_all`` when C(fetch_all) is true. ``list_entities``
+        removes ``_fetch_all`` before calling the SDK. When ``fetch_all`` is
+        true, ``page``/``limit`` are omitted from the returned query kwargs
+        because pagination is handled by the list helper.
 
         Returns:
             tuple: (spec, error) where ``spec`` contains SDK query kwargs
-            (``_page``, ``_limit``, ``_filter``, ...). ``error`` is a string
-            when validation fails. Use ``sg.fetch_all`` with ``list_entities``.
+            (``_page``, ``_limit``, ``_filter``, ``_fetch_all``, ...).
+            ``error`` is a string when validation fails.
         """
         if not attr:
             attr = copy.deepcopy(self.module.params)
         spec = {}
-        all_params = ["page", "limit", "filter", "orderby", "select"]
+        all_params = ["page", "limit", "filter", "orderby", "select", "fetch_all"]
         if extra_params is None:
             extra_params = []
         all_params.extend(extra_params)
-        arg_spec = getattr(self.module, "argument_spec", None) or {}
-        fetch_all = bool(attr.get("fetch_all"))
-        if fetch_all and not ("page" in arg_spec and "limit" in arg_spec):
-            self.fetch_all = False
-            return None, (
-                "fetch_all is only supported when page and limit parameters "
-                "are supported"
-            )
 
-        # Only honor fetch_all when the module declares the option.
-        self.fetch_all = fetch_all if "fetch_all" in arg_spec else False
-
+        fetch_all_param = attr.get("fetch_all")
+        fetch_all = False if fetch_all_param is None else bool(fetch_all_param)
         if attr.get("name"):
             _filter = attr.get("filter")
             if _filter:
@@ -147,7 +136,7 @@ class SpecGenerator(object):
         for key, val in attr.items():
             if key in all_params:
                 # page/limit are ignored when fetch_all paginates the full list
-                if self.fetch_all and key in ("page", "limit"):
+                if fetch_all and key in ("page", "limit"):
                     continue
                 spec["_{0}".format(key)] = val
 

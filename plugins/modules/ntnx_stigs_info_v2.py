@@ -181,7 +181,6 @@ def run_module():
         resp = list_entities(
             stig_api_instance.list_stigs,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

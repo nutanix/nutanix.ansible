@@ -193,7 +193,6 @@ def get_vg_disks(module, result):
         resp = list_entities(
             vgs.list_volume_disks_by_volume_group_id,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
             volumeGroupExtId=volume_group_ext_id,
         )
     except Exception as e:

@@ -224,7 +224,6 @@ def get_routes(module, route_api_instance, result):
         resp = list_entities(
             route_api_instance.list_routes_by_route_table_id,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
             routeTableExtId=route_table_ext_id,
         )
     except Exception as e:

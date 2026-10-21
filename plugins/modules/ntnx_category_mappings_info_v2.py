@@ -200,7 +200,6 @@ def get_category_mappings(module, api_instance, result):
         resp = list_entities(
             api_instance.list_category_mappings,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

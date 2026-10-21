@@ -186,7 +186,6 @@ def get_cd_roms(module, vms, result):
         resp = list_entities(
             vms.list_cd_roms_by_vm_id,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
             vmExtId=vm_ext_id,
         )
     except Exception as e:

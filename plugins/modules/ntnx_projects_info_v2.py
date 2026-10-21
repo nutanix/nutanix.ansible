@@ -221,7 +221,6 @@ def get_projects(module, projects, result):
         resp = list_entities(
             projects.list_projects,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

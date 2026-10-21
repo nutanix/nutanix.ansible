@@ -192,7 +192,6 @@ def get_storage_policies(module, storage_policies, result):
         resp = list_entities(
             storage_policies.list_storage_policies,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

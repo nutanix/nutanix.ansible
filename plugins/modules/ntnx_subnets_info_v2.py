@@ -282,7 +282,6 @@ def get_subnets(module, result):
         resp = list_entities(
             subnets.list_subnets,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

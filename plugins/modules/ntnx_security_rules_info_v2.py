@@ -269,7 +269,6 @@ def get_network_security_policies(module, result):
         resp = list_entities(
             network_security_policies.list_network_security_policies,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

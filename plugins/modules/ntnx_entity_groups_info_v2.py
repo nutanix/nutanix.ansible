@@ -199,7 +199,6 @@ def get_entity_groups(module, entity_groups, result):
         resp = list_entities(
             entity_groups.list_entity_groups,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

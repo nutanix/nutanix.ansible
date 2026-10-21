@@ -213,7 +213,6 @@ def get_content_repositories(module, content_repositories, result):
         resp = list_entities(
             content_repositories.list_content_repositories,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

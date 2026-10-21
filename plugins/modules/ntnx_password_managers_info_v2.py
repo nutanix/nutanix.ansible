@@ -190,7 +190,6 @@ def get_password_status_system_users(module, result):
         resp = list_entities(
             password_manager_api.list_system_user_passwords,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

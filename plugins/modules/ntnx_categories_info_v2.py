@@ -181,7 +181,6 @@ def get_categories(module, categories, result):
         resp = list_entities(
             categories.list_categories,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

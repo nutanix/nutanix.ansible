@@ -173,7 +173,6 @@ def get_iscsi_clients(module, result):
         resp = list_entities(
             clients.list_iscsi_clients,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

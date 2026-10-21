@@ -223,7 +223,6 @@ def get_entities(module, entities, result):
         resp = list_entities(
             entities.list_entities,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

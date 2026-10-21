@@ -185,7 +185,6 @@ def get_user_groups(module, user_groups, result):
         resp = list_entities(
             user_groups.list_user_groups,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

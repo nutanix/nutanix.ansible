@@ -191,7 +191,6 @@ def get_directory_services(module, directory_services, result):
         resp = list_entities(
             directory_services.list_directory_services,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

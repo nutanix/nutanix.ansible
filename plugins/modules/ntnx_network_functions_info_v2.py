@@ -208,7 +208,6 @@ def get_network_functions(module, network_functions, result):
         resp = list_entities(
             network_functions.list_network_functions,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

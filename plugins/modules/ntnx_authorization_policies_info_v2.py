@@ -220,7 +220,6 @@ def get_authorization_policies(module, api_instance, result):
         resp = list_entities(
             api_instance.list_authorization_policies,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

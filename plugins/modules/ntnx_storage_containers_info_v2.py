@@ -200,7 +200,6 @@ def get_storage_containers(module, result):
         resp = list_entities(
             storage_containers.list_storage_containers,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

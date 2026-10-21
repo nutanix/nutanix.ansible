@@ -223,7 +223,6 @@ def get_load_balancer_sessions(module, load_balancer_sessions, result):
         resp = list_entities(
             load_balancer_sessions.list_load_balancer_sessions,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

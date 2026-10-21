@@ -207,7 +207,6 @@ def get_user_api_keys(module, users, result):
         resp = list_entities(
             users.list_user_keys,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
             userExtId=user_ext_id,
         )
     except Exception as e:

@@ -225,7 +225,6 @@ def get_protection_policies(module, protection_policies, result):
         resp = list_entities(
             protection_policies.list_protection_policies,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

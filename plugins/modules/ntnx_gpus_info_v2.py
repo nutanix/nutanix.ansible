@@ -175,7 +175,6 @@ def get_gpus(module, gpus, result):
         resp = list_entities(
             gpus.list_gpus_by_vm_id,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
             vmExtId=module.params.get("vm_ext_id"),
         )
     except Exception as e:

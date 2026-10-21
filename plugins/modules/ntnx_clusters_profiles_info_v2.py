@@ -301,7 +301,6 @@ def get_cluster_profiles(module, cluster_profiles, result):
         resp = list_entities(
             cluster_profiles.list_cluster_profiles,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

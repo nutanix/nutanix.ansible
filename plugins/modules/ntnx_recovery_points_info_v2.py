@@ -210,7 +210,6 @@ def get_recovery_points(module, recovery_points, result):
         resp = list_entities(
             recovery_points.list_recovery_points,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(

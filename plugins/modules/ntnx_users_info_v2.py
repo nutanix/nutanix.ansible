@@ -194,7 +194,6 @@ def get_users(module, users, result):
         resp = list_entities(
             users.list_users,
             kwargs=kwargs,
-            fetch_all=sg.fetch_all,
         )
     except Exception as e:
         raise_api_exception(
