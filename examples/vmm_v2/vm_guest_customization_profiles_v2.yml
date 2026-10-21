@@ -121,7 +121,7 @@
       register: profile_list_all
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all VM guest customization profiles with fetch_all
       nutanix.ncp.ntnx_vm_guest_customization_profiles_info_v2:
         fetch_all: true
       register: result

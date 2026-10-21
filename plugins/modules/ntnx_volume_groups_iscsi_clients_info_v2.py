@@ -64,7 +64,7 @@ EXAMPLES = r"""
     limit: 10
   register: result
 
-- name: Fetch all entities using fetch_all
+- name: List all volume group iSCSI clients with fetch_all
   nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

@@ -74,7 +74,7 @@ EXAMPLES = r"""
     filter: "name eq 'directory_service_name'"
   register: result
 
-- name: Fetch all entities using fetch_all
+- name: List all directory services with fetch_all
   nutanix.ncp.ntnx_directory_services_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

@@ -70,7 +70,7 @@
       nutanix.ncp.ntnx_image_rate_limit_policies_info_v2:
       register: result
 
-    - name: List all with fetch_all
+    - name: List all image rate limit policies with fetch_all
       nutanix.ncp.ntnx_image_rate_limit_policies_info_v2:
         fetch_all: true
       register: result

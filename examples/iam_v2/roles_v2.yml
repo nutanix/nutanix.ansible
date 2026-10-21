@@ -71,7 +71,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all roles with fetch_all
       nutanix.ncp.ntnx_roles_info_v2:
         fetch_all: true
       register: result

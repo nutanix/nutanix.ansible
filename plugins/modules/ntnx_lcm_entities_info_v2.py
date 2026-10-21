@@ -51,7 +51,7 @@ EXAMPLES = r"""
     ext_id: "3c196eac-e1d5-1b8a-9b01-c133f6907ca2"
   register: lcm_entity
 
-- name: Fetch all entities using fetch_all
+- name: List all LCM entities with fetch_all
   nutanix.ncp.ntnx_lcm_entities_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

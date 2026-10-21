@@ -61,7 +61,7 @@ EXAMPLES = r"""
     limit: 1
   register: result_limit
 
-- name: Fetch all entities using fetch_all
+- name: List all STIGs with fetch_all
   nutanix.ncp.ntnx_stigs_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

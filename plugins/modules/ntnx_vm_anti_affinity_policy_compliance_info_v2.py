@@ -82,7 +82,7 @@ EXAMPLES = r"""
     limit: 1
   register: result
 
-- name: Fetch all VM compliance states using fetch_all
+- name: List all VM anti affinity policy compliance with fetch_all
   nutanix.ncp.ntnx_vm_anti_affinity_policy_compliance_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

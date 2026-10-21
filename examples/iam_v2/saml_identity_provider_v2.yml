@@ -53,7 +53,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all SAML identity providers with fetch_all
       nutanix.ncp.ntnx_saml_identity_providers_info_v2:
         fetch_all: true
       register: result

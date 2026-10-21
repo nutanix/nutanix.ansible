@@ -58,7 +58,7 @@ EXAMPLES = r"""
     ext_id: "{{ version_ext_id }}"
     template_ext_id: "{{ template_ext_id }}"
 
-- name: Fetch all entities using fetch_all
+- name: List all template versions with fetch_all
   nutanix.ncp.ntnx_templates_versions_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

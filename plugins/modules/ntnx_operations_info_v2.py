@@ -72,7 +72,7 @@ EXAMPLES = r"""
     validate_certs: false
     filter: "displayName eq 'Display_Name_Test'"
 
-- name: Fetch all entities using fetch_all
+- name: List all operations with fetch_all
   nutanix.ncp.ntnx_operations_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

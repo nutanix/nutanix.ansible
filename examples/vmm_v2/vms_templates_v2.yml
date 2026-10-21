@@ -92,7 +92,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all templates with fetch_all
       nutanix.ncp.ntnx_templates_info_v2:
         fetch_all: true
       register: result
@@ -104,7 +104,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all template versions with fetch_all
       nutanix.ncp.ntnx_templates_versions_info_v2:
         template_ext_id: "{{ template_ext_id }}"
         fetch_all: true

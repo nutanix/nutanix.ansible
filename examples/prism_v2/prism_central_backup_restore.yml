@@ -69,7 +69,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all clusters with fetch_all
       nutanix.ncp.ntnx_clusters_info_v2:
         fetch_all: true
       register: result
@@ -95,7 +95,7 @@
       register: backup_result
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all PC backup targets with fetch_all
       nutanix.ncp.ntnx_pc_backup_target_info_v2:
         domain_manager_ext_id: "{{ domain_manager_ext_id }}"
         fetch_all: true
@@ -141,7 +141,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all PC configs with fetch_all
       nutanix.ncp.ntnx_pc_config_info_v2:
         fetch_all: true
       register: result
@@ -158,7 +158,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all VMs with fetch_all
       nutanix.ncp.ntnx_vms_info_v2:
         fetch_all: true
       register: result
@@ -241,7 +241,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all PC restorable domain managers with fetch_all
       nutanix.ncp.ntnx_pc_restorable_domain_managers_info_v2:
         fetch_all: true
       register: result
@@ -259,7 +259,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all PC restore points with fetch_all
       nutanix.ncp.ntnx_pc_restore_points_info_v2:
         fetch_all: true
       register: result

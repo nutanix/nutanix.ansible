@@ -93,7 +93,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all VM NICs with fetch_all
       nutanix.ncp.ntnx_vms_nics_info_v2:
         vm_ext_id: "{{ vm_uuid }}"
         fetch_all: true

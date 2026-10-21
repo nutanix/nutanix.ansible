@@ -83,7 +83,7 @@ EXAMPLES = r"""
     filter: hostName eq 'host1'
   register: result
 
-- name: Fetch all entities using fetch_all
+- name: List all hosts with fetch_all
   nutanix.ncp.ntnx_hosts_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

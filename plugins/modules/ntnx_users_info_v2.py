@@ -71,7 +71,7 @@ EXAMPLES = r"""
     validate_certs: false
     filter: "username eq 'test_user'"
 
-- name: Fetch all entities using fetch_all
+- name: List all users with fetch_all
   nutanix.ncp.ntnx_users_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

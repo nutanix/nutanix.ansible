@@ -62,7 +62,7 @@ EXAMPLES = r"""
     ext_id: "12345678-1234-1234-1234-123456789012"
   register: result
 
-- name: Fetch all entities using fetch_all
+- name: List all OVAs with fetch_all
   nutanix.ncp.ntnx_ova_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

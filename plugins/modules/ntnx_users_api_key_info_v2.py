@@ -75,7 +75,7 @@ EXAMPLES = r"""
     ext_id: "9i8h7g6f-5e4d-3c2b-1a0j-k2l3m4n5o6p"
   register: result
 
-- name: Fetch all entities using fetch_all
+- name: List all user API keys with fetch_all
   nutanix.ncp.ntnx_users_api_key_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

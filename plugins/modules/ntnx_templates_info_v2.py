@@ -57,7 +57,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
 
-- name: Fetch all entities using fetch_all
+- name: List all templates with fetch_all
   nutanix.ncp.ntnx_templates_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

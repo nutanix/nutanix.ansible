@@ -67,7 +67,7 @@ EXAMPLES = r"""
     validate_certs: false
     filter: "name eq 'my_rate_limit_policy'"
 
-- name: Fetch all entities using fetch_all
+- name: List all image rate limit policies with fetch_all
   nutanix.ncp.ntnx_image_rate_limit_policies_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

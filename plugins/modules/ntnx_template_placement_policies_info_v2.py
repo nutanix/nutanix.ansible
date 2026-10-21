@@ -76,7 +76,7 @@ EXAMPLES = r"""
     validate_certs: false
     limit: 1
 
-- name: Fetch all entities using fetch_all
+- name: List all template placement policies with fetch_all
   nutanix.ncp.ntnx_template_placement_policies_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

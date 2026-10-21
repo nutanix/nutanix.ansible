@@ -46,7 +46,7 @@
         filter: name eq '{{ cluster_name }}'
       register: clusters_info
 
-    - name: List all with fetch_all
+    - name: List all clusters with fetch_all
       nutanix.ncp.ntnx_clusters_info_v2:
         fetch_all: true
       register: result
@@ -57,7 +57,7 @@
         filter: name eq '{{ subnet_name }}'
       register: subnets_info
 
-    - name: List all with fetch_all
+    - name: List all subnets with fetch_all
       nutanix.ncp.ntnx_subnets_info_v2:
         fetch_all: true
       register: result
@@ -68,7 +68,7 @@
         filter: name eq '{{ image_name }}'
       register: image_info
 
-    - name: List all with fetch_all
+    - name: List all images with fetch_all
       nutanix.ncp.ntnx_images_info_v2:
         fetch_all: true
       register: result
@@ -79,7 +79,7 @@
         filter: key eq '{{ category_key }}' and value eq '{{ category_value }}'
       register: category_info
 
-    - name: List all with fetch_all
+    - name: List all categories with fetch_all
       nutanix.ncp.ntnx_categories_info_v2:
         fetch_all: true
       register: result

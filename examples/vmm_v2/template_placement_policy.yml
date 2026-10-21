@@ -57,7 +57,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all template placement policies with fetch_all
       nutanix.ncp.ntnx_template_placement_policies_info_v2:
         fetch_all: true
       register: result

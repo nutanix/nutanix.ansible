@@ -59,7 +59,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
 
-- name: Fetch all entities using fetch_all
+- name: List all image placement policies with fetch_all
   nutanix.ncp.ntnx_image_placement_policies_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

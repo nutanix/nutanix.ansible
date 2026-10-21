@@ -86,7 +86,7 @@ EXAMPLES = r"""
     validate_certs: false
     filter: "clusterReference eq '{{ cluster_uuid }}'"
 
-- name: Fetch all entities using fetch_all
+- name: List all subnets with fetch_all
   nutanix.ncp.ntnx_subnets_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

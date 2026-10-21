@@ -72,7 +72,7 @@ EXAMPLES = r"""
     filter: "displayName eq 'Display_Name_Test'"
   register: result
 
-- name: Fetch all entities using fetch_all
+- name: List all roles with fetch_all
   nutanix.ncp.ntnx_roles_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

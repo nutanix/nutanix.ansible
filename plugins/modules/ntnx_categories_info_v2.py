@@ -68,7 +68,7 @@ EXAMPLES = r"""
     expand: associations
     filter: "key eq '{{category_name}}'"
 
-- name: Fetch all entities using fetch_all
+- name: List all categories with fetch_all
   nutanix.ncp.ntnx_categories_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

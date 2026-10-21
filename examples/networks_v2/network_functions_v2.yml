@@ -122,7 +122,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all network functions with fetch_all
       nutanix.ncp.ntnx_network_functions_info_v2:
         fetch_all: true
       register: result

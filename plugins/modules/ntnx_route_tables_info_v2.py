@@ -69,7 +69,7 @@ EXAMPLES = r"""
     filter: vpcReference eq '251d4a4f-244f-4c84-70a9-8c8f68f9dff0'
   register: route_tables_filter
 
-- name: Fetch all entities using fetch_all
+- name: List all route tables with fetch_all
   nutanix.ncp.ntnx_route_tables_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

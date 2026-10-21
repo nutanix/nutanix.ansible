@@ -74,7 +74,7 @@
       register: list_result
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all key management servers with fetch_all
       nutanix.ncp.ntnx_key_management_server_info_v2:
         fetch_all: true
       register: result

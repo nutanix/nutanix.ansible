@@ -81,7 +81,7 @@ EXAMPLES = r"""
     vm_ext_id: "9a1aa5ca-20ff-4703-672a-f41ad0a401b9"
   register: result
 
-- name: Fetch all entities using fetch_all
+- name: List all GPUs with fetch_all
   nutanix.ncp.ntnx_gpus_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

@@ -73,7 +73,7 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
-- name: Fetch all entities using fetch_all
+- name: List all virtual switches with fetch_all
   nutanix.ncp.ntnx_virtual_switches_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

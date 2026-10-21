@@ -94,7 +94,7 @@ EXAMPLES = r"""
     limit: 5
   register: result
 
-- name: Fetch all entities using fetch_all
+- name: List all resource groups with fetch_all
   nutanix.ncp.ntnx_resource_groups_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

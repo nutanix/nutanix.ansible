@@ -81,7 +81,7 @@ EXAMPLES = r"""
     limit: 1
   register: result
 
-- name: Fetch all entities using fetch_all
+- name: List all VM anti affinity policies with fetch_all
   nutanix.ncp.ntnx_vm_anti_affinity_policies_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

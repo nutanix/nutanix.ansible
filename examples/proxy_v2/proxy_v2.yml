@@ -56,7 +56,7 @@
       nutanix.ncp.ntnx_vms_info_v2:
       register: vms_result
 
-    - name: List all with fetch_all
+    - name: List all VMs with fetch_all
       nutanix.ncp.ntnx_vms_info_v2:
         fetch_all: true
       register: result
@@ -75,7 +75,7 @@
         https_proxy: "http://altuser:altpass@alt-proxy.example.com:8080"
       register: clusters_result
 
-    - name: List all with fetch_all
+    - name: List all clusters with fetch_all
       nutanix.ncp.ntnx_clusters_info_v2:
         fetch_all: true
       register: result
@@ -94,7 +94,7 @@
         no_proxy: "{{ pc_ip }}"
       register: categories_result
 
-    - name: List all with fetch_all
+    - name: List all categories with fetch_all
       nutanix.ncp.ntnx_categories_info_v2:
         fetch_all: true
       register: result
@@ -115,7 +115,7 @@
         proxy_password: "myproxypassword"
       register: vpcs_result
 
-    - name: List all with fetch_all
+    - name: List all VPCs with fetch_all
       nutanix.ncp.ntnx_vpcs_info_v2:
         fetch_all: true
       register: result
@@ -134,7 +134,7 @@
         https_proxy: ""
       register: users_result
 
-    - name: List all with fetch_all
+    - name: List all users with fetch_all
       nutanix.ncp.ntnx_users_info_v2:
         fetch_all: true
       register: result

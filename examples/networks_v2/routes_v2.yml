@@ -84,7 +84,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all routes with fetch_all
       nutanix.ncp.ntnx_routes_info_v2:
         route_table_ext_id: "{{ route_table_external_id }}"
         fetch_all: true

@@ -69,7 +69,7 @@ EXAMPLES = r"""
     vm_ext_id: 530567f3-abda-4913-b5d0-0ab6758ec16e
     ext_id: 530567f3-abda-4913-b5d0-0ab6758ec1653
 
-- name: Fetch all entities using fetch_all
+- name: List all VM NICs with fetch_all
   nutanix.ncp.ntnx_vms_nics_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

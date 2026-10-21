@@ -57,7 +57,7 @@ EXAMPLES = r"""
     limit: 1
   register: limited_passwords
 
-- name: Fetch all entities using fetch_all
+- name: List all password managers with fetch_all
   nutanix.ncp.ntnx_password_managers_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

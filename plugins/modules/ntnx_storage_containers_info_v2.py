@@ -71,7 +71,7 @@ EXAMPLES = r"""
     filter: "name eq 'storage_container_name'"
   register: result
 
-- name: Fetch all entities using fetch_all
+- name: List all storage containers with fetch_all
   nutanix.ncp.ntnx_storage_containers_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

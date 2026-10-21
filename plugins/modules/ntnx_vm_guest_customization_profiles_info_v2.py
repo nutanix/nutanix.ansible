@@ -78,7 +78,7 @@ EXAMPLES = r"""
     ext_id: "a3265671-de53-41be-af9b-f06241b95356"
   register: result
 
-- name: Fetch all entities using fetch_all
+- name: List all VM guest customization profiles with fetch_all
   nutanix.ncp.ntnx_vm_guest_customization_profiles_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

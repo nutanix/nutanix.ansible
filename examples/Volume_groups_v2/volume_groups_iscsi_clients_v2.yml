@@ -47,7 +47,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all volume group iSCSI clients with fetch_all
       nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
         fetch_all: true
       register: result

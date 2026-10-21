@@ -70,7 +70,7 @@ EXAMPLES = r"""
     ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
   register: result
 
-- name: Fetch all entities using fetch_all
+- name: List all SAML identity providers with fetch_all
   nutanix.ncp.ntnx_saml_identity_providers_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

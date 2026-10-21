@@ -86,7 +86,7 @@ EXAMPLES = r"""
     limit: 5
   register: result
 
-- name: Fetch all content repositories using fetch_all
+- name: List all content repositories with fetch_all
   nutanix.ncp.ntnx_content_repositories_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

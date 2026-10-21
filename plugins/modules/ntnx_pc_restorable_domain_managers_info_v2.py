@@ -69,7 +69,7 @@ EXAMPLES = r"""
     restore_source_ext_id: "d4e44c2b-944c-48b0-8de1-b0adae3d54c6"
   register: result
 
-- name: Fetch all entities using fetch_all
+- name: List all PC restorable domain managers with fetch_all
   nutanix.ncp.ntnx_pc_restorable_domain_managers_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

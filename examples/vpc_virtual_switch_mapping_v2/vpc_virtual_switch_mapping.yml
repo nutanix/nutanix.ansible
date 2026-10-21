@@ -18,7 +18,7 @@
         limit: 1
       register: vs_info
 
-    - name: List all with fetch_all
+    - name: List all virtual switches with fetch_all
       nutanix.ncp.ntnx_virtual_switches_info_v2:
         fetch_all: true
       register: result
@@ -43,7 +43,7 @@
         limit: 1
       register: cluster_info
 
-    - name: List all with fetch_all
+    - name: List all clusters with fetch_all
       nutanix.ncp.ntnx_clusters_info_v2:
         fetch_all: true
       register: result
@@ -112,7 +112,7 @@
       register: list_result
       ignore_errors: true
 
-    - name: List all with fetch_all
+    - name: List all VPC virtual switch mappings with fetch_all
       nutanix.ncp.ntnx_vpc_virtual_switch_mappings_info_v2:
         fetch_all: true
     ############################################################################

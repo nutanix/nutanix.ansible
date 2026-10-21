@@ -64,7 +64,7 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
-- name: Fetch all entities using fetch_all
+- name: List all protection policies with fetch_all
   nutanix.ncp.ntnx_protection_policies_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

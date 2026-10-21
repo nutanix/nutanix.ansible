@@ -72,7 +72,7 @@ EXAMPLES = r"""
     filter: "name eq 'test_user_group_name'"
   register: result
 
-- name: Fetch all entities using fetch_all
+- name: List all user groups with fetch_all
   nutanix.ncp.ntnx_user_groups_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

@@ -69,7 +69,7 @@ EXAMPLES = r"""
         vm_ext_id: 00000-00000-000000-000000
         ext_id: 00000-00000-000000-000000
 
-- name: Fetch all entities using fetch_all
+- name: List all VM serial ports with fetch_all
   nutanix.ncp.ntnx_vms_serial_port_info_v2:
         nutanix_host: "{{ ip }}"
         nutanix_username: "{{ username }}"

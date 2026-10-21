@@ -74,7 +74,7 @@ EXAMPLES = r"""
     limit: 5
   register: result
 
-- name: Fetch all entities using fetch_all
+- name: List all security rules with fetch_all
   nutanix.ncp.ntnx_security_rules_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

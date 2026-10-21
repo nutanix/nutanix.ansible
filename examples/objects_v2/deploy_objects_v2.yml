@@ -102,7 +102,7 @@
         object_store_ext_id: "{{ object_store_ext_id }}"
       register: result
 
-    - name: List all with fetch_all
+    - name: List all object store certificates with fetch_all
       nutanix.ncp.ntnx_object_stores_certificate_info_v2:
         object_store_ext_id: "{{ object_store_ext_id }}"
         fetch_all: true
@@ -136,7 +136,7 @@
       nutanix.ncp.ntnx_object_stores_info_v2:
       register: result
 
-    - name: List all with fetch_all
+    - name: List all object stores with fetch_all
       nutanix.ncp.ntnx_object_stores_info_v2:
         fetch_all: true
       register: result

@@ -63,7 +63,7 @@ EXAMPLES = r"""
     ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
   register: backup_result
 
-- name: Fetch all entities using fetch_all
+- name: List all PC backup targets with fetch_all
   nutanix.ncp.ntnx_pc_backup_target_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"

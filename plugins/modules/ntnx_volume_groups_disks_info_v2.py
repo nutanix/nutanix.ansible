@@ -77,7 +77,7 @@ EXAMPLES = r"""
     ext_id: 530567f3-abda-4913-b5d0-0ab6758ec1654
     volume_group_ext_id: 530567f3-abda-4913-b5d0-0ab6758ec1653
 
-- name: Fetch all entities using fetch_all
+- name: List all volume group disks with fetch_all
   nutanix.ncp.ntnx_volume_groups_disks_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
