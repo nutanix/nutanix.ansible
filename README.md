@@ -5,7 +5,7 @@ Official Nutanix Ansible Collection
 
 To run any Nutanix Ansible module, the host must have the Python dependencies listed in [requirements.txt](https://github.com/nutanix/nutanix.ansible/blob/v2.6.0/requirements.txt)
 Once the collection is installed, install these dependencies into your Python environment using pip: `pip install -r ~/.ansible/collections/ansible_collections/nutanix/ncp/requirements.txt`
-This collection requires ansible-core>=2.16.0. This should be installed explicitly if ansible-core version is not installed previously or is below the specified version.
+This collection requires ansible-core>=2.16.0. The minimum supported version is enforced automatically through the `requires_ansible` constraint in `meta/runtime.yml`. Red Hat customers run `ansible-core` inside an execution environment, so it does not need to be installed separately.
 
 # About
 Nutanix ansible collection nutanix.ncp is the official Nutanix ansible collection to automate Nutanix Cloud Platform (ncp).
@@ -161,10 +161,20 @@ We now have a brand new developer-centric Support Program designed for organizat
 Customers not taking advantage of the [Advanced API/SDK Support Program](https://www.nutanix.com/support-services/product-support/premium-support-programs) will continue to receive the support through our standard, community-supported model. This community model also provides support for contributions to the open-source Nutanix Ansible Collections repository.Visit [Nutanix Portal KB](https://portal.nutanix.com/kb/13424) for more details.
 
 
+# Changelog
+
+Release notes for every version of the collection are maintained in the changelog. Review it to assess new features, bug fixes, deprecations, and breaking changes before upgrading.
+
+- Human-readable changelog: [CHANGELOG.rst](https://github.com/nutanix/nutanix.ansible/blob/main/CHANGELOG.rst) (also available as [CHANGELOG.md](https://github.com/nutanix/nutanix.ansible/blob/main/CHANGELOG.md))
+- Machine-readable changelog: [changelogs/changelog.yaml](https://github.com/nutanix/nutanix.ansible/blob/main/changelogs/changelog.yaml)
+
+All three files are also included in the collection tarball distributed on Ansible Galaxy and Red Hat Ansible Automation Hub.
+
+
 # Version compatibility
 
 ## Ansible
-This collection requires ansible-core>=2.16.0. This should be installed explicitly if ansible-core version is not installed previously or is below the specified version.
+This collection requires ansible-core>=2.16.0. This minimum version is enforced automatically through the `requires_ansible` constraint in `meta/runtime.yml`, so `ansible-core` does not need to be installed explicitly (Red Hat customers run it inside an execution environment).
 
 ## Python
 This collection requires Python 3.12 or greater
@@ -226,28 +236,51 @@ This collection requires Python 3.12 or greater
 5. [NDB](https://github.com/nutanix/nutanix.ansible/tree/main/examples/ndb)
 
 # Installing the collection
-**Prerequisite**
 
-Ansible should be pre-installed. If not, please follow official ansible [install guide](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) .
+This collection is published as `nutanix.ncp` and can be installed through the methods below. Red Hat customers should install it from Red Hat Ansible Automation Hub.
 
-Installation can be done as per usage using below methods:
+## **1. Install from Red Hat Ansible Automation Hub (recommended for Red Hat customers):**
 
-## **1. Install from Ansible Galaxy Portal:**
+As Red Hat Ansible Certified Content, this collection is distributed through [Red Hat Ansible Automation Hub](https://console.redhat.com/ansible/automation-hub). Installing from Automation Hub entitles you to Red Hat support and delivers the certified build that runs inside supported execution environments. For the full procedure, see the [Red Hat Ansible Automation Platform documentation](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform).
 
-Published at : [Ansible Galaxy](https://galaxy.ansible.com/ui/repo/published/nutanix/ncp/)
+Configure Ansible to pull content from Automation Hub by adding it as a Galaxy server in your `ansible.cfg`. Obtain an offline token from the [Automation Hub API token management page](https://console.redhat.com/ansible/automation-hub/token):
 
-Installation:
+```ini
+[galaxy]
+server_list = automation_hub
+
+[galaxy_server.automation_hub]
+url = https://console.redhat.com/api/automation-hub/content/published/
+auth_url = https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token
+token = <your-automation-hub-token>
+```
+
+Then install the collection:
 
 ```ansible-galaxy collection install nutanix.ncp```
 
-Install [requirements](https://github.com/nutanix/nutanix.ansible/blob/v2.6.0/requirements.txt) from repository if dependencies are missing in environment (Ref: [GitHub Issue](https://github.com/nutanix/nutanix.ansible/issues/600)):
+To install a specific version:
+
+```ansible-galaxy collection install nutanix.ncp:==2.6.0```
+
+You can also pin the collection in a `requirements.yml` file and install it with `ansible-galaxy collection install -r requirements.yml`:
+
+```yaml
+collections:
+  - name: nutanix.ncp
+```
+
+## **2. Install from Ansible Galaxy (upstream / community):**
+
+The collection is also published at [Ansible Galaxy](https://galaxy.ansible.com/ui/repo/published/nutanix/ncp/) for upstream and community users.
+
+```ansible-galaxy collection install nutanix.ncp```
+
+When installing from Galaxy, install the Python [requirements](https://github.com/nutanix/nutanix.ansible/blob/v2.6.0/requirements.txt) if the dependencies are missing in your environment (Ref: [GitHub Issue](https://github.com/nutanix/nutanix.ansible/issues/600)):
 
 ```pip install -r requirements.txt```
 
-This collection requires ansible-core>=2.16.0. This should be installed explicitly if ansible-core version is not installed previously or is below the specified version.
-
-
-## **2. Build and install from code:**
+## **3. Build and install from code:**
 
 For Developers, please follow [this install guide](https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_general.html) for setting up dev environment.
 
