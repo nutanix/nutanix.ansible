@@ -50,8 +50,6 @@ response:
       "created_time": "2026-06-29T07:18:36.280134+00:00",
       "is_enabled": true,
       "last_updated_time": "2026-07-21T06:36:56.065999+00:00",
-      "links": null,
-      "tenant_id": null
     }
 
 changed:
