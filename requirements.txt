@@ -1,5 +1,3 @@
-pip>=26.1.2
-setuptools>=83.0.0
 requests>=2.34.2
 ntnx-clustermgmt-py-client==4.3.1
 ntnx-iam-py-client==4.1.2b3
