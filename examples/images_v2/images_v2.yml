@@ -77,12 +77,6 @@
       nutanix.ncp.ntnx_categories_info_v2:
       register: result
 
-    - name: List all categories with fetch_all
-      nutanix.ncp.ntnx_categories_info_v2:
-        fetch_all: true
-      register: result
-      ignore_errors: true
-
     - name: Set variables
       ansible.builtin.set_fact:
         category_ext_id: '{{ result["response"][0]["ext_id"] }}'

@@ -21,7 +21,6 @@
 # 11. Disassociate category from first VG
 # 12. Disassociate category from second VG
 # 13. Fetch all VGs on local cluster
-# 14. List all volume groups with fetch_all
 # 15. Delete all Created VGs on local cluster
 # 16. Fetch all VGs on remote cluster
 # 17. Delete Created VG on remote cluster
@@ -274,12 +273,6 @@
     - name: Fetch all VGs on local cluster
       nutanix.ncp.ntnx_volume_groups_info_v2:
       register: result
-
-    - name: List all volume groups with fetch_all
-      nutanix.ncp.ntnx_volume_groups_info_v2:
-        fetch_all: true
-      register: result
-      ignore_errors: true
 
     - name: Filter only protected VGs on local cluster
       ansible.builtin.set_fact:

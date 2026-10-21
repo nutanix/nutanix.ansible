@@ -1,15 +1,8 @@
 ---
 # This playbook create VM
-# 1. Fetch cluster info with given name
-# 2. List all clusters with fetch_all
-# 3. Fetch subnet info with given name
-# 4. List all subnets with fetch_all
-# 5. Get vm image info
-# 6. List all images with fetch_all
-# 7. Fetch category key value
-# 8. List all categories with fetch_all
-# 9. Create VM with guest customization and categories attached
-# 10. Power On the VM
+# 1. Fetch VM image, cluster, subnet, category info
+# 2. Create VM with guest customization and categories attached
+# 3. Power ON the VM
 
 # Pre-requisites:
 # 1. Please provide local user's username and password in the module_defaults section
@@ -46,44 +39,20 @@
         filter: name eq '{{ cluster_name }}'
       register: clusters_info
 
-    - name: List all clusters with fetch_all
-      nutanix.ncp.ntnx_clusters_info_v2:
-        fetch_all: true
-      register: result
-      ignore_errors: true
-
     - name: Fetch subnet info with given name
       nutanix.ncp.ntnx_subnets_info_v2:
         filter: name eq '{{ subnet_name }}'
       register: subnets_info
-
-    - name: List all subnets with fetch_all
-      nutanix.ncp.ntnx_subnets_info_v2:
-        fetch_all: true
-      register: result
-      ignore_errors: true
 
     - name: Get vm image info
       nutanix.ncp.ntnx_images_info_v2:
         filter: name eq '{{ image_name }}'
       register: image_info
 
-    - name: List all images with fetch_all
-      nutanix.ncp.ntnx_images_info_v2:
-        fetch_all: true
-      register: result
-      ignore_errors: true
-
     - name: Fetch category key value
       nutanix.ncp.ntnx_categories_info_v2:
         filter: key eq '{{ category_key }}' and value eq '{{ category_value }}'
       register: category_info
-
-    - name: List all categories with fetch_all
-      nutanix.ncp.ntnx_categories_info_v2:
-        fetch_all: true
-      register: result
-      ignore_errors: true
 
     - name: Read clould init script and encode it
       ansible.builtin.set_fact:

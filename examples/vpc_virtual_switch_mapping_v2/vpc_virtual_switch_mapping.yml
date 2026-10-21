@@ -18,12 +18,6 @@
         limit: 1
       register: vs_info
 
-    - name: List all virtual switches with fetch_all
-      nutanix.ncp.ntnx_virtual_switches_info_v2:
-        fetch_all: true
-      register: result
-      ignore_errors: true
-
     - name: Set virtual switch UUID from first available switch
       ansible.builtin.set_fact:
         virtual_switch_uuid: "{{ vs_info.response[0].ext_id }}"
@@ -42,12 +36,6 @@
       nutanix.ncp.ntnx_clusters_info_v2:
         limit: 1
       register: cluster_info
-
-    - name: List all clusters with fetch_all
-      nutanix.ncp.ntnx_clusters_info_v2:
-        fetch_all: true
-      register: result
-      ignore_errors: true
 
     - name: Set cluster UUID
       ansible.builtin.set_fact:

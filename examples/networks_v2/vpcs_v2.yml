@@ -6,7 +6,8 @@
 # 3. Update VPC to unshare from specific projects
 # 4. Update vpc name
 # 5. Fetch VPC info
-# 6. Delete VPC
+# 6. List all VPCs with fetch_all
+# 7. Delete VPC
 
 - name: VPCs playbook
   hosts: localhost
@@ -66,6 +67,12 @@
     - name: Fetch VPC info
       nutanix.ncp.ntnx_vpcs_info_v2:
         ext_id: "{{ vpc_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all VPCs with fetch_all
+      nutanix.ncp.ntnx_vpcs_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 

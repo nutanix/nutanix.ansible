@@ -4,7 +4,6 @@
 # 1. Create a cluster with 3 nodes
 # 2. Register the cluster with Prism Central
 # 3. Fetch cluster using name
-# 4. List all clusters with fetch_all
 # 5. Expand the cluster by adding a node
 # 6. Remove the node from the cluster
 # 7. Destroy the cluster
@@ -129,13 +128,6 @@
       ansible.builtin.set_fact:
         cluster_ext_id: "{{ result.response[0].ext_id }}"
 
-    - name: List all clusters with fetch_all
-      nutanix.ncp.ntnx_clusters_info_v2:
-        fetch_all: true
-      register: result
-      ignore_errors: true
-
-    # here we discover the unconfigured node which we want to add to the cluster
     - name: Discover unconfigured node
       nutanix.ncp.ntnx_discover_unconfigured_nodes_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"

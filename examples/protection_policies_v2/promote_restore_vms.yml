@@ -11,7 +11,6 @@
 # 9. Promote VM
 # 10. Restore VM
 # 11. Fetch all VMs on local cluster
-# 12. List all vms with fetch_all
 # 13. Delete all Created VMs on local cluster
 # 14. Fetch all VMs on remote cluster
 # 15. Delete all Created VMs on remote cluster
@@ -256,12 +255,6 @@
     - name: Fetch all VMs on local cluster
       nutanix.ncp.ntnx_vms_info_v2:
       register: result
-
-    - name: List all VMs with fetch_all
-      nutanix.ncp.ntnx_vms_info_v2:
-        fetch_all: true
-      register: result
-      ignore_errors: true
 
     - name: Filter only protected VMs on local cluster
       ansible.builtin.set_fact:

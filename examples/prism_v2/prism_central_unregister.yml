@@ -2,9 +2,8 @@
 # This playbook Unregister PC-PC connection (removing PC as availbility_zone)
 # Before running playbook, the two PCs should be connected with availability_zone feature
 # You need to provide two parameters:
-# 1. List all clusters to get prism central external ID
-# 2. List all clusters to get prism central external ID with fetch_all
-# 3. Unregister PC
+# 1. ext_id: This is the availability_zone_pc_uuid (Secondary PC UUID)
+# 2. pc_ext_id: This is the domain_manager_ext_id (Primary PC UUID)
 # PC UUID (Primary or Secondary) can be fetched using nutanix.ncp.ntnx_clusters_info_v2 module
 # To fetch ext_id, you can use nutanix.ncp.ntnx_clusters_info_v2 with nutanix_host as Secondary PC IP
 # To fetch pc_ext_id, you can use nutanix.ncp.ntnx_clusters_info_v2 with nutanix_host as Primary PC IP
@@ -27,12 +26,6 @@
     - name: List all clusters to get prism central external ID
       nutanix.ncp.ntnx_clusters_info_v2:
         filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
-      register: result
-      ignore_errors: true
-
-    - name: List all clusters with fetch_all
-      nutanix.ncp.ntnx_clusters_info_v2:
-        fetch_all: true
       register: result
       ignore_errors: true
 
