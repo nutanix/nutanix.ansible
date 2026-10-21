@@ -21,11 +21,11 @@
 # 11. Disassociate category from first VG
 # 12. Disassociate category from second VG
 # 13. Fetch all VGs on local cluster
-# 15. Delete all Created VGs on local cluster
-# 16. Fetch all VGs on remote cluster
-# 17. Delete Created VG on remote cluster
-# 18. Delete all protection policies
-# 19. Delete Created categories
+# 14. Delete all Created VGs on local cluster
+# 15. Fetch all VGs on remote cluster
+# 16. Delete Created VG on remote cluster
+# 17. Delete all protection policies
+# 18. Delete Created categories
 
 - name: Protection policies playbook
   hosts: localhost

@@ -11,11 +11,11 @@
 # 9. Promote VM
 # 10. Restore VM
 # 11. Fetch all VMs on local cluster
-# 13. Delete all Created VMs on local cluster
-# 14. Fetch all VMs on remote cluster
-# 15. Delete all Created VMs on remote cluster
-# 16. Delete all protection policies
-# 17. Delete Created categories
+# 12. Delete all Created VMs on local cluster
+# 13. Fetch all VMs on remote cluster
+# 14. Delete all Created VMs on remote cluster
+# 15. Delete all protection policies
+# 16. Delete Created categories
 
 - name: Protection policies playbook
   hosts: localhost

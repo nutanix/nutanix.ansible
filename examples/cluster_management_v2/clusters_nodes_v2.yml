@@ -4,9 +4,9 @@
 # 1. Create a cluster with 3 nodes
 # 2. Register the cluster with Prism Central
 # 3. Fetch cluster using name
-# 5. Expand the cluster by adding a node
-# 6. Remove the node from the cluster
-# 7. Destroy the cluster
+# 4. Expand the cluster by adding a node
+# 5. Remove the node from the cluster
+# 6. Destroy the cluster
 
 - name: Cluster expanding playbook
   hosts: localhost
