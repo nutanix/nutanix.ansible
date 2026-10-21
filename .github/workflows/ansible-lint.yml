@@ -27,3 +27,24 @@ jobs:
       - name: Run ansible-lint
         run: |
           ansible-lint
+
+      # Lint the SHIPPED test content (tests/integration, tests/unit) with a
+      # relaxed profile. The certification .ansible-lint excludes tests/ because
+      # the production profile would flood test playbooks with noise, but these
+      # files ship in the tarball, so we still give them a lighter-weight gate.
+      #
+      # Building and installing the collection first lets ansible-lint resolve
+      # nutanix.ncp.* FQCNs during syntax-check (otherwise every test task that
+      # uses a collection module fails with "unknown module").
+      #
+      # NOTE: non-blocking for now (continue-on-error) so it surfaces findings
+      # without breaking PR CI. Flip continue-on-error to false once the initial
+      # backlog of test-lint findings has been triaged.
+      - name: Build and install collection (for FQCN/module resolution)
+        run: |
+          ansible-galaxy collection build --output-path /tmp/collection-build --force
+          ansible-galaxy collection install /tmp/collection-build/nutanix-ncp-*.tar.gz --force
+      - name: Run ansible-lint on shipped tests (relaxed)
+        continue-on-error: true
+        run: |
+          ansible-lint -c .config/ansible-lint-tests.yml tests/integration tests/unit
