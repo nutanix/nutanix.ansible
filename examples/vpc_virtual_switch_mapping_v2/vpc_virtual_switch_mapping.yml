@@ -103,11 +103,12 @@
     - name: List all VPC virtual switch mappings with fetch_all
       nutanix.ncp.ntnx_vpc_virtual_switch_mappings_info_v2:
         fetch_all: true
+      register: result
+      ignore_errors: true
+
     ############################################################################
     # Restore mapping to original state
     ############################################################################
-      register: result
-      ignore_errors: true
 
     - name: Restore original mapping
       nutanix.ncp.ntnx_vpc_virtual_switch_mapping_v2:

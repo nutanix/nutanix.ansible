@@ -355,7 +355,6 @@
     - name: List all protection policies with fetch_all
       nutanix.ncp.ntnx_protection_policies_info_v2:
         fetch_all: true
-    ########################################################################################
       register: result
       ignore_errors: true
 
