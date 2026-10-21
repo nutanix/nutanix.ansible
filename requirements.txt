@@ -2,7 +2,7 @@ pip>=26.1.2
 setuptools>=83.0.0
 requests>=2.34.2
 ntnx-clustermgmt-py-client==4.3.1
-ntnx-iam-py-client==17.7.0.26194
+ntnx-iam-py-client==4.1.2b3
 ntnx-microseg-py-client==4.3.1
 ntnx-networking-py-client==4.4.1
 ntnx-prism-py-client==4.4.1

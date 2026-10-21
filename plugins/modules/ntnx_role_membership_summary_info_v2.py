@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -25,11 +25,12 @@ description:
       filter, limit, select, orderby or page.
     - This module uses PC v4 APIs based SDKs.
 notes:
-    - This module talks to Prism Central (PC), not to an FCVM/Foundation endpoint.
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(List role membership summaries) -
-      Requires an IAM role on Prism Central that grants read access to role
-      memberships (for example Super Admin or Prism Admin).
+      Required Roles: Consumer, Developer, NCM Admin, Nutanix Central Admin, Operator, Prism Admin, Prism Viewer,
+      Project Admin, Project Manager, Super Admin, Virtual Machine Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options: {}
 extends_documentation_fragment:

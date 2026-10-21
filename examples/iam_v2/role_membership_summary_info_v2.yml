@@ -19,21 +19,15 @@
       nutanix.ncp.ntnx_role_membership_summary_info_v2:
       register: result
       ignore_errors: true
-      # sample response:
-      # "response": []
 
     - name: List role membership summaries with limit
       nutanix.ncp.ntnx_role_membership_summary_info_v2:
         limit: 5
       register: result
       ignore_errors: true
-      # sample response:
-      # "response": []
 
     - name: List role membership summaries with filter
       nutanix.ncp.ntnx_role_membership_summary_info_v2:
         filter: "extId eq '00000000-0000-0000-0000-000000000000'"
       register: result
       ignore_errors: true
-      # sample response:
-      # "response": []
