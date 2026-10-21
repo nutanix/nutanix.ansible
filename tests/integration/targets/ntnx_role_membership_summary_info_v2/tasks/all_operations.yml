@@ -1,0 +1,216 @@
+---
+# Test plan for ntnx_role_membership_summary_info_v2
+# -------------------------------------------------
+# The underlying v4 API (ListRoleMembershipSummary) is LIST-ONLY: there is no
+# get-by-ID endpoint for a role membership summary. A summary aggregates, per
+# project, the counts of distinct identities (users + groups) and roles that
+# have role memberships in that project. Accordingly these tests cover:
+#   1. List all summaries (default)           -> response is always a list.
+#   2. List with limit                        -> response length is bounded by limit.
+#   3. List with select (projection)          -> request succeeds, counts fields present.
+#   4. List with filter (valid)               -> filtered list returned.
+#   5. List with page                         -> pagination param accepted.
+#   6. Structure validation of every element  -> each summary has the SDK fields.
+#   7. Negative: invalid filter property      -> API rejects with IAM-20017 / 400.
+#   8. Negative: invalid orderby property     -> API rejects with IAM-20017 / 400.
+# Because the cluster may legitimately have zero role membership summaries, the
+# structural assertions run per-element via a loop and are skipped gracefully
+# when the list is empty, while the type/shape assertions always run.
+
+- name: Start testing ntnx_role_membership_summary_info_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_role_membership_summary_info_v2
+
+###########################################################
+# LIST ALL SUMMARIES
+###########################################################
+- name: List all role membership summaries
+  nutanix.ncp.ntnx_role_membership_summary_info_v2:
+  register: list_result
+  ignore_errors: true
+
+- name: Verify list all role membership summaries
+  ansible.builtin.assert:
+    that:
+      - list_result.changed == false
+      - list_result.failed == false
+      - list_result.response is defined
+      - list_result.response is iterable
+      - list_result.response is not mapping
+      - list_result.total_available_results is defined
+      - list_result.total_available_results >= 0
+    fail_msg: "List all role membership summaries failed"
+    success_msg: "List all role membership summaries passed"
+
+- name: Validate structure of each role membership summary
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.total_identities_count is defined
+      - item.total_identities_count >= 0
+      - item.users_count is defined
+      - item.users_count >= 0
+      - item.groups_count is defined
+      - item.groups_count >= 0
+      - item.roles_count is defined
+      - item.roles_count >= 0
+    fail_msg: "Role membership summary structure validation failed"
+    success_msg: "Role membership summary structure validation passed"
+  loop: "{{ list_result.response }}"
+  loop_control:
+    label: "{{ item.ext_id | default('summary') }}"
+  when: list_result.response | length > 0
+
+###########################################################
+# LIST WITH LIMIT
+###########################################################
+- name: List role membership summaries with limit
+  nutanix.ncp.ntnx_role_membership_summary_info_v2:
+    limit: 1
+  register: limit_result
+  ignore_errors: true
+
+- name: Verify list with limit
+  ansible.builtin.assert:
+    that:
+      - limit_result.changed == false
+      - limit_result.failed == false
+      - limit_result.response is defined
+      - limit_result.response is iterable
+      - limit_result.response is not mapping
+      - limit_result.response | length <= 1
+      - limit_result.total_available_results is defined
+    fail_msg: "List role membership summaries with limit failed"
+    success_msg: "List role membership summaries with limit passed"
+
+###########################################################
+# LIST WITH SELECT (projection)
+###########################################################
+- name: List role membership summaries with select
+  nutanix.ncp.ntnx_role_membership_summary_info_v2:
+    select: "extId,usersCount,groupsCount,rolesCount,totalIdentitiesCount"
+    limit: 5
+  register: select_result
+  ignore_errors: true
+
+- name: Verify list with select
+  ansible.builtin.assert:
+    that:
+      - select_result.changed == false
+      - select_result.failed == false
+      - select_result.response is defined
+      - select_result.response is iterable
+      - select_result.response is not mapping
+    fail_msg: "List role membership summaries with select failed"
+    success_msg: "List role membership summaries with select passed"
+
+- name: Validate selected fields on each summary
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.users_count is defined
+      - item.groups_count is defined
+      - item.roles_count is defined
+      - item.total_identities_count is defined
+    fail_msg: "Selected field validation failed"
+    success_msg: "Selected field validation passed"
+  loop: "{{ select_result.response }}"
+  loop_control:
+    label: "{{ item.ext_id | default('summary') }}"
+  when: select_result.response | length > 0
+
+###########################################################
+# LIST WITH FILTER (valid property)
+###########################################################
+- name: List role membership summaries with filter on extId
+  nutanix.ncp.ntnx_role_membership_summary_info_v2:
+    filter: "extId eq '00000000-0000-0000-0000-000000000000'"
+  register: filter_result
+  ignore_errors: true
+
+- name: Verify list with filter
+  ansible.builtin.assert:
+    that:
+      - filter_result.changed == false
+      - filter_result.failed == false
+      - filter_result.response is defined
+      - filter_result.response is iterable
+      - filter_result.response is not mapping
+      - filter_result.total_available_results is defined
+    fail_msg: "List role membership summaries with filter failed"
+    success_msg: "List role membership summaries with filter passed"
+
+- name: Validate every filtered summary matches the filter
+  ansible.builtin.assert:
+    that:
+      - item.ext_id == "00000000-0000-0000-0000-000000000000"
+    fail_msg: "Filtered summary did not match the filter"
+    success_msg: "Filtered summary matched the filter"
+  loop: "{{ filter_result.response }}"
+  loop_control:
+    label: "{{ item.ext_id | default('summary') }}"
+  when: filter_result.response | length > 0
+
+###########################################################
+# LIST WITH PAGE
+###########################################################
+- name: List role membership summaries with page and limit
+  nutanix.ncp.ntnx_role_membership_summary_info_v2:
+    page: 0
+    limit: 2
+  register: page_result
+  ignore_errors: true
+
+- name: Verify list with page
+  ansible.builtin.assert:
+    that:
+      - page_result.changed == false
+      - page_result.failed == false
+      - page_result.response is defined
+      - page_result.response is iterable
+      - page_result.response is not mapping
+      - page_result.response | length <= 2
+    fail_msg: "List role membership summaries with page failed"
+    success_msg: "List role membership summaries with page passed"
+
+###########################################################
+# NEGATIVE - INVALID FILTER PROPERTY
+###########################################################
+- name: "Negative: List with invalid filter property"
+  nutanix.ncp.ntnx_role_membership_summary_info_v2:
+    filter: "invalidProperty eq 'foo'"
+  register: invalid_filter_result
+  ignore_errors: true
+
+- name: Verify invalid filter property fails
+  ansible.builtin.assert:
+    that:
+      - invalid_filter_result.changed == false
+      - invalid_filter_result.failed == true
+      - invalid_filter_result.msg is defined
+      - invalid_filter_result.msg == "Api Exception raised while listing role membership summaries"
+      - invalid_filter_result.status is defined
+      - invalid_filter_result.status == 400
+    fail_msg: "Negative test - invalid filter property should fail"
+    success_msg: "Negative test - invalid filter property correctly failed"
+
+###########################################################
+# NEGATIVE - INVALID ORDERBY PROPERTY
+###########################################################
+- name: "Negative: List with non-sortable orderby property"
+  nutanix.ncp.ntnx_role_membership_summary_info_v2:
+    orderby: "usersCount"
+  register: invalid_orderby_result
+  ignore_errors: true
+
+- name: Verify non-sortable orderby property fails
+  ansible.builtin.assert:
+    that:
+      - invalid_orderby_result.changed == false
+      - invalid_orderby_result.failed == true
+      - invalid_orderby_result.msg is defined
+      - invalid_orderby_result.msg == "Api Exception raised while listing role membership summaries"
+      - invalid_orderby_result.status is defined
+      - invalid_orderby_result.status == 400
+    fail_msg: "Negative test - non-sortable orderby should fail"
+    success_msg: "Negative test - non-sortable orderby correctly failed"

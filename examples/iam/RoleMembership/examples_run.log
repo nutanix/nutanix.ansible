@@ -1,0 +1,19 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Role Membership Summary info playbook] ***********************************
+
+TASK [List all role membership summaries] **************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List role membership summaries with limit] *******************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List role membership summaries with filter] ******************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
