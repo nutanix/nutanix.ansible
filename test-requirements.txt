@@ -1,7 +1,0 @@
-# Build/environment dependencies used for building and testing the collection.
-# These are intentionally kept out of the runtime requirements.txt so they do
-# not conflict with the versions provided by ansible-builder execution
-# environment base images.
-# See: https://docs.ansible.com/projects/partner-certification-requirements/dependencies/
-pip>=26.1.2
-setuptools>=83.0.0
