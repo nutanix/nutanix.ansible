@@ -68,7 +68,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all
+    - name: List all floating IPs
       nutanix.ncp.ntnx_floating_ips_info_v2:
       register: result
       ignore_errors: true

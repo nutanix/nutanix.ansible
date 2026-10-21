@@ -87,7 +87,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all
+    - name: List all templates
       nutanix.ncp.ntnx_templates_info_v2:
       register: result
       ignore_errors: true
@@ -98,7 +98,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all
+    - name: List all template versions
       nutanix.ncp.ntnx_templates_versions_info_v2:
         template_ext_id: "{{ template_ext_id }}"
       register: result

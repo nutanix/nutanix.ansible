@@ -87,7 +87,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all
+    - name: List all VM NICs
       nutanix.ncp.ntnx_vms_nics_info_v2:
         vm_ext_id: "{{ vm_uuid }}"
       register: result

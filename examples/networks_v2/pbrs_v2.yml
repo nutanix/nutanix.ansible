@@ -74,7 +74,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all
+    - name: List all PBRs
       nutanix.ncp.ntnx_pbrs_info_v2:
       register: result
       ignore_errors: true

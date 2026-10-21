@@ -74,7 +74,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all
+    - name: List all VM CD-ROMs
       nutanix.ncp.ntnx_vms_cd_rom_info_v2:
         vm_ext_id: "{{ vm_uuid }}"
       register: result

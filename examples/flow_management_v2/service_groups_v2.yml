@@ -73,7 +73,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all
+    - name: List all service groups
       nutanix.ncp.ntnx_service_groups_info_v2:
       register: result
       ignore_errors: true

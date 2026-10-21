@@ -51,7 +51,7 @@
       register: result
       ignore_errors: true
 
-    - name: List all
+    - name: List all volume group disks
       nutanix.ncp.ntnx_volume_groups_disks_info_v2:
         volume_group_ext_id: "{{ vg1_uuid }}"
       register: result
