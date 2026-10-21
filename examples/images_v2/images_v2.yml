@@ -3,21 +3,20 @@
 # This playbook will do:
 # 1. Create VM
 # 2. List all categories and define variables
-# 3. List all categories and define variables with fetch_all
-# 4. Create ISO IMAGE using valid source url
-# 5. Create DISK IMAGE using valid source url
-# 6. Create DISK IMAGE using valid disk source
-# 7. Create image using object lite source
-# 8. Retrieve an existing ISO image
-# 9. Retrieve all images with limit 1
-# 10. Retrieve all images with limit 2
-# 11. Retrieve all images with fetch all
-# 12. Retrieve all images and filter for disk image
-# 13. Update DISK IMAGE by changing its name and type
-# 14. Update ISO IMAGE by changing its name and type
-# 15. Update ISO IMAGE by changing category
-# 16. Delete image
-# 17. Delete the VM
+# 3. Create ISO IMAGE using valid source url
+# 4. Create DISK IMAGE using valid source url
+# 5. Create DISK IMAGE using valid disk source
+# 6. Create image using object lite source
+# 7. Retrieve an existing ISO image
+# 8. Retrieve all images with limit 1
+# 9. Retrieve all images with limit 2
+# 10. Retrieve all images with fetch_all
+# 11. Retrieve all images and filter for disk image
+# 12. Update DISK IMAGE by changing its name and type
+# 13. Update ISO IMAGE by changing its name and type
+# 14. Update ISO IMAGE by changing category
+# 15. Delete image
+# 16. Delete the VM
 
 - name: Images crud playbook
   hosts: localhost

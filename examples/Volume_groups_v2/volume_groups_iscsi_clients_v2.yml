@@ -4,8 +4,8 @@
 # 1. Attach iscsi client to VG using initiator name
 # 2. Fetch specific client
 # 3. Detach client from VG
-# 4. List all volume groups iscsi clients
-# 5. List all volume groups iscsi clients with fetch_all
+# 4. List all volume group iSCSI clients
+# 5. List all volume group iSCSI clients with fetch_all
 
 - name: Volume groups iscsi clients playbook
   hosts: localhost

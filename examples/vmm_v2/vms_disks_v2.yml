@@ -8,8 +8,8 @@
 # 5. Create Disk with VG reference
 # 6. Update disk data source
 # 7. Get disk info
-# 8. List all vms disks
-# 9. List all vms disks with fetch_all
+# 8. List all VM disks
+# 9. List all VM disks with fetch_all
 # 10. Delete disk
 
 - name: VM disks playbook

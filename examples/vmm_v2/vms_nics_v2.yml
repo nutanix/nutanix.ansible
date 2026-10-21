@@ -7,8 +7,8 @@
 # 4. Retrieve nic info after migrating nic to another subnet
 # 5. Assign IP address to nic
 # 6. Release IP address from nic
-# 7. List all vms nics
-# 8. List all vms nics with fetch_all
+# 7. List all VM NICs
+# 8. List all VM NICs with fetch_all
 # 9. Delete nic
 
 - name: VM nics playbook

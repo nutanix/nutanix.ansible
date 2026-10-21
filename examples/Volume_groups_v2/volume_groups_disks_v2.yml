@@ -3,8 +3,8 @@
 # This playbook will do:
 # 1. Create disks
 # 2. Create disk from previously created vdisk
-# 3. List all volume groups disks
-# 4. List all volume groups disks with fetch_all
+# 3. List all volume group disks
+# 4. List all volume group disks with fetch_all
 # 5. Delete disk
 
 - name: Volume groups disks playbook

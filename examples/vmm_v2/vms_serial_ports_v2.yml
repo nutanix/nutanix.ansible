@@ -3,7 +3,7 @@
 # This playbook will do:
 # 1. Create Serial Port
 # 2. Fetch serial port information
-# 3. List all vms serial port with fetch_all
+# 3. List all VM serial ports with fetch_all
 # 4. Update Serial Port connection
 # 5. Delete Serial Port
 
