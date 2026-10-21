@@ -8,7 +8,10 @@
 # profile rejects (unnamed tasks, debug, hardcoded vars, etc.). However, these
 # test files DO ship in the collection tarball, so we still give them a lighter
 # gate here that catches real problems (broken/unloadable content, bad syntax,
-# deprecated/removed syntax) without the production-profile noise.
+# deprecated/removed syntax) without the full production-profile strictness.
+#
+# The "basic" profile is applied as-is, with no per-rule skips, so every finding
+# at that level is reported.
 #
 # This config is NOT used by the certification workflow or the Automation Hub
 # import; it is only used by the dedicated "tests" step in ansible-lint.yml.
