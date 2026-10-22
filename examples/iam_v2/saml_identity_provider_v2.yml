@@ -1,15 +1,16 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create SAML identity provider shared with all projects
-# 2. Fetch SAML identity providers using filters
-# 3. Update SAML identity provider to share with specific projects
-# 4. Update SAML identity provider to unshare from all projects
-# 5. Update SAML identity provider to unshare from specific projects
-# 6. Update SAML identity provider
-# 7. Get specific SAML identity provider
-# 8. List all SAML identity providers
-# 9. Delete created SAML identity provider
+# 1. Create saml identity provider shared with all projects
+# 2. Get saml using filter name
+# 3. List all saml identity providers with fetch_all
+# 4. Update saml to share with specific projects
+# 5. Update saml to unshare from all projects
+# 6. Update saml to unshare from specific projects
+# 7. Update saml
+# 8. Get saml using ext id
+# 9. List all identity providers
+# 10. Delete the created SAML identity providers
 
 - name: SAML identity provider playbook
   hosts: localhost
@@ -49,6 +50,12 @@
     - name: Get saml using filter name
       nutanix.ncp.ntnx_saml_identity_providers_info_v2:
         filter: name eq  '{{ saml_name }}'
+      register: result
+      ignore_errors: true
+
+    - name: List all SAML identity providers with fetch_all
+      nutanix.ncp.ntnx_saml_identity_providers_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 
