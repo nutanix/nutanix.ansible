@@ -271,6 +271,26 @@
     fail_msg: " Unable to list pbrs using priority and vpcExtId filter criteria "
     success_msg: " pbrs listed successfully using priority and vpcExtId filter criteria"
 ###############################################################################################################################
+
+########################################################################
+
+- name: List all PBRs with fetch_all
+  nutanix.ncp.ntnx_pbrs_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_pbrs_info_v2
+  ignore_errors: true
+
+- name: List all PBRs with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_pbrs_info_v2.changed == false
+      - fetch_all_ntnx_pbrs_info_v2.failed == false
+      - fetch_all_ntnx_pbrs_info_v2.response is defined
+      - fetch_all_ntnx_pbrs_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_pbrs_info_v2.response | default([]) | length) == (fetch_all_ntnx_pbrs_info_v2.total_available_results | int)
+    fail_msg: "Unable to list all PBRs with fetch_all"
+    success_msg: "Listed all PBRs with fetch_all successfully"
+
 - name: List pbrs using ext_id
   nutanix.ncp.ntnx_pbrs_info_v2:
     ext_id: "{{todelete[-1]}}"

@@ -3,7 +3,7 @@
 # This playbook will do:
 # 1. Clone VM with same attributes values
 # 2. Clone VM with different attributes values
-# 3. Clone VM with a VM Guest Customization Profile reference and per-clone overrides
+# 3. Clone VM with Guest Customization Profile
 #    (registered owner/organization, static IP). Requires NGT installed on the
 #    source VM; otherwise the clone API rejects the request.
 
@@ -44,6 +44,7 @@
     # When the referenced profile marks fields with `must_provide_during_deployment`,
     # the per-clone override MUST supply those fields (e.g. computer_name, ipv4_config)
     # or the API rejects the request.
+
     - name: Clone VM with Guest Customization Profile
       nutanix.ncp.ntnx_vms_clone_v2:
         ext_id: "{{ vm_uuid }}"
