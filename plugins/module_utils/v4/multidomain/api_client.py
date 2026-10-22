@@ -107,3 +107,15 @@ def get_resource_groups_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_multidomain_py_client.ResourceGroupsApi(api_client=api_client)
+
+
+def get_content_repositories_api_instance(module):
+    """
+    This method will return content repositories api instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): ContentRepositoriesApi instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_multidomain_py_client.ContentRepositoriesApi(api_client=api_client)

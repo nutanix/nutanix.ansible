@@ -260,6 +260,8 @@ action_groups:
     - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_lcm_bundle_v2
+    - ntnx_lcm_bundles_info_v2
     - ntnx_snmp_user_v2
     - ntnx_snmp_user_info_v2
     - ntnx_snmp_trap_v2
@@ -289,5 +291,11 @@ action_groups:
     - ntnx_resource_groups_info_v2
     - ntnx_role_membership_v2
     - ntnx_role_memberships_info_v2
+    - ntnx_content_repository_v2
+    - ntnx_content_repositories_info_v2
+    - ntnx_content_repository_subscribe_v2
+    - ntnx_content_repository_sync_v2
+    - ntnx_content_repository_items_info_v2
+    - ntnx_images_migrate_v2
     - ntnx_vpn_connection_v2
     - ntnx_vpn_connections_info_v2

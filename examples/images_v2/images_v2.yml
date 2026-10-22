@@ -1,20 +1,22 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a VM with a disk
-# 2. Create an ISO image using a valid source URL
-# 3. Create a disk image using a valid source URL
-# 4. Create a disk image using a valid disk source
-# 5. Create an image using object lite source
-# 6. Retrieve an existing ISO image
-# 7. Retrieve all images with limit 1 and 2
-# 8. Retrieve all images and filter for disk image
-# 9. Update a disk image by changing its name and type
-# 10. Update an ISO image by changing its name and type
-# 11. Update an ISO image by changing its category
-# 12. Delete an image
-# 13. Delete the VM
-
+# 1. Create VM
+# 2. List all categories and define variables
+# 3. Create ISO IMAGE using valid source url
+# 4. Create DISK IMAGE using valid source url
+# 5. Create DISK IMAGE using valid disk source
+# 6. Create image using object lite source
+# 7. Retrieve an existing ISO image
+# 8. Retrieve all images with limit 1
+# 9. Retrieve all images with limit 2
+# 10. Retrieve all images with fetch_all
+# 11. Retrieve all images and filter for disk image
+# 12. Update DISK IMAGE by changing its name and type
+# 13. Update ISO IMAGE by changing its name and type
+# 14. Update ISO IMAGE by changing category
+# 15. Delete image
+# 16. Delete the VM
 
 - name: Images crud playbook
   hosts: localhost
@@ -169,6 +171,13 @@
     - name: Retrieve all images with limit 2
       nutanix.ncp.ntnx_images_info_v2:
         limit: 2
+      register: result
+
+    #################################################################################
+
+    - name: Retrieve all images with fetch_all
+      nutanix.ncp.ntnx_images_info_v2:
+        fetch_all: true
       register: result
 
     #################################################################################
