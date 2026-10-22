@@ -50,6 +50,7 @@ class Tasks:
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
         LOAD_BALANCER_SESSION = "networking:config:load-balancer-session"
         ENTITY_GROUP = "microseg:config:entity-group"
+        LCM_BUNDLE = "lifecycle:resources:bundle"
         VM_STARTUP_POLICY = "vmm:ahv:policies:vm-startup-policy"
         CATEGORY_MAPPING = "microseg:config:category-mapping"
         DIRECTORY_SERVER_CONFIG = "microseg:config:directory-server-config"
@@ -59,6 +60,7 @@ class Tasks:
         VM_ANTI_AFFINITY_POLICY = "vmm:ahv:policies:vm-anti-affinity-policy"
         PROJECT = "multidomain:config:Project"
         RESOURCE_GROUP = "multidomain:config:nutanix-resource-group"
+        CONTENT_REPOSITORY = "multidomain:content:content-repository"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
