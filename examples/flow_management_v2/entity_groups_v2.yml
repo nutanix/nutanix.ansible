@@ -47,6 +47,35 @@
       ansible.builtin.set_fact:
         entity_group_ext_id: "{{ result.ext_id }}"
 
+    - name: Create entity group using REGEX select_by
+      nutanix.ncp.ntnx_entity_group_v2:
+        state: present
+        name: "{{ entity_group_name }}_regex"
+        description: "{{ entity_group_description }}_regex"
+        allowed_config:
+          entities:
+            - select_by: REGEX
+              type: VM
+              reference_string: "ansible-vm"
+              match_criteria: CONTAINS
+      register: result
+      ignore_errors: true
+
+    - name: Create entity group using FQDN_VALUES select_by
+      nutanix.ncp.ntnx_entity_group_v2:
+        state: present
+        name: "{{ entity_group_name }}_fqdn"
+        description: "{{ entity_group_description }}_fqdn"
+        allowed_config:
+          entities:
+            - select_by: FQDN_VALUES
+              type: ADDRESS_GROUP
+              fqdns:
+                - "app.example.com"
+                - "db.example.com"
+      register: result
+      ignore_errors: true
+
     - name: Update entity group
       nutanix.ncp.ntnx_entity_group_v2:
         state: present

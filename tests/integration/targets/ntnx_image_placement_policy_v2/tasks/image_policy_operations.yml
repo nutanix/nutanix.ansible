@@ -9,7 +9,7 @@
 
 - name: Set VM and images names
   ansible.builtin.set_fact:
-    image_name: "{{ random_name }}_image_test"
+    image_name: "{{ random_name }}_ansible_image_test"
 
 - name: List all categories and choose the first one
   nutanix.ncp.ntnx_categories_info_v2:

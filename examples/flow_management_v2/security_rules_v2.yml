@@ -79,6 +79,26 @@
                 is_all_protocol_allowed: true
       register: result
 
+    - name: Create workload policy with FLEX rule
+      nutanix.ncp.ntnx_security_rules_v2:
+        name: "{{ security_rule_name }}_flex"
+        description: Ansible created FLEX rule
+        type: WORKLOAD
+        policy_state: ENFORCE
+        scope: ALL_VLAN
+        rules:
+          - description: flex allow inbound
+            type: FLEX
+            spec:
+              flex_rule_spec:
+                action: ALLOW
+                direction: IN
+                should_allow_any_src: true
+                should_allow_any_dst: true
+                is_all_protocol_allowed: true
+      register: result
+      ignore_errors: true
+
     - name: List all security policy rules
       nutanix.ncp.ntnx_security_policy_rules_info_v2:
         policy_ext_id: "{{ security_rule_uuid }}"

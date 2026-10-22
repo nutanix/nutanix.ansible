@@ -61,6 +61,13 @@
       register: lcm_inventory
       ignore_errors: true
 
+    - name: Perform software-only LCM inventory
+      nutanix.ncp.ntnx_lcm_inventory_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+        inventory_type: SOFTWARE
+      register: lcm_inventory
+      ignore_errors: true
+
     - name: List all LCM entities details
       nutanix.ncp.ntnx_lcm_entities_info_v2:
       register: lcm_entities

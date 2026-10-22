@@ -5,7 +5,8 @@
 # 2. Create disk from previously created vdisk
 # 3. List all volume group disks
 # 4. List all volume group disks with fetch_all
-# 5. Delete disk
+# 5. List volume group disks with external storage info expanded
+# 6. Delete disk
 
 - name: Volume groups disks playbook
   hosts: localhost
@@ -61,6 +62,13 @@
       nutanix.ncp.ntnx_volume_groups_disks_info_v2:
         volume_group_ext_id: "{{ vg1_uuid }}"
         fetch_all: true
+      register: result
+      ignore_errors: true
+
+    - name: List volume group disks with external storage info expanded
+      nutanix.ncp.ntnx_volume_groups_disks_info_v2:
+        volume_group_ext_id: "{{ vg1_uuid }}"
+        expand: externalStorageInfo
       register: result
       ignore_errors: true
 

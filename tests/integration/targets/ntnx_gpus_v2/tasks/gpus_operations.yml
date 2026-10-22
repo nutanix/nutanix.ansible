@@ -13,7 +13,7 @@
 
 - name: Set VM name
   ansible.builtin.set_fact:
-    vm_name: "{{ random_name }}_vm_test"
+    vm_name: "{{ random_name }}_ansible_vm_test"
 
 - name: Generate spec for VM creation with GPU using check mode
   nutanix.ncp.ntnx_vms_v2:
