@@ -12,7 +12,6 @@
   tasks:
     - name: Create single instance postgres database on registered db server vm
       nutanix.ncp.ntnx_ndb_databases:
-
         name: POSTGRES_DATABASE_ANSIBLE
 
         db_params_profile:

@@ -1,12 +1,13 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a category key & value
-# 2. Update the category value and description
+# 1. Create category key & value
+# 2. Update category value and description
 # 3. Update category to unshare from specific projects
 # 4. List all categories
-# 5. Fetch category using ext id & expand detailedAssociations
-# 6. Delete Created category
+# 5. List all categories with fetch_all
+# 6. Fetch category using ext id & expand detailedAssociations
+# 7. Delete Created category
 
 - name: Categories playbook
   hosts: localhost
@@ -59,6 +60,12 @@
 
     - name: List all categories
       nutanix.ncp.ntnx_categories_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all categories with fetch_all
+      nutanix.ncp.ntnx_categories_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 

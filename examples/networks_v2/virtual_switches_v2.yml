@@ -2,14 +2,15 @@
 # Summary:
 # This playbook will do:
 # 1. Create virtual switch owned by a project
-# 2. Create virtual switch from an existing bridge
+# 2. Create a virtual switch from an existing bridge
 # 3. Update virtual switch
-# 4. Get virtual switch using ext_id
+# 4. Get virtual switch using ext id
 # 5. List all virtual switches
-# 6. List virtual switches with filter
-# 7. List virtual switches with limit
-# 8. Delete virtual switch
-# 9. Delete virtual switch from bridge
+# 6. List all virtual switches with fetch_all
+# 7. List virtual switches with filter
+# 8. List virtual switches with limit
+# 9. Delete virtual switch
+# 10. Delete virtual switch from bridge
 
 - name: Virtual Switches playbook
   hosts: localhost
@@ -116,6 +117,13 @@
     - name: List all virtual switches
       nutanix.ncp.ntnx_virtual_switches_info_v2:
         cluster_ext_id: "{{ cluster_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all virtual switches with fetch_all
+      nutanix.ncp.ntnx_virtual_switches_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        fetch_all: true
       register: result
       ignore_errors: true
 
