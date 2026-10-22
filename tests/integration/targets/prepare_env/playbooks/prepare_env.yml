@@ -164,6 +164,9 @@
             network_ip: "{{overlay_subnet.network_ip}}"
             network_prefix: "{{overlay_subnet.network_prefix}}"
             gateway_ip: "{{overlay_subnet.gateway_ip}}"
+            ip_pools:
+              - start_ip: "{{ overlay_subnet.ip_pool.start_ip }}"
+                end_ip: "{{ overlay_subnet.ip_pool.end_ip }}"
       register: result
 
     - name: Insert overlay subnet configuration block to var file
