@@ -299,6 +299,10 @@ action_groups:
     - ntnx_content_repository_sync_v2
     - ntnx_content_repository_items_info_v2
     - ntnx_images_migrate_v2
+<<<<<<< HEAD
+    - ntnx_certificate_auth_provider_v2
+    - ntnx_certificate_auth_providers_info_v2
+=======
     - ntnx_registered_clients_info_v2
     - ntnx_user_password_v2
     - ntnx_iam_welcome_banner_v2
@@ -306,3 +310,4 @@ action_groups:
     - ntnx_user_state_v2
     - ntnx_login_providers_info_v2
     - ntnx_role_membership_summary_info_v2
+>>>>>>> release/janus-qa-testing
