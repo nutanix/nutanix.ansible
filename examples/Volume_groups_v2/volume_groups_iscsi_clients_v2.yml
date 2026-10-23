@@ -2,9 +2,10 @@
 # Summary:
 # This playbook will do:
 # 1. Attach iscsi client to VG using initiator name
-# 2. List all clients attached to VG
-# 3. Fetch specific client
-# 4. Detach client from VG
+# 2. Fetch specific client
+# 3. Detach client from VG
+# 4. List all volume group iSCSI clients
+# 5. List all volume group iSCSI clients with fetch_all
 
 - name: Volume groups iscsi clients playbook
   hosts: localhost
@@ -40,3 +41,14 @@
         ext_id: "{{ iscsi_client_uuid }}"
         state: absent
       register: result
+
+    - name: List all volume group iSCSI clients
+      nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all volume group iSCSI clients with fetch_all
+      nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
