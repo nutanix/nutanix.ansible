@@ -173,6 +173,28 @@
     success_msg: "All certificates are listed successfully"
     fail_msg: "All certificates are not listed successfully"
 
+
+########################################################################
+
+- name: List all object store certificates with fetch_all
+  nutanix.ncp.ntnx_object_stores_certificate_info_v2:
+    object_store_ext_id: "{{ object_store_ext_id_1 }}"
+    fetch_all: true
+  register: fetch_all_ntnx_object_stores_certificate_info_v2
+  ignore_errors: true
+
+- name: List all object store certificates with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_object_stores_certificate_info_v2.changed == false
+      - fetch_all_ntnx_object_stores_certificate_info_v2.failed == false
+      - fetch_all_ntnx_object_stores_certificate_info_v2.response is defined
+      - fetch_all_ntnx_object_stores_certificate_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_object_stores_certificate_info_v2.response | default([]) | length) ==
+        (fetch_all_ntnx_object_stores_certificate_info_v2.total_available_results | int)
+    fail_msg: "Unable to list all object store certificates with fetch_all"
+    success_msg: "Listed all object store certificates with fetch_all successfully"
+
 - name: Set certificate external ID
   ansible.builtin.set_fact:
     certificate_ext_id: "{{ result.response[0].ext_id }}"
@@ -400,6 +422,26 @@
       - result.total_available_results >= 2
     success_msg: "All object stores are listed successfully"
     fail_msg: "All object stores are not listed successfully"
+
+
+########################################################################
+
+- name: List all object stores with fetch_all
+  nutanix.ncp.ntnx_object_stores_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_object_stores_info_v2
+  ignore_errors: true
+
+- name: List all object stores with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_object_stores_info_v2.changed == false
+      - fetch_all_ntnx_object_stores_info_v2.failed == false
+      - fetch_all_ntnx_object_stores_info_v2.response is defined
+      - fetch_all_ntnx_object_stores_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_object_stores_info_v2.response | default([]) | length) == (fetch_all_ntnx_object_stores_info_v2.total_available_results | int)
+    fail_msg: "Unable to list all object stores with fetch_all"
+    success_msg: "Listed all object stores with fetch_all successfully"
 
 - name: Set object store name
   ansible.builtin.set_fact:

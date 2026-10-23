@@ -85,6 +85,15 @@ EXAMPLES = r"""
     validate_certs: false
     limit: 5
   register: result
+
+- name: List all content repositories with fetch_all
+  nutanix.ncp.ntnx_content_repositories_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
+  register: result
 """
 
 RETURN = r"""
@@ -160,6 +169,7 @@ from ..module_utils.v4.multidomain.api_client import (  # noqa: E402
 from ..module_utils.v4.multidomain.helpers import get_content_repository  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -200,7 +210,10 @@ def get_content_repositories(module, content_repositories, result):
         kwargs["X_Project_Id"] = module.params.get("project_ext_id")
 
     try:
-        resp = content_repositories.list_content_repositories(**kwargs)
+        resp = list_entities(
+            content_repositories.list_content_repositories,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

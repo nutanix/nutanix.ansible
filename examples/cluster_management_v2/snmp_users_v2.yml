@@ -1,8 +1,8 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create an SNMP user
-# 2. Fetch SNMP user by ext_id
+# 1. Create SNMP user
+# 2. Fetch SNMP user by ext id
 # 3. Update SNMP user
 # 4. Delete SNMP user
 

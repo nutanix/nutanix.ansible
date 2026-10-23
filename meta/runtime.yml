@@ -298,3 +298,5 @@ action_groups:
     - ntnx_content_repository_items_info_v2
     - ntnx_images_migrate_v2
     - ntnx_user_state_v2
+    - ntnx_login_providers_info_v2
+    - ntnx_role_membership_summary_info_v2
