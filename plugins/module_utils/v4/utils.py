@@ -5,6 +5,7 @@ from __future__ import absolute_import, division, print_function
 
 import json
 import os
+import tempfile
 
 try:
     # Python 3
@@ -628,3 +629,43 @@ def list_entities(
         current_page += 1
 
     return ListEntitiesResponse(entities, metadata)
+
+
+def save_bytes_to_file(
+    module,
+    data,
+    dest,
+    result,
+    fail_msg,
+    temp_prefix="download_",
+    temp_suffix="",
+):
+    """
+    Save in-memory bytes from a v4 SDK text response to dest or a tempfile.
+
+    Used for APIs that return text bodies (e.g. text/xml) as raw bytes in
+    resp.data rather than writing a file via download_directory.
+
+    Sets result["response"] = {"path": <final path>}.
+    """
+    if isinstance(data, (bytes, bytearray)):
+        content = bytes(data)
+    else:
+        content = None
+
+    if content is None:
+        module.fail_json(msg=fail_msg, **result)
+
+    if dest:
+        dest_dir = os.path.dirname(os.path.abspath(dest))
+        if dest_dir and not os.path.isdir(dest_dir):
+            os.makedirs(dest_dir)
+        with open(dest, "wb") as f:
+            f.write(content)
+        result["response"] = {"path": dest}
+        return
+
+    fd, temp_path = tempfile.mkstemp(suffix=temp_suffix, prefix=temp_prefix)
+    with os.fdopen(fd, "wb") as f:
+        f.write(content)
+    result["response"] = {"path": temp_path}
