@@ -1,12 +1,12 @@
 ---
 # Summary:
 # This playbook demonstrates end-to-end usage of the LCM Bundle v4 modules:
-# 1. Create an LCM FRAMEWORK bundle from a reachable url_source (with image metadata).
-# 2. Fetch the created bundle by its external ID.
-# 3. List all LCM bundles on Prism Central.
-# 4. List LCM bundles filtered by name.
-# 5. List LCM bundles with a limit.
-# 6. Delete the LCM bundle.
+# 1. Create an LCM bundle
+# 2. Fetch LCM bundle using ext id
+# 3. List all LCM bundles
+# 4. List LCM bundles with filter
+# 5. List LCM bundles with limit
+# 6. Delete the LCM bundle
 
 - name: LCM Bundle playbook
   hosts: localhost

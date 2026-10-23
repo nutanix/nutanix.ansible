@@ -136,6 +136,7 @@ from ..module_utils.v4.flow.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.flow.helpers import get_directory_server_config  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -167,7 +168,10 @@ def get_directory_server_configs(module, api_instance, result):
         kwargs["_select"] = module.params["select"]
 
     try:
-        resp = api_instance.list_directory_server_configs(**kwargs)
+        resp = list_entities(
+            api_instance.list_directory_server_configs,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
