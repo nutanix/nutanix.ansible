@@ -5,16 +5,17 @@
 # 2. Update the content repository description
 # 3. Fetch a content repository using external ID
 # 4. List all content repositories
-# 5. List content repositories with name filter
-# 6. List content repositories with limit
-# 7. List content repository items
-# 8. Subscribe to a source content repository (requires paired domains)
-# 9. Sync items of a subscribed content repository
-# 10. Create a disk image (required for migrate)
-# 11. Migrate the image to a content repository
-# 12. Delete the subscribed content repository from the availability zone PC
-# 13. Delete the image (must happen before deleting the content repository)
-# 14. Delete the source content repository
+# 5. List all content repositories with fetch_all
+# 6. List content repositories with name filter
+# 7. List content repositories with limit
+# 8. List content repository items
+# 9. Subscribe to a source content repository (requires paired domains)
+# 10. Sync items of a subscribed content repository
+# 11. Create a disk image (required for migrate)
+# 12. Migrate the image to a content repository
+# 13. Delete the subscribed content repository from the availability zone PC
+# 14. Delete the image (must happen before deleting the content repository)
+# 15. Delete the source content repository
 
 - name: Content repositories playbook
   hosts: localhost
@@ -77,6 +78,12 @@
 
     - name: List all content repositories
       nutanix.ncp.ntnx_content_repositories_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all content repositories with fetch_all
+      nutanix.ncp.ntnx_content_repositories_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 

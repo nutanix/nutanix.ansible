@@ -171,6 +171,7 @@ from ..module_utils.v4.lcm.api_client import get_bundles_api_instance  # noqa: E
 from ..module_utils.v4.lcm.helpers import get_lcm_bundle  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -204,7 +205,10 @@ def get_bundles(module, api_instance, result):
         module.fail_json(msg="Failed generating LCM bundles info spec", **result)
 
     try:
-        resp = api_instance.list_bundles(**kwargs)
+        resp = list_entities(
+            api_instance.list_bundles,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

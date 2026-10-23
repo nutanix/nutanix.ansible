@@ -146,6 +146,7 @@ from ..module_utils.v4.multidomain.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -178,10 +179,10 @@ def list_content_repository_items(module, content_repositories, result):
         kwargs["X_Cluster_Id"] = module.params.get("cluster_ext_id")
 
     try:
-        resp = (
-            content_repositories.list_content_repository_items_by_content_repository_id(
-                extId=ext_id, **kwargs
-            )
+        resp = list_entities(
+            content_repositories.list_content_repository_items_by_content_repository_id,
+            kwargs=kwargs,
+            extId=ext_id,
         )
     except Exception as e:
         raise_api_exception(
