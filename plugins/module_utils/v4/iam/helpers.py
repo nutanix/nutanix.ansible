@@ -207,3 +207,23 @@ def get_entity(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching entity info using ext_id",
         )
+
+
+def get_welcome_banner(module, api_instance):
+    """
+    This method will return the welcome banner configuration.
+    Args:
+        module (object): Ansible module object.
+        api_instance (object): Welcome banner api instance from
+            ``ntnx_iam_py_client``.
+    Returns:
+        welcome_banner (object): Welcome banner configuration object.
+    """
+    try:
+        return api_instance.get_welcome_banner().data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching welcome banner",
+        )
