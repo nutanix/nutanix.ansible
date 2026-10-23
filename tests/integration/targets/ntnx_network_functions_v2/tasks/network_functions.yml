@@ -842,6 +842,26 @@
     fail_msg: "Failed to list all network functions"
     success_msg: "All network functions listed successfully"
 
+
+########################################################################
+
+- name: List all network functions with fetch_all
+  nutanix.ncp.ntnx_network_functions_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_network_functions_info_v2
+  ignore_errors: true
+
+- name: List all network functions with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_network_functions_info_v2.changed == false
+      - fetch_all_ntnx_network_functions_info_v2.failed == false
+      - fetch_all_ntnx_network_functions_info_v2.response is defined
+      - fetch_all_ntnx_network_functions_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_network_functions_info_v2.response | default([]) | length) == (fetch_all_ntnx_network_functions_info_v2.total_available_results | int)
+    fail_msg: "Unable to list all network functions with fetch_all"
+    success_msg: "Listed all network functions with fetch_all successfully"
+
 - name: List all network functions with filter
   nutanix.ncp.ntnx_network_functions_info_v2:
     filter: "name eq '{{ network_function_name }}_1_updated_2'"

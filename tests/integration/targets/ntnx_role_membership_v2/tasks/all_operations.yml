@@ -1,7 +1,7 @@
 ---
-- name: Start testing ntnx_role_membership_v2, ntnx_role_memberships_info_v2
+- name: Start testing ntnx_role_membership_v2, ntnx_role_memberships_info_v2, ntnx_role_membership_summary_info_v2
   ansible.builtin.debug:
-    msg: Start testing ntnx_role_membership_v2, ntnx_role_memberships_info_v2
+    msg: Start testing ntnx_role_membership_v2, ntnx_role_memberships_info_v2, ntnx_role_membership_summary_info_v2
 
 ###########################################################
 # SETUP - Gather required IDs
@@ -353,6 +353,26 @@
 ###########################################################
 # INFO OPERATIONS - LIST WITH LIMIT
 ###########################################################
+
+########################################################################
+
+- name: List all role memberships with fetch_all
+  nutanix.ncp.ntnx_role_memberships_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_role_memberships_info_v2
+  ignore_errors: true
+
+- name: List all role memberships with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_role_memberships_info_v2.changed == false
+      - fetch_all_ntnx_role_memberships_info_v2.failed == false
+      - fetch_all_ntnx_role_memberships_info_v2.response is defined
+      - fetch_all_ntnx_role_memberships_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_role_memberships_info_v2.response | default([]) | length) == (fetch_all_ntnx_role_memberships_info_v2.total_available_results | int)
+    fail_msg: "Unable to list all role memberships with fetch_all"
+    success_msg: "Listed all role memberships with fetch_all successfully"
+
 - name: List role memberships with limit
   nutanix.ncp.ntnx_role_memberships_info_v2:
     limit: 2
@@ -406,6 +426,65 @@
       - filter_result.response[0].scope_template_name_values[0].value == project_ext_id
     fail_msg: "List role memberships with filter failed"
     success_msg: "List role memberships with filter passed"
+
+###########################################################
+# SUMMARY INFO - LIST ALL (list-only API; no get-by-ID)
+###########################################################
+- name: List all role membership summaries
+  nutanix.ncp.ntnx_role_membership_summary_info_v2:
+  register: summary_list_result
+  ignore_errors: true
+
+- name: Verify list all role membership summaries
+  ansible.builtin.assert:
+    that:
+      - summary_list_result.changed == false
+      - summary_list_result.failed == false
+      - summary_list_result.response is defined
+      - summary_list_result.response | length > 0
+      - summary_list_result.total_available_results is defined
+      - summary_list_result.total_available_results > 0
+    fail_msg: "List all role membership summaries failed"
+    success_msg: "List all role membership summaries passed"
+
+###########################################################
+# SUMMARY INFO - LIST WITH LIMIT
+###########################################################
+- name: List role membership summaries with limit
+  nutanix.ncp.ntnx_role_membership_summary_info_v2:
+    limit: 1
+  register: summary_limit_result
+  ignore_errors: true
+
+- name: Verify list role membership summaries with limit
+  ansible.builtin.assert:
+    that:
+      - summary_limit_result.changed == false
+      - summary_limit_result.failed == false
+      - summary_limit_result.response is defined
+      - summary_limit_result.response | length == 1
+    fail_msg: "List role membership summaries with limit failed"
+    success_msg: "List role membership summaries with limit passed"
+
+###########################################################
+# SUMMARY INFO - LIST WITH FILTER (this run's project)
+###########################################################
+- name: List role membership summaries with filter on this project extId
+  nutanix.ncp.ntnx_role_membership_summary_info_v2:
+    filter: "extId eq '{{ project_ext_id }}'"
+  register: summary_filter_result
+  ignore_errors: true
+
+- name: Verify list role membership summaries with filter
+  ansible.builtin.assert:
+    that:
+      - summary_filter_result.changed == false
+      - summary_filter_result.failed == false
+      - summary_filter_result.response is defined
+      - summary_filter_result.response | length == 1
+      - summary_filter_result.response[0].ext_id == project_ext_id
+    fail_msg: "List role membership summaries with filter failed"
+    success_msg: "List role membership summaries with filter passed"
 
 ###########################################################
 # CHECK MODE TESTS - DELETE
