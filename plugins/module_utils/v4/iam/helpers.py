@@ -128,6 +128,45 @@ def get_identity_provider(module, api_instance, ext_id):
         )
 
 
+def get_saml_sp_metadata(module, api_instance):
+    """
+    Get SAML SP metadata.
+    Args:
+        module: Ansible module
+        api_instance: SAMLIdentityProvidersApi instance from ntnx_iam_py_client sdk
+    Returns:
+        GetSamlSpMetadataApiResponse instance
+    """
+    try:
+        return api_instance.get_saml_sp_metadata()
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching SAML SP metadata",
+        )
+
+
+def get_saml_idp_sp_metadata(module, api_instance, ext_id):
+    """
+    Download SAML IdP SP metadata by identity provider ext_id.
+    Args:
+        module: Ansible module
+        api_instance: SAMLIdentityProvidersApi instance from ntnx_iam_py_client sdk
+        ext_id: External id of identity provider
+    Returns:
+        GetSamlIdpSpMetadataApiResponse instance
+    """
+    try:
+        return api_instance.get_saml_idp_sp_metadata_by_id(extId=ext_id)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while downloading SAML IdP SP metadata",
+        )
+
+
 def get_directory_service(module, api_instance, ext_id):
     """
     This method will return directory service info using ext_id.
