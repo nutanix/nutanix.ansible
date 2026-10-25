@@ -229,6 +229,7 @@ def get_registered_client(module, api_instance, ext_id):
             msg="Api Exception raised while fetching registered client info using ext_id",
         )
 
+
 def get_welcome_banner(module, api_instance):
     """
     This method will return the welcome banner configuration.
