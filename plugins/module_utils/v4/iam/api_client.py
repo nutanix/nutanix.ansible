@@ -189,3 +189,40 @@ def get_entity_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_iam_py_client.EntitiesApi(api_client=api_client)
+
+
+def get_registered_client_api_instance(module):
+    """
+    This method will return the registered clients api instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): Clients api instance used to interact with
+            /iam/v4.1.b2/authz/clients endpoints.
+    """
+    api_client = get_api_client(module)
+    return ntnx_iam_py_client.ClientsApi(api_client=api_client)
+
+
+def get_welcome_banner_api_instance(module):
+    """
+    This method will return welcome banner api instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): Welcome banner api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_iam_py_client.WelcomeBannerApi(api_client=api_client)
+
+
+def get_login_providers_api_instance(module):
+    """
+    This method will return LoginProvidersApi instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): Login providers api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_iam_py_client.LoginProvidersApi(api_client=api_client)
