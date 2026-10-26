@@ -205,7 +205,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False,"failed": False, "response": None}
+    result = {"changed": False, "failed": False, "response": None}
     api_instance = get_batches_api_instance(module)
     if module.params.get("ext_id"):
         get_batch_with_ext_id(module, api_instance, result)
