@@ -5,7 +5,7 @@ ntnx-clustermgmt-py-client==4.3.1
 ntnx-iam-py-client==4.1.2b3
 ntnx-microseg-py-client==4.3.1
 ntnx-networking-py-client==4.4.1
-ntnx-prism-py-client==4.4.1
+ntnx-prism-py-client==4.4.2
 ntnx-vmm-py-client==4.3.1
 ntnx-volumes-py-client==4.3.1
 ntnx-dataprotection-py-client==4.4.1
