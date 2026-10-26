@@ -1,12 +1,8 @@
 ---
 # Summary:
-# 1. Create a Prism Central task by uploading a new image (produces a task_ext_id).
-# 2. Wait for the task to reach SUCCEEDED so the affected-entities list is populated.
-# 3. List all TaskEntity (affected entities) of the task.
-# 4. List TaskEntity of the task with a limit.
-# 5. List TaskEntity of the task with an OData filter on `rel`.
-# 6. Project a subset of TaskEntity fields via `select`.
-# 7. Clean up the image created for the demo.
+# 1. List all TaskEntity (affected entities) of a task.
+# 2. List TaskEntity of the task with a limit.
+# 3. List TaskEntity of the task with an OData filter on `rel`.
 #
 # TaskEntity in Prism v4 is the EntityReference model returned by
 # GET /api/prism/v4.3/config/tasks/{taskExtId}/affected-entities and describes
