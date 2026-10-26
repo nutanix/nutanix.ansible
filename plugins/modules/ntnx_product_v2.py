@@ -367,9 +367,7 @@ def get_module_spec():
             choices=["SMALL", "LARGE", "XLARGE"],
             obj=prism_sdk.FlowControllerSize,
         ),
-        is_security_analytics_enabled=dict(
-            type="bool", required=False, default=True
-        ),
+        is_security_analytics_enabled=dict(type="bool", required=False, default=True),
     )
 
     metadata_spec = dict(
