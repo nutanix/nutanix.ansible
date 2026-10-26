@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -23,10 +23,12 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get a Batch by ext_id) -
-      Required Roles: Prism Admin, Prism Viewer, Super Admin.
+      Required Roles: Internal Super Admin, Monitoring Admin, Prism Admin, Prism User, Prism Viewer, Super Admin, Tenant Admin,
+        Tenant Consumer, Virtual Machine Admin
     - >-
       B(List Batches) -
-      Required Roles: Prism Admin, Prism Viewer, Super Admin.
+      Required Roles: Internal Super Admin, Monitoring Admin, Prism Admin, Prism User, Prism Viewer, Super Admin, Tenant Admin,
+        Tenant Consumer, Virtual Machine Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
   ext_id:
@@ -51,7 +53,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    ext_id: "0005b21e-batch-ext-id"
+    ext_id: "a8d414a4-9c28-453a-965a-7140fb9b4aee"
   register: result
   ignore_errors: true
 
@@ -203,7 +205,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "response": None}
+    result = {"changed": False,"failed": False, "response": None}
     api_instance = get_batches_api_instance(module)
     if module.params.get("ext_id"):
         get_batch_with_ext_id(module, api_instance, result)

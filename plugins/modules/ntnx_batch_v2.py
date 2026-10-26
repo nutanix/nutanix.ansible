@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -14,22 +14,19 @@ module: ntnx_batch_v2
 short_description: Submit a batch operation in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module allows you to submit a bulk (batch) operation in Nutanix Prism Central.
+  - This module submits a bulk (batch) operation in Nutanix Prism Central.
   - >-
     A batch is a JSON-driven request that groups multiple CRUD or action calls
     against one entity type (VMs, Categories, Subnets, Images, LCM, ...) into a
     single asynchronous request. The batch service returns a parent task whose
     subtasks track each individual operation.
-  - The module returns the parent task reference; use M(nutanix.ncp.ntnx_pc_tasks_info_v2)
-    to poll the task status.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Submit a batch operation) -
-      Required Roles: Prism Admin, Super Admin. The user must also have the entity-level
-      permissions for every operation carried in the batch payload.
+      Required Roles: Internal Super Admin, Monitoring Admin, Prism Admin, Prism User, Super Admin, Tenant Admin, Tenant Consumer, Virtual Machine Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
   state:
@@ -43,9 +40,8 @@ options:
   metadata:
     description:
       - Metadata describing the batch request as a whole.
-      - Required for submit operation.
     type: dict
-    required: false
+    required: true
     suboptions:
       action:
         description:
@@ -58,90 +54,81 @@ options:
           - CREATE
           - DELETE
           - MODIFY
-        required: false
+        required: true
       name:
         description:
-          - Human-readable name of the batch. Shown in the tasks list and useful
-            for correlating batches across audit logs.
+          - A user friendly name of the batch.
         type: str
-        required: false
+        required: true
       uri:
         description:
-          - Target REST URI (relative to the Prism Central base URL) against which
-            each payload entry is applied.
-          - Example - C(/api/vmm/v4.0/ahv/config/vms) for a VM bulk create.
+          - The absolute URI of the API operation on which batching will be performed.
         type: str
-        required: false
+        required: true
       should_stop_on_error:
         description:
-          - Whether the batch service should stop processing further payload
-            entries as soon as one of them fails.
+          - A flag indicating whether the batch procession should halt or
+            continue when an error response is received from the server during the execution of a batch chunk
         type: bool
         required: false
       chunk_size:
         description:
-          - Number of payload entries the batch service will execute in parallel.
+          - The chunk size to use during the batching operation. If not specified a minimum value of 1 would be chosen.
           - Defaults to C(1) on the server (sequential execution).
         type: int
         required: false
   payload:
     description:
-      - Ordered list of individual operations that make up the batch.
+      - An ordered list of individual operations that make up the batch.
       - Each entry has its own request C(metadata) (headers/path) and a free-form
         C(data) body specific to the target entity's schema.
-      - Required for submit operation.
     type: list
     elements: dict
-    required: false
+    required: true
     suboptions:
       metadata:
         description:
-          - Per-entry request metadata carrying HTTP headers and path parameters
-            that the batch service should apply when calling the target entity API.
+          - The metadata section on the input specification for performing the batch operation.
         type: dict
         required: false
         suboptions:
           headers:
             description:
-              - HTTP headers to be sent for this payload entry.
-              - Use this to pass conditional headers such as C(If-Match) with an ETag.
+              - A list of HTTP headers to be sent for this payload entry.
             type: list
             elements: dict
             required: false
             suboptions:
               name:
                 description:
-                  - HTTP header name.
+                  - The name of the header parameter.
                 type: str
                 required: true
               value:
                 description:
-                  - HTTP header value.
+                  - The value of the header parameter.
                 type: str
                 required: true
           path:
             description:
-              - Path parameters to substitute in the target URI (for example
-                C(extId) when the URI is C(/vms/{extId})).
+              - A list of path parameters to substitute in the target URI.
             type: list
             elements: dict
             required: false
             suboptions:
               name:
                 description:
-                  - Path parameter name (matches the placeholder in the target URI).
+                  - The name of the path parameter.
                 type: str
                 required: true
               value:
                 description:
-                  - Path parameter value.
+                  - The value of the path parameter.
                 type: str
                 required: true
       data:
         description:
-          - Free-form request body sent as the individual operation's payload.
-          - The exact schema depends on the entity C(uri) targeted by the batch
-            metadata (VM create body, Category update body, etc.).
+          - The data section of the payload provided to the batch operation.
         type: dict
         required: false
 extends_documentation_fragment:
@@ -249,7 +236,6 @@ response:
 task_ext_id:
   description:
     - External ID of the parent batch task.
-    - Use it with M(nutanix.ncp.ntnx_pc_tasks_info_v2) to inspect subtasks and status.
   returned: always
   type: str
   sample: "ZXJnb24=:e38e02b7-d946-4069-8291-e9407e3a15d8"
@@ -299,7 +285,6 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
-    validate_required_params,
 )
 
 SDK_IMP_ERROR = None
@@ -358,10 +343,10 @@ def get_module_spec():
             type="str",
             choices=["ACTION", "CREATE", "DELETE", "MODIFY"],
             obj=prism_sdk.ActionType,
-            required=False,
+            required=True,
         ),
-        name=dict(type="str", required=False),
-        uri=dict(type="str", required=False),
+        name=dict(type="str", required=True),
+        uri=dict(type="str", required=True),
         should_stop_on_error=dict(type="bool", required=False),
         chunk_size=dict(type="int", required=False),
     )
@@ -372,14 +357,14 @@ def get_module_spec():
             type="dict",
             options=batch_metadata_spec,
             obj=prism_sdk.BatchSpecMetadata,
-            required=False,
+            required=True,
         ),
         payload=dict(
             type="list",
             elements="dict",
             options=payload_spec,
             obj=prism_sdk.BatchSpecPayload,
-            required=False,
+            required=True,
         ),
     )
 
@@ -388,8 +373,6 @@ def get_module_spec():
 
 def submit_batch(module, result, api_instance):
     """Submit a batch operation to Prism Central."""
-    validate_required_params(module, ["metadata", "payload"])
-
     sg = SpecGenerator(module)
     default_spec = prism_sdk.BatchSpec()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -443,6 +426,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "failed": False,
         "response": None,
         "ext_id": None,
         "task_ext_id": None,
