@@ -67,6 +67,14 @@ EXAMPLES = r"""
     filter: extId eq '840c6c3f-2b01-47d5-81fb-b285e45e89ba'
   register: result
   ignore_errors: true
+
+- name: List all recovery points with fetch_all
+  nutanix.ncp.ntnx_recovery_points_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 RETURN = r"""
 response:
@@ -164,6 +172,7 @@ from ..module_utils.v4.data_protection.api_client import (  # noqa: E402
 from ..module_utils.v4.data_protection.helpers import get_recovery_point  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -198,7 +207,10 @@ def get_recovery_points(module, recovery_points, result):
         module.fail_json(msg="Failed generating recovery points info Spec", **result)
 
     try:
-        resp = recovery_points.list_recovery_points(**kwargs)
+        resp = list_entities(
+            recovery_points.list_recovery_points,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
