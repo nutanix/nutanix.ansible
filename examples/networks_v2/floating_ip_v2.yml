@@ -1,10 +1,12 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a floating IP with external subnet uuid
-# 2. Update the floating IP name and private IP
-# 3. Fetch the floating IP details using ext_id
-# 4. Delete the floating IP
+# 1. Create floating ip with external subnet UUID
+# 2. Update floating ip name and private IP
+# 3. Get floating ips using ext id
+# 4. List all floating ips
+# 5. List all floating ips with fetch_all
+# 6. Delete floating ip
 
 - name: Floating IP playbook
   hosts: localhost
@@ -22,6 +24,7 @@
         floating_ip_ext_id: "d7419d65-1254-9632-1122-ec1431516bbe"
         external_nat_subnet_uuid: "e2dee03b-aa1a-54dc-81b4-6788222f17b8"
         project_uuid: "d7419d65-100e-4c99-a666-ec1431516bbe"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
         user_uuid: "7c62834e-43f0-4c20-a5d4-cbf36b9a142b"
         category_ext_id: "2dff5b0a-99c5-46d6-9002-d42439a8b6e5"
         floating_ip: "10.0.0.1"
@@ -32,6 +35,7 @@
       nutanix.ncp.ntnx_floating_ips_v2:
         state: present
         name: "{{ floating_ip_name }}"
+        project_ext_id: "{{ project_ext_id }}"
         external_subnet_reference: "{{ external_nat_subnet_uuid }}"
         metadata:
           project_reference_id: "{{ project_uuid }}"
@@ -61,6 +65,17 @@
     - name: Get floating_ips using ext_id
       nutanix.ncp.ntnx_floating_ips_info_v2:
         ext_id: "{{ floating_ip_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all floating IPs
+      nutanix.ncp.ntnx_floating_ips_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all floating IPs with fetch_all
+      nutanix.ncp.ntnx_floating_ips_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 
