@@ -1,10 +1,12 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create an address group
-# 2. Update the address group
-# 3. Fetch the address group info
-# 4. Delete the address group
+# 1. Create address group
+# 2. Update address group with the given UUID
+# 3. Fetch address group info
+# 4. List all address groups
+# 5. List all address groups with fetch_all
+# 6. Delete address group
 
 - name: Address groups playbook
   hosts: localhost
@@ -20,6 +22,7 @@
       ansible.builtin.set_fact:
         address_group_name: "ansible_address_group"
         address_group_uuid: "f1b1b1b1-1b1b-1b1b-1b1b-1b1b1b1b1b1b"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
         ipv4_addresses:
           - value: 10.0.0.1
             prefix_length: 24
@@ -31,6 +34,7 @@
         state: present
         name: "{{ address_group_name }}"
         description: address group description
+        project_ext_id: "{{ project_ext_id }}"
         ipv4_addresses:
           - value: "{{ ipv4_addresses[0].value }}"
             prefix_length: "{{ ipv4_addresses[0].prefix_length }}"
@@ -54,6 +58,17 @@
     - name: Fetch address group info
       nutanix.ncp.ntnx_address_groups_info_v2:
         ext_id: "{{ address_group_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all address groups
+      nutanix.ncp.ntnx_address_groups_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all address groups with fetch_all
+      nutanix.ncp.ntnx_address_groups_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 
