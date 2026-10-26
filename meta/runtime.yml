@@ -315,3 +315,4 @@ action_groups:
     - ntnx_batches_info_v2
     - ntnx_task_jobs_info_v2
     - ntnx_task_entities_info_v2
+    - ntnx_registrations_info_v2
