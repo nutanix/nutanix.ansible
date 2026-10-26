@@ -5,7 +5,8 @@
 # The clustermgmt v4.3 ExternalStorages API supports Create, Get, List and
 # Update only (no Delete). External storage represents a third-party storage
 # provider (Dell PowerFlex, Everpure FlashArray, Dell PowerStore) attached to
-# an AOS cluster on Prism Central.
+# an AOS cluster on Prism Central. Provider type is inferred from the config
+# discriminator key; it is not a module input.
 #
 # Because a live third-party storage backend is required for a real Create to
 # succeed, this suite exercises:
@@ -14,12 +15,12 @@
 #   3. check_mode create with ALL fields (Dell PowerStore) — enum/config coverage
 #   4. check_mode update with ALL fields — spec built, no API call (best effort)
 #   5. check_mode delete — reports delete is unsupported, no API call
-#   6. Negative: missing required create fields (name/provider_type/cluster_ext_id)
-#   7. Negative: invalid provider_type enum rejected by argument spec
-#   8. Negative: config provider mismatch with provider_type
-#   9. Negative: get / update with a non-existent ext_id -> descriptive error
-#  10. Info: list all external storages (list may be empty on a fresh cluster)
-#  11. Info: list with limit
+#   6. Negative: missing required create fields (name/config/cluster_ext_id)
+#   7. Negative: create without a provider config sub-key (required_one_of)
+#   8. Negative: get / update with a non-existent ext_id -> descriptive error
+#   9. Info: list all external storages (list may be empty on a fresh cluster)
+#  10. Info: list with limit
+#  11. Info: list with fetch_all (paginated full list)
 #  12. Real create (best effort): attempted against the discovered cluster; if
 #      no backend exists the API error is asserted to be a clean failure and the
 #      created entity is tracked for potential follow-up.
@@ -69,7 +70,6 @@
   nutanix.ncp.ntnx_external_storages_v2:
     state: present
     name: "{{ external_storage_name }}-pflex"
-    provider_type: "DELL_POWERFLEX"
     cluster_ext_id: "{{ cluster_ext_id }}"
     end_point_address:
       ipv4:
@@ -77,12 +77,10 @@
         prefix_length: 32
     config:
       dell_powerflex:
-        system_id: "powerflex-system-01"
         username: "admin"
         password: "PowerFlex.123"
         protection_domain_name: "pd-01"
         storage_pool_name: "sp-01"
-        storage_pool_id: "sp-id-01"
   check_mode: true
   register: result
   ignore_errors: true
@@ -93,15 +91,12 @@
       - result.changed == false
       - result.failed == false
       - result.response.name == external_storage_name + "-pflex"
-      - result.response.provider_type == "DELL_POWERFLEX"
       - result.response.cluster_ext_id == cluster_ext_id
       - result.response.end_point_address.ipv4.value == "10.44.76.100"
       - result.response.end_point_address.ipv4.prefix_length == 32
-      - result.response.config.system_id == "powerflex-system-01"
       - result.response.config.username == "admin"
       - result.response.config.protection_domain_name == "pd-01"
       - result.response.config.storage_pool_name == "sp-01"
-      - result.response.config.storage_pool_id == "sp-id-01"
     fail_msg: "Unable to generate Dell PowerFlex external storage create spec in check mode"
     success_msg: "Dell PowerFlex external storage create spec generated successfully in check mode"
 
@@ -112,19 +107,16 @@
   nutanix.ncp.ntnx_external_storages_v2:
     state: present
     name: "{{ external_storage_name }}-fa"
-    provider_type: "EVERPURE_FLASHARRAY"
     cluster_ext_id: "{{ cluster_ext_id }}"
     end_point_address:
       fqdn:
         value: "flasharray.example.com"
     config:
       everpure_flasharray:
-        id: "fa-id-01"
         username: "admin"
         password: "FlashArray.123"
         realm_name: "realm-01"
         pod_name: "pod-01"
-        pod_id: "pod-id-01"
   check_mode: true
   register: result
   ignore_errors: true
@@ -135,13 +127,10 @@
       - result.changed == false
       - result.failed == false
       - result.response.name == external_storage_name + "-fa"
-      - result.response.provider_type == "EVERPURE_FLASHARRAY"
       - result.response.end_point_address.fqdn.value == "flasharray.example.com"
-      - result.response.config.id == "fa-id-01"
       - result.response.config.username == "admin"
       - result.response.config.realm_name == "realm-01"
       - result.response.config.pod_name == "pod-01"
-      - result.response.config.pod_id == "pod-id-01"
     fail_msg: "Unable to generate Everpure FlashArray external storage create spec in check mode"
     success_msg: "Everpure FlashArray external storage create spec generated successfully in check mode"
 
@@ -152,7 +141,6 @@
   nutanix.ncp.ntnx_external_storages_v2:
     state: present
     name: "{{ external_storage_name }}-pstore"
-    provider_type: "DELL_POWERSTORE"
     cluster_ext_id: "{{ cluster_ext_id }}"
     end_point_address:
       ipv6:
@@ -172,7 +160,6 @@
       - result.changed == false
       - result.failed == false
       - result.response.name == external_storage_name + "-pstore"
-      - result.response.provider_type == "DELL_POWERSTORE"
       - result.response.end_point_address.ipv6.value == "2001:db8::1"
       - result.response.end_point_address.ipv6.prefix_length == 128
       - result.response.config.username == "admin"
@@ -203,7 +190,7 @@
 # ---------------------------------------------------------------------------
 # 6. Negative: missing required create fields
 # ---------------------------------------------------------------------------
-- name: Create external storage without name/provider_type/cluster_ext_id
+- name: Create external storage without name/config/cluster_ext_id
   nutanix.ncp.ntnx_external_storages_v2:
     state: present
     end_point_address:
@@ -222,55 +209,31 @@
     success_msg: "Create with missing required fields failed as expected"
 
 # ---------------------------------------------------------------------------
-# 7. Negative: invalid provider_type enum
+# 7. Negative: create without a provider config sub-key
 # ---------------------------------------------------------------------------
-- name: Create external storage with invalid provider_type
+- name: Create external storage without provider config sub-key
   nutanix.ncp.ntnx_external_storages_v2:
     state: present
-    name: "{{ external_storage_name }}-bad"
-    provider_type: "INVALID_PROVIDER"
+    name: "{{ external_storage_name }}-noconfig"
     cluster_ext_id: "{{ cluster_ext_id }}"
-  register: result
-  ignore_errors: true
-
-- name: Verify invalid provider_type is rejected
-  ansible.builtin.assert:
-    that:
-      - result.changed == false
-      - result.failed == true
-      - "'value of provider_type must be one of' in result.msg"
-    fail_msg: "Invalid provider_type was not rejected by the argument spec"
-    success_msg: "Invalid provider_type correctly rejected by the argument spec"
-
-# ---------------------------------------------------------------------------
-# 8. Negative: config provider mismatch with provider_type
-# ---------------------------------------------------------------------------
-- name: Create external storage with mismatched config provider
-  nutanix.ncp.ntnx_external_storages_v2:
-    state: present
-    name: "{{ external_storage_name }}-mismatch"
-    provider_type: "DELL_POWERSTORE"
-    cluster_ext_id: "{{ cluster_ext_id }}"
-    config:
-      dell_powerflex:
-        system_id: "powerflex-system-01"
-        username: "admin"
-        password: "PowerFlex.123"
+    config: {}
   check_mode: true
   register: result
   ignore_errors: true
 
-- name: Verify config provider mismatch error
+- name: Verify missing provider config sub-key is rejected
   ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == true
-      - "'config.dell_powerstore must be provided' in result.msg"
-    fail_msg: "Config provider mismatch was not rejected"
-    success_msg: "Config provider mismatch correctly rejected"
+      - >-
+          'one of the following is required' in result.msg
+          or 'Missing required parameter' in result.msg
+    fail_msg: "Create without a provider config sub-key was not rejected"
+    success_msg: "Create without a provider config sub-key correctly rejected"
 
 # ---------------------------------------------------------------------------
-# 9. Negative: get / update with a non-existent ext_id
+# 8. Negative: get / update with a non-existent ext_id
 # ---------------------------------------------------------------------------
 - name: Get external storage with non-existent ext_id
   nutanix.ncp.ntnx_external_storages_info_v2:
@@ -288,7 +251,7 @@
     success_msg: "Get with non-existent ext_id failed with a descriptive error as expected"
 
 # ---------------------------------------------------------------------------
-# 10 & 11. Info: list all / list with limit
+# 9 & 10. Info: list all / list with limit
 # ---------------------------------------------------------------------------
 - name: List all external storages
   nutanix.ncp.ntnx_external_storages_info_v2:
@@ -321,26 +284,42 @@
     fail_msg: "Unable to list external storages with limit"
     success_msg: "Listed external storages with limit successfully"
 
+- name: List all external storages with fetch_all
+  nutanix.ncp.ntnx_external_storages_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_external_storages_info_v2
+  ignore_errors: true
+
+- name: Verify list all external storages with fetch_all
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_external_storages_info_v2.changed == false
+      - fetch_all_ntnx_external_storages_info_v2.failed == false
+      - fetch_all_ntnx_external_storages_info_v2.response is defined
+      - fetch_all_ntnx_external_storages_info_v2.total_available_results is defined
+      - >-
+          (fetch_all_ntnx_external_storages_info_v2.response | default([]) | length)
+          == (fetch_all_ntnx_external_storages_info_v2.total_available_results | int)
+    fail_msg: "Unable to list all external storages with fetch_all"
+    success_msg: "Listed all external storages with fetch_all successfully"
+
 # ---------------------------------------------------------------------------
-# 12. Real create (best effort) against the discovered cluster
+# 11. Real create (best effort) against the discovered cluster
 # ---------------------------------------------------------------------------
 - name: Attempt real external storage create (best effort)
   nutanix.ncp.ntnx_external_storages_v2:
     state: present
     name: "{{ external_storage_name }}-real"
-    provider_type: "DELL_POWERFLEX"
     cluster_ext_id: "{{ cluster_ext_id }}"
     end_point_address:
       ipv4:
         value: "10.44.76.100"
     config:
       dell_powerflex:
-        system_id: "powerflex-system-01"
         username: "admin"
         password: "PowerFlex.123"
         protection_domain_name: "pd-01"
         storage_pool_name: "sp-01"
-        storage_pool_id: "sp-id-01"
   register: real_create_result
   ignore_errors: true
 

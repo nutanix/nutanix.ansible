@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -67,6 +67,12 @@ EXAMPLES = r"""
 - name: List external storages with limit
   nutanix.ncp.ntnx_external_storages_info_v2:
     limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List all external storages with fetch_all
+  nutanix.ncp.ntnx_external_storages_info_v2:
+    fetch_all: true
   register: result
   ignore_errors: true
 """
@@ -154,6 +160,7 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.helpers import get_external_storage  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -187,7 +194,10 @@ def get_external_storages(module, api_instance, result):
         module.fail_json(msg="Failed generating external storages info spec", **result)
 
     try:
-        resp = api_instance.list_external_storages(**kwargs)
+        resp = list_entities(
+            api_instance.list_external_storages,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -197,10 +207,10 @@ def get_external_storages(module, api_instance, result):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
-    if not resp:
-        resp = []
-    result["response"] = resp
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    else:
+        result["response"] = []
 
 
 def run_module():

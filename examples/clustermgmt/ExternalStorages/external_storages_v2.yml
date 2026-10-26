@@ -38,19 +38,16 @@
       nutanix.ncp.ntnx_external_storages_v2:
         state: present
         name: "external_storage_ansible"
-        provider_type: "DELL_POWERFLEX"
         cluster_ext_id: "{{ cluster_ext_id }}"
         end_point_address:
           ipv4:
             value: "10.44.76.100"
         config:
           dell_powerflex:
-            system_id: "powerflex-system-01"
             username: "admin"
             password: "PowerFlex.123"
             protection_domain_name: "pd-01"
             storage_pool_name: "sp-01"
-            storage_pool_id: "sp-id-01"
       register: result
       ignore_errors: true
 
@@ -63,19 +60,16 @@
         state: present
         ext_id: "{{ external_storage_ext_id }}"
         name: "external_storage_ansible_updated"
-        provider_type: "DELL_POWERFLEX"
         cluster_ext_id: "{{ cluster_ext_id }}"
         end_point_address:
           ipv4:
             value: "10.44.76.101"
         config:
           dell_powerflex:
-            system_id: "powerflex-system-01"
             username: "admin"
             password: "PowerFlex.456"
             protection_domain_name: "pd-01"
             storage_pool_name: "sp-01"
-            storage_pool_id: "sp-id-01"
       register: result
       ignore_errors: true
       when: external_storage_ext_id | length > 0
@@ -101,6 +95,12 @@
     - name: List external storages with limit
       nutanix.ncp.ntnx_external_storages_info_v2:
         limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: List all external storages with fetch_all
+      nutanix.ncp.ntnx_external_storages_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 

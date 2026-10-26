@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -26,14 +26,15 @@ notes:
     The required roles depend on the operation being performed.
   - >-
     B(Create an External Storage) -
-    Required Roles: Prism Admin, Storage Admin, Super Admin
+    Required Roles: Cluster Admin, Internal Super Admin, Prism Admin, Storage Admin, Super Admin
   - >-
     B(Update an External Storage) -
-    Required Roles: Prism Admin, Storage Admin, Super Admin
+    Required Roles: Cluster Admin, Internal Super Admin, Prism Admin, Storage Admin, Super Admin
   - This module talks to B(Prism Central) (PC). It does not target FCVM/Foundation.
   - The referenced AOS cluster (C(cluster_ext_id)) must already exist and be registered to Prism Central
     before creating an external storage against it.
-  - The C(provider_type) and C(cluster_ext_id) cannot be modified after creation.
+  - The provider configuration type (which C(config) key is used) and C(cluster_ext_id) cannot be
+    modified after creation.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   state:
@@ -60,17 +61,6 @@ options:
       - Required for the create operation.
     type: str
     required: false
-  provider_type:
-    description:
-      - The type of external storage provider.
-      - Required for the create operation.
-      - This value cannot be modified after creation.
-    type: str
-    required: false
-    choices:
-      - DELL_POWERFLEX
-      - EVERPURE_FLASHARRAY
-      - DELL_POWERSTORE
   cluster_ext_id:
     description:
       - The UUID of the AOS cluster connected to this external storage.
@@ -130,7 +120,9 @@ options:
   config:
     description:
       - Configuration details for the external storage.
-      - Exactly one provider configuration must be supplied and it must match C(provider_type).
+      - Exactly one provider configuration must be supplied
+        (C(dell_powerflex), C(everpure_flasharray), or C(dell_powerstore)).
+      - Required for the create operation.
       - The configuration type cannot be changed after creation, but certain attributes within may be updated.
     type: dict
     required: false
@@ -138,16 +130,9 @@ options:
       dell_powerflex:
         description:
           - Configuration for a Dell PowerFlex external storage provider.
-          - Use with C(provider_type=DELL_POWERFLEX).
         type: dict
         required: false
         suboptions:
-          system_id:
-            description:
-              - The Dell PowerFlex system identifier.
-              - Maximum 256 characters.
-            type: str
-            required: false
           username:
             description:
               - Username to connect to the external storage.
@@ -174,25 +159,12 @@ options:
               - Maximum 256 characters.
             type: str
             required: false
-          storage_pool_id:
-            description:
-              - Unique identifier for the Dell PowerFlex storage pool.
-              - Maximum 256 characters.
-            type: str
-            required: false
       everpure_flasharray:
         description:
           - Configuration for an Everpure FlashArray external storage provider.
-          - Use with C(provider_type=EVERPURE_FLASHARRAY).
         type: dict
         required: false
         suboptions:
-          id:
-            description:
-              - The Everpure FlashArray identifier.
-              - Maximum 256 characters.
-            type: str
-            required: false
           username:
             description:
               - Username to connect to the external storage.
@@ -219,16 +191,9 @@ options:
               - Maximum 256 characters.
             type: str
             required: false
-          pod_id:
-            description:
-              - Unique identifier for the Everpure FlashArray pod.
-              - Maximum 256 characters.
-            type: str
-            required: false
       dell_powerstore:
         description:
           - Configuration for a Dell PowerStore external storage provider.
-          - Use with C(provider_type=DELL_POWERSTORE).
         type: dict
         required: false
         suboptions:
@@ -259,19 +224,16 @@ EXAMPLES = r"""
   nutanix.ncp.ntnx_external_storages_v2:
     state: present
     name: "external_storage_ansible"
-    provider_type: "DELL_POWERFLEX"
     cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
     end_point_address:
       ipv4:
         value: "10.44.76.100"
     config:
       dell_powerflex:
-        system_id: "powerflex-system-01"
         username: "admin"
         password: "PowerFlex.123"
         protection_domain_name: "pd-01"
         storage_pool_name: "sp-01"
-        storage_pool_id: "sp-id-01"
   register: result
   ignore_errors: true
 
@@ -280,19 +242,16 @@ EXAMPLES = r"""
     state: present
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
     name: "external_storage_ansible_updated"
-    provider_type: "DELL_POWERFLEX"
     cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
     end_point_address:
       ipv4:
         value: "10.44.76.101"
     config:
       dell_powerflex:
-        system_id: "powerflex-system-01"
         username: "admin"
         password: "PowerFlex.456"
         protection_domain_name: "pd-01"
         storage_pool_name: "sp-01"
-        storage_pool_id: "sp-id-01"
   register: result
   ignore_errors: true
 """
@@ -310,9 +269,7 @@ response:
       "cluster_ext_id": "00061de6-4a87-6b06-185b-ac1f6b6f97e2",
       "config": {
         "protection_domain_name": "pd-01",
-        "storage_pool_id": "sp-id-01",
         "storage_pool_name": "sp-01",
-        "system_id": "powerflex-system-01",
         "username": "admin"
       },
       "end_point_address": {
@@ -415,15 +372,13 @@ except ImportError:
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
-# Mapping of provider_type enum values to the config sub-key and SDK config class.
-PROVIDER_CONFIG_MAP = {
-    "DELL_POWERFLEX": ("dell_powerflex", "DellPowerFlexConfig"),
-    "EVERPURE_FLASHARRAY": ("everpure_flasharray", "EverpureFlashArrayConfig"),
-    "DELL_POWERSTORE": ("dell_powerstore", "DellPowerStoreConfig"),
-}
-
 
 def get_module_spec():
+    config_obj_map = {
+        "dell_powerflex": clustermgmt_sdk.DellPowerFlexConfig,
+        "everpure_flasharray": clustermgmt_sdk.EverpureFlashArrayConfig,
+        "dell_powerstore": clustermgmt_sdk.DellPowerStoreConfig,
+    }
 
     ipv4_spec = dict(
         value=dict(type="str", required=True),
@@ -461,21 +416,17 @@ def get_module_spec():
     )
 
     dell_powerflex_spec = dict(
-        system_id=dict(type="str", required=False),
         username=dict(type="str", required=False),
         password=dict(type="str", required=False, no_log=True),
         protection_domain_name=dict(type="str", required=False),
         storage_pool_name=dict(type="str", required=False),
-        storage_pool_id=dict(type="str", required=False),
     )
 
     everpure_flasharray_spec = dict(
-        id=dict(type="str", required=False),
         username=dict(type="str", required=False),
         password=dict(type="str", required=False, no_log=True),
         realm_name=dict(type="str", required=False),
         pod_name=dict(type="str", required=False),
-        pod_id=dict(type="str", required=False),
     )
 
     dell_powerstore_spec = dict(
@@ -504,11 +455,6 @@ def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str", required=False),
         name=dict(type="str", required=False),
-        provider_type=dict(
-            type="str",
-            required=False,
-            choices=["DELL_POWERFLEX", "EVERPURE_FLASHARRAY", "DELL_POWERSTORE"],
-        ),
         cluster_ext_id=dict(type="str", required=False),
         end_point_address=dict(
             type="dict",
@@ -520,8 +466,12 @@ def get_module_spec():
         config=dict(
             type="dict",
             options=config_spec,
+            obj=config_obj_map,
             required=False,
             mutually_exclusive=[
+                ("dell_powerflex", "everpure_flasharray", "dell_powerstore")
+            ],
+            required_one_of=[
                 ("dell_powerflex", "everpure_flasharray", "dell_powerstore")
             ],
         ),
@@ -529,53 +479,8 @@ def get_module_spec():
     return module_args
 
 
-def _build_config_spec(module, result, provider_type):
-    """Build the provider specific external storage config SDK object.
-
-    Args:
-        module: Ansible module.
-        result (dict): result dict populated on failure.
-        provider_type (str): the selected external storage provider type.
-    Returns:
-        object|None: the provider config SDK object, or None if no config was supplied.
-    """
-    config = module.params.get("config")
-    if not config:
-        return None
-
-    sub_key, sdk_class_name = PROVIDER_CONFIG_MAP.get(provider_type, (None, None))
-    if sub_key is None:
-        module.fail_json(
-            msg="Unsupported provider_type '{0}' for external storage config".format(
-                provider_type
-            ),
-            **result,
-        )
-
-    provider_config = config.get(sub_key)
-    if not provider_config:
-        module.fail_json(
-            msg="config.{0} must be provided when provider_type is '{1}'".format(
-                sub_key, provider_type
-            ),
-            **result,
-        )
-
-    sdk_class = getattr(clustermgmt_sdk, sdk_class_name)
-    config_obj = sdk_class()
-    for attr, value in provider_config.items():
-        if value is not None:
-            setattr(config_obj, attr, value)
-    return config_obj
-
-
 def _remove_read_only_attributes(spec):
-    """Null out server-computed / read-only attributes before an API call.
-
-    The external storage API rejects read-only fields (for example providerType,
-    which is inferred from the config discriminator) if they are present in the
-    request body. Capacity and health are also server-populated on GET.
-    """
+    """Null out server-computed attributes before an update API call."""
     spec.provider_type = None
     spec.total_capacity_bytes = None
     spec.free_capacity_bytes = None
@@ -584,7 +489,7 @@ def _remove_read_only_attributes(spec):
 
 
 def create_external_storage(module, api_instance, result):
-    validate_required_params(module, ["name", "provider_type", "cluster_ext_id"])
+    validate_required_params(module, ["name", "config", "cluster_ext_id"])
 
     sg = SpecGenerator(module)
     default_spec = clustermgmt_sdk.ExternalStorage()
@@ -593,14 +498,9 @@ def create_external_storage(module, api_instance, result):
         result["error"] = err
         module.fail_json(msg="Failed generating create external storage spec", **result)
 
-    spec.config = _build_config_spec(module, result, module.params.get("provider_type"))
-
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
-
-    # providerType is a read-only field derived from the config discriminator.
-    _remove_read_only_attributes(spec)
 
     resp = None
     try:
@@ -650,12 +550,6 @@ def update_external_storage(module, api_instance, result):
         result["error"] = err
         module.fail_json(msg="Failed generating update external storage spec", **result)
 
-    if module.params.get("config"):
-        provider_type = module.params.get("provider_type") or getattr(
-            current_spec, "provider_type", None
-        )
-        update_spec.config = _build_config_spec(module, result, provider_type)
-
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
@@ -664,7 +558,7 @@ def update_external_storage(module, api_instance, result):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
-    # providerType (and other server-computed fields) are read-only on update.
+    # Clear GET-populated fields the update API rejects.
     _remove_read_only_attributes(update_spec)
 
     kwargs = {"if_match": etag}
