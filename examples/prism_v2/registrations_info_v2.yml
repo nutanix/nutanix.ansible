@@ -1,0 +1,46 @@
+---
+# Summary:
+# 1. List all registrations under a domain manager
+# 2. Get a single registration by ext_id
+
+- name: Registrations info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        domain_manager_ext_id: "18553f0f-7b41-4115-b25e-e5b45f414d6f"
+        registration_ext_id: "d2f9994f-44fb-4d4c-ad3c-92055316444f"
+
+    - name: List all registrations under the domain manager
+      nutanix.ncp.ntnx_registrations_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all registrations with limit
+      nutanix.ncp.ntnx_registrations_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: List all registrations with filter
+      nutanix.ncp.ntnx_registrations_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        filter: "remoteClusterDetails/clusterType eq Prism.Management.ClusterType'DOMAIN_MANAGER'"
+      register: result
+      ignore_errors: true
+
+    - name: Get a single registration by ext_id
+      nutanix.ncp.ntnx_registrations_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        ext_id: "{{ registration_ext_id }}"
+      register: result
+      ignore_errors: true

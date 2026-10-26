@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_registrations_info_v2
 short_description: Fetch information about registrations of a Prism Central (domain manager).
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to fetch information about Registration in Nutanix Prism Central.
   - If C(ext_id) is provided, fetch details of the specific Registration.
@@ -26,17 +26,19 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get registration by ext_id) -
-      Required Roles: Prism Admin, Super Admin, Prism Viewer
+      Required Roles: Cluster Admin, Cluster Viewer, Domain Manager Admin, Domain Manager Viewer, DR Admin, DR Viewer,
+        Internal Super Admin, Prism Admin, Prism Viewer, Super Admin
     - >-
       B(List registrations) -
-      Required Roles: Prism Admin, Super Admin, Prism Viewer
+      Required Roles: Cluster Admin, Cluster Viewer, Domain Manager Admin, Domain Manager Viewer, DR Admin, DR Viewer,
+        Internal Super Admin, Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
   domain_manager_ext_id:
     description:
       - The external identifier of the domain manager (Prism Central) resource
         whose registrations are being queried.
-      - This value is required by the underlying v4 Registration API.
+      - This is a required parameter.
     type: str
     required: true
   ext_id:
@@ -84,17 +86,16 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     domain_manager_ext_id: "18553f0f-7b41-4115-b25e-e5b45f414d6f"
-    filter: "remoteClusterDetails/clusterType eq Prism.Config.ClusterType'DOMAIN_MANAGER'"
+    filter: "remoteClusterDetails/clusterType eq Prism.Management.ClusterType'DOMAIN_MANAGER'"
   register: dm_only_registrations
 
-- name: List registrations with paging + limit
+- name: List registrations with limit
   nutanix.ncp.ntnx_registrations_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
     domain_manager_ext_id: "18553f0f-7b41-4115-b25e-e5b45f414d6f"
-    page: 0
     limit: 1
   register: first_registration_only
 """
@@ -147,10 +148,9 @@ msg:
   sample: "Api Exception raised while fetching registrations info"
 
 error:
-  description:
-    - Error details from the SDK / API when the module fails to fetch data.
-  returned: When an error occurs
-  type: str
+    description: Error message if any.
+    type: str
+    returned: When an error occurs
 
 failed:
   description: Whether the module failed.
@@ -242,10 +242,6 @@ def run_module():
         supports_check_mode=False,
         mutually_exclusive=[
             ("ext_id", "filter"),
-            ("ext_id", "limit"),
-            ("ext_id", "page"),
-            ("ext_id", "orderby"),
-            ("ext_id", "select"),
         ],
     )
     remove_param_with_none_value(module.params)
