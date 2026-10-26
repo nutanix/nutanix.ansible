@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,35 +12,29 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_task_entities_info_v2
 short_description: Fetch the affected entities (TaskEntity) of a Prism Central task
-version_added: 2.5.0
+version_added: "2.7.0"
 description:
-  - This module allows you to fetch information about TaskEntity in Nutanix Prism Central.
+  - Fetch list of TaskEntity records for a Prism Central task identified by C(task_ext_id).
   - A TaskEntity is an entity (VM, image, subnet, VPC, category, etc.) that a Prism Central
     v4 asynchronous task created, modified, or otherwise affected.
-  - The list of affected entities is scoped to a single parent task identified by C(task_ext_id).
-  - The Nutanix Prism v4 API only exposes a list endpoint for task entities
-    (C(GET /api/prism/v4.3/config/tasks/{taskExtId}/affected-entities)); there is no
-    dedicated get-by-ID endpoint. This module therefore always returns a list of
-    TaskEntity records for the given task, optionally filtered / paginated / projected.
-  - This module uses PC v4 APIs based SDKs.
+  - This module uses PC v4 APIs based SDKs
 notes:
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the user
     performing the operation.
   - >-
     B(List entities associated with a task) -
-    Required Roles: Account Owner, Administrator, Backup Admin, CSI System,
+    Required Roles: Account Owner, Administrator, Backup Admin, Consumer, CSI System,
     Intelligent Ops Admin, Kubernetes Data Services System, Monitoring Admin,
-    NCM Admin, NCM Connector, NCM Viewer, Prism Admin, Prism Viewer, Super Admin,
-    Self-Service Admin (deprecated)
+    NCM Admin, NCM Connector, NCM Viewer, Prism Admin, Prism Viewer, Project Admin,
+    Self-Service Admin (deprecated), Super Admin, Tenant Admin, Tenant Consumer
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
   task_ext_id:
     description:
-      - A globally unique identifier for a task.
-      - It consists of a prefix and a UUID separated by C(:).
-      - The C(legacy) prefix can be used with a task UUID provided by previous API families.
-      - Required. The task entities endpoint is always scoped to a specific parent task.
+      - External ID of the parent task whose affected entities should be listed.
+      - Consists of a prefix and a UUID separated by C(:).
+      - The C(legacy) prefix can be used with a task UUID from previous API families.
     type: str
     required: true
 extends_documentation_fragment:
@@ -50,44 +44,46 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_proxy_v2
 author:
   - Abhinav Bansal (@abhinavbansal29)
+  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
 - name: List all entities affected by a task
   nutanix.ncp.ntnx_task_entities_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     task_ext_id: "ZXJnb24=:e38e02b7-d946-4069-8291-e9407e3a15d8"
   register: result
-  ignore_errors: true
 
 - name: List task-affected entities with a limit
   nutanix.ncp.ntnx_task_entities_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     task_ext_id: "ZXJnb24=:e38e02b7-d946-4069-8291-e9407e3a15d8"
     limit: 1
   register: result
-  ignore_errors: true
 
-- name: List task-affected entities filtered by rel (entity type)
+- name: List task-affected entities filtered by rel
   nutanix.ncp.ntnx_task_entities_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     task_ext_id: "ZXJnb24=:e38e02b7-d946-4069-8291-e9407e3a15d8"
     filter: "rel eq 'vmm:content:image'"
   register: result
-  ignore_errors: true
-
-- name: Project only ext_id and rel of task-affected entities
-  nutanix.ncp.ntnx_task_entities_info_v2:
-    task_ext_id: "ZXJnb24=:e38e02b7-d946-4069-8291-e9407e3a15d8"
-    select: "extId,rel"
-  register: result
-  ignore_errors: true
 """
 
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC TaskEntity info v4 API.
+    - Response for fetching task entities info.
     - Always a list of TaskEntity dicts for the given C(task_ext_id).
-    - Each element is an EntityReference with fields such as C(ext_id), C(rel), and C(name).
-    - When the task has not affected any entities the list is empty.
+    - Empty list when the task has not affected any entities.
   returned: always
   type: list
   elements: dict
@@ -97,53 +93,39 @@ response:
       rel: "vmm:content:image"
 
 task_ext_id:
-  description:
-    - The external ID of the parent task whose affected entities were fetched.
+  description: The external ID of the parent task whose affected entities were fetched.
   returned: always
   type: str
   sample: "ZXJnb24=:e38e02b7-d946-4069-8291-e9407e3a15d8"
 
-total_available_results:
-  description:
-    - The total number of TaskEntity records available on the server for the given
-      parent task (not just the current page).
-  returned: when the list call succeeds
-  type: int
-  sample: 1
-
 changed:
-  description: Always C(false); this is a read-only info module.
+  description: This indicates whether the task resulted in any changes
   returned: always
   type: bool
   sample: false
 
+error:
+  description: This field typically holds information about if the task have errors that occurred during the task execution
+  returned: always
+  type: bool
+
 failed:
-  description: Whether the module failed.
+  description: This field typically holds information about if the task have failed
   returned: always
   type: bool
   sample: false
 
 msg:
-  description: Status or error message.
+  description: This indicates the message if any message occurred
   returned: When there is an error
   type: str
   sample: "Api Exception raised while fetching task entities info"
 
-error:
-  description: Error details returned by the SDK, if any.
-  returned: When an error occurs
-  type: str
-
-status:
-  description: HTTP status code returned by the SDK, if any.
-  returned: When an error occurs
+total_available_results:
+  description: The total number of available TaskEntity records for the parent task.
+  returned: when all task entities are fetched
   type: int
-  sample: 400
-
-response_on_error:
-  description: Raw error body returned by the SDK, if any.
-  returned: When an error occurs
-  type: raw
+  sample: 1
 """
 
 import warnings  # noqa: E402
@@ -215,8 +197,8 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "response": None,
         "failed": False,
+        "response": None,
         "task_ext_id": None,
     }
     tasks_api = get_tasks_api_instance(module)

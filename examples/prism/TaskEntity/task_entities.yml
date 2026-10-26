@@ -23,37 +23,10 @@
       nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') }}"
       nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default(9440, true) }}"
       validate_certs: false
-  vars:
-    demo_image_name: "ansible-task-entity-demo-{{ 999999 | random }}"
-    demo_image_url: "http://download.cirros-cloud.net/0.5.2/cirros-0.5.2-x86_64-disk.img"
-
   tasks:
-    - name: Create a Prism Central task by uploading a disk image
-      nutanix.ncp.ntnx_images_v2:
-        state: present
-        type: DISK_IMAGE
-        name: "{{ demo_image_name }}"
-        description: "Image created by ntnx_task_entities_info_v2 example"
-        source:
-          url_source:
-            url: "{{ demo_image_url }}"
-            should_allow_insecure_url: true
-      register: image_task
-      ignore_errors: true
-
-    - name: Save task_ext_id for the follow-up TaskEntity queries
+    - name: Set varaibles
       ansible.builtin.set_fact:
-        demo_task_ext_id: "{{ image_task.task_ext_id }}"
-      when: image_task.task_ext_id is defined
-
-    - name: Wait for the image-create task to reach SUCCEEDED
-      nutanix.ncp.ntnx_pc_tasks_info_v2:
-        ext_id: "{{ demo_task_ext_id }}"
-      register: task_status
-      until: task_status.response.status == 'SUCCEEDED'
-      retries: 60
-      delay: 10
-      when: demo_task_ext_id is defined
+        demo_task_ext_id: "{{ 'ZXJnb24=:e38e02b7-d946-4069-8291-e9407e3a15d8' }}"
 
     - name: List all TaskEntity (affected entities) of the task
       nutanix.ncp.ntnx_task_entities_info_v2:
@@ -74,21 +47,3 @@
         filter: "rel eq 'vmm:content:image'"
       register: entities_filtered
       ignore_errors: true
-
-    - name: Project only a subset of TaskEntity fields via select
-      nutanix.ncp.ntnx_task_entities_info_v2:
-        task_ext_id: "{{ demo_task_ext_id }}"
-        select: "extId,rel"
-      register: entities_selected
-      ignore_errors: true
-
-    - name: Delete the demo image once TaskEntity queries are done
-      nutanix.ncp.ntnx_images_v2:
-        state: absent
-        ext_id: "{{ task_status.response.entities_affected[0].ext_id }}"
-      when:
-        - task_status is defined
-        - task_status.response is defined
-        - task_status.response.entities_affected | default([]) | length > 0
-      register: cleanup_result
-      failed_when: false
