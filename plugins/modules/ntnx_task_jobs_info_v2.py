@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_task_jobs_info_v2
 short_description: Fetch task job(s) associated with a Prism Central task
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to fetch information about TaskJob in Nutanix Prism Central.
   - A TaskJob represents a single action inside a parent batch task; each
@@ -25,17 +25,17 @@ notes:
     This module requires the following Nutanix IAM roles to be assigned to
     the user performing the operation.
   - >-
-    B(Get task job by ext_id) -
-    Required Roles: Account Owner, Administrator, Backup Admin, CSI System,
+    B(Fetch a job associated with a task) -
+    Required Roles: Account Owner, Administrator, Backup Admin, Consumer, CSI System,
     Intelligent Ops Admin, Kubernetes Data Services System, Monitoring Admin,
-    NCM Admin, NCM Connector, NCM Viewer, Prism Admin, Prism Viewer, Super Admin,
-    Self-Service Admin (deprecated)
+    NCM Admin, NCM Connector, NCM Viewer, Prism Admin, Prism Viewer, Project Admin,
+    Self-Service Admin (deprecated), Super Admin, Tenant Admin, Tenant Consumer
   - >-
-    B(List task jobs) -
-    Required Roles: Account Owner, Administrator, Backup Admin, CSI System,
+    B(List jobs associated with a task) -
+    Required Roles: Account Owner, Administrator, Backup Admin, Consumer, CSI System,
     Intelligent Ops Admin, Kubernetes Data Services System, Monitoring Admin,
-    NCM Admin, NCM Connector, NCM Viewer, Prism Admin, Prism Viewer, Super Admin,
-    Self-Service Admin (deprecated)
+    NCM Admin, NCM Connector, NCM Viewer, Prism Admin, Prism Viewer, Project Admin,
+    Self-Service Admin (deprecated), Super Admin, Tenant Admin, Tenant Consumer
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
   task_ext_id:
@@ -56,6 +56,7 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_proxy_v2
 author:
   - Abhinav Bansal (@abhinavbansal29)
+  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -72,18 +73,10 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
-- name: List task jobs with pagination
+- name: List task jobs with limit
   nutanix.ncp.ntnx_task_jobs_info_v2:
     task_ext_id: "ZXJnb24=:e38e02b7-d946-4069-8291-e9407e3a15d8"
-    page: 0
     limit: 1
-  register: result
-  ignore_errors: true
-
-- name: List task jobs and select only status and name
-  nutanix.ncp.ntnx_task_jobs_info_v2:
-    task_ext_id: "ZXJnb24=:e38e02b7-d946-4069-8291-e9407e3a15d8"
-    select: "status,name"
   register: result
   ignore_errors: true
 """
@@ -193,6 +186,7 @@ def get_task_job_with_ext_id(module, tasks_api, result):
     ext_id = module.params.get("ext_id")
     resp = get_task_job(module, tasks_api, task_ext_id, ext_id)
     result["ext_id"] = ext_id
+    result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.to_dict())
 
 
@@ -237,7 +231,6 @@ def run_module():
         "changed": False,
         "response": None,
         "failed": False,
-        "task_ext_id": module.params.get("task_ext_id"),
     }
     tasks_api = get_tasks_api_instance(module)
     if module.params.get("ext_id"):
