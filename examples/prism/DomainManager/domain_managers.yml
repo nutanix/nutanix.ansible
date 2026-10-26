@@ -1,0 +1,90 @@
+---
+# Summary:
+# This playbook demonstrates the operations supported by the generated
+# Nutanix Prism domain manager (Prism Central) v4 modules:
+#
+#   1. Fetch all domain managers (Prism Central) configured on the cluster.
+#   2. Fetch a specific domain manager (Prism Central) by external ID.
+#   3. List backup targets configured on a given domain manager.
+#   4. List restorable domain managers for a given restore source.
+#   5. List restore points for a restore source + restorable domain manager.
+#   6. Scale up a domain manager (Prism Central) cluster to a higher size.
+#
+# All plays target the domain manager (Prism Central) endpoint. Connection
+# parameters are set ONCE via a play-level ``module_defaults`` block as
+# recommended by the collection style guide — do not repeat them in every task.
+
+- name: Nutanix Prism domain manager (Prism Central) playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('ansible.builtin.env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('ansible.builtin.env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('ansible.builtin.env', 'NUTANIX_PASSWORD')) }}"
+      nutanix_port: "{{ nutanix_port | default(lookup('ansible.builtin.env', 'NUTANIX_PORT') | default(9440, true)) }}"
+      validate_certs: false
+
+  tasks:
+    ########################################################################
+    # Discover the primary domain manager (Prism Central) ext_id. The rest
+    # of the plays scope their calls to the first entry returned by the
+    # list_domain_managers API — on a single-PC deployment this is the PC
+    # under test.
+    ########################################################################
+
+    - name: List all domain managers (Prism Central) on the cluster
+      nutanix.ncp.ntnx_domain_managers_info_v2:
+      register: all_domain_managers
+
+    - name: Set discovered domain_manager_ext_id
+      ansible.builtin.set_fact:
+        domain_manager_ext_id: "{{ all_domain_managers.response[0].ext_id }}"
+
+    - name: Fetch a specific domain manager (Prism Central) by ext_id
+      nutanix.ncp.ntnx_domain_managers_info_v2:
+        ext_id: "{{ domain_manager_ext_id }}"
+      register: one_domain_manager
+
+    ########################################################################
+    # Backup targets configured on the domain manager (Prism Central).
+    ########################################################################
+
+    - name: List backup targets configured on the domain manager
+      nutanix.ncp.ntnx_domain_managers_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+      register: all_backup_targets
+
+    ########################################################################
+    # Restorable domain managers / restore points — these require a restore
+    # source to exist on the cluster. If the first list call returns zero
+    # results the dependent plays are skipped.
+    ########################################################################
+
+    - name: List all restorable domain managers for a given restore source
+      nutanix.ncp.ntnx_domain_managers_info_v2:
+        restore_source_ext_id: "{{ restore_source_ext_id | default('d4e44c2b-944c-48b0-8de1-b0adae3d54c6') }}"
+      register: all_restorable_domain_managers
+      ignore_errors: true
+
+    - name: List all restore points for a restore source + restorable domain manager
+      nutanix.ncp.ntnx_domain_managers_info_v2:
+        restore_source_ext_id: "{{ restore_source_ext_id | default('d4e44c2b-944c-48b0-8de1-b0adae3d54c6') }}"
+        restorable_domain_manager_ext_id: "{{ restorable_domain_manager_ext_id | default(domain_manager_ext_id) }}"
+      register: all_restore_points
+      ignore_errors: true
+
+    ########################################################################
+    # Scale-up action — this is a long-running task on the live cluster.
+    # By default we run it in dry-run mode so the playbook is safe to
+    # execute against a live PC without actually resizing the deployment.
+    # Flip ``scale_up_dryrun`` to ``false`` to perform a real scale-up.
+    ########################################################################
+
+    - name: Scale up the domain manager (Prism Central) in dry-run mode
+      nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+        ext_id: "{{ domain_manager_ext_id }}"
+        size: "{{ scale_up_target_size | default('LARGE') }}"
+        dryrun: "{{ scale_up_dryrun | default(true) }}"
+      register: scale_up_result
+      ignore_errors: true

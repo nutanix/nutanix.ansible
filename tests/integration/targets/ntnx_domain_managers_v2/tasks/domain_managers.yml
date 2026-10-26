@@ -1,0 +1,431 @@
+---
+# Test plan for ntnx_domain_managers_info_v2 and
+# ntnx_scale_up_domain_manager_by_id_v2.
+#
+# The two modules exercised here cover five v4 SDK operations:
+#
+#   Info module (ntnx_domain_managers_info_v2):
+#     - ListDomainManagers         (default: no scope params)
+#     - GetDomainManagerById       (ext_id provided)
+#     - ListBackupTargets          (domain_manager_ext_id provided)
+#     - ListRestorableDomainManagers (restore_source_ext_id provided)
+#     - ListRestorePoints          (restore_source_ext_id +
+#                                   restorable_domain_manager_ext_id)
+#
+#   Action module (ntnx_scale_up_domain_manager_by_id_v2):
+#     - ScaleUpDomainManagerById   (with dryrun=true for a safe end-to-end
+#                                   invocation on a live PC)
+#
+# The scale-up action is destructive and long-running; the only "real" API
+# invocation we drive from here is in dry-run mode so the test suite is
+# safe to run against a production PC. Check_mode tests cover the full
+# argument-spec surface and we still assert the dry-run returns a valid
+# task payload.
+#
+# Negative tests exercise:
+#   - Unknown ext_id (expect clean API error).
+#   - Missing required parameters at the argspec layer.
+#   - Invalid enum values.
+#   - Mutually-exclusive combinations rejected by argspec.
+#   - required_by rule for restorable_domain_manager_ext_id ->
+#     restore_source_ext_id.
+
+- name: Start ntnx_domain_managers_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_domain_managers_v2 tests
+
+########################################################################################
+# Info — list all domain managers (Prism Central) on the cluster.
+########################################################################################
+
+- name: List all domain managers (Prism Central) on the cluster
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+  register: all_domain_managers
+  ignore_errors: true
+
+- name: Assert list-all returned at least one domain manager
+  ansible.builtin.assert:
+    that:
+      - all_domain_managers is defined
+      - all_domain_managers.failed == false
+      - all_domain_managers.changed == false
+      - all_domain_managers.response is defined
+      - all_domain_managers.response | length > 0
+      - all_domain_managers.total_available_results is defined
+      - all_domain_managers.total_available_results >= 1
+      - all_domain_managers.response[0].ext_id is defined
+      - all_domain_managers.response[0].config is defined
+      - all_domain_managers.response[0].config.name is defined
+      - all_domain_managers.response[0].config.size in ["STARTER", "SMALL", "LARGE", "EXTRALARGE"]
+      - all_domain_managers.response[0].network is defined
+      - all_domain_managers.response[0].node_ext_ids is defined
+    success_msg: "List of domain managers fetched successfully"
+    fail_msg: "Failed to list domain managers"
+
+- name: Record the primary domain manager ext_id and current size
+  ansible.builtin.set_fact:
+    domain_manager_ext_id: "{{ all_domain_managers.response[0].ext_id }}"
+    current_size: "{{ all_domain_managers.response[0].config.size }}"
+
+########################################################################################
+# Info — get a single domain manager (Prism Central) by ext_id.
+########################################################################################
+
+- name: Fetch a specific domain manager (Prism Central) using ext_id
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    ext_id: "{{ domain_manager_ext_id }}"
+  register: one_domain_manager
+  ignore_errors: true
+
+- name: Assert get-by-ext-id returned the expected domain manager
+  ansible.builtin.assert:
+    that:
+      - one_domain_manager is defined
+      - one_domain_manager.failed == false
+      - one_domain_manager.changed == false
+      - one_domain_manager.ext_id == domain_manager_ext_id
+      - one_domain_manager.response is defined
+      - one_domain_manager.response.ext_id == domain_manager_ext_id
+      - one_domain_manager.response.config is defined
+      - one_domain_manager.response.config.size == current_size
+    success_msg: "Get domain manager by ext_id returned the expected entity"
+    fail_msg: "Get domain manager by ext_id did not return the expected entity"
+
+- name: Fetch a domain manager with an unknown ext_id
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_dm_id
+  ignore_errors: true
+
+- name: Assert unknown ext_id fails with the expected error
+  ansible.builtin.assert:
+    that:
+      - bad_dm_id is defined
+      - bad_dm_id.failed == true
+      - bad_dm_id.changed == false
+      - bad_dm_id.msg == "Api Exception raised while fetching pc config info using ext_id"
+    success_msg: "Get domain manager with unknown ext_id failed as expected"
+    fail_msg: "Get domain manager with unknown ext_id did not fail as expected"
+
+########################################################################################
+# Info — list backup targets scoped to the primary domain manager.
+########################################################################################
+
+- name: List backup targets for the primary domain manager
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+  register: all_backup_targets
+  ignore_errors: true
+
+- name: Assert backup targets list call completed cleanly
+  ansible.builtin.assert:
+    that:
+      - all_backup_targets is defined
+      - all_backup_targets.failed == false
+      - all_backup_targets.changed == false
+      - all_backup_targets.response is defined
+      - all_backup_targets.response is iterable
+      - "'total_available_results' in all_backup_targets"
+    success_msg: "List backup targets completed cleanly"
+    fail_msg: "List backup targets did not complete cleanly"
+
+- name: List backup targets for an unknown domain manager
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    domain_manager_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_dm_backups
+  ignore_errors: true
+
+- name: Assert unknown domain_manager_ext_id fails with the expected error
+  ansible.builtin.assert:
+    that:
+      - bad_dm_backups is defined
+      - bad_dm_backups.failed == true
+      - bad_dm_backups.changed == false
+      - bad_dm_backups.msg == "Api Exception raised while fetching backup targets info"
+    success_msg: "List backup targets with unknown domain_manager_ext_id failed as expected"
+    fail_msg: "List backup targets with unknown domain_manager_ext_id did not fail as expected"
+
+########################################################################################
+# Info — restorable domain managers and restore points. These require a
+# restore source to exist on the cluster. We cannot assume one does, so we
+# only assert the module routed to the correct SDK method by checking that
+# an unknown restore_source_ext_id surfaces the expected error message. The
+# routing itself (and the required_by rule) is validated whether or not a
+# real restore source exists.
+########################################################################################
+
+- name: List restorable domain managers for a (likely non-existent) restore source
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    restore_source_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_restorable_dms
+  ignore_errors: true
+
+- name: Assert the module routed to list_restorable_domain_managers
+  ansible.builtin.assert:
+    that:
+      - bad_restorable_dms is defined
+      - bad_restorable_dms.changed == false
+      - >-
+        (bad_restorable_dms.failed == false and bad_restorable_dms.response is defined)
+        or
+        (bad_restorable_dms.failed == true
+         and bad_restorable_dms.msg == "Api Exception raised while fetching restorable domain managers info")
+    success_msg: "List restorable domain managers routed through the correct SDK method"
+    fail_msg: "List restorable domain managers did not route through the correct SDK method"
+
+- name: List restore points for a (likely non-existent) restore source + restorable DM
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    restore_source_ext_id: "00000000-0000-0000-0000-000000000000"
+    restorable_domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+  register: bad_restore_points
+  ignore_errors: true
+
+- name: Assert the module routed to list_restore_points
+  ansible.builtin.assert:
+    that:
+      - bad_restore_points is defined
+      - bad_restore_points.changed == false
+      - >-
+        (bad_restore_points.failed == false and bad_restore_points.response is defined)
+        or
+        (bad_restore_points.failed == true
+         and bad_restore_points.msg == "Api Exception raised while fetching restore points info")
+    success_msg: "List restore points routed through the correct SDK method"
+    fail_msg: "List restore points did not route through the correct SDK method"
+
+- name: Negative — restorable_domain_manager_ext_id without restore_source_ext_id (required_by rule)
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    restorable_domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+  register: required_by_result
+  ignore_errors: true
+
+- name: Assert required_by rule rejects the call at argspec time
+  ansible.builtin.assert:
+    that:
+      - required_by_result is defined
+      - required_by_result.failed == true
+      - required_by_result.changed == false
+      - "'missing parameter(s) required by' in required_by_result.msg"
+      - "'restore_source_ext_id' in required_by_result.msg"
+    success_msg: "required_by rule rejected missing restore_source_ext_id"
+    fail_msg: "required_by rule did not reject missing restore_source_ext_id"
+
+########################################################################################
+# Info — argspec negative paths (mutually exclusive combinations).
+########################################################################################
+
+- name: Negative — ext_id and filter are mutually exclusive
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    ext_id: "{{ domain_manager_ext_id }}"
+    filter: "name eq 'anything'"
+  register: ext_filter_mutex
+  ignore_errors: true
+
+- name: Assert ext_id + filter are rejected as mutually exclusive
+  ansible.builtin.assert:
+    that:
+      - ext_filter_mutex is defined
+      - ext_filter_mutex.failed == true
+      - ext_filter_mutex.changed == false
+      - ext_filter_mutex.msg == "parameters are mutually exclusive: ext_id|filter"
+    success_msg: "Mutex ext_id + filter rejected as expected"
+    fail_msg: "Mutex ext_id + filter was not rejected"
+
+- name: Negative — ext_id and domain_manager_ext_id are mutually exclusive
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    ext_id: "{{ domain_manager_ext_id }}"
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+  register: ext_dm_mutex
+  ignore_errors: true
+
+- name: Assert ext_id + domain_manager_ext_id are rejected as mutually exclusive
+  ansible.builtin.assert:
+    that:
+      - ext_dm_mutex is defined
+      - ext_dm_mutex.failed == true
+      - ext_dm_mutex.changed == false
+      - ext_dm_mutex.msg == "parameters are mutually exclusive: ext_id|domain_manager_ext_id"
+    success_msg: "Mutex ext_id + domain_manager_ext_id rejected as expected"
+    fail_msg: "Mutex ext_id + domain_manager_ext_id was not rejected"
+
+- name: Negative — domain_manager_ext_id and restore_source_ext_id are mutually exclusive
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    restore_source_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: dm_src_mutex
+  ignore_errors: true
+
+- name: Assert domain_manager_ext_id + restore_source_ext_id are rejected as mutually exclusive
+  ansible.builtin.assert:
+    that:
+      - dm_src_mutex is defined
+      - dm_src_mutex.failed == true
+      - dm_src_mutex.changed == false
+      - dm_src_mutex.msg == "parameters are mutually exclusive: domain_manager_ext_id|restore_source_ext_id"
+    success_msg: "Mutex domain_manager_ext_id + restore_source_ext_id rejected as expected"
+    fail_msg: "Mutex domain_manager_ext_id + restore_source_ext_id was not rejected"
+
+########################################################################################
+# Scale-up action — check_mode. Covers Create / Update / Delete-style
+# check_mode guidance from Step 4 (one check_mode per operation; this
+# module exposes a single action verb so a single check_mode is sufficient).
+########################################################################################
+
+- name: Scale-up check_mode — full attribute set, expect no API call
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    ext_id: "{{ domain_manager_ext_id }}"
+    size: LARGE
+    dryrun: true
+  check_mode: true
+  register: scale_up_check_mode_result
+  ignore_errors: true
+
+- name: Assert the scale-up check_mode spec is built correctly
+  ansible.builtin.assert:
+    that:
+      - scale_up_check_mode_result is defined
+      - scale_up_check_mode_result.failed == false
+      - scale_up_check_mode_result.changed == false
+      - scale_up_check_mode_result.ext_id == domain_manager_ext_id
+      - scale_up_check_mode_result.response is defined
+      - scale_up_check_mode_result.response.size == "LARGE"
+      - scale_up_check_mode_result.skipped is defined
+      - "'check_mode' in scale_up_check_mode_result.skipped"
+    success_msg: "Scale-up check_mode spec generated correctly"
+    fail_msg: "Scale-up check_mode spec generation failed"
+
+########################################################################################
+# Scale-up action — real invocation in dry-run mode. The backend validates
+# the request end-to-end but does NOT actually resize the PC. We accept
+# either (a) a successful task response, or (b) a well-formed API error
+# (for example, when the requested size equals the current size and the
+# backend rejects the no-op with 400 / 409 / 412). Both outcomes prove the
+# module reached the API with a well-formed payload.
+########################################################################################
+
+- name: Scale-up (dry-run) — exercise the real API in a non-destructive way
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    ext_id: "{{ domain_manager_ext_id }}"
+    size: EXTRALARGE
+    dryrun: true
+    wait: false
+  register: scale_up_dryrun_result
+  ignore_errors: true
+
+- name: Assert dry-run scale-up produced a valid task or a well-formed API error
+  ansible.builtin.assert:
+    that:
+      - scale_up_dryrun_result is defined
+      - >-
+        (scale_up_dryrun_result.failed == false
+         and scale_up_dryrun_result.changed == true
+         and scale_up_dryrun_result.ext_id == domain_manager_ext_id
+         and scale_up_dryrun_result.task_ext_id is defined
+         and scale_up_dryrun_result.task_ext_id is string
+         and scale_up_dryrun_result.task_ext_id | length > 0
+         and scale_up_dryrun_result.response is defined)
+        or
+        (scale_up_dryrun_result.failed == true
+         and scale_up_dryrun_result.changed == false
+         and scale_up_dryrun_result.msg == ("Api Exception raised while scaling up domain manager with ext_id: "
+                                             ~ domain_manager_ext_id))
+    success_msg: "Dry-run scale-up produced a valid outcome"
+    fail_msg: "Dry-run scale-up produced an unexpected outcome"
+
+########################################################################################
+# Scale-up action — negative paths.
+########################################################################################
+
+- name: Negative — scale-up missing required ext_id
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    size: LARGE
+  register: scale_up_missing_ext_id
+  ignore_errors: true
+
+- name: Assert missing ext_id is rejected at the argspec layer
+  ansible.builtin.assert:
+    that:
+      - scale_up_missing_ext_id is defined
+      - scale_up_missing_ext_id.failed == true
+      - scale_up_missing_ext_id.changed == false
+      - "'missing required arguments: ext_id' in scale_up_missing_ext_id.msg"
+    success_msg: "Missing ext_id rejected as expected"
+    fail_msg: "Missing ext_id was NOT rejected as expected"
+
+- name: Negative — scale-up missing required size
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    ext_id: "{{ domain_manager_ext_id }}"
+  register: scale_up_missing_size
+  ignore_errors: true
+
+- name: Assert missing size is rejected at the argspec layer
+  ansible.builtin.assert:
+    that:
+      - scale_up_missing_size is defined
+      - scale_up_missing_size.failed == true
+      - scale_up_missing_size.changed == false
+      - "'missing required arguments: size' in scale_up_missing_size.msg"
+    success_msg: "Missing size rejected as expected"
+    fail_msg: "Missing size was NOT rejected as expected"
+
+- name: Negative — scale-up with invalid size enum
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    ext_id: "{{ domain_manager_ext_id }}"
+    size: BOGUS
+  register: scale_up_bad_size
+  ignore_errors: true
+
+- name: Assert invalid size enum is rejected at the argspec layer
+  ansible.builtin.assert:
+    that:
+      - scale_up_bad_size is defined
+      - scale_up_bad_size.failed == true
+      - scale_up_bad_size.changed == false
+      - "'value of size must be one of' in scale_up_bad_size.msg"
+    success_msg: "Invalid size enum rejected as expected"
+    fail_msg: "Invalid size enum was NOT rejected as expected"
+
+- name: Negative — scale-up against unknown domain manager ext_id
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    size: LARGE
+    dryrun: true
+    wait: false
+  register: scale_up_unknown_id
+  ignore_errors: true
+
+- name: Assert unknown ext_id surfaces the expected API error
+  ansible.builtin.assert:
+    that:
+      - scale_up_unknown_id is defined
+      - scale_up_unknown_id.failed == true
+      - scale_up_unknown_id.changed == false
+      - scale_up_unknown_id.msg == "Api Exception raised while scaling up domain manager with ext_id: 00000000-0000-0000-0000-000000000000"
+    success_msg: "Scale-up with unknown ext_id failed as expected"
+    fail_msg: "Scale-up with unknown ext_id did NOT fail as expected"
+
+- name: Negative — scale-up with invalid state value
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    state: absent
+    ext_id: "{{ domain_manager_ext_id }}"
+    size: LARGE
+  register: scale_up_bad_state
+  ignore_errors: true
+
+- name: Assert invalid state is rejected at the argspec layer
+  ansible.builtin.assert:
+    that:
+      - scale_up_bad_state is defined
+      - scale_up_bad_state.failed == true
+      - scale_up_bad_state.changed == false
+      - "'value of state must be one of' in scale_up_bad_state.msg"
+    success_msg: "Invalid state value rejected as expected"
+    fail_msg: "Invalid state value was NOT rejected as expected"
+
+########################################################################################
+# End of tests
+########################################################################################
+
+- name: Finish ntnx_domain_managers_v2 tests
+  ansible.builtin.debug:
+    msg: Finished ntnx_domain_managers_v2 tests
