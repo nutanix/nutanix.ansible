@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -24,8 +24,10 @@ notes:
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
     B(Get Storage Configuration) -
-    Required Roles: Prism Admin, Prism Viewer, Storage Admin, Super Admin.
-  - This module talks to Prism Central (PC), not to FCVM/Foundation.
+    Required Roles: Cluster Admin, Cluster Viewer, Consumer, Developer,Internal Super Admin, 
+      Kubernetes Admin, Network Infra Admin, Prism Admin, Prism Viewer, Project Admin, 
+      Project Manager, Project Viewer, Storage Admin, Storage Viewer, Super Admin
+  - This module talks to Prism Central (PC)
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   cluster_ext_id:

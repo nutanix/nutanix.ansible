@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -25,43 +25,52 @@ notes:
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
     B(Update Storage Configuration) -
-    Required Roles: Prism Admin, Storage Admin, Super Admin.
-  - This module talks to Prism Central (PC), not to FCVM/Foundation.
+    Required Roles: Cluster Admin, Internal Super Admin, Prism Admin, Storage Admin, Super Admin.
+  - This module talks to Prism Central (PC).
   - The referenced cluster must exist and be registered with Prism Central before updating its storage configuration.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
+  state:
+    description:
+      - Specify state.
+      - If C(state) is set to C(present), the module will update the storage configuration.
+      - C(absent) is not supported because storage configuration cannot be deleted.
+    type: str
+    choices:
+      - present
+    default: present
   cluster_ext_id:
     description:
       - The external ID (UUID) of the cluster whose storage configuration is to be updated.
       - Required for the update operation.
     type: str
-    required: false
+    required: true
   resilient_capacity_warning_threshold_percentage:
     description:
       - The percentage threshold at which a resilient capacity warning is triggered.
       - Valid range is 0 to 100.
     type: int
-    required: false
+    required: true
   is_rebuild_reservation_enabled:
     description:
       - Whether rebuild capacity reservation is enabled for the cluster.
     type: bool
-    required: false
+    required: true
   is_rf1_enabled:
     description:
       - Whether replication factor 1 (RF1) storage containers are enabled for the cluster.
     type: bool
-    required: false
+    required: true
   storage_over_provisioning_caution_threshold:
     description:
       - The storage over-provisioning caution threshold for the cluster.
     type: float
-    required: false
+    required: true
   is_delayed_maintenance_resiliency_enabled:
     description:
       - Whether delayed maintenance resiliency is enabled for the cluster.
     type: bool
-    required: false
+    required: true
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -169,7 +178,6 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
-    validate_required_params,
 )
 
 SDK_IMP_ERROR = None
@@ -187,14 +195,15 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
-        cluster_ext_id=dict(type="str", required=False),
+        state=dict(type="str", default="present", choices=["present"]),
+        cluster_ext_id=dict(type="str", required=True),
         resilient_capacity_warning_threshold_percentage=dict(
-            type="int", required=False
+            type="int", required=True
         ),
-        is_rebuild_reservation_enabled=dict(type="bool", required=False),
-        is_rf1_enabled=dict(type="bool", required=False),
-        storage_over_provisioning_caution_threshold=dict(type="float", required=False),
-        is_delayed_maintenance_resiliency_enabled=dict(type="bool", required=False),
+        is_rebuild_reservation_enabled=dict(type="bool", required=True),
+        is_rf1_enabled=dict(type="bool", required=True),
+        storage_over_provisioning_caution_threshold=dict(type="float", required=True),
+        is_delayed_maintenance_resiliency_enabled=dict(type="bool", required=True),
     )
     return module_args
 
@@ -205,7 +214,6 @@ def check_idempotency(old_spec, update_spec):
 
 
 def update_storage_config(module, api_instance, result):
-    validate_required_params(module, ["cluster_ext_id"])
     cluster_ext_id = module.params.get("cluster_ext_id")
     result["ext_id"] = cluster_ext_id
 
@@ -276,9 +284,9 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
+        "failed": False,
     }
     api_instance = get_storage_config_api_instance(module)
     update_storage_config(module, api_instance, result)
