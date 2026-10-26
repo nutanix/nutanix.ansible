@@ -71,6 +71,27 @@ def get_storage_container(module, api_instance, ext_id):
         )
 
 
+def get_storage_config(module, api_instance, cluster_ext_id):
+    """
+    This method will return the storage configuration of a cluster using
+    the cluster external ID.
+    Args:
+        module: Ansible module
+        api_instance: StorageConfigApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+    return:
+        storage config info (object): storage configuration info
+    """
+    try:
+        return api_instance.get_storage_config(clusterExtId=cluster_ext_id)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching storage config using cluster ext_id",
+        )
+
+
 def get_ssl_certificates(module, api_instance, ext_id):
     """
     This method will return SSL certificate info using external ID.
