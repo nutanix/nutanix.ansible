@@ -143,6 +143,30 @@ def get_pc_task(
         )
 
 
+def get_product(module, api_instance, ext_id, domain_manager_ext_id):
+    """
+    This method will return product info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: DomainManagerApi instance from ntnx_prism_py_client sdk
+        ext_id (str): product external ID
+        domain_manager_ext_id (str): the external identifier of the domain
+            manager (Prism Central) that owns the product
+    return:
+        product_info (object): product info
+    """
+    try:
+        return api_instance.get_product_by_id(
+            domainManagerExtId=domain_manager_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching product info using ext_id",
+        )
+
+
 def get_task_job(
     module,
     api_instance,
@@ -166,5 +190,5 @@ def get_task_job(
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while fetching task job info using ext_id",
+            msg="Api Exception raised while fetching task job info using task_ext_id and ext_id",
         )
