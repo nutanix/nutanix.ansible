@@ -324,17 +324,13 @@ _PRODUCT_READ_ONLY_FIELDS = (
     "resize_time",
     "last_modified_time",
     "version",
+    "resource_spec",
     "links",
     "tenant_id",
 )
 
 
 def get_module_spec():
-
-    resource_spec = dict(
-        cpu_count=dict(type="int", required=False),
-        memory_size_bytes=dict(type="int", required=False),
-    )
 
     generic_metadata_attribute_spec = dict(
         name=dict(type="str", required=False),
@@ -409,18 +405,11 @@ def get_module_spec():
             ],
             obj=prism_sdk.ProductName,
         ),
-        version=dict(type="str", required=False),
         enablement_state=dict(
             type="str",
             required=False,
             choices=["ENABLED", "DISABLED"],
             obj=prism_sdk.EnablementState,
-        ),
-        resource_spec=dict(
-            type="dict",
-            options=resource_spec,
-            required=False,
-            obj=prism_sdk.ManagementResourceSpec,
         ),
         metadata=dict(
             type="dict",
