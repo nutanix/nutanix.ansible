@@ -2,3 +2,8 @@ nutanix-ncp-*
 .ansible/
 py3.12_virt
 tests/integration/integration_config.yml
+<<<<<<< HEAD
+=======
+__pycache__/
+*.pyc
+>>>>>>> release/janus-qa-testing

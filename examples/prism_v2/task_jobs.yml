@@ -1,0 +1,44 @@
+---
+# Summary:
+# This playbook demonstrates how to use the ntnx_task_jobs_info_v2 module.
+# TaskJob is a read-only sub-entity of a Prism Central Task, so the module
+# only supports list and get-by-ext_id operations.
+#
+# 1. List all jobs for a task
+# 2. Get a specific job by ext_id
+# 3. List task jobs using limit
+- name: TaskJob playbook (info-only entity)
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      nutanix_port: "{{ nutanix_port | default(lookup('env', 'NUTANIX_PORT') or 9440) }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables (edit for your environment)
+      ansible.builtin.set_fact:
+        task_ext_id: "ZXJnb24=:e38e02b7-d946-4069-8291-e9407e3a15d8"
+        job_ext_id: "ZXJnb24=:e38e02b7-d946-4069-8291-e9407e3a15d8"
+
+    - name: List all jobs associated with the task
+      nutanix.ncp.ntnx_task_jobs_info_v2:
+        task_ext_id: "{{ task_ext_id }}"
+      register: jobs_list
+      ignore_errors: true
+
+    - name: Fetch a specific task job by ext_id
+      nutanix.ncp.ntnx_task_jobs_info_v2:
+        task_ext_id: "{{ task_ext_id }}"
+        ext_id: "{{ job_ext_id }}"
+      register: job_get
+      ignore_errors: true
+
+    - name: List task jobs using limit
+      nutanix.ncp.ntnx_task_jobs_info_v2:
+        task_ext_id: "{{ task_ext_id }}"
+        limit: 1
+      register: jobs_paged
+      ignore_errors: true

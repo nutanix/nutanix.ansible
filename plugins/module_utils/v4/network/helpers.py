@@ -170,3 +170,23 @@ def get_virtual_switch(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching virtual switch info using ext_id",
         )
+
+
+def get_load_balancer_session(module, api_instance, ext_id):
+    """
+    This method will return load balancer session info using its ext_id
+    Args:
+        module: Ansible module
+        api_instance: LoadBalancerSessionsApi instance from ntnx_networking_py_client sdk
+        ext_id (str): load balancer session external ID
+    return:
+        info (object): load balancer session info
+    """
+    try:
+        return api_instance.get_load_balancer_session_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching load balancer session info using ext_id",
+        )
