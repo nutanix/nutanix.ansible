@@ -163,10 +163,7 @@ def get_product(module, api_instance, ext_id, domain_manager_ext_id):
         raise_api_exception(
             module=module,
             exception=e,
-            msg=(
-                "Api Exception raised while fetching registration with ext_id "
-                "{0} under domain manager {1}"
-            ).format(ext_id, domain_manager_ext_id),
+            msg="Api Exception raised while fetching product info using ext_id",
         )
 
 
