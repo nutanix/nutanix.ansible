@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -14,32 +14,35 @@ module: ntnx_products_info_v2
 short_description: Fetch information about portfolio Products in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module allows you to fetch information about Product in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific Product.
-  - If C(ext_id) is not provided, list multiple Product optionally filtered / paginated.
+  - This module fetches information about portfolio products in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch details of the specific product.
+  - If C(ext_id) is not provided, list multiple products optionally filtered / paginated.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the
       user performing the operation.
     - >-
-      B(Get product by ext_id) -
-      Required Roles: Prism Admin, Prism Viewer, Super Admin
+      B(Fetch a product by ext_id) -
+      Required Roles: Cluster Admin, Cluster Viewer, Domain Manager Admin, Domain Manager Viewer,
+      Flow Admin, Flow Policy Author, Flow Viewer, Internal Super Admin, Prism Admin, Prism Viewer,
+      Super Admin
     - >-
       B(List products) -
-      Required Roles: Prism Admin, Prism Viewer, Super Admin
+      Required Roles: Cluster Admin, Cluster Viewer, Domain Manager Admin, Domain Manager Viewer,
+      Flow Admin, Flow Policy Author, Flow Viewer, Internal Super Admin, Prism Admin, Prism Viewer,
+      Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
   ext_id:
     description:
-      - The product ID for a given product.
+      - The external identifier of the product.
     type: str
     required: false
   domain_manager_ext_id:
     description:
-      - The external identifier of the domain manager (Prism Central) resource that
+      - The external identifier of the domain manager resource that
         owns the product.
-      - Can be discovered using M(nutanix.ncp.ntnx_pc_config_info_v2).
     type: str
     required: true
 extends_documentation_fragment:
@@ -73,31 +76,26 @@ EXAMPLES = r"""
   register: products
   ignore_errors: true
 
-- name: Attempt to filter products using an OData $filter expression
-  # NOTE: The Products list endpoint currently accepts the $filter query
-  # parameter but does not expose any filterable properties. The backend
-  # rejects filter expressions with an "invalid property for query" error.
+- name: List all products with a limit
   nutanix.ncp.ntnx_products_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
     domain_manager_ext_id: "cae459ec-08db-475e-a5e5-151e390c9484"
-    filter: "name eq Prism.Config.ProductName'SELF_SERVICE'"
-  register: filtered_products
+    limit: 5
+  register: products
   ignore_errors: true
 
-- name: List products with pagination and ordering
+- name: List all products with filter
   nutanix.ncp.ntnx_products_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
     domain_manager_ext_id: "cae459ec-08db-475e-a5e5-151e390c9484"
-    page: 0
-    limit: 5
-    orderby: "name asc"
-  register: paged_products
+    filter: "name eq <name>"
+  register: filtered_products
   ignore_errors: true
 """
 RETURN = r"""
@@ -128,8 +126,7 @@ response:
     }
 
 changed:
-  description: This indicates whether the task resulted in any changes.
-    Always false for info modules.
+  description: This indicates whether the operation resulted in any changes. Always false for info modules.
   returned: always
   type: bool
   sample: false

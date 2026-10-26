@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -14,59 +14,45 @@ module: ntnx_product_v2
 short_description: Update the status of a portfolio Product in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module allows you to update the status of a portfolio product (for example
-    enable or disable products such as Nutanix Cloud Manager, Nutanix Disaster
-    Recovery, Flow Network Security, Flow Virtual Networking, Intelligent
-    Operations, Self Service, Marketplace or Flow Controller) in Nutanix Prism
-    Central.
-  - The Product API only supports the update operation. Portfolio products are
-    pre-provisioned on Prism Central and cannot be created or deleted via this API.
-  - Use C(state=present) with C(ext_id) to update a product. Toggling
-    C(enablement_state) between C(ENABLED) and C(DISABLED) triggers the
-    corresponding enable / disable workflow on Prism Central.
+  - This module updates the status of a portfolio product in Nutanix Prism Central.
+  - Use C(state=present) with C(ext_id) to update a product. Set
+    C(enablement_state) to C(ENABLED) or C(DISABLED) to request the
+    corresponding enable or disable workflow in Prism Central.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the
-      user performing the operation. The required roles depend on the operation
-      being performed.
+      user performing the operation.
     - >-
       B(Update a Product) -
-      Required Roles: Prism Admin, Super Admin
+      Required Roles: Cluster Admin, Domain Manager Admin, Internal Super Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
   state:
     description:
-      - If C(state) is set to C(present) and C(ext_id) is provided then the operation
-        will be update the product.
-      - If C(state) is set to C(present) and C(ext_id) is not provided then the
-        module fails, since the Product API does not support the create operation.
-      - If C(state) is set to C(absent) then the module fails, since the Product API
-        does not support the delete operation. To disable a product use
-        C(state=present) with C(enablement_state=DISABLED).
+      - Specify state.
+      - If C(state) is set to C(present), the module will update the product.
+      - C(absent) is not supported because the Product API does not support delete.
     type: str
-    required: false
     choices:
       - present
-      - absent
     default: present
   domain_manager_ext_id:
     description:
-      - The external identifier of the domain manager (Prism Central) resource that
+      - The external identifier of the domain manager resource that
         owns the product.
-      - Can be discovered using M(nutanix.ncp.ntnx_pc_config_info_v2).
+      - Required for update operation.
     type: str
     required: true
   ext_id:
     description:
-      - The product ID for a given product.
-      - Can be retrieved using M(nutanix.ncp.ntnx_products_info_v2).
+      - The external identifier of the product.
       - Required for update operation.
     type: str
-    required: false
+    required: true
   name:
     description:
-      - Portfolio product name.
+      - Name of the product.
     type: str
     required: false
     choices:
@@ -78,40 +64,17 @@ options:
       - NUTANIX_DISASTER_RECOVERY
       - NUTANIX_MARKETPLACE
       - SELF_SERVICE
-  version:
-    description:
-      - Version of the product (if any).
-    type: str
-    required: false
   enablement_state:
     description:
       - Enablement state of the product.
       - Required for update operation.
       - Set to C(ENABLED) to enable and C(DISABLED) to disable the product.
-      - Some products (for example Nutanix Disaster Recovery) cannot be disabled
-        once they have been enabled.
+      - Some products cannot be disabled once they have been enabled.
     type: str
     required: false
     choices:
       - ENABLED
       - DISABLED
-  resource_spec:
-    description:
-      - Resource specification used by the application.
-      - Resources are dynamically provisioned by Prism Central during enablement.
-    type: dict
-    required: false
-    suboptions:
-      cpu_count:
-        description:
-          - Number of virtual CPUs used by the application.
-        type: int
-        required: false
-      memory_size_bytes:
-        description:
-          - Memory allocated for the application, in bytes.
-        type: int
-        required: false
   metadata:
     description:
       - Metadata associated with the given product. This field is a no-op for
@@ -137,11 +100,13 @@ options:
                 description:
                   - Attribute name.
                 type: str
-                required: true
+                required: false
               value:
                 description:
-                  - Attribute value.
-                type: str
+                  - The value associated with the key for this key-value pair.
+                  - Can be a string, integer, boolean, object, or a list of
+                    strings/integers/objects as defined by the API.
+                type: raw
                 required: false
       flow_controller_metadata:
         description:
@@ -170,6 +135,32 @@ options:
                 deployed.
             type: str
             required: false
+          is_fns_flex_mode_enabled:
+            description:
+              - Indicates whether the Flow Controller should operate in Flex mode
+                or App-centric mode for Flow Network Security policies.
+              - Flex mode uses standard 5-tuple network definitions (source,
+                destination, protocol, ports) for more explicit control.
+              - App-centric mode uses the traditional secured entity-based approach.
+            type: bool
+            required: false
+            default: false
+          size:
+            description:
+              - Size of the Flow Controller deployment.
+            type: str
+            required: false
+            choices:
+              - SMALL
+              - LARGE
+              - XLARGE
+          is_security_analytics_enabled:
+            description:
+              - Indicates whether the Security Analytics feature is enabled for
+                the Flow Controller.
+            type: bool
+            required: false
+            default: true
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -275,12 +266,6 @@ changed:
   type: bool
   sample: true
 
-skipped:
-  description: This indicates whether the task was skipped (idempotency).
-  returned: always
-  type: bool
-  sample: false
-
 error:
   description: This indicates the error message if any error occurred.
   returned: When an error occurs
@@ -293,13 +278,10 @@ failed:
   sample: false
 
 msg:
-  description:
-    - Status or error message.
-    - Returned when the module is idempotent, in check mode, or when an error
-      occurs.
-  returned: When there is an error, module is idempotent or in check mode
-  type: str
-  sample: "Nothing to change."
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Failed generating update product spec"
 """
 
 import traceback  # noqa: E402
@@ -341,6 +323,7 @@ _PRODUCT_READ_ONLY_FIELDS = (
     "service_enablement_time",
     "resize_time",
     "last_modified_time",
+    "version",
     "links",
     "tenant_id",
 )
@@ -354,8 +337,8 @@ def get_module_spec():
     )
 
     generic_metadata_attribute_spec = dict(
-        name=dict(type="str", required=True),
-        value=dict(type="str", required=False),
+        name=dict(type="str", required=False),
+        value=dict(type="raw", required=False),
     )
 
     generic_metadata_spec = dict(
@@ -377,6 +360,16 @@ def get_module_spec():
         ),
         cluster_ext_id=dict(type="str", required=False),
         subnet_ext_id=dict(type="str", required=False),
+        is_fns_flex_mode_enabled=dict(type="bool", required=False, default=False),
+        size=dict(
+            type="str",
+            required=False,
+            choices=["SMALL", "LARGE", "XLARGE"],
+            obj=prism_sdk.FlowControllerSize,
+        ),
+        is_security_analytics_enabled=dict(
+            type="bool", required=False, default=True
+        ),
     )
 
     metadata_spec = dict(
@@ -400,8 +393,9 @@ def get_module_spec():
     }
 
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         domain_manager_ext_id=dict(type="str", required=True),
-        ext_id=dict(type="str"),
+        ext_id=dict(type="str", required=True),
         name=dict(
             type="str",
             required=False,
@@ -441,40 +435,12 @@ def get_module_spec():
     return module_args
 
 
-def create_Product(module, result, api_instance):
-    """
-    Create is not supported by the Product API. Portfolio products are
-    pre-provisioned by Prism Central, so we fail here with a descriptive
-    error rather than pretending to create one.
-    """
-    result["error"] = (
-        "Create operation is not supported for Product. Portfolio products are "
-        "pre-provisioned on Prism Central. Use state=present with an ext_id to "
-        "update an existing product (for example to enable or disable it)."
-    )
-    module.fail_json(msg=result["error"], **result)
-
-
-def _check_for_idempotency(current_spec_dict, update_spec_dict):
-    """
-    Compare the current product spec with the proposed update spec while
-    ignoring server-populated read-only fields. Returns True when there is
-    nothing to change.
-    """
-    current = strip_internal_attributes(deepcopy(current_spec_dict))
-    update = strip_internal_attributes(deepcopy(update_spec_dict))
-    for field in _PRODUCT_READ_ONLY_FIELDS:
-        current.pop(field, None)
-        update.pop(field, None)
-    return current == update
-
-
 def update_Product(module, result, api_instance):
     ext_id = module.params.get("ext_id")
     domain_manager_ext_id = module.params.get("domain_manager_ext_id")
     result["ext_id"] = ext_id
 
-    validate_required_params(module, ["ext_id", "enablement_state"])
+    validate_required_params(module, ["enablement_state"])
 
     current_spec = get_product(module, api_instance, ext_id, domain_manager_ext_id)
     etag = get_etag(data=current_spec)
@@ -495,14 +461,6 @@ def update_Product(module, result, api_instance):
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
-
-    if _check_for_idempotency(current_spec.to_dict(), update_spec.to_dict()):
-        result["skipped"] = True
-        module.exit_json(
-            msg="Product with ext_id:{0} is already in the desired state. "
-            "Nothing to change.".format(ext_id),
-            **result,
-        )
 
     strip_read_only_fields(update_spec, fields=_PRODUCT_READ_ONLY_FIELDS)
 
@@ -532,28 +490,10 @@ def update_Product(module, result, api_instance):
     result["changed"] = True
 
 
-def delete_Product(module, result, api_instance):
-    """
-    Delete is not supported by the Product API. To turn off a product, update
-    its enablement_state to DISABLED via update_Product instead. Note that
-    some products (for example Nutanix Disaster Recovery) cannot be disabled
-    after enablement.
-    """
-    result["error"] = (
-        "Delete operation is not supported for Product. To turn off a portfolio "
-        "product, use state=present with enablement_state=DISABLED instead. Some "
-        "products cannot be disabled once enabled."
-    )
-    module.fail_json(msg=result["error"], **result)
-
-
 def run_module():
     module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        required_if=[
-            ("state", "absent", ("ext_id",)),
-        ],
     )
     if SDK_IMP_ERROR:
         module.fail_json(
@@ -568,17 +508,9 @@ def run_module():
         "failed": False,
         "ext_id": None,
         "task_ext_id": None,
-        "skipped": False,
     }
     api_instance = get_domain_manager_api_instance(module)
-    state = module.params.get("state")
-    if state == "present":
-        if module.params.get("ext_id"):
-            update_Product(module, result, api_instance)
-        else:
-            create_Product(module, result, api_instance)
-    else:
-        delete_Product(module, result, api_instance)
+    update_Product(module, result, api_instance)
     module.exit_json(**result)
 
 
