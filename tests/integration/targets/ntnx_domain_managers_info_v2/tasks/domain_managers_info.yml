@@ -1,0 +1,376 @@
+---
+# Test plan for ntnx_domain_managers_info_v2.
+#
+# This is a multi-purpose info module that fans out to four SDK calls based
+# on the `method` parameter:
+#   * domain_managers              -> ListDomainManagers / GetDomainManagerById
+#   * backup_targets               -> ListBackupTargets / GetBackupTargetById
+#   * restorable_domain_managers   -> ListRestorableDomainManagers (PE only)
+#   * restore_points               -> ListRestorePoints / GetRestorePointById (PE only)
+#
+# The target cluster is a Prism Central (the integration harness points
+# `ip` at the PC endpoint), so the domain_managers and backup_targets
+# methods are driven end-to-end. The restorable_domain_managers and
+# restore_points methods are PE-only — against a PC endpoint they return a
+# clean 4xx that the module surfaces verbatim; we assert that behaviour and
+# the generic argspec guards (missing params, invalid enum, invalid ext_id,
+# mutually exclusive combinations) rather than driving a real restore
+# source from the test cluster.
+#
+# Scenarios covered:
+#   1. Default method (`domain_managers`) list, with and without ext_id,
+#      with fetch_all, orderby, limit, and page.
+#   2. `backup_targets` list on the discovered PC ext_id, plus get-by-id
+#      when the cluster has at least one backup target configured.
+#   3. Negative paths: invalid method enum, invalid ext_id, mutually
+#      exclusive ext_id + filter, missing required method-specific
+#      parameters, missing credentials.
+#   4. PE-only methods: assert the PC endpoint rejects them cleanly without
+#      ever masking the real error.
+#   5. Idempotency / `changed == False` on every success path.
+
+- name: Start ntnx_domain_managers_info_v2 tests
+  ansible.builtin.debug:
+    msg: "Start ntnx_domain_managers_info_v2 tests"
+
+########################################################################################
+# method=domain_managers — list all, then get-by-ext_id
+########################################################################################
+
+- name: List all domain managers (PCs) known to this endpoint
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    method: domain_managers
+  register: all_dms
+  ignore_errors: true
+
+- name: Assert list all domain managers returned a non-empty list
+  ansible.builtin.assert:
+    that:
+      - all_dms is defined
+      - all_dms.failed == false
+      - all_dms.changed == false
+      - all_dms.response is defined
+      - all_dms.response | length > 0
+      - all_dms.response[0].ext_id is defined
+      - all_dms.response[0].config is defined
+      - all_dms.response[0].config.name is defined
+      - all_dms.total_available_results is defined
+      - all_dms.total_available_results >= all_dms.response | length
+    success_msg: "List of domain managers fetched successfully"
+    fail_msg: "List of domain managers was not fetched as expected"
+
+- name: Capture the discovered domain manager ext_id
+  ansible.builtin.set_fact:
+    domain_manager_ext_id: "{{ all_dms.response[0].ext_id }}"
+
+- name: Get a single domain manager (PC) using its ext_id
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    method: domain_managers
+    ext_id: "{{ domain_manager_ext_id }}"
+  register: one_dm
+  ignore_errors: true
+
+- name: Assert get-by-ext_id returned the expected domain manager
+  ansible.builtin.assert:
+    that:
+      - one_dm is defined
+      - one_dm.failed == false
+      - one_dm.changed == false
+      - one_dm.response is defined
+      - one_dm.ext_id == domain_manager_ext_id
+      - one_dm.response.ext_id == domain_manager_ext_id
+      - one_dm.response.config is defined
+      - one_dm.response.network is defined
+    success_msg: "Get domain manager by ext_id returned the expected entity"
+    fail_msg: "Get domain manager by ext_id did not return the expected entity"
+
+- name: List domain managers with fetch_all
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    method: domain_managers
+    fetch_all: true
+  register: all_dms_fetched
+  ignore_errors: true
+
+- name: Assert fetch_all returned every available domain manager
+  ansible.builtin.assert:
+    that:
+      - all_dms_fetched is defined
+      - all_dms_fetched.failed == false
+      - all_dms_fetched.changed == false
+      - all_dms_fetched.response is defined
+      - all_dms_fetched.response | length >= 1
+    success_msg: "fetch_all returned every available domain manager"
+    fail_msg: "fetch_all did not return every available domain manager"
+
+- name: List domain managers with a limit of 1
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    method: domain_managers
+    limit: 1
+  register: limited_dms
+  ignore_errors: true
+
+- name: Assert limit was respected
+  ansible.builtin.assert:
+    that:
+      - limited_dms is defined
+      - limited_dms.failed == false
+      - limited_dms.changed == false
+      - limited_dms.response | length == 1
+    success_msg: "Limit was respected"
+    fail_msg: "Limit was not respected"
+
+- name: List domain managers with page + limit
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    method: domain_managers
+    page: 0
+    limit: 2
+  register: paged_dms
+  ignore_errors: true
+
+- name: Assert pagination was respected
+  ansible.builtin.assert:
+    that:
+      - paged_dms is defined
+      - paged_dms.failed == false
+      - paged_dms.changed == false
+      - paged_dms.response | length <= 2
+    success_msg: "Pagination was respected"
+    fail_msg: "Pagination was not respected"
+
+########################################################################################
+# method=domain_managers — negative paths
+########################################################################################
+
+- name: Get domain manager with an unknown ext_id
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    method: domain_managers
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_dm_id
+  ignore_errors: true
+
+- name: Assert bad ext_id surfaces the SDK-level error from helpers.get_pc_config
+  ansible.builtin.assert:
+    that:
+      - bad_dm_id is defined
+      - bad_dm_id.failed == true
+      - bad_dm_id.changed == false
+      - bad_dm_id.msg == "Api Exception raised while fetching pc config info using ext_id"
+    success_msg: "Unknown domain manager ext_id was rejected as expected"
+    fail_msg: "Unknown domain manager ext_id was NOT rejected as expected"
+
+- name: Mutually exclusive ext_id + filter should be rejected
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    method: domain_managers
+    ext_id: "{{ domain_manager_ext_id }}"
+    filter: "config/name eq 'bogus'"
+  register: mutex_dm
+  ignore_errors: true
+
+- name: Assert ext_id + filter is rejected by the argspec
+  ansible.builtin.assert:
+    that:
+      - mutex_dm is defined
+      - mutex_dm.failed == true
+      - mutex_dm.changed == false
+      - mutex_dm.msg == "parameters are mutually exclusive: ext_id|filter"
+    success_msg: "Mutually exclusive ext_id + filter was rejected as expected"
+    fail_msg: "Mutually exclusive ext_id + filter was NOT rejected as expected"
+
+- name: Invalid method value should be rejected at the argspec layer
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    method: "not_a_method"
+  register: bad_method
+  ignore_errors: true
+
+- name: Assert invalid method was rejected at the argspec layer
+  ansible.builtin.assert:
+    that:
+      - bad_method is defined
+      - bad_method.failed == true
+      - bad_method.changed == false
+      - "'value of method must be one of' in bad_method.msg"
+    success_msg: "Invalid method value was rejected as expected"
+    fail_msg: "Invalid method value was NOT rejected as expected"
+
+########################################################################################
+# method=backup_targets — list, then try get-by-ext_id if any target exists
+########################################################################################
+
+- name: List all backup targets for the discovered PC
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    method: backup_targets
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+  register: all_backup_targets
+  ignore_errors: true
+
+- name: Assert list backup targets returned a well-formed response
+  ansible.builtin.assert:
+    that:
+      - all_backup_targets is defined
+      - all_backup_targets.failed == false
+      - all_backup_targets.changed == false
+      - all_backup_targets.response is defined
+      - all_backup_targets.response is iterable
+    success_msg: "List backup targets returned a well-formed response"
+    fail_msg: "List backup targets did not return a well-formed response"
+
+- name: Get a single backup target by ext_id (only when at least one is configured)
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    method: backup_targets
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ all_backup_targets.response[0].ext_id }}"
+  register: one_backup_target
+  when: all_backup_targets.response | length > 0
+  ignore_errors: true
+
+- name: Assert get backup target by ext_id returned the expected entity
+  ansible.builtin.assert:
+    that:
+      - one_backup_target.failed == false
+      - one_backup_target.changed == false
+      - one_backup_target.response is defined
+      - one_backup_target.ext_id == all_backup_targets.response[0].ext_id
+      - one_backup_target.response.ext_id == all_backup_targets.response[0].ext_id
+    success_msg: "Get backup target by ext_id returned the expected entity"
+    fail_msg: "Get backup target by ext_id did not return the expected entity"
+  when: all_backup_targets.response | length > 0
+
+- name: Backup_targets method missing domain_manager_ext_id should fail cleanly
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    method: backup_targets
+  register: bt_missing_dm
+  ignore_errors: true
+
+- name: Assert missing domain_manager_ext_id was rejected
+  ansible.builtin.assert:
+    that:
+      - bt_missing_dm is defined
+      - bt_missing_dm.failed == true
+      - bt_missing_dm.changed == false
+      - "'Missing required parameter(s) for method ' in bt_missing_dm.msg"
+      - "'domain_manager_ext_id' in bt_missing_dm.msg"
+    success_msg: "Missing domain_manager_ext_id for backup_targets was rejected as expected"
+    fail_msg: "Missing domain_manager_ext_id for backup_targets was NOT rejected as expected"
+
+- name: Get backup target with bogus ext_id must surface an SDK error
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    method: backup_targets
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bt_bad_id
+  ignore_errors: true
+
+- name: Assert bogus backup target ext_id surfaces the helpers.get_backup_target error
+  ansible.builtin.assert:
+    that:
+      - bt_bad_id is defined
+      - bt_bad_id.failed == true
+      - bt_bad_id.changed == false
+      - bt_bad_id.msg == "Api Exception raised while fetching backup target info using ext_id and domain_manager_ext_id"
+    success_msg: "Bogus backup target ext_id was rejected as expected"
+    fail_msg: "Bogus backup target ext_id was NOT rejected as expected"
+
+########################################################################################
+# method=restorable_domain_managers — PE-only; against PC it must error cleanly
+########################################################################################
+
+- name: Restorable_domain_managers method missing restore_source_ext_id should fail cleanly
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    method: restorable_domain_managers
+  register: rdm_missing
+  ignore_errors: true
+
+- name: Assert missing restore_source_ext_id was rejected
+  ansible.builtin.assert:
+    that:
+      - rdm_missing is defined
+      - rdm_missing.failed == true
+      - rdm_missing.changed == false
+      - "'Missing required parameter(s) for method ' in rdm_missing.msg"
+      - "'restore_source_ext_id' in rdm_missing.msg"
+    success_msg: "Missing restore_source_ext_id was rejected as expected"
+    fail_msg: "Missing restore_source_ext_id was NOT rejected as expected"
+
+- name: Restorable_domain_managers against the PC endpoint must surface the SDK error cleanly
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    method: restorable_domain_managers
+    restore_source_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: rdm_bad
+  ignore_errors: true
+
+- name: Assert restorable_domain_managers against the PC endpoint reports the expected failure
+  ansible.builtin.assert:
+    that:
+      - rdm_bad is defined
+      - rdm_bad.failed == true
+      - rdm_bad.changed == false
+      - rdm_bad.msg == "Api Exception raised while fetching restorable domain managers info"
+    success_msg: "restorable_domain_managers against PC returned the expected error"
+    fail_msg: "restorable_domain_managers against PC did not return the expected error"
+
+########################################################################################
+# method=restore_points — PE-only; against PC it must error cleanly
+########################################################################################
+
+- name: Restore_points method missing restore_source_ext_id + restorable_domain_manager_ext_id should fail cleanly
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    method: restore_points
+  register: rp_missing_both
+  ignore_errors: true
+
+- name: Assert missing restore_points parameters was rejected
+  ansible.builtin.assert:
+    that:
+      - rp_missing_both is defined
+      - rp_missing_both.failed == true
+      - rp_missing_both.changed == false
+      - "'Missing required parameter(s) for method ' in rp_missing_both.msg"
+      - "'restore_source_ext_id' in rp_missing_both.msg"
+      - "'restorable_domain_manager_ext_id' in rp_missing_both.msg"
+    success_msg: "Missing restore_points parameters was rejected as expected"
+    fail_msg: "Missing restore_points parameters was NOT rejected as expected"
+
+- name: Restore_points list against the PC endpoint must surface the SDK error cleanly
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    method: restore_points
+    restore_source_ext_id: "00000000-0000-0000-0000-000000000000"
+    restorable_domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+  register: rp_bad_list
+  ignore_errors: true
+
+- name: Assert restore_points list against PC endpoint reports the expected failure
+  ansible.builtin.assert:
+    that:
+      - rp_bad_list is defined
+      - rp_bad_list.failed == true
+      - rp_bad_list.changed == false
+      - rp_bad_list.msg == "Api Exception raised while fetching restore points info"
+    success_msg: "restore_points list against PC returned the expected error"
+    fail_msg: "restore_points list against PC did not return the expected error"
+
+- name: Restore_points get-by-ext_id against the PC endpoint must surface the SDK error cleanly
+  nutanix.ncp.ntnx_domain_managers_info_v2:
+    method: restore_points
+    restore_source_ext_id: "00000000-0000-0000-0000-000000000000"
+    restorable_domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: rp_bad_single
+  ignore_errors: true
+
+- name: Assert restore_points get-by-ext_id against PC endpoint reports the expected failure
+  ansible.builtin.assert:
+    that:
+      - rp_bad_single is defined
+      - rp_bad_single.failed == true
+      - rp_bad_single.changed == false
+      - rp_bad_single.msg == "Api Exception raised while fetching restore point info using ext_id"
+    success_msg: "restore_points get-by-ext_id against PC returned the expected error"
+    fail_msg: "restore_points get-by-ext_id against PC did not return the expected error"
+
+########################################################################################
+# End of tests
+########################################################################################
+
+- name: Finish ntnx_domain_managers_info_v2 tests
+  ansible.builtin.debug:
+    msg: "Finished ntnx_domain_managers_info_v2 tests"
