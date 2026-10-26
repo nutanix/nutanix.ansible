@@ -24,10 +24,10 @@ notes:
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
     B(Get Storage Configuration) -
-    Required Roles: Cluster Admin, Cluster Viewer, Consumer, Developer,Internal Super Admin, 
-      Kubernetes Admin, Network Infra Admin, Prism Admin, Prism Viewer, Project Admin, 
+    Required Roles: Cluster Admin, Cluster Viewer, Consumer, Developer, Internal Super Admin,
+      Kubernetes Admin, Network Infra Admin, Prism Admin, Prism Viewer, Project Admin,
       Project Manager, Project Viewer, Storage Admin, Storage Viewer, Super Admin
-  - This module talks to Prism Central (PC)
+    - This module talks to Prism Central (PC)
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   cluster_ext_id:

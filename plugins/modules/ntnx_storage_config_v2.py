@@ -197,9 +197,7 @@ def get_module_spec():
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
         cluster_ext_id=dict(type="str", required=True),
-        resilient_capacity_warning_threshold_percentage=dict(
-            type="int", required=True
-        ),
+        resilient_capacity_warning_threshold_percentage=dict(type="int", required=True),
         is_rebuild_reservation_enabled=dict(type="bool", required=True),
         is_rf1_enabled=dict(type="bool", required=True),
         storage_over_provisioning_caution_threshold=dict(type="float", required=True),
