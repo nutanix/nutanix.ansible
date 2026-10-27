@@ -82,6 +82,14 @@ EXAMPLES = r"""
     nutanix_password: <pass>
     filter: hostName eq 'host1'
   register: result
+
+- name: List all hosts with fetch_all
+  nutanix.ncp.ntnx_hosts_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -184,6 +192,7 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.helpers import get_host  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -221,10 +230,15 @@ def get_hosts(module, result):
     try:
         cluster_ext_id = module.params.get("cluster_ext_id")
         if not cluster_ext_id:
-            resp = clusters.list_hosts(**kwargs)
+            resp = list_entities(
+                clusters.list_hosts,
+                kwargs=kwargs,
+            )
         else:
-            resp = clusters.list_hosts_by_cluster_id(
-                clusterExtId=cluster_ext_id, **kwargs
+            resp = list_entities(
+                clusters.list_hosts_by_cluster_id,
+                kwargs=kwargs,
+                clusterExtId=cluster_ext_id,
             )
     except Exception as e:
         raise_api_exception(
