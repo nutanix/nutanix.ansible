@@ -19,13 +19,13 @@ description:
   - If C(ext_id) is not provided, a list of multiple PCIe devices is fetched with/without using filters, limit, etc.
   - This module uses PC v4 APIs based SDKs.
 notes:
-  - This module talks to Prism Central (PC), not to FCVM/Foundation.
+  - This module talks to Prism Central (PC).
   - The PCIe devices are discovered from the AHV hosts of the registered clusters.
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
     B(List PCIe devices) -
-    Required Roles: Prism Admin, Prism Viewer, Super Admin.
+    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   ext_id:
