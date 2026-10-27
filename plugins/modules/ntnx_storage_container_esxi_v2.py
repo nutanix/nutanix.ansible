@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_storage_container_esxi_v2
 short_description: Create, Update, Delete Storage Containers in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to create, update, and delete Storage Containers in Nutanix Prism Central.
   - A Storage Container is a logical subset of available storage within a Nutanix Storage Pool
@@ -56,8 +56,10 @@ options:
     required: false
   name:
     description:
-      - Name of the Storage Container.
-      - Required for create operation.
+      - Name of the Storage Container. Must be unique on every cluster. Maximum length is 75
+        characters.
+      - Required for create operation. On update, if omitted, the existing name from the
+        current Storage Container is retained in the request body.
     type: str
     required: false
   cluster_ext_id:
@@ -65,34 +67,36 @@ options:
       - The external identifier of the Prism Element cluster on which the Storage Container is
         (or will be) hosted.
       - Required for create operation. Passed as the C(X-Cluster-Id) header to route the
-        request to the correct PE.
+        request to the correct PE. Not a writable body field (C(clusterExtId) is read-only
+        on the Storage Container model).
     type: str
     required: false
   owner_ext_id:
     description:
-      - The external identifier of the owner (user) of the Storage Container.
+      - The external identifier of the owner of the Storage Container.
     type: str
     required: false
   logical_explicit_reserved_capacity_bytes:
     description:
-      - Total reserved size (in bytes) of the container (excluding reservation of vDisks). This
-        is the minimum guaranteed physical capacity for the container.
+      - Total reserved size (in bytes) of the Storage Container (set by Admin). This also
+        includes the replication factor of the Storage Container. The actual reserved capacity
+        is the maximum of explicit and implicit reserved capacity.
     type: int
     required: false
   logical_advertised_capacity_bytes:
     description:
-      - Maximum physical capacity (in bytes) that the container can advertise / grow to.
+      - Maximum capacity of the Storage Container as defined by the user, in bytes.
     type: int
     required: false
   replication_factor:
     description:
       - Replication factor of the Storage Container. Typically C(2) or C(3).
-      - RF1 containers are generally not supported via PC-based Storage Container management.
+      - RF-1 containers generally require C(affinity_host_ext_id).
     type: int
     required: false
   nfs_whitelist_address:
     description:
-      - List of NFS addresses which need to be whitelisted for accessing this Storage Container.
+      - List of NFS addresses that need to be whitelisted for this Storage Container.
     type: list
     elements: dict
     required: false
@@ -146,19 +150,18 @@ options:
       - "ON"
   is_inline_ec_enabled:
     description:
-      - Indicates whether inline Erasure Coding is enabled for the Storage Container.
+      - Indicates whether data written to this Storage Container should be inline
+        erasure-coded. Only considered when Erasure Coding is enabled.
     type: bool
     required: false
   has_higher_ec_fault_domain_preference:
     description:
-      - Indicates whether the Storage Container has a preference to keep a higher fault domain
-        for erasure-coded strips.
+      - Indicates whether to prefer a higher Erasure Code fault domain.
     type: bool
     required: false
   erasure_code_delay_secs:
     description:
-      - Delay (in seconds) after which the Erasure Coding transform should be applied on
-        write-cold data.
+      - Delay in seconds before performing Erasure Coding for the Storage Container.
     type: int
     required: false
   cache_deduplication:
@@ -186,31 +189,41 @@ options:
     required: false
   compression_delay_secs:
     description:
-      - Delay (in seconds) after which compression is applied on write-cold data.
+      - The compression delay in seconds.
     type: int
     required: false
   is_internal:
     description:
-      - Indicates whether the Storage Container is internal / managed by Nutanix.
+      - Indicates whether the Storage Container is internal and is managed by Nutanix.
       - Internal containers (e.g. C(NutanixManagementShare)) are not expected to be created by
         end users.
     type: bool
     required: false
   is_software_encryption_enabled:
     description:
-      - Indicates whether software encryption is enabled for the Storage Container.
+      - Indicates whether the Storage Container instance has software encryption enabled.
     type: bool
     required: false
   affinity_host_ext_id:
     description:
-      - The external identifier of the host to which the Storage Container has affinity.
+      - Affinity host external identifier for an RF-1 Storage Container.
     type: str
+    required: false
+  is_shared:
+    description:
+      - Indicates whether the Storage Container is shared. When shared, all Prism Element
+        clusters registered under the same Prism Central can access and utilize its storage.
+      - Once set during create, this field is immutable except for SelfServiceContainer, where
+        only a change from C(false) to C(true) is allowed.
+    type: bool
     required: false
   ignore_small_files:
     description:
       - When deleting a Storage Container, if this is set to C(true) small files that may still
         be in the container will be ignored and the delete will proceed.
       - Applies only to the delete operation.
+      - Corresponds to the C(ignoreSmallFiles) query parameter on the delete API
+        (API default is C(true) when omitted).
     type: bool
     required: false
 extends_documentation_fragment:
@@ -226,10 +239,6 @@ author:
 EXAMPLES = r"""
 - name: Create Storage Container with minimal spec
   nutanix.ncp.ntnx_storage_container_esxi_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: present
     name: "storage_container_ansible"
     cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
@@ -238,10 +247,6 @@ EXAMPLES = r"""
 
 - name: Create Storage Container with full spec
   nutanix.ncp.ntnx_storage_container_esxi_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: present
     name: "storage_container_ansible_full"
     cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
@@ -262,15 +267,12 @@ EXAMPLES = r"""
     compression_delay_secs: 0
     is_internal: false
     is_software_encryption_enabled: false
+    is_shared: true
   register: result
   ignore_errors: true
 
 - name: Update Storage Container
   nutanix.ncp.ntnx_storage_container_esxi_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: present
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
     name: "storage_container_ansible_updated"
@@ -284,10 +286,6 @@ EXAMPLES = r"""
 
 - name: Delete Storage Container
   nutanix.ncp.ntnx_storage_container_esxi_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: absent
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
     ignore_small_files: true
@@ -361,10 +359,10 @@ changed:
   sample: true
 
 skipped:
-  description: This indicates whether the task was skipped (e.g. due to idempotency).
-  returned: always
+  description: This indicates whether the task was skipped, for example during idempotency checks.
+  returned: when applicable
   type: bool
-  sample: false
+  sample: true
 
 error:
   description: This indicates the error message if any error occurred.
@@ -406,17 +404,16 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    strip_read_only_fields,
     validate_required_params,
 )
 
 SDK_IMP_ERROR = None
 try:
-    import ntnx_clustermgmt_py_client as cluster_management_sdk  # noqa: E402
+    import ntnx_clustermgmt_py_client as clustermgmt_sdk  # noqa: E402
 except ImportError:
 
-    from ..module_utils.v4.sdk_mock import (  # noqa: E402
-        mock_sdk as cluster_management_sdk,
-    )
+    from ..module_utils.v4.sdk_mock import mock_sdk as clustermgmt_sdk  # noqa: E402
 
     SDK_IMP_ERROR = traceback.format_exc()
 
@@ -425,17 +422,15 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 # Fields that are populated by the server and MUST NOT be sent back on update
-# to avoid schema/validation errors on the API side. The SDK model exposes
-# these as properties with setters but no deleters, so we clear them by
-# assigning None rather than using ``delattr``.
+# to avoid schema/validation errors on the API side.
 _READ_ONLY_FIELDS = (
     "container_ext_id",
     "storage_pool_ext_id",
     "max_capacity_bytes",
     "logical_implicit_reserved_capacity_bytes",
+    "cluster_ext_id",
     "cluster_name",
     "is_marked_for_removal",
-    "is_shared",
     "external_storage_ext_id",
     "is_encrypted",
     "is_nfs_whitelist_inherited",
@@ -443,14 +438,6 @@ _READ_ONLY_FIELDS = (
     "tenant_id",
     "ext_id",
 )
-
-
-def _clear_read_only_fields(spec):
-    """Null out read-only fields on the update body before sending."""
-    for field in _READ_ONLY_FIELDS:
-        if hasattr(spec, field):
-            setattr(spec, field, None)
-    return spec
 
 
 def get_module_spec():
@@ -471,19 +458,19 @@ def get_module_spec():
             type="dict",
             options=ipv4_spec,
             required=False,
-            obj=cluster_management_sdk.IPv4Address,
+            obj=clustermgmt_sdk.IPv4Address,
         ),
         ipv6=dict(
             type="dict",
             options=ipv6_spec,
             required=False,
-            obj=cluster_management_sdk.IPv6Address,
+            obj=clustermgmt_sdk.IPv6Address,
         ),
         fqdn=dict(
             type="dict",
             options=fqdn_spec,
             required=False,
-            obj=cluster_management_sdk.FQDN,
+            obj=clustermgmt_sdk.FQDN,
         ),
     )
 
@@ -500,13 +487,13 @@ def get_module_spec():
             elements="dict",
             options=nfs_whitelist_address_spec,
             required=False,
-            obj=cluster_management_sdk.IPAddressOrFQDN,
+            obj=clustermgmt_sdk.IPAddressOrFQDN,
         ),
         erasure_code=dict(
             type="str",
             choices=["NONE", "OFF", "ON"],
             required=False,
-            obj=cluster_management_sdk.ErasureCodeStatus,
+            obj=clustermgmt_sdk.ErasureCodeStatus,
         ),
         is_inline_ec_enabled=dict(type="bool", required=False),
         has_higher_ec_fault_domain_preference=dict(type="bool", required=False),
@@ -515,39 +502,35 @@ def get_module_spec():
             type="str",
             choices=["NONE", "OFF", "ON"],
             required=False,
-            obj=cluster_management_sdk.CacheDeduplication,
+            obj=clustermgmt_sdk.CacheDeduplication,
         ),
         on_disk_dedup=dict(
             type="str",
             choices=["NONE", "OFF", "POST_PROCESS"],
             required=False,
-            obj=cluster_management_sdk.OnDiskDedup,
+            obj=clustermgmt_sdk.OnDiskDedup,
         ),
         is_compression_enabled=dict(type="bool", required=False),
         compression_delay_secs=dict(type="int", required=False),
         is_internal=dict(type="bool", required=False),
         is_software_encryption_enabled=dict(type="bool", required=False),
         affinity_host_ext_id=dict(type="str", required=False),
+        is_shared=dict(type="bool", required=False),
         ignore_small_files=dict(type="bool", required=False),
     )
     return module_args
 
 
-def _idempotency_check(current_spec, update_spec):
-    """Compare two SDK StorageContainer objects for effective equality.
-
-    Follow the same pattern used by the existing storage-containers v2 module:
-    rely on the SDK's ``__eq__`` implementation. This handles nested spec
-    objects (``nfs_whitelist_address`` items etc.) correctly.
-    """
-    return current_spec == update_spec
+def check_idempotency(old_spec, update_spec):
+    """Return True if the update spec matches the current spec (nothing to change)."""
+    return old_spec == update_spec
 
 
-def create_StorageContainer(module, result, api_instance):
+def create_storage_container(module, api_instance, result):
     validate_required_params(module, ["name", "cluster_ext_id"])
 
     sg = SpecGenerator(module)
-    default_spec = cluster_management_sdk.StorageContainer()
+    default_spec = clustermgmt_sdk.StorageContainer()
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
@@ -599,7 +582,7 @@ def create_StorageContainer(module, result, api_instance):
     result["changed"] = True
 
 
-def update_StorageContainer(module, result, api_instance):
+def update_storage_container(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -623,12 +606,12 @@ def update_StorageContainer(module, result, api_instance):
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
-    if _idempotency_check(current_spec, update_spec):
+    if check_idempotency(current_spec, update_spec):
         result["skipped"] = True
-        result["response"] = strip_internal_attributes(current_spec.to_dict())
         module.exit_json(msg="Nothing to change.", **result)
 
-    _clear_read_only_fields(update_spec)
+    # Clear GET-populated fields the update API rejects.
+    strip_read_only_fields(update_spec, fields=_READ_ONLY_FIELDS)
 
     kwargs = {"if_match": etag}
     resp = None
@@ -655,7 +638,7 @@ def update_StorageContainer(module, result, api_instance):
     result["changed"] = True
 
 
-def delete_StorageContainer(module, result, api_instance):
+def delete_storage_container(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -684,7 +667,7 @@ def delete_StorageContainer(module, result, api_instance):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
 
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
 
     result["changed"] = True
@@ -709,20 +692,20 @@ def run_module():
     result = {
         "changed": False,
         "response": None,
+        "failed": False,
         "ext_id": None,
         "task_ext_id": None,
-        "failed": False,
     }
 
     api_instance = get_storage_containers_api_instance(module)
     state = module.params.get("state")
     if state == "present":
         if module.params.get("ext_id"):
-            update_StorageContainer(module, result, api_instance)
+            update_storage_container(module, api_instance, result)
         else:
-            create_StorageContainer(module, result, api_instance)
+            create_storage_container(module, api_instance, result)
     else:
-        delete_StorageContainer(module, result, api_instance)
+        delete_storage_container(module, api_instance, result)
 
     module.exit_json(**result)
 
