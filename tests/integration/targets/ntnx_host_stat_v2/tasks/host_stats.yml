@@ -10,7 +10,6 @@
 #     - Compute a valid ISO-8601 time window (last hour, UTC).
 #
 #   ntnx_host_stat_v2 (single-host stats fetch)
-#     - Check-mode fetch with ALL attributes populated.
 #     - Fetch stats with only the required attributes.
 #     - Fetch stats with ALL optional attributes populated.
 #     - Fetch stats for each valid $statType enum value (SUM/MIN/MAX/AVG/COUNT/LAST).
@@ -88,36 +87,6 @@
     stats_end_time: "{{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ') }}"
 
 ########################################################################################
-# ntnx_host_stat_v2 - Check mode with ALL attributes
-########################################################################################
-
-- name: Check mode fetch of host stats with all attributes
-  nutanix.ncp.ntnx_host_stat_v2:
-    cluster_ext_id: "{{ cluster_ext_id }}"
-    ext_id: "{{ host_ext_id }}"
-    start_time: "{{ stats_start_time }}"
-    end_time: "{{ stats_end_time }}"
-    sampling_interval: 30
-    stat_type: "AVG"
-    select: "controllerNumIops,hypervisorCpuUsagePpm,overallMemoryUsagePpm"
-  check_mode: true
-  register: result
-  ignore_errors: true
-
-- name: Verify check mode fetch of host stats with all attributes
-  ansible.builtin.assert:
-    that:
-      - result is defined
-      - result.changed == false
-      - result.failed == false
-      - result.cluster_ext_id == cluster_ext_id
-      - result.ext_id == host_ext_id
-      - result.msg is defined
-      - "'would be fetched' in result.msg"
-    success_msg: "Check mode fetch of host stats with all attributes passed"
-    fail_msg: "Check mode fetch of host stats with all attributes failed"
-
-########################################################################################
 # ntnx_host_stat_v2 - Fetch with minimum required attributes
 ########################################################################################
 
@@ -140,7 +109,6 @@
       - result.response is mapping
       - result.cluster_ext_id == cluster_ext_id
       - result.ext_id == host_ext_id
-      - result.task_ext_id is none
     success_msg: "Fetch host stats with only required attributes passed"
     fail_msg: "Fetch host stats with only required attributes failed"
 

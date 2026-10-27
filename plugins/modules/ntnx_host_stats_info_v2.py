@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -14,55 +14,59 @@ module: ntnx_host_stats_info_v2
 short_description: Fetch host statistics info in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module allows you to fetch information about HostStat in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific HostStat for that host.
-  - If C(ext_id) is not provided, list HostStat for every host in the supplied
-    C(cluster_ext_id). Server-side filter / limit / orderby / page are NOT supported
-    by the underlying C(GetHostStats) v4 API, so those options are intentionally
-    absent from this module.
+  - This module allows you to fetch host statistics info in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch stats for that specific host.
+  - If C(ext_id) is not provided, list hosts in C(cluster_ext_id) and fetch stats for each host.
+  - Server-side filter / limit / orderby / page are not supported by the underlying
+    C(GetHostStats) v4 API, so those options are intentionally absent from this module.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the user
-    performing the operation.
+    performing the operation. The required roles depend on the operation being performed.
   - >-
-    B(Get Host Stats) -
-    Required Roles: Prism Admin, Prism Viewer, Super Admin.
+    B(View Host Stats) -
+    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Project Manager,
+    Super Admin, Self-Service Admin (deprecated)
+  - >-
+    B(View Cluster Host) -
+    Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, LocalAccountManager Admin,
+    LocalAccountManager Viewer, NCM Connector, Network Infra Admin, Prism Admin, Prism Viewer,
+    Project Manager, Super Admin, VPC Admin, Self-Service Admin (deprecated)
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   cluster_ext_id:
     description:
-      - The external ID (UUID) of the cluster the host(s) belong to.
+      - The external ID of the cluster.
     type: str
     required: true
   ext_id:
     description:
-      - The external ID (UUID) of the host whose statistics are being fetched.
-      - When omitted, the module fetches stats for every host in C(cluster_ext_id).
+      - The external ID of the host.
+      - If not provided, stats are fetched for every host in C(cluster_ext_id).
     type: str
-    required: false
   start_time:
     description:
       - The start time of the period for which stats should be reported.
-      - The value must be in extended ISO-8601 format.
+      - The value should be in extended ISO-8601 format.
     type: str
     required: true
   end_time:
     description:
       - The end time of the period for which stats should be reported.
-      - The value must be in extended ISO-8601 format.
+      - The value should be in extended ISO-8601 format.
     type: str
     required: true
   sampling_interval:
     description:
       - The sampling interval in seconds at which statistical data should be collected.
+      - For example, if you want performance statistics every 30 seconds, then provide the value as 30.
     type: int
-    required: false
   stat_type:
     description:
-      - The down-sampling operator applied when aggregating stats across the sampling interval.
+      - The operator to use while performing down-sampling on stats data.
+      - Allowed values are SUM, MIN, MAX, AVG, COUNT and LAST.
     type: str
-    required: false
     choices:
       - SUM
       - MIN
@@ -72,9 +76,12 @@ options:
       - LAST
   select:
     description:
-      - OData V4.01 C($select) query parameter used to restrict the returned properties.
+      - A URL query parameter that allows clients to request a specific set of properties
+        for each entity or complex type.
+      - Expression specified with the C($select) must conform to the OData V4.01 URL conventions.
+      - If a C($select) expression consists of a single select item that is an asterisk (i.e., C(*)),
+        then all properties on the matching resource will be returned.
     type: str
-    required: false
   read_timeout:
     description: Read timeout in milliseconds for API calls.
     type: int
@@ -92,22 +99,14 @@ author:
 EXAMPLES = r"""
 - name: Fetch stats for a single host using ext_id
   nutanix.ncp.ntnx_host_stats_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     cluster_ext_id: "0006c9d0-abcd-1234-5678-0242ac110002"
     ext_id: "d7f28e12-cafe-babe-0000-1a2b3c4d5e6f"
     start_time: "2026-07-19T00:00:00Z"
     end_time: "2026-07-20T00:00:00Z"
   register: single_host
 
-- name: Fetch stats for a single host with all optional attributes
+- name: Fetch stats for a single host with all attributes
   nutanix.ncp.ntnx_host_stats_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     cluster_ext_id: "0006c9d0-abcd-1234-5678-0242ac110002"
     ext_id: "d7f28e12-cafe-babe-0000-1a2b3c4d5e6f"
     start_time: "2026-07-19T00:00:00Z"
@@ -119,10 +118,6 @@ EXAMPLES = r"""
 
 - name: Fetch stats for every host in a cluster
   nutanix.ncp.ntnx_host_stats_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     cluster_ext_id: "0006c9d0-abcd-1234-5678-0242ac110002"
     start_time: "2026-07-19T00:00:00Z"
     end_time: "2026-07-20T00:00:00Z"
@@ -134,10 +129,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC HostStat info v4 API.
-    - It can be a single HostStat if external ID is provided.
-    - List of multiple HostStat (one entry per host in the cluster) if external ID is not provided.
-    - Filter / limit / orderby / page are NOT supported by the underlying stats endpoint.
+    - The response from the Nutanix PC host stats info v4 API.
+    - It can be a single host stats object if external ID is provided.
+    - It can be a list of host stats (one entry per host in the cluster) if external ID is not provided.
   returned: always
   type: dict
   sample:
@@ -175,7 +169,7 @@ total_available_results:
   sample: 3
 
 changed:
-  description: Always C(false) for this info module.
+  description: This indicates whether the task resulted in any changes. Always false for info modules.
   returned: always
   type: bool
   sample: false
@@ -198,10 +192,7 @@ failed:
   sample: false
 """
 
-import traceback  # noqa: E402
 import warnings  # noqa: E402
-
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
@@ -209,19 +200,12 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_clusters_api_instance,
 )
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
-    validate_required_params,
 )
 
-SDK_IMP_ERROR = None
-try:
-    # Imported so we can surface a helpful missing-SDK error to the caller;
-    # the API instance itself is built via get_clusters_api_instance().
-    import ntnx_clustermgmt_py_client  # noqa: F401  pylint: disable=unused-import
-except ImportError:
-    SDK_IMP_ERROR = traceback.format_exc()
-
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
@@ -229,47 +213,37 @@ def get_module_spec():
 
     module_args = dict(
         cluster_ext_id=dict(type="str", required=True),
-        ext_id=dict(type="str", required=False),
+        ext_id=dict(type="str"),
         start_time=dict(type="str", required=True),
         end_time=dict(type="str", required=True),
-        sampling_interval=dict(type="int", required=False),
+        sampling_interval=dict(type="int"),
         stat_type=dict(
             type="str",
-            required=False,
             choices=["SUM", "MIN", "MAX", "AVG", "COUNT", "LAST"],
         ),
-        select=dict(type="str", required=False),
+        select=dict(type="str"),
     )
 
     return module_args
 
 
 def _build_stats_kwargs(module):
-    """Build the kwargs dict for a ``get_host_stats`` call."""
-    kwargs = {}
-    sampling_interval = module.params.get("sampling_interval")
-    stat_type = module.params.get("stat_type")
-    select = module.params.get("select")
-    if sampling_interval is not None:
-        kwargs["_samplingInterval"] = sampling_interval
-    if stat_type is not None:
-        kwargs["_statType"] = stat_type
-    if select is not None:
-        kwargs["_select"] = select
+    kwargs = {
+        "_startTime": module.params.get("start_time"),
+        "_endTime": module.params.get("end_time"),
+    }
+    if module.params.get("sampling_interval") is not None:
+        kwargs["_samplingInterval"] = module.params.get("sampling_interval")
+    if module.params.get("stat_type") is not None:
+        kwargs["_statType"] = module.params.get("stat_type")
+    if module.params.get("select") is not None:
+        kwargs["_select"] = module.params.get("select")
     return kwargs
 
 
 def get_host_stats_using_ext_id(module, api_instance, result):
-    """Fetch stats for a single host and populate ``result``."""
-    validate_required_params(
-        module, ["cluster_ext_id", "ext_id", "start_time", "end_time"]
-    )
-
     cluster_ext_id = module.params.get("cluster_ext_id")
     ext_id = module.params.get("ext_id")
-    start_time = module.params.get("start_time")
-    end_time = module.params.get("end_time")
-
     result["cluster_ext_id"] = cluster_ext_id
     result["ext_id"] = ext_id
 
@@ -280,8 +254,6 @@ def get_host_stats_using_ext_id(module, api_instance, result):
         resp = api_instance.get_host_stats(
             clusterExtId=cluster_ext_id,
             extId=ext_id,
-            _startTime=start_time,
-            _endTime=end_time,
             **kwargs,
         )
     except Exception as e:
@@ -291,44 +263,32 @@ def get_host_stats_using_ext_id(module, api_instance, result):
             msg="Api Exception raised while fetching host stats info",
         )
 
-    if getattr(resp, "data", None) is not None:
+    if getattr(resp, "data", None):
         result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
     else:
-        result["response"] = None
-        module.fail_json(
-            msg=(
-                "Failed to fetch host stats info: response contained no data for host "
-                "ext_id:{0} in cluster ext_id:{1}."
-            ).format(ext_id, cluster_ext_id),
-            **result,
-        )
+        module.fail_json(msg="Failed fetching host stats info", **result)
 
 
 def get_host_stats_for_cluster(module, api_instance, result):
-    """List all hosts in the cluster and fetch stats for each one."""
-    validate_required_params(module, ["cluster_ext_id", "start_time", "end_time"])
-
     cluster_ext_id = module.params.get("cluster_ext_id")
-    start_time = module.params.get("start_time")
-    end_time = module.params.get("end_time")
-
     result["cluster_ext_id"] = cluster_ext_id
 
-    hosts_resp = None
     try:
-        hosts_resp = api_instance.list_hosts_by_cluster_id(clusterExtId=cluster_ext_id)
+        hosts_resp = list_entities(
+            api_instance.list_hosts_by_cluster_id,
+            fetch_all=True,
+            clusterExtId=cluster_ext_id,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
-            msg=(
-                "Api Exception raised while listing hosts in cluster "
-                "ext_id:{0} for host stats info"
-            ).format(cluster_ext_id),
+            msg="Api Exception raised while fetching hosts info",
         )
 
-    hosts_dict = strip_internal_attributes(hosts_resp.to_dict())
-    hosts = hosts_dict.get("data") or []
+    hosts = []
+    if getattr(hosts_resp, "data", None):
+        hosts = strip_internal_attributes(hosts_resp.to_dict()).get("data") or []
 
     kwargs = _build_stats_kwargs(module)
 
@@ -341,20 +301,15 @@ def get_host_stats_for_cluster(module, api_instance, result):
             host_stats_resp = api_instance.get_host_stats(
                 clusterExtId=cluster_ext_id,
                 extId=host_ext_id,
-                _startTime=start_time,
-                _endTime=end_time,
                 **kwargs,
             )
         except Exception as e:
             raise_api_exception(
                 module=module,
                 exception=e,
-                msg=(
-                    "Api Exception raised while fetching host stats info for host "
-                    "ext_id:{0} in cluster ext_id:{1}"
-                ).format(host_ext_id, cluster_ext_id),
+                msg="Api Exception raised while fetching host stats info",
             )
-        if getattr(host_stats_resp, "data", None) is not None:
+        if getattr(host_stats_resp, "data", None):
             stats_list.append(
                 strip_internal_attributes(host_stats_resp.to_dict()).get("data")
             )
@@ -369,17 +324,13 @@ def run_module():
         supports_check_mode=False,
         skip_info_args=True,
     )
-    if SDK_IMP_ERROR:
-        module.fail_json(
-            msg=missing_required_lib("ntnx_clustermgmt_py_client"),
-            exception=SDK_IMP_ERROR,
-        )
 
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
         "response": None,
         "failed": False,
+        "error": None,
         "cluster_ext_id": None,
     }
     api_instance = get_clusters_api_instance(module)
