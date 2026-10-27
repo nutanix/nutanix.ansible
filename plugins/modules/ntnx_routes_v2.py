@@ -44,6 +44,11 @@ options:
     description:
       - External ID of the route.
     type: str
+  project_ext_id:
+    description:
+      - External ID (UUID) of the project that owns this route.
+      - Update of this field is not supported.
+    type: str
   vpc_reference:
     description:
       - Reference to the VPC where the route table is located.
@@ -231,6 +236,7 @@ EXAMPLES = r"""
     state: present
     name: "route_test"
     description: "Route for testing"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     vpc_reference: "c9a4b37d-5f8d-4a2a-b639-2d8e1f5a0c67"
     route_table_ext_id: "7f9a76a3-922b-4aba-8d79-e7eb5cdaf201"
     route_type: STATIC
@@ -374,6 +380,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -450,6 +457,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         vpc_reference=dict(type="str"),
         metadata=dict(type="dict", options=metadata_spec, obj=net_sdk.Metadata),
         name=dict(type="str"),
@@ -502,6 +510,12 @@ def create_route_table(module, route_api_instance, result):
             result["ext_id"] = ext_id
             route = get_route(module, route_api_instance, ext_id, route_table_ext_id)
             result["response"] = strip_internal_attributes(route.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception("Failed to get entity ext_id from task for Route"),
+                msg="Failed to get entity ext_id from task for Route",
+            )
     result["changed"] = True
 
 
@@ -515,11 +529,23 @@ def update_route_table(module, route_api_instance, result):
     result["ext_id"] = ext_id
     result["route_table_ext_id"] = route_table_ext_id
     current_spec = get_route(module, route_api_instance, ext_id, route_table_ext_id)
+
+    # The API returns both the singular `nexthop` and the server-managed plural
+    # `nexthops` on GET, but rejects an update body that contains both.
+    # The module only manages `nexthop`, so drop the
+    # server-only `nexthops` field before building and comparing the update spec.
+    if getattr(current_spec, "nexthops", None) is not None:
+        current_spec.nexthops = None
+
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating update route spec", **result)
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
