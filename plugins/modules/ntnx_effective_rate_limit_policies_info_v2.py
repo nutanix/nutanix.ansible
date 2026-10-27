@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -15,8 +15,6 @@ short_description: Fetch effective image rate limit policies in Nutanix Prism Ce
 version_added: 2.7.0
 description:
   - This module allows you to list effective image rate limit policies in Nutanix Prism Central.
-  - The effective rate limit for the Prism Elements. If no rate limit applies to a particular
-    cluster, no entry is returned for that cluster.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
