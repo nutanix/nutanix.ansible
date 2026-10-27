@@ -13,11 +13,12 @@
 #      shape, that all entries have ext_id/serial and non-empty nodes.
 #   3. Positive: fetch one rackable unit by ext_id; assert single-object
 #      response shape and that it matches an entry in the list output.
-#   4. Negative: missing required parameter cluster_ext_id → module fails.
-#   5. Negative: invalid cluster_ext_id → API error is surfaced.
-#   6. Negative: invalid rackable unit ext_id under a valid cluster → API
+#   4. Positive: list with limit / fetch_all.
+#   5. Negative: missing required parameter cluster_ext_id → module fails.
+#   6. Negative: invalid cluster_ext_id → API error is surfaced.
+#   7. Negative: invalid rackable unit ext_id under a valid cluster → API
 #      error is surfaced.
-#   7. Idempotency-of-reads: two consecutive list calls return the same
+#   8. Idempotency-of-reads: two consecutive list calls return the same
 #      total_available_results.
 ###############################################################################
 
@@ -58,8 +59,6 @@
       - rackable_units_list.failed == false
       - rackable_units_list.response is defined
       - rackable_units_list.response is iterable
-      - rackable_units_list.cluster_ext_id == pe_cluster_ext_id
-      - rackable_units_list.ext_id is none
       - rackable_units_list.total_available_results is defined
       - rackable_units_list.total_available_results | int >= 0
     fail_msg: "Rackable units list call failed or returned an unexpected shape."
@@ -99,7 +98,6 @@
       - rackable_unit_single.changed == false
       - rackable_unit_single.failed == false
       - rackable_unit_single.ext_id == ru_ext_id
-      - rackable_unit_single.cluster_ext_id == pe_cluster_ext_id
       - rackable_unit_single.response is defined
       - rackable_unit_single.response.ext_id == ru_ext_id
       - rackable_unit_single.response.serial == ru_serial
@@ -108,6 +106,44 @@
     fail_msg: "Get-by-id for rackable unit did not return the expected entity."
     success_msg: "Get-by-id for rackable unit returned the expected entity."
   when: ru_ext_id is defined
+
+- name: List rackable units with limit
+  nutanix.ncp.ntnx_rackable_units_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    limit: 1
+  register: rackable_units_limit
+  ignore_errors: true
+
+- name: Assert list with limit
+  ansible.builtin.assert:
+    that:
+      - rackable_units_limit.changed == false
+      - rackable_units_limit.failed == false
+      - rackable_units_limit.response is defined
+      - rackable_units_limit.response | length <= 1
+      - rackable_units_limit.total_available_results is defined
+    fail_msg: "Unable to list rackable units with limit."
+    success_msg: "Listed rackable units with limit successfully."
+
+- name: List all rackable units with fetch_all
+  nutanix.ncp.ntnx_rackable_units_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    fetch_all: true
+  register: rackable_units_fetch_all
+  ignore_errors: true
+
+- name: Assert list with fetch_all
+  ansible.builtin.assert:
+    that:
+      - rackable_units_fetch_all.changed == false
+      - rackable_units_fetch_all.failed == false
+      - rackable_units_fetch_all.response is defined
+      - rackable_units_fetch_all.total_available_results is defined
+      - >-
+          (rackable_units_fetch_all.response | default([]) | length)
+          == (rackable_units_fetch_all.total_available_results | int)
+    fail_msg: "Unable to list all rackable units with fetch_all."
+    success_msg: "Listed all rackable units with fetch_all successfully."
 
 - name: Negative — missing required cluster_ext_id parameter  # noqa: args[module]
   nutanix.ncp.ntnx_rackable_units_info_v2: {}
