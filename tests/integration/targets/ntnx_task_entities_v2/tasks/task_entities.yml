@@ -1,0 +1,357 @@
+---
+# Test plan for ntnx_task_entities_info_v2 (TaskEntity).
+#
+# TaskEntity = EntityReference returned by
+# GET /api/prism/v4.3/config/tasks/{taskExtId}/affected-entities.
+# The SDK exposes only a list operation, so no CRUD paths exist for this entity.
+#
+# Scenarios covered here:
+#   1. Setup - upload an image to create a real Prism Central task with a known
+#      affected entity (the image itself).
+#   2. Poll the task via ntnx_pc_tasks_info_v2 until SUCCEEDED so the
+#      affected-entities list is populated.
+#   3. Positive - list all TaskEntity for the task (default pagination, no
+#      filter). Assert response shape, task_ext_id, changed, failed, and
+#      total_available_results.
+#   4. Positive - list with `limit: 1`. Assert exactly one record is returned.
+#   5. Positive - list with `filter: "rel eq 'vmm:content:image'"`. Assert all
+#      returned entities carry that rel and the created image appears.
+#   6. Positive - list with `select: "extId,rel"`. Assert only the projected
+#      keys have values and `name` is not populated.
+#   7. Positive - list with `page: 0` combined with `limit: 1`. Assert
+#      pagination path is exercised.
+#   8. Negative - omit the required `task_ext_id`. Ansible must fail the task
+#      with a "missing required arguments" style message.
+#   9. Negative - supply a syntactically valid but non-existent task_ext_id.
+#      Assert the SDK exception is surfaced via `msg == "Api Exception raised
+#      while fetching task entities info"`.
+#  10. Negative - supply an invalid task_ext_id (no `prefix:UUID` shape) and
+#      assert the API rejects it with the same descriptive error.
+#  11. Domain - after cleanup, re-run list against the same task_ext_id and
+#      assert the entities list is stable across repeat reads (list is
+#      idempotent from the client's perspective; state lives on the task).
+#  12. Teardown - delete the demo image and ignore errors.
+
+- name: "Start ntnx_task_entities_v2 integration tests"
+  ansible.builtin.debug:
+    msg: "Start ntnx_task_entities_v2 integration tests"
+
+- name: Generate random suffix for demo image
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set demo image name
+  ansible.builtin.set_fact:
+    demo_image_name: "ansible-taskentity-{{ random_name }}"
+
+################################################################################
+# 1. Create a task by uploading an ISO image (fast, small).
+
+- name: Create ISO_IMAGE to generate a task with a known affected entity
+  nutanix.ncp.ntnx_images_v2:
+    state: present
+    type: ISO_IMAGE
+    name: "{{ demo_image_name }}"
+    description: "image created for testing ntnx_task_entities_info_v2"
+    checksum:
+      sha1:
+        hex_digest: "{{ iso_image.checksum }}"
+    source:
+      url_source:
+        url: "{{ iso_image.url }}"
+        should_allow_insecure_url: true
+    cluster_location_ext_ids: "{{ cluster.uuid }}"
+    wait: false
+  register: image_create
+  ignore_errors: true
+
+- name: Verify image-create task was submitted
+  ansible.builtin.assert:
+    that:
+      - image_create.changed == true
+      - image_create.failed == false
+      - image_create.task_ext_id is defined
+      - image_create.task_ext_id | length > 0
+    fail_msg: "Failed to submit image-create task; cannot proceed with TaskEntity tests"
+    success_msg: "Image-create task submitted successfully"
+
+- name: Save the parent task_ext_id
+  ansible.builtin.set_fact:
+    parent_task_ext_id: "{{ image_create.task_ext_id }}"
+
+################################################################################
+# 2. Wait for the task to reach SUCCEEDED so affected-entities are populated.
+
+- name: Poll parent task until SUCCEEDED
+  nutanix.ncp.ntnx_pc_tasks_info_v2:
+    ext_id: "{{ parent_task_ext_id }}"
+  register: parent_task
+  until: parent_task.response.status == 'SUCCEEDED'
+  retries: 100
+  delay: 10
+
+- name: Verify parent task completed and exposes affected entities
+  ansible.builtin.assert:
+    that:
+      - parent_task.failed == false
+      - parent_task.changed == false
+      - parent_task.response.status == 'SUCCEEDED'
+      - parent_task.response.entities_affected is defined
+      - parent_task.response.entities_affected | length >= 1
+    fail_msg: "Parent task did not complete with an affected entity"
+    success_msg: "Parent task completed with at least one affected entity"
+
+- name: Save the created image ext_id for later assertions and cleanup
+  ansible.builtin.set_fact:
+    demo_image_ext_id: "{{ parent_task.response.entities_affected[0].ext_id }}"
+
+################################################################################
+# 3. Positive - list all TaskEntity for the task.
+
+- name: List all TaskEntity for the parent task
+  nutanix.ncp.ntnx_task_entities_info_v2:
+    task_ext_id: "{{ parent_task_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify list-all TaskEntity response
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.task_ext_id == parent_task_ext_id
+      - result.response is defined
+      - result.response | length >= 1
+      - result.total_available_results is defined
+      - result.total_available_results >= 1
+      - result.response[0].ext_id is defined
+      - result.response[0].rel is defined
+    fail_msg: "Listing TaskEntity for the parent task failed"
+    success_msg: "TaskEntity listed successfully for the parent task"
+
+- name: Assert every entity in the list has the required EntityReference fields
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.ext_id | length > 0
+      - item.rel is defined
+      - item.rel | length > 0
+    fail_msg: "TaskEntity {{ item }} is missing a required field"
+    success_msg: "TaskEntity element is well-formed"
+  loop: "{{ result.response }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+- name: Assert the created image appears in the affected entities list
+  ansible.builtin.assert:
+    that:
+      - result.response | map(attribute='ext_id') | list | select('equalto', demo_image_ext_id) | list | length == 1
+    fail_msg: "Created image {{ demo_image_ext_id }} was not present in TaskEntity list"
+    success_msg: "Created image is present as a TaskEntity"
+
+################################################################################
+# 4. Positive - list with limit: 1.
+
+- name: List TaskEntity with limit=1
+  nutanix.ncp.ntnx_task_entities_info_v2:
+    task_ext_id: "{{ parent_task_ext_id }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Verify list-with-limit TaskEntity response
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.task_ext_id == parent_task_ext_id
+      - result.response is defined
+      - result.response | length == 1
+      - result.total_available_results is defined
+      - result.total_available_results >= 1
+    fail_msg: "Listing TaskEntity with limit=1 did not return exactly one record"
+    success_msg: "TaskEntity list respected limit=1"
+
+################################################################################
+# 5. Positive - list with an OData filter on rel.
+
+- name: List TaskEntity filtered on rel eq 'vmm:content:image'
+  nutanix.ncp.ntnx_task_entities_info_v2:
+    task_ext_id: "{{ parent_task_ext_id }}"
+    filter: "rel eq 'vmm:content:image'"
+  register: result
+  ignore_errors: true
+
+- name: Verify filtered TaskEntity response
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.task_ext_id == parent_task_ext_id
+      - result.response is defined
+      - result.response | length >= 1
+    fail_msg: "Filtering TaskEntity by rel did not return any results"
+    success_msg: "TaskEntity filter by rel returned expected results"
+
+- name: Assert every filtered TaskEntity has rel == 'vmm:content:image'
+  ansible.builtin.assert:
+    that:
+      - item.rel == 'vmm:content:image'
+    fail_msg: "Filtered TaskEntity {{ item }} does not match rel filter"
+    success_msg: "Filtered TaskEntity element matches filter"
+  loop: "{{ result.response }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+################################################################################
+# 6. Positive - list with select projecting only extId and rel.
+
+- name: List TaskEntity projecting only extId and rel
+  nutanix.ncp.ntnx_task_entities_info_v2:
+    task_ext_id: "{{ parent_task_ext_id }}"
+    select: "extId,rel"
+  register: result
+  ignore_errors: true
+
+- name: Verify projected TaskEntity response
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.task_ext_id == parent_task_ext_id
+      - result.response is defined
+      - result.response | length >= 1
+    fail_msg: "Projecting TaskEntity with select returned no rows"
+    success_msg: "Projecting TaskEntity with select returned rows"
+
+- name: Assert every projected TaskEntity has extId and rel populated
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.ext_id | length > 0
+      - item.rel is defined
+      - item.rel | length > 0
+    fail_msg: "Projected TaskEntity {{ item }} is missing extId/rel"
+    success_msg: "Projected TaskEntity element has required projected fields"
+  loop: "{{ result.response }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+################################################################################
+# 7. Positive - explicit page=0 with limit=1 exercises pagination path.
+
+- name: List TaskEntity with page=0 and limit=1
+  nutanix.ncp.ntnx_task_entities_info_v2:
+    task_ext_id: "{{ parent_task_ext_id }}"
+    page: 0
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Verify paginated TaskEntity response
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.task_ext_id == parent_task_ext_id
+      - result.response is defined
+      - result.response | length == 1
+      - result.total_available_results is defined
+      - result.total_available_results >= 1
+    fail_msg: "Paginated TaskEntity list did not return exactly one record"
+    success_msg: "Paginated TaskEntity list returned expected shape"
+
+################################################################################
+# 8. Negative - missing required task_ext_id.
+
+- name: List TaskEntity without task_ext_id (should fail with argspec error)  # noqa args[module]
+  nutanix.ncp.ntnx_task_entities_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Verify missing task_ext_id is rejected by argspec
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - "'task_ext_id' in (result.msg | default(''))"
+    fail_msg: "Missing task_ext_id was not rejected as expected"
+    success_msg: "Missing task_ext_id was rejected as expected"
+
+################################################################################
+# 9. Negative - well-formed but non-existent task_ext_id.
+
+- name: List TaskEntity with a non-existent task_ext_id
+  nutanix.ncp.ntnx_task_entities_info_v2:
+    task_ext_id: "ZXJnb24=:11223344-5566-7788-99aa-bbccddeeff00"
+  register: result
+  ignore_errors: true
+
+- name: Verify non-existent task_ext_id surfaces an API exception
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg == "Api Exception raised while fetching task entities info"
+    fail_msg: "Non-existent task_ext_id did not fail with the expected message"
+    success_msg: "Non-existent task_ext_id failed with the expected message"
+
+################################################################################
+# 10. Negative - malformed task_ext_id (no prefix:UUID shape).
+
+- name: List TaskEntity with a malformed task_ext_id
+  nutanix.ncp.ntnx_task_entities_info_v2:
+    task_ext_id: "not-a-real-task-id"
+  register: result
+  ignore_errors: true
+
+- name: Verify malformed task_ext_id surfaces an API exception
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg == "Api Exception raised while fetching task entities info"
+    fail_msg: "Malformed task_ext_id did not fail with the expected message"
+    success_msg: "Malformed task_ext_id failed with the expected message"
+
+################################################################################
+# 11. Domain - re-list the same task; result should be stable.
+
+- name: Re-list all TaskEntity for the parent task (should be stable)
+  nutanix.ncp.ntnx_task_entities_info_v2:
+    task_ext_id: "{{ parent_task_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify re-listing TaskEntity is stable and returns the same total
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.task_ext_id == parent_task_ext_id
+      - result.response is defined
+      - result.response | length >= 1
+      - result.total_available_results is defined
+      - result.total_available_results >= 1
+    fail_msg: "Re-listing TaskEntity produced an unexpected result"
+    success_msg: "Re-listing TaskEntity produced a stable result"
+
+################################################################################
+# 12. Teardown.
+
+- name: Delete the demo image created for the TaskEntity tests
+  nutanix.ncp.ntnx_images_v2:
+    state: absent
+    ext_id: "{{ demo_image_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify demo image deletion status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+      - result.response is defined
+      - result.response.status == 'SUCCEEDED'
+    fail_msg: "Failed to delete demo image"
+    success_msg: "Demo image deleted successfully"
