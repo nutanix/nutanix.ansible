@@ -7,7 +7,7 @@
 # The tests below are designed to be meaningful in both cases:
 #
 # 1. Argument-validation tests (missing required, mutually_exclusive,
-#    unsupported state=absent) — always run, do not touch the API.
+#    invalid state=absent) — always run, do not touch the API.
 # 2. check_mode preview tests — always run, do not touch the API (the module
 #    builds the update body from a fresh SDK default, not from a live GET).
 # 3. Live API tests — best-effort. They gracefully accept either the
@@ -183,7 +183,7 @@
     fail_msg: "Missing cluster_ext_id did not fail as expected"
     success_msg: "Missing cluster_ext_id failed as expected"
 
-- name: Update BMC info with state=absent (unsupported)
+- name: Update BMC info with state=absent (invalid choice)
   nutanix.ncp.ntnx_bmc_info_v2:
     state: absent
     cluster_ext_id: "00000000-0000-0000-0000-000000000000"
@@ -191,13 +191,13 @@
   register: result
   ignore_errors: true
 
-- name: Assert state=absent is rejected with a clear message
+- name: Assert state=absent is rejected by argument validation
   ansible.builtin.assert:
     that:
       - result is defined
       - result.changed == false
       - result.failed == true
-      - "'state=absent is not supported' in result.msg"
+      - "'value of state must be one of: present' in result.msg"
     fail_msg: "state=absent was not rejected as expected"
     success_msg: "state=absent was rejected as expected"
 

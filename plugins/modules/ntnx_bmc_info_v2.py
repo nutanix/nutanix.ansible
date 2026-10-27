@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_bmc_info_v2
 short_description: Update BMC (Baseboard Management Controller) info of a host in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to update the out-of-band Baseboard Management Controller (BMC) info
     (IP address and basic-auth credentials) of a host that belongs to a cluster registered with
@@ -23,24 +23,22 @@ description:
     and is treated as read-only by this module.
   - This module uses PC v4 APIs based SDKs.
 notes:
-    - >-
-      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
-    - >-
-      B(Update BMC info of a host) -
-      Required Roles: Cluster Admin, Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
+  - >-
+    This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+  - >-
+    B(Update BMC Info) -
+    Required Roles: Cluster Admin, Prism Admin, Super Admin
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   state:
     description:
-      - Only V(present) is supported for BMC info because the underlying v4 API does not
-        expose create or delete operations. When set to V(absent) the module fails with a
-        clear error message.
+      - Specify state.
+      - If C(state) is set to C(present), the module will update the BMC info.
+      - C(absent) is not supported because the underlying v4 API does not expose delete.
     type: str
     choices:
       - present
-      - absent
     default: present
-    required: false
   ext_id:
     description:
       - The external ID of the host whose BMC info should be updated.
@@ -120,10 +118,6 @@ author:
 EXAMPLES = r"""
 - name: Update BMC IP address and credential of a host
   nutanix.ncp.ntnx_bmc_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: present
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     ext_id: "8300384a-56ee-4750-aeb8-3d1c42908bee"
@@ -134,18 +128,19 @@ EXAMPLES = r"""
     credential:
       username: "ADMIN"
       password: "SuperSecret.123"
+  register: result
+  ignore_errors: true
 
 - name: Rotate only the BMC credential (keep existing IP)
   nutanix.ncp.ntnx_bmc_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
+    state: present
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     ext_id: "8300384a-56ee-4750-aeb8-3d1c42908bee"
     credential:
       username: "ADMIN"
       password: "RotatedSecret.456"
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -217,8 +212,8 @@ failed:
   sample: false
 
 msg:
-  description: This indicates the message when there is an error, on idempotency, or when state=absent is requested.
-  returned: When there is an error, module is idempotent or state=absent is requested
+  description: This indicates the message when there is an error, on idempotency, or in check mode.
+  returned: When there is an error, module is idempotent or in check mode
   type: str
   sample: "Nothing to change."
 """
@@ -241,6 +236,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    strip_read_only_fields,
 )
 
 SDK_IMP_ERROR = None
@@ -248,13 +244,15 @@ try:
     import ntnx_clustermgmt_py_client as cluster_management_sdk  # noqa: E402
 except ImportError:
 
-    from ..module_utils.v4.sdk_mock import (  # noqa: E402
-        mock_sdk as cluster_management_sdk,
-    )
+    from ..module_utils.v4.sdk_mock import mock_sdk as cluster_management_sdk  # noqa: E402  # fmt: skip
 
     SDK_IMP_ERROR = traceback.format_exc()
 
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
+
+# Server-populated attribute that must NOT be sent back in the update body.
+_BMC_INFO_READ_ONLY_FIELDS = ("status",)
 
 
 def get_module_spec():
@@ -290,6 +288,7 @@ def get_module_spec():
     )
 
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         cluster_ext_id=dict(type="str", required=True),
         ip_address=dict(
@@ -309,7 +308,7 @@ def get_module_spec():
     return module_args
 
 
-def _check_for_idempotency(old_spec_dict, update_spec_dict):
+def check_idempotency(old_spec_dict, update_spec_dict):
     """Return True if the update payload matches the current BMC info spec."""
     old = strip_internal_attributes(deepcopy(old_spec_dict))
     new = strip_internal_attributes(deepcopy(update_spec_dict))
@@ -359,10 +358,12 @@ def update_BmcInfo(module, result, api_instance):
         result["error"] = err
         module.fail_json(msg="Failed generating update BMC info spec", **result)
 
-    if _check_for_idempotency(current_spec.to_dict(), update_spec.to_dict()):
+    if check_idempotency(current_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
         result["response"] = strip_internal_attributes(current_spec.to_dict())
         module.exit_json(msg="Nothing to change.", **result)
+
+    strip_read_only_fields(update_spec, fields=_BMC_INFO_READ_ONLY_FIELDS)
 
     kwargs = {"if_match": etag}
     resp = None
@@ -407,21 +408,11 @@ def run_module():
         "changed": False,
         "error": None,
         "response": None,
+        "failed": False,
         "ext_id": None,
         "cluster_ext_id": None,
         "task_ext_id": None,
-        "skipped": False,
     }
-
-    state = module.params.get("state")
-    if state == "absent":
-        module.fail_json(
-            msg=(
-                "state=absent is not supported for BMC info — the v4 API "
-                "only exposes get and update operations on this resource."
-            ),
-            **result,
-        )
 
     api_instance = get_bmc_api_instance(module)
     update_BmcInfo(module, result, api_instance)

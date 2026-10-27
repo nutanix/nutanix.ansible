@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_bmc_infos_info_v2
 short_description: Fetch BMC (Baseboard Management Controller) info of a host in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to fetch information about the BMC (Baseboard Management Controller)
     of a host that belongs to a cluster registered with Nutanix Prism Central.
@@ -20,12 +20,12 @@ description:
     list endpoint), so both C(cluster_ext_id) and C(ext_id) are required.
   - This module uses PC v4 APIs based SDKs.
 notes:
-    - >-
-      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
-    - >-
-      B(Get BMC info of a host) -
-      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
+  - >-
+    This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+  - >-
+    B(Get BMC Info) -
+    Required Roles: Cluster Admin, Prism Admin, Prism Viewer, Super Admin, User Admin
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   ext_id:
     description:
@@ -53,13 +53,10 @@ author:
 EXAMPLES = r"""
 - name: Fetch BMC info of a host
   nutanix.ncp.ntnx_bmc_infos_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     ext_id: "8300384a-56ee-4750-aeb8-3d1c42908bee"
   register: bmc_info
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -133,6 +130,7 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.helpers import get_bmc_info  # noqa: E402
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
 
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
@@ -166,6 +164,7 @@ def run_module():
         "changed": False,
         "error": None,
         "response": None,
+        "failed": False,
         "ext_id": None,
         "cluster_ext_id": None,
     }
