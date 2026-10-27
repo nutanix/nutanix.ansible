@@ -30,7 +30,7 @@ options:
   state:
     description:
       - State of the module.
-      - If state is C(present), the module will restore a new AHV VM from a recovery point.
+      - If state is C(present) the module will restore a new AHV VM from a recovery point.
     type: str
     choices:
       - present
@@ -42,11 +42,13 @@ options:
     required: true
   is_strict_mode:
     description:
-      - If set to false, any VM configuration in the VM recovery point that cannot be restored
+      - >-
+        If set to false, any VM configuration in the VM recovery point that cannot be restored
         will be dropped or reset to system defaults. This currently applies to the following
         fields in the VM configuration: subnets, NIC profiles, and the project. It also handles
         dropping unknown features on older PEs.
-      - If set to true, the restore operation will run in normal mode, where any failures will
+      - >-
+        If set to true, the restore operation will run in normal mode, where any failures will
         be raised as errors, and the VM will not be restored until the issues are resolved.
     type: bool
     required: false
@@ -59,7 +61,8 @@ options:
     suboptions:
       name:
         description:
-          - Name of the VM to override with. If not specified, a name is chosen by the system
+          - >-
+            Name of the VM to override with. If not specified, a name is chosen by the system
             and returned to the task entities when complete.
         type: str
         required: false
@@ -70,7 +73,8 @@ options:
         required: false
       nic_spec:
         description:
-          - NIC configuration input for the restored VM. If not specified, the NICs in the
+          - >-
+            NIC configuration input for the restored VM. If not specified, the NICs in the
             VM Recovery Point will be restored.
         type: dict
         required: false
@@ -83,7 +87,8 @@ options:
             required: false
           nic_override_list:
             description:
-              - List of NIC parameters to override the corresponding NICs captured in the
+              - >-
+                List of NIC parameters to override the corresponding NICs captured in the
                 VM Recovery Point.
             type: list
             elements: dict
@@ -156,7 +161,8 @@ options:
       project_ext_id:
         description:
           - Project to be associated with the VM on successful restore.
-          - Only the default project or the recovery point's original project can be provided
+          - >-
+            Only the default project or the recovery point's original project can be provided
             in the override restore.
         type: str
         required: false
@@ -186,7 +192,8 @@ options:
         suboptions:
           should_clear_in_guest_volume_group_attachments:
             description:
-              - If C(true), the restored VM will drop all in-guest volume group attachments
+              - >-
+                If C(true), the restored VM will drop all in-guest volume group attachments
                 captured in the recovery point.
             type: bool
             required: false
@@ -199,7 +206,8 @@ options:
         suboptions:
           bios_spec:
             description:
-              - Configuration object that specifies whether to preserve or generate a new
+              - >-
+                Configuration object that specifies whether to preserve or generate a new
                 BIOS UUID when restoring a VM from a recovery point.
             type: dict
             required: false
