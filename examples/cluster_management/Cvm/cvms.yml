@@ -73,7 +73,7 @@
     # you fully own. Uncomment to enable.
     #
     # - name: Reconfigure CVMs — vCPUs and memory
-    #   nutanix.ncp.ntnx_cvm_v2:
+    #   nutanix.ncp.ntnx_cluster_cvm_v2:
     #     state: present
     #     cluster_ext_id: "{{ cluster_ext_id }}"
     #     num_vcpus: "{{ cvm_single.response.num_vcpus }}"

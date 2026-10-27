@@ -112,14 +112,14 @@ def get_ssl_certificates(module, api_instance, ext_id):
         )
 
 
-def get_cvm(module, api_instance, cluster_ext_id, ext_id):
+def get_cvm(module, api_instance, ext_id, cluster_ext_id):
     """
-    This method will return CVM info using cluster external ID and CVM external ID.
+    This method will return CVM info using external ID.
     Args:
         module: Ansible module
         api_instance: CvmsApi instance from sdk
-        cluster_ext_id (str): parent cluster external ID
         ext_id (str): CVM external ID
+        cluster_ext_id (str): parent cluster external ID
     return:
         cvm info (object): CVM info
     """

@@ -1,6 +1,6 @@
 ---
 # ##################################################################################
-# Test plan for ntnx_cvm_v2 and ntnx_cluster_cvms_info_v2
+# Test plan for ntnx_cluster_cvm_v2 and ntnx_cluster_cvms_info_v2
 #
 # The CVM (Controller VM) API only exposes GET / LIST / RECONFIGURE operations —
 # there is no create/delete. The reconfigure operation is *disruptive* (it triggers
@@ -239,7 +239,7 @@
 ########################################################################################
 
 - name: Generate spec for reconfiguring CVMs using check_mode with all attributes
-  nutanix.ncp.ntnx_cvm_v2:
+  nutanix.ncp.ntnx_cluster_cvm_v2:
     state: present
     cluster_ext_id: "{{ cluster_ext_id }}"
     num_vcpus: "{{ cvm_num_vcpus | int }}"
@@ -261,7 +261,7 @@
     fail_msg: "Reconfigure CVMs check_mode with all attributes failed"
 
 - name: Generate spec for reconfiguring CVMs using check_mode with only num_vcpus
-  nutanix.ncp.ntnx_cvm_v2:
+  nutanix.ncp.ntnx_cluster_cvm_v2:
     state: present
     cluster_ext_id: "{{ cluster_ext_id }}"
     num_vcpus: "{{ cvm_num_vcpus | int }}"
@@ -282,7 +282,7 @@
     fail_msg: "Reconfigure CVMs check_mode with only num_vcpus failed"
 
 - name: Generate spec for reconfiguring CVMs using check_mode with only memory_size_bytes
-  nutanix.ncp.ntnx_cvm_v2:
+  nutanix.ncp.ntnx_cluster_cvm_v2:
     state: present
     cluster_ext_id: "{{ cluster_ext_id }}"
     memory_size_bytes: "{{ cvm_memory_size_bytes | int }}"
@@ -307,7 +307,7 @@
 ########################################################################################
 
 - name: Reconfigure CVMs - missing cluster_ext_id
-  nutanix.ncp.ntnx_cvm_v2:
+  nutanix.ncp.ntnx_cluster_cvm_v2:
     state: present
     num_vcpus: 12
     memory_size_bytes: 34359738368
@@ -325,7 +325,7 @@
     fail_msg: "Reconfigure CVMs missing cluster_ext_id did not fail as expected"
 
 - name: Reconfigure CVMs - missing both num_vcpus and memory_size_bytes
-  nutanix.ncp.ntnx_cvm_v2:
+  nutanix.ncp.ntnx_cluster_cvm_v2:
     state: present
     cluster_ext_id: "{{ cluster_ext_id }}"
   register: result
@@ -342,7 +342,7 @@
     fail_msg: "Reconfigure CVMs missing both num_vcpus and memory_size_bytes did not fail as expected"
 
 - name: Reconfigure CVMs - invalid state=absent
-  nutanix.ncp.ntnx_cvm_v2:
+  nutanix.ncp.ntnx_cluster_cvm_v2:
     state: absent
     cluster_ext_id: "{{ cluster_ext_id }}"
     num_vcpus: 12
@@ -360,7 +360,7 @@
     fail_msg: "Reconfigure CVMs invalid state=absent did not fail as expected"
 
 - name: Reconfigure CVMs - wrong cluster_ext_id
-  nutanix.ncp.ntnx_cvm_v2:
+  nutanix.ncp.ntnx_cluster_cvm_v2:
     state: present
     cluster_ext_id: "00000000-0000-0000-0000-000000000000"
     num_vcpus: 12

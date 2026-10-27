@@ -162,7 +162,7 @@ def get_cvms_api_instance(module):
     Args:
         module (AnsibleModule): AnsibleModule instance
     Returns:
-        CvmsApi: CvmsApi instance for cluster CVM list, get and reconfigure operations
+        CvmsApi: CvmsApi instance
     """
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.CvmsApi(client)
