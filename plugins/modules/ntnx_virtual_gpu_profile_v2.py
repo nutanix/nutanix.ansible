@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -31,29 +31,34 @@ description:
     so the module can still be included in dry-run playbooks.
   - This module uses PC v4 APIs based SDKs.
 notes:
-    - >-
-      This module requires the following Nutanix IAM roles to be assigned to
-      the user performing the operation.
-    - >-
-      B(Read Virtual GPU Profiles) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator,
-      Prism Admin, Prism Viewer, Project Admin, Super Admin, Virtual Machine
-      Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
+  - >-
+    This module requires the following Nutanix IAM roles to be assigned to
+    the user performing the operation.
+  - >-
+    B(View Cluster Vgpu Profiles) -
+    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer,
+    Project Manager, Super Admin, Self-Service Admin (deprecated)
+  - >-
+    The V4 C(clustermgmt) API exposes only
+    C(listVirtualGpuProfiles)
+    (C(GET /api/clustermgmt/v4.3/config/clusters/{clusterExtId}/virtual-gpu-profiles)).
+    There are no Create, Update, or Delete operations for this entity, so
+    C(state=present) / C(state=absent) fail outside of C(check_mode).
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   state:
     description:
       - If C(state) is set to C(present) and C(ext_id) is not provided the
         operation would be create Virtual GPU profile, which is B(not
-        supported) by the V4 SDK - the module fails with a descriptive
+        supported) by the V4 API - the module fails with a descriptive
         message.
       - If C(state) is set to C(present) and C(ext_id) is provided the
         operation would be update Virtual GPU profile, which is B(not
-        supported) by the V4 SDK - the module fails with a descriptive
+        supported) by the V4 API - the module fails with a descriptive
         message.
       - If C(state) is set to C(absent) and C(ext_id) is provided the
         operation would be delete Virtual GPU profile, which is B(not
-        supported) by the V4 SDK - the module fails with a descriptive
+        supported) by the V4 API - the module fails with a descriptive
         message.
     type: str
     required: false
@@ -65,13 +70,15 @@ options:
     description:
       - External ID (UUID) of the Prism Element cluster that owns the
         Virtual GPU profile.
+      - Maps to the C(clusterExtId) path parameter of
+        C(listVirtualGpuProfiles).
     type: str
     required: false
   ext_id:
     description:
       - The external ID of the Virtual GPU profile.
-      - Required for update and delete operations. The V4 SDK does not
-        support these operations for this entity.
+      - Required for update and delete operations. The V4 API does not
+        support Create, Update, or Delete for this entity.
     type: str
     required: false
 extends_documentation_fragment:
@@ -87,10 +94,6 @@ author:
 EXAMPLES = r"""
 - name: Attempt to create a Virtual GPU profile (will fail - read-only entity)
   nutanix.ncp.ntnx_virtual_gpu_profile_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: present
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
   register: result
@@ -98,10 +101,6 @@ EXAMPLES = r"""
 
 - name: Attempt to update a Virtual GPU profile (will fail - read-only entity)
   nutanix.ncp.ntnx_virtual_gpu_profile_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: present
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     ext_id: "0005a1ef-b3aa-4fc4-9c8c-1c8c8f3a0000"
@@ -110,10 +109,6 @@ EXAMPLES = r"""
 
 - name: Attempt to delete a Virtual GPU profile (will fail - read-only entity)
   nutanix.ncp.ntnx_virtual_gpu_profile_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: absent
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     ext_id: "0005a1ef-b3aa-4fc4-9c8c-1c8c8f3a0000"
@@ -196,24 +191,14 @@ from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
-from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
-    get_clusters_api_instance,
-)
-from ..module_utils.v4.utils import (  # noqa: E402
-    strip_internal_attributes,
-    validate_required_params,
-)
+from ..module_utils.v4.utils import validate_required_params  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
-    # pylint: disable=unused-import
-    import ntnx_clustermgmt_py_client as cluster_management_sdk  # noqa: F401,E402
+    import ntnx_clustermgmt_py_client  # noqa: F401,E402
 except ImportError:
 
-    # pylint: disable=unused-import
-    from ..module_utils.v4.sdk_mock import (  # noqa: F401,E402
-        mock_sdk as cluster_management_sdk,
-    )
+    from ..module_utils.v4.sdk_mock import mock_sdk as ntnx_clustermgmt_py_client  # noqa: F401,E402  # fmt: skip
 
     SDK_IMP_ERROR = traceback.format_exc()
 
@@ -247,34 +232,7 @@ def _spec_snapshot(module):
     }
 
 
-def _check_profile_exists(module, api_instance, result):
-    """Best-effort read to surface any existing profile before failing.
-
-    When update or delete is requested with a valid ``ext_id`` /
-    ``cluster_ext_id`` pair, the caller almost always wants to know
-    whether the profile is actually present. We call the list endpoint
-    directly (the SDK has no get-by-id) and, if the target ext_id is in
-    the response, include its dict representation in ``result`` so
-    operators can pivot to the info module. Any SDK-level exception is
-    swallowed here — we only want to enrich the failure payload; the
-    caller still fails with the "not supported" message.
-    """
-    cluster_ext_id = module.params.get("cluster_ext_id")
-    ext_id = module.params.get("ext_id")
-    if not (cluster_ext_id and ext_id):
-        return
-    try:
-        resp = api_instance.list_virtual_gpu_profiles(clusterExtId=cluster_ext_id)
-    except Exception:  # noqa: BLE001
-        return
-    for profile in resp.data or []:
-        if getattr(profile, "ext_id", None) == ext_id:
-            result["response"] = strip_internal_attributes(profile.to_dict())
-            result["ext_id"] = ext_id
-            return
-
-
-def create_VirtualGpuProfile(module, result, api_instance):
+def create_VirtualGpuProfile(module, result):
     validate_required_params(module, ["cluster_ext_id"])
 
     if module.check_mode:
@@ -289,19 +247,7 @@ def create_VirtualGpuProfile(module, result, api_instance):
     module.fail_json(**result)
 
 
-def check_for_idempotency(module, api_instance, result):
-    """Idempotency helper for update.
-
-    There is no update endpoint, so this always returns True (nothing to
-    change). The parameters mirror the ``virtual_switch_v2`` helper
-    signature so callers can swap between the two modules if the SDK
-    later exposes a real update API.
-    """
-    del module, api_instance, result
-    return True
-
-
-def update_VirtualGpuProfile(module, result, api_instance):
+def update_VirtualGpuProfile(module, result):
     validate_required_params(module, ["cluster_ext_id", "ext_id"])
 
     result["ext_id"] = module.params.get("ext_id")
@@ -312,16 +258,13 @@ def update_VirtualGpuProfile(module, result, api_instance):
         result["skipped"] = True
         return
 
-    _check_profile_exists(module, api_instance, result)
-
     result["failed"] = True
     result["msg"] = _UNSUPPORTED_MSG.format(op="update")
-    if result.get("response") is None:
-        result["response"] = _spec_snapshot(module)
+    result["response"] = _spec_snapshot(module)
     module.fail_json(**result)
 
 
-def delete_VirtualGpuProfile(module, result, api_instance):
+def delete_VirtualGpuProfile(module, result):
     validate_required_params(module, ["cluster_ext_id", "ext_id"])
 
     result["ext_id"] = module.params.get("ext_id")
@@ -332,12 +275,9 @@ def delete_VirtualGpuProfile(module, result, api_instance):
         result["skipped"] = True
         return
 
-    _check_profile_exists(module, api_instance, result)
-
     result["failed"] = True
     result["msg"] = _UNSUPPORTED_MSG.format(op="delete")
-    if result.get("response") is None:
-        result["response"] = _spec_snapshot(module)
+    result["response"] = _spec_snapshot(module)
     module.fail_json(**result)
 
 
@@ -363,15 +303,14 @@ def run_module():
         "ext_id": None,
         "task_ext_id": None,
     }
-    api_instance = get_clusters_api_instance(module)
     state = module.params.get("state")
     if state == "present":
         if module.params.get("ext_id"):
-            update_VirtualGpuProfile(module, result, api_instance)
+            update_VirtualGpuProfile(module, result)
         else:
-            create_VirtualGpuProfile(module, result, api_instance)
+            create_VirtualGpuProfile(module, result)
     else:
-        delete_VirtualGpuProfile(module, result, api_instance)
+        delete_VirtualGpuProfile(module, result)
     module.exit_json(**result)
 
 

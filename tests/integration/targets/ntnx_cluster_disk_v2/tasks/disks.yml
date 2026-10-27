@@ -1,0 +1,483 @@
+---
+# Integration tests for ntnx_cluster_disk_v2 and ntnx_cluster_disks_info_v2.
+#
+# Test plan:
+#
+# 1. Info / list-all: ensures the list endpoint returns disks and metadata.
+# 2. Info / get-by-ext_id: fetches a specific disk and asserts its shape.
+# 3. Info / filter: filters disks by storageTier and asserts every row honors it.
+# 4. Info / limit: verifies limit is honored by the SDK.
+# 5. Info / negative: fetch by a non-existent ext_id returns a descriptive error.
+# 6. Check_mode create (one, with all attributes).
+# 7. Check_mode update (one, with all attributes).
+# 8. Check_mode delete (one).
+# 9. Add-disk real API call with all attributes — expected to error out
+#    gracefully on a cluster where no unpartitioned drive matches
+#    `serial_number`, and we assert the error message points at the API layer.
+# 10. Update LED state real API call with all attributes (idempotent-ish since
+#    the API accepts same-state calls) — asserts `changed`, `task_ext_id`,
+#    and returned disk shape.
+# 11. Negative: update LED state on a non-existent Disk returns clean error.
+# 12. Negative: create without `cluster_ext_id` fails validation.
+# 13. Negative: create without `serial_number` fails validation.
+# 14. Negative: update without `is_engaged` fails validation.
+# 15. Negative: invalid enum value for `partition_type`.
+# 16. Delete against a non-existent ext_id — asserts the API layer returns an
+#    error and the module fails cleanly.
+
+- name: Start ntnx_cluster_disk_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_cluster_disk_v2 tests
+
+- name: Generate random suffix and defaults
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    non_existent_ext_id: "00000000-0000-0000-0000-000000000000"
+    fake_serial_number: "ANSIBLE_NONEXISTENT_SERIAL"
+
+########################################################################
+# INFO MODULE — List all
+########################################################################
+
+- name: List all Disks in Prism Central (unbounded)
+  nutanix.ncp.ntnx_cluster_disks_info_v2: {}
+  register: list_all_result
+  ignore_errors: true
+
+- name: Assert list all Disks status
+  ansible.builtin.assert:
+    that:
+      - list_all_result is defined
+      - list_all_result.changed == false
+      - list_all_result.failed == false
+      - list_all_result.response is defined
+      - list_all_result.response | type_debug == "list"
+      - list_all_result.response | length >= 1
+      - list_all_result.total_available_results is defined
+      - list_all_result.total_available_results >= list_all_result.response | length
+    fail_msg: "List all Disks failed"
+    success_msg: "List all Disks returned {{ list_all_result.response | length }} rows"
+
+- name: Assert every row in list has the mandatory Disk fields
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.cluster_ext_id is defined
+      - item.serial_number is defined
+      - item.mount_path is defined
+      - item.disk_size_bytes is defined
+      - item.storage_tier in ["CLOUD", "DAS_SATA", "SSD_MEM_NVME", "SSD_PCIE", "SSD_SATA"]
+      - item.status in ["DATA_MIGRATION_INITIATED", "DETACHABLE", "MARKED_FOR_REMOVAL_BUT_NOT_DETACHABLE", "NORMAL"]
+      - item.disk_advance_config is defined
+    fail_msg: "Row missing required Disk field(s): {{ item }}"
+    success_msg: "Disk row {{ item.ext_id }} has all mandatory fields"
+  loop: "{{ list_all_result.response }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+- name: Capture a real Disk ext_id / cluster ext_id / serial for later tests
+  ansible.builtin.set_fact:
+    target_disk_ext_id: "{{ list_all_result.response[0].ext_id }}"
+    target_cluster_ext_id: "{{ list_all_result.response[0].cluster_ext_id }}"
+    target_disk_serial: "{{ list_all_result.response[0].serial_number }}"
+    target_disk_storage_tier: "{{ list_all_result.response[0].storage_tier }}"
+
+########################################################################
+# INFO MODULE — Get by ext_id
+########################################################################
+
+- name: Fetch a single Disk by ext_id
+  nutanix.ncp.ntnx_cluster_disks_info_v2:
+    ext_id: "{{ target_disk_ext_id }}"
+  register: get_by_id_result
+  ignore_errors: true
+
+- name: Assert get-by-ext_id status
+  ansible.builtin.assert:
+    that:
+      - get_by_id_result.changed == false
+      - get_by_id_result.failed == false
+      - get_by_id_result.ext_id == target_disk_ext_id
+      - get_by_id_result.response is defined
+      - get_by_id_result.response.ext_id == target_disk_ext_id
+      - get_by_id_result.response.cluster_ext_id == target_cluster_ext_id
+      - get_by_id_result.response.serial_number == target_disk_serial
+      - get_by_id_result.response.storage_tier == target_disk_storage_tier
+      - get_by_id_result.response.disk_advance_config is defined
+    fail_msg: "Get Disk by ext_id failed"
+    success_msg: "Get Disk by ext_id returned {{ get_by_id_result.response.ext_id }}"
+
+########################################################################
+# INFO MODULE — Filter and limit
+########################################################################
+
+- name: List Disks filtered by storage tier
+  nutanix.ncp.ntnx_cluster_disks_info_v2:
+    filter: "storageTier eq Clustermgmt.Config.StorageTier'{{ target_disk_storage_tier }}'"
+  register: filter_result
+  ignore_errors: true
+
+- name: Assert filter honors storageTier
+  ansible.builtin.assert:
+    that:
+      - filter_result.changed == false
+      - filter_result.failed == false
+      - filter_result.response is defined
+      - filter_result.response | length >= 1
+    fail_msg: "Filter on storageTier failed"
+    success_msg: "Filter on storageTier returned {{ filter_result.response | length }} rows"
+
+- name: Every filtered row must have the requested storage tier
+  ansible.builtin.assert:
+    that:
+      - item.storage_tier == target_disk_storage_tier
+    fail_msg: "Row {{ item.ext_id }} did not honor filter (got {{ item.storage_tier }})"
+    success_msg: "Row {{ item.ext_id }} honors filter"
+  loop: "{{ filter_result.response }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+- name: List Disks with limit=1
+  nutanix.ncp.ntnx_cluster_disks_info_v2:
+    limit: 1
+  register: limit_result
+  ignore_errors: true
+
+- name: Assert limit is honored
+  ansible.builtin.assert:
+    that:
+      - limit_result.changed == false
+      - limit_result.failed == false
+      - limit_result.response | length == 1
+    fail_msg: "limit=1 not honored (got {{ limit_result.response | length }} rows)"
+    success_msg: "limit=1 honored"
+
+########################################################################
+# INFO MODULE — Negative: get by non-existent ext_id
+########################################################################
+
+- name: Fetch a Disk by a non-existent ext_id (negative)
+  nutanix.ncp.ntnx_cluster_disks_info_v2:
+    ext_id: "{{ non_existent_ext_id }}"
+  register: missing_disk_result
+  ignore_errors: true
+
+- name: Assert missing Disk returns clean error
+  ansible.builtin.assert:
+    that:
+      - missing_disk_result.failed == true
+      - missing_disk_result.changed == false
+      - missing_disk_result.msg is defined
+      - "'Api Exception raised while fetching Disk info using ext_id' in missing_disk_result.msg"
+      - non_existent_ext_id in missing_disk_result.msg
+    fail_msg: "Missing Disk did not return a clean error"
+    success_msg: "Missing Disk error is descriptive"
+
+########################################################################
+# CRUD MODULE — Check-mode Create (single test with ALL attributes)
+########################################################################
+
+- name: Generate spec for adding a Disk in check_mode with all attributes
+  nutanix.ncp.ntnx_cluster_disk_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    serial_number: "check_mode_serial_{{ random_suffix }}"
+    disk_partition_info:
+      partition_type: "EXT4"
+      drive_replacement_option: "CAPACITY_UPGRADE"
+  check_mode: true
+  register: create_check_mode
+  ignore_errors: true
+
+- name: Assert create check_mode status
+  ansible.builtin.assert:
+    that:
+      - create_check_mode.changed == false
+      - create_check_mode.failed == false
+      - create_check_mode.response is defined
+      - create_check_mode.response.serial_number == "check_mode_serial_" ~ random_suffix
+      - create_check_mode.response.disk_partition_info is defined
+      - create_check_mode.response.disk_partition_info.partition_type == "EXT4"
+      - create_check_mode.response.disk_partition_info.drive_replacement_option == "CAPACITY_UPGRADE"
+    fail_msg: "Add-disk check_mode did not generate the expected spec"
+    success_msg: "Add-disk check_mode generated the correct spec"
+
+########################################################################
+# CRUD MODULE — Check-mode Update (single test with ALL attributes)
+########################################################################
+
+- name: Generate spec for updating LED state in check_mode
+  nutanix.ncp.ntnx_cluster_disk_v2:
+    state: present
+    ext_id: "{{ target_disk_ext_id }}"
+    is_engaged: true
+  check_mode: true
+  register: update_check_mode
+  ignore_errors: true
+
+- name: Assert update check_mode status
+  ansible.builtin.assert:
+    that:
+      - update_check_mode.changed == false
+      - update_check_mode.failed == false
+      - update_check_mode.response is defined
+      - update_check_mode.response.is_engaged == true
+      - update_check_mode.ext_id == target_disk_ext_id
+    fail_msg: "Update LED check_mode did not generate the expected spec"
+    success_msg: "Update LED check_mode generated the correct spec"
+
+########################################################################
+# CRUD MODULE — Check-mode Delete (single test)
+########################################################################
+
+- name: Generate spec for deleting a Disk in check_mode
+  nutanix.ncp.ntnx_cluster_disk_v2:
+    state: absent
+    ext_id: "{{ target_disk_ext_id }}"
+  check_mode: true
+  register: delete_check_mode
+  ignore_errors: true
+
+- name: Assert delete check_mode status
+  ansible.builtin.assert:
+    that:
+      - delete_check_mode.changed == false
+      - delete_check_mode.failed == false
+      - delete_check_mode.ext_id == target_disk_ext_id
+      - delete_check_mode.msg is defined
+      - "'will be deleted' in delete_check_mode.msg"
+      - target_disk_ext_id in delete_check_mode.msg
+    fail_msg: "Delete check_mode did not produce the expected msg"
+    success_msg: "Delete check_mode produced the correct msg"
+
+########################################################################
+# CRUD MODULE — Add Disk real API call
+#
+# On a live cluster where every physical slot is already occupied, the
+# add-disk API returns a CLU-11001 error indicating the serial cannot
+# be located. We assert we captured that clean API-level failure rather
+# than a Python traceback.
+########################################################################
+
+- name: Attempt to add a Disk with a synthetic serial number (expected to error)
+  nutanix.ncp.ntnx_cluster_disk_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    serial_number: "{{ fake_serial_number }}"
+    disk_partition_info:
+      partition_type: "XFS"
+      drive_replacement_option: "RMA"
+  register: add_disk_result
+  ignore_errors: true
+
+- name: Assert add-disk gracefully surfaces the API error
+  ansible.builtin.assert:
+    that:
+      - add_disk_result.changed == false
+      - add_disk_result.failed == true
+      - add_disk_result.msg is defined
+      - "'Api Exception raised while adding Disk to cluster' in add_disk_result.msg"
+      - target_cluster_ext_id in add_disk_result.msg
+    fail_msg: "Add-disk did not surface API error cleanly"
+    success_msg: "Add-disk surfaced API error cleanly"
+
+########################################################################
+# CRUD MODULE — Real Update LED state (turn LED off; safe on any drive)
+########################################################################
+
+- name: Update Disk LED state (turn LED off)
+  nutanix.ncp.ntnx_cluster_disk_v2:
+    state: present
+    ext_id: "{{ target_disk_ext_id }}"
+    is_engaged: false
+  register: led_off_result
+  ignore_errors: true
+
+- name: Assert LED-off real call
+  ansible.builtin.assert:
+    that:
+      - led_off_result.failed == false
+      - led_off_result.changed == true
+      - led_off_result.ext_id == target_disk_ext_id
+      - led_off_result.task_ext_id is defined
+      - led_off_result.response is defined
+      - led_off_result.response.ext_id == target_disk_ext_id
+      - led_off_result.response.status in ["DATA_MIGRATION_INITIATED", "DETACHABLE", "MARKED_FOR_REMOVAL_BUT_NOT_DETACHABLE", "NORMAL"]
+    fail_msg: "LED-off real call failed"
+    success_msg: "LED-off real call succeeded, task {{ led_off_result.task_ext_id }}"
+
+- name: Update Disk LED state again with same value (repeat call)
+  nutanix.ncp.ntnx_cluster_disk_v2:
+    state: present
+    ext_id: "{{ target_disk_ext_id }}"
+    is_engaged: false
+  register: led_off_repeat_result
+  ignore_errors: true
+
+- name: Assert repeated LED-off still succeeds
+  ansible.builtin.assert:
+    that:
+      - led_off_repeat_result.failed == false
+      - led_off_repeat_result.changed == true
+      - led_off_repeat_result.ext_id == target_disk_ext_id
+      - led_off_repeat_result.task_ext_id is defined
+    fail_msg: "Repeat LED-off call failed"
+    success_msg: "Repeat LED-off call succeeded"
+
+########################################################################
+# CRUD MODULE — Negative tests
+########################################################################
+
+- name: Attempt to update LED on a non-existent Disk
+  nutanix.ncp.ntnx_cluster_disk_v2:
+    state: present
+    ext_id: "{{ non_existent_ext_id }}"
+    is_engaged: true
+  register: led_missing_result
+  ignore_errors: true
+
+- name: Assert LED update on missing Disk fails cleanly
+  ansible.builtin.assert:
+    that:
+      - led_missing_result.failed == true
+      - led_missing_result.changed == false
+      - led_missing_result.msg is defined
+      - "'Api Exception raised while fetching Disk info using ext_id' in led_missing_result.msg"
+      - non_existent_ext_id in led_missing_result.msg
+    fail_msg: "LED update on missing Disk did not fail cleanly"
+    success_msg: "LED update on missing Disk failed cleanly"
+
+- name: Attempt to add a Disk without cluster_ext_id (negative)
+  nutanix.ncp.ntnx_cluster_disk_v2:
+    state: present
+    serial_number: "any_serial"
+  register: missing_cluster_ext_id_result
+  ignore_errors: true
+
+- name: Assert add-disk without cluster_ext_id fails validation
+  ansible.builtin.assert:
+    that:
+      - missing_cluster_ext_id_result.failed == true
+      - missing_cluster_ext_id_result.changed == false
+      - missing_cluster_ext_id_result.msg is defined
+      - "'cluster_ext_id' in missing_cluster_ext_id_result.msg"
+    fail_msg: "Add-disk without cluster_ext_id did not fail validation"
+    success_msg: "Add-disk without cluster_ext_id failed validation"
+
+- name: Attempt to add a Disk without serial_number (negative)
+  nutanix.ncp.ntnx_cluster_disk_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: missing_serial_result
+  ignore_errors: true
+
+- name: Assert add-disk without serial_number fails validation
+  ansible.builtin.assert:
+    that:
+      - missing_serial_result.failed == true
+      - missing_serial_result.changed == false
+      - missing_serial_result.msg is defined
+      - "'serial_number' in missing_serial_result.msg"
+    fail_msg: "Add-disk without serial_number did not fail validation"
+    success_msg: "Add-disk without serial_number failed validation"
+
+- name: Attempt to update LED without is_engaged (negative)
+  nutanix.ncp.ntnx_cluster_disk_v2:
+    state: present
+    ext_id: "{{ target_disk_ext_id }}"
+  register: missing_is_engaged_result
+  ignore_errors: true
+
+- name: Assert update without is_engaged fails validation
+  ansible.builtin.assert:
+    that:
+      - missing_is_engaged_result.failed == true
+      - missing_is_engaged_result.changed == false
+      - missing_is_engaged_result.msg is defined
+      - "'is_engaged' in missing_is_engaged_result.msg"
+    fail_msg: "Update LED without is_engaged did not fail validation"
+    success_msg: "Update LED without is_engaged failed validation"
+
+- name: Attempt to add a Disk with an invalid partition_type (negative)
+  nutanix.ncp.ntnx_cluster_disk_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    serial_number: "any_serial"
+    disk_partition_info:
+      partition_type: "NOT_A_REAL_TYPE"
+      drive_replacement_option: "RMA"
+  register: invalid_enum_result
+  ignore_errors: true
+
+- name: Assert invalid enum value is rejected by argument_spec
+  ansible.builtin.assert:
+    that:
+      - invalid_enum_result.failed == true
+      - invalid_enum_result.changed == false
+      - invalid_enum_result.msg is defined
+      - "'partition_type' in invalid_enum_result.msg or 'value of partition_type' in invalid_enum_result.msg"
+    fail_msg: "Invalid partition_type enum was not rejected"
+    success_msg: "Invalid partition_type enum was rejected"
+
+- name: Attempt to add a Disk with an invalid drive_replacement_option (negative)
+  nutanix.ncp.ntnx_cluster_disk_v2:
+    state: present
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    serial_number: "any_serial"
+    disk_partition_info:
+      partition_type: "EXT4"
+      drive_replacement_option: "NOT_A_REAL_OPTION"
+  register: invalid_drive_option_result
+  ignore_errors: true
+
+- name: Assert invalid drive_replacement_option is rejected by argument_spec
+  ansible.builtin.assert:
+    that:
+      - invalid_drive_option_result.failed == true
+      - invalid_drive_option_result.changed == false
+      - invalid_drive_option_result.msg is defined
+      - "'drive_replacement_option' in invalid_drive_option_result.msg"
+    fail_msg: "Invalid drive_replacement_option enum was not rejected"
+    success_msg: "Invalid drive_replacement_option enum was rejected"
+
+- name: Attempt to delete a Disk that does not exist (negative)
+  nutanix.ncp.ntnx_cluster_disk_v2:
+    state: absent
+    ext_id: "{{ non_existent_ext_id }}"
+  register: delete_missing_result
+  ignore_errors: true
+
+- name: Assert delete of non-existent Disk fails cleanly at the API layer
+  ansible.builtin.assert:
+    that:
+      - delete_missing_result.failed == true
+      - delete_missing_result.changed == false
+      - delete_missing_result.msg is defined
+      - "'Api Exception raised while removing Disk' in delete_missing_result.msg"
+      - non_existent_ext_id in delete_missing_result.msg
+    fail_msg: "Delete of non-existent Disk did not fail cleanly"
+    success_msg: "Delete of non-existent Disk failed cleanly"
+
+- name: Attempt to delete without ext_id (state=absent + no ext_id) — must be blocked by required_if
+  nutanix.ncp.ntnx_cluster_disk_v2:
+    state: absent
+  register: delete_without_ext_id_result
+  ignore_errors: true
+
+- name: Assert delete without ext_id is rejected by required_if
+  ansible.builtin.assert:
+    that:
+      - delete_without_ext_id_result.failed == true
+      - delete_without_ext_id_result.changed == false
+      - delete_without_ext_id_result.msg is defined
+      - "'ext_id' in delete_without_ext_id_result.msg"
+    fail_msg: "Delete without ext_id was not blocked by required_if"
+    success_msg: "Delete without ext_id was blocked by required_if"
+
+########################################################################
+# Final summary
+########################################################################
+
+- name: End ntnx_cluster_disk_v2 tests
+  ansible.builtin.debug:
+    msg: "End ntnx_cluster_disk_v2 tests — real disk used: {{ target_disk_ext_id }}"
