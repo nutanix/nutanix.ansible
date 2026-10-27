@@ -225,23 +225,16 @@ def get_external_storage(module, api_instance, ext_id):
 
 def get_physical_gpu_profile(module, api_instance, ext_id, cluster_ext_id):
     """
-    Return a single PhysicalGpuProfile from the per-cluster list endpoint.
-
-    The clustermgmt v4 SDK exposes only a list method
-    (ClustersApi.list_physical_gpu_profiles) for physical GPU profiles.
-    This helper performs a server-side filter on ``extId`` and then verifies
-    the match client-side, so callers can operate as if a real
-    "get-by-ext_id" endpoint existed.
-
+    This method will return physical GPU profile info using external ID.
+    The SDK exposes only list_physical_gpu_profiles, so this helper lists with
+    an extId filter and returns the matching profile.
     Args:
-        module: Ansible module.
-        api_instance: ``ClustersApi`` instance from the SDK.
-        ext_id (str): PhysicalGpuProfile external ID.
-        cluster_ext_id (str): Parent cluster external ID (required by the
-            SDK/API).
-
-    Returns:
-        The matching PhysicalGpuProfile model instance.
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        ext_id (str): physical GPU profile external ID
+        cluster_ext_id (str): parent cluster external ID
+    return:
+        physical GPU profile info (object): physical GPU profile info
     """
     try:
         resp = api_instance.list_physical_gpu_profiles(
@@ -270,13 +263,10 @@ def get_physical_gpu_profile(module, api_instance, ext_id, cluster_ext_id):
 def list_physical_gpu_profiles(module, api_instance, cluster_ext_id, **kwargs):
     """
     This method will return the list of physical GPU profiles for a cluster.
-    Physical GPU profiles are automatically discovered from the installed GPU
-    hardware across the registered clusters and are attached to virtual machines
-    in passthrough mode.
     Args:
         module: Ansible module
         api_instance: ClustersApi instance from sdk
-        cluster_ext_id (str): UUID of the cluster
+        cluster_ext_id (str): cluster external ID
         kwargs (dict): additional query parameters (_page, _limit, _filter, _orderby)
     return:
         physical GPU profiles list API response (object)
@@ -296,13 +286,10 @@ def list_physical_gpu_profiles(module, api_instance, cluster_ext_id, **kwargs):
 def list_virtual_gpu_profiles(module, api_instance, cluster_ext_id, **kwargs):
     """
     This method will return the list of virtual GPU profiles for a cluster.
-    Virtual GPU profiles define the resource allocation (frame buffer, display
-    heads, resolution, licensing) available to virtual machines across the
-    registered clusters.
     Args:
         module: Ansible module
         api_instance: ClustersApi instance from sdk
-        cluster_ext_id (str): UUID of the cluster
+        cluster_ext_id (str): cluster external ID
         kwargs (dict): additional query parameters (_page, _limit, _filter, _orderby)
     return:
         virtual GPU profiles list API response (object)
