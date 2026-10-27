@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_cluster_disk_v2
 short_description: Add, update LED state or remove a Disk from a cluster in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to add a physical disk to a cluster, update the LED
     state of a disk, or remove a disk from a cluster in Nutanix Prism Central.
@@ -30,13 +30,13 @@ notes:
     being performed.
   - >-
     B(Add a Disk to a cluster) -
-    Required Roles: Cluster Admin, Prism Admin, Super Admin
+    Required Roles: Cluster Admin, Prism Admin, Project Manager, Super Admin
   - >-
     B(Update Disk LED state) -
-    Required Roles: Cluster Admin, Prism Admin, Super Admin
+    Required Roles: Cluster Admin, Prism Admin, Project Manager, Super Admin
   - >-
     B(Remove a Disk from a cluster) -
-    Required Roles: Cluster Admin, Prism Admin, Super Admin
+    Required Roles: Cluster Admin, Prism Admin, Project Manager, Super Admin
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   state:
@@ -486,7 +486,7 @@ def run_module():
 
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "ext_id": None,
         "task_ext_id": None,
