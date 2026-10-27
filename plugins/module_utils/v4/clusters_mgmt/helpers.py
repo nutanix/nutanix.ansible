@@ -1,4 +1,4 @@
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -109,6 +109,32 @@ def get_ssl_certificates(module, api_instance, ext_id):
             module=module,
             exception=e,
             msg="Api Exception raised while fetching SSL certificate info using cluster ext_id",
+        )
+
+
+def get_vcenter_extension(module, api_instance, ext_id):
+    """
+    Fetch vCenter server extension information for the given ext_id.
+
+    The vCenter server extension identifies the Nutanix Prism registration
+    on a vCenter Server that manages an ESXi cluster attached to Prism Central.
+
+    Args:
+        module: Ansible module
+        api_instance: VcenterExtensionsApi instance from
+            ntnx_clustermgmt_py_client sdk
+        ext_id (str): The globally unique identifier of vCenter Server
+            extension instance (UUID).
+    Returns:
+        vcenter extension info (object): vCenter extension info
+    """
+    try:
+        return api_instance.get_vcenter_extension_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching vCenter extension info using ext_id",
         )
 
 
