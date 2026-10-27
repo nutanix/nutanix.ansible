@@ -1,12 +1,23 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create ACTIVE_DIRECTORY service
-# 2. Update ACTIVE_DIRECTORY service
-# 3. Fetch ACTIVE_DIRECTORY service info using ext id
-# 4. List all directory services
-# 5. List all directory services with filter
-# 6. Delete ACTIVE_DIRECTORY service
+# 1. Create ACTIVE DIRECTORY service
+# 2. Create ACTIVE DIRECTORY service shared with all projects
+# 3. Create ACTIVE DIRECTORY service shared with specific projects
+# 4. Create OPEN LDAP service
+# 5. Update ACTIVE DIRECTORY service
+# 6. Update OPEN LDAP service
+# 7. Update directory service to share with all projects
+# 8. Update directory service to share with specific projects
+# 9. Update directory service to unshare from all projects
+# 10. Update directory service to unshare from specific projects
+# 11. Fetch active directory service info using ext id
+# 12. Fetch open ldap service info using ext id
+# 13. List all directory services
+# 14. List all directory services with fetch_all
+# 15. List all directory services with filter using active directory name
+# 16. List all directory services with filter using open ldap name
+# 17. Delete directory service
 
 - name: Directory Services playbook
   hosts: localhost
@@ -48,12 +59,15 @@
             - "group3"
             - "group4"
           directory_service_ext_id: "51485478-3699-9999-8585-123456789012"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
+        shared_project_ext_id: "12345678-1234-1234-1234-123456789012"
 
     - name: Create ACTIVE_DIRECTORY service
       nutanix.ncp.ntnx_directory_services_v2:
         state: present
         name: "{{ active_directory.name }}"
         url: "{{ active_directory.url }}"
+        project_ext_id: "{{ project_ext_id }}"
         directory_type: active_directory
         domain_name: "{{ active_directory.domain_name }}"
         service_account:
@@ -61,6 +75,37 @@
           password: "{{ active_directory.password }}"
         white_listed_groups:
           - "{{ active_directory.white_listed_groups[0] }}"
+      register: result
+      ignore_errors: true
+
+    - name: Create ACTIVE_DIRECTORY service shared with all projects
+      nutanix.ncp.ntnx_directory_services_v2:
+        state: present
+        name: "{{ active_directory.name }}_shared_all"
+        url: "{{ active_directory.url }}"
+        project_ext_id: "{{ project_ext_id }}"
+        directory_type: active_directory
+        domain_name: "{{ active_directory.domain_name }}_shared"
+        service_account:
+          username: "{{ active_directory.username }}"
+          password: "{{ active_directory.password }}"
+        is_shared_with_all_projects: true
+      register: result
+      ignore_errors: true
+
+    - name: Create ACTIVE_DIRECTORY service shared with specific projects
+      nutanix.ncp.ntnx_directory_services_v2:
+        state: present
+        name: "{{ active_directory.name }}_shared_proj"
+        url: "{{ active_directory.url }}"
+        project_ext_id: "{{ project_ext_id }}"
+        directory_type: active_directory
+        domain_name: "{{ active_directory.domain_name }}_proj"
+        service_account:
+          username: "{{ active_directory.username }}"
+          password: "{{ active_directory.password }}"
+        shared_with_projects:
+          - "{{ shared_project_ext_id }}"
       register: result
       ignore_errors: true
 
@@ -113,6 +158,51 @@
       register: result
       ignore_errors: true
 
+    - name: Update directory service to share with all projects
+      nutanix.ncp.ntnx_directory_services_v2:
+        state: present
+        ext_id: "{{ active_directory.directory_service_ext_id }}"
+        service_account:
+          username: "{{ active_directory.username }}"
+          password: "{{ active_directory.password }}"
+        is_shared_with_all_projects: true
+      register: result
+      ignore_errors: true
+
+    - name: Update directory service to share with specific projects
+      nutanix.ncp.ntnx_directory_services_v2:
+        state: present
+        ext_id: "{{ active_directory.directory_service_ext_id }}"
+        service_account:
+          username: "{{ active_directory.username }}"
+          password: "{{ active_directory.password }}"
+        shared_with_projects:
+          - "{{ shared_project_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update directory service to unshare from all projects
+      nutanix.ncp.ntnx_directory_services_v2:
+        state: present
+        ext_id: "{{ active_directory.directory_service_ext_id }}"
+        service_account:
+          username: "{{ active_directory.username }}"
+          password: "{{ active_directory.password }}"
+        is_shared_with_all_projects: false
+      register: result
+      ignore_errors: true
+
+    - name: Update directory service to unshare from specific projects
+      nutanix.ncp.ntnx_directory_services_v2:
+        state: present
+        ext_id: "{{ active_directory.directory_service_ext_id }}"
+        service_account:
+          username: "{{ active_directory.username }}"
+          password: "{{ active_directory.password }}"
+        shared_with_projects: []
+      register: result
+      ignore_errors: true
+
     - name: Fetch active directory service info using ext id
       nutanix.ncp.ntnx_directory_services_info_v2:
         ext_id: "{{ active_directory.directory_service_ext_id }}"
@@ -127,6 +217,12 @@
 
     - name: List all directory services
       nutanix.ncp.ntnx_directory_services_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all directory services with fetch_all
+      nutanix.ncp.ntnx_directory_services_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 
