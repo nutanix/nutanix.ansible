@@ -1,0 +1,72 @@
+---
+# Summary:
+# This playbook demonstrates listing VM compliance states for a VM startup policy:
+#
+#   1. Create a VM startup policy
+#   2. List VM compliance states for the policy
+#   3. List VM compliance states with limit
+#   4. List all VM compliance states with fetch_all
+#   5. Delete the VM startup policy
+
+- name: VM startup policy VM compliance states info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        category_ext_id_1: "<category_ext_id_1>"
+        category_ext_id_2: "<category_ext_id_2>"
+        vm_startup_policy_name: "vm_startup_policy_compliance_ansible"
+
+    - name: Create a VM startup policy
+      nutanix.ncp.ntnx_vm_startup_policy_v2:
+        state: present
+        name: "{{ vm_startup_policy_name }}"
+        description: "VM startup policy for compliance states example"
+        groups:
+          - categories:
+              - ext_id: "{{ category_ext_id_1 }}"
+          - categories:
+              - ext_id: "{{ category_ext_id_2 }}"
+        start_conditions:
+          - power_state_criteria:
+              power_on: {}
+      register: create_result
+      ignore_errors: true
+
+    - name: Set VM startup policy ext_id
+      ansible.builtin.set_fact:
+        vm_startup_policy_ext_id: "{{ create_result.response.ext_id }}"
+
+    - name: List VM compliance states for the VM startup policy
+      nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+        ext_id: "{{ vm_startup_policy_ext_id }}"
+      register: list_result
+      ignore_errors: true
+
+    - name: List VM compliance states with limit
+      nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+        ext_id: "{{ vm_startup_policy_ext_id }}"
+        limit: 1
+      register: list_limited_result
+      ignore_errors: true
+
+    - name: List all VM compliance states with fetch_all
+      nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+        ext_id: "{{ vm_startup_policy_ext_id }}"
+        fetch_all: true
+      register: list_fetch_all_result
+      ignore_errors: true
+
+    - name: Delete the VM startup policy
+      nutanix.ncp.ntnx_vm_startup_policy_v2:
+        state: absent
+        ext_id: "{{ vm_startup_policy_ext_id }}"
+      register: delete_result
+      ignore_errors: true

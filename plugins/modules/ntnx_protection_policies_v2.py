@@ -706,6 +706,14 @@ def create_protection_policy(module, protection_policies, result):
                 module, protection_policies, protection_policy_ext_id
             )
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Protection Policy"
+                ),
+                msg="Failed to get entity ext_id from task for Protection Policy",
+            )
     result["changed"] = True
 
 
