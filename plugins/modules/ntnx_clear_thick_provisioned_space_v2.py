@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -24,17 +24,17 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user
       performing the operation.
     - >-
-      B(Clear thick provisioned space for a Storage Container) -
-      Required Roles: Internal Super Admin, Prism Admin, Project Manager,
-      Self-Service Admin (deprecated), Storage Admin, Super Admin.
+      B(Clear Thick Provisioned Space Storage Container) -
+      Required Roles: Prism Admin, Project Manager, Storage Admin, Super Admin,
+      Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
     state:
         description:
             - State of the module.
-            - If C(state) is C(present), the module will trigger the clear thick provisioned
-              space action on the Storage Container identified by C(ext_id).
-            - Only C(present) is supported for this action module.
+            - If state is present, the module will clear thick provisioned space for the
+              Storage Container identified by C(ext_id).
+            - If state is not present, the module will fail.
         type: str
         choices:
             - present
@@ -45,15 +45,13 @@ options:
               space must be cleared.
         type: str
         required: true
-    x_cluster_id:
+    cluster_ext_id:
         description:
-            - The external identifier of the remote Prism Element cluster to which the request
-              should be forwarded.
+            - The external ID of the remote Prism Element cluster to which the request should
+              be forwarded via the C(X-Cluster-Id) header.
             - Typically not required when the Storage Container is already resolvable from
-              Prism Central; supply this only for multi-cluster deployments that need explicit
-              routing to a specific PE.
+              Prism Central.
         type: str
-        required: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -67,22 +65,14 @@ author:
 EXAMPLES = r"""
 - name: Clear thick provisioned space for a storage container
   nutanix.ncp.ntnx_clear_thick_provisioned_space_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     ext_id: "cb3fd049-7896-9632-8555-e4f088711991"
   register: result
   ignore_errors: true
 
 - name: Clear thick provisioned space and route to a specific remote cluster
   nutanix.ncp.ntnx_clear_thick_provisioned_space_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     ext_id: "cb3fd049-7896-9632-8555-e4f088711991"
-    x_cluster_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+    cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
   register: result
   ignore_errors: true
 """
@@ -147,7 +137,7 @@ changed:
 
 msg:
     description: This indicates the message if any message occurred.
-    returned: When there is an error
+    returned: on error or check mode
     type: str
     sample: "Api Exception raised while clearing thick provisioned space for storage container"
 
@@ -198,20 +188,12 @@ def get_module_spec():
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
-        x_cluster_id=dict(type="str", required=False),
+        cluster_ext_id=dict(type="str"),
     )
     return module_args
 
 
 def clear_thick_provisioned_space(module, storage_containers_api, result):
-    """Trigger the ClearThickProvisionedSpace action on the given Storage Container.
-
-    Args:
-        module: AnsibleModule instance.
-        storage_containers_api: SDK ``StorageContainersApi`` instance.
-        result: Module result dict that will be mutated in place with the response,
-            task_ext_id, and changed flag.
-    """
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -223,9 +205,9 @@ def clear_thick_provisioned_space(module, storage_containers_api, result):
         return
 
     kwargs = {}
-    x_cluster_id = module.params.get("x_cluster_id")
-    if x_cluster_id:
-        kwargs["X_Cluster_Id"] = x_cluster_id
+    cluster_ext_id = module.params.get("cluster_ext_id")
+    if cluster_ext_id:
+        kwargs["X_Cluster_Id"] = cluster_ext_id
 
     resp = None
     try:
@@ -259,6 +241,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "failed": False,
         "response": None,
         "ext_id": None,
         "task_ext_id": None,

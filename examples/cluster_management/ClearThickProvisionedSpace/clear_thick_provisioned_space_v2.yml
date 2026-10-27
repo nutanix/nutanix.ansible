@@ -8,7 +8,7 @@
 # 1. Trigger the clear thick provisioned space action against an existing
 #    Storage Container identified by its external ID.
 # 2. Trigger the same action against a Storage Container hosted on a specific
-#    remote Prism Element by supplying the X-Cluster-Id header via x_cluster_id.
+#    remote Prism Element by supplying the X-Cluster-Id header via cluster_ext_id.
 
 - name: Clear Thick Provisioned Space playbook
   hosts: localhost
@@ -36,6 +36,6 @@
       nutanix.ncp.ntnx_clear_thick_provisioned_space_v2:
         state: present
         ext_id: "{{ storage_container_ext_id }}"
-        x_cluster_id: "{{ remote_cluster_ext_id }}"
+        cluster_ext_id: "{{ remote_cluster_ext_id }}"
       register: clear_result_with_cluster
       ignore_errors: true

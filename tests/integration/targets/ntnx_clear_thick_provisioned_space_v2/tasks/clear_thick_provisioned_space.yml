@@ -12,7 +12,7 @@
 #   2. Real end-to-end
 #        2.1  create a fresh storage container as a prerequisite
 #        2.2  clear thick provisioned space with only the required ext_id
-#        2.3  clear thick provisioned space with x_cluster_id set (routing header)
+#        2.3  clear thick provisioned space with cluster_ext_id set (routing header)
 #   3. Cleanup
 #        3.1  delete the storage container created above
 
@@ -40,7 +40,7 @@
   nutanix.ncp.ntnx_clear_thick_provisioned_space_v2:
     state: present
     ext_id: "00000000-0000-0000-0000-000000000001"
-    x_cluster_id: "00000000-0000-0000-0000-000000000002"
+    cluster_ext_id: "00000000-0000-0000-0000-000000000002"
   register: check_mode_result
   check_mode: true
   ignore_errors: true
@@ -139,24 +139,24 @@
     fail_msg: "ClearThickProvisionedSpace did not complete successfully"
     success_msg: "ClearThickProvisionedSpace completed successfully on the storage container"
 
-- name: Clear thick provisioned space again with x_cluster_id header set
+- name: Clear thick provisioned space again with cluster_ext_id header set
   nutanix.ncp.ntnx_clear_thick_provisioned_space_v2:
     state: present
     ext_id: "{{ ctps_container_ext_id }}"
-    x_cluster_id: "{{ cluster.uuid }}"
-  register: clear_result_with_x_cluster
+    cluster_ext_id: "{{ cluster.uuid }}"
+  register: clear_result_with_cluster
   ignore_errors: true
 
-- name: Verify clear thick provisioned space works with x_cluster_id
+- name: Verify clear thick provisioned space works with cluster_ext_id
   ansible.builtin.assert:
     that:
-      - clear_result_with_x_cluster.changed == true
-      - clear_result_with_x_cluster.failed == false
-      - clear_result_with_x_cluster.ext_id == ctps_container_ext_id
-      - clear_result_with_x_cluster.task_ext_id is defined
-      - clear_result_with_x_cluster.response.status == 'SUCCEEDED'
-    fail_msg: "ClearThickProvisionedSpace with x_cluster_id did not complete successfully"
-    success_msg: "ClearThickProvisionedSpace with x_cluster_id completed successfully"
+      - clear_result_with_cluster.changed == true
+      - clear_result_with_cluster.failed == false
+      - clear_result_with_cluster.ext_id == ctps_container_ext_id
+      - clear_result_with_cluster.task_ext_id is defined
+      - clear_result_with_cluster.response.status == 'SUCCEEDED'
+    fail_msg: "ClearThickProvisionedSpace with cluster_ext_id did not complete successfully"
+    success_msg: "ClearThickProvisionedSpace with cluster_ext_id completed successfully"
 
 ################################################################################
 # 3. Cleanup — remove the temporary storage container
