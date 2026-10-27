@@ -12,6 +12,7 @@
       domain_name: "{{ domain_name }}"
       dns_servers: "{{ dns_servers }}"
       domain_search: "{{ domain_search }}"
+
     - name: "{{ Prod_SubnetB.name }}"
       vpc_name: "{{ Prod_SubnetB.vpc_name }}"
       nip: "{{ Prod_SubnetB.nip }}"
@@ -22,6 +23,7 @@
       domain_name: "{{ domain_name }}"
       dns_servers: "{{ dns_servers }}"
       domain_search: "{{ domain_search }}"
+
     - name: "{{ Dev_SubnetA.name }}"
       vpc_name: "{{ Dev_SubnetA.vpc_name }}"
       nip: "{{ Dev_SubnetA.nip }}"
@@ -32,6 +34,7 @@
       domain_name: "{{ domain_name }}"
       dns_servers: "{{ dns_servers }}"
       domain_search: "{{ domain_search }}"
+
     - name: "{{ Dev_SubnetB.name }}"
       vpc_name: "{{ Dev_SubnetB.vpc_name }}"
       nip: "{{ Dev_SubnetB.nip }}"
