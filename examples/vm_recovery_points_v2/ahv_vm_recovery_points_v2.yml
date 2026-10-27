@@ -1,6 +1,6 @@
 ---
 # Summary:
-# This playbook demonstrates AHV VM recovery point create, info, restore, and delete:
+# AHV VM recovery point create, info, restore, and delete:
 #
 #   1. Create an AHV VM recovery point
 #   2. Get the AHV VM recovery point by ext_id
@@ -23,6 +23,8 @@
         vm_ext_id: "<vm_ext_id>"
         vm_recovery_point_name: "ansible_vm_rp_example"
         expiration_time: "2027-01-01T00:00:00+00:00"
+        domain_manager_ext_id: "<domain_manager_ext_id>"
+        cluster_ext_id: "<cluster_ext_id>"
 
     - name: Create a crash-consistent AHV VM recovery point
       nutanix.ncp.ntnx_vm_recovery_point_v2:
@@ -31,6 +33,10 @@
         expiration_time: "{{ expiration_time }}"
         recovery_point_type: CRASH_CONSISTENT
         vm_ext_id: "{{ vm_ext_id }}"
+        source_location:
+          domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+          cluster_ext_ids:
+            - "{{ cluster_ext_id }}"
       register: create_result
       ignore_errors: true
 

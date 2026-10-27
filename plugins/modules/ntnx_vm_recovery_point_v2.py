@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,12 +12,10 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_vm_recovery_point_v2
 short_description: Create or delete an AHV VM recovery point in Nutanix Prism Central
-version_added: 2.7.0
+version_added: "2.7.0"
 description:
   - This module allows you to create or delete an AHV VM recovery point in Nutanix Prism Central.
-  - The AHV VM recovery point API does not support update. When C(ext_id) is provided with
-    C(state=present), the module fetches the existing recovery point and reports skipped.
-  - This module uses PC v4 APIs based SDKs.
+  - This module uses PC v4 APIs based SDKs
 notes:
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the
@@ -25,21 +23,19 @@ notes:
     being performed.
   - >-
     B(Create AHV VM recovery point) -
-    Required Roles: Account Owner, Administrator, Prism Admin, Super Admin,
-    Virtual Machine Admin, Disaster Recovery Admin, Backup Admin, Project Manager,
-    Project Admin, Tenant Admin, Tenant Consumer, Self-Service Admin (deprecated)
+    Required Roles: Account Owner, Administrator, Backup Admin, Disaster Recovery Admin,
+    Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated),
+    Super Admin, Tenant Admin, Tenant Consumer, Virtual Machine Admin
   - >-
     B(Delete AHV VM recovery point) -
-    Required Roles: Account Owner, Administrator, Prism Admin, Super Admin,
-    Virtual Machine Admin, Disaster Recovery Admin, Backup Admin, Project Manager,
-    Project Admin, Tenant Admin, Tenant Consumer, Self-Service Admin (deprecated)
+    Required Roles: Account Owner, Administrator, Backup Admin, Disaster Recovery Admin,
+    Prism Admin, Project Admin, Project Manager, Self-Service Admin (deprecated),
+    Super Admin, Tenant Admin, Tenant Consumer, Virtual Machine Admin
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
   state:
     description:
-      - If C(state) is set to C(present) and C(ext_id) is not provided then the operation will create an AHV VM recovery point.
-      - If C(state) is set to C(present) and C(ext_id) is provided then the module fetches the existing recovery point
-        (update is not supported by the API).
+      - If C(state) is set to C(present) then the operation will create an AHV VM recovery point.
       - If C(state) is set to C(absent) and C(ext_id) is provided then the operation will delete the AHV VM recovery point.
     type: str
     required: false
@@ -49,7 +45,7 @@ options:
     default: present
   ext_id:
     description:
-      - A globally unique identifier of an AHV VM recovery point. It should be of type UUID.
+      - The External ID of the AHV VM recovery point.
       - Required for delete operation.
     type: str
     required: false
@@ -74,15 +70,13 @@ options:
     required: false
   vm_ext_id:
     description:
-      - VM external identifier which is captured as a part of this recovery point.
+      - The External ID of the AHV VM.
       - Required for the create operation.
     type: str
     required: false
   project_ext_id:
     description:
-      - A globally unique identifier for the project associated with the resource.
-      - This field is required in create requests for authorization and must match the project
-        identifier of all associated entities.
+      - The External ID of the Project.
     type: str
     required: false
   application_consistent_properties:
@@ -126,6 +120,25 @@ options:
         type: bool
         required: false
         default: false
+  source_location:
+    description:
+      - The location where this recovery point was first created.
+    type: dict
+    required: false
+    suboptions:
+      domain_manager_ext_id:
+        description:
+          - External identifier of the Prism Central (also known as the Domain Manager)
+            where the recovery point was first created.
+        type: str
+        required: true
+      cluster_ext_ids:
+        description:
+          - External identifier of the cluster(s) associated with the recovery point
+            at source Prism Central.
+        type: list
+        elements: str
+        required: true
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -168,6 +181,10 @@ EXAMPLES = r"""
       writers:
         - "0f95b402-67aa-431c-9eab-bf0907a99345"
       should_store_vss_metadata: true
+    source_location:
+      domain_manager_ext_id: "c4ccc094-7409-4075-bd0f-b525ce717481"
+      cluster_ext_ids:
+        - "a2b8c69d-b83e-479a-b6eb-68568c85daa3"
   register: result
   ignore_errors: true
 
@@ -231,12 +248,6 @@ changed:
   type: bool
   sample: true
 
-skipped:
-  description: This indicates whether the task was skipped
-  returned: when the module is idempotent
-  type: bool
-  sample: false
-
 error:
   description: This indicates the error message if any error occurred
   returned: When an error occurs
@@ -250,7 +261,7 @@ failed:
 
 msg:
   description: This indicates the message if any message occurred
-  returned: When there is an error, module is idempotent or check mode
+  returned: When there is an error or in check mode operation
   type: str
   sample: "AHV VM recovery point with ext_id:b387359d-fa5c-4d58-9eb2-3af1a4976319 will be deleted."
 """
@@ -303,6 +314,11 @@ def get_module_spec():
         should_store_vss_metadata=dict(type="bool", required=False, default=False),
     )
 
+    source_location_sub_spec = dict(
+        domain_manager_ext_id=dict(type="str", required=True),
+        cluster_ext_ids=dict(type="list", elements="str", required=True),
+    )
+
     module_args = dict(
         ext_id=dict(type="str"),
         name=dict(type="str"),
@@ -319,13 +335,17 @@ def get_module_spec():
             options=vss_properties_sub_spec,
             obj=vmm_sdk.VssProperties,
         ),
+        source_location=dict(
+            type="dict",
+            options=source_location_sub_spec,
+            obj=vmm_sdk.DisasterRecoveryLocation,
+        ),
     )
     return module_args
 
 
-def create_vm_recovery_point(module, result):
+def create_vm_recovery_point(module, result, api_instance):
     validate_required_params(module, ["name", "vm_ext_id"])
-    api_instance = get_vm_recovery_points_api_instance(module)
 
     sg = SpecGenerator(module)
     default_spec = vmm_sdk.VmRecoveryPoint()
@@ -367,27 +387,9 @@ def create_vm_recovery_point(module, result):
     result["changed"] = True
 
 
-def get_existing_vm_recovery_point(module, result):
-    """Fetch existing recovery point when present+ext_id (API has no update)."""
+def delete_vm_recovery_point(module, result, api_instance):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-    api_instance = get_vm_recovery_points_api_instance(module)
-    entity = get_vm_recovery_point(module, api_instance, ext_id)
-    result["response"] = strip_internal_attributes(entity.to_dict())
-    result["skipped"] = True
-    module.exit_json(
-        msg=(
-            "AHV VM recovery point does not support update. "
-            "Existing recovery point with ext_id '{0}' has been fetched.".format(ext_id)
-        ),
-        **result,
-    )
-
-
-def delete_vm_recovery_point(module, result):
-    ext_id = module.params.get("ext_id")
-    result["ext_id"] = ext_id
-    api_instance = get_vm_recovery_points_api_instance(module)
 
     if module.check_mode:
         result["msg"] = "AHV VM recovery point with ext_id:{0} will be deleted.".format(
@@ -419,7 +421,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
-            ("state", "present", ("name", "ext_id"), True),
+            ("state", "present", ("name", "vm_ext_id")),
             ("state", "absent", ("ext_id",)),
         ],
     )
@@ -436,14 +438,12 @@ def run_module():
         "failed": False,
         "ext_id": None,
     }
+    api_instance = get_vm_recovery_points_api_instance(module)
     state = module.params.get("state")
     if state == "present":
-        if module.params.get("ext_id"):
-            get_existing_vm_recovery_point(module, result)
-        else:
-            create_vm_recovery_point(module, result)
+        create_vm_recovery_point(module, result, api_instance)
     else:
-        delete_vm_recovery_point(module, result)
+        delete_vm_recovery_point(module, result, api_instance)
     module.exit_json(**result)
 
 

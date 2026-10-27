@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,35 +12,35 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_vm_recovery_points_info_v2
 short_description: Fetch AHV VM recovery point info from Nutanix Prism Central
-version_added: 2.7.0
+version_added: "2.7.0"
 description:
   - This module allows you to fetch information about AHV VM recovery points in Nutanix Prism Central.
   - If C(ext_id) is provided, fetch details of the specific AHV VM recovery point.
   - If C(ext_id) is not provided, list multiple AHV VM recovery points optionally filtered / paginated.
-  - This module uses PC v4 APIs based SDKs.
+  - This module uses PC v4 APIs based SDKs
 notes:
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the
     user performing the operation.
   - >-
     B(Retrieve AHV VM recovery point details) -
-    Required Roles: Account Owner, Administrator, Operator, Prism Admin, Prism Viewer,
-    Project Admin, Project Manager, Super Admin, Virtual Machine Admin,
-    Virtual Machine Operator, Virtual Machine Viewer, Disaster Recovery Admin,
-    Disaster Recovery Viewer, Backup Admin, Tenant Admin, Tenant Consumer,
-    Self-Service Admin (deprecated)
+    Required Roles: Account Owner, Administrator, Backup Admin, Disaster Recovery Admin,
+    Disaster Recovery Viewer, Operator, Prism Admin, Prism Viewer, Project Admin,
+    Project Manager, Self-Service Admin (deprecated), Super Admin, Tenant Admin,
+    Tenant Consumer, Virtual Machine Admin, Virtual Machine Operator,
+    Virtual Machine Viewer
   - >-
     B(List AHV VM recovery points) -
-    Required Roles: Account Owner, Administrator, Operator, Prism Admin, Prism Viewer,
-    Project Admin, Project Manager, Super Admin, Virtual Machine Admin,
-    Virtual Machine Operator, Virtual Machine Viewer, Disaster Recovery Admin,
-    Disaster Recovery Viewer, Backup Admin, Tenant Admin, Tenant Consumer,
-    Self-Service Admin (deprecated)
+    Required Roles: Account Owner, Administrator, Backup Admin, Disaster Recovery Admin,
+    Disaster Recovery Viewer, Operator, Prism Admin, Prism Viewer, Project Admin,
+    Project Manager, Self-Service Admin (deprecated), Super Admin, Tenant Admin,
+    Tenant Consumer, Virtual Machine Admin, Virtual Machine Operator,
+    Virtual Machine Viewer
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
   ext_id:
     description:
-      - A globally unique identifier of an AHV VM recovery point. It should be of type UUID.
+      - The External ID of the AHV VM recovery point.
     type: str
     required: false
 extends_documentation_fragment:
@@ -79,7 +79,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    filter: "name eq 'ansible-vm-rp'"
+    filter: "recoveryPointType eq 'CRASH_CONSISTENT'"
   register: result
   ignore_errors: true
 

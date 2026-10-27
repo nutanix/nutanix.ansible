@@ -1,7 +1,7 @@
 ---
 # ---------------------------------------------------------------------------
 # End-to-end integration tests for the AHV VM Recovery Point v4 modules:
-#   - nutanix.ncp.ntnx_vm_recovery_point_v2         (Create/Delete + noop update)
+#   - nutanix.ncp.ntnx_vm_recovery_point_v2         (Create/Delete)
 #   - nutanix.ncp.ntnx_vm_recovery_points_info_v2   (Get/List)
 #   - nutanix.ncp.ntnx_vm_recovery_point_restore_v2 (Restore action)
 #
@@ -17,9 +17,6 @@
 #     - negative: missing `name`
 #     - negative: missing `vm_ext_id`
 #     - negative: invalid `recovery_point_type` enum
-#   Update (no-op, API doesn't support update):
-#     - present + valid ext_id -> `skipped=True` and message
-#     - present + wrong ext_id -> failed=True (not-found)
 #   Info module:
 #     - get by ext_id
 #     - list all
@@ -145,6 +142,10 @@
       writers:
         - "0f95b402-67aa-431c-9eab-bf0907a99345"
       should_store_vss_metadata: true
+    source_location:
+      domain_manager_ext_id: "00000000-0000-0000-0000-000000000003"
+      cluster_ext_ids:
+        - "00000000-0000-0000-0000-000000000004"
   check_mode: true
   register: result
   ignore_errors: true
@@ -165,6 +166,12 @@
       - result.response.application_consistent_properties.writers | length == 1
       - result.response.application_consistent_properties.writers[0] == "0f95b402-67aa-431c-9eab-bf0907a99345"
       - result.response.application_consistent_properties.should_store_vss_metadata == true
+      - >-
+          result.response.source_location.domain_manager_ext_id ==
+          "00000000-0000-0000-0000-000000000003"
+      - >-
+          result.response.source_location.cluster_ext_ids[0] ==
+          "00000000-0000-0000-0000-000000000004"
     fail_msg: "Check mode create spec did not match input"
     success_msg: "Check mode create spec generated successfully with all attributes"
 
@@ -278,47 +285,6 @@
       - "'value of recovery_point_type must be one of' in result.msg"
     fail_msg: "Invalid recovery_point_type enum was accepted"
     success_msg: "Invalid recovery_point_type enum rejected as expected"
-
-########################################################################################
-# Update (no-op) tests
-########################################################################################
-
-- name: Update a valid recovery point (API has no update -> expect skipped no-op)
-  nutanix.ncp.ntnx_vm_recovery_point_v2:
-    state: present
-    ext_id: "{{ min_vm_rp_ext_id }}"
-    name: "irrelevant_will_not_change"
-  register: result
-  ignore_errors: true
-
-- name: Assert update was a no-op skipped
-  ansible.builtin.assert:
-    that:
-      - result is defined
-      - result.changed == false
-      - result.failed == false
-      - result.skipped == true
-      - "'does not support update' in result.msg"
-      - result.response.ext_id == min_vm_rp_ext_id
-    fail_msg: "Update no-op did not behave as expected"
-    success_msg: "Update no-op returned skipped=True as expected"
-
-- name: Update with a wrong external ID (should fail)
-  nutanix.ncp.ntnx_vm_recovery_point_v2:
-    state: present
-    ext_id: "00000000-0000-0000-0000-000000000000"
-    name: "irrelevant"
-  register: result
-  ignore_errors: true
-
-- name: Assert wrong-ext_id update failed
-  ansible.builtin.assert:
-    that:
-      - result is defined
-      - result.changed == false
-      - result.failed == true
-    fail_msg: "Update with wrong ext_id did not fail"
-    success_msg: "Update with wrong ext_id failed as expected"
 
 ########################################################################################
 # Info module tests
@@ -438,7 +404,7 @@
 - name: Call info module with mutually exclusive ext_id + filter
   nutanix.ncp.ntnx_vm_recovery_points_info_v2:
     ext_id: "{{ full_vm_rp_ext_id }}"
-    filter: "name eq 'foo'"
+    filter: "recoveryPointType eq 'CRASH_CONSISTENT'"
   register: result
   ignore_errors: true
 
@@ -466,6 +432,29 @@
       project_ext_id: "00000000-0000-0000-0000-000000000004"
       guest_tools_spec:
         should_clear_in_guest_volume_group_attachments: true
+      bios_spec:
+        bios_spec:
+          should_preserve_bios_uuid: true
+      nic_spec:
+        nic_remove_list:
+          - "00000000-0000-0000-0000-000000000005"
+        nic_override_list:
+          - nic_ext_id: "00000000-0000-0000-0000-000000000006"
+            nic_backing_info:
+              mac_address: "d8:c9:86:a5:68:98"
+            nic_network_info:
+              subnet:
+                ext_id: "00000000-0000-0000-0000-000000000007"
+              ipv4_config:
+                ip_address:
+                  value: "10.1.1.10"
+                  prefix_length: 24
+            guest_nic_info:
+              guest_dns_config_spec:
+                ipv4_server_address_list:
+                  - "8.8.8.8"
+                suffix_list:
+                  - "example.com"
   check_mode: true
   register: result
   ignore_errors: true
@@ -482,6 +471,19 @@
       - result.response.vm_config_override_spec.description == "Restored (check mode) from full recovery point"
       - result.response.vm_config_override_spec.project_ext_id == "00000000-0000-0000-0000-000000000004"
       - result.response.vm_config_override_spec.guest_tools_spec.should_clear_in_guest_volume_group_attachments == true
+      - result.response.vm_config_override_spec.bios_spec.bios_spec.should_preserve_bios_uuid == true
+      - >-
+          result.response.vm_config_override_spec.nic_spec.nic_override_list[0].nic_ext_id ==
+          "00000000-0000-0000-0000-000000000006"
+      - >-
+          result.response.vm_config_override_spec.nic_spec.nic_override_list[0].nic_backing_info.mac_address ==
+          "d8:c9:86:a5:68:98"
+      - >-
+          result.response.vm_config_override_spec.nic_spec.nic_override_list[0].nic_network_info.subnet.ext_id ==
+          "00000000-0000-0000-0000-000000000007"
+      - >-
+          result.response.vm_config_override_spec.nic_spec.nic_override_list[0].guest_nic_info.guest_dns_config_spec.ipv4_server_address_list[0] ==
+          "8.8.8.8"
     fail_msg: "Check_mode restore spec was not generated correctly"
     success_msg: "Check_mode restore spec generated correctly"
 
