@@ -24,8 +24,8 @@ notes:
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
-    B(List PCIe devices) -
-    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin.
+    B(View Pcie Device) -
+    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   ext_id:
@@ -99,7 +99,7 @@ response:
       "ext_id": "17081fa3-3e5c-58d2-aca5-b1312414d8d9",
       "host_ext_id": "06aaf34c-9a27-4125-9557-04f87c7971eb",
       "links": null,
-      "maxPartitions": 0,
+      "max_partitions": 0,
       "owner_vm_ext_id": null,
       "state": "HOST_USED",
       "tenant_id": null,

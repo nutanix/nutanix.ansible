@@ -205,37 +205,26 @@ def get_disk(module, api_instance, ext_id):
 
 def get_pcie_device(module, api_instance, ext_id):
     """
-    Return a single PcieDevice entity by its external ID.
-
-    The v4 SDK only exposes ``list_pcie_devices``; there is no dedicated
-    ``get_pcie_device_by_id`` endpoint. This helper simulates the get-by-id
-    behavior by issuing a list with an OData ``$filter`` on ``extId`` and
-    returning the first matching entity.
-
+    This method will return PCIe device info using external ID.
+    The SDK only exposes list_pcie_devices (no get_pcie_device_by_id), so this
+    helper filters the list by extId to emulate get-by-id.
     Args:
         module: Ansible module
-        api_instance: PcieDevicesApi instance from the SDK
-        ext_id (str): PcieDevice external ID
-
-    Returns:
-        object | None: The matching PcieDevice model instance, or ``None``
-        if no device with the given ``ext_id`` exists on the cluster.
+        api_instance: PcieDevicesApi instance from sdk
+        ext_id (str): PCIe device external ID
+    return:
+        PCIe device info (object): PCIe device info, or None if not found
     """
     try:
         resp = api_instance.list_pcie_devices(_filter="extId eq '{0}'".format(ext_id))
+        data = getattr(resp, "data", None) or []
+        return data[0] if data else None
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
             msg="Api Exception raised while fetching PCIe device info using ext_id",
         )
-    data = getattr(resp, "data", None) or []
-    for item in data:
-        if getattr(item, "ext_id", None) == ext_id:
-            return item
-    if data:
-        return data[0]
-    return None
 
 
 def get_external_storage(module, api_instance, ext_id):
