@@ -20,19 +20,22 @@ description:
     (Replication Factor, encryption) are applied.
   - This module uses PC v4 APIs based SDKs.
 notes:
-    - >-
-      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
-      The required roles depend on the operation being performed.
-    - >-
-      B(Create a Storage Container) -
-      Required Roles: Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
-    - >-
-      B(Update a Storage Container) -
-      Required Roles: Backup Admin, Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
-    - >-
-      B(Delete a Storage Container) -
-      Required Roles: Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
+  - >-
+    This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    The required roles depend on the operation being performed.
+  - >-
+    B(Create a Storage Container) -
+    Required Roles: Prism Admin, Project Manager, Self-Service Admin (deprecated), Storage Admin,
+    Super Admin
+  - >-
+    B(Update a Storage Container) -
+    Required Roles: Backup Admin, Prism Admin, Project Manager, Self-Service Admin (deprecated),
+    Storage Admin, Super Admin
+  - >-
+    B(Delete a Storage Container) -
+    Required Roles: Prism Admin, Project Manager, Self-Service Admin (deprecated), Storage Admin,
+    Super Admin
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   state:
     description:
@@ -56,8 +59,8 @@ options:
     required: false
   name:
     description:
-      - Name of the Storage Container. Must be unique on every cluster. Maximum length is 75
-        characters.
+      - Name of the Storage Container. Note that the name of Storage Container should be unique
+        in every cluster. Maximum length is 75 characters.
       - Required for create operation. On update, if omitted, the existing name from the
         current Storage Container is retained in the request body.
     type: str
@@ -73,30 +76,30 @@ options:
     required: false
   owner_ext_id:
     description:
-      - The external identifier of the owner of the Storage Container.
+      - The external identifier of the owner.
     type: str
     required: false
   logical_explicit_reserved_capacity_bytes:
     description:
       - Total reserved size (in bytes) of the Storage Container (set by Admin). This also
         includes the replication factor of the Storage Container. The actual reserved capacity
-        is the maximum of explicit and implicit reserved capacity.
+        of the Storage Container will be the maximum of explicit and implicit reserved capacity.
     type: int
     required: false
   logical_advertised_capacity_bytes:
     description:
-      - Maximum capacity of the Storage Container as defined by the user, in bytes.
+      - Maximum capacity of the Storage Container as defined by the user.
     type: int
     required: false
   replication_factor:
     description:
-      - Replication factor of the Storage Container. Typically C(2) or C(3).
+      - Replication factor of the Storage Container.
       - RF-1 containers generally require C(affinity_host_ext_id).
     type: int
     required: false
   nfs_whitelist_address:
     description:
-      - List of NFS addresses that need to be whitelisted for this Storage Container.
+      - List of NFS addresses that need to be whitelisted.
     type: list
     elements: dict
     required: false
@@ -108,11 +111,12 @@ options:
         required: false
         suboptions:
           value:
-            description: The IPv4 address value.
+            description: The IPv4 address of the host.
             type: str
             required: true
           prefix_length:
-            description: The prefix length of the network to which this address belongs.
+            description:
+              - The prefix length of the network to which this host IPv4 address belongs.
             type: int
             required: false
       ipv6:
@@ -122,11 +126,12 @@ options:
         required: false
         suboptions:
           value:
-            description: The IPv6 address value.
+            description: The IPv6 address of the host.
             type: str
             required: true
           prefix_length:
-            description: The prefix length of the network to which this address belongs.
+            description:
+              - The prefix length of the network to which this host IPv6 address belongs.
             type: int
             required: false
       fqdn:
@@ -136,12 +141,12 @@ options:
         required: false
         suboptions:
           value:
-            description: The fully qualified domain name value.
+            description: The fully qualified domain name of the host.
             type: str
             required: true
   erasure_code:
     description:
-      - Erasure Coding status for the Storage Container.
+      - Indicates the current status value of Erasure Coding for the Storage Container.
     type: str
     required: false
     choices:
@@ -151,7 +156,7 @@ options:
   is_inline_ec_enabled:
     description:
       - Indicates whether data written to this Storage Container should be inline
-        erasure-coded. Only considered when Erasure Coding is enabled.
+        erasure-coded or not. This field is only considered if Erasure Coding is enabled.
     type: bool
     required: false
   has_higher_ec_fault_domain_preference:
@@ -161,12 +166,12 @@ options:
     required: false
   erasure_code_delay_secs:
     description:
-      - Delay in seconds before performing Erasure Coding for the Storage Container.
+      - Delay in performing Erasure Code for the current Storage Container instance.
     type: int
     required: false
   cache_deduplication:
     description:
-      - Cache deduplication status for the Storage Container.
+      - Indicates the current status of Cache Deduplication for the Storage Container.
     type: str
     required: false
     choices:
@@ -175,7 +180,7 @@ options:
       - "ON"
   on_disk_dedup:
     description:
-      - On-disk deduplication status for the Storage Container.
+      - Indicates the current status of Disk deduplication for the Storage Container.
     type: str
     required: false
     choices:
@@ -184,7 +189,7 @@ options:
       - POST_PROCESS
   is_compression_enabled:
     description:
-      - Indicates whether compression is enabled for the Storage Container.
+      - Indicates whether the compression is enabled for the Storage Container.
     type: bool
     required: false
   compression_delay_secs:
@@ -206,24 +211,24 @@ options:
     required: false
   affinity_host_ext_id:
     description:
-      - Affinity host external identifier for an RF-1 Storage Container.
+      - Affinity host external identifier for RF-1 Storage Container.
     type: str
     required: false
   is_shared:
     description:
-      - Indicates whether the Storage Container is shared. When shared, all Prism Element
-        clusters registered under the same Prism Central can access and utilize its storage.
-      - Once set during create, this field is immutable except for SelfServiceContainer, where
-        only a change from C(false) to C(true) is allowed.
+      - Indicates whether the Storage Container is shared. When shared, all PEs registered under
+        the same PC can access and utilize its storage.
+      - Once the field is set during the creation, it is immutable except in the case of
+        SelfServiceContainer. Even for SelfServiceContainer only C(false) to C(true) is allowed.
     type: bool
     required: false
   ignore_small_files:
     description:
-      - When deleting a Storage Container, if this is set to C(true) small files that may still
-        be in the container will be ignored and the delete will proceed.
-      - Applies only to the delete operation.
-      - Corresponds to the C(ignoreSmallFiles) query parameter on the delete API
-        (API default is C(true) when omitted).
+      - Indicates whether the small files should be ignored. Storage containers can have small
+        files that are measured in KBs; these files are ignored when the storage container is
+        marked for removal.
+      - Applies only to the delete operation (C(ignoreSmallFiles) query parameter).
+      - API default is C(true) when omitted.
     type: bool
     required: false
 extends_documentation_fragment:
@@ -543,6 +548,9 @@ def create_storage_container(module, api_instance, result):
         return
 
     cluster_ext_id = module.params.get("cluster_ext_id")
+    # SpecGenerator may copy cluster_ext_id onto the body; create routes via X-Cluster-Id only.
+    if hasattr(spec, "cluster_ext_id"):
+        spec.cluster_ext_id = None
 
     resp = None
     try:
