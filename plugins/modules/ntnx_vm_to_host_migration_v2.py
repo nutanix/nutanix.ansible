@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -9,48 +9,47 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
----
 module: ntnx_vm_to_host_migration_v2
-short_description: Live-migrate a VM to another host in the same cluster
-version_added: 2.5.0
+short_description: Migrate a VM to another host within the same cluster
+version_added: "2.7.0"
 description:
-    - Migrate an AHV VM from its current host to a specific destination host within the same Prism Element cluster.
-    - Wraps the VMM v4 C(POST /api/vmm/v4.x/ahv/config/vms/{extId}/$actions/migrate-to-host) action endpoint.
-    - The operation is asynchronous; the API returns a C(task_ext_id) and the module optionally waits for the task to complete.
-    - This module uses PC v4 APIs based SDKs.
+    - Migrate a VM to another host within the same cluster.
+    - This module uses PC v4 APIs based SDKs
+author:
+    - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Host to host VM migration) -
-      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User,
-      Virtual Machine Admin, Self-Service Admin (deprecated)
+      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin,
+      Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     state:
         description:
-            - State of the module.
-            - If state is C(present), the module will migrate the VM to the specified destination host.
-            - Only C(present) is supported for this action module.
-        type: str
+            - Specify state.
+            - If C(state) is set to C(present), the VM is migrated to the specified destination host.
+            - No other choices are supported for this module.
         choices:
             - present
+        type: str
         default: present
     ext_id:
         description:
-            - The external ID (UUID) of the VM to migrate.
+            - A globally unique identifier of a VM of type UUID.
         type: str
         required: true
     host:
         description:
-            - Reference to the destination host to which the VM will be migrated.
+            - The destination host to which the VM is migrated.
         type: dict
         required: true
         suboptions:
             ext_id:
                 description:
-                    - The external ID (UUID) of the destination host.
-                    - The destination host must belong to the same Prism Element cluster as the VM's current host.
+                    - The globally unique identifier of a host type UUID.
                 type: str
                 required: true
 extends_documentation_fragment:
@@ -58,12 +57,10 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
     - nutanix.ncp.ntnx_proxy_v2
-author:
-    - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
-- name: Migrate a VM to a specific destination host
+- name: Migrate a VM to a destination host
   nutanix.ncp.ntnx_vm_to_host_migration_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -73,16 +70,15 @@ EXAMPLES = r"""
     host:
       ext_id: "8300384a-56ee-4750-aeb8-3d1c42908bee"
   register: result
-  ignore_errors: true
 """
 
 RETURN = r"""
 response:
     description:
-        - Response for the VM-to-host migration action.
-        - Task details if C(wait) is true and the operation completes; otherwise the initial task acknowledgement returned by the API.
-    returned: always
+        - Task details for the VM to host migration.
+        - When C(wait) is true, the final task payload after completion; otherwise the initial task acknowledgement.
     type: dict
+    returned: always
     sample:
         {
             "app_name": null,
@@ -127,42 +123,36 @@ response:
             "sub_tasks": null,
             "warnings": null
         }
-
-changed:
-    description: Indicates whether the task resulted in any changes.
-    returned: always
-    type: bool
-    sample: true
-
-msg:
-    description: This indicates the message if any message occurred.
-    returned: When there is an error
-    type: str
-    sample: "Api Exception raised while migrating VM to host"
-
-error:
-    description: Error details if the migration failed.
-    returned: when an error occurs
-    type: str
-    sample: "Failed to get etag for VM"
-
-failed:
-    description: Whether the module invocation failed.
-    returned: always
-    type: bool
-    sample: false
-
 task_ext_id:
-    description: The external ID of the asynchronous migration task.
-    returned: always
+    description: The external ID of the task.
     type: str
+    returned: always
     sample: "ZXJnb24=:f1e19e35-8c51-53f5-a699-70dd11f8724d"
-
 ext_id:
-    description: The external ID of the VM that was migrated.
-    returned: always
+    description: The external ID of the VM.
     type: str
+    returned: always
     sample: "16023bcc-c1e2-4131-76eb-6bad6e0ddb66"
+changed:
+    description: This indicates whether the task resulted in any changes
+    type: bool
+    returned: always
+    sample: true
+error:
+    description: This indicates the error if any error occurred.
+    type: str
+    returned: when an error occurs
+    sample: "Failed to get etag for VM"
+msg:
+    description: This indicates the message if any message occurred
+    type: str
+    returned: When there is an error, module is idempotent or check mode
+    sample: "Api Exception raised while migrating VM to host"
+failed:
+    description: This indicates whether the task failed
+    type: bool
+    returned: always
+    sample: false
 """
 
 import traceback  # noqa: E402
@@ -272,6 +262,7 @@ def run_module():
         "response": None,
         "ext_id": None,
         "task_ext_id": None,
+        "failed": False,
     }
 
     api_instance = get_vm_api_instance(module)
