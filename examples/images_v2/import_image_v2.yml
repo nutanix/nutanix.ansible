@@ -1,0 +1,31 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Import images from a registered Prism Element cluster into Prism Central
+#
+# Prerequisites:
+# - cluster_ext_id must be a Prism Element cluster registered to this Prism Central
+# - images_ext_ids must be PE-owned images that are not already owned by PC
+
+- name: Import image playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_ext_id: "44cb13ea-4039-4952-a90a-65f808493637"
+        pe_owned_image_ext_ids:
+          - "b9c1e191-8237-4be9-986d-3a547c3c946c"
+
+    - name: Import images from a registered Prism Element cluster
+      nutanix.ncp.ntnx_import_image_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        images_ext_ids: "{{ pe_owned_image_ext_ids }}"
+      register: import_result

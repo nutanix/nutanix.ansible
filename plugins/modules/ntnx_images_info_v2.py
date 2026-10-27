@@ -9,15 +9,15 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
----
 module: ntnx_images_info_v2
-short_description: Fetch information about Image in Nutanix Prism Central
-version_added: "2.0.0"
+short_description: Fetch information about Nutanix images
 description:
-  - This module allows you to fetch information about Image in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific Image.
-  - If C(ext_id) is not provided, list multiple Image optionally filtered / paginated.
-  - This module uses PC v4 APIs based SDKs.
+  - This module fetches information about Nutanix images.
+  - The module can fetch information about all images or a specific image.
+  - This module uses PC v4 APIs based SDKs
+version_added: "2.0.0"
+author:
+ - Pradeepsingh Bhati (@bhati-pradeep)
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
@@ -43,10 +43,6 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_info_v2
   - nutanix.ncp.ntnx_logger
   - nutanix.ncp.ntnx_proxy_v2
-author:
- - Pradeepsingh Bhati (@bhati-pradeep)
- - George Ghawali (@george-ghawali)
- - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
@@ -56,8 +52,6 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-  register: result
-  ignore_errors: true
 
 - name: Fetch information about a specific image
   nutanix.ncp.ntnx_images_info_v2:
@@ -66,29 +60,22 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-  register: result
-  ignore_errors: true
 
-- name: List images with filter
+- name: List all images with fetch_all
   nutanix.ncp.ntnx_images_info_v2:
-    filter: "name eq 'my-image'"
-  register: result
-  ignore_errors: true
-
-- name: List images with limit
-  nutanix.ncp.ntnx_images_info_v2:
-    limit: 5
-  register: result
-  ignore_errors: true
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC Image info v4 API.
-    - It can be a single Image if external ID is provided.
-    - List of multiple Image if external ID is not provided with optional filter or limit.
+    - The response from the Nutanix PC Images.
+    - it can be single image or list of image as per spec.
   type: dict
   returned: always
   sample: {
@@ -114,36 +101,15 @@ response:
             "tenant_id": null,
             "type": "DISK_IMAGE"
         }
-
-changed:
-  description: This indicates whether the task resulted in any changes. Always false for info modules.
-  returned: always
-  type: bool
-  sample: false
-
 error:
   description: The error message if an error occurs.
   type: str
   returned: when an error occurs
-
 msg:
     description: This indicates the message if any message occurred
     returned: When there is an error
     type: str
     sample: "Api Exception raised while fetching images info"
-
-failed:
-    description: This indicates whether the task failed
-    returned: always
-    type: bool
-    sample: false
-
-ext_id:
-    description: External ID of the image.
-    type: str
-    returned: when external ID is provided
-    sample: "172e0d73-74ee-4d05-95f2-1894d83d7e09"
-
 total_available_results:
     description:
         - The total number of available images in PC.
@@ -158,10 +124,12 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
 from ..module_utils.v4.vmm.api_client import get_image_api_instance  # noqa: E402
+from ..module_utils.v4.vmm.helpers import get_image  # noqa: E402
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -174,26 +142,14 @@ def get_module_spec():
     return module_args
 
 
-def get_image(module, result):
-    images = get_image_api_instance(module)
+def get_image_using_ext_id(module, images, result):
     ext_id = module.params.get("ext_id")
-
-    try:
-        resp = images.get_image_by_id(ext_id)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching image info",
-        )
-
+    resp = get_image(module, images, ext_id)
     result["ext_id"] = ext_id
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    result["response"] = strip_internal_attributes(resp.to_dict())
 
 
-def get_images(module, result):
-    images = get_image_api_instance(module)
-
+def get_images(module, images, result):
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
 
@@ -202,7 +158,10 @@ def get_images(module, result):
         module.fail_json(msg="Failed generating images info Spec", **result)
 
     try:
-        resp = images.list_images(**kwargs)
+        resp = list_entities(
+            images.list_images,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -212,10 +171,8 @@ def get_images(module, result):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
-    if not resp:
-        resp = []
-    result["response"] = resp
+
+    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
 
 
 def run_module():
@@ -228,10 +185,11 @@ def run_module():
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
+    images = get_image_api_instance(module)
     if module.params.get("ext_id"):
-        get_image(module, result)
+        get_image_using_ext_id(module, images, result)
     else:
-        get_images(module, result)
+        get_images(module, images, result)
 
     module.exit_json(**result)
 
