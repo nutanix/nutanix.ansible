@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -19,43 +19,56 @@ description:
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
-    This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    This module requires the following Nutanix IAM roles to be assigned to the
+    user performing the operation.
   - >-
-    B(Get Stats for a Disk) -
-    Required Roles: Prism Admin, Prism Viewer, Super Admin
+    B(View Disk Stats) -
+    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin,
+    Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   ext_id:
     description:
-      - The external identifier of the disk whose stats should be fetched.
+      - The external identifier of the Disk.
     type: str
     required: true
   start_time:
     description:
       - The start time of the period for which stats should be reported.
       - The value should be in extended ISO-8601 format.
-      - Example input C(2024-07-31T12:41:56.955Z).
+      - >-
+        For example, start time of C(2022-04-23T01:23:45.678+09:00) would consider
+        all stats starting at 1:23:45.678 on the 23rd of April 2022.
+      - Details around ISO-8601 format can be found at U(https://www.iso.org/standard/70907.html)
     type: str
     required: true
   end_time:
     description:
       - The end time of the period for which stats should be reported.
       - The value should be in extended ISO-8601 format.
-      - Example input C(2025-07-31T12:41:56.955Z).
+      - >-
+        For example, end time of C(2022-04-23T13:23:45.678+09:00) would consider
+        all stats till 13:23:45.678 on the 23rd of April 2022.
+      - Details around ISO-8601 format can be found at U(https://www.iso.org/standard/70907.html)
     type: str
     required: true
   sampling_interval:
     description:
       - The sampling interval in seconds at which statistical data should be collected.
       - For example, if you want performance statistics every 30 seconds, then provide the value as 30.
+      - Minimum value is 1.
     type: int
-    required: false
   stat_type:
     description:
-      - The type of down-sampling operator to apply to the stats data.
-      - See Nutanix SDK C(DownSamplingOperator) enum for details.
+      - The operator to use while performing down-sampling on stats data.
+      - Allowed values are SUM, MIN, MAX, AVG, COUNT and LAST.
+      - C(SUM) - Aggregation with sum of all values.
+      - C(MIN) - Aggregation containing lowest of all values.
+      - C(MAX) - Aggregation containing highest of all values.
+      - C(AVG) - Aggregation indicating mean or average of all values.
+      - C(COUNT) - Aggregation containing total count of values.
+      - C(LAST) - Aggregation containing only the last recorded value.
     type: str
-    required: false
     choices:
       - SUM
       - MIN
@@ -80,10 +93,6 @@ author:
 EXAMPLES = r"""
 - name: Fetch disk stats during time interval
   nutanix.ncp.ntnx_disk_stat_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     ext_id: "6f0a0f0b-4b39-4d05-89be-fefdaea6a3c1"
     start_time: "2024-07-31T12:41:56.955Z"
     end_time: "2025-07-31T12:41:56.955Z"
@@ -91,10 +100,6 @@ EXAMPLES = r"""
 
 - name: Fetch disk stats with all attributes
   nutanix.ncp.ntnx_disk_stat_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     ext_id: "6f0a0f0b-4b39-4d05-89be-fefdaea6a3c1"
     start_time: "2024-07-31T12:41:56.955Z"
     end_time: "2025-07-31T12:41:56.955Z"
@@ -197,24 +202,24 @@ ext_id:
   sample: "4542a93c-f79a-43fc-a515-ec8c066000a0"
 
 changed:
-  description: This indicates whether the task resulted in any changes. Always false for stats fetches.
+  description: This indicates whether the task resulted in any changes.
   returned: always
   type: bool
   sample: false
 
 failed:
-  description: This indicates whether the task failed
+  description: This indicates whether the task failed.
   returned: always
   type: bool
   sample: false
 
 error:
-  description: This indicates the error message if any error occurred
+  description: The error message if an error occurs.
   returned: When an error occurs
   type: str
 
 msg:
-  description: This indicates the message if any message occurred
+  description: This indicates the message if any message occurred.
   returned: When there is an error
   type: str
   sample: "Api Exception raised while fetching disk stats"
@@ -230,9 +235,9 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
-    validate_required_params,
 )
 
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
@@ -242,10 +247,9 @@ def get_module_spec():
         ext_id=dict(type="str", required=True),
         start_time=dict(type="str", required=True),
         end_time=dict(type="str", required=True),
-        sampling_interval=dict(type="int", required=False),
+        sampling_interval=dict(type="int"),
         stat_type=dict(
             type="str",
-            required=False,
             choices=["SUM", "MIN", "MAX", "AVG", "COUNT", "LAST"],
         ),
     )
@@ -253,10 +257,10 @@ def get_module_spec():
     return module_args
 
 
-def get_disk_stats(module, result, api_instance):
+def get_disk_stats(module, result):
+    api_instance = get_disks_api_instance(module)
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-    validate_required_params(module, ["ext_id", "start_time", "end_time"])
     start_time = module.params.get("start_time")
     end_time = module.params.get("end_time")
     sampling_interval = module.params.get("sampling_interval")
@@ -299,8 +303,7 @@ def run_module():
         "ext_id": None,
         "failed": False,
     }
-    api_instance = get_disks_api_instance(module)
-    get_disk_stats(module, result, api_instance)
+    get_disk_stats(module, result)
 
     module.exit_json(**result)
 
