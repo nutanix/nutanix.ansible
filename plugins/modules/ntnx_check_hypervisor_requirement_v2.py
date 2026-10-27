@@ -30,11 +30,7 @@ notes:
     - >-
       B(Check Cluster Hypervisor Requirements) -
       Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer,
-      Project Manager, Super Admin, Self-Service Admin (deprecated)
-    - >-
-      B(Fetch Task Response) -
-      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer,
-      Project Manager, Super Admin, Self-Service Admin (deprecated)
+      Project Manager, Super Admin
     - This API is not supported for the C(XEN) hypervisor type.
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
@@ -353,7 +349,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "ext_id": None,
         "task_ext_id": None,
