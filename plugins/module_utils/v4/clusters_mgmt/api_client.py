@@ -156,6 +156,18 @@ def get_ssl_certificates_api_instance(module):
     return ntnx_clustermgmt_py_client.SSLCertificateApi(client)
 
 
+def get_pcie_devices_api_instance(module):
+    """
+    This method will return PCIe devices api instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        PcieDevicesApi: PcieDevicesApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.PcieDevicesApi(client)
+
+
 def get_external_storages_api_instance(module):
     """
     This method will return external storages api instance from sdk
