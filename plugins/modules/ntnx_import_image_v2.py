@@ -113,12 +113,6 @@ changed:
     type: bool
     sample: true
 
-ext_id:
-    description: The external ID of the imported image.
-    returned: always
-    type: str
-    sample: "9d4bf6f4-0e8f-4f6c-93a7-70e12b95a8b1"
-
 cluster_ext_id:
     description: The external ID of the Prism Element cluster.
     returned: always
@@ -156,7 +150,6 @@ from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
-from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
@@ -239,7 +232,6 @@ def run_module():
         "changed": False,
         "failed": False,
         "response": None,
-        "ext_id": None,
     }
     import_image(module, result)
     module.exit_json(**result)
