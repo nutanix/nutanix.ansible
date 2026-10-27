@@ -1,0 +1,521 @@
+---
+# Test plan for ntnx_batch_v2 / ntnx_batches_info_v2
+# -----------------------------------------------------------------------------
+# 1. Positive:
+#    - check_mode: build a Create-Categories batch spec with ALL attributes and
+#      assert the generated spec matches what we passed (no API call).
+#    - check_mode: build a Modify-Categories batch spec.
+#    - check_mode: build a Delete-Categories batch spec.
+#    - REAL submit: bulk-create two Categories via a batch (chunk_size=2),
+#      poll the task, assert the batch finished, then fetch the affected
+#      Batch entity and validate its schema (name, execution_status,
+#      completion_status, size, success_count, failed_count).
+#    - Idempotent info calls: list, list with limit, list with filter.
+#    - Fetch the Batch by its ext_id and assert every field.
+# 2. Negative:
+#    - Missing required metadata parameter.
+#    - Missing required payload parameter.
+#    - Invalid enum: unsupported action value.
+#    - Fetching a Batch with an invalid ext_id.
+# 3. Domain-level:
+#    - Assert should_stop_on_error propagates.
+#    - Assert chunk_size >= 1 is respected.
+#    - Assert the batch task returns the parent task ext_id (prism task ergon
+#      format) and includes sub_tasks entries.
+
+- name: Start ntnx_batch_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_batch_v2 tests
+
+- name: Generate random suffix for batch test data
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] | lower }}"
+
+- name: Compute batch demo names
+  ansible.builtin.set_fact:
+    batch_category_key: "ansible-batch-{{ random_name }}"
+    batch_name_create: "ansible-batch-create-{{ random_name }}"
+    batch_name_modify: "ansible-batch-modify-{{ random_name }}"
+    batch_name_delete: "ansible-batch-delete-{{ random_name }}"
+    batch_target_uri: "/api/prism/v4.1/config/categories"
+    created_category_ext_ids: []
+
+########################################################################################
+# 1. check_mode: full spec generation for Create batch
+########################################################################################
+
+- name: Generate submit-batch spec in check mode with all attributes
+  nutanix.ncp.ntnx_batch_v2:
+    state: present
+    metadata:
+      action: CREATE
+      name: "{{ batch_name_create }}"
+      uri: "{{ batch_target_uri }}"
+      should_stop_on_error: false
+      chunk_size: 2
+    payload:
+      - metadata:
+          headers:
+            - name: "Content-Type"
+              value: "application/json"
+          path:
+            - name: "clusterExtId"
+              value: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
+        data:
+          key: "{{ batch_category_key }}"
+          value: "one"
+          description: "check-mode-created category one"
+      - metadata:
+          headers:
+            - name: "Content-Type"
+              value: "application/json"
+        data:
+          key: "{{ batch_category_key }}"
+          value: "two"
+          description: "check-mode-created category two"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert Create batch check-mode result
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.metadata is defined
+      - result.response.metadata.action == "CREATE"
+      - result.response.metadata.name == batch_name_create
+      - result.response.metadata.uri == batch_target_uri
+      - result.response.metadata.should_stop_on_error == false
+      - result.response.metadata.chunk_size == 2
+      - result.response.payload | length == 2
+      - result.response.payload[0].metadata.headers[0].name == "Content-Type"
+      - result.response.payload[0].metadata.headers[0].value == "application/json"
+      - result.response.payload[0].metadata.path[0].name == "clusterExtId"
+      - result.response.payload[0].metadata.path[0].value == "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
+      - result.response.payload[0].data.key == batch_category_key
+      - result.response.payload[0].data.value == "one"
+      - result.response.payload[0].data.description == "check-mode-created category one"
+      - result.response.payload[1].data.value == "two"
+    success_msg: "Create batch check-mode spec generated successfully"
+    fail_msg: "Create batch check-mode spec generation failed"
+
+########################################################################################
+# 2. check_mode: Modify batch spec
+########################################################################################
+
+- name: Generate submit-batch spec in check mode for a MODIFY action
+  nutanix.ncp.ntnx_batch_v2:
+    state: present
+    metadata:
+      action: MODIFY
+      name: "{{ batch_name_modify }}"
+      uri: "{{ batch_target_uri }}"
+      should_stop_on_error: true
+      chunk_size: 1
+    payload:
+      - metadata:
+          headers:
+            - name: "If-Match"
+              value: 'W/"0-1"'
+          path:
+            - name: "extId"
+              value: "6f8b4a2e-1111-2222-3333-abcdef012345"
+        data:
+          description: "renamed via ansible batch"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert Modify batch check-mode result
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.metadata.action == "MODIFY"
+      - result.response.metadata.should_stop_on_error == true
+      - result.response.metadata.chunk_size == 1
+      - result.response.payload[0].metadata.headers[0].name == "If-Match"
+      - result.response.payload[0].metadata.path[0].name == "extId"
+    success_msg: "Modify batch check-mode spec generated successfully"
+    fail_msg: "Modify batch check-mode spec generation failed"
+
+########################################################################################
+# 3. check_mode: Delete batch spec
+########################################################################################
+
+- name: Generate submit-batch spec in check mode for a DELETE action
+  nutanix.ncp.ntnx_batch_v2:
+    state: present
+    metadata:
+      action: DELETE
+      name: "{{ batch_name_delete }}"
+      uri: "{{ batch_target_uri }}"
+      should_stop_on_error: false
+      chunk_size: 5
+    payload:
+      - metadata:
+          path:
+            - name: "extId"
+              value: "6f8b4a2e-1111-2222-3333-abcdef012345"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert Delete batch check-mode result
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.metadata.action == "DELETE"
+      - result.response.metadata.name == batch_name_delete
+      - result.response.metadata.chunk_size == 5
+      - result.response.payload[0].metadata.path[0].value == "6f8b4a2e-1111-2222-3333-abcdef012345"
+    success_msg: "Delete batch check-mode spec generated successfully"
+    fail_msg: "Delete batch check-mode spec generation failed"
+
+########################################################################################
+# 4. Negative tests
+########################################################################################
+
+- name: Submit batch without metadata (should fail)
+  nutanix.ncp.ntnx_batch_v2:
+    state: present
+    payload:
+      - data:
+          key: "should-not-work"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing metadata fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Missing required parameter(s)' in result.msg"
+      - "'metadata' in result.msg"
+    success_msg: "Submit batch without metadata failed as expected"
+    fail_msg: "Submit batch without metadata did not fail as expected"
+
+- name: Submit batch without payload (should fail)
+  nutanix.ncp.ntnx_batch_v2:
+    state: present
+    metadata:
+      action: CREATE
+      name: "batch-missing-payload"
+      uri: "{{ batch_target_uri }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing payload fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Missing required parameter(s)' in result.msg"
+      - "'payload' in result.msg"
+    success_msg: "Submit batch without payload failed as expected"
+    fail_msg: "Submit batch without payload did not fail as expected"
+
+- name: Submit batch with invalid action (should fail)
+  nutanix.ncp.ntnx_batch_v2:
+    state: present
+    metadata:
+      action: INVALID_ACTION
+      name: "batch-invalid-action"
+      uri: "{{ batch_target_uri }}"
+    payload:
+      - data:
+          key: "irrelevant"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid action fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of action must be one of' in result.msg or 'not one of' in result.msg or 'ACTION, CREATE, DELETE, MODIFY' in result.msg"
+    success_msg: "Submit batch with invalid action failed as expected"
+    fail_msg: "Submit batch with invalid action did not fail as expected"
+
+- name: Fetch a batch with a random invalid ext_id (should fail)
+  nutanix.ncp.ntnx_batches_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid ext_id fetch fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching batch info using ext_id"
+    success_msg: "Fetch batch with wrong ext_id failed as expected"
+    fail_msg: "Fetch batch with wrong ext_id did not fail as expected"
+
+########################################################################################
+# 5. REAL submit: bulk create two Categories via batch. Use wait=false so we
+#    always see a successful submission (the batch service creates a Batch
+#    record and returns a parent task even when individual subtasks fail on
+#    this cluster - see ENG-886836, ENG-887521).
+########################################################################################
+
+- name: Submit a real batch to bulk-create two Categories (wait=false)
+  nutanix.ncp.ntnx_batch_v2:
+    state: present
+    wait: false
+    metadata:
+      action: CREATE
+      name: "{{ batch_name_create }}"
+      uri: "{{ batch_target_uri }}"
+      should_stop_on_error: false
+      chunk_size: 2
+    payload:
+      - metadata:
+          headers:
+            - name: "Content-Type"
+              value: "application/json"
+        data:
+          key: "{{ batch_category_key }}"
+          value: "one"
+          description: "First category created via ansible batch"
+      - metadata:
+          headers:
+            - name: "Content-Type"
+              value: "application/json"
+        data:
+          key: "{{ batch_category_key }}"
+          value: "two"
+          description: "Second category created via ansible batch"
+  register: submit_result
+  ignore_errors: true
+
+- name: Assert submit result (batch service accepted the request)
+  ansible.builtin.assert:
+    that:
+      - submit_result is defined
+      - submit_result.changed == true
+      - submit_result.failed == false
+      - submit_result.task_ext_id is defined
+      - submit_result.task_ext_id is string
+      - submit_result.response is defined
+      - submit_result.response.ext_id is defined
+    success_msg: "Batch submit accepted by the service"
+    fail_msg: "Batch submit was not accepted by the service"
+
+- name: Store batch parent task ext_id
+  ansible.builtin.set_fact:
+    batch_task_ext_id: "{{ submit_result.task_ext_id }}"
+
+- name: Poll parent task until it reaches a terminal state
+  nutanix.ncp.ntnx_pc_tasks_info_v2:
+    ext_id: "{{ batch_task_ext_id }}"
+  register: batch_task_result
+  until: batch_task_result.response.status in ['SUCCEEDED', 'FAILED']
+  retries: 60
+  delay: 5
+  ignore_errors: true
+
+- name: Assert parent task reached a terminal state
+  ansible.builtin.assert:
+    that:
+      - batch_task_result is defined
+      - batch_task_result.failed == false
+      - batch_task_result.response is defined
+      - batch_task_result.response.status in ['SUCCEEDED', 'FAILED']
+      - batch_task_result.response.operation == "BATCH-CREATE"
+      - batch_task_result.response.sub_tasks is defined
+      - (batch_task_result.response.sub_tasks | length) == 2
+      - batch_task_result.response.completion_details is defined
+    success_msg: "Batch parent task reached terminal state"
+    fail_msg: "Batch parent task did not reach a terminal state"
+
+- name: Store the final batch task view
+  ansible.builtin.set_fact:
+    batch_task: "{{ batch_task_result.response }}"
+
+- name: Extract created category ext_ids from the batch subtasks (if any subtask succeeded)
+  when: batch_task is defined and batch_task.sub_tasks is defined
+  block:
+    - name: Fetch each subtask
+      nutanix.ncp.ntnx_pc_tasks_info_v2:
+        ext_id: "{{ item.ext_id }}"
+      loop: "{{ batch_task.sub_tasks | default([]) }}"
+      loop_control:
+        label: "{{ item.ext_id }}"
+      register: subtask_results
+      when: batch_task.sub_tasks is defined and (batch_task.sub_tasks | length) > 0
+
+    - name: Collect category ext_ids from each subtask entities_affected
+      ansible.builtin.set_fact:
+        created_category_ext_ids: >-
+          {{
+            created_category_ext_ids
+            + (
+              (subtask_result.response.entities_affected | default([]))
+              | selectattr('rel', 'equalto', 'prism:config:category')
+              | map(attribute='ext_id')
+              | list
+            )
+          }}
+      loop: "{{ subtask_results.results | default([]) }}"
+      loop_control:
+        label: "{{ subtask_result.ext_id | default('n/a') }}"
+        loop_var: subtask_result
+      when:
+        - subtask_results is defined
+        - (subtask_results.results | default([])) | length > 0
+        - subtask_result.response is defined
+        - subtask_result.response.status == 'SUCCEEDED'
+
+########################################################################################
+# 6. Info: List batches (default) and assert schema
+########################################################################################
+
+- name: List all batches
+  nutanix.ncp.ntnx_batches_info_v2:
+  register: list_all
+  ignore_errors: true
+
+- name: Assert list all
+  ansible.builtin.assert:
+    that:
+      - list_all is defined
+      - list_all.changed == false
+      - list_all.failed == false
+      - list_all.response is defined
+      - list_all.response | length >= 1
+      - list_all.total_available_results is defined
+      - list_all.total_available_results | int >= 1
+      - list_all.response[0].ext_id is defined
+      - list_all.response[0].name is defined
+      - list_all.response[0].execution_status is defined
+    success_msg: "List batches succeeded"
+    fail_msg: "List batches failed"
+
+- name: List batches with limit=1
+  nutanix.ncp.ntnx_batches_info_v2:
+    limit: 1
+  register: list_limit
+  ignore_errors: true
+
+- name: Assert list limit
+  ansible.builtin.assert:
+    that:
+      - list_limit.changed == false
+      - list_limit.failed == false
+      - list_limit.response | length == 1
+      - list_limit.total_available_results | int >= 1
+    success_msg: "List batches with limit succeeded"
+    fail_msg: "List batches with limit failed"
+
+- name: List batches with filter on name
+  nutanix.ncp.ntnx_batches_info_v2:
+    filter: "name eq '{{ batch_name_create }}'"
+  register: list_filter
+  ignore_errors: true
+
+- name: Assert filtered list
+  ansible.builtin.assert:
+    that:
+      - list_filter.changed == false
+      - list_filter.failed == false
+      - list_filter.response is defined
+      - list_filter.response | length >= 1
+      - list_filter.response[0].name == batch_name_create
+    success_msg: "List batches with filter succeeded"
+    fail_msg: "List batches with filter failed"
+
+- name: Store batch ext_id for get-by-id assertions
+  ansible.builtin.set_fact:
+    batch_ext_id: "{{ list_filter.response[0].ext_id }}"
+
+########################################################################################
+# 7. Info: Get batch by ext_id
+########################################################################################
+
+- name: Fetch batch by ext_id
+  nutanix.ncp.ntnx_batches_info_v2:
+    ext_id: "{{ batch_ext_id }}"
+  register: get_result
+  ignore_errors: true
+
+- name: Assert get-by-id response
+  ansible.builtin.assert:
+    that:
+      - get_result is defined
+      - get_result.changed == false
+      - get_result.failed == false
+      - get_result.ext_id == batch_ext_id
+      - get_result.response is defined
+      - get_result.response.ext_id == batch_ext_id
+      - get_result.response.name == batch_name_create
+      - get_result.response.execution_status is defined
+      - get_result.response.execution_status == "COMPLETED"
+      - get_result.response.completion_status is defined
+      - get_result.response.completion_status in ["SUCCEEDED", "PARTIALLY_SUCCEEDED", "FAILED"]
+      - get_result.response.size is defined
+      - get_result.response.size | int == 2
+      - (get_result.response.success_count | int) + (get_result.response.failed_count | int) == 2
+    success_msg: "Get batch by ext_id succeeded"
+    fail_msg: "Get batch by ext_id failed"
+
+########################################################################################
+# 8. Mutually-exclusive check for info module
+########################################################################################
+
+- name: Fetch batch with both ext_id and filter (should fail)
+  nutanix.ncp.ntnx_batches_info_v2:
+    ext_id: "{{ batch_ext_id }}"
+    filter: "name eq '{{ batch_name_create }}'"
+  register: result
+  ignore_errors: true
+
+- name: Assert ext_id + filter mutual exclusion
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    success_msg: "ext_id + filter mutual exclusion enforced"
+    fail_msg: "ext_id + filter mutual exclusion NOT enforced"
+
+########################################################################################
+# 9. Cleanup: delete created categories via a bulk DELETE batch
+########################################################################################
+
+- name: Build explicit delete payload with a loop
+  ansible.builtin.set_fact:
+    delete_payload: "{{ delete_payload | default([]) + [{'metadata': {'path': [{'name': 'extId', 'value': item}]}}] }}"
+  loop: "{{ created_category_ext_ids }}"
+  when: (created_category_ext_ids | length) > 0
+
+- name: Submit a batch to bulk-delete the categories created earlier
+  nutanix.ncp.ntnx_batch_v2:
+    state: present
+    metadata:
+      action: DELETE
+      name: "{{ batch_name_delete }}"
+      uri: "{{ batch_target_uri }}"
+      should_stop_on_error: false
+      chunk_size: 2
+    payload: "{{ delete_payload }}"
+  register: cleanup_result
+  ignore_errors: true
+  when: (created_category_ext_ids | length) > 0
+
+- name: Cleanup summary
+  ansible.builtin.debug:
+    msg:
+      - "created_category_ext_ids: {{ created_category_ext_ids }}"
+      - "cleanup task_ext_id: {{ cleanup_result.task_ext_id | default('n/a') }}"
+      - "cleanup failed: {{ cleanup_result.failed | default('not_run') }}"

@@ -6,14 +6,16 @@
 # 3. Register the cluster to Prism Central
 # 4. Fetch cluster using name
 # 5. Fetch cluster info using external ID
-# 6. Associate categories with cluster
-# 7. Update ntp servers, dns servers and smtp servers in cluster
-# 8. List all hosts
-# 9. List all hosts using filter
-# 10. Verify fetching host using external ID
-# 11. Fetch hosts of particular cluster
-# 12. Disassociate categories from cluster
-# 13. Destroy the cluster
+# 6. List all clusters with fetch_all
+# 7. Associate categories with cluster
+# 8. Update ntp servers, dns servers and smtp servers in cluster
+# 9. List all hosts
+# 10. List all hosts with fetch_all
+# 11. List all hosts using filter
+# 12. Verify fetching host using external ID
+# 13. Fetch hosts of particular cluster
+# 14. Disassociate categories from cluster
+# 15. Destroy the cluster
 
 - name: Clusters CRUD playbook
   hosts: localhost
@@ -203,6 +205,12 @@
       register: result
       ignore_errors: true
 
+    - name: List all clusters with fetch_all
+      nutanix.ncp.ntnx_clusters_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
+
     - name: Associate categories with cluster
       nutanix.ncp.ntnx_clusters_categories_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
@@ -241,6 +249,12 @@
 
     - name: List all hosts
       nutanix.ncp.ntnx_hosts_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all hosts with fetch_all
+      nutanix.ncp.ntnx_hosts_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 
