@@ -94,7 +94,7 @@
     success_msg: "Missing ext_id was rejected as expected"
     fail_msg: "Missing ext_id was NOT rejected as expected"
 
-- name: state=absent must be rejected
+- name: State absent must be rejected
   nutanix.ncp.ntnx_update_domain_manager_v2:
     state: absent
     ext_id: "{{ domain_manager_ext_id }}"
@@ -103,7 +103,7 @@
   register: absent_state
   ignore_errors: true
 
-- name: Assert state=absent was rejected
+- name: Assert state absent was rejected
   ansible.builtin.assert:
     that:
       - absent_state.failed == true
@@ -131,7 +131,7 @@
   ignore_errors: true
   when:
     - current_dm is defined
-    - current_dm.failed == false
+    - not current_dm.failed
     - current_dm.response.config.name is defined
 
 - name: Assert idempotent update was skipped
