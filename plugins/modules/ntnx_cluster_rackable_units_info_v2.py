@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -14,35 +14,35 @@ module: ntnx_cluster_rackable_units_info_v2
 short_description: Fetch rackable units of a cluster in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module allows you to fetch information about RackableUnitsByClusterId in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific RackableUnitsByClusterId.
-  - If C(ext_id) is not provided, list multiple RackableUnitsByClusterId for the specified cluster.
+  - This module allows you to fetch information about rackable units of a cluster in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch details of the specific rackable unit belonging to the given cluster.
+  - If C(ext_id) is not provided, list all rackable units of the specified cluster.
   - A rackable unit is the physical block or chassis that houses one or more Nutanix nodes.
   - This module uses PC v4 APIs based SDKs.
 notes:
-    - >-
-      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
-      The required roles depend on the operation being performed.
-    - >-
-      B(Get rackable unit by ext_id) -
-      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
-    - >-
-      B(Get the list of rackable units for a cluster) -
-      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
+  - >-
+    This module requires the following Nutanix IAM roles to be assigned to the
+    user performing the operation.
+  - >-
+    B(View Cluster Rackable Unit) -
+    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin,
+    Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)
+  - The list API does not support OData filter, limit, page, orderby, or select query parameters.
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
-  ext_id:
-    description:
-      - The external ID of the rackable unit.
-      - When provided, fetches the details of the specific rackable unit.
-    type: str
-    required: false
   cluster_ext_id:
     description:
-      - The external ID (UUID) of the parent cluster.
+      - External identifier (UUID) of the parent cluster whose rackable units should be fetched.
       - Required for both list and get-by-ID operations because the v4 API is scoped by cluster.
     type: str
     required: true
+  ext_id:
+    description:
+      - External identifier (UUID) of a specific rackable unit in the given cluster.
+      - If provided, the module returns a single rackable unit; otherwise, it returns the list of
+        rackable units for the cluster.
+    type: str
+    required: false
   read_timeout:
     description:
       - Read timeout in milliseconds for API calls.
@@ -64,19 +64,21 @@ EXAMPLES = r"""
     cluster_ext_id: "0005e2f7-8ee2-6bbb-0000-000000012345"
     ext_id: "f28e7475-f835-42ef-ac35-ecbc48d5421e"
   register: rackable_unit
+  ignore_errors: true
 
 - name: List all rackable units for a cluster
   nutanix.ncp.ntnx_cluster_rackable_units_info_v2:
     cluster_ext_id: "0005e2f7-8ee2-6bbb-0000-000000012345"
   register: rackable_units
+  ignore_errors: true
 """
 
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC RackableUnitsByClusterId info v4 API.
-    - It can be a single RackableUnitsByClusterId if external ID is provided.
-    - List of multiple RackableUnitsByClusterId if external ID is not provided.
+    - The response from the Nutanix PC clustermgmt rackable units v4 API.
+    - A single rackable unit when C(ext_id) is provided.
+    - A list of rackable units when C(ext_id) is not provided.
   returned: always
   type: dict
   sample:
@@ -105,31 +107,31 @@ changed:
   sample: false
 
 ext_id:
-  description: External ID of the rackable unit
-  returned: when external ID is provided
+  description: External ID of the rackable unit (when requested via C(ext_id)).
+  returned: When external ID is provided
   type: str
   sample: "5879195f-5101-4d41-8e6d-af4a6aa52472"
 
 msg:
-  description: Status/error message when applicable
+  description: This indicates the message if any message occurred.
   returned: When there is an error
   type: str
-  sample: "Api Exception raised while fetching rackable unit info using ext_id"
+  sample: "Api Exception raised while fetching rackable units info"
 
 error:
-  description: This field typically holds information about if the task have errors that occurred during the task execution
+  description: This field typically holds information about if the task have errors that occurred during the task execution.
   returned: when an error occurs
   type: str
 
 failed:
-  description: This field typically holds information about if the task have failed
+  description: This field typically holds information about if the task have failed.
   returned: always
   type: bool
   sample: false
 
 total_available_results:
   description: The total number of available rackable units for the cluster.
-  returned: when list of rackable units is fetched
+  returned: When listing rackable units for a cluster
   type: int
   sample: 1
 """
@@ -143,6 +145,7 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.clusters_mgmt.helpers import get_rackable_unit  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -152,26 +155,30 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
+
     module_args = dict(
-        ext_id=dict(type="str"),
         cluster_ext_id=dict(type="str", required=True),
+        ext_id=dict(type="str"),
     )
+
     return module_args
 
 
-def get_rackable_unit_by_ext_id(module, clusters_api, result):
-    ext_id = module.params.get("ext_id")
+def get_rackable_unit_using_ext_id(module, api_instance, result):
     cluster_ext_id = module.params.get("cluster_ext_id")
-    resp = get_rackable_unit(module, clusters_api, ext_id, cluster_ext_id)
+    ext_id = module.params.get("ext_id")
+    resp = get_rackable_unit(module, api_instance, ext_id, cluster_ext_id)
     result["ext_id"] = ext_id
     result["response"] = strip_internal_attributes(resp.to_dict())
 
 
-def get_rackable_units(module, clusters_api, result):
+def get_rackable_units(module, api_instance, result):
     cluster_ext_id = module.params.get("cluster_ext_id")
+
     try:
-        resp = clusters_api.list_rackable_units_by_cluster_id(
-            clusterExtId=cluster_ext_id
+        resp = list_entities(
+            api_instance.list_rackable_units_by_cluster_id,
+            clusterExtId=cluster_ext_id,
         )
     except Exception as e:
         raise_api_exception(
@@ -182,10 +189,10 @@ def get_rackable_units(module, clusters_api, result):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
-    if not resp:
-        resp = []
-    result["response"] = resp
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    else:
+        result["response"] = []
 
 
 def run_module():
@@ -195,12 +202,12 @@ def run_module():
         skip_info_args=True,
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "response": None, "failed": False}
-    clusters_api = get_clusters_api_instance(module)
+    result = {"changed": False, "error": None, "response": None, "failed": False}
+    api_instance = get_clusters_api_instance(module)
     if module.params.get("ext_id"):
-        get_rackable_unit_by_ext_id(module, clusters_api, result)
+        get_rackable_unit_using_ext_id(module, api_instance, result)
     else:
-        get_rackable_units(module, clusters_api, result)
+        get_rackable_units(module, api_instance, result)
     module.exit_json(**result)
 
 
