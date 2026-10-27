@@ -1,0 +1,53 @@
+---
+# Summary:
+# 1. List all TaskEntity (affected entities) of a task.
+# 2. List all TaskEntity of the task with fetch_all.
+# 3. List TaskEntity of the task with a limit.
+# 4. List TaskEntity of the task with an OData filter on `rel`.
+#
+# TaskEntity in Prism v4 is the EntityReference model returned by
+# GET /api/prism/v4.3/config/tasks/{taskExtId}/affected-entities and describes
+# the entities (VM, image, subnet, VPC, ...) that a long-running async task
+# created, modified, or otherwise affected.
+
+- name: Nutanix Prism TaskEntity (task affected-entities) playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') }}"
+      nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default(9440, true) }}"
+      validate_certs: false
+  tasks:
+    - name: Set varaibles
+      ansible.builtin.set_fact:
+        demo_task_ext_id: "{{ 'ZXJnb24=:e38e02b7-d946-4069-8291-e9407e3a15d8' }}"
+
+    - name: List all TaskEntity (affected entities) of the task
+      nutanix.ncp.ntnx_task_entities_info_v2:
+        task_ext_id: "{{ demo_task_ext_id }}"
+      register: entities_all
+      ignore_errors: true
+
+    - name: List all TaskEntity of the task with fetch_all
+      nutanix.ncp.ntnx_task_entities_info_v2:
+        task_ext_id: "{{ demo_task_ext_id }}"
+        fetch_all: true
+      register: entities_fetch_all
+      ignore_errors: true
+
+    - name: List TaskEntity of the task with a limit
+      nutanix.ncp.ntnx_task_entities_info_v2:
+        task_ext_id: "{{ demo_task_ext_id }}"
+        limit: 1
+      register: entities_limited
+      ignore_errors: true
+
+    - name: List TaskEntity of the task filtered by rel (entity type)
+      nutanix.ncp.ntnx_task_entities_info_v2:
+        task_ext_id: "{{ demo_task_ext_id }}"
+        filter: "rel eq 'vmm:content:image'"
+      register: entities_filtered
+      ignore_errors: true

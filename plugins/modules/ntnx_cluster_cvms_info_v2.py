@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -11,34 +11,32 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_cluster_cvms_info_v2
-short_description: Fetch information about Controller VMs (CVMs) of a Nutanix cluster
+short_description: Fetch CVMs (Controller VMs) associated with a Nutanix cluster
 version_added: 2.7.0
 description:
-  - This module allows you to fetch information about CvmsbyClusterId in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific CvmsbyClusterId.
-  - If C(ext_id) is not provided, list multiple CvmsbyClusterId optionally filtered / paginated.
+  - This module allows you to fetch information about CVMs (Controller VMs) associated with a cluster in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch details of the specific CVM belonging to the given cluster.
+  - If C(ext_id) is not provided, list all CVMs of the cluster optionally filtered / paginated.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
-    This module requires the following Nutanix IAM roles to be assigned to the user
-    performing the operation.
+    This module requires the following Nutanix IAM roles to be assigned to the
+    user performing the operation.
   - >-
-    B(Get the list of CVMs of a cluster) -
-    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
-  - >-
-    B(Get CVM by ext_id) -
-    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
+    B(View Cluster Cvm) -
+    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin,
+    Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   cluster_ext_id:
     description:
-      - The external ID (UUID) of the cluster whose CVMs are to be fetched.
+      - External identifier (UUID) of the parent cluster whose CVMs should be fetched.
     type: str
     required: true
   ext_id:
     description:
-      - The external ID (UUID) of a specific CVM to fetch.
-      - When provided, only the matching CVM is returned.
+      - External identifier of a specific CVM in the given cluster.
+      - If provided, the module returns a single CVM; otherwise, it returns the list of CVMs for the cluster.
     type: str
     required: false
 extends_documentation_fragment:
@@ -47,51 +45,56 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_logger
   - nutanix.ncp.ntnx_proxy_v2
 author:
-  - Abhinav Bansal (@abhinavbansal29)
   - George Ghawali (@george-ghawali)
+  - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
+- name: Get CVM using ext_id
+  nutanix.ncp.ntnx_cluster_cvms_info_v2:
+    cluster_ext_id: "0006288e-4d5d-4364-0000-000000024e5f"
+    ext_id: "6a24ee94-8c26-4d10-9c60-6c67d4c47dc2"
+  register: result
+  ignore_errors: true
+
 - name: List all CVMs of a cluster
   nutanix.ncp.ntnx_cluster_cvms_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
-  register: result
-  ignore_errors: true
-
-- name: Fetch a specific CVM by external ID
-  nutanix.ncp.ntnx_cluster_cvms_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
-    ext_id: "1bfd91f2-1b8e-4c62-9d20-9b1c5e46d5a6"
-  register: result
-  ignore_errors: true
-
-- name: List CVMs of a cluster with limit
-  nutanix.ncp.ntnx_cluster_cvms_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
-    limit: 1
+    cluster_ext_id: "0006288e-4d5d-4364-0000-000000024e5f"
   register: result
   ignore_errors: true
 
 - name: List CVMs of a cluster with filter
   nutanix.ncp.ntnx_cluster_cvms_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
-    filter: "numVcpus eq 8"
+    cluster_ext_id: "0006288e-4d5d-4364-0000-000000024e5f"
+    filter: "startswith(name, 'NTNX-')"
+  register: result
+  ignore_errors: true
+
+- name: List CVMs of a cluster with limit
+  nutanix.ncp.ntnx_cluster_cvms_info_v2:
+    cluster_ext_id: "0006288e-4d5d-4364-0000-000000024e5f"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List CVMs of a cluster with ordering
+  nutanix.ncp.ntnx_cluster_cvms_info_v2:
+    cluster_ext_id: "0006288e-4d5d-4364-0000-000000024e5f"
+    orderby: "name desc"
+  register: result
+  ignore_errors: true
+
+- name: List CVMs of a cluster with selection
+  nutanix.ncp.ntnx_cluster_cvms_info_v2:
+    cluster_ext_id: "0006288e-4d5d-4364-0000-000000024e5f"
+    select: "name,extId,numVcpus,memorySizeBytes"
+  register: result
+  ignore_errors: true
+
+- name: List all CVMs of a cluster with fetch_all
+  nutanix.ncp.ntnx_cluster_cvms_info_v2:
+    cluster_ext_id: "0006288e-4d5d-4364-0000-000000024e5f"
+    fetch_all: true
   register: result
   ignore_errors: true
 """
@@ -99,9 +102,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC CvmsbyClusterId info v4 API.
-    - It can be a single CvmsbyClusterId if external ID is provided.
-    - List of multiple CvmsbyClusterId if external ID is not provided with optional filter or limit.
+    - The response from the Nutanix PC CVM info v4 API.
+    - It can be a single CVM if external ID is provided.
+    - List of multiple CVMs of the cluster if external ID is not provided with optional filter, limit, orderby, or select.
   returned: always
   type: dict
   sample:
@@ -126,40 +129,38 @@ response:
     }
 
 changed:
-  description: This indicates whether the info module resulted in any changes. Always false for info modules.
+  description: This indicates whether the task resulted in any changes. Always false for info modules.
   returned: always
   type: bool
   sample: false
 
 msg:
-  description: Status/error message returned by the module.
+  description: This indicates the message if any message occurred.
   returned: When there is an error
   type: str
   sample: "Api Exception raised while fetching CVMs info"
 
 error:
-  description: Error details when an API/SDK error is raised.
+  description: This field typically holds information about if the task have errors that occurred during the task execution.
   type: str
   returned: when an error occurs
 
 failed:
-  description: This field indicates whether the module failed.
+  description: This field typically holds information about if the task have failed.
   returned: always
   type: bool
   sample: false
 
 ext_id:
-  description:
-    - The external ID of the CVM, only when fetching by external ID.
+  description: External ID of the CVM (when requested via C(ext_id)).
   type: str
-  returned: when external ID is provided
+  returned: When external ID is provided
   sample: "f83f7ea6-4d56-5db6-8ebf-fb3157870d33"
 
 total_available_results:
-  description:
-    - The total number of CVMs available on the target cluster.
+  description: The total number of available CVMs for the cluster.
   type: int
-  returned: when all CVMs of the cluster are fetched
+  returned: When listing CVMs for a cluster
   sample: 1
 """
 
@@ -173,6 +174,7 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.helpers import get_cvm  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -182,33 +184,38 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
+
     module_args = dict(
         cluster_ext_id=dict(type="str", required=True),
         ext_id=dict(type="str"),
     )
+
     return module_args
 
 
-def get_cvm_by_ext_id(module, api_instance, result):
+def get_cvm_using_ext_id(module, api_instance, result):
     cluster_ext_id = module.params.get("cluster_ext_id")
     ext_id = module.params.get("ext_id")
-    resp = get_cvm(module, api_instance, cluster_ext_id, ext_id)
+    resp = get_cvm(module, api_instance, ext_id, cluster_ext_id)
     result["ext_id"] = ext_id
     result["response"] = strip_internal_attributes(resp.to_dict())
 
 
-def get_cvms_by_cluster_id(module, api_instance, result):
+def get_cvms(module, api_instance, result):
     cluster_ext_id = module.params.get("cluster_ext_id")
+
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
+
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating spec for fetching CVMs info", **result)
+        module.fail_json(msg="Failed generating CVMs info spec", **result)
 
-    resp = None
     try:
-        resp = api_instance.list_cvmsby_cluster_id(
-            clusterExtId=cluster_ext_id, **kwargs
+        resp = list_entities(
+            api_instance.list_cvmsby_cluster_id,
+            kwargs=kwargs,
+            clusterExtId=cluster_ext_id,
         )
     except Exception as e:
         raise_api_exception(
@@ -219,25 +226,27 @@ def get_cvms_by_cluster_id(module, api_instance, result):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
-    if not resp:
-        resp = []
-    result["response"] = resp
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    else:
+        result["response"] = []
 
 
 def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
-        mutually_exclusive=[("ext_id", "filter")],
+        mutually_exclusive=[
+            ("ext_id", "filter"),
+        ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "response": None, "failed": False}
+    result = {"changed": False, "error": None, "response": None, "failed": False}
     api_instance = get_cvms_api_instance(module)
     if module.params.get("ext_id"):
-        get_cvm_by_ext_id(module, api_instance, result)
+        get_cvm_using_ext_id(module, api_instance, result)
     else:
-        get_cvms_by_cluster_id(module, api_instance, result)
+        get_cvms(module, api_instance, result)
     module.exit_json(**result)
 
 
