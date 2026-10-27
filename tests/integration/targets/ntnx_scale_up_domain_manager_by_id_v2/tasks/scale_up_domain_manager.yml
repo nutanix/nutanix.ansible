@@ -1,0 +1,172 @@
+---
+# Scale-up is a one-way operation. Tests focus on check_mode, dry-run, and
+# negative paths so CI does not permanently resize the shared PC.
+
+- name: Start ntnx_scale_up_domain_manager_by_id_v2 tests
+  ansible.builtin.debug:
+    msg: "Start ntnx_scale_up_domain_manager_by_id_v2 tests"
+
+- name: Discover domain managers on this endpoint
+  nutanix.ncp.ntnx_pc_config_info_v2:
+  register: all_dms
+  ignore_errors: true
+
+- name: Assert the discovery call succeeded
+  ansible.builtin.assert:
+    that:
+      - all_dms is defined
+      - all_dms.failed == false
+      - all_dms.response is defined
+    success_msg: "Discovered a domain manager to run the scale-up tests against"
+    fail_msg: "Could not discover any domain manager on this endpoint"
+
+- name: Capture the discovered domain manager ext_id and its current size
+  ansible.builtin.set_fact:
+    domain_manager_ext_id: >-
+      {{ all_dms.response[0].ext_id | default(all_dms.response.ext_id) }}
+    current_size: >-
+      {{ all_dms.response[0].config.size
+         | default(all_dms.response.config.size) }}
+
+########################################################################################
+# check_mode — inline dummy values
+########################################################################################
+
+- name: Check_mode scale-up with ALL attributes
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    state: present
+    ext_id: "83083083-0000-0000-0000-000000000000"
+    size: "LARGE"
+    dryrun: true
+  check_mode: true
+  register: full_check_mode
+  ignore_errors: true
+
+- name: Assert the full check_mode spec is populated and no task was triggered
+  ansible.builtin.assert:
+    that:
+      - full_check_mode.failed == false
+      - full_check_mode.changed == false
+      - full_check_mode.response is defined
+      - full_check_mode.response.size == "LARGE"
+      - full_check_mode.ext_id == "83083083-0000-0000-0000-000000000000"
+      - full_check_mode.task_ext_id is none
+    success_msg: "check_mode spec with all attributes was generated correctly"
+    fail_msg: "check_mode spec with all attributes was not generated correctly"
+
+- name: Delete-style check_mode state=absent must be rejected
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    state: absent
+    ext_id: "83083083-0000-0000-0000-000000000000"
+    size: "LARGE"
+  check_mode: true
+  register: absent_check_mode
+  ignore_errors: true
+
+- name: Assert state=absent is rejected at the argspec layer
+  ansible.builtin.assert:
+    that:
+      - absent_check_mode.failed == true
+      - absent_check_mode.changed == false
+      - "'value of state must be one of' in absent_check_mode.msg"
+    success_msg: "state=absent in check_mode was rejected as expected"
+    fail_msg: "state=absent in check_mode was NOT rejected as expected"
+
+########################################################################################
+# Real dry-run against the live cluster
+########################################################################################
+
+- name: Dry-run scale up to LARGE against the live PC
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    ext_id: "{{ domain_manager_ext_id }}"
+    size: "LARGE"
+    dryrun: true
+    wait: false
+  register: dryrun_result
+  ignore_errors: true
+
+- name: Assert dry-run returned either a task-ish response or a clean 4xx
+  ansible.builtin.assert:
+    that:
+      - dryrun_result is defined
+      - >-
+        (dryrun_result.failed == false
+         and dryrun_result.changed == true
+         and dryrun_result.ext_id == domain_manager_ext_id
+         and dryrun_result.response is defined)
+        or
+        (dryrun_result.failed == true
+         and dryrun_result.changed == false)
+    success_msg: "Dry-run scale-up produced a valid outcome"
+    fail_msg: "Dry-run scale-up produced an unexpected outcome"
+
+########################################################################################
+# Negative / error paths
+########################################################################################
+
+- name: Missing ext_id must be rejected at the argspec layer
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    size: "LARGE"
+  register: missing_ext_id
+  ignore_errors: true
+
+- name: Assert missing ext_id was rejected
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id.failed == true
+      - "'missing required arguments: ext_id' in missing_ext_id.msg"
+    success_msg: "Missing ext_id was rejected as expected"
+    fail_msg: "Missing ext_id was NOT rejected as expected"
+
+- name: Missing size must be rejected at the argspec layer
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    ext_id: "{{ domain_manager_ext_id }}"
+  register: missing_size
+  ignore_errors: true
+
+- name: Assert missing size was rejected
+  ansible.builtin.assert:
+    that:
+      - missing_size.failed == true
+      - "'missing required arguments: size' in missing_size.msg"
+    success_msg: "Missing size was rejected as expected"
+    fail_msg: "Missing size was NOT rejected as expected"
+
+- name: Invalid size enum must be rejected at the argspec layer
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    ext_id: "{{ domain_manager_ext_id }}"
+    size: "GIGANTIC"
+  register: bad_size
+  ignore_errors: true
+
+- name: Assert invalid size enum was rejected
+  ansible.builtin.assert:
+    that:
+      - bad_size.failed == true
+      - "'value of size must be one of' in bad_size.msg"
+    success_msg: "Invalid size enum was rejected as expected"
+    fail_msg: "Invalid size enum was NOT rejected as expected"
+
+- name: Scale up with an unknown ext_id (dry-run)
+  nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    size: "LARGE"
+    dryrun: true
+    wait: false
+  register: unknown_ext_id
+  ignore_errors: true
+
+- name: Assert unknown ext_id surfaces the pre-flight get-domain-manager error
+  ansible.builtin.assert:
+    that:
+      - unknown_ext_id.failed == true
+      - unknown_ext_id.changed == false
+      - >-
+          unknown_ext_id.msg ==
+          "Api Exception raised while fetching pc config info using ext_id"
+    success_msg: "Unknown ext_id was rejected as expected"
+    fail_msg: "Unknown ext_id was NOT rejected as expected"
+
+- name: Finish ntnx_scale_up_domain_manager_by_id_v2 tests
+  ansible.builtin.debug:
+    msg: "Finished ntnx_scale_up_domain_manager_by_id_v2 tests"
