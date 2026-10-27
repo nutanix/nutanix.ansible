@@ -1,0 +1,50 @@
+---
+# Summary:
+# This playbook demonstrates how to manage the storage configuration of a Nutanix cluster
+# using the clustermgmt v4 API based modules. Storage configuration is a singleton
+# resource per cluster (identified by the cluster external ID); it supports only
+# Get and Update operations. There is NO create or delete operation for storage
+# configuration, so this playbook covers:
+#   1. Get the storage configuration of a cluster
+#   2. Update the storage configuration of a cluster
+#
+# NOTE: These modules talk to Prism Central (PC), not to FCVM/Foundation.
+
+- name: Storage Config playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_ext_id: "0006197f-3d06-ce49-1fc3-ac1f6b6029c1"
+
+    - name: Get storage configuration of a cluster
+      nutanix.ncp.ntnx_storage_config_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    # There is no create operation for storage configuration; it is a singleton
+    # per-cluster resource. The following task updates the existing configuration.
+    # NOTE: Enabling C(is_rebuild_reservation_enabled) is rejected by the platform
+    # when an RF1 storage container exists on the cluster, so it is left disabled here.
+    - name: Update storage configuration of a cluster
+      nutanix.ncp.ntnx_storage_config_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resilient_capacity_warning_threshold_percentage: 75
+        is_rebuild_reservation_enabled: false
+        is_rf1_enabled: false
+        storage_over_provisioning_caution_threshold: 3.0
+        is_delayed_maintenance_resiliency_enabled: true
+      register: result
+      ignore_errors: true
+
+    # There is no delete operation for storage configuration; a cluster always has
+    # a storage configuration that can only be updated, never removed.
