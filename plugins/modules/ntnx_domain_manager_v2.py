@@ -876,9 +876,7 @@ def get_module_spec():
     )
     config_spec = dict(
         should_enable_lockdown_mode=dict(type="bool"),
-        build_info=dict(
-            type="dict", options=build_info_spec, obj=prism_sdk.BuildInfo
-        ),
+        build_info=dict(type="dict", options=build_info_spec, obj=prism_sdk.BuildInfo),
         name=dict(type="str"),
         size=dict(
             type="str",
@@ -939,9 +937,7 @@ def get_module_spec():
         network_ext_id=dict(type="str", required=True),
     )
     http_proxy_spec = dict(
-        ip_address=dict(
-            type="dict", options=ip_address_spec, obj=prism_sdk.IPAddress
-        ),
+        ip_address=dict(type="dict", options=ip_address_spec, obj=prism_sdk.IPAddress),
         port=dict(type="int"),
         username=dict(type="str"),
         password=dict(type="str", no_log=True),
@@ -1060,9 +1056,7 @@ def update_domain_manager(module, result, api_instance):
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
-    if check_domain_manager_idempotency(
-        current_spec.to_dict(), update_spec.to_dict()
-    ):
+    if check_domain_manager_idempotency(current_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
