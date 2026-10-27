@@ -1,16 +1,16 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Power off a VM
-# 2. Power on a VM
-# 3. Install NGT in a VM
+# 1. Power off VM
+# 2. Power on VM
+# 3. Install NGT in VM
 # 4. Shutdown VM using acpi
-# 5. Shutdown VM using NGT
-# 6. Reboot VM using NGT
-# 7. Reboot VM using acpi
-# 8. Force power cycle VM
-# 9. Reset VM
-# 10. Get VM power state
+# 5. Shutdown VM using ngt
+# 6. Rebooting VM using ngt
+# 7. Rebooting VM using acpi
+# 8. Force power cycle
+# 9. Resetting VM
+# 10. Get VM power state (look for power state in result)
 
 - name: VM power actions playbook
   hosts: localhost
