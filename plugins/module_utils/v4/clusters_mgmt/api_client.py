@@ -158,10 +158,7 @@ def get_ssl_certificates_api_instance(module):
 
 def get_cvms_api_instance(module):
     """
-    This method will return CVMs api instance from sdk. The CVMs API is
-    used to drive rolling reconfiguration (vCPU/memory) of Controller VMs
-    inside a cluster (v4.2 clustermgmt).
-
+    This method will return CVMs api instance from sdk
     Args:
         module (AnsibleModule): AnsibleModule instance
     Returns:

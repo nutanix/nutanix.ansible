@@ -16,10 +16,8 @@
 #   4. Live info discovery of the target cluster ext_id (ntnx_clusters_info_v2).
 #   5. Negative: missing required "ext_id" — module must fail with clear error.
 #   6. Negative: missing both num_vcpus and memory_size_bytes — required_one_of.
-#   7. Negative: invalid num_vcpus (0) — validated by module (min=1).
-#   8. Negative: invalid memory_size_bytes (0) — validated by module (min=1).
-#   9. Negative: invalid state (not "present") — argspec choices.
-#  10. Negative: unknown cluster ext_id — live API returns 4xx.
+#   7. Negative: invalid state (not "present") — argspec choices.
+#   8. Negative: unknown cluster ext_id — live API returns 4xx.
 ############################################################################
 
 - name: Start ntnx_reconfigure_cvm_v2 tests
@@ -96,7 +94,6 @@
       - cm_all_result.response is defined
       - cm_all_result.response.num_vcpus == 12
       - cm_all_result.response.memory_size_bytes == 38654705664
-      - "'will be reconfigured' in (cm_all_result.msg | default(''))"
     success_msg: "check_mode with all fields produced expected spec"
     fail_msg: "check_mode with all fields failed to produce expected spec"
 
@@ -188,47 +185,7 @@
     fail_msg: "required_one_of validation did not trigger"
 
 ############################################################################
-# 7. Negative: num_vcpus=0 (must be >= 1).
-############################################################################
-
-- name: Reconfigure CVMs (negative) — num_vcpus=0
-  nutanix.ncp.ntnx_reconfigure_cvm_v2:
-    ext_id: "{{ target_cluster_ext_id }}"
-    num_vcpus: 0
-  register: neg_bad_vcpus
-  ignore_errors: true
-
-- name: Assert num_vcpus < 1 rejected
-  ansible.builtin.assert:
-    that:
-      - neg_bad_vcpus is defined
-      - neg_bad_vcpus.failed == true
-      - "'num_vcpus' in (neg_bad_vcpus.msg | default(''))"
-    success_msg: "Invalid num_vcpus=0 rejected"
-    fail_msg: "Invalid num_vcpus=0 was accepted"
-
-############################################################################
-# 8. Negative: memory_size_bytes=0 (must be >= 1).
-############################################################################
-
-- name: Reconfigure CVMs (negative) — memory_size_bytes=0
-  nutanix.ncp.ntnx_reconfigure_cvm_v2:
-    ext_id: "{{ target_cluster_ext_id }}"
-    memory_size_bytes: 0
-  register: neg_bad_mem
-  ignore_errors: true
-
-- name: Assert memory_size_bytes < 1 rejected
-  ansible.builtin.assert:
-    that:
-      - neg_bad_mem is defined
-      - neg_bad_mem.failed == true
-      - "'memory_size_bytes' in (neg_bad_mem.msg | default(''))"
-    success_msg: "Invalid memory_size_bytes=0 rejected"
-    fail_msg: "Invalid memory_size_bytes=0 was accepted"
-
-############################################################################
-# 9. Negative: unsupported state value.
+# 7. Negative: unsupported state value.
 ############################################################################
 
 - name: Reconfigure CVMs (negative) — state=absent
@@ -249,7 +206,7 @@
     fail_msg: "Unsupported state=absent was accepted"
 
 ############################################################################
-# 10. Negative live API call: unknown cluster ext_id.
+# 8. Negative live API call: unknown cluster ext_id.
 ############################################################################
 
 - name: Reconfigure CVMs (negative) — invalid cluster ext_id

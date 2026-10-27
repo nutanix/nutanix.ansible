@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -11,31 +11,28 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_reconfigure_cvm_v2
-short_description: Reconfigure Controller VMs (CVMs) of a cluster in Nutanix Prism Central
+short_description: Reconfigure CVMs (Controller VMs) of a Nutanix cluster
 version_added: 2.7.0
 description:
-  - Reconfigure the Controller Virtual Machines (CVMs) of a given cluster.
-  - This module drives a rolling change across every CVM of the target cluster to
-    adjust their vCPU count and/or memory size.
-  - Provide at least one of C(num_vcpus) and C(memory_size_bytes) — providing
-    both applies both changes in the same rolling operation.
-  - Modifying CVM vCPU is not supported through the Prism Central UI (as of AOS 7.5);
-    this module is the supported v4 API workflow.
+  - This module allows you to reconfigure CVMs (Controller VMs) within a Nutanix cluster from Prism Central.
+  - Reconfiguration is limited to updating vCPU count and memory allocation of the CVMs.
+  - The reconfigure operation is asynchronous and returns a task reference; the module waits for the task
+    to complete when C(wait) is set to true (default).
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
-    This module requires the following Nutanix IAM roles to be assigned to the user
-    performing the operation.
+    This module requires the following Nutanix IAM roles to be assigned to the
+    user performing the operation.
   - >-
-    B(Reconfigure CVMs of a cluster) -
+    B(Reconfigure Cluster Cvm) -
     Required Roles: Cluster Admin, Prism Admin, Super Admin
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   state:
     description:
       - State of the module.
-      - If C(state) is C(present), the module triggers the CVM reconfiguration action.
-      - Only C(present) is supported for this action module.
+      - If C(state) is C(present), the module reconfigures the CVMs of the given cluster.
+      - This module does not support C(absent) — CVMs cannot be deleted via this API.
     type: str
     choices:
       - present
@@ -43,22 +40,21 @@ options:
   ext_id:
     description:
       - External ID (UUID) of the cluster whose CVMs are to be reconfigured.
-      - Required for triggering the reconfigure CVMs action.
+      - Maps to the API path parameter C(clusterExtId).
     type: str
     required: true
   num_vcpus:
     description:
-      - The desired number of vCPUs to assign to every CVM in the cluster.
+      - Number of vCPUs assigned to the CVM.
       - Must be a positive integer (minimum 1).
-      - At least one of C(num_vcpus) and C(memory_size_bytes) must be provided.
+      - At least one of C(num_vcpus) or C(memory_size_bytes) MUST be provided.
     type: int
     required: false
   memory_size_bytes:
     description:
-      - The desired memory size, in B(bytes), for every CVM in the cluster.
+      - Memory for a given CVM in cluster, in bytes.
       - Must be a positive integer (minimum 1).
-      - For example, 36 GiB equals 36 * 1024 * 1024 * 1024 = 38654705664 bytes.
-      - At least one of C(num_vcpus) and C(memory_size_bytes) must be provided.
+      - At least one of C(num_vcpus) or C(memory_size_bytes) MUST be provided.
     type: int
     required: false
 extends_documentation_fragment:
@@ -72,37 +68,28 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Reconfigure CVMs of a cluster — change vCPU only
+- name: Reconfigure CVM vCPUs and memory
   nutanix.ncp.ntnx_reconfigure_cvm_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    ext_id: "0005f6f4-7b8c-11ee-8a0d-000000000000"
+    state: present
+    ext_id: "0006288e-4d5d-4364-0000-000000024e5f"
     num_vcpus: 12
+    memory_size_bytes: 34359738368
   register: result
   ignore_errors: true
 
-- name: Reconfigure CVMs of a cluster — change memory only (36 GiB)
+- name: Reconfigure only CVM vCPUs
   nutanix.ncp.ntnx_reconfigure_cvm_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    ext_id: "0005f6f4-7b8c-11ee-8a0d-000000000000"
-    memory_size_bytes: 38654705664
+    state: present
+    ext_id: "0006288e-4d5d-4364-0000-000000024e5f"
+    num_vcpus: 10
   register: result
   ignore_errors: true
 
-- name: Reconfigure CVMs of a cluster — change both vCPU and memory
+- name: Reconfigure only CVM memory
   nutanix.ncp.ntnx_reconfigure_cvm_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    ext_id: "0005f6f4-7b8c-11ee-8a0d-000000000000"
-    num_vcpus: 12
-    memory_size_bytes: 38654705664
+    state: present
+    ext_id: "0006288e-4d5d-4364-0000-000000024e5f"
+    memory_size_bytes: 42949672960
   register: result
   ignore_errors: true
 """
@@ -110,40 +97,39 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - Response for reconfiguring CVMs of the cluster.
-    - Task details if C(wait) is C(true) (the task terminal state is returned).
-    - Task reference (with task ext_id) if C(wait) is C(false).
+    - Response for reconfiguring CVMs within a cluster.
+    - Task details when C(wait) is true (task run to completion).
+    - Task reference details when C(wait) is false.
   returned: always
   type: dict
   sample:
     {
       "cluster_ext_ids": [
-        "0005f6f4-7b8c-11ee-8a0d-000000000000"
+        "0006288e-4d5d-4364-0000-000000024e5f"
       ],
-      "completed_time": "2026-07-20T13:24:11.524581+00:00",
+      "completed_time": "2026-07-20T12:45:32.524581+00:00",
       "completion_details": null,
-      "created_time": "2026-07-20T13:20:47.167906+00:00",
+      "created_time": "2026-07-20T12:44:47.167906+00:00",
       "entities_affected": [
         {
-          "ext_id": "0005f6f4-7b8c-11ee-8a0d-000000000000",
-          "name": null,
+          "ext_id": "0006288e-4d5d-4364-0000-000000024e5f",
           "rel": "clustermgmt:config:cluster"
         }
       ],
       "error_messages": null,
       "ext_id": "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1",
       "is_cancelable": false,
-      "last_updated_time": "2026-07-20T13:24:11.524581+00:00",
+      "last_updated_time": "2026-07-20T12:45:32.524581+00:00",
       "legacy_error_message": null,
       "operation": "ReconfigureCvms",
-      "operation_description": "Reconfigure CVMs of a cluster",
+      "operation_description": "Reconfigure CVMs",
       "owned_by": {
         "ext_id": "00000000-0000-0000-0000-000000000000",
         "name": "admin"
       },
       "parent_task": null,
       "progress_percentage": 100,
-      "started_time": "2026-07-20T13:20:47.185754+00:00",
+      "started_time": "2026-07-20T12:44:47.185754+00:00",
       "status": "SUCCEEDED",
       "sub_steps": null,
       "sub_tasks": null,
@@ -157,34 +143,35 @@ changed:
   sample: true
 
 msg:
-  description: This indicates the status/error message emitted by the module.
-  returned: When there is an error, or in check mode.
+  description: This indicates the message if any message occurred.
+  returned: When there is an error
   type: str
   sample: "Api Exception raised while reconfiguring CVMs"
 
 error:
-  description: This field typically holds information about errors that occurred during the task execution.
-  returned: When an error occurs
+  description: This field typically holds information about if the task have errors that occurred during the task execution.
+  returned: when an error occurs
   type: str
-  sample: "Failed generating spec for reconfiguring CVMs"
+  sample: "Not Found"
 
 failed:
-  description: This field typically holds information about whether the task failed.
+  description: This field typically holds information about if the task have failed.
   returned: always
   type: bool
   sample: false
 
 task_ext_id:
-  description: The external ID of the task triggered by the reconfigure CVMs action.
+  description: The external ID of the task.
   returned: always
   type: str
   sample: "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1"
 
 ext_id:
-  description: The external ID of the cluster whose CVMs were reconfigured.
+  description:
+    - The external ID of the cluster whose CVMs were reconfigured.
   returned: always
   type: str
-  sample: "0005f6f4-7b8c-11ee-8a0d-000000000000"
+  sample: "0006288e-4d5d-4364-0000-000000024e5f"
 """
 
 import traceback  # noqa: E402
@@ -209,9 +196,7 @@ try:
     import ntnx_clustermgmt_py_client as cluster_management_sdk  # noqa: E402
 except ImportError:
 
-    from ..module_utils.v4.sdk_mock import (  # noqa: E402
-        mock_sdk as cluster_management_sdk,
-    )
+    from ..module_utils.v4.sdk_mock import mock_sdk as cluster_management_sdk  # noqa: E402  # fmt: skip
 
     SDK_IMP_ERROR = traceback.format_exc()
 
@@ -229,42 +214,19 @@ def get_module_spec():
     return module_args
 
 
-def reconfigure_cvm(module, result, api_instance):
+def reconfigure_Cvm(module, result, api_instance):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-
-    if (
-        module.params.get("num_vcpus") is None
-        and module.params.get("memory_size_bytes") is None
-    ):
-        module.fail_json(
-            msg="At least one of 'num_vcpus' or 'memory_size_bytes' must be provided.",
-            **result,
-        )
-
-    for field in ("num_vcpus", "memory_size_bytes"):
-        value = module.params.get(field)
-        if value is not None and value < 1:
-            module.fail_json(
-                msg="Invalid value for '{0}': must be a positive integer (>= 1).".format(
-                    field
-                ),
-                **result,
-            )
 
     sg = SpecGenerator(module)
     default_spec = cluster_management_sdk.CvmReconfigurationSpec()
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating spec for reconfiguring CVMs", **result)
+        module.fail_json(msg="Failed generating CVM reconfiguration spec", **result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
-        result["msg"] = (
-            "CVMs of cluster with ext_id:{0} will be reconfigured "
-            "with the following spec.".format(ext_id)
-        )
         return
 
     resp = None
@@ -301,12 +263,15 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "error": None,
         "response": None,
+        "failed": False,
         "ext_id": None,
         "task_ext_id": None,
     }
+
     api_instance = get_cvms_api_instance(module)
-    reconfigure_cvm(module, result, api_instance)
+    reconfigure_Cvm(module, result, api_instance)
 
     module.exit_json(**result)
 

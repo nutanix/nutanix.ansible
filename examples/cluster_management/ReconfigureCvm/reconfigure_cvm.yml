@@ -23,23 +23,26 @@
       ansible.builtin.set_fact:
         cluster_ext_id: "0005f6f4-7b8c-11ee-8a0d-000000000000"
 
-    - name: Reconfigure CVMs — change both vCPU and memory (all fields)
+    - name: Reconfigure CVM vCPUs and memory
       nutanix.ncp.ntnx_reconfigure_cvm_v2:
+        state: present
         ext_id: "{{ cluster_ext_id }}"
         num_vcpus: 12
         memory_size_bytes: 38654705664
       register: reconfigure_all_result
       ignore_errors: true
 
-    - name: Reconfigure CVMs — change vCPU only
+    - name: Reconfigure only CVM vCPUs
       nutanix.ncp.ntnx_reconfigure_cvm_v2:
+        state: present
         ext_id: "{{ cluster_ext_id }}"
         num_vcpus: 10
       register: reconfigure_vcpus_result
       ignore_errors: true
 
-    - name: Reconfigure CVMs — change memory only (32 GiB)
+    - name: Reconfigure only CVM memory
       nutanix.ncp.ntnx_reconfigure_cvm_v2:
+        state: present
         ext_id: "{{ cluster_ext_id }}"
         memory_size_bytes: 34359738368
       register: reconfigure_memory_result
