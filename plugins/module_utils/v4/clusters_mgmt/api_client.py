@@ -1,4 +1,4 @@
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -154,6 +154,23 @@ def get_ssl_certificates_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.SSLCertificateApi(client)
+
+
+def get_vcenter_extensions_api_instance(module):
+    """
+    This method will return vCenter Extensions api instance from sdk.
+
+    The vCenter Extensions API is used to register or unregister the Nutanix
+    Prism vCenter Server extension for ESXi based clusters that are registered
+    to a Prism Central instance.
+
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        VcenterExtensionsApi: VcenterExtensionsApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.VcenterExtensionsApi(client)
 
 
 def get_disks_api_instance(module):
