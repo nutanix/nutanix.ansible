@@ -56,6 +56,11 @@ options:
     description:
       - An optional, longer text field (up to 1000 characters) to describe the network function's purpose.
     type: str
+  project_ext_id:
+    description:
+      - External ID (UUID) of the project that owns this network function.
+      - Update of this field is not supported.
+    type: str
   nic_pairs:
     description:
       - List of all NIC pairs part of this network function.
@@ -220,6 +225,26 @@ EXAMPLES = r"""
       success_threshold: 3
       failure_threshold: 3
 
+- name: Create network function owned by a specific project
+  nutanix.ncp.ntnx_network_function_v2:
+    state: present
+    nutanix_host: "{{ ip }}"
+    validate_certs: false
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    name: "project-scoped-network-function"
+    description: "Network function owned by a project"
+    project_ext_id: "79298789-1234-1111-2222-6788222f17b8"
+    high_availability_mode: ACTIVE_PASSIVE
+    failure_handling: FAIL_CLOSE
+    traffic_forwarding_mode: INLINE
+    nic_pairs:
+      - ingress_nic_reference: "a3265671-de53-41be-af9b-f06241b95356"
+        egress_nic_reference: "b4376782-ef64-52cf-bg0c-g17352ca6467"
+        vm_reference: "c5487893-fg75-63dg-ch1d-h28463db7578"
+        is_enabled: true
+  register: result
+
 - name: Create network function with VTAP traffic forwarding mode and ACTIVE_PASSIVE HA
   nutanix.ncp.ntnx_network_function_v2:
     state: present
@@ -308,6 +333,7 @@ response:
           "project_reference_id": null,
         },
       "name": "network_function_ansible_test_mcFntnPsLwEi_1",
+      "project_ext_id": "79298789-1234-1111-2222-6788222f17b8",
       "nic_pairs":
         [
           {
@@ -388,6 +414,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
     validate_required_params,
 )
@@ -432,6 +459,7 @@ def get_module_spec():
         ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
+        project_ext_id=dict(type="str"),
         nic_pairs=dict(
             type="list",
             elements="dict",
@@ -497,6 +525,14 @@ def create_network_function(module, result, network_functions):
             resp = get_network_function(module, network_functions, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Network Function"
+                ),
+                msg="Failed to get entity ext_id from task for Network Function",
+            )
 
     result["changed"] = True
 
@@ -538,6 +574,10 @@ def update_network_function(module, result, network_functions):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating network function update spec", **result)
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
