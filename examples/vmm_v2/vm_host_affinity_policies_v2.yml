@@ -92,19 +92,11 @@
       register: result
       ignore_errors: true
 
-    - name: Print compliance result
-      ansible.builtin.debug:
-        var: compliance_result
-
     - name: List VM-host affinity policy compliance states with limit
       nutanix.ncp.ntnx_vm_host_affinity_policy_compliance_info_v2:
         ext_id: "{{ policy_ext_id }}"
         limit: 1
       register: compliance_limit_result
-
-    - name: Print compliance limit result
-      ansible.builtin.debug:
-        var: compliance_limit_result
 
     ################################################################################
     # Update operation
