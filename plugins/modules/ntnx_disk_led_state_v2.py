@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -26,14 +26,15 @@ notes:
     This module requires the following Nutanix IAM roles to be assigned to the user
     performing the operation.
   - >-
-    B(Update Disk LED state) -
-    Required Roles: Prism Admin, Super Admin, Cluster Admin
+    B(Update LED State Disk) -
+    Required Roles: Prism Admin, Prism Viewer, Project Manager, Super Admin,
+    Self-Service Admin (deprecated)
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   state:
     description:
-      - State of the module.
-      - Only C(present) is supported — this is an action-only module.
+      - state is not supported for this module.
+      - It will always be present.
     type: str
     choices:
       - present
@@ -64,10 +65,6 @@ author:
 EXAMPLES = r"""
 - name: Turn ON the LED of a disk to locate it in the chassis
   nutanix.ncp.ntnx_disk_led_state_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     ext_id: "5a2b0e5c-4a2b-4c9b-8d5a-2f0e0e3b9a11"
     is_engaged: true
   register: result
@@ -75,10 +72,6 @@ EXAMPLES = r"""
 
 - name: Turn OFF the LED of a disk after maintenance
   nutanix.ncp.ntnx_disk_led_state_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     ext_id: "5a2b0e5c-4a2b-4c9b-8d5a-2f0e0e3b9a11"
     is_engaged: false
   register: result
@@ -126,7 +119,7 @@ response:
       },
       "parent_task": null,
       "progress_percentage": 100,
-      "projectExtId": "00000000-0000-0000-0000-000000000000",
+      "project_ext_id": "00000000-0000-0000-0000-000000000000",
       "resource_links": null,
       "root_task": null,
       "started_time": "2026-07-20T13:14:43.933314+00:00",
@@ -154,7 +147,7 @@ error:
       occurred during the task execution.
   returned: when an error occurs
   type: str
-  sample: "Failed to get etag for Disk"
+  sample: "Failed generating disk LED state update spec"
 
 failed:
   description: This field typically holds information about if the task have failed.
@@ -184,7 +177,9 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_disks_api_instance,
+    get_etag,
 )
+from ..module_utils.v4.clusters_mgmt.helpers import get_disk  # noqa: E402
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
@@ -197,13 +192,10 @@ try:
     import ntnx_clustermgmt_py_client as cluster_management_sdk  # noqa: E402
 except ImportError:
 
-    from ..module_utils.v4.sdk_mock import (  # noqa: E402
-        mock_sdk as cluster_management_sdk,
-    )
+    from ..module_utils.v4.sdk_mock import mock_sdk as cluster_management_sdk  # noqa: E402  # fmt: skip
 
     SDK_IMP_ERROR = traceback.format_exc()
 
-# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
@@ -216,20 +208,18 @@ def get_module_spec():
     return module_args
 
 
-def update_disk_led_state(module, disks_api, result):
-    """Trigger the Disk LED state update action.
+def update_disk_led_state(module, result, api_instance):
+    """Update the LED state of an existing Disk.
 
-    This is an action-only operation (no CRUD idempotency): the API always
-    submits a task, and the caller is expected to poll via C(wait).
-
-    The Cluster Management v4 ``$actions/update-led-state`` endpoint is a
-    plain POST that does not require an ``If-Match`` header, so this
-    module intentionally does NOT perform a preflight
-    ``get_disk_by_id`` — invalid ``ext_id`` values fall through to the
-    action call and surface as a descriptive API error.
+    The GET Disk API does not expose the current LED state, so an
+    idempotency check cannot be based on it. The module verifies the
+    target Disk exists via GET-by-ext_id and forwards the desired LED
+    state to the platform.
     """
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+
+    current_disk = get_disk(module, api_instance, ext_id)
 
     sg = SpecGenerator(module)
     default_spec = cluster_management_sdk.LEDStateUpdationSpec()
@@ -242,9 +232,14 @@ def update_disk_led_state(module, disks_api, result):
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
+    etag = get_etag(data=current_disk)
+    kwargs = {}
+    if etag:
+        kwargs["if_match"] = etag
+
     resp = None
     try:
-        resp = disks_api.update_disk_led_state(extId=ext_id, body=spec)
+        resp = api_instance.update_disk_led_state(extId=ext_id, body=spec, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -275,12 +270,13 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "failed": False,
         "response": None,
         "ext_id": None,
         "task_ext_id": None,
     }
-    disks_api = get_disks_api_instance(module)
-    update_disk_led_state(module, disks_api, result)
+    api_instance = get_disks_api_instance(module)
+    update_disk_led_state(module, result, api_instance)
     module.exit_json(**result)
 
 

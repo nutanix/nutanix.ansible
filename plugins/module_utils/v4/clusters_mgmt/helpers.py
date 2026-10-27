@@ -184,9 +184,6 @@ def get_cluster_profile(module, api_instance, ext_id):
 def get_disk(module, api_instance, ext_id):
     """
     This method will return Disk info using external ID.
-
-    Used by disk-related modules (e.g. the ``update-led-state`` action) to
-    fetch the current Disk representation from the cluster management v4 API.
     Args:
         module: Ansible module
         api_instance: DisksApi instance from sdk
@@ -200,9 +197,7 @@ def get_disk(module, api_instance, ext_id):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while fetching Disk info using ext_id: {0}".format(
-                ext_id
-            ),
+            msg="Api Exception raised while fetching Disk info using ext_id",
         )
 
 

@@ -187,12 +187,7 @@ def get_vcenter_extensions_api_instance(module):
 
 def get_disks_api_instance(module):
     """
-    This method will return disks api instance from sdk.
-
-    The DisksApi exposes the cluster-scoped Disk endpoints under
-    ``/api/clustermgmt/v4.x/config/disks`` — including the
-    ``$actions/update-led-state`` action used to identify a physical disk
-    via its chassis LED.
+    This method will return disks api instance from sdk
     Args:
         module (AnsibleModule): AnsibleModule instance
     Returns:
