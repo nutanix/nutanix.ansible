@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -102,7 +102,7 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The list of VMs for the specified VM startup policy with their compliance states.
+    - The list of VM Compliance States for the specified VM startup policy.
   type: list
   returned: always
   sample:
@@ -148,9 +148,9 @@ failed:
 
 total_available_results:
   description:
-    - The total number of available VMs for the specified VM startup policy.
+    - The total number of available VM Compliance States for the specified VM startup policy.
   type: int
-  returned: when all VMs for the specified VM startup policy are fetched
+  returned: when all VM Compliance States for the specified VM startup policy are fetched
   sample: 10
 """
 
