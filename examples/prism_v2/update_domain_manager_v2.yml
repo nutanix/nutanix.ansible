@@ -21,7 +21,7 @@
         domain_manager_ext_id: "cfddac63-ffdb-4d9c-9a8c-54abf89ce234"
 
     - name: Update Prism Central name
-      nutanix.ncp.ntnx_domain_manager_v2:
+      nutanix.ncp.ntnx_update_domain_manager_v2:
         ext_id: "{{ domain_manager_ext_id }}"
         config:
           name: "PC_ansible_updated"
@@ -30,7 +30,7 @@
       ignore_errors: true
 
     - name: Update Prism Central VIP
-      nutanix.ncp.ntnx_domain_manager_v2:
+      nutanix.ncp.ntnx_update_domain_manager_v2:
         ext_id: "{{ domain_manager_ext_id }}"
         config: {}
         network:

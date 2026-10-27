@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_domain_manager_v2
+module: ntnx_update_domain_manager_v2
 short_description: Update a Domain Manager (Prism Central) entity
 version_added: "2.7.0"
 description:
@@ -697,7 +697,7 @@ author:
 
 EXAMPLES = r"""
 - name: Update Prism Central name
-  nutanix.ncp.ntnx_domain_manager_v2:
+  nutanix.ncp.ntnx_update_domain_manager_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -709,7 +709,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Update Prism Central VIP (IPv4)
-  nutanix.ncp.ntnx_domain_manager_v2:
+  nutanix.ncp.ntnx_update_domain_manager_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -724,7 +724,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Dry-run domain manager update
-  nutanix.ncp.ntnx_domain_manager_v2:
+  nutanix.ncp.ntnx_update_domain_manager_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -1019,7 +1019,7 @@ def get_module_spec():
             required=True,
         ),
         hosting_cluster_ext_id=dict(type="str"),
-        should_enable_high_availability=dict(type="bool"),
+        should_enable_high_availability=dict(type="bool", default=False),
         dryrun=dict(type="bool"),
     )
     return module_args

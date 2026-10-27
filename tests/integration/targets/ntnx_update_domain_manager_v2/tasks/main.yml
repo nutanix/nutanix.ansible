@@ -10,5 +10,5 @@
       nutanix_debug: "{{ nutanix_debug | default(omit) }}"
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
   block:
-    - name: Import domain_manager.yml
-      ansible.builtin.import_tasks: domain_manager.yml
+    - name: Import update_domain_manager.yml
+      ansible.builtin.import_tasks: update_domain_manager.yml

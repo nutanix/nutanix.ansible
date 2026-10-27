@@ -1,7 +1,7 @@
 ---
-- name: Start ntnx_domain_manager_v2 tests
+- name: Start ntnx_update_domain_manager_v2 tests
   ansible.builtin.debug:
-    msg: "Start ntnx_domain_manager_v2 tests"
+    msg: "Start ntnx_update_domain_manager_v2 tests"
 
 ########################################################################################
 # Discover the domain manager (PC) ext_id
@@ -32,7 +32,7 @@
 ########################################################################################
 
 - name: Update domain manager name with check mode enabled
-  nutanix.ncp.ntnx_domain_manager_v2:
+  nutanix.ncp.ntnx_update_domain_manager_v2:
     ext_id: "83083083-0000-0000-0000-000000000000"
     config:
       name: "PC_check_mode_name"
@@ -52,7 +52,7 @@
     fail_msg: "check_mode update spec was not generated correctly"
 
 - name: Update domain manager network with check mode enabled
-  nutanix.ncp.ntnx_domain_manager_v2:
+  nutanix.ncp.ntnx_update_domain_manager_v2:
     ext_id: "83083083-0000-0000-0000-000000000000"
     config: {}
     network:
@@ -78,7 +78,7 @@
 ########################################################################################
 
 - name: Missing ext_id must be rejected
-  nutanix.ncp.ntnx_domain_manager_v2:
+  nutanix.ncp.ntnx_update_domain_manager_v2:
     config:
       name: "PC_missing_ext_id"
     network: {}
@@ -95,7 +95,7 @@
     fail_msg: "Missing ext_id was NOT rejected as expected"
 
 - name: state=absent must be rejected
-  nutanix.ncp.ntnx_domain_manager_v2:
+  nutanix.ncp.ntnx_update_domain_manager_v2:
     state: absent
     ext_id: "{{ domain_manager_ext_id }}"
     config: {}
@@ -122,7 +122,7 @@
   ignore_errors: true
 
 - name: Idempotent update with the current name
-  nutanix.ncp.ntnx_domain_manager_v2:
+  nutanix.ncp.ntnx_update_domain_manager_v2:
     ext_id: "{{ domain_manager_ext_id }}"
     config:
       name: "{{ current_dm.response.config.name }}"
@@ -146,6 +146,6 @@
     fail_msg: "Idempotent update did not skip as expected"
   when: idempotent_result is defined
 
-- name: Finish ntnx_domain_manager_v2 tests
+- name: Finish ntnx_update_domain_manager_v2 tests
   ansible.builtin.debug:
-    msg: "Finished ntnx_domain_manager_v2 tests"
+    msg: "Finished ntnx_update_domain_manager_v2 tests"
