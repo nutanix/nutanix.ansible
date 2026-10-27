@@ -1,0 +1,70 @@
+---
+# Summary:
+# This playbook will do:
+# 1. List all portfolio products on the PC
+# 2. List all portfolio products with fetch_all
+# 3. Get a single product by ext_id
+# 4. List products with an OData filter expression
+# 5. Enable the product
+# 6. Disable the product
+
+- name: Nutanix Prism Central Product playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ pc_ip | default('10.44.76.28') }}"
+      nutanix_username: "{{ pc_username | default('admin') }}"
+      nutanix_password: "{{ pc_password | default('Nutanix.123') }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        domain_manager_ext_id: "cae459ec-08db-475e-a5e5-151e390c9484"
+        product_ext_id: "0081eaf6-527b-44a0-4fe9-60ee067c0e82"
+        product_name: "product_name"
+
+    - name: List all portfolio products on the PC
+      nutanix.ncp.ntnx_products_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+      register: all_products
+      ignore_errors: true
+
+    - name: List all portfolio products with fetch_all
+      nutanix.ncp.ntnx_products_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        fetch_all: true
+      register: all_products_fetch_all
+      ignore_errors: true
+
+    - name: Get a single product by ext_id
+      nutanix.ncp.ntnx_products_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        ext_id: "{{ product_ext_id }}"
+      register: product_by_id
+      ignore_errors: true
+
+    - name: List products with an OData filter expression
+      nutanix.ncp.ntnx_products_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        filter: "name eq {{ product_name }}"
+      register: filtered_products
+      ignore_errors: true
+
+    - name: Enable the product
+      nutanix.ncp.ntnx_product_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        ext_id: "{{ product_ext_id }}"
+        enablement_state: "ENABLED"
+        name: "{{ product_name }}"
+      register: enable_result
+      ignore_errors: true
+
+    - name: Disable the product
+      nutanix.ncp.ntnx_product_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        ext_id: "{{ product_ext_id }}"
+        enablement_state: "DISABLED"
+        name: "{{ product_name }}"
+      register: disable_result
+      ignore_errors: true
