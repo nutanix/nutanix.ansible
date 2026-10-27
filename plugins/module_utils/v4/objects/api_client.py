@@ -99,3 +99,15 @@ def get_objects_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_objects_py_client.ObjectStoresApi(api_client)
+
+
+def get_objects_stats_api_instance(module):
+    """
+    This method will return api instance to be used for object store stats api calls.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): StatsApi instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_objects_py_client.StatsApi(api_client)

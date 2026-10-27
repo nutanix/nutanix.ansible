@@ -34,6 +34,7 @@
         control_plane_virtual_ip: <control_plane_virtual_ip>
 
     #############################
+
     - name: Create  DEV cluster with Flannel network provider
       nutanix.ncp.ntnx_karbon_clusters:
         cluster:
