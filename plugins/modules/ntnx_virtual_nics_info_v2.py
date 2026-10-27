@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,38 +12,28 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_virtual_nics_info_v2
 short_description: Fetch virtual NICs info in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to fetch information about VirtualNic in Nutanix Prism Central.
   - If C(ext_id) is provided, fetch details of the specific VirtualNic on the given host.
   - If C(ext_id) is not provided, list multiple VirtualNic on the given host optionally
     filtered / paginated using C(filter), C(limit), C(page), C(orderby) and C(select).
-  - Virtual NICs are the AHV / hypervisor level network interfaces attached to a Nutanix
-    cluster host (for example br0, vnet0). They are read-only entities exposed by the
-    V4 clustermgmt API.
   - This module uses PC v4 APIs based SDKs.
 notes:
-    - >-
-      This module requires the following Nutanix IAM roles to be assigned to the user
-      performing the operation.
-    - >-
-      B(Get virtual NIC by ext_id) -
-      Required Roles: Cluster Admin, Cluster Viewer, Network Infra Admin,
-      Prism Admin, Prism Viewer, Super Admin
-    - >-
-      B(List Virtual NICs on a host) -
-      Required Roles: Cluster Admin, Cluster Viewer, Network Infra Admin,
-      Prism Admin, Prism Viewer, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
+  - >-
+    This module requires the following Nutanix IAM roles to be assigned to the
+    user performing the operation.
+  - >-
+    B(View Cluster Host Virtual Nic) -
+    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin,
+    Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   ext_id:
     description:
       - The external ID (UUID) of the virtual NIC.
-      - When provided, C(cluster_ext_id) and C(host_ext_id) are also required and the
-        specific virtual NIC is fetched via
-        GET /clusters/{clusterExtId}/hosts/{hostExtId}/virtual-nics/{extId}.
-      - When omitted, all virtual NICs on the given host are listed via
-        GET /clusters/{clusterExtId}/hosts/{hostExtId}/virtual-nics.
+      - If provided, the module returns a single virtual NIC; otherwise, it returns
+        the list of virtual NICs for the given host.
     type: str
     required: false
   cluster_ext_id:
@@ -71,56 +61,67 @@ author:
 EXAMPLES = r"""
 - name: Get a specific virtual NIC by external ID
   nutanix.ncp.ntnx_virtual_nics_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
     host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
     ext_id: "7bea69e9-684c-4736-7805-d658ee17c1b6"
   register: result
+  ignore_errors: true
 
 - name: List all virtual NICs on a host
   nutanix.ncp.ntnx_virtual_nics_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
     host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
   register: result
+  ignore_errors: true
 
-- name: List virtual NICs with limit and pagination
+- name: List virtual NICs with filter
   nutanix.ncp.ntnx_virtual_nics_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
-    host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
-    limit: 5
-    page: 0
-  register: result
-
-- name: List virtual NICs filtered by name
-  nutanix.ncp.ntnx_virtual_nics_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
     host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
     filter: "name eq 'br0'"
   register: result
+  ignore_errors: true
+
+- name: List virtual NICs with limit
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+    host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
+    limit: 5
+  register: result
+  ignore_errors: true
+
+- name: List virtual NICs with ordering
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+    host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
+    orderby: "name desc"
+  register: result
+  ignore_errors: true
+
+- name: List virtual NICs with selection
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+    host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
+    select: "name,extId,macAddress"
+  register: result
+  ignore_errors: true
+
+- name: List all virtual NICs on a host with fetch_all
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+    host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
+    fetch_all: true
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
 response:
   description:
     - The response from the Nutanix PC VirtualNic info v4 API.
-    - It is a single VirtualNic dict if C(ext_id) is provided.
-    - It is a list of VirtualNic dicts if C(ext_id) is not provided (optionally
-      filtered / paginated by C(filter), C(limit), C(page), C(orderby), C(select)).
+    - It can be a single VirtualNic if external ID is provided.
+    - List of multiple VirtualNic on the host if external ID is not provided with
+      optional filter, limit, orderby, or select.
   returned: always
   type: dict
   sample:
@@ -149,20 +150,6 @@ response:
         "vlan_id": 0
     }
 
-ext_id:
-  description:
-    - The external ID of the virtual NIC (only returned when C(ext_id) input was provided).
-  returned: when external ID is provided
-  type: str
-  sample: "7bea69e9-684c-4736-7805-d658ee17c1b6"
-
-total_available_results:
-  description:
-    - The total number of virtual NICs available for the queried host in PC.
-  returned: when all virtual NICs are fetched (list operation)
-  type: int
-  sample: 4
-
 changed:
   description: This indicates whether the task resulted in any changes. Always false for info modules.
   returned: always
@@ -176,21 +163,30 @@ msg:
   sample: "Api Exception raised while fetching virtual NICs info"
 
 error:
-  description: This field typically holds information about errors during task execution.
-  returned: When an error occurs
+  description: This field typically holds information about if the task have errors that occurred during the task execution.
   type: str
+  returned: when an error occurs
 
 failed:
-  description: This field typically holds information about whether the task has failed.
+  description: This field typically holds information about if the task have failed.
   returned: always
   type: bool
   sample: false
+
+ext_id:
+  description: External ID of the virtual NIC (when requested via C(ext_id)).
+  type: str
+  returned: When external ID is provided
+  sample: "7bea69e9-684c-4736-7805-d658ee17c1b6"
+
+total_available_results:
+  description: The total number of available virtual NICs for the host.
+  type: int
+  returned: When listing virtual NICs for a host
+  sample: 4
 """
 
-import traceback  # noqa: E402
 import warnings  # noqa: E402
-
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
@@ -200,20 +196,10 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.helpers import get_virtual_nic  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
-
-SDK_IMP_ERROR = None
-try:
-    import ntnx_clustermgmt_py_client as cluster_management_sdk  # noqa: E402, F401
-except ImportError:
-
-    from ..module_utils.v4.sdk_mock import (  # noqa: E402, F401
-        mock_sdk as cluster_management_sdk,
-    )
-
-    SDK_IMP_ERROR = traceback.format_exc()
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -250,10 +236,11 @@ def get_virtual_nics(module, api_instance, result):
     host_ext_id = module.params.get("host_ext_id")
 
     try:
-        resp = api_instance.list_virtual_nics_by_host_id(
+        resp = list_entities(
+            api_instance.list_virtual_nics_by_host_id,
+            kwargs=kwargs,
             clusterExtId=cluster_ext_id,
             hostExtId=host_ext_id,
-            **kwargs,
         )
     except Exception as e:
         raise_api_exception(
@@ -264,10 +251,10 @@ def get_virtual_nics(module, api_instance, result):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
-    if not resp:
-        resp = []
-    result["response"] = resp
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    else:
+        result["response"] = []
 
 
 def run_module():
@@ -278,14 +265,8 @@ def run_module():
             ("ext_id", "filter"),
         ],
     )
-    if SDK_IMP_ERROR:
-        module.fail_json(
-            msg=missing_required_lib("ntnx_clustermgmt_py_client"),
-            exception=SDK_IMP_ERROR,
-        )
-
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "response": None, "failed": False}
+    result = {"changed": False, "error": None, "response": None, "failed": False}
     api_instance = get_clusters_api_instance(module)
     if module.params.get("ext_id"):
         get_virtual_nic_using_ext_id(module, api_instance, result)

@@ -184,9 +184,6 @@ def get_cluster_profile(module, api_instance, ext_id):
 def get_virtual_nic(module, api_instance, ext_id, cluster_ext_id, host_ext_id):
     """
     This method will return virtual NIC info using external ID.
-    A virtual NIC lives inside a host, which itself lives inside a
-    cluster — so the SDK requires the full (cluster, host, nic) triple.
-
     Args:
         module: Ansible module
         api_instance: ClustersApi instance from sdk
