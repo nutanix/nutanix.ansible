@@ -43,6 +43,11 @@ options:
       - A URL query parameter that specifies the total number of records returned in the result set.
     type: int
     required: false
+  read_timeout:
+    description: Read timeout in milliseconds for API calls.
+    type: int
+    required: false
+    default: 30000
   fetch_all:
     description:
       - When C(true), paginate through the list API until all available entities are returned.
