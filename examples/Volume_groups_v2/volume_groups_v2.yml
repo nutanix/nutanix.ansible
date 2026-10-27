@@ -4,7 +4,8 @@
 # 1. Create Volume group
 # 2. Fetch above created VG
 # 3. Fetch all VGs using filters
-# 4. Delete Volume group
+# 4. List all volume groups with fetch_all
+# 5. Delete Volume group
 
 - name: Volume groups playbook
   hosts: localhost
@@ -21,11 +22,13 @@
         vg_name: "vg1"
         cluster_reference: "00057b8b-1b1b-1b1b-1b1b-1b1b1b1b1b1b1"
         vg1_uuid: "d1b1b3b1-1b1b-1b1b-1b1b-1b1b1b1b1b1b"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
 
     - name: Create Volume group
       nutanix.ncp.ntnx_volume_groups_v2:
         name: "{{ vg_name }}"
         description: "Volume group description"
+        project_ext_id: "{{ project_ext_id }}"
         should_load_balance_vm_attachments: true
         sharing_status: "SHARED"
         target_prefix: "vg1"
@@ -49,6 +52,12 @@
     - name: Fetch all VGs using filters
       nutanix.ncp.ntnx_volume_groups_info_v2:
         filter: "startswith(name, '{{ name }}')"
+      register: result
+      ignore_errors: true
+
+    - name: List all volume groups with fetch_all
+      nutanix.ncp.ntnx_volume_groups_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 

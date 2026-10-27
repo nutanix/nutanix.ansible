@@ -1,9 +1,7 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Deploy an object store with one worker node using update operation
-# 2. Delete the bucket in the object store
-# 3. Delete the object store
+# 1. Deploy the object store which failed in create operation
 # Note: You can use the update operation to deploy an object store that has failed, so that it will be redeployed again with the same specifications.
 
 - name: Update objects playbook
