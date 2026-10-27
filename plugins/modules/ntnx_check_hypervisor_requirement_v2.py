@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -14,80 +14,81 @@ module: ntnx_check_hypervisor_requirement_v2
 short_description: Check whether a hypervisor ISO upload is required before expanding a Nutanix cluster
 version_added: 2.7.0
 description:
-    - Trigger the Nutanix Prism Central v4 cluster management action
-      B(check-hypervisor-requirements) against a target cluster.
-    - Given the list of nodes that are being considered for cluster expansion, the API
+    - This module allows you to check whether a hypervisor ISO upload is required
+      before expanding a Nutanix cluster.
+    - Given a list of nodes being considered for cluster expansion, the API
       evaluates whether the target cluster needs a hypervisor bundle (ISO / tar.gz)
       to be uploaded prior to imaging and adding those nodes.
-    - The API is asynchronous. A C(TaskReference) is returned immediately and the
-      module (when C(wait=true)) polls the task and fetches the hypervisor upload
-      information via C(fetchTaskResponse) with response type C(HYPERVISOR_UPLOAD_INFO).
-    - This module wraps the C(POST /api/clustermgmt/v4.2/config/clusters/{clusterExtId}/$actions/check-hypervisor-requirements)
-      endpoint of the C(ntnx_clustermgmt_py_client) SDK.
+    - The API is asynchronous. When C(wait) is true, the module polls the task and
+      fetches hypervisor upload information via C(fetchTaskResponse) with response
+      type C(HYPERVISOR_UPLOAD_INFO).
     - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user
       performing the operation.
     - >-
-      B(Get hypervisor ISO upload information) -
-      Required Roles: Cluster Admin, Super Admin, Prism Admin, Internal Super Admin,
-      Self-Service Admin (deprecated), Project Manager.
+      B(Check Cluster Hypervisor Requirements) -
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer,
+      Project Manager, Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Fetch Task Response) -
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer,
+      Project Manager, Super Admin, Self-Service Admin (deprecated)
     - This API is not supported for the C(XEN) hypervisor type.
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
     state:
         description:
             - State of the module.
-            - Only C(present) is supported for this action module. Setting any other
-              value causes the module to fail.
+            - If state is present, the module will check hypervisor requirements.
+            - If state is not present, the module will fail.
         type: str
         choices:
             - present
         default: present
     cluster_ext_id:
         description:
-            - External ID (UUID) of the target cluster on which the
-              C(check-hypervisor-requirements) action is invoked.
+            - External ID of the cluster on which the check-hypervisor-requirements
+              action is invoked.
         type: str
         required: true
     node_list:
         description:
-            - List of node details for which the hypervisor upload requirement should
-              be evaluated. Each item describes a single incoming node being
-              considered for expansion.
+            - List of node details for checking whether hypervisor ISO upload is
+              required or not.
         type: list
         elements: dict
         required: true
         suboptions:
             node_uuid:
                 description:
-                    - UUID of the host / node.
+                    - UUID of the host.
                 type: str
             hypervisor_version:
                 description:
-                    - Host / hypervisor version currently reported by the node.
+                    - Host version of the node.
                 type: str
             nos_version:
                 description:
-                    - NOS (AOS) software version of the node.
+                    - NOS software version of a node.
                 type: str
             model:
                 description:
-                    - Rackable unit model type of the node.
+                    - Rackable unit model type.
                 type: str
             block_id:
                 description:
-                    - Rackable unit ID (block) that the node belongs to.
+                    - Rackable unit Id in which node resides.
                 type: str
             is_light_compute:
                 description:
-                    - Indicates whether the node is a light compute node or not.
+                    - Indicates whether the node is light compute or not.
                 type: bool
             hypervisor_type:
                 description:
-                    - Hypervisor type reported by the node. The API is not supported
-                      for the C(XEN) hypervisor.
+                    - Hypervisor type of the node.
+                    - This API is not supported for the C(XEN) hypervisor type.
                 type: str
                 choices:
                     - AHV
@@ -97,16 +98,15 @@ options:
                     - NATIVEHOST
             is_robo_mixed_hypervisor:
                 description:
-                    - Indicates whether the node is part of a ROBO deployment with a
-                      mixed hypervisor.
+                    - Indicates whether the hypervisor is robo mixed or not.
                 type: bool
             is_minimum_compute_node:
                 description:
-                    - Indicates whether the node is a minimum-compute node.
+                    - Indicates if node is minimum compute or not.
                 type: bool
             luks_status:
                 description:
-                    - LUKS encryption status reported by the node.
+                    - LUKS encryption status of the node.
                 type: str
                 choices:
                     - NON_LUKS
@@ -126,10 +126,6 @@ author:
 EXAMPLES = r"""
 - name: Check hypervisor requirements for an incoming AHV node
   nutanix.ncp.ntnx_check_hypervisor_requirement_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     cluster_ext_id: "000628e4-4c8f-1239-5575-0cc47a9a3e6d"
     node_list:
       - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
@@ -143,12 +139,23 @@ EXAMPLES = r"""
         is_minimum_compute_node: false
         luks_status: "NON_LUKS"
   register: result
+  ignore_errors: true
+
+- name: Check hypervisor requirements without waiting for task completion
+  nutanix.ncp.ntnx_check_hypervisor_requirement_v2:
+    cluster_ext_id: "000628e4-4c8f-1239-5575-0cc47a9a3e6d"
+    wait: false
+    node_list:
+      - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
+        hypervisor_type: "AHV"
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
 response:
     description:
-        - Response for the C(check-hypervisor-requirements) action.
+        - Response for the check-hypervisor-requirements action.
         - When C(wait) is C(true), this contains the resolved task response
           (from C(fetchTaskResponse) with C(taskResponseType=HYPERVISOR_UPLOAD_INFO))
           describing, for each node, whether a hypervisor bundle upload is required.
@@ -197,11 +204,9 @@ msg:
     sample: "Api Exception raised while checking hypervisor requirements"
 
 error:
-    description:
-        - This field typically holds information about if the task have errors that
-          occurred during the task execution.
-    returned: when an error occurs
+    description: Error message if an error occurs.
     type: str
+    returned: when an error occurs
     sample: "Failed generating spec for checking hypervisor requirements"
 
 failed:
@@ -242,12 +247,10 @@ from ..module_utils.v4.utils import (  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
-    import ntnx_clustermgmt_py_client as cluster_management_sdk  # noqa: E402
+    import ntnx_clustermgmt_py_client as clustermgmt_sdk  # noqa: E402
 except ImportError:
 
-    from ..module_utils.v4.sdk_mock import (  # noqa: E402
-        mock_sdk as cluster_management_sdk,
-    )
+    from ..module_utils.v4.sdk_mock import mock_sdk as clustermgmt_sdk  # noqa: E402
 
     SDK_IMP_ERROR = traceback.format_exc()
 
@@ -266,14 +269,14 @@ def get_module_spec():
         hypervisor_type=dict(
             type="str",
             choices=["AHV", "ESX", "HYPERV", "XEN", "NATIVEHOST"],
-            obj=cluster_management_sdk.HypervisorType,
+            obj=clustermgmt_sdk.HypervisorType,
         ),
         is_robo_mixed_hypervisor=dict(type="bool"),
         is_minimum_compute_node=dict(type="bool"),
         luks_status=dict(
             type="str",
             choices=["NON_LUKS", "LUKS", "PARTIAL_LUKS", "UNKNOWN_LUKS"],
-            obj=cluster_management_sdk.NodeLuksStatus,
+            obj=clustermgmt_sdk.NodeLuksStatus,
         ),
     )
 
@@ -285,7 +288,7 @@ def get_module_spec():
             elements="dict",
             required=True,
             options=node_list_spec,
-            obj=cluster_management_sdk.HypervisorUploadNodeListItem,
+            obj=clustermgmt_sdk.HypervisorUploadNodeListItem,
         ),
     )
 
@@ -293,16 +296,11 @@ def get_module_spec():
 
 
 def check_hypervisor_requirements(module, api_instance, result):
-    """
-    Invoke the CheckHypervisorRequirements action on the target cluster and,
-    when running with wait=True, poll the resulting task and fetch the hypervisor
-    upload information via fetch_task_response(HYPERVISOR_UPLOAD_INFO).
-    """
     cluster_ext_id = module.params.get("cluster_ext_id")
     result["ext_id"] = cluster_ext_id
 
     sg = SpecGenerator(module)
-    default_spec = cluster_management_sdk.HypervisorUploadParam()
+    default_spec = clustermgmt_sdk.HypervisorUploadParam()
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
@@ -332,23 +330,13 @@ def check_hypervisor_requirements(module, api_instance, result):
 
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
-        fetch_task_ext_id = task_ext_id
-        # The fetch_task_response endpoint expects the task ext_id WITHOUT the
-        # base64-encoded service prefix (`ergon:...`); strip it if present.
-        if ":" in fetch_task_ext_id:
-            fetch_task_ext_id = fetch_task_ext_id.split(":")[1]
-        try:
-            task_response = api_instance.fetch_task_response(
-                extId=fetch_task_ext_id,
-                taskResponseType="HYPERVISOR_UPLOAD_INFO",
-            )
-        except Exception as e:
-            raise_api_exception(
-                module=module,
-                exception=e,
-                msg="Api Exception raised while fetching hypervisor upload information",
-            )
-        result["response"] = strip_internal_attributes(task_response.data.to_dict())
+        if ":" in task_ext_id:
+            task_ext_id = task_ext_id.split(":")[1]
+        task_status = api_instance.fetch_task_response(
+            extId=task_ext_id,
+            taskResponseType="HYPERVISOR_UPLOAD_INFO",
+        )
+        result["response"] = strip_internal_attributes(task_status.data.to_dict())
 
 
 def run_module():
@@ -365,6 +353,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "error": None,
         "response": None,
         "ext_id": None,
         "task_ext_id": None,
