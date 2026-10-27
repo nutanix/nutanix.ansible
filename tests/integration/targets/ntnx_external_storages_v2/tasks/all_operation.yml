@@ -334,7 +334,10 @@
 - name: Report real create outcome
   ansible.builtin.debug:
     msg: >-
-      Real external storage create {{ 'succeeded' if (real_create_result.changed | default(false)) else 'did not create an entity (expected without a live third-party storage backend)' }}.
+      Real external storage create
+      {{ 'succeeded' if (real_create_result.changed | default(false))
+         else 'did not create an entity
+         (expected without a live third-party storage backend)' }}.
 
 - name: Verify real create returns a well-formed result either way
   ansible.builtin.assert:
