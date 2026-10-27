@@ -112,6 +112,29 @@ def get_ssl_certificates(module, api_instance, ext_id):
         )
 
 
+def get_cvm(module, api_instance, ext_id, cluster_ext_id):
+    """
+    This method will return CVM info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: CvmsApi instance from sdk
+        ext_id (str): CVM external ID
+        cluster_ext_id (str): parent cluster external ID
+    return:
+        cvm info (object): CVM info
+    """
+    try:
+        return api_instance.get_cvm_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching CVM info using ext_id",
+        )
+
+
 def get_vcenter_extension(module, api_instance, ext_id):
     """
     Fetch vCenter server extension information for the given ext_id.

@@ -267,6 +267,8 @@ action_groups:
     - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_cluster_cvm_v2
+    - ntnx_cluster_cvms_info_v2
     - ntnx_vcenter_extension_v2
     - ntnx_vcenter_extensions_info_v2
     - ntnx_lcm_bundle_v2
