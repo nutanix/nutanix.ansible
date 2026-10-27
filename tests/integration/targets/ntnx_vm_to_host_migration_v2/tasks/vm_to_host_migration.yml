@@ -36,7 +36,7 @@
           cm_result.response.host.ext_id ==
           "83083083-0000-0000-0000-000000000002"
       - cm_result.ext_id == "83083083-0000-0000-0000-000000000001"
-      - cm_result.task_ext_id is none
+      - cm_result.task_ext_id is not defined
     fail_msg: >-
       check_mode dry-run for VM to host migration failed
     success_msg: >-

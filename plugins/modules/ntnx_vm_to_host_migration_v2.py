@@ -23,8 +23,8 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Host to host VM migration) -
-      Required Roles: Account Owner, Administrator, User, Consumer, Developer, Operator, Prism Admin, Project Admin,
-      Project Manager, Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin,
+      Project Manager, Self-Service Admin (deprecated), Super Admin, User, Virtual Machine Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     state:
@@ -139,14 +139,14 @@ changed:
     returned: always
     sample: true
 error:
-    description: This indicates the error if any error occurred.
+    description: This indicates the error message if any error occurred
     type: str
     returned: when an error occurs
     sample: "Failed to get etag for VM"
 msg:
     description: This indicates the message if any message occurred
     type: str
-    returned: When there is an error, module is idempotent or check mode
+    returned: When there is an error
     sample: "Api Exception raised while migrating VM to host"
 failed:
     description: This indicates whether the task failed
@@ -258,11 +258,9 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
-        "ext_id": None,
-        "task_ext_id": None,
         "failed": False,
+        "ext_id": None,
     }
 
     api_instance = get_vm_api_instance(module)
