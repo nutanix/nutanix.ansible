@@ -7,9 +7,12 @@
 # 4. List all VM host affinity policies with fetch_all
 # 5. List all VM host affinity policies with filter
 # 6. List all VM host affinity policies with limit
-# 7. Update VM host affinity policy
-# 8. Re-enforce VM host affinity policy
-# 9. Delete VM host affinity policy
+# 7. List VM-host affinity policy compliance states
+# 8. List all VM host affinity policy compliance with fetch_all
+# 9. List VM-host affinity policy compliance states with limit
+# 10. Update VM host affinity policy
+# 11. Re-enforce VM host affinity policy
+# 12. Delete VM host affinity policy
 
 - name: VM host affinity policy CRUD playbook
   hosts: localhost
@@ -76,6 +79,32 @@
       nutanix.ncp.ntnx_vm_host_affinity_policies_info_v2:
         limit: 1
       register: limit_result
+
+    - name: List VM-host affinity policy compliance states
+      nutanix.ncp.ntnx_vm_host_affinity_policy_compliance_info_v2:
+        ext_id: "{{ policy_ext_id }}"
+      register: compliance_result
+
+    - name: List all VM host affinity policy compliance with fetch_all
+      nutanix.ncp.ntnx_vm_host_affinity_policy_compliance_info_v2:
+        ext_id: "{{ policy_ext_id }}"
+        fetch_all: true
+      register: result
+      ignore_errors: true
+
+    - name: Print compliance result
+      ansible.builtin.debug:
+        var: compliance_result
+
+    - name: List VM-host affinity policy compliance states with limit
+      nutanix.ncp.ntnx_vm_host_affinity_policy_compliance_info_v2:
+        ext_id: "{{ policy_ext_id }}"
+        limit: 1
+      register: compliance_limit_result
+
+    - name: Print compliance limit result
+      ansible.builtin.debug:
+        var: compliance_limit_result
 
     ################################################################################
     # Update operation

@@ -297,3 +297,4 @@ action_groups:
     - ntnx_content_repository_sync_v2
     - ntnx_content_repository_items_info_v2
     - ntnx_images_migrate_v2
+    - ntnx_vm_host_affinity_policy_compliance_info_v2
