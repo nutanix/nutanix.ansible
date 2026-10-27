@@ -161,6 +161,8 @@ action_groups:
     - ntnx_directory_service_search_v2
     - ntnx_saml_identity_providers_v2
     - ntnx_saml_identity_providers_info_v2
+    - ntnx_saml_sp_metadata_info_v2
+    - ntnx_saml_identity_providers_sp_metadata_download_v2
     - ntnx_user_groups_v2
     - ntnx_user_groups_info_v2
     - ntnx_users_v2
@@ -187,13 +189,18 @@ action_groups:
     - ntnx_recovery_point_replicate_v2
     - ntnx_gpus_v2
     - ntnx_gpus_info_v2
+    - ntnx_pcie_devices_info_v2
+    - ntnx_gpu_profiles_info_v2
     - ntnx_clusters_nodes_v2
     - ntnx_nodes_network_info_v2
     - ntnx_pc_registration_v2
     - ntnx_discover_unconfigured_nodes_v2
+    - ntnx_check_hypervisor_requirement_v2
     - ntnx_storage_containers_stats_v2
     - ntnx_storage_containers_info_v2
     - ntnx_storage_containers_v2
+    - ntnx_storage_config_v2
+    - ntnx_storage_config_info_v2
     - ntnx_pc_unregistration_v2
     - ntnx_pc_backup_target_info_v2
     - ntnx_pc_backup_target_v2
@@ -260,6 +267,10 @@ action_groups:
     - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_cluster_cvm_v2
+    - ntnx_cluster_cvms_info_v2
+    - ntnx_vcenter_extension_v2
+    - ntnx_vcenter_extensions_info_v2
     - ntnx_lcm_bundle_v2
     - ntnx_lcm_bundles_info_v2
     - ntnx_snmp_user_v2
@@ -298,3 +309,21 @@ action_groups:
     - ntnx_content_repository_items_info_v2
     - ntnx_images_migrate_v2
     - ntnx_vm_startup_policy_vm_compliance_states_info_v2
+    - ntnx_import_image_v2
+    - ntnx_vm_host_affinity_policy_compliance_info_v2
+    - ntnx_certificate_auth_provider_v2
+    - ntnx_certificate_auth_providers_info_v2
+    - ntnx_registered_clients_info_v2
+    - ntnx_user_password_v2
+    - ntnx_iam_welcome_banner_v2
+    - ntnx_iam_welcome_banner_info_v2
+    - ntnx_user_state_v2
+    - ntnx_login_providers_info_v2
+    - ntnx_role_membership_summary_info_v2
+    - ntnx_batch_v2
+    - ntnx_batches_info_v2
+    - ntnx_task_jobs_info_v2
+    - ntnx_task_entities_info_v2
+    - ntnx_registrations_info_v2
+    - ntnx_update_domain_manager_v2
+    - ntnx_scale_up_domain_manager_by_id_v2
