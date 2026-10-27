@@ -98,6 +98,27 @@ def get_restore_point(
         )
 
 
+def get_category(module, api_instance, ext_id, expand=None):
+    """
+    This method will return category info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: CategoriesApi instance from ntnx_prism_py_client sdk
+        ext_id (str): category external ID
+        expand (str): optional query param to expand the response with more details
+    return:
+        category_info (object): category info
+    """
+    try:
+        return api_instance.get_category_by_id(extId=ext_id, _expand=expand).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching category info using ext_id",
+        )
+
+
 def get_pc_task(
     module,
     api_instance,
@@ -119,4 +140,101 @@ def get_pc_task(
             module=module,
             exception=e,
             msg="Api Exception raised while fetching pc task info using ext_id",
+        )
+
+
+def get_product(module, api_instance, ext_id, domain_manager_ext_id):
+    """
+    This method will return product info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: DomainManagerApi instance from ntnx_prism_py_client sdk
+        ext_id (str): product external ID
+        domain_manager_ext_id (str): the external identifier of the domain
+            manager (Prism Central) that owns the product
+    return:
+        product_info (object): product info
+    """
+    try:
+        return api_instance.get_product_by_id(
+            domainManagerExtId=domain_manager_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching product info using ext_id",
+        )
+
+
+def get_batch(module, api_instance, ext_id):
+    """
+    Fetch a single Batch entity by external ID.
+
+    Args:
+        module: Ansible module.
+        api_instance: BatchesApi instance from ntnx_prism_py_client sdk.
+        ext_id (str): Batch external ID.
+
+    Returns:
+        object: The Batch entity returned by the SDK.
+    """
+    try:
+        return api_instance.get_batch_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching batch info using ext_id",
+        )
+
+
+def get_task_job(
+    module,
+    api_instance,
+    task_ext_id,
+    ext_id,
+):
+    """
+    Fetch a single job that belongs to a Prism Central task.
+
+    Args:
+        module: Ansible module
+        api_instance: TasksApi instance from ntnx_prism_py_client sdk
+        task_ext_id (str): external ID of the parent task
+        ext_id (str): external ID of the job to fetch
+    return:
+        task_job_info (object): task job info
+    """
+    try:
+        return api_instance.get_task_job_by_id(taskExtId=task_ext_id, extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching task job info using task_ext_id and ext_id",
+        )
+
+
+def get_registration(module, api_instance, domain_manager_ext_id, ext_id):
+    """
+    This method will return the details of a single registration for the
+    given domain manager (Prism Central) using the registration external ID.
+    Args:
+        module: Ansible module
+        api_instance: RegistrationApi instance from ntnx_prism_py_client sdk
+        domain_manager_ext_id (str): external ID of the domain manager (PC)
+        ext_id (str): external ID of the registration
+    return:
+        registration (object): registration object
+    """
+    try:
+        return api_instance.get_registration_by_id(
+            domainManagerExtId=domain_manager_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching registration info using ext_id and domain_manager_ext_id",
         )
