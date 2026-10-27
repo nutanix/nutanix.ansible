@@ -188,8 +188,8 @@ def get_virtual_nic(module, api_instance, ext_id, cluster_ext_id, host_ext_id):
         module: Ansible module
         api_instance: ClustersApi instance from sdk
         ext_id (str): virtual NIC external ID
-        cluster_ext_id (str): cluster external ID (Prism Element cluster UUID)
-        host_ext_id (str): host external ID
+        cluster_ext_id (str): parent cluster external ID
+        host_ext_id (str): parent host external ID
     return:
         virtual NIC info (object): virtual NIC info
     """
