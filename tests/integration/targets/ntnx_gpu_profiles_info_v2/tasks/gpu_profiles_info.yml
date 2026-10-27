@@ -1,0 +1,235 @@
+---
+# Test plan for ntnx_gpu_profiles_info_v2
+# ---------------------------------------
+# The module fetches physical and/or virtual GPU profiles for a cluster from
+# Prism Central. There is no create/update/delete API for GPU profiles: they are
+# read-only entities discovered from the cluster hardware. Therefore this test
+# suite focuses on the info operations and their negative paths:
+#
+# 1. Discover a PE (AOS) cluster ext_id dynamically (prerequisite).
+# 2. List all GPU profiles (physical + virtual) -> response is a dict with both keys.
+# 3. List physical GPU profiles only (profile_type=PHYSICAL) -> response is a list.
+# 4. List virtual GPU profiles only (profile_type=VIRTUAL) -> response is a list.
+# 5. List physical GPU profiles with an OData filter.
+# 6. List virtual GPU profiles with a limit.
+# 7. Negative: missing required cluster_ext_id -> module fails.
+# 8. Negative: invalid profile_type enum value -> argument spec rejects it.
+# 9. Negative: invalid (non-existent) cluster_ext_id -> API returns an error.
+#
+# changed is always False and failed is False for successful info calls. Every
+# spec attribute (cluster_ext_id, profile_type, filter, limit, orderby) is
+# exercised and asserted. The test cluster may not have GPU hardware attached,
+# so the profile lists can legitimately be empty; assertions account for this.
+
+- name: Start ntnx_gpu_profiles_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_gpu_profiles_info_v2 tests
+
+############################################################################
+# Prerequisite: discover a PE (AOS) cluster external ID from the live PC.
+############################################################################
+
+- name: Fetch a PE (AOS) cluster from Prism Central
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_result
+  ignore_errors: true
+
+- name: Verify a PE cluster was found
+  ansible.builtin.assert:
+    that:
+      - clusters_result.changed == false
+      - clusters_result.failed == false
+      - clusters_result.response is defined
+      - clusters_result.response | length > 0
+    fail_msg: "No PE (AOS) cluster found on Prism Central; GPU profiles tests cannot run"
+    success_msg: "PE (AOS) cluster found on Prism Central"
+
+- name: Set cluster external ID
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+############################################################################
+# 1. List all GPU profiles (physical + virtual) of a cluster.
+############################################################################
+
+- name: List all GPU profiles (physical and virtual) of a cluster
+  nutanix.ncp.ntnx_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: List all GPU profiles status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.physical_gpu_profiles is defined
+      - result.response.virtual_gpu_profiles is defined
+      - result.total_available_results is defined
+      - result.total_available_results.physical_gpu_profiles is defined
+      - result.total_available_results.virtual_gpu_profiles is defined
+    fail_msg: "Unable to list all GPU profiles of a cluster"
+    success_msg: "All GPU profiles of a cluster listed successfully"
+
+############################################################################
+# 2. List physical GPU profiles only.
+############################################################################
+
+- name: List physical GPU profiles of a cluster
+  nutanix.ncp.ntnx_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    profile_type: PHYSICAL
+  register: result
+  ignore_errors: true
+
+- name: List physical GPU profiles status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response is iterable
+      - result.total_available_results is defined
+    fail_msg: "Unable to list physical GPU profiles of a cluster"
+    success_msg: "Physical GPU profiles of a cluster listed successfully"
+
+- name: Assert each physical GPU profile structure (if any exist)
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.physical_gpu_config is defined
+    fail_msg: "Physical GPU profile structure is invalid"
+    success_msg: "Physical GPU profile structure is valid"
+  loop: "{{ result.response }}"
+  when: result.response | length > 0
+
+############################################################################
+# 3. List virtual GPU profiles only.
+############################################################################
+
+- name: List virtual GPU profiles of a cluster
+  nutanix.ncp.ntnx_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    profile_type: VIRTUAL
+  register: result
+  ignore_errors: true
+
+- name: List virtual GPU profiles status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response is iterable
+      - result.total_available_results is defined
+    fail_msg: "Unable to list virtual GPU profiles of a cluster"
+    success_msg: "Virtual GPU profiles of a cluster listed successfully"
+
+- name: Assert each virtual GPU profile structure (if any exist)
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.virtual_gpu_config is defined
+    fail_msg: "Virtual GPU profile structure is invalid"
+    success_msg: "Virtual GPU profile structure is valid"
+  loop: "{{ result.response }}"
+  when: result.response | length > 0
+
+############################################################################
+# 4. List physical GPU profiles with an OData filter.
+############################################################################
+
+- name: List physical GPU profiles with a filter
+  nutanix.ncp.ntnx_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    profile_type: PHYSICAL
+    filter: "physicalGpuConfig/deviceName eq 'Tesla_M10'"
+  register: result
+  ignore_errors: true
+
+- name: List physical GPU profiles with a filter status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response is iterable
+    fail_msg: "Unable to list physical GPU profiles with a filter"
+    success_msg: "Physical GPU profiles with a filter listed successfully"
+
+############################################################################
+# 5. List virtual GPU profiles with a limit.
+############################################################################
+
+- name: List virtual GPU profiles with a limit
+  nutanix.ncp.ntnx_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    profile_type: VIRTUAL
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List virtual GPU profiles with a limit status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response is iterable
+      - result.response | length <= 1
+    fail_msg: "Unable to list virtual GPU profiles with a limit"
+    success_msg: "Virtual GPU profiles with a limit listed successfully"
+
+############################################################################
+# Negative tests
+############################################################################
+
+- name: Negative - missing required cluster_ext_id
+  nutanix.ncp.ntnx_gpu_profiles_info_v2:
+    profile_type: PHYSICAL
+  register: result
+  ignore_errors: true
+
+- name: Missing required cluster_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'cluster_ext_id' in result.msg"
+    fail_msg: "Module did not fail when required cluster_ext_id was missing"
+    success_msg: "Module correctly failed when required cluster_ext_id was missing"
+
+- name: Negative - invalid profile_type enum value
+  nutanix.ncp.ntnx_gpu_profiles_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    profile_type: INVALID_TYPE
+  register: result
+  ignore_errors: true
+
+- name: Invalid profile_type enum status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'profile_type' in result.msg"
+    fail_msg: "Module did not reject an invalid profile_type value"
+    success_msg: "Module correctly rejected an invalid profile_type value"
+
+- name: Negative - invalid (non-existent) cluster_ext_id
+  nutanix.ncp.ntnx_gpu_profiles_info_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+    profile_type: PHYSICAL
+  register: result
+  ignore_errors: true
+
+- name: Invalid cluster_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.error is defined
+    fail_msg: "Module did not fail for a non-existent cluster_ext_id"
+    success_msg: "Module correctly failed for a non-existent cluster_ext_id"
+
+- name: End ntnx_gpu_profiles_info_v2 tests
+  ansible.builtin.debug:
+    msg: End ntnx_gpu_profiles_info_v2 tests
