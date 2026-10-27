@@ -5,6 +5,7 @@
 # 2. Fetch a specific PCIe device using ext_id
 # 3. List PCIe devices with a filter
 # 4. List PCIe devices with a limit
+# 5. List all PCIe devices with fetch_all
 #
 # Note: PcieDevices is an info-only (read-only) entity. The PCIe devices are
 # discovered from the AHV hosts of the registered clusters and are fetched
@@ -47,5 +48,11 @@
     - name: List PCIe devices with a limit
       nutanix.ncp.ntnx_pcie_devices_info_v2:
         limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: List all PCIe devices with fetch_all
+      nutanix.ncp.ntnx_pcie_devices_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true

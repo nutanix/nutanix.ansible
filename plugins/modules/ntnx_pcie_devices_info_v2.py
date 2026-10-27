@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -65,6 +65,12 @@ EXAMPLES = r"""
 - name: List PCIe devices with a limit
   nutanix.ncp.ntnx_pcie_devices_info_v2:
     limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List all PCIe devices with fetch_all
+  nutanix.ncp.ntnx_pcie_devices_info_v2:
+    fetch_all: true
   register: result
   ignore_errors: true
 """
@@ -145,6 +151,7 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -173,7 +180,10 @@ def get_pcie_device_using_ext_id(module, pcie_devices, result):
     kwargs["_filter"] = "extId eq '{0}'".format(ext_id)
 
     try:
-        resp = pcie_devices.list_pcie_devices(**kwargs)
+        resp = list_entities(
+            pcie_devices.list_pcie_devices,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -200,7 +210,10 @@ def get_pcie_devices(module, pcie_devices, result):
         module.fail_json(msg="Failed generating PCIe devices info spec", **result)
 
     try:
-        resp = pcie_devices.list_pcie_devices(**kwargs)
+        resp = list_entities(
+            pcie_devices.list_pcie_devices,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

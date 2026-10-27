@@ -11,11 +11,12 @@
 #   1. List all PCIe devices          -> changed=false, failed=false, response is a list,
 #                                        total_available_results is populated.
 #   2. List with limit                -> response length is bounded by the limit.
-#   3. Fetch a single device by ext_id -> single dict response, ext_id is echoed back.
+#   3. List with fetch_all            -> response length equals total_available_results.
+#   4. Fetch a single device by ext_id -> single dict response, ext_id is echoed back.
 #      (only when the cluster actually has PCIe devices)
-#   4. List with filter on extId       -> exactly one device matching the ext_id.
-#   5. Fetch with a non-existent ext_id -> graceful "not found" handling.
-#   6. Mutually exclusive ext_id + filter -> module rejects the combination.
+#   5. List with filter on extId       -> exactly one device matching the ext_id.
+#   6. Fetch with a non-existent ext_id -> graceful "not found" handling.
+#   7. Mutually exclusive ext_id + filter -> module rejects the combination.
 ############################################################################################
 
 - name: Start ntnx_pcie_devices_info_v2 tests
@@ -68,6 +69,28 @@
       - result.response | length <= 1
     success_msg: "List PCIe devices with limit passed"
     fail_msg: "List PCIe devices with limit failed"
+
+############################################################################################
+# List all PCIe devices with fetch_all
+############################################################################################
+
+- name: List all PCIe devices with fetch_all
+  nutanix.ncp.ntnx_pcie_devices_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_pcie_devices_info_v2
+  ignore_errors: true
+
+- name: List all PCIe devices with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_pcie_devices_info_v2.changed == false
+      - fetch_all_ntnx_pcie_devices_info_v2.failed == false
+      - fetch_all_ntnx_pcie_devices_info_v2.response is defined
+      - fetch_all_ntnx_pcie_devices_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_pcie_devices_info_v2.response | default([]) | length) ==
+        (fetch_all_ntnx_pcie_devices_info_v2.total_available_results | int)
+    success_msg: "Listed all PCIe devices with fetch_all successfully"
+    fail_msg: "Unable to list all PCIe devices with fetch_all"
 
 ############################################################################################
 # Fetch a single PCIe device using ext_id (only when devices exist on the cluster)
