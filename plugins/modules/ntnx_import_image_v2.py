@@ -21,7 +21,7 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Import images from Prism Element) -
-      Required Roles: Prism Admin, Project Manager, Super Admin, Virtual Machine Admin,
+      Required Roles: Prism Admin, Project Admin, Project Manager, Super Admin, Virtual Machine Admin,
       Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
@@ -45,6 +45,11 @@ options:
         type: list
         elements: str
         required: true
+    project_ext_id:
+        description:
+            - External identifier of the Project associated with the image.
+        type: str
+        required: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -65,6 +70,7 @@ EXAMPLES = r"""
     cluster_ext_id: "44cb13ea-4039-4952-a90a-65f808493637"
     images_ext_ids:
       - "b9c1e191-8237-4be9-986d-3a547c3c946c"
+    project_ext_id: "6d3bf69e-7f2c-40c3-9db8-c52f9f81a0d2"
   register: result
 """
 
@@ -108,8 +114,8 @@ changed:
     sample: true
 
 ext_id:
-    description: The external ID of the first imported image.
-    returned: when the import task completes and at least one image is imported
+    description: The external ID of the imported image.
+    returned: always
     type: str
     sample: "9d4bf6f4-0e8f-4f6c-93a7-70e12b95a8b1"
 
@@ -118,15 +124,6 @@ cluster_ext_id:
     returned: always
     type: str
     sample: "44cb13ea-4039-4952-a90a-65f808493637"
-
-imported_image_ext_ids:
-    description:
-        - The list of external IDs of images imported into Prism Central by this import task.
-    returned: when the import task completes and at least one image is imported
-    type: list
-    elements: str
-    sample:
-        - "9d4bf6f4-0e8f-4f6c-93a7-70e12b95a8b1"
 
 task_ext_id:
     description: The external ID of the task.
@@ -147,7 +144,7 @@ failed:
 
 msg:
     description: This indicates the message if any message occurred
-    returned: When there is an error or in check mode operation
+    returned: When there is an error
     type: str
     sample: "Api Exception raised while importing images from Prism Element"
 """
@@ -184,20 +181,9 @@ def get_module_spec():
         state=dict(type="str", default="present", choices=["present"]),
         cluster_ext_id=dict(type="str", required=True),
         images_ext_ids=dict(type="list", elements="str", required=True),
+        project_ext_id=dict(type="str"),
     )
     return module_args
-
-
-def _collect_imported_image_ext_ids(task):
-    """Return image ext_ids from the completed task's entities_affected."""
-    entities_affected = getattr(task, "entities_affected", None) or []
-    ext_ids = []
-    for entity in entities_affected:
-        rel = getattr(entity, "rel", None)
-        ext_id = getattr(entity, "ext_id", None)
-        if rel == TASK_CONSTANTS.RelEntityType.IMAGES and ext_id:
-            ext_ids.append(ext_id)
-    return ext_ids
 
 
 def import_image(module, result):
@@ -230,14 +216,9 @@ def import_image(module, result):
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
-
     if task_ext_id and module.params.get("wait"):
         task = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task.to_dict())
-        imported_ext_ids = _collect_imported_image_ext_ids(task)
-        if imported_ext_ids:
-            result["imported_image_ext_ids"] = imported_ext_ids
-            result["ext_id"] = imported_ext_ids[0]
 
     result["changed"] = True
 

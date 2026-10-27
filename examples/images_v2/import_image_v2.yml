@@ -20,6 +20,7 @@
     - name: Setting Variables
       ansible.builtin.set_fact:
         cluster_ext_id: "44cb13ea-4039-4952-a90a-65f808493637"
+        project_ext_id: "6d3bf69e-7f2c-40c3-9db8-c52f9f81a0d2"
         pe_owned_image_ext_ids:
           - "b9c1e191-8237-4be9-986d-3a547c3c946c"
 
@@ -28,4 +29,5 @@
         state: present
         cluster_ext_id: "{{ cluster_ext_id }}"
         images_ext_ids: "{{ pe_owned_image_ext_ids }}"
+        project_ext_id: "{{ project_ext_id }}"
       register: import_result
