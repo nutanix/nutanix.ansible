@@ -3,8 +3,9 @@
 # This playbook will do:
 # 1. Submit a batch to bulk create Categories.
 # 2. Wait for the batch task to finish and inspect the parent task response.
-# 3. Fetch the created Batch entity by ext_id.
-# 4. List Batches with pagination and filter.
+# 3. List all Batches with fetch_all
+# 4. Get the newly-created Batch using its ext_id
+# 5. List Batches with a filter and limit
 
 - name: Batch playbook (Nutanix Prism Central v4)
   hosts: localhost
@@ -86,6 +87,16 @@
     - name: Show list result
       ansible.builtin.debug:
         var: list_result
+
+    - name: List all Batches with fetch_all
+      nutanix.ncp.ntnx_batches_info_v2:
+        fetch_all: true
+      register: fetch_all_result
+      ignore_errors: true
+
+    - name: Show fetch_all result
+      ansible.builtin.debug:
+        var: fetch_all_result
 
     - name: Get the newly-created Batch using its ext_id
       nutanix.ncp.ntnx_batches_info_v2:

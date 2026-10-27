@@ -79,6 +79,16 @@ EXAMPLES = r"""
     domain_manager_ext_id: "18553f0f-7b41-4115-b25e-e5b45f414d6f"
   register: all_registrations
 
+- name: List all registrations with fetch_all
+  nutanix.ncp.ntnx_registrations_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    domain_manager_ext_id: "18553f0f-7b41-4115-b25e-e5b45f414d6f"
+    fetch_all: true
+  register: all_registrations
+
 - name: List registrations with a filter (only DOMAIN_MANAGER cluster type)
   nutanix.ncp.ntnx_registrations_info_v2:
     nutanix_host: "{{ ip }}"
@@ -181,6 +191,7 @@ from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -218,8 +229,10 @@ def list_registrations(module, api_instance, result):
     domain_manager_ext_id = module.params.get("domain_manager_ext_id")
 
     try:
-        resp = api_instance.list_registrations(
-            domainManagerExtId=domain_manager_ext_id, **kwargs
+        resp = list_entities(
+            api_instance.list_registrations,
+            kwargs=kwargs,
+            domainManagerExtId=domain_manager_ext_id,
         )
     except Exception as e:
         raise_api_exception(
@@ -228,9 +241,11 @@ def list_registrations(module, api_instance, result):
             msg="Api Exception raised while fetching registrations info",
         )
 
-    total_available_results = resp.metadata.total_available_results
+    resp = strip_internal_attributes(resp.to_dict())
+    total_available_results = resp.get("metadata").get("total_available_results")
     result["total_available_results"] = total_available_results
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    resp = resp.get("data")
+
     if not resp:
         resp = []
     result["response"] = resp

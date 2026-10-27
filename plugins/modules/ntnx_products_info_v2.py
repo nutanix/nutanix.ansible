@@ -76,6 +76,17 @@ EXAMPLES = r"""
   register: products
   ignore_errors: true
 
+- name: List all portfolio products with fetch_all
+  nutanix.ncp.ntnx_products_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    domain_manager_ext_id: "cae459ec-08db-475e-a5e5-151e390c9484"
+    fetch_all: true
+  register: products
+  ignore_errors: true
+
 - name: List all products with a limit
   nutanix.ncp.ntnx_products_info_v2:
     nutanix_host: "{{ ip }}"
@@ -172,6 +183,7 @@ from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -207,8 +219,10 @@ def get_products(module, api_instance, result):
         module.fail_json(msg="Failed generating products info spec", **result)
 
     try:
-        resp = api_instance.list_products(
-            domainManagerExtId=domain_manager_ext_id, **kwargs
+        resp = list_entities(
+            api_instance.list_products,
+            kwargs=kwargs,
+            domainManagerExtId=domain_manager_ext_id,
         )
     except Exception as e:
         raise_api_exception(
@@ -217,9 +231,11 @@ def get_products(module, api_instance, result):
             msg="Api Exception raised while fetching products info",
         )
 
-    total_available_results = resp.metadata.total_available_results
+    resp = strip_internal_attributes(resp.to_dict())
+    total_available_results = resp.get("metadata").get("total_available_results")
     result["total_available_results"] = total_available_results
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    resp = resp.get("data")
+
     if not resp:
         resp = []
     result["response"] = resp

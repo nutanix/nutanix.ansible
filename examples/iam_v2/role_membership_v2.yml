@@ -8,9 +8,10 @@
 # 5. List role memberships with limit
 # 6. List role memberships with filter (roleExtId and projectExtId)
 # 7. List all role membership summaries
-# 8. List role membership summaries with limit
-# 9. List role membership summaries with filter
-# 10. Delete the role membership
+# 8. List all role membership summaries with fetch_all
+# 9. List role membership summaries with limit
+# 10. List role membership summaries with filter
+# 11. Delete the role membership
 
 - name: Role memberships playbook
   hosts: localhost
@@ -86,6 +87,12 @@
 
     - name: List all role membership summaries
       nutanix.ncp.ntnx_role_membership_summary_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all role membership summaries with fetch_all
+      nutanix.ncp.ntnx_role_membership_summary_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 

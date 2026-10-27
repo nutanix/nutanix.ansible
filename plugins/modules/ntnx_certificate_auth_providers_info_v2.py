@@ -146,6 +146,7 @@ from ..module_utils.v4.iam.api_client import (  # noqa: E402
 from ..module_utils.v4.iam.helpers import get_certificate_auth_provider  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -182,16 +183,22 @@ def get_certificate_auth_providers(module, api_instance, result):
         module.fail_json(msg, **result)
 
     try:
-        resp = api_instance.list_cert_auth_providers(**kwargs)
+        resp = list_entities(
+            api_instance.list_cert_auth_providers,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
             msg="Api Exception raised while fetching certificate authentication provider info",
         )
-    total_available_results = resp.metadata.total_available_results
+
+    resp = strip_internal_attributes(resp.to_dict())
+    total_available_results = resp.get("metadata").get("total_available_results")
     result["total_available_results"] = total_available_results
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    resp = resp.get("data")
+
     if not resp:
         resp = []
     result["response"] = resp

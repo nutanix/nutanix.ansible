@@ -2,10 +2,11 @@
 # Summary:
 # This playbook will do:
 # 1. List all portfolio products on the PC
-# 2. Get a single product by ext_id
-# 3. List products with an OData filter expression
-# 4. Enable the product
-# 5. Disable the product
+# 2. List all portfolio products with fetch_all
+# 3. Get a single product by ext_id
+# 4. List products with an OData filter expression
+# 5. Enable the product
+# 6. Disable the product
 
 - name: Nutanix Prism Central Product playbook
   hosts: localhost
@@ -27,6 +28,13 @@
       nutanix.ncp.ntnx_products_info_v2:
         domain_manager_ext_id: "{{ domain_manager_ext_id }}"
       register: all_products
+      ignore_errors: true
+
+    - name: List all portfolio products with fetch_all
+      nutanix.ncp.ntnx_products_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        fetch_all: true
+      register: all_products_fetch_all
       ignore_errors: true
 
     - name: Get a single product by ext_id

@@ -66,6 +66,13 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
+- name: Fetch all jobs for a task with fetch_all
+  nutanix.ncp.ntnx_task_jobs_info_v2:
+    task_ext_id: "ZXJnb24=:e38e02b7-d946-4069-8291-e9407e3a15d8"
+    fetch_all: true
+  register: result
+  ignore_errors: true
+
 - name: Fetch a single task job by ext_id
   nutanix.ncp.ntnx_task_jobs_info_v2:
     task_ext_id: "ZXJnb24=:e38e02b7-d946-4069-8291-e9407e3a15d8"
@@ -165,6 +172,7 @@ from ..module_utils.v4.prism.helpers import get_task_job  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import get_tasks_api_instance  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -204,7 +212,11 @@ def get_task_jobs(module, tasks_api, result):
     kwargs.pop("_orderby", None)
 
     try:
-        resp = tasks_api.list_task_jobs(taskExtId=task_ext_id, **kwargs)
+        resp = list_entities(
+            tasks_api.list_task_jobs,
+            kwargs=kwargs,
+            taskExtId=task_ext_id,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -212,10 +224,11 @@ def get_task_jobs(module, tasks_api, result):
             msg="Api Exception raised while fetching task jobs info",
         )
 
-    total_available_results = resp.metadata.total_available_results
+    resp = strip_internal_attributes(resp.to_dict())
+    total_available_results = resp.get("metadata").get("total_available_results")
     result["total_available_results"] = total_available_results
+    resp = resp.get("data")
 
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:
         resp = []
     result["response"] = resp

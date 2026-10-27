@@ -129,6 +129,26 @@
     fail_msg: "Listing TaskEntity for the parent task failed"
     success_msg: "TaskEntity listed successfully for the parent task"
 
+- name: List all TaskEntity for the parent task with fetch_all
+  nutanix.ncp.ntnx_task_entities_info_v2:
+    task_ext_id: "{{ parent_task_ext_id }}"
+    fetch_all: true
+  register: fetch_all_ntnx_task_entities_info_v2
+  ignore_errors: true
+
+- name: List all TaskEntity with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_task_entities_info_v2.changed == false
+      - fetch_all_ntnx_task_entities_info_v2.failed == false
+      - fetch_all_ntnx_task_entities_info_v2.response is defined
+      - fetch_all_ntnx_task_entities_info_v2.total_available_results is defined
+      - >-
+          (fetch_all_ntnx_task_entities_info_v2.response | default([]) | length)
+          == (fetch_all_ntnx_task_entities_info_v2.total_available_results | int)
+    fail_msg: "Unable to list all TaskEntity with fetch_all"
+    success_msg: "Listed all TaskEntity with fetch_all successfully"
+
 - name: Assert every entity in the list has the required EntityReference fields
   ansible.builtin.assert:
     that:

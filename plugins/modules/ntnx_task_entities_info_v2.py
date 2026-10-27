@@ -57,6 +57,16 @@ EXAMPLES = r"""
     task_ext_id: "ZXJnb24=:e38e02b7-d946-4069-8291-e9407e3a15d8"
   register: result
 
+- name: List all entities affected by a task with fetch_all
+  nutanix.ncp.ntnx_task_entities_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    task_ext_id: "ZXJnb24=:e38e02b7-d946-4069-8291-e9407e3a15d8"
+    fetch_all: true
+  register: result
+
 - name: List task-affected entities with a limit
   nutanix.ncp.ntnx_task_entities_info_v2:
     nutanix_host: "{{ ip }}"
@@ -135,6 +145,7 @@ from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import get_tasks_api_instance  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -172,7 +183,11 @@ def list_task_entities(module, tasks_api, result):
     kwargs.pop("_orderby", None)
 
     try:
-        resp = tasks_api.list_task_entities(taskExtId=task_ext_id, **kwargs)
+        resp = list_entities(
+            tasks_api.list_task_entities,
+            kwargs=kwargs,
+            taskExtId=task_ext_id,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -180,10 +195,11 @@ def list_task_entities(module, tasks_api, result):
             msg="Api Exception raised while fetching task entities info",
         )
 
-    total_available_results = resp.metadata.total_available_results
+    resp = strip_internal_attributes(resp.to_dict())
+    total_available_results = resp.get("metadata").get("total_available_results")
     result["total_available_results"] = total_available_results
+    resp = resp.get("data")
 
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:
         resp = []
     result["response"] = resp

@@ -52,6 +52,15 @@ EXAMPLES = r"""
     validate_certs: false
   register: result
 
+- name: List all role membership summaries with fetch_all
+  nutanix.ncp.ntnx_role_membership_summary_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
+  register: result
+
 - name: List role membership summaries with limit
   nutanix.ncp.ntnx_role_membership_summary_info_v2:
     nutanix_host: "{{ ip }}"
@@ -136,6 +145,7 @@ from ..module_utils.v4.iam.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -175,7 +185,10 @@ def get_role_membership_summaries(module, role_memberships, result):
         )
 
     try:
-        resp = role_memberships.list_role_membership_summary(**kwargs)
+        resp = list_entities(
+            role_memberships.list_role_membership_summary,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -183,9 +196,11 @@ def get_role_membership_summaries(module, role_memberships, result):
             msg="Api Exception raised while listing role membership summaries",
         )
 
-    total_available_results = resp.metadata.total_available_results
+    resp = strip_internal_attributes(resp.to_dict())
+    total_available_results = resp.get("metadata").get("total_available_results")
     result["total_available_results"] = total_available_results
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    resp = resp.get("data")
+
     if not resp:
         resp = []
     result["response"] = resp

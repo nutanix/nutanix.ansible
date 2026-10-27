@@ -66,6 +66,16 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
+- name: List all Batches with fetch_all
+  nutanix.ncp.ntnx_batches_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
+  register: result
+  ignore_errors: true
+
 - name: List Batches with filter
   nutanix.ncp.ntnx_batches_info_v2:
     filter: "executionStatus eq Prism.Config.BatchExecutionStatus'COMPLETED'"
@@ -148,6 +158,7 @@ from ..module_utils.v4.prism.helpers import get_batch  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import get_batches_api_instance  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -179,7 +190,10 @@ def get_batches(module, api_instance, result):
         module.fail_json(msg="Failed generating batches info spec", **result)
 
     try:
-        resp = api_instance.list_batches(**kwargs)
+        resp = list_entities(
+            api_instance.list_batches,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -187,10 +201,11 @@ def get_batches(module, api_instance, result):
             msg="Api Exception raised while fetching batches info",
         )
 
-    total_available_results = resp.metadata.total_available_results
+    resp = strip_internal_attributes(resp.to_dict())
+    total_available_results = resp.get("metadata").get("total_available_results")
     result["total_available_results"] = total_available_results
+    resp = resp.get("data")
 
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
     if not resp:
         resp = []
     result["response"] = resp

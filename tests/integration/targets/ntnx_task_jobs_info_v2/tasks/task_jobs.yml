@@ -119,6 +119,26 @@
     fail_msg: "list_task_jobs returned an unexpected envelope"
     success_msg: "list_task_jobs returned a valid envelope"
 
+- name: List all jobs for the parent task with fetch_all
+  nutanix.ncp.ntnx_task_jobs_info_v2:
+    task_ext_id: "{{ task_ext_id }}"
+    fetch_all: true
+  register: fetch_all_ntnx_task_jobs_info_v2
+  ignore_errors: true
+
+- name: List all jobs with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_task_jobs_info_v2.changed == false
+      - fetch_all_ntnx_task_jobs_info_v2.failed == false
+      - fetch_all_ntnx_task_jobs_info_v2.response is defined
+      - fetch_all_ntnx_task_jobs_info_v2.total_available_results is defined
+      - >-
+          (fetch_all_ntnx_task_jobs_info_v2.response | default([]) | length)
+          == (fetch_all_ntnx_task_jobs_info_v2.total_available_results | int)
+    fail_msg: "Unable to list all task jobs with fetch_all"
+    success_msg: "Listed all task jobs with fetch_all successfully"
+
 - name: Assert every returned job has the mandatory TaskJob fields
   ansible.builtin.assert:
     that:
