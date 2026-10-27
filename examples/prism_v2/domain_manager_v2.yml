@@ -1,0 +1,57 @@
+---
+# Summary:
+# 1. Set the domain manager (Prism Central) ext_id
+# 2. Update domain manager name
+# 3. Update domain manager VIP
+# 4. Scale up to LARGE
+# 5. Dry-run scale up to EXTRALARGE
+
+- name: Domain manager update and scale-up playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        domain_manager_ext_id: "cfddac63-ffdb-4d9c-9a8c-54abf89ce234"
+
+    - name: Update Prism Central name
+      nutanix.ncp.ntnx_domain_manager_v2:
+        ext_id: "{{ domain_manager_ext_id }}"
+        config:
+          name: "PC_ansible_updated"
+        network: {}
+      register: result
+      ignore_errors: true
+
+    - name: Update Prism Central VIP
+      nutanix.ncp.ntnx_domain_manager_v2:
+        ext_id: "{{ domain_manager_ext_id }}"
+        config: {}
+        network:
+          external_address:
+            ipv4:
+              value: "10.44.76.25"
+              prefix_length: 32
+      register: result
+      ignore_errors: true
+
+    - name: Scale up Prism Central to LARGE
+      nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+        ext_id: "{{ domain_manager_ext_id }}"
+        size: "LARGE"
+      register: result
+      ignore_errors: true
+
+    - name: Dry-run scale up to EXTRALARGE
+      nutanix.ncp.ntnx_scale_up_domain_manager_by_id_v2:
+        ext_id: "{{ domain_manager_ext_id }}"
+        size: "EXTRALARGE"
+        dryrun: true
+      register: result
+      ignore_errors: true

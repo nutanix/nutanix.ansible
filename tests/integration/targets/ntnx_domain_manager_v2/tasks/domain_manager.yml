@@ -1,0 +1,151 @@
+---
+- name: Start ntnx_domain_manager_v2 tests
+  ansible.builtin.debug:
+    msg: "Start ntnx_domain_manager_v2 tests"
+
+########################################################################################
+# Discover the domain manager (PC) ext_id
+########################################################################################
+
+- name: Discover domain managers on this endpoint
+  nutanix.ncp.ntnx_pc_config_info_v2:
+  register: all_dms
+  ignore_errors: true
+
+- name: Assert the discovery call succeeded
+  ansible.builtin.assert:
+    that:
+      - all_dms is defined
+      - all_dms.failed == false
+      - all_dms.response is defined
+    success_msg: "Discovered domain manager info"
+    fail_msg: "Could not discover domain manager on this endpoint"
+
+- name: Capture the discovered domain manager ext_id
+  ansible.builtin.set_fact:
+    domain_manager_ext_id: >-
+      {{ all_dms.response[0].ext_id
+         | default(all_dms.response.ext_id) }}
+
+########################################################################################
+# check_mode — update with inline dummy values
+########################################################################################
+
+- name: Update domain manager name with check mode enabled
+  nutanix.ncp.ntnx_domain_manager_v2:
+    ext_id: "83083083-0000-0000-0000-000000000000"
+    config:
+      name: "PC_check_mode_name"
+    network: {}
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update domain manager name with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.response is defined
+      - result.ext_id == "83083083-0000-0000-0000-000000000000"
+    success_msg: "check_mode update spec generated correctly"
+    fail_msg: "check_mode update spec was not generated correctly"
+
+- name: Update domain manager network with check mode enabled
+  nutanix.ncp.ntnx_domain_manager_v2:
+    ext_id: "83083083-0000-0000-0000-000000000000"
+    config: {}
+    network:
+      external_address:
+        ipv4:
+          value: "10.1.1.10"
+          prefix_length: 32
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update domain manager network with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.response is defined
+    success_msg: "check_mode network update spec generated correctly"
+    fail_msg: "check_mode network update spec was not generated correctly"
+
+########################################################################################
+# Negative paths
+########################################################################################
+
+- name: Missing ext_id must be rejected
+  nutanix.ncp.ntnx_domain_manager_v2:
+    config:
+      name: "PC_missing_ext_id"
+    network: {}
+  register: missing_ext_id
+  ignore_errors: true
+
+- name: Assert missing ext_id was rejected
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id.failed == true
+      - missing_ext_id.changed == false
+      - "'missing required arguments: ext_id' in missing_ext_id.msg"
+    success_msg: "Missing ext_id was rejected as expected"
+    fail_msg: "Missing ext_id was NOT rejected as expected"
+
+- name: state=absent must be rejected
+  nutanix.ncp.ntnx_domain_manager_v2:
+    state: absent
+    ext_id: "{{ domain_manager_ext_id }}"
+    config: {}
+    network: {}
+  register: absent_state
+  ignore_errors: true
+
+- name: Assert state=absent was rejected
+  ansible.builtin.assert:
+    that:
+      - absent_state.failed == true
+      - "'value of state must be one of' in absent_state.msg"
+    success_msg: "state=absent was rejected as expected"
+    fail_msg: "state=absent was NOT rejected as expected"
+
+########################################################################################
+# Live idempotency (no-op update with current name)
+########################################################################################
+
+- name: Fetch current domain manager by ext_id
+  nutanix.ncp.ntnx_pc_config_info_v2:
+    ext_id: "{{ domain_manager_ext_id }}"
+  register: current_dm
+  ignore_errors: true
+
+- name: Idempotent update with the current name
+  nutanix.ncp.ntnx_domain_manager_v2:
+    ext_id: "{{ domain_manager_ext_id }}"
+    config:
+      name: "{{ current_dm.response.config.name }}"
+    network: {}
+  register: idempotent_result
+  ignore_errors: true
+  when:
+    - current_dm is defined
+    - current_dm.failed == false
+    - current_dm.response.config.name is defined
+
+- name: Assert idempotent update was skipped
+  ansible.builtin.assert:
+    that:
+      - idempotent_result.changed == false
+      - >-
+          (idempotent_result.skipped is defined)
+          or (idempotent_result.msg is defined
+              and idempotent_result.msg == "Nothing to change.")
+    success_msg: "Idempotent update skipped as expected"
+    fail_msg: "Idempotent update did not skip as expected"
+  when: idempotent_result is defined
+
+- name: Finish ntnx_domain_manager_v2 tests
+  ansible.builtin.debug:
+    msg: "Finished ntnx_domain_manager_v2 tests"

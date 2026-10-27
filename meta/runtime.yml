@@ -317,3 +317,5 @@ action_groups:
     - ntnx_task_jobs_info_v2
     - ntnx_task_entities_info_v2
     - ntnx_registrations_info_v2
+    - ntnx_domain_manager_v2
+    - ntnx_scale_up_domain_manager_by_id_v2
