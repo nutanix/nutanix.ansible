@@ -184,23 +184,11 @@ msg:
     Use ntnx_virtual_gpu_profiles_info_v2 to list profiles.
 """
 
-import traceback  # noqa: E402
 import warnings  # noqa: E402
-
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.utils import validate_required_params  # noqa: E402
-
-SDK_IMP_ERROR = None
-try:
-    import ntnx_clustermgmt_py_client  # noqa: F401,E402
-except ImportError:
-
-    from ..module_utils.v4.sdk_mock import mock_sdk as ntnx_clustermgmt_py_client  # noqa: F401,E402  # fmt: skip
-
-    SDK_IMP_ERROR = traceback.format_exc()
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
@@ -289,11 +277,6 @@ def run_module():
             ("state", "absent", ("ext_id",)),
         ],
     )
-    if SDK_IMP_ERROR:
-        module.fail_json(
-            msg=missing_required_lib("ntnx_clustermgmt_py_client"),
-            exception=SDK_IMP_ERROR,
-        )
 
     remove_param_with_none_value(module.params)
     result = {
