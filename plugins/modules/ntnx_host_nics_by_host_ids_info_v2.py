@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -14,45 +14,44 @@ module: ntnx_host_nics_by_host_ids_info_v2
 short_description: Fetch host NICs information for a specific host in a Nutanix cluster.
 version_added: 2.7.0
 description:
-  - This module allows you to fetch information about HostNicsByHostId in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific HostNicsByHostId.
-  - If C(ext_id) is not provided, list multiple HostNicsByHostId optionally filtered / paginated.
+  - This module allows you to fetch information about host NICs for a host in a cluster in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch details of the specific host NIC belonging to the given host and cluster.
+  - If C(ext_id) is not provided, list all host NICs of the host optionally filtered / paginated.
   - This module uses PC v4 APIs based SDKs.
+notes:
+  - >-
+    This module requires the following Nutanix IAM roles to be assigned to the
+    user performing the operation.
+  - >-
+    B(View Cluster Host Nic) -
+    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin,
+    Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
-  ext_id:
-    description:
-      - The external ID (UUID) of the host NIC to fetch.
-      - Required when fetching a single host NIC by its external ID.
-    type: str
   cluster_ext_id:
     description:
-      - The external ID (UUID) of the cluster the host belongs to.
-      - Required for both single-fetch and list operations because the API
-        endpoint is scoped by the parent cluster.
+      - External identifier (UUID) of the parent cluster the host belongs to.
+      - Required because the API endpoint is scoped by the parent cluster.
     type: str
     required: true
   host_ext_id:
     description:
-      - The external ID (UUID) of the host whose NICs should be fetched.
-      - Required for both single-fetch and list operations because the API
-        endpoint is scoped by the parent host.
+      - External identifier (UUID) of the host whose NICs should be fetched.
+      - Required because the API endpoint is scoped by the parent host.
     type: str
     required: true
+  ext_id:
+    description:
+      - External identifier (UUID) of a specific host NIC on the given host.
+      - If provided, the module returns a single host NIC; otherwise, it returns
+        the list of host NICs for the host.
+    type: str
+    required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
   - nutanix.ncp.ntnx_logger
   - nutanix.ncp.ntnx_proxy_v2
-notes:
-    - >-
-      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
-    - >-
-      B(Get host NIC by ext_id) -
-      Required Roles: Cluster Admin, Cluster Viewer, Network Infra Admin, Prism Admin, Prism Viewer, Super Admin
-    - >-
-      B(Get list of host NICs by host id) -
-      Required Roles: Cluster Admin, Cluster Viewer, Network Infra Admin, Prism Admin, Prism Viewer, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 author:
   - Abhinav Bansal (@abhinavbansal29)
   - George Ghawali (@george-ghawali)
@@ -61,10 +60,6 @@ author:
 EXAMPLES = r"""
 - name: List all host NICs for a given cluster and host
   nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
     host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
   register: result
@@ -72,10 +67,6 @@ EXAMPLES = r"""
 
 - name: Fetch a specific host NIC by external ID
   nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
     host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
     ext_id: "5b2e4e93-2222-3333-7777-a015d302eec2"
@@ -84,10 +75,6 @@ EXAMPLES = r"""
 
 - name: List host NICs filtered by name
   nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
     host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
     filter: "name eq 'eth0'"
@@ -96,13 +83,17 @@ EXAMPLES = r"""
 
 - name: List host NICs with limit
   nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
     host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
     limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List all host NICs for a host with fetch_all
+  nutanix.ncp.ntnx_host_nics_by_host_ids_info_v2:
+    cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
+    host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
+    fetch_all: true
   register: result
   ignore_errors: true
 """
@@ -110,9 +101,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC HostNicsByHostId info v4 API.
-    - It can be a single HostNicsByHostId if external ID is provided.
-    - List of multiple HostNicsByHostId if external ID is not provided with optional filter or limit.
+    - The response from the Nutanix PC host NIC info v4 API.
+    - It can be a single host NIC if external ID is provided.
+    - List of multiple host NICs for the host if external ID is not provided with optional filter, limit, orderby, or select.
   returned: always
   type: dict
   sample:
@@ -155,7 +146,7 @@ response:
     }
 
 changed:
-  description: This indicates whether the task resulted in any changes.
+  description: This indicates whether the task resulted in any changes. Always false for info modules.
   returned: always
   type: bool
   sample: false
@@ -178,15 +169,15 @@ failed:
   sample: false
 
 ext_id:
-  description: External ID of the host NIC.
+  description: External ID of the host NIC (when requested via C(ext_id)).
   type: str
-  returned: when external ID is provided
+  returned: When external ID is provided
   sample: "1ada3cfc-c1c5-4bcd-a55d-d2f7e46a4b41"
 
 total_available_results:
   description: The total number of host NICs available for the given cluster and host in PC.
   type: int
-  returned: when listing host NICs
+  returned: When listing host NICs
   sample: 4
 """
 
@@ -200,6 +191,7 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.helpers import get_host_nic  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -209,18 +201,20 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
+
     module_args = dict(
-        ext_id=dict(type="str"),
         cluster_ext_id=dict(type="str", required=True),
         host_ext_id=dict(type="str", required=True),
+        ext_id=dict(type="str"),
     )
+
     return module_args
 
 
-def get_host_nic_by_ext_id(module, api_instance, result):
-    ext_id = module.params.get("ext_id")
+def get_host_nic_using_ext_id(module, api_instance, result):
     cluster_ext_id = module.params.get("cluster_ext_id")
     host_ext_id = module.params.get("host_ext_id")
+    ext_id = module.params.get("ext_id")
     resp = get_host_nic(module, api_instance, ext_id, cluster_ext_id, host_ext_id)
     result["ext_id"] = ext_id
     result["response"] = strip_internal_attributes(resp.to_dict())
@@ -232,13 +226,17 @@ def get_host_nics(module, api_instance, result):
 
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
+
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating host NICs info spec", **result)
 
     try:
-        resp = api_instance.list_host_nics_by_host_id(
-            clusterExtId=cluster_ext_id, hostExtId=host_ext_id, **kwargs
+        resp = list_entities(
+            api_instance.list_host_nics_by_host_id,
+            kwargs=kwargs,
+            clusterExtId=cluster_ext_id,
+            hostExtId=host_ext_id,
         )
     except Exception as e:
         raise_api_exception(
@@ -249,10 +247,10 @@ def get_host_nics(module, api_instance, result):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
-    if not resp:
-        resp = []
-    result["response"] = resp
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    else:
+        result["response"] = []
 
 
 def run_module():
@@ -261,17 +259,13 @@ def run_module():
         supports_check_mode=False,
         mutually_exclusive=[
             ("ext_id", "filter"),
-            ("ext_id", "limit"),
-            ("ext_id", "page"),
-            ("ext_id", "orderby"),
-            ("ext_id", "select"),
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "response": None, "failed": False}
+    result = {"changed": False, "error": None, "response": None, "failed": False}
     api_instance = get_clusters_api_instance(module)
     if module.params.get("ext_id"):
-        get_host_nic_by_ext_id(module, api_instance, result)
+        get_host_nic_using_ext_id(module, api_instance, result)
     else:
         get_host_nics(module, api_instance, result)
     module.exit_json(**result)
