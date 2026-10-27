@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -26,11 +26,11 @@ notes:
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     The required roles depend on the operation being performed.
   - >-
-    B(Mount Storage Container on ESX datastore) -
-    Required Roles: Prism Admin, Storage Admin, Super Admin
+    B(Mount Storage Container Datastore) -
+    Required Roles: Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
   - >-
-    B(Unmount Storage Container from ESX datastore) -
-    Required Roles: Prism Admin, Storage Admin, Super Admin
+    B(Unmount Storage Container Datastore) -
+    Required Roles: Prism Admin, Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   state:
@@ -48,6 +48,8 @@ options:
       - The external identifier of the cluster the datastore belongs to.
       - Used for the idempotency lookup — the module lists the cluster's datastores and
         skips the operation when a datastore of the same name is already in the expected state.
+      - Not sent in the mount / unmount request body; mount and unmount are scoped by C(ext_id)
+        (Storage Container external identifier).
     type: str
     required: false
   ext_id:
@@ -77,6 +79,7 @@ options:
     description:
       - The UUIDs of the ESXi nodes where the NFS datastore should be created (mount) or removed (unmount).
       - When omitted on mount the API mounts the datastore on all eligible nodes of the cluster.
+      - Maximum 50 items.
     type: list
     elements: str
     required: false
@@ -230,12 +233,10 @@ from ..module_utils.v4.utils import (  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
-    import ntnx_clustermgmt_py_client as cluster_management_sdk  # noqa: E402
+    import ntnx_clustermgmt_py_client as clustermgmt_sdk  # noqa: E402
 except ImportError:
 
-    from ..module_utils.v4.sdk_mock import (  # noqa: E402
-        mock_sdk as cluster_management_sdk,
-    )
+    from ..module_utils.v4.sdk_mock import mock_sdk as clustermgmt_sdk  # noqa: E402
 
     SDK_IMP_ERROR = traceback.format_exc()
 
@@ -244,12 +245,6 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
-    """Return the argument spec for the datastore CRUD-style module.
-
-    ``ext_id`` here refers to the parent Storage Container's external
-    identifier because datastores in Nutanix are implemented as mounted
-    Storage Containers and do not have their own PC-managed identifier.
-    """
     module_args = dict(
         cluster_ext_id=dict(type="str", required=False),
         ext_id=dict(type="str", required=False),
@@ -263,21 +258,21 @@ def get_module_spec():
     return module_args
 
 
-def _idempotency_lookup(module, api_instance, cluster_ext_id, datastore_name):
-    """Return the existing DataStore matching name in the cluster, or None.
+def _remove_read_only_attributes(spec):
+    """Null out ExternalizableAbstractModel fields that must not be sent in the body.
 
-    Idempotency for mount/unmount is derived by inspecting the cluster's
-    current datastore list. We treat two datastores as identical when their
-    ``datastore_name`` matches inside the same cluster — this is the only
-    field the ESX layer uniquely keys on.
+    ``ext_id`` on the module is the Storage Container path parameter for
+    mount/unmount; SpecGenerator would otherwise copy it onto the body because
+    DataStoreMount / DataStoreUnmount inherit ``ext_id``.
     """
-    if not cluster_ext_id or not datastore_name:
-        return None
-    return find_data_store_by_name(module, api_instance, cluster_ext_id, datastore_name)
+    spec.ext_id = None
+    spec.links = None
+    spec.tenant_id = None
+    return spec
 
 
-def create_data_stores_by_cluster_id(module, result, api_instance):
-    """Mount a Storage Container as an ESX datastore ("create" the datastore)."""
+def create_data_store(module, api_instance, result):
+    """Mount a Storage Container as an ESX datastore (create the datastore)."""
     validate_required_params(module, ["ext_id", "container_name"])
 
     ext_id = module.params.get("ext_id")
@@ -288,30 +283,33 @@ def create_data_stores_by_cluster_id(module, result, api_instance):
     result["ext_id"] = ext_id
 
     sg = SpecGenerator(module)
-    default_spec = cluster_management_sdk.DataStoreMount()
+    default_spec = clustermgmt_sdk.DataStoreMount()
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating mount storage container (create datastore) spec",
-            **result,
+            msg="Failed generating create datastore (mount) spec", **result
         )
     if not spec.datastore_name:
         spec.datastore_name = datastore_name
+    _remove_read_only_attributes(spec)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
-    existing = _idempotency_lookup(module, api_instance, cluster_ext_id, datastore_name)
-    if existing is not None:
-        result["skipped"] = True
-        result["response"] = strip_internal_attributes(existing.to_dict())
-        result["msg"] = (
-            "Datastore with name '{0}' is already mounted on cluster '{1}'. "
-            "Skipping mount.".format(datastore_name, cluster_ext_id)
+    if cluster_ext_id and datastore_name:
+        existing = find_data_store_by_name(
+            module, api_instance, cluster_ext_id, datastore_name
         )
-        module.exit_json(**result)
+        if existing is not None:
+            result["skipped"] = True
+            result["response"] = strip_internal_attributes(existing.to_dict())
+            result["msg"] = (
+                "Datastore with name '{0}' is already mounted on cluster '{1}'. "
+                "Skipping mount.".format(datastore_name, cluster_ext_id)
+            )
+            module.exit_json(**result)
 
     resp = None
     try:
@@ -332,8 +330,8 @@ def create_data_stores_by_cluster_id(module, result, api_instance):
     result["changed"] = True
 
 
-def delete_data_stores_by_cluster_id(module, result, api_instance):
-    """Unmount an ESX datastore ("delete" the datastore)."""
+def delete_data_store(module, api_instance, result):
+    """Unmount an ESX datastore (delete the datastore)."""
     validate_required_params(module, ["ext_id", "datastore_name"])
 
     ext_id = module.params.get("ext_id")
@@ -342,14 +340,14 @@ def delete_data_stores_by_cluster_id(module, result, api_instance):
     result["ext_id"] = ext_id
 
     sg = SpecGenerator(module)
-    default_spec = cluster_management_sdk.DataStoreUnmount()
+    default_spec = clustermgmt_sdk.DataStoreUnmount()
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating unmount storage container (delete datastore) spec",
-            **result,
+            msg="Failed generating delete datastore (unmount) spec", **result
         )
+    _remove_read_only_attributes(spec)
 
     if module.check_mode:
         result["msg"] = (
@@ -359,14 +357,17 @@ def delete_data_stores_by_cluster_id(module, result, api_instance):
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
-    existing = _idempotency_lookup(module, api_instance, cluster_ext_id, datastore_name)
-    if cluster_ext_id and existing is None:
-        result["skipped"] = True
-        result["msg"] = (
-            "Datastore with name '{0}' is not mounted on cluster '{1}'. "
-            "Skipping unmount.".format(datastore_name, cluster_ext_id)
+    if cluster_ext_id and datastore_name:
+        existing = find_data_store_by_name(
+            module, api_instance, cluster_ext_id, datastore_name
         )
-        module.exit_json(**result)
+        if existing is None:
+            result["skipped"] = True
+            result["msg"] = (
+                "Datastore with name '{0}' is not mounted on cluster '{1}'. "
+                "Skipping unmount.".format(datastore_name, cluster_ext_id)
+            )
+            module.exit_json(**result)
 
     resp = None
     try:
@@ -392,7 +393,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
-            ("state", "present", ("ext_id",)),
+            ("state", "present", ("ext_id", "container_name")),
             ("state", "absent", ("ext_id", "datastore_name")),
         ],
     )
@@ -413,9 +414,9 @@ def run_module():
     api_instance = get_storage_containers_api_instance(module)
     state = module.params.get("state")
     if state == "present":
-        create_data_stores_by_cluster_id(module, result, api_instance)
+        create_data_store(module, api_instance, result)
     else:
-        delete_data_stores_by_cluster_id(module, result, api_instance)
+        delete_data_store(module, api_instance, result)
     module.exit_json(**result)
 
 

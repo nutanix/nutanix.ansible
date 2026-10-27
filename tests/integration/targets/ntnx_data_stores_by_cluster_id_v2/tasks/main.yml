@@ -10,8 +10,8 @@
 # action. The CRUD module is therefore modeled as:
 #   - state=present  -> mount action  ("create datastore")
 #   - state=absent   -> unmount action ("delete datastore")
-# The info module wraps list_data_stores_by_cluster_id with local
-# filtering (by container_ext_id) when the caller supplies ext_id.
+# The info module wraps list_data_stores_by_cluster_id and applies an
+# OData filter on containerExtId when the caller supplies ext_id.
 #
 # Scenarios covered here:
 #
