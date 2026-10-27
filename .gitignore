@@ -2,3 +2,5 @@ nutanix-ncp-*
 .ansible/
 py3.12_virt
 tests/integration/integration_config.yml
+__pycache__/
+*.pyc

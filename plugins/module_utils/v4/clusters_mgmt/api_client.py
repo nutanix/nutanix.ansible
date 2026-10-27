@@ -120,6 +120,18 @@ def get_storage_containers_api_instance(module):
     return ntnx_clustermgmt_py_client.StorageContainersApi(client)
 
 
+def get_storage_config_api_instance(module):
+    """
+    This method will return storage config api instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        StorageConfigApi: StorageConfigApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.StorageConfigApi(client)
+
+
 def get_password_manager_api_instance(module):
     """
     This method will return password manager api instance from sdk
@@ -154,3 +166,28 @@ def get_pcie_devices_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.PcieDevicesApi(client)
+
+
+def get_external_storages_api_instance(module):
+    """
+    This method will return external storages api instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        ExternalStoragesApi: ExternalStoragesApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.ExternalStoragesApi(client)
+
+
+def get_snmp_api_instance(module):
+    """
+    This method will return ClustersApi instance for all SNMP operations
+    (config, users, traps, transports).
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): ClustersApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.ClustersApi(client)
