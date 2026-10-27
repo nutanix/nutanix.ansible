@@ -19,22 +19,28 @@ description:
   - If C(ext_id) is not provided, list multiple AHV VM recovery points optionally filtered / paginated.
   - This module uses PC v4 APIs based SDKs.
 notes:
-    - >-
-      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
-    - >-
-      B(Get an AHV VM recovery point by ext_id) -
-      Required Roles: Backup Admin, Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin, Prism Viewer,
-      Super Admin, Self-Service Admin (deprecated)
-    - >-
-      B(List AHV VM recovery points) -
-      Required Roles: Backup Admin, Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin, Prism Viewer,
-      Super Admin, Self-Service Admin (deprecated)
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
+  - >-
+    This module requires the following Nutanix IAM roles to be assigned to the
+    user performing the operation.
+  - >-
+    B(Retrieve AHV VM recovery point details) -
+    Required Roles: Account Owner, Administrator, Operator, Prism Admin, Prism Viewer,
+    Project Admin, Project Manager, Super Admin, Virtual Machine Admin,
+    Virtual Machine Operator, Virtual Machine Viewer, Disaster Recovery Admin,
+    Disaster Recovery Viewer, Backup Admin, Tenant Admin, Tenant Consumer,
+    Self-Service Admin (deprecated)
+  - >-
+    B(List AHV VM recovery points) -
+    Required Roles: Account Owner, Administrator, Operator, Prism Admin, Prism Viewer,
+    Project Admin, Project Manager, Super Admin, Virtual Machine Admin,
+    Virtual Machine Operator, Virtual Machine Viewer, Disaster Recovery Admin,
+    Disaster Recovery Viewer, Backup Admin, Tenant Admin, Tenant Consumer,
+    Self-Service Admin (deprecated)
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
   ext_id:
     description:
       - A globally unique identifier of an AHV VM recovery point. It should be of type UUID.
-      - If provided, only that recovery point is returned.
     type: str
     required: false
 extends_documentation_fragment:
@@ -56,6 +62,7 @@ EXAMPLES = r"""
     validate_certs: false
     ext_id: "b387359d-fa5c-4d58-9eb2-3af1a4976319"
   register: result
+  ignore_errors: true
 
 - name: List all AHV VM recovery points
   nutanix.ncp.ntnx_vm_recovery_points_info_v2:
@@ -64,6 +71,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
   register: result
+  ignore_errors: true
 
 - name: List AHV VM recovery points with filter
   nutanix.ncp.ntnx_vm_recovery_points_info_v2:
@@ -73,6 +81,7 @@ EXAMPLES = r"""
     validate_certs: false
     filter: "name eq 'ansible-vm-rp'"
   register: result
+  ignore_errors: true
 
 - name: List AHV VM recovery points with limit
   nutanix.ncp.ntnx_vm_recovery_points_info_v2:
@@ -82,39 +91,38 @@ EXAMPLES = r"""
     validate_certs: false
     limit: 5
   register: result
+  ignore_errors: true
+
+- name: List all AHV VM recovery points with fetch_all
+  nutanix.ncp.ntnx_vm_recovery_points_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC AHV VM recovery point info v4 API.
-    - It can be a single AHV VM recovery point if external ID is provided.
-    - List of multiple AHV VM recovery points if external ID is not provided
-      with optional filter, limit or pagination.
+    - Response for fetching AHV VM recovery points info.
+    - One AHV VM recovery point if C(ext_id) is provided.
+    - List of multiple AHV VM recovery points if C(ext_id) is not provided.
   returned: always
   type: dict
   sample:
     {
       "application_consistent_properties": null,
-      "consistency_group_ext_id": null,
       "creation_time": "2026-07-21T05:12:31.912+00:00",
-      "disk_recovery_points": [
-        {
-          "disk_ext_id": "839feff9-bac0-4a70-9523-82ea9e431517",
-          "disk_recovery_point_ext_id": "21d467f0-ccef-4733-91cc-f04db58a92eb"
-        }
-      ],
       "expiration_time": "2027-01-01T00:00:00+00:00",
       "ext_id": "b387359d-fa5c-4d58-9eb2-3af1a4976319",
       "links": null,
-      "location_agnostic_id": "51264897-07a8-4292-831b-ae28a37135e5",
       "name": "ansible-vm-rp",
       "recovery_point_type": "CRASH_CONSISTENT",
       "status": "COMPLETE",
       "tenant_id": null,
-      "total_exclusive_usage_bytes": 0,
-      "vm": null,
-      "vm_categories": null,
       "vm_ext_id": "ac5aff0c-6c68-4948-9088-b903e2be0ce7"
     }
 
@@ -136,7 +144,7 @@ error:
   returned: when an error occurs
 
 failed:
-  description: This field typically holds information about if the task have failed
+  description: This indicates whether the task failed
   returned: always
   type: bool
   sample: false
@@ -160,6 +168,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -168,16 +177,13 @@ from ..module_utils.v4.vmm.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.vmm.helpers import get_vm_recovery_point  # noqa: E402
 
-# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
 def get_module_spec():
-
     module_args = dict(
         ext_id=dict(type="str"),
     )
-
     return module_args
 
 
@@ -198,7 +204,10 @@ def list_vm_recovery_points(module, api_instance, result):
         )
 
     try:
-        resp = api_instance.list_vm_recovery_points(**kwargs)
+        resp = list_entities(
+            api_instance.list_vm_recovery_points,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

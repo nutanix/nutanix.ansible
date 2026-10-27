@@ -134,11 +134,11 @@
 - name: Generate spec for creating AHV VM recovery point using check mode with all attributes
   nutanix.ncp.ntnx_vm_recovery_point_v2:
     state: present
-    name: "check_mode_full_{{ vm_rp_name }}"
-    expiration_time: "{{ expiration_time }}"
+    name: "check_mode_full_ansible_vm_rp"
+    expiration_time: "2027-01-01T00:00:00+00:00"
     recovery_point_type: "APPLICATION_CONSISTENT"
-    vm_ext_id: "{{ source_vm_ext_id }}"
-    consistency_group_ext_id: "aaaaaaaa-1111-2222-3333-444444444444"
+    vm_ext_id: "00000000-0000-0000-0000-000000000001"
+    project_ext_id: "00000000-0000-0000-0000-000000000002"
     application_consistent_properties:
       backup_type: "FULL_BACKUP"
       should_include_writers: true
@@ -156,10 +156,10 @@
       - result.changed == false
       - result.failed == false
       - result.response is defined
-      - result.response.name == "check_mode_full_{{ vm_rp_name }}"
+      - result.response.name == "check_mode_full_ansible_vm_rp"
       - result.response.recovery_point_type == "APPLICATION_CONSISTENT"
-      - result.response.vm_ext_id == source_vm_ext_id
-      - result.response.consistency_group_ext_id == "aaaaaaaa-1111-2222-3333-444444444444"
+      - result.response.vm_ext_id == "00000000-0000-0000-0000-000000000001"
+      - result.response.project_ext_id == "00000000-0000-0000-0000-000000000002"
       - result.response.application_consistent_properties.backup_type == "FULL_BACKUP"
       - result.response.application_consistent_properties.should_include_writers == true
       - result.response.application_consistent_properties.writers | length == 1
@@ -403,6 +403,23 @@
     fail_msg: "Limit=1 was not honored"
     success_msg: "Limit=1 was honored"
 
+- name: List all AHV VM recovery points with fetch_all
+  nutanix.ncp.ntnx_vm_recovery_points_info_v2:
+    fetch_all: true
+  register: result
+  ignore_errors: true
+
+- name: Assert fetch_all returned all available results
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.response is defined
+      - result.total_available_results is defined
+      - result.response | length == result.total_available_results
+    fail_msg: "fetch_all did not return all available results"
+    success_msg: "fetch_all returned all available results"
+
 - name: Fetch with a non-existent ext_id (should fail)
   nutanix.ncp.ntnx_vm_recovery_points_info_v2:
     ext_id: "00000000-0000-0000-0000-000000000000"
@@ -441,11 +458,12 @@
 
 - name: Restore in check mode with full override spec
   nutanix.ncp.ntnx_vm_recovery_point_restore_v2:
-    ext_id: "{{ full_vm_rp_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000003"
     is_strict_mode: false
     vm_config_override_spec:
-      name: "check_mode_restored_{{ vm_rp_name }}"
+      name: "check_mode_restored_ansible_vm"
       description: "Restored (check mode) from full recovery point"
+      project_ext_id: "00000000-0000-0000-0000-000000000004"
       guest_tools_spec:
         should_clear_in_guest_volume_group_attachments: true
   check_mode: true
@@ -460,8 +478,9 @@
       - result.failed == false
       - result.response is defined
       - result.response.is_strict_mode == false
-      - result.response.vm_config_override_spec.name == "check_mode_restored_{{ vm_rp_name }}"
+      - result.response.vm_config_override_spec.name == "check_mode_restored_ansible_vm"
       - result.response.vm_config_override_spec.description == "Restored (check mode) from full recovery point"
+      - result.response.vm_config_override_spec.project_ext_id == "00000000-0000-0000-0000-000000000004"
       - result.response.vm_config_override_spec.guest_tools_spec.should_clear_in_guest_volume_group_attachments == true
     fail_msg: "Check_mode restore spec was not generated correctly"
     success_msg: "Check_mode restore spec generated correctly"
@@ -559,7 +578,7 @@
 - name: Delete AHV VM recovery point in check mode
   nutanix.ncp.ntnx_vm_recovery_point_v2:
     state: absent
-    ext_id: "{{ min_vm_rp_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000005"
   check_mode: true
   register: result
   ignore_errors: true

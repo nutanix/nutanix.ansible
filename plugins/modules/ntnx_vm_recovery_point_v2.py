@@ -15,28 +15,32 @@ short_description: Create or delete an AHV VM recovery point in Nutanix Prism Ce
 version_added: 2.7.0
 description:
   - This module allows you to create or delete an AHV VM recovery point in Nutanix Prism Central.
-  - The Nutanix VMM v4 AHV VM recovery point API does not expose an update endpoint;
-    supplying C(ext_id) with C(state=present) will only fetch the existing recovery
-    point and report C(changed=false) (idempotent no-op).
+  - The AHV VM recovery point API does not support update. When C(ext_id) is provided with
+    C(state=present), the module fetches the existing recovery point and reports skipped.
   - This module uses PC v4 APIs based SDKs.
 notes:
-    - >-
-      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
-      The required roles depend on the operation being performed.
-    - >-
-      B(Create an AHV VM Recovery Point) -
-      Required Roles: Backup Admin, Disaster Recovery Admin, Prism Admin, Super Admin, Self-Service Admin (deprecated)
-    - >-
-      B(Delete an AHV VM Recovery Point) -
-      Required Roles: Backup Admin, Disaster Recovery Admin, Prism Admin, Super Admin, Self-Service Admin (deprecated)
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
+  - >-
+    This module requires the following Nutanix IAM roles to be assigned to the
+    user performing the operation. The required roles depend on the operation
+    being performed.
+  - >-
+    B(Create AHV VM recovery point) -
+    Required Roles: Account Owner, Administrator, Prism Admin, Super Admin,
+    Virtual Machine Admin, Disaster Recovery Admin, Backup Admin, Project Manager,
+    Project Admin, Tenant Admin, Tenant Consumer, Self-Service Admin (deprecated)
+  - >-
+    B(Delete AHV VM recovery point) -
+    Required Roles: Account Owner, Administrator, Prism Admin, Super Admin,
+    Virtual Machine Admin, Disaster Recovery Admin, Backup Admin, Project Manager,
+    Project Admin, Tenant Admin, Tenant Consumer, Self-Service Admin (deprecated)
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
   state:
     description:
-      - If C(state) is set to C(present) and C(ext_id) is not provided the operation will create an AHV VM recovery point.
-      - If C(state) is set to C(present) and C(ext_id) is provided the module will fetch the existing recovery
-        point and report C(changed=false) (the AHV VM recovery point API does not support in-place updates).
-      - If C(state) is set to C(absent) and C(ext_id) is provided the operation will delete the AHV VM recovery point.
+      - If C(state) is set to C(present) and C(ext_id) is not provided then the operation will create an AHV VM recovery point.
+      - If C(state) is set to C(present) and C(ext_id) is provided then the module fetches the existing recovery point
+        (update is not supported by the API).
+      - If C(state) is set to C(absent) and C(ext_id) is provided then the operation will delete the AHV VM recovery point.
     type: str
     required: false
     choices:
@@ -51,22 +55,18 @@ options:
     required: false
   name:
     description:
-      - Name of the AHV VM recovery point.
-      - Required in create operation.
+      - The name of the recovery point.
+      - Required for the create operation.
     type: str
     required: false
   expiration_time:
     description:
-      - The UTC date and time in ISO-8601 format when this AHV VM recovery point expires
-        (for example C(2026-12-31T23:59:59+00:00)).
+      - The UTC date and time in ISO-8601 format when the current recovery point expires and will be removed.
     type: str
     required: false
   recovery_point_type:
     description:
-      - Type of the AHV VM recovery point.
-      - C(CRASH_CONSISTENT) captures the disk state of the VM as-is.
-      - C(APPLICATION_CONSISTENT) quiesces the guest application (requires NGT + VSS on the VM)
-        before creating the recovery point.
+      - Type of the recovery point.
     type: str
     choices:
       - CRASH_CONSISTENT
@@ -74,35 +74,31 @@ options:
     required: false
   vm_ext_id:
     description:
-      - External identifier (UUID) of the source AHV VM that this recovery point captures.
-      - Required in create operation.
+      - VM external identifier which is captured as a part of this recovery point.
+      - Required for the create operation.
     type: str
     required: false
-  vm_categories:
+  project_ext_id:
     description:
-      - List of category external IDs that were associated with the source VM at the time
-        of the recovery point.
-    type: list
-    elements: str
-    required: false
-  consistency_group_ext_id:
-    description:
-      - External identifier (UUID) of the consistency group this VM recovery point belongs to.
+      - A globally unique identifier for the project associated with the resource.
+      - This field is required in create requests for authorization and must match the project
+        identifier of all associated entities.
     type: str
     required: false
   application_consistent_properties:
     description:
-      - Application-consistent properties for the recovery point (only valid when
-        C(recovery_point_type=APPLICATION_CONSISTENT) on Windows VMs with NGT installed).
+      - User-defined application-consistent properties for the recovery point.
     type: dict
     required: false
     suboptions:
       backup_type:
         description:
-          - The backup type defines the criteria for selecting files for application-consistent
-            recovery points on Windows VMs.
-          - C(FULL_BACKUP) backs up all files and updates their backup history.
-          - C(COPY_BACKUP) backs up all files without updating their backup history.
+          - The backup type specifies the criteria for identifying the files to be backed up.
+          - This property should be specified to the application-consistent recovery points for Windows VMs/agents.
+          - C(FULL_BACKUP) - All files are backed up irrespective of their last backup date/time and state.
+            Also, this backup type updates the backup history of every file that was involved in the recovery point.
+          - C(COPY_BACKUP) - All files are backed up regardless of their last backup date/time and state.
+            However, this backup type does not update the backup history of individual files involved in the recovery point.
         type: str
         choices:
           - FULL_BACKUP
@@ -110,21 +106,23 @@ options:
         required: true
       should_include_writers:
         description:
-          - Whether the supplied list of VSS writer UUIDs should be included or excluded from the
-            application-consistent recovery point.
+          - Indicates whether the given set of VSS writers' UUIDs should be included or excluded
+            from the application consistent recovery point.
+          - By default, the value is set to false, indicating that all listed VSS writers' UUIDs will be excluded.
         type: bool
         required: false
         default: false
       writers:
         description:
-          - List of VSS writer UUIDs to include or exclude, per C(should_include_writers).
+          - List of VSS writer UUIDs that are used in an application consistent recovery point.
+          - The default values are the system and the registry writer UUIDs.
         type: list
         elements: str
         required: false
       should_store_vss_metadata:
         description:
-          - Whether to store VSS metadata (writer/requester details) alongside the recovery point
-            so that it is available for application-specific restore operations.
+          - Indicates whether to store the VSS metadata if the user is interested in
+            application-specific backup/restore.
         type: bool
         required: false
         default: false
@@ -151,6 +149,7 @@ EXAMPLES = r"""
     recovery_point_type: "CRASH_CONSISTENT"
     vm_ext_id: "ac5aff0c-6c68-4948-9088-b903e2be0ce7"
   register: result
+  ignore_errors: true
 
 - name: Create an application consistent AHV VM recovery point
   nutanix.ncp.ntnx_vm_recovery_point_v2:
@@ -170,6 +169,7 @@ EXAMPLES = r"""
         - "0f95b402-67aa-431c-9eab-bf0907a99345"
       should_store_vss_metadata: true
   register: result
+  ignore_errors: true
 
 - name: Delete an AHV VM recovery point
   nutanix.ncp.ntnx_vm_recovery_point_v2:
@@ -180,6 +180,7 @@ EXAMPLES = r"""
     state: absent
     ext_id: "b387359d-fa5c-4d58-9eb2-3af1a4976319"
   register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -194,7 +195,6 @@ response:
   sample:
     {
       "application_consistent_properties": null,
-      "consistency_group_ext_id": null,
       "creation_time": "2026-07-21T05:12:31.912+00:00",
       "disk_recovery_points": [
         {
@@ -210,22 +210,17 @@ response:
       "recovery_point_type": "CRASH_CONSISTENT",
       "status": "COMPLETE",
       "tenant_id": null,
-      "total_exclusive_usage_bytes": 0,
-      "vm": null,
-      "vm_categories": null,
       "vm_ext_id": "ac5aff0c-6c68-4948-9088-b903e2be0ce7"
     }
 
 task_ext_id:
-  description:
-    - The external ID of the task.
+  description: The external ID of the task.
   returned: always
   type: str
   sample: "ZXJnb24=:90458bc7-a12b-4616-ac66-562fdb00c209"
 
 ext_id:
-  description:
-    - The external ID of the AHV VM recovery point.
+  description: The external ID of the AHV VM recovery point.
   returned: always
   type: str
   sample: "b387359d-fa5c-4d58-9eb2-3af1a4976319"
@@ -237,8 +232,8 @@ changed:
   sample: true
 
 skipped:
-  description: This indicates whether the operation was skipped due to idempotency
-  returned: always
+  description: This indicates whether the task was skipped
+  returned: when the module is idempotent
   type: bool
   sample: false
 
@@ -255,9 +250,9 @@ failed:
 
 msg:
   description: This indicates the message if any message occurred
-  returned: When there is an error, module is idempotent or check mode (in delete operation)
+  returned: When there is an error, module is idempotent or check mode
   type: str
-  sample: "Api Exception raised while creating AHV VM recovery point"
+  sample: "AHV VM recovery point with ext_id:b387359d-fa5c-4d58-9eb2-3af1a4976319 will be deleted."
 """
 
 import traceback  # noqa: E402
@@ -292,12 +287,10 @@ except ImportError:
 
     SDK_IMP_ERROR = traceback.format_exc()
 
-# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
 def get_module_spec():
-
     vss_properties_sub_spec = dict(
         backup_type=dict(
             type="str",
@@ -320,8 +313,7 @@ def get_module_spec():
             obj=vmm_sdk.RecoveryPointType,
         ),
         vm_ext_id=dict(type="str"),
-        vm_categories=dict(type="list", elements="str"),
-        consistency_group_ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         application_consistent_properties=dict(
             type="dict",
             options=vss_properties_sub_spec,
@@ -331,16 +323,9 @@ def get_module_spec():
     return module_args
 
 
-def create_vm_recovery_point(module, result, api_instance):
-    """Create a new AHV VM recovery point.
-
-    The AHV VM recovery point Create API requires at minimum ``name`` and
-    ``vm_ext_id`` to identify the source VM. On success the task ``entities_affected``
-    list carries the new recovery point's external ID with rel
-    ``dataprotection:config:vm-recovery-point`` which we use to fetch and return
-    the full entity.
-    """
+def create_vm_recovery_point(module, result):
     validate_required_params(module, ["name", "vm_ext_id"])
+    api_instance = get_vm_recovery_points_api_instance(module)
 
     sg = SpecGenerator(module)
     default_spec = vmm_sdk.VmRecoveryPoint()
@@ -379,48 +364,30 @@ def create_vm_recovery_point(module, result, api_instance):
             result["ext_id"] = ext_id
             entity = get_vm_recovery_point(module, api_instance, ext_id)
             result["response"] = strip_internal_attributes(entity.to_dict())
-        else:
-            raise_api_exception(
-                module=module,
-                exception=Exception(
-                    "Failed to get AHV VM recovery point ext_id from task "
-                    "entities_affected"
-                ),
-                msg=(
-                    "Failed to get AHV VM recovery point ext_id from task "
-                    "for the created recovery point"
-                ),
-            )
     result["changed"] = True
 
 
-def update_vm_recovery_point(module, result, api_instance):
-    """Idempotent no-op for AHV VM recovery point.
-
-    The AHV VM recovery point v4 API does not expose an update endpoint. When
-    ``ext_id`` is supplied with ``state=present`` we fetch the existing entity
-    (validating that it exists) and return it unchanged. This preserves the
-    Ansible-idiomatic ``changed=false`` semantics without pretending an update
-    happened.
-    """
+def get_existing_vm_recovery_point(module, result):
+    """Fetch existing recovery point when present+ext_id (API has no update)."""
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-
+    api_instance = get_vm_recovery_points_api_instance(module)
     entity = get_vm_recovery_point(module, api_instance, ext_id)
     result["response"] = strip_internal_attributes(entity.to_dict())
     result["skipped"] = True
     module.exit_json(
         msg=(
-            "AHV VM recovery point does not support update operation. "
+            "AHV VM recovery point does not support update. "
             "Existing recovery point with ext_id '{0}' has been fetched.".format(ext_id)
         ),
         **result,
     )
 
 
-def delete_vm_recovery_point(module, result, api_instance):
+def delete_vm_recovery_point(module, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+    api_instance = get_vm_recovery_points_api_instance(module)
 
     if module.check_mode:
         result["msg"] = "AHV VM recovery point with ext_id:{0} will be deleted.".format(
@@ -440,6 +407,7 @@ def delete_vm_recovery_point(module, result, api_instance):
 
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
         task_status = wait_for_completion(module, task_ext_id, True)
         result["response"] = strip_internal_attributes(task_status.to_dict())
@@ -451,6 +419,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
+            ("state", "present", ("name", "ext_id"), True),
             ("state", "absent", ("ext_id",)),
         ],
     )
@@ -466,18 +435,15 @@ def run_module():
         "response": None,
         "failed": False,
         "ext_id": None,
-        "task_ext_id": None,
-        "skipped": False,
     }
-    api_instance = get_vm_recovery_points_api_instance(module)
     state = module.params.get("state")
     if state == "present":
         if module.params.get("ext_id"):
-            update_vm_recovery_point(module, result, api_instance)
+            get_existing_vm_recovery_point(module, result)
         else:
-            create_vm_recovery_point(module, result, api_instance)
+            create_vm_recovery_point(module, result)
     else:
-        delete_vm_recovery_point(module, result, api_instance)
+        delete_vm_recovery_point(module, result)
     module.exit_json(**result)
 
 

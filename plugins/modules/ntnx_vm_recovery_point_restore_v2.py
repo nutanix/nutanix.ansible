@@ -15,22 +15,22 @@ short_description: Restore a new AHV VM from an AHV VM recovery point
 version_added: 2.7.0
 description:
   - Restore a new AHV VM from an existing AHV VM recovery point in Nutanix Prism Central.
-  - The restored VM's configuration can optionally be overridden (name, description, NIC spec,
-    categories, ownership, guest tools) via C(vm_config_override_spec).
   - This module uses PC v4 APIs based SDKs.
 notes:
-    - >-
-      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
-    - >-
-      B(Restore an AHV VM Recovery Point) -
-      Required Roles: Backup Admin, Disaster Recovery Admin, Prism Admin, Super Admin, Self-Service Admin (deprecated)
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
+  - >-
+    This module requires the following Nutanix IAM roles to be assigned to the
+    user performing the operation.
+  - >-
+    B(Restore a new VM from an AHV VM recovery point) -
+    Required Roles: Account Owner, Administrator, Backup Admin, Disaster Recovery Admin,
+    Prism Admin, Project Admin, Project Manager, Super Admin, Virtual Machine Admin,
+    Tenant Admin, Tenant Consumer, Self-Service Admin (deprecated)
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
   state:
     description:
       - State of the module.
       - If state is C(present), the module will restore a new AHV VM from a recovery point.
-      - If state is anything else, the module will fail.
     type: str
     choices:
       - present
@@ -38,51 +38,53 @@ options:
   ext_id:
     description:
       - A globally unique identifier of an AHV VM recovery point. It should be of type UUID.
-      - This is the recovery point that will be restored.
     type: str
     required: true
   is_strict_mode:
     description:
-      - If set to C(false), any VM configuration that cannot be restored will be dropped or
-        reset to system defaults (currently applies to subnets, NIC profiles, project and
-        categories, plus dropping unknown features on older PEs).
-      - If set to C(true), the restore will run in normal mode where any failures are raised
-        as errors and the VM is not restored until the issues are resolved.
+      - If set to false, any VM configuration in the VM recovery point that cannot be restored
+        will be dropped or reset to system defaults. This currently applies to the following
+        fields in the VM configuration: subnets, NIC profiles, and the project. It also handles
+        dropping unknown features on older PEs.
+      - If set to true, the restore operation will run in normal mode, where any failures will
+        be raised as errors, and the VM will not be restored until the issues are resolved.
     type: bool
     required: false
     default: true
   vm_config_override_spec:
     description:
-      - Optional overrides to apply on the VM configuration captured by the recovery point.
+      - To override the VM configuration captured in the snapshot (VM Recovery Point).
     type: dict
     required: false
     suboptions:
       name:
         description:
-          - Name to assign to the restored VM.
+          - Name of the VM to override with. If not specified, a name is chosen by the system
+            and returned to the task entities when complete.
         type: str
         required: false
       description:
         description:
-          - Description to assign to the restored VM.
+          - VM description.
         type: str
         required: false
       nic_spec:
         description:
-          - NIC configuration overrides for the restored VM. If omitted, the NICs captured
-            in the recovery point are restored as-is.
+          - NIC configuration input for the restored VM. If not specified, the NICs in the
+            VM Recovery Point will be restored.
         type: dict
         required: false
         suboptions:
           nic_remove_list:
             description:
-              - List of NIC UUIDs from the VM recovery point to drop when restoring the VM.
+              - List of NIC UUIDs from the VM Recovery Point to be dropped when restoring the VM.
             type: list
             elements: str
             required: false
           nic_override_list:
             description:
-              - Per-NIC override specifications.
+              - List of NIC parameters to override the corresponding NICs captured in the
+                VM Recovery Point.
             type: list
             elements: dict
             required: false
@@ -94,19 +96,54 @@ options:
                 required: false
               guest_nic_info:
                 description:
-                  - Guest NIC info overrides (currently supports guest static IP list).
+                  - Guest NIC info overrides.
                 type: dict
                 required: false
                 suboptions:
                   guest_static_ip_list:
                     description:
-                      - List of guest static IP entries to override.
+                      - List of static IP addresses to override for the guest NIC.
                     type: list
                     elements: dict
                     required: false
+                    suboptions:
+                      ipv4_address:
+                        description:
+                          - List of static IPv4 addresses to override for the guest NIC.
+                        type: dict
+                        required: false
+                        suboptions:
+                          value:
+                            description:
+                              - The IPv4 address of the host.
+                            type: str
+                            required: true
+                          prefix_length:
+                            description:
+                              - The prefix length of the network to which this host IPv4 address belongs.
+                            type: int
+                            required: false
+                      gateway_ipv4_address_list:
+                        description:
+                          - List of gateway IPv4 addresses to override for the guest NIC's particular static IP.
+                        type: list
+                        elements: dict
+                        required: false
+                        suboptions:
+                          value:
+                            description:
+                              - The IPv4 address of the host.
+                            type: str
+                            required: true
+                          prefix_length:
+                            description:
+                              - The prefix length of the network to which this host IPv4 address belongs.
+                            type: int
+                            required: false
       categories:
         description:
-          - List of AHV category references to associate with the restored VM.
+          - Categories to be associated with the VM on successful restore.
+          - If not specified, the VM is provisioned without any categories.
         type: list
         elements: dict
         required: false
@@ -116,9 +153,17 @@ options:
               - External identifier of the category.
             type: str
             required: true
+      project_ext_id:
+        description:
+          - Project to be associated with the VM on successful restore.
+          - Only the default project or the recovery point's original project can be provided
+            in the override restore.
+        type: str
+        required: false
       ownership_info:
         description:
-          - Ownership override for the restored VM.
+          - Ownership information to restore the VM with.
+          - If not specified, the user invoking the restore operation will be the owner.
         type: dict
         required: false
         suboptions:
@@ -135,7 +180,7 @@ options:
                 required: true
       guest_tools_spec:
         description:
-          - Guest tools override for the restored VM (only applicable when NGT is installed).
+          - Guest tools override for the restored VM.
         type: dict
         required: false
         suboptions:
@@ -146,6 +191,25 @@ options:
             type: bool
             required: false
             default: false
+      bios_spec:
+        description:
+          - Specification for BIOS UUID related overrides for VM restore.
+        type: dict
+        required: false
+        suboptions:
+          bios_spec:
+            description:
+              - Configuration object that specifies whether to preserve or generate a new
+                BIOS UUID when restoring a VM from a recovery point.
+            type: dict
+            required: false
+            suboptions:
+              should_preserve_bios_uuid:
+                description:
+                  - Whether to preserve the BIOS UUID from the recovery point.
+                type: bool
+                required: false
+                default: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -165,6 +229,7 @@ EXAMPLES = r"""
     validate_certs: false
     ext_id: "b387359d-fa5c-4d58-9eb2-3af1a4976319"
   register: result
+  ignore_errors: true
 
 - name: Restore a new VM from an AHV VM recovery point with overrides
   nutanix.ncp.ntnx_vm_recovery_point_restore_v2:
@@ -180,6 +245,7 @@ EXAMPLES = r"""
       guest_tools_spec:
         should_clear_in_guest_volume_group_attachments: true
   register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -192,32 +258,10 @@ response:
   type: dict
   sample:
     {
-        "cluster_ext_ids": [
-            "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
-        ],
         "completed_time": "2026-07-21T05:20:11.524581+00:00",
-        "completion_details": [
-            {
-                "name": "vmExtIds",
-                "value": "e44621b1-da4e-40d1-87b1-cbb640001347"
-            }
-        ],
-        "created_time": "2026-07-21T05:20:07.167906+00:00",
-        "entities_affected": [
-            {
-                "ext_id": "b387359d-fa5c-4d58-9eb2-3af1a4976319",
-                "rel": "dataprotection:config:vm-recovery-point"
-            },
-            {
-                "ext_id": "e44621b1-da4e-40d1-87b1-cbb640001347",
-                "rel": "vmm:ahv:config:vm"
-            }
-        ],
         "ext_id": "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1",
         "operation": "RestoreVmRecoveryPoint",
-        "operation_description": "Restore VM Recovery Point",
         "progress_percentage": 100,
-        "started_time": "2026-07-21T05:20:07.185754+00:00",
         "status": "SUCCEEDED"
     }
 
@@ -246,13 +290,12 @@ changed:
   sample: true
 
 error:
-  description: This field typically holds information about if the task have errors that occurred during the task execution
+  description: This indicates the error message if any error occurred
   returned: when an error occurs
   type: str
-  sample: "Failed to get etag for AHV VM recovery point"
 
 failed:
-  description: This field typically holds information about if the task have failed
+  description: This indicates whether the task failed
   returned: always
   type: bool
   sample: false
@@ -294,13 +337,28 @@ except ImportError:
 
     SDK_IMP_ERROR = traceback.format_exc()
 
-# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
 def get_module_spec():
+    ipv4_address_spec = dict(
+        value=dict(type="str", required=True),
+        prefix_length=dict(type="int"),
+    )
 
-    guest_static_ip_sub_spec = dict()
+    guest_static_ip_sub_spec = dict(
+        ipv4_address=dict(
+            type="dict",
+            options=ipv4_address_spec,
+            obj=vmm_sdk.IPv4Address,
+        ),
+        gateway_ipv4_address_list=dict(
+            type="list",
+            elements="dict",
+            options=ipv4_address_spec,
+            obj=vmm_sdk.IPv4Address,
+        ),
+    )
 
     guest_nic_info_sub_spec = dict(
         guest_static_ip_list=dict(
@@ -350,6 +408,18 @@ def get_module_spec():
         should_clear_in_guest_volume_group_attachments=dict(type="bool", default=False),
     )
 
+    preserve_bios_sub_spec = dict(
+        should_preserve_bios_uuid=dict(type="bool", default=False),
+    )
+
+    bios_spec_sub_spec = dict(
+        bios_spec=dict(
+            type="dict",
+            options=preserve_bios_sub_spec,
+            obj=vmm_sdk.VmRestorePreserveBios,
+        ),
+    )
+
     vm_config_override_spec_sub_spec = dict(
         name=dict(type="str"),
         description=dict(type="str"),
@@ -364,6 +434,7 @@ def get_module_spec():
             options=category_ref_sub_spec,
             obj=vmm_sdk.AhvConfigCategoryReference,
         ),
+        project_ext_id=dict(type="str"),
         ownership_info=dict(
             type="dict",
             options=ownership_info_sub_spec,
@@ -373,6 +444,11 @@ def get_module_spec():
             type="dict",
             options=guest_tools_sub_spec,
             obj=vmm_sdk.VmRestoreGuestToolsSpecification,
+        ),
+        bios_spec=dict(
+            type="dict",
+            options=bios_spec_sub_spec,
+            obj=vmm_sdk.VmRestoreBiosSpecification,
         ),
     )
 
@@ -389,9 +465,10 @@ def get_module_spec():
     return module_args
 
 
-def restore_vm_recovery_point(module, result, api_instance):
+def restore_vm_recovery_point(module, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+    api_instance = get_vm_recovery_points_api_instance(module)
 
     sg = SpecGenerator(module)
     default_spec = vmm_sdk.RestoreVmRecoveryPointParams()
@@ -447,10 +524,8 @@ def run_module():
         "response": None,
         "failed": False,
         "ext_id": None,
-        "task_ext_id": None,
     }
-    api_instance = get_vm_recovery_points_api_instance(module)
-    restore_vm_recovery_point(module, result, api_instance)
+    restore_vm_recovery_point(module, result)
     module.exit_json(**result)
 
 
