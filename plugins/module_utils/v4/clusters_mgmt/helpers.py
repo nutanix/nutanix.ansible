@@ -278,13 +278,10 @@ def list_physical_gpu_profiles(module, api_instance, cluster_ext_id, **kwargs):
 def list_virtual_gpu_profiles(module, api_instance, cluster_ext_id, **kwargs):
     """
     This method will return the list of virtual GPU profiles for a cluster.
-    Virtual GPU profiles define the resource allocation (frame buffer, display
-    heads, resolution, licensing) available to virtual machines across the
-    registered clusters.
     Args:
         module: Ansible module
         api_instance: ClustersApi instance from sdk
-        cluster_ext_id (str): UUID of the cluster
+        cluster_ext_id (str): cluster external ID
         kwargs (dict): additional query parameters (_page, _limit, _filter, _orderby)
     return:
         virtual GPU profiles list API response (object)
@@ -301,35 +298,40 @@ def list_virtual_gpu_profiles(module, api_instance, cluster_ext_id, **kwargs):
         )
 
 
-def get_virtual_gpu_profile(module, api_instance, cluster_ext_id, ext_id):
+def get_virtual_gpu_profile(module, api_instance, ext_id, cluster_ext_id):
     """
-    This method will return a virtual GPU profile by external ID.
-
-    The underlying V4 ClustersApi only exposes a list endpoint
-    (list_virtual_gpu_profiles). We emulate a "get by ext_id" by listing
-    profiles for the given cluster and returning the entry whose ext_id
-    matches. If the profile is not found, the module will be failed with a
-    descriptive error.
-
+    This method will return virtual GPU profile info using external ID.
+    The SDK exposes only list_virtual_gpu_profiles, so this helper lists with
+    an extId filter and returns the matching profile.
     Args:
         module: Ansible module
         api_instance: ClustersApi instance from sdk
-        cluster_ext_id (str): cluster external ID (path parameter)
-        ext_id (str): virtual GPU profile external ID to look up
+        ext_id (str): virtual GPU profile external ID
+        cluster_ext_id (str): parent cluster external ID
     return:
-        virtual GPU profile (object): matching VirtualGpuProfile object
+        virtual GPU profile info (object): virtual GPU profile info
     """
-    resp = list_virtual_gpu_profiles(module, api_instance, cluster_ext_id)
-    profiles = resp.data or []
-    for profile in profiles:
+    try:
+        resp = api_instance.list_virtual_gpu_profiles(
+            clusterExtId=cluster_ext_id,
+            _filter="extId eq '{0}'".format(ext_id),
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching virtual GPU profile info using ext_id",
+        )
+
+    data = getattr(resp, "data", None) or []
+    for profile in data:
         if getattr(profile, "ext_id", None) == ext_id:
             return profile
+
     module.fail_json(
         msg=(
-            "Virtual GPU profile with ext_id '{0}' not found on cluster '{1}'".format(
-                ext_id, cluster_ext_id
-            )
-        )
+            "VirtualGpuProfile with ext_id '{0}' was not found on cluster '{1}'."
+        ).format(ext_id, cluster_ext_id)
     )
 
 

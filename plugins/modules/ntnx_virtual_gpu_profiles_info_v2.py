@@ -11,45 +11,34 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_virtual_gpu_profiles_info_v2
-short_description: Fetch Virtual GPU Profile info from a Nutanix Prism Central managed cluster
+short_description: Fetch virtual GPU profiles info in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module allows you to fetch information about VirtualGpuProfile in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific VirtualGpuProfile.
-  - If C(ext_id) is not provided, list multiple VirtualGpuProfile optionally filtered / paginated.
-  - Virtual GPU profiles describe functionally equivalent vGPU devices (frame buffer size,
-    number of virtual display heads, max resolution, licenses, etc.) that can be assigned to
-    virtual machines. They are discovered from the AHV Acropolis Device Manager (ADM) and
-    aggregated at Prism Central per cluster.
-  - There is no Get-by-ID endpoint; when C(ext_id) is set the module lists profiles for the
-    cluster and returns the matching entry.
+  - This module allows you to fetch information about virtual GPU profiles in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch details of the specific virtual GPU profile.
+  - If C(ext_id) is not provided, list multiple virtual GPU profiles optionally filtered / paginated.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
-    This module requires the following Nutanix IAM roles to be assigned to the user
-    performing the operation.
+    This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
     B(View Cluster Vgpu Profiles) -
     Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer,
     Project Manager, Super Admin, Self-Service Admin (deprecated)
-  - The GPU profiles are scoped to a single cluster, so C(cluster_ext_id) is required.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
-  cluster_ext_id:
-    description:
-      - External ID (UUID) of the Prism Element cluster whose Virtual GPU profiles are
-        being fetched.
-      - Maps to the C(clusterExtId) path parameter of C(listVirtualGpuProfiles).
-    type: str
-    required: true
   ext_id:
     description:
-      - External ID of a Virtual GPU profile to fetch.
-      - When provided, the module returns a single matching profile from the cluster
-        list response (client-side filter; not a separate Get API).
-      - When not provided, the module lists all profiles for the given cluster.
+      - The external ID of the virtual GPU profile.
+      - If provided, only the matching profile is returned.
     type: str
     required: false
+  cluster_ext_id:
+    description:
+      - External ID (UUID) of the parent cluster whose virtual GPU profiles should be fetched.
+      - Required for both list and get-by-ext_id flows.
+    type: str
+    required: true
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
@@ -61,34 +50,42 @@ author:
 """
 
 EXAMPLES = r"""
-- name: List all Virtual GPU profiles on a cluster
+- name: List all virtual GPU profiles on a cluster
   nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2:
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
   register: result
   ignore_errors: true
 
-- name: Fetch a Virtual GPU profile by external ID
+- name: Get a virtual GPU profile by external ID
   nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2:
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     ext_id: "0005a1ef-b3aa-4fc4-9c8c-1c8c8f3a0000"
   register: result
   ignore_errors: true
 
-- name: List Virtual GPU profiles with a limit
-  nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2:
-    cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
-    limit: 5
-  register: result
-  ignore_errors: true
-
-- name: List Virtual GPU profiles using a filter (OData)
+- name: List virtual GPU profiles filtered by device name
   nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2:
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     filter: "virtualGpuConfig/deviceName eq 'GRID V100D-8Q'"
   register: result
   ignore_errors: true
 
-- name: List all Virtual GPU profiles with fetch_all
+- name: List virtual GPU profiles with page and limit
+  nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2:
+    cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
+    page: 0
+    limit: 5
+  register: result
+  ignore_errors: true
+
+- name: List virtual GPU profiles ordered by frame buffer size
+  nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2:
+    cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
+    orderby: "virtualGpuConfig/frameBufferSizeBytes desc"
+  register: result
+  ignore_errors: true
+
+- name: List all virtual GPU profiles with fetch_all
   nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2:
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     fetch_all: true
@@ -99,10 +96,10 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC VirtualGpuProfile info v4 API.
-    - It can be a single VirtualGpuProfile if external ID is provided.
-    - List of multiple VirtualGpuProfile if external ID is not provided
-      with optional filter or limit.
+    - The response from the Nutanix PC virtual GPU profiles info v4 API.
+    - It can be a single virtual GPU profile if C(ext_id) is provided.
+    - List of multiple virtual GPU profiles if C(ext_id) is not provided,
+      optionally filtered / limited.
   returned: always
   type: dict
   sample:
@@ -130,19 +127,6 @@ response:
       }
     }
 
-ext_id:
-  description:
-    - The external ID of the Virtual GPU profile.
-  returned: when external ID is provided
-  type: str
-  sample: "0005a1ef-b3aa-4fc4-9c8c-1c8c8f3a0000"
-
-total_available_results:
-  description: The total number of available Virtual GPU profiles on the cluster.
-  type: int
-  returned: when all profiles are fetched (no ext_id given)
-  sample: 4
-
 changed:
   description: This indicates whether the task resulted in any changes. Always false for info modules.
   returned: always
@@ -153,18 +137,30 @@ msg:
   description: This indicates the message if any message occurred.
   returned: When there is an error
   type: str
-  sample: "Api Exception raised while fetching Virtual GPU profiles info"
+  sample: "Api Exception raised while fetching virtual GPU profiles info"
 
 error:
-  description: The error message if any error occurred.
+  description: This field typically holds information about if the task have errors that occurred during the task execution.
   type: str
-  returned: When an error occurs
+  returned: when an error occurs
 
 failed:
-  description: This indicates whether the task failed.
+  description: This field typically holds information about if the task have failed.
   returned: always
   type: bool
   sample: false
+
+ext_id:
+  description: External ID of the virtual GPU profile.
+  type: str
+  returned: when external ID is provided
+  sample: "0005a1ef-b3aa-4fc4-9c8c-1c8c8f3a0000"
+
+total_available_results:
+  description: The total number of available virtual GPU profiles on the cluster.
+  type: int
+  returned: when all virtual GPU profiles are fetched
+  sample: 4
 """
 
 import warnings  # noqa: E402
@@ -201,7 +197,7 @@ def get_module_spec():
 def get_virtual_gpu_profile_using_ext_id(module, api_instance, result):
     cluster_ext_id = module.params.get("cluster_ext_id")
     ext_id = module.params.get("ext_id")
-    resp = get_virtual_gpu_profile(module, api_instance, cluster_ext_id, ext_id)
+    resp = get_virtual_gpu_profile(module, api_instance, ext_id, cluster_ext_id)
     result["ext_id"] = ext_id
     result["response"] = strip_internal_attributes(resp.to_dict())
 
@@ -211,11 +207,10 @@ def get_virtual_gpu_profiles(module, api_instance, result):
 
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
-
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating Virtual GPU profiles info spec", **result
+            msg="Failed generating virtual GPU profiles info spec", **result
         )
 
     try:
@@ -228,7 +223,7 @@ def get_virtual_gpu_profiles(module, api_instance, result):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while fetching Virtual GPU profiles info",
+            msg="Api Exception raised while fetching virtual GPU profiles info",
         )
 
     total_available_results = resp.metadata.total_available_results

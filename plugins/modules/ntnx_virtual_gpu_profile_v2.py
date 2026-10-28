@@ -11,24 +11,19 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_virtual_gpu_profile_v2
-short_description: Manage Virtual GPU Profiles (read-only shim) in Nutanix Prism Central
+short_description: Manage Virtual GPU Profiles in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module is the CRUD-style counterpart to
-    M(nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2) for the Prism Central
-    V4 C(VirtualGpuProfile) entity in the C(clustermgmt) namespace.
-  - Virtual GPU profiles describe functionally equivalent vGPU devices
-    (frame buffer size, number of virtual display heads, max resolution,
-    licenses, etc.) that are discovered from the AHV Acropolis Device
-    Manager (ADM) and aggregated at Prism Central per cluster.
-  - The V4 C(clustermgmt) API only exposes a read-only C(list) endpoint for
-    C(VirtualGpuProfile); there are no supported Create, Update, or Delete
-    endpoints. Because of that, when C(state=present) or C(state=absent) is
-    invoked this module fails with a descriptive message instead of
-    silently performing a no-op. Use
+  - Virtual GPU profiles are discovered from AHV and aggregated at Prism Central
+    per cluster. They describe functionally equivalent vGPU devices (frame buffer
+    size, display heads, max resolution, licenses, etc.).
+  - The V4 C(clustermgmt) API only exposes a read-only list endpoint for
+    C(VirtualGpuProfile); Create, Update, and Delete are not supported.
+  - When C(state=present) or C(state=absent) is invoked outside of C(check_mode),
+    this module fails with a descriptive message. Use
     M(nutanix.ncp.ntnx_virtual_gpu_profiles_info_v2) to fetch profiles.
-  - In C(check_mode) the module returns the requested spec without failing,
-    so the module can still be included in dry-run playbooks.
+  - In C(check_mode) the module returns the requested spec and sets C(skipped)
+    without failing, so the module can still be included in dry-run playbooks.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -39,27 +34,22 @@ notes:
     Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer,
     Project Manager, Super Admin, Self-Service Admin (deprecated)
   - >-
-    The V4 C(clustermgmt) API exposes only
-    C(listVirtualGpuProfiles)
-    (C(GET /api/clustermgmt/v4.3/config/clusters/{clusterExtId}/virtual-gpu-profiles)).
+    The V4 C(clustermgmt) API exposes only C(listVirtualGpuProfiles).
     There are no Create, Update, or Delete operations for this entity, so
     C(state=present) / C(state=absent) fail outside of C(check_mode).
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   state:
     description:
-      - If C(state) is set to C(present) and C(ext_id) is not provided the
-        operation would be create Virtual GPU profile, which is B(not
-        supported) by the V4 API - the module fails with a descriptive
-        message.
-      - If C(state) is set to C(present) and C(ext_id) is provided the
-        operation would be update Virtual GPU profile, which is B(not
-        supported) by the V4 API - the module fails with a descriptive
-        message.
-      - If C(state) is set to C(absent) and C(ext_id) is provided the
-        operation would be delete Virtual GPU profile, which is B(not
-        supported) by the V4 API - the module fails with a descriptive
-        message.
+      - If C(state) is set to C(present) and C(ext_id) is not provided, create
+        would be attempted, which is B(not supported) by the V4 API - the
+        module fails with a descriptive message.
+      - If C(state) is set to C(present) and C(ext_id) is provided, update
+        would be attempted, which is B(not supported) by the V4 API - the
+        module fails with a descriptive message.
+      - If C(state) is set to C(absent) and C(ext_id) is provided, delete
+        would be attempted, which is B(not supported) by the V4 API - the
+        module fails with a descriptive message.
     type: str
     required: false
     choices:
@@ -70,10 +60,9 @@ options:
     description:
       - External ID (UUID) of the Prism Element cluster that owns the
         Virtual GPU profile.
-      - Maps to the C(clusterExtId) path parameter of
-        C(listVirtualGpuProfiles).
+      - Required for all states.
     type: str
-    required: false
+    required: true
   ext_id:
     description:
       - The external ID of the Virtual GPU profile.
@@ -120,10 +109,7 @@ RETURN = r"""
 response:
   description:
     - The full request spec that the module would have submitted if the
-      operation were supported. Returned only in C(check_mode).
-    - Outside of C(check_mode) the module fails before an SDK call is
-      attempted because the C(clustermgmt) V4 SDK is read-only for this
-      entity.
+      operation were supported. Returned in C(check_mode) and on failure.
   returned: always
   type: dict
   sample:
@@ -136,8 +122,7 @@ response:
 task_ext_id:
   description:
     - The external ID of the task.
-    - Always null because no task is submitted (the SDK does not expose a
-      task-producing endpoint for this entity).
+    - Always null because no task is submitted for this read-only entity.
   returned: always
   type: str
   sample: null
@@ -158,8 +143,7 @@ changed:
 skipped:
   description:
     - This indicates whether the task was skipped.
-    - Applicable when the module cannot proceed (for example when the
-      requested operation is not supported by the V4 SDK).
+    - Set in C(check_mode) because Create / Update / Delete are not supported.
   returned: when applicable
   type: bool
   sample: true
@@ -188,7 +172,6 @@ import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
-from ..module_utils.v4.utils import validate_required_params  # noqa: E402
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
@@ -201,7 +184,7 @@ _UNSUPPORTED_MSG = (
 def get_module_spec():
 
     module_args = dict(
-        cluster_ext_id=dict(type="str"),
+        cluster_ext_id=dict(type="str", required=True),
         ext_id=dict(type="str"),
     )
     return module_args
@@ -220,9 +203,7 @@ def _spec_snapshot(module):
     }
 
 
-def create_VirtualGpuProfile(module, result):
-    validate_required_params(module, ["cluster_ext_id"])
-
+def create_virtual_gpu_profile(module, result):
     if module.check_mode:
         result["response"] = _spec_snapshot(module)
         result["msg"] = _UNSUPPORTED_MSG.format(op="create")
@@ -235,9 +216,7 @@ def create_VirtualGpuProfile(module, result):
     module.fail_json(**result)
 
 
-def update_VirtualGpuProfile(module, result):
-    validate_required_params(module, ["cluster_ext_id", "ext_id"])
-
+def update_virtual_gpu_profile(module, result):
     result["ext_id"] = module.params.get("ext_id")
 
     if module.check_mode:
@@ -252,9 +231,7 @@ def update_VirtualGpuProfile(module, result):
     module.fail_json(**result)
 
 
-def delete_VirtualGpuProfile(module, result):
-    validate_required_params(module, ["cluster_ext_id", "ext_id"])
-
+def delete_virtual_gpu_profile(module, result):
     result["ext_id"] = module.params.get("ext_id")
 
     if module.check_mode:
@@ -282,6 +259,7 @@ def run_module():
     result = {
         "changed": False,
         "response": None,
+        "error": None,
         "failed": False,
         "ext_id": None,
         "task_ext_id": None,
@@ -289,11 +267,11 @@ def run_module():
     state = module.params.get("state")
     if state == "present":
         if module.params.get("ext_id"):
-            update_VirtualGpuProfile(module, result)
+            update_virtual_gpu_profile(module, result)
         else:
-            create_VirtualGpuProfile(module, result)
+            create_virtual_gpu_profile(module, result)
     else:
-        delete_VirtualGpuProfile(module, result)
+        delete_virtual_gpu_profile(module, result)
     module.exit_json(**result)
 
 
