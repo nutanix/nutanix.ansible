@@ -51,10 +51,12 @@
       nutanix.ncp.ntnx_vms_power_actions_v2:
         ext_id: "{{ vm_result.ext_id }}"
         state: power_off
+      register: power_off_result
       ignore_errors: true
 
     - name: Delete VM
       nutanix.ncp.ntnx_vms_v2:
         state: absent
         ext_id: "{{ vm_result.ext_id }}"
+      register: delete_result
       ignore_errors: true
