@@ -10,5 +10,5 @@
       nutanix_debug: "{{ nutanix_debug | default(omit) }}"
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
   block:
-    - name: Import vm_disk_stat_v2 tests
-      ansible.builtin.import_tasks: vm_disk_stat_v2.yml
+    - name: Import vm_nic_stats_info_v2 tests
+      ansible.builtin.import_tasks: vm_nic_stats_info_v2.yml

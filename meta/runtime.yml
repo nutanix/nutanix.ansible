@@ -334,5 +334,5 @@ action_groups:
     - ntnx_update_domain_manager_v2
     - ntnx_scale_up_domain_manager_by_id_v2
     - ntnx_vm_stats_info_v2
-    - ntnx_vm_disk_stat_v2
-    - ntnx_vm_nic_stat_v2
+    - ntnx_vm_disk_stats_info_v2
+    - ntnx_vm_nic_stats_info_v2

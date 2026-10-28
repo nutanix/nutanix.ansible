@@ -1,9 +1,9 @@
 ---
-# Integration tests for ntnx_vm_disk_stat_v2.
+# Integration tests for ntnx_vm_disk_stats_info_v2.
 
-- name: Start ntnx_vm_disk_stat_v2 integration tests
+- name: Start ntnx_vm_disk_stats_info_v2 integration tests
   ansible.builtin.debug:
-    msg: Start ntnx_vm_disk_stat_v2 integration tests
+    msg: Start ntnx_vm_disk_stats_info_v2 integration tests
 
 - name: Compute stats window start time (last 5 minutes)
   ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
@@ -16,7 +16,7 @@
   changed_when: false
 
 - name: Disk stats module rejects missing required params
-  nutanix.ncp.ntnx_vm_disk_stat_v2: {}
+  nutanix.ncp.ntnx_vm_disk_stats_info_v2: {}
   register: result
   ignore_errors: true
 
@@ -35,7 +35,7 @@
     success_msg: Disk stats module correctly rejected missing required params
 
 - name: Disk stats module rejects invalid stat_type
-  nutanix.ncp.ntnx_vm_disk_stat_v2:
+  nutanix.ncp.ntnx_vm_disk_stats_info_v2:
     vm_ext_id: "83083083-0000-0000-0000-000000000001"
     ext_id: "83083083-0000-0000-0000-000000000002"
     start_time: "{{ start_time.stdout }}"
@@ -57,7 +57,7 @@
     success_msg: Invalid stat_type correctly rejected
 
 - name: Fetch disk stats for a non-existent VM/disk
-  nutanix.ncp.ntnx_vm_disk_stat_v2:
+  nutanix.ncp.ntnx_vm_disk_stats_info_v2:
     vm_ext_id: "83083083-0000-0000-0000-000000000099"
     ext_id: "83083083-0000-0000-0000-000000000098"
     start_time: "{{ start_time.stdout }}"
