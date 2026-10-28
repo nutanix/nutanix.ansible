@@ -11,7 +11,8 @@
 # 8. List VM compliance states for the policy
 # 9. List VM compliance states with limit
 # 10. List all VM compliance states with fetch_all
-# 11. Delete VM startup policy
+# 11. List dependency / start-condition conflicts (and nested VM lists)
+# 12. Delete VM startup policy
 
 - name: VM Startup Policies playbook
   hosts: localhost
@@ -119,6 +120,90 @@
         fetch_all: true
       register: result
       ignore_errors: true
+
+    - name: List dependency conflicts for the VM startup policy
+      nutanix.ncp.ntnx_vm_startup_policy_dp_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+      register: dep_conflicts
+      ignore_errors: true
+
+    - name: List dependency conflicts with fetch_all
+      nutanix.ncp.ntnx_vm_startup_policy_dp_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        fetch_all: true
+      register: dep_conflicts_all
+      ignore_errors: true
+
+    - name: List start condition conflicts for the VM startup policy
+      nutanix.ncp.ntnx_vm_startup_policy_sc_conflicts_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+      register: sc_conflicts
+      ignore_errors: true
+
+    - name: List start condition conflicts with fetch_all
+      nutanix.ncp.ntnx_vm_startup_policy_sc_conflicts_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        fetch_all: true
+      register: sc_conflicts_all
+      ignore_errors: true
+
+    - name: Set first dependency conflict ext_id when available
+      ansible.builtin.set_fact:
+        dependency_conflict_ext_id: >-
+          {{ (dep_conflicts.response | default([]))[0].ext_id | default('') }}
+      when:
+        - dep_conflicts is defined
+        - not dep_conflicts.failed | default(true)
+        - (dep_conflicts.response | default([]) | length) > 0
+
+    - name: List dependee VMs for a dependency conflict
+      nutanix.ncp.ntnx_vm_startup_policy_dp_dependee_vms_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        dependency_conflict_ext_id: "{{ dependency_conflict_ext_id }}"
+      register: dep_dependee
+      ignore_errors: true
+      when: >-
+        dependency_conflict_ext_id is defined and
+        (dependency_conflict_ext_id | length) > 0
+
+    - name: List dependent VMs for a dependency conflict
+      nutanix.ncp.ntnx_vm_startup_policy_dp_dependent_vms_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        dependency_conflict_ext_id: "{{ dependency_conflict_ext_id }}"
+      register: dep_dependent
+      ignore_errors: true
+      when: >-
+        dependency_conflict_ext_id is defined and
+        (dependency_conflict_ext_id | length) > 0
+
+    - name: Set first start condition conflict ext_id when available
+      ansible.builtin.set_fact:
+        start_condition_conflict_ext_id: >-
+          {{ (sc_conflicts.response | default([]))[0].ext_id | default('') }}
+      when:
+        - sc_conflicts is defined
+        - not sc_conflicts.failed | default(true)
+        - (sc_conflicts.response | default([]) | length) > 0
+
+    - name: List dependee VMs for a start condition conflict
+      nutanix.ncp.ntnx_vm_startup_policy_sc_conflict_dependee_vms_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        start_condition_conflict_ext_id: "{{ start_condition_conflict_ext_id }}"
+      register: sc_dependee
+      ignore_errors: true
+      when: >-
+        start_condition_conflict_ext_id is defined and
+        (start_condition_conflict_ext_id | length) > 0
+
+    - name: List dependent VMs for a start condition conflict
+      nutanix.ncp.ntnx_vm_startup_policy_sc_conflict_dependent_vms_info_v2:
+        vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
+        start_condition_conflict_ext_id: "{{ start_condition_conflict_ext_id }}"
+      register: sc_dependent
+      ignore_errors: true
+      when: >-
+        start_condition_conflict_ext_id is defined and
+        (start_condition_conflict_ext_id | length) > 0
 
     - name: Delete VM startup policy
       nutanix.ncp.ntnx_vm_startup_policy_v2:
