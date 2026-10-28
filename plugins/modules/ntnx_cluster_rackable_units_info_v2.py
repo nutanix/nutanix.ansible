@@ -44,8 +44,7 @@ options:
     type: str
     required: false
   read_timeout:
-    description:
-      - Read timeout in milliseconds for API calls.
+    description: Read timeout in milliseconds for API calls.
     type: int
     required: false
     default: 30000
@@ -83,21 +82,24 @@ response:
   type: dict
   sample:
     {
-      "ext_id": "5879195f-5101-4d41-8e6d-af4a6aa52472",
-      "id": 10,
-      "serial": "18FM6G460083",
-      "model": "USELAYOUT",
-      "model_name": "NX-1065-G5",
+      "ext_id": "7050d2f7-63eb-4c42-9415-53396a9576f8",
+      "id": 91,
+      "serial": "19FM6F160446",
+      "model": "DESKTOP",
+      "model_name": "NX-3060-G5",
       "nodes": [
         {
-          "uuid": "adf0c9e0-4051-4cd2-9f6f-ca9f962e941b",
-          "svm_id": 2,
-          "position": 4
+          "uuid": "827264db-fbc6-4344-8fad-4f218d7931fc",
+          "svm_id": 32,
+          "position": 75
         }
       ],
-      "rack": null,
+      "rack": {
+        "uuid": "3e3284e7-2a81-4de0-b0eb-f651526d4048",
+        "id": 80
+      },
       "links": null,
-      "tenant_id": null
+      "tenant_id": "dabd59d8-faa1-4062-9911-0e7c1683da44"
     }
 
 changed:
@@ -105,12 +107,6 @@ changed:
   returned: always
   type: bool
   sample: false
-
-ext_id:
-  description: External ID of the rackable unit (when requested via C(ext_id)).
-  returned: When external ID is provided
-  type: str
-  sample: "5879195f-5101-4d41-8e6d-af4a6aa52472"
 
 msg:
   description: This indicates the message if any message occurred.
@@ -120,8 +116,8 @@ msg:
 
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution.
-  returned: when an error occurs
   type: str
+  returned: when an error occurs
 
 failed:
   description: This field typically holds information about if the task have failed.
@@ -129,10 +125,16 @@ failed:
   type: bool
   sample: false
 
+ext_id:
+  description: External ID of the rackable unit (when requested via C(ext_id)).
+  type: str
+  returned: When external ID is provided
+  sample: "7050d2f7-63eb-4c42-9415-53396a9576f8"
+
 total_available_results:
   description: The total number of available rackable units for the cluster.
-  returned: When listing rackable units for a cluster
   type: int
+  returned: When listing rackable units for a cluster
   sample: 1
 """
 
@@ -178,6 +180,7 @@ def get_rackable_units(module, api_instance, result):
     try:
         resp = list_entities(
             api_instance.list_rackable_units_by_cluster_id,
+            kwargs={},
             clusterExtId=cluster_ext_id,
         )
     except Exception as e:
