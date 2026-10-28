@@ -142,7 +142,6 @@ error:
     description: This indicates the error message if any error occurred
     type: str
     returned: when an error occurs
-    sample: "Failed to get etag for VM"
 msg:
     description: This indicates the message if any message occurred
     type: str
@@ -168,8 +167,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-from ..module_utils.v4.vmm.api_client import get_etag, get_vm_api_instance  # noqa: E402
-from ..module_utils.v4.vmm.helpers import get_vm  # noqa: E402
+from ..module_utils.v4.vmm.api_client import get_vm_api_instance  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
@@ -220,15 +218,8 @@ def migrate_vm_to_host(module, result, api_instance):
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
-    vm = get_vm(module, api_instance, ext_id)
-    etag = get_etag(vm)
-    if not etag:
-        module.fail_json(msg="Failed to get etag for VM", **result)
-
-    kwargs = {"if_match": etag}
-    resp = None
     try:
-        resp = api_instance.migrate_vm_to_host(extId=ext_id, body=spec, **kwargs)
+        resp = api_instance.migrate_vm_to_host(extId=ext_id, body=spec)
     except Exception as e:
         raise_api_exception(
             module=module,
