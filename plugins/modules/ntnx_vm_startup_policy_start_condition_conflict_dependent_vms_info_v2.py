@@ -200,7 +200,10 @@ def list_entities_for_conflict(module, api_instance, result):
     kwargs, err = sg.get_info_spec(attr=module.params)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating VM startup policy start condition conflict dependent VMs info spec", **result)
+        module.fail_json(
+            msg="Failed generating VM startup policy start condition conflict dependent VMs info spec",
+            **result,
+        )
 
     try:
         resp = list_entities(

@@ -194,7 +194,9 @@ from ..module_utils.v4.utils import (  # noqa: E402
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_vm_startup_policies_api_instance,
 )
-from ..module_utils.v4.vmm.helpers import get_vm_startup_policy_dependency_conflict  # noqa: E402
+from ..module_utils.v4.vmm.helpers import (  # noqa: E402
+    get_vm_startup_policy_dependency_conflict,
+)
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
@@ -216,9 +218,13 @@ def get_conflict_using_ext_id(module, api_instance, result):
     result["vm_startup_policy_ext_id"] = policy_ext_id
     result["ext_id"] = ext_id
 
-    resp = get_vm_startup_policy_dependency_conflict(module, api_instance, policy_ext_id, ext_id)
+    resp = get_vm_startup_policy_dependency_conflict(
+        module, api_instance, policy_ext_id, ext_id
+    )
     if resp is None:
-        module.fail_json(msg="Failed fetching VM startup policy dependency conflict", **result)
+        module.fail_json(
+            msg="Failed fetching VM startup policy dependency conflict", **result
+        )
     result["response"] = strip_internal_attributes(resp.to_dict())
 
 
@@ -230,7 +236,10 @@ def list_conflicts(module, api_instance, result):
     kwargs, err = sg.get_info_spec(attr=module.params)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating VM startup policy dependency conflicts info spec", **result)
+        module.fail_json(
+            msg="Failed generating VM startup policy dependency conflicts info spec",
+            **result,
+        )
 
     try:
         resp = list_entities(
