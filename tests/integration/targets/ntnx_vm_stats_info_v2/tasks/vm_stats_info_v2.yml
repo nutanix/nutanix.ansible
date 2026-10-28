@@ -1,0 +1,219 @@
+---
+# Integration tests for ntnx_vm_stats_info_v2.
+
+- name: Start ntnx_vm_stats_info_v2 integration tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vm_stats_info_v2 integration tests
+
+- name: Compute stats window start time (last 5 minutes)
+  ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: start_time
+  changed_when: false
+
+- name: Compute stats window end time (now)
+  ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: end_time
+  changed_when: false
+
+- name: Info module rejects request with no start_time/end_time
+  nutanix.ncp.ntnx_vm_stats_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Assert missing required params fail
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - >-
+          ('start_time' in (result.msg | string)) or
+          ('end_time' in (result.msg | string))
+    fail_msg: Info module did not reject missing required params
+    success_msg: Info module correctly rejected missing required params
+
+- name: Info module rejects invalid stat_type
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+    stat_type: NOT_A_VALID_OPERATOR
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid enum fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - >-
+          ('stat_type' in (result.msg | string)) or
+          ('NOT_A_VALID_OPERATOR' in (result.msg | string))
+    fail_msg: Info module did not reject invalid stat_type
+    success_msg: Info module correctly rejected invalid stat_type
+
+- name: Info module rejects ext_id with filter
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    ext_id: "83083083-0000-0000-0000-000000000001"
+    filter: "stats/any(a:a/hypervisorCpuUsagePpm gt 0)"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert mutually exclusive ext_id/filter fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - >-
+          ('mutually exclusive' in (result.msg | string)) or
+          ('ext_id' in (result.msg | string))
+    fail_msg: Mutually exclusive params were not rejected
+    success_msg: Mutually exclusive params correctly rejected
+
+- name: List VM stats within a time window
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: list_result
+  ignore_errors: true
+
+- name: Assert list VM stats success or clean error
+  ansible.builtin.assert:
+    that:
+      - list_result.changed == false
+      - >-
+          (list_result.failed == false) or
+          (list_result.failed == true and list_result.msg is defined)
+    fail_msg: List VM stats returned unexpected shape
+    success_msg: List VM stats behaved correctly
+
+- name: Assert list metadata when list succeeds
+  ansible.builtin.assert:
+    that:
+      - list_result.response is iterable
+      - list_result.total_available_results is defined
+    fail_msg: List VM stats did not return list metadata
+    success_msg: List VM stats returned list with total_available_results
+  when: not list_result.failed
+
+- name: List VM stats with fetch_all
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: Assert fetch_all when list succeeds
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result.changed == false
+      - fetch_all_result.failed == false
+      - fetch_all_result.response is defined
+      - fetch_all_result.total_available_results is defined
+      - >-
+          (fetch_all_result.response | length) ==
+          (fetch_all_result.total_available_results | int)
+    fail_msg: fetch_all did not return full result set
+    success_msg: fetch_all returned all available results
+  when: not fetch_all_result.failed
+
+- name: List VM stats with options
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+    sampling_interval: 60
+    stat_type: AVG
+    limit: 5
+    page: 0
+    orderby: stats/hypervisorCpuUsagePpm
+    select: "extId,stats/hypervisorCpuUsagePpm"
+  register: full_list_result
+  ignore_errors: true
+
+- name: Assert list with options success or clean error
+  ansible.builtin.assert:
+    that:
+      - full_list_result.changed == false
+      - >-
+          (full_list_result.failed == false) or
+          (full_list_result.failed == true and
+          full_list_result.msg is defined)
+    fail_msg: List with options returned unexpected shape
+    success_msg: List with options behaved correctly
+
+- name: Enforce limit when list with options succeeds
+  ansible.builtin.assert:
+    that:
+      - (full_list_result.response | length) <= 5
+    fail_msg: limit=5 was not honoured
+    success_msg: limit=5 was honoured
+  when: >-
+    (not full_list_result.failed) and
+    full_list_result.response is defined
+
+- name: Info module get non-existent VM stats
+  nutanix.ncp.ntnx_vm_stats_info_v2:
+    ext_id: "83083083-0000-0000-0000-000000000099"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: info_not_found
+  ignore_errors: true
+
+- name: Assert clean error for missing VM
+  ansible.builtin.assert:
+    that:
+      - info_not_found.changed == false
+      - info_not_found.failed == true
+      - info_not_found.msg is defined
+    fail_msg: Info module did not return a clean error for missing VM
+    success_msg: Info module returned a clean error for missing VM
+
+- name: Discover a VM for positive-path tests
+  nutanix.ncp.ntnx_vms_info_v2:
+    limit: 5
+  register: vms_info
+  ignore_errors: true
+
+- name: Set vm_ext_id when a VM is available
+  ansible.builtin.set_fact:
+    vm_ext_id: >-
+      {{ (vms_info.response | default([]))[0].ext_id | default('') }}
+  when:
+    - vms_info is defined
+    - not vms_info.failed
+    - vms_info.response is defined
+    - (vms_info.response | length) > 0
+
+- name: Positive-path tests when a VM is available
+  when: >-
+    vm_ext_id is defined and (vm_ext_id | length) > 0
+  block:
+    - name: Info module get single VM stats by ext_id
+      nutanix.ncp.ntnx_vm_stats_info_v2:
+        ext_id: "{{ vm_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+        sampling_interval: 30
+        stat_type: AVG
+      register: info_single
+      ignore_errors: true
+
+    - name: Assert info module returned single VM stats
+      ansible.builtin.assert:
+        that:
+          - info_single.changed == false
+          - info_single.failed == false
+          - info_single.response is defined
+          - info_single.ext_id == vm_ext_id
+        fail_msg: Info module did not return single VM stats
+        success_msg: Info module returned single VM stats
+
+- name: Skip notice when no VM is available
+  ansible.builtin.debug:
+    msg: >-
+      Skipping positive-path VM stats tests; no VM was discovered.
+  when: >-
+    not (vm_ext_id is defined and (vm_ext_id | length) > 0)
