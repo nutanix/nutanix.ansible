@@ -71,6 +71,14 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     filter: "displayName eq 'Display_Name_Test'"
+
+- name: List all operations with fetch_all
+  nutanix.ncp.ntnx_operations_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 RETURN = r"""
 response:
@@ -142,6 +150,7 @@ from ..module_utils.v4.iam.api_client import get_permission_api_instance  # noqa
 from ..module_utils.v4.iam.helpers import get_permission  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -171,7 +180,10 @@ def get_operations(module, operations, result):
         module.fail_json(msg="Failed generating operations info Spec", **result)
 
     try:
-        resp = operations.list_operations(**kwargs)
+        resp = list_entities(
+            operations.list_operations,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
