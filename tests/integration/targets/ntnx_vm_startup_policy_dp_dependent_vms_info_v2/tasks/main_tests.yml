@@ -1,12 +1,12 @@
 ---
-# Integration tests for ntnx_vm_startup_policy_start_condition_conflict_dependent_vms_info_v2.
+# Integration tests for ntnx_vm_startup_policy_dp_dependent_vms_info_v2.
 
-- name: Start ntnx_vm_startup_policy_start_condition_conflict_dependent_vms_info_v2 tests
+- name: Start ntnx_vm_startup_policy_dp_dependent_vms_info_v2 tests
   ansible.builtin.debug:
-    msg: Start ntnx_vm_startup_policy_start_condition_conflict_dependent_vms_info_v2 tests
+    msg: Start ntnx_vm_startup_policy_dp_dependent_vms_info_v2 tests
 
 - name: Module rejects missing required params
-  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_dependent_vms_info_v2: {}
+  nutanix.ncp.ntnx_vm_startup_policy_dp_dependent_vms_info_v2: {}
   register: result
   ignore_errors: true
 
@@ -18,14 +18,14 @@
       - result.msg is defined
       - >-
           ('vm_startup_policy_ext_id' in (result.msg | string)) or
-          ('start_condition_conflict_ext_id' in (result.msg | string))
+          ('dependency_conflict_ext_id' in (result.msg | string))
     fail_msg: Module did not reject missing required params
     success_msg: Module correctly rejected missing required params
 
 - name: List VMs for non-existent conflict
-  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_dependent_vms_info_v2:
+  nutanix.ncp.ntnx_vm_startup_policy_dp_dependent_vms_info_v2:
     vm_startup_policy_ext_id: "83083083-0000-0000-0000-000000000099"
-    start_condition_conflict_ext_id: "83083083-0000-0000-0000-000000000098"
+    dependency_conflict_ext_id: "83083083-0000-0000-0000-000000000098"
   register: list_result
   ignore_errors: true
 

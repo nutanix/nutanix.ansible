@@ -10,18 +10,18 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_vm_startup_policy_start_condition_conflict_dependent_vms_info_v2
-short_description: List dependent VMs of a VM startup policy start condition conflict
+module: ntnx_vm_startup_policy_dp_dependee_vms_info_v2
+short_description: List dependee VMs of a VM startup policy dependency conflict
 version_added: 2.7.0
 description:
-  - List dependent VMs of a Start condition conflict of a VM startup policy.
+  - List dependee VMs of a Dependency conflict of a VM startup policy.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the
     user performing the operation.
   - >-
-    B(List dependent VMs of a Start condition conflict of a VM startup policy) -
+    B(List dependee VMs of a Dependency conflict of a VM startup policy) -
     Required Roles: Prism Admin, Prism Viewer, Project Admin, Project Manager,
     Self-Service Admin (deprecated), Super Admin, Tenant Admin, Tenant Consumer,
     Virtual Machine Admin, Virtual Machine Viewer
@@ -32,9 +32,9 @@ options:
       - The external ID of the VM startup policy.
     type: str
     required: true
-  start_condition_conflict_ext_id:
+  dependency_conflict_ext_id:
     description:
-      - The external ID of the start condition conflict of a VM startup policy.
+      - The external ID of the Dependency conflict of a VM startup policy.
     type: str
     required: true
   page:
@@ -71,36 +71,36 @@ author:
 
 EXAMPLES = r"""
 - name: List entities
-  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_dependent_vms_info_v2:
+  nutanix.ncp.ntnx_vm_startup_policy_dp_dependee_vms_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
     vm_startup_policy_ext_id: "6f452990-bd1d-45ae-46d7-4622c5d323aa"
-    start_condition_conflict_ext_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    dependency_conflict_ext_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
   register: result
   ignore_errors: true
 
 - name: List entities with limit
-  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_dependent_vms_info_v2:
+  nutanix.ncp.ntnx_vm_startup_policy_dp_dependee_vms_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
     vm_startup_policy_ext_id: "6f452990-bd1d-45ae-46d7-4622c5d323aa"
-    start_condition_conflict_ext_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    dependency_conflict_ext_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
     limit: 1
   register: result
   ignore_errors: true
 
 - name: List all entities with fetch_all
-  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_dependent_vms_info_v2:
+  nutanix.ncp.ntnx_vm_startup_policy_dp_dependee_vms_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
     vm_startup_policy_ext_id: "6f452990-bd1d-45ae-46d7-4622c5d323aa"
-    start_condition_conflict_ext_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    dependency_conflict_ext_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
     fetch_all: true
   register: result
   ignore_errors: true
@@ -108,7 +108,7 @@ EXAMPLES = r"""
 
 RETURN = r"""
 response:
-  description: The list of dependent VMs for the specified start condition conflict.
+  description: The list of dependee VMs for the specified dependency conflict.
   type: list
   returned: always
   sample:
@@ -126,8 +126,8 @@ vm_startup_policy_ext_id:
   returned: always
   sample: "6f452990-bd1d-45ae-46d7-4622c5d323aa"
 
-start_condition_conflict_ext_id:
-  description: The external ID of the start condition conflict of a VM startup policy.
+dependency_conflict_ext_id:
+  description: The external ID of the Dependency conflict of a VM startup policy.
   type: str
   returned: always
   sample: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
@@ -142,7 +142,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error
   type: str
-  sample: "Api Exception raised while fetching VM startup policy start condition conflict dependent VMs"
+  sample: "Api Exception raised while fetching VM startup policy dependency conflict dependee VMs"
 
 error:
   description: This indicates the error message if any error occurred
@@ -182,7 +182,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         vm_startup_policy_ext_id=dict(type="str", required=True),
-        start_condition_conflict_ext_id=dict(type="str", required=True),
+        dependency_conflict_ext_id=dict(type="str", required=True),
         page=dict(type="int"),
         limit=dict(type="int"),
         fetch_all=dict(type="bool", required=False, default=False),
@@ -192,31 +192,31 @@ def get_module_spec():
 
 def list_entities_for_conflict(module, api_instance, result):
     policy_ext_id = module.params.get("vm_startup_policy_ext_id")
-    conflict_ext_id = module.params.get("start_condition_conflict_ext_id")
+    conflict_ext_id = module.params.get("dependency_conflict_ext_id")
     result["vm_startup_policy_ext_id"] = policy_ext_id
-    result["start_condition_conflict_ext_id"] = conflict_ext_id
+    result["dependency_conflict_ext_id"] = conflict_ext_id
 
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating VM startup policy start condition conflict dependent VMs info spec",
+            msg="Failed generating VM startup policy dependency conflict dependee VMs info spec",
             **result,
         )
 
     try:
         resp = list_entities(
-            api_instance.list_vm_startup_policy_start_condition_conflict_dependent_vms,
+            api_instance.list_vm_startup_policy_dependency_conflict_dependee_vms,
             kwargs=kwargs,
             vmStartupPolicyExtId=policy_ext_id,
-            startConditionConflictExtId=conflict_ext_id,
+            dependencyConflictExtId=conflict_ext_id,
         )
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while fetching VM startup policy start condition conflict dependent VMs",
+            msg="Api Exception raised while fetching VM startup policy dependency conflict dependee VMs",
         )
 
     if getattr(resp, "metadata", None) is not None:

@@ -123,26 +123,26 @@
 
 
     - name: List dependency conflicts for the VM startup policy
-      nutanix.ncp.ntnx_vm_startup_policy_dependency_conflicts_info_v2:
+      nutanix.ncp.ntnx_vm_startup_policy_dp_info_v2:
         vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
       register: dep_conflicts
       ignore_errors: true
 
     - name: List dependency conflicts with fetch_all
-      nutanix.ncp.ntnx_vm_startup_policy_dependency_conflicts_info_v2:
+      nutanix.ncp.ntnx_vm_startup_policy_dp_info_v2:
         vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
         fetch_all: true
       register: dep_conflicts_all
       ignore_errors: true
 
     - name: List start condition conflicts for the VM startup policy
-      nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+      nutanix.ncp.ntnx_vm_startup_policy_sc_conflicts_info_v2:
         vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
       register: sc_conflicts
       ignore_errors: true
 
     - name: List start condition conflicts with fetch_all
-      nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+      nutanix.ncp.ntnx_vm_startup_policy_sc_conflicts_info_v2:
         vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
         fetch_all: true
       register: sc_conflicts_all
@@ -158,7 +158,7 @@
         - (dep_conflicts.response | default([]) | length) > 0
 
     - name: List dependee VMs for a dependency conflict
-      nutanix.ncp.ntnx_vm_startup_policy_dependency_conflict_dependee_vms_info_v2:
+      nutanix.ncp.ntnx_vm_startup_policy_dp_dependee_vms_info_v2:
         vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
         dependency_conflict_ext_id: "{{ dependency_conflict_ext_id }}"
       register: dep_dependee
@@ -168,7 +168,7 @@
         (dependency_conflict_ext_id | length) > 0
 
     - name: List dependent VMs for a dependency conflict
-      nutanix.ncp.ntnx_vm_startup_policy_dependency_conflict_dependent_vms_info_v2:
+      nutanix.ncp.ntnx_vm_startup_policy_dp_dependent_vms_info_v2:
         vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
         dependency_conflict_ext_id: "{{ dependency_conflict_ext_id }}"
       register: dep_dependent
@@ -187,7 +187,7 @@
         - (sc_conflicts.response | default([]) | length) > 0
 
     - name: List dependee VMs for a start condition conflict
-      nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_dependee_vms_info_v2:
+      nutanix.ncp.ntnx_vm_startup_policy_sc_conflict_dependee_vms_info_v2:
         vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
         start_condition_conflict_ext_id: "{{ start_condition_conflict_ext_id }}"
       register: sc_dependee
@@ -197,7 +197,7 @@
         (start_condition_conflict_ext_id | length) > 0
 
     - name: List dependent VMs for a start condition conflict
-      nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflict_dependent_vms_info_v2:
+      nutanix.ncp.ntnx_vm_startup_policy_sc_conflict_dependent_vms_info_v2:
         vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
         start_condition_conflict_ext_id: "{{ start_condition_conflict_ext_id }}"
       register: sc_dependent

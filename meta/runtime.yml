@@ -340,9 +340,9 @@ action_groups:
     - ntnx_vm_stats_info_v2
     - ntnx_vm_disk_stats_info_v2
     - ntnx_vm_nic_stats_info_v2
-    - ntnx_vm_startup_policy_dependency_conflicts_info_v2
-    - ntnx_vm_startup_policy_dependency_conflict_dependee_vms_info_v2
-    - ntnx_vm_startup_policy_dependency_conflict_dependent_vms_info_v2
-    - ntnx_vm_startup_policy_start_condition_conflicts_info_v2
-    - ntnx_vm_startup_policy_start_condition_conflict_dependee_vms_info_v2
-    - ntnx_vm_startup_policy_start_condition_conflict_dependent_vms_info_v2
+    - ntnx_vm_startup_policy_dp_info_v2
+    - ntnx_vm_startup_policy_dp_dependee_vms_info_v2
+    - ntnx_vm_startup_policy_dp_dependent_vms_info_v2
+    - ntnx_vm_startup_policy_sc_conflicts_info_v2
+    - ntnx_vm_startup_policy_sc_conflict_dependee_vms_info_v2
+    - ntnx_vm_startup_policy_sc_conflict_dependent_vms_info_v2
