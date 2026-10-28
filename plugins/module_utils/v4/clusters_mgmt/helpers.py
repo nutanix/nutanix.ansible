@@ -71,6 +71,55 @@ def get_storage_container(module, api_instance, ext_id):
         )
 
 
+def list_data_stores_by_cluster_id(module, api_instance, cluster_ext_id, **kwargs):
+    """
+    This method will return the list of datastores associated with a cluster.
+    Args:
+        module: Ansible module
+        api_instance: StorageContainersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        kwargs (dict): additional query parameters (_page, _limit, _filter, _orderby)
+    return:
+        datastores list API response (object)
+    """
+    try:
+        return api_instance.list_data_stores_by_cluster_id(
+            clusterExtId=cluster_ext_id, **kwargs
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while listing datastores for cluster with ext_id: {0}".format(
+                cluster_ext_id
+            ),
+        )
+
+
+def find_data_store_by_name(module, api_instance, cluster_ext_id, datastore_name):
+    """
+    This method will return the datastore matching ``datastore_name`` inside
+    the cluster identified by ``cluster_ext_id``.
+    Args:
+        module: Ansible module
+        api_instance: StorageContainersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        datastore_name (str): datastore name to look up
+    return:
+        datastore info (object) or None if not found
+    """
+    resp = list_data_stores_by_cluster_id(
+        module,
+        api_instance,
+        cluster_ext_id,
+        _filter="datastoreName eq '{0}'".format(datastore_name),
+    )
+    data_stores = getattr(resp, "data", None) or []
+    if data_stores:
+        return data_stores[0]
+    return None
+
+
 def get_storage_config(module, api_instance, cluster_ext_id):
     """
     This method will return the storage configuration of a cluster using
