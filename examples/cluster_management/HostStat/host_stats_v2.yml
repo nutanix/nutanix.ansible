@@ -1,20 +1,19 @@
 ---
 # Summary:
-# This playbook demonstrates using the HostStat modules to fetch time-series
+# This playbook demonstrates using ntnx_host_stats_info_v2 to fetch time-series
 # host statistics from Nutanix Prism Central using the v4 API.
 #
-# It shows every operation supported by the two generated modules:
+# It shows every operation supported by the module:
 #
 #   1. Discover a Prism Element cluster (registered under Prism Central).
 #   2. Discover a host in that cluster.
-#   3. Fetch stats for that single host using ntnx_host_stat_v2 (all attributes).
-#   4. Fetch stats for that single host using ntnx_host_stats_info_v2 (all attributes).
-#   5. Fetch stats for every host in the cluster using ntnx_host_stats_info_v2.
+#   3. Fetch stats for that single host using ntnx_host_stats_info_v2 (all attributes).
+#   4. Fetch stats for every host in the cluster using ntnx_host_stats_info_v2.
 #
 # There are no create / update / delete operations because the underlying v4
 # stats endpoint (GetHostStats) is read-only.
 
-- name: HostStat playbook
+- name: Host stats info playbook
   hosts: localhost
   gather_facts: false
   module_defaults:
@@ -48,17 +47,6 @@
       ansible.builtin.set_fact:
         host_ext_id: "{{ hosts_info.response[0].ext_id }}"
 
-    - name: Fetch host stats via ntnx_host_stat_v2 with all optional attributes
-      nutanix.ncp.ntnx_host_stat_v2:
-        cluster_ext_id: "{{ cluster_ext_id }}"
-        ext_id: "{{ host_ext_id }}"
-        start_time: "{{ stats_start_time }}"
-        end_time: "{{ stats_end_time }}"
-        sampling_interval: 30
-        stat_type: "AVG"
-        select: "controllerNumIops,hypervisorCpuUsagePpm,overallMemoryUsagePpm"
-      register: single_host_stats
-
     - name: Fetch host stats via ntnx_host_stats_info_v2 with all optional attributes
       nutanix.ncp.ntnx_host_stats_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
@@ -68,7 +56,7 @@
         sampling_interval: 30
         stat_type: "AVG"
         select: "controllerNumIops,hypervisorCpuUsagePpm,overallMemoryUsagePpm"
-      register: single_host_stats_info
+      register: single_host_stats
 
     - name: Fetch host stats for every host in the cluster
       nutanix.ncp.ntnx_host_stats_info_v2:
