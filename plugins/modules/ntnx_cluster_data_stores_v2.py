@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_data_stores_by_cluster_id_v2
+module: ntnx_cluster_data_stores_v2
 short_description: Manage NFS datastores (mount / unmount Storage Containers on ESXi) via Nutanix Prism Central
 version_added: 2.7.0
 description:
@@ -107,7 +107,7 @@ author:
 
 EXAMPLES = r"""
 - name: Mount a Storage Container as a datastore on ESXi hosts
-  nutanix.ncp.ntnx_data_stores_by_cluster_id_v2:
+  nutanix.ncp.ntnx_cluster_data_stores_v2:
     state: present
     cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
     ext_id: "547c01c4-19c2-4293-8a9c-43441c18d0c7"
@@ -121,7 +121,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Unmount the datastore from ESXi hosts
-  nutanix.ncp.ntnx_data_stores_by_cluster_id_v2:
+  nutanix.ncp.ntnx_cluster_data_stores_v2:
     state: absent
     cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
     ext_id: "547c01c4-19c2-4293-8a9c-43441c18d0c7"

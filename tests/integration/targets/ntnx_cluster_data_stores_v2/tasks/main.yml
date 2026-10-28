@@ -59,9 +59,9 @@
       nutanix_debug: "{{ nutanix_debug | default(omit) }}"
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
   block:
-    - name: Start DataStoresByClusterId tests
+    - name: Start cluster data stores tests
       ansible.builtin.debug:
-        msg: Start DataStoresByClusterId tests
+        msg: Start cluster data stores tests
 
     - name: Generate a random name suffix for this test run
       ansible.builtin.set_fact:
@@ -98,7 +98,7 @@
     ####################################################################
 
     - name: Generate spec for mount (state=present) using check_mode with ALL attributes
-      nutanix.ncp.ntnx_data_stores_by_cluster_id_v2:
+      nutanix.ncp.ntnx_cluster_data_stores_v2:
         state: present
         cluster_ext_id: "{{ cluster.uuid }}"
         ext_id: "{{ storage_container.uuid }}"
@@ -128,7 +128,7 @@
         fail_msg: "check_mode mount spec generation failed"
 
     - name: Generate spec for unmount (state=absent) using check_mode
-      nutanix.ncp.ntnx_data_stores_by_cluster_id_v2:
+      nutanix.ncp.ntnx_cluster_data_stores_v2:
         state: absent
         cluster_ext_id: "{{ cluster.uuid }}"
         ext_id: "{{ storage_container.uuid }}"
@@ -155,7 +155,7 @@
     ####################################################################
 
     - name: Mount datastore with the minimum set of attributes
-      nutanix.ncp.ntnx_data_stores_by_cluster_id_v2:
+      nutanix.ncp.ntnx_cluster_data_stores_v2:
         state: present
         cluster_ext_id: "{{ cluster.uuid }}"
         ext_id: "{{ storage_container.uuid }}"
@@ -178,7 +178,7 @@
         fail_msg: "Mount datastore with minimum attributes failed"
 
     - name: Mount datastore with ALL attributes
-      nutanix.ncp.ntnx_data_stores_by_cluster_id_v2:
+      nutanix.ncp.ntnx_cluster_data_stores_v2:
         state: present
         cluster_ext_id: "{{ cluster.uuid }}"
         ext_id: "{{ storage_container.uuid }}"
@@ -208,7 +208,7 @@
     ####################################################################
 
     - name: Mount the same datastore again — should skip
-      nutanix.ncp.ntnx_data_stores_by_cluster_id_v2:
+      nutanix.ncp.ntnx_cluster_data_stores_v2:
         state: present
         cluster_ext_id: "{{ cluster.uuid }}"
         ext_id: "{{ storage_container.uuid }}"
@@ -314,7 +314,7 @@
     ####################################################################
 
     - name: Mount with missing ext_id
-      nutanix.ncp.ntnx_data_stores_by_cluster_id_v2:  # noqa: args[module]
+      nutanix.ncp.ntnx_cluster_data_stores_v2:  # noqa: args[module]
         state: present
         cluster_ext_id: "{{ cluster.uuid }}"
         container_name: "{{ storage_container.name }}"
@@ -333,7 +333,7 @@
         fail_msg: "Mount without ext_id did not fail correctly"
 
     - name: Mount with missing container_name
-      nutanix.ncp.ntnx_data_stores_by_cluster_id_v2:
+      nutanix.ncp.ntnx_cluster_data_stores_v2:
         state: present
         cluster_ext_id: "{{ cluster.uuid }}"
         ext_id: "{{ storage_container.uuid }}"
@@ -352,7 +352,7 @@
         fail_msg: "Mount without container_name did not fail correctly"
 
     - name: Unmount with missing datastore_name
-      nutanix.ncp.ntnx_data_stores_by_cluster_id_v2:  # noqa: args[module]
+      nutanix.ncp.ntnx_cluster_data_stores_v2:  # noqa: args[module]
         state: absent
         cluster_ext_id: "{{ cluster.uuid }}"
         ext_id: "{{ storage_container.uuid }}"
@@ -384,7 +384,7 @@
         fail_msg: "Info without cluster_ext_id did not fail correctly"
 
     - name: Unmount a datastore that does not exist on the cluster
-      nutanix.ncp.ntnx_data_stores_by_cluster_id_v2:
+      nutanix.ncp.ntnx_cluster_data_stores_v2:
         state: absent
         cluster_ext_id: "{{ cluster.uuid }}"
         ext_id: "{{ storage_container.uuid }}"
@@ -408,7 +408,7 @@
     ####################################################################
 
     - name: Unmount the datastore created with minimum attributes
-      nutanix.ncp.ntnx_data_stores_by_cluster_id_v2:
+      nutanix.ncp.ntnx_cluster_data_stores_v2:
         state: absent
         cluster_ext_id: "{{ cluster.uuid }}"
         ext_id: "{{ storage_container.uuid }}"
@@ -429,7 +429,7 @@
         fail_msg: "Unmount of min datastore failed"
 
     - name: Unmount the datastore created with all attributes
-      nutanix.ncp.ntnx_data_stores_by_cluster_id_v2:
+      nutanix.ncp.ntnx_cluster_data_stores_v2:
         state: absent
         cluster_ext_id: "{{ cluster.uuid }}"
         ext_id: "{{ storage_container.uuid }}"

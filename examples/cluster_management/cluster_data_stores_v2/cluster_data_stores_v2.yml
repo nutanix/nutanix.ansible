@@ -21,7 +21,7 @@
 # `module_defaults` block (per reviewer guidance) so individual tasks do
 # not repeat connection parameters.
 
-- name: DataStoresByClusterId (mount / unmount / info) playbook
+- name: Cluster data stores (mount / unmount / info) playbook
   hosts: localhost
   gather_facts: false
   module_defaults:
@@ -41,7 +41,7 @@
           - "f28e7475-f835-42ef-ac35-ecbc48d5421e"
 
     - name: Mount a Storage Container as an NFS datastore on ESXi hosts (create)
-      nutanix.ncp.ntnx_data_stores_by_cluster_id_v2:
+      nutanix.ncp.ntnx_cluster_data_stores_v2:
         state: present
         cluster_ext_id: "{{ cluster_ext_id }}"
         ext_id: "{{ storage_container_ext_id }}"
@@ -81,7 +81,7 @@
       ignore_errors: true
 
     - name: Unmount the datastore from ESXi hosts (delete)
-      nutanix.ncp.ntnx_data_stores_by_cluster_id_v2:
+      nutanix.ncp.ntnx_cluster_data_stores_v2:
         state: absent
         cluster_ext_id: "{{ cluster_ext_id }}"
         ext_id: "{{ storage_container_ext_id }}"
