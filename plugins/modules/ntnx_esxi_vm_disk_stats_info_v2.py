@@ -171,7 +171,7 @@ from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
 from ..module_utils.v4.vmm.api_client import get_esxi_stats_api_instance  # noqa: E402
-from ..module_utils.v4.vmm.helpers import get_esxi_vm_disk_stats  # noqa: E402
+from ..module_utils.v4.vmm.helpers import get_vm_disk_stats  # noqa: E402
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
@@ -208,7 +208,7 @@ def get_vm_disk_stat(module, api_instance, result):
     if module.params.get("select") is not None:
         kwargs["_select"] = module.params.get("select")
 
-    resp = get_esxi_vm_disk_stats(module, api_instance, vm_ext_id, ext_id, **kwargs)
+    resp = get_vm_disk_stats(module, api_instance, vm_ext_id, ext_id, **kwargs)
     if resp is None:
         module.fail_json(msg="Failed fetching ESXi VM disk stats", **result)
     result["response"] = strip_internal_attributes(resp.to_dict())

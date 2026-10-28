@@ -108,7 +108,7 @@ EXAMPLES = r"""
     fetch_all: true
   register: all_vm_stats_fetch_all
 
-- name: List ESXi VM stats with sampling, aggregation, and paging
+- name: List ESXi VM stats with sampling and limit
   nutanix.ncp.ntnx_esxi_vm_stats_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -119,7 +119,6 @@ EXAMPLES = r"""
     sampling_interval: 60
     stat_type: AVG
     limit: 10
-    orderby: stats/hypervisorCpuUsagePpm
   register: paged_vm_stats
 
 - name: List ESXi VM stats filtered by hypervisor CPU usage
@@ -210,7 +209,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_internal_attributes,
 )
 from ..module_utils.v4.vmm.api_client import get_esxi_stats_api_instance  # noqa: E402
-from ..module_utils.v4.vmm.helpers import get_esxi_vm_stats  # noqa: E402
+from ..module_utils.v4.vmm.helpers import get_vm_stats  # noqa: E402
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
@@ -243,7 +242,7 @@ def get_vm_stats_by_ext_id(module, api_instance, result):
     if module.params.get("select") is not None:
         kwargs["_select"] = module.params.get("select")
 
-    resp = get_esxi_vm_stats(module, api_instance, ext_id, **kwargs)
+    resp = get_vm_stats(module, api_instance, ext_id, **kwargs)
     if resp is None:
         module.fail_json(msg="Failed fetching ESXi VM stats info", **result)
     result["response"] = strip_internal_attributes(resp.to_dict())

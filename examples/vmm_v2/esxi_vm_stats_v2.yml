@@ -37,7 +37,7 @@
       register: all_stats_fetch_all
       ignore_errors: true
 
-    - name: List ESXi VM stats with sampling, aggregation, and paging
+    - name: List ESXi VM stats with sampling and limit
       nutanix.ncp.ntnx_esxi_vm_stats_info_v2:
         start_time: "{{ start_time }}"
         end_time: "{{ end_time }}"
@@ -46,7 +46,6 @@
         limit: 5
         page: 0
         orderby: stats/hypervisorCpuUsagePpm
-        select: "extId,stats/hypervisorCpuUsagePpm"
       register: paged_stats
       ignore_errors: true
 

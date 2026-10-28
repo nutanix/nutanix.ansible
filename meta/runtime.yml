@@ -336,3 +336,6 @@ action_groups:
     - ntnx_esxi_vm_stats_info_v2
     - ntnx_esxi_vm_disk_stats_info_v2
     - ntnx_esxi_vm_nic_stats_info_v2
+    - ntnx_vm_stats_info_v2
+    - ntnx_vm_disk_stats_info_v2
+    - ntnx_vm_nic_stats_info_v2
