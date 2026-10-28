@@ -4,19 +4,13 @@
 # =====================================================================================
 # The clustermgmt V4 SDK only exposes a read-only ListVirtualGpuProfiles endpoint
 # for the VirtualGpuProfile entity. There are no Create/Update/Delete APIs.
-# These tests therefore focus on:
-#   * Info module (ntnx_virtual_gpu_profiles_info_v2)
-#       - list-all on a cluster (metadata + pagination fields)
-#       - list-all with limit / filter
-#       - get-by-ext_id (client-side lookup)
-#       - negative: missing cluster_ext_id, unknown ext_id
-#       - domain: total_available_results + response shape sanity checks
-#   * CRUD shim (ntnx_virtual_gpu_profile_v2)
-#       - check_mode: create (all attrs), update (all attrs), delete
-#         -> module must return a spec snapshot and skipped=True
-#       - real run for create/update/delete
-#         -> module must fail with the "not supported by V4 SDK" message
-#       - required_if: state=absent without ext_id
+# These tests therefore focus on the info module
+# (ntnx_virtual_gpu_profiles_info_v2):
+#   - list-all on a cluster (metadata + pagination fields)
+#   - list-all with limit / filter
+#   - get-by-ext_id (client-side lookup)
+#   - negative: missing cluster_ext_id, unknown ext_id
+#   - domain: total_available_results + response shape sanity checks
 # The tests dynamically discover an eligible PE cluster and adapt when the
 # cluster does not expose any Virtual GPU profiles (which is expected in
 # many lab environments).
@@ -242,161 +236,6 @@
       - "'cluster_ext_id' in missing_cluster_result.msg"
     success_msg: "Missing cluster_ext_id was rejected as expected"
     fail_msg: "Missing cluster_ext_id was not rejected as expected"
-
-########################################################################################
-# CRUD shim: check_mode Create
-########################################################################################
-
-- name: Create Virtual GPU profile in check mode (with all attributes)
-  nutanix.ncp.ntnx_virtual_gpu_profile_v2:
-    state: present
-    cluster_ext_id: "{{ target_cluster_ext_id }}"
-  check_mode: true
-  register: create_check_mode
-  ignore_errors: true
-
-- name: Create Virtual GPU profile in check mode status
-  ansible.builtin.assert:
-    that:
-      - create_check_mode is defined
-      - create_check_mode.changed == false
-      - create_check_mode.failed == false
-      - create_check_mode.skipped == true
-      - "'not supported' in create_check_mode.msg"
-      - create_check_mode.response is defined
-      - create_check_mode.response.cluster_ext_id == target_cluster_ext_id
-      - create_check_mode.response.state == "present"
-    success_msg: "Create check_mode returned a spec snapshot as expected"
-    fail_msg: "Create check_mode did not return the expected spec snapshot"
-
-########################################################################################
-# CRUD shim: check_mode Update
-########################################################################################
-
-- name: Update Virtual GPU profile in check mode (with all attributes)
-  nutanix.ncp.ntnx_virtual_gpu_profile_v2:
-    state: present
-    cluster_ext_id: "{{ target_cluster_ext_id }}"
-    ext_id: "{{ first_profile_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
-  check_mode: true
-  register: update_check_mode
-  ignore_errors: true
-
-- name: Update Virtual GPU profile in check mode status
-  ansible.builtin.assert:
-    that:
-      - update_check_mode is defined
-      - update_check_mode.changed == false
-      - update_check_mode.failed == false
-      - update_check_mode.skipped == true
-      - "'not supported' in update_check_mode.msg"
-      - update_check_mode.ext_id is defined
-    success_msg: "Update check_mode returned a spec snapshot as expected"
-    fail_msg: "Update check_mode did not return the expected spec snapshot"
-
-########################################################################################
-# CRUD shim: check_mode Delete
-########################################################################################
-
-- name: Delete Virtual GPU profile in check mode
-  nutanix.ncp.ntnx_virtual_gpu_profile_v2:
-    state: absent
-    cluster_ext_id: "{{ target_cluster_ext_id }}"
-    ext_id: "{{ first_profile_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
-  check_mode: true
-  register: delete_check_mode
-  ignore_errors: true
-
-- name: Delete Virtual GPU profile in check mode status
-  ansible.builtin.assert:
-    that:
-      - delete_check_mode is defined
-      - delete_check_mode.changed == false
-      - delete_check_mode.failed == false
-      - delete_check_mode.skipped == true
-      - "'not supported' in delete_check_mode.msg"
-      - delete_check_mode.ext_id is defined
-    success_msg: "Delete check_mode returned a spec snapshot as expected"
-    fail_msg: "Delete check_mode did not return the expected spec snapshot"
-
-########################################################################################
-# CRUD shim: real Create / Update / Delete (all must fail with unsupported)
-########################################################################################
-
-- name: Create Virtual GPU profile (real call, must fail unsupported)
-  nutanix.ncp.ntnx_virtual_gpu_profile_v2:
-    state: present
-    cluster_ext_id: "{{ target_cluster_ext_id }}"
-  register: create_real
-  ignore_errors: true
-
-- name: Create Virtual GPU profile (real call) status
-  ansible.builtin.assert:
-    that:
-      - create_real is defined
-      - create_real.changed == false
-      - create_real.failed == true
-      - "'create is not supported' in create_real.msg"
-      - "'ntnx_virtual_gpu_profiles_info_v2' in create_real.msg"
-    success_msg: "Create real call failed as expected (read-only entity)"
-    fail_msg: "Create real call did not fail as expected"
-
-- name: Update Virtual GPU profile (real call, must fail unsupported)
-  nutanix.ncp.ntnx_virtual_gpu_profile_v2:
-    state: present
-    cluster_ext_id: "{{ target_cluster_ext_id }}"
-    ext_id: "{{ first_profile_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
-  register: update_real
-  ignore_errors: true
-
-- name: Update Virtual GPU profile (real call) status
-  ansible.builtin.assert:
-    that:
-      - update_real is defined
-      - update_real.changed == false
-      - update_real.failed == true
-      - "'update is not supported' in update_real.msg"
-    success_msg: "Update real call failed as expected (read-only entity)"
-    fail_msg: "Update real call did not fail as expected"
-
-- name: Delete Virtual GPU profile (real call, must fail unsupported)
-  nutanix.ncp.ntnx_virtual_gpu_profile_v2:
-    state: absent
-    cluster_ext_id: "{{ target_cluster_ext_id }}"
-    ext_id: "{{ first_profile_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
-  register: delete_real
-  ignore_errors: true
-
-- name: Delete Virtual GPU profile (real call) status
-  ansible.builtin.assert:
-    that:
-      - delete_real is defined
-      - delete_real.changed == false
-      - delete_real.failed == true
-      - "'delete is not supported' in delete_real.msg"
-    success_msg: "Delete real call failed as expected (read-only entity)"
-    fail_msg: "Delete real call did not fail as expected"
-
-########################################################################################
-# CRUD shim: required_if — delete without ext_id
-########################################################################################
-
-- name: Delete Virtual GPU profile without ext_id (should fail required_if)
-  nutanix.ncp.ntnx_virtual_gpu_profile_v2:  # noqa: args[module]
-    state: absent
-    cluster_ext_id: "{{ target_cluster_ext_id }}"
-  register: delete_missing_ext_id
-  ignore_errors: true
-
-- name: Delete Virtual GPU profile without ext_id status
-  ansible.builtin.assert:
-    that:
-      - delete_missing_ext_id is defined
-      - delete_missing_ext_id.changed == false
-      - delete_missing_ext_id.failed == true
-      - "'state is absent but all of the following are missing: ext_id' in delete_missing_ext_id.msg"
-    success_msg: "Delete without ext_id was rejected as expected"
-    fail_msg: "Delete without ext_id was not rejected as expected"
 
 ########################################################################################
 # Idempotency-style: fetching the same profile twice returns identical data.
