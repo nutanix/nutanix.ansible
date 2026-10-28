@@ -1,0 +1,146 @@
+---
+# Summary:
+# This playbook will do:
+# 1. List all VM profiles
+# 2. List all VM profiles with fetch_all
+# 3. List VM profiles with limit
+# 4. List VM profiles with filter
+# 5. Get a VM profile using ext id
+# 6. Update the VM configuration of the VM profile
+# 7. Deploy a VM from the VM profile
+# 8. Share the VM profile with a project
+# 9. Unshare the VM profile from the project
+#
+# Note: a VM profile must already exist in Prism Central. Set vm_profile_ext_id below to
+# the external ID of an existing VM profile (it can be fetched with the list task).
+
+- name: VM profiles playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_profile_ext_id: "a4c0a5d2-6e2f-4a52-9d3e-5d7b1f1c8e11"  # existing VM profile
+        nic_profile_ext_id: "8f897185-e5ee-46ac-82ad-e8945f8687f4"  # existing NIC profile
+        cluster_ext_id: "00062e5f-9a19-0f5b-0000-000000028f57"  # existing cluster
+        subnet_ext_id: "b1c3d5e7-1a2b-4c3d-8e9f-0a1b2c3d4e5f"  # existing subnet
+        image_ext_id: "c2d4e6f8-2b3c-4d5e-9f0a-1b2c3d4e5f60"  # existing image
+        project_ext_id: "26ff200c-e24c-47f7-809b-00a571fe7ecc"  # existing project
+        vm_name: "vm-from-vm-profile-ansible"
+
+    - name: List all VM profiles
+      nutanix.ncp.ntnx_vm_profiles_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Print the VM profiles
+      ansible.builtin.debug:
+        msg: "{{ result.response }}"
+
+    - name: List all VM profiles with fetch_all
+      nutanix.ncp.ntnx_vm_profiles_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
+
+    - name: Print the number of VM profiles
+      ansible.builtin.debug:
+        msg: "Fetched {{ result.response | length }} of {{ result.total_available_results }} VM profiles"
+
+    - name: List VM profiles with limit
+      nutanix.ncp.ntnx_vm_profiles_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: List VM profiles with filter
+      nutanix.ncp.ntnx_vm_profiles_info_v2:
+        filter: "extId eq '{{ vm_profile_ext_id }}'"
+      register: result
+      ignore_errors: true
+
+    - name: Get the VM profile using ext id
+      nutanix.ncp.ntnx_vm_profiles_info_v2:
+        ext_id: "{{ vm_profile_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Print the VM profile
+      ansible.builtin.debug:
+        msg: "{{ result.response }}"
+
+    - name: Update the VM configuration of the VM profile
+      nutanix.ncp.ntnx_vm_profile_v2:
+        state: present
+        ext_id: "{{ vm_profile_ext_id }}"
+        vm_configuration:
+          memory_size_bytes: 8589934592
+          num_cores: 4
+          nics:
+            - backing_info:
+                dp_offload_nic:
+                  nic_profile_reference:
+                    ext_id: "{{ nic_profile_ext_id }}"
+      register: updated
+      ignore_errors: true
+
+    - name: Print the updated VM profile
+      ansible.builtin.debug:
+        msg: "{{ updated.response }}"
+
+    - name: Deploy a VM from the VM profile
+      nutanix.ncp.ntnx_vm_profile_deploy_v2:
+        state: present
+        ext_id: "{{ vm_profile_ext_id }}"
+        vm_name: "{{ vm_name }}"
+        vm_description: "VM deployed from a VM profile using Ansible"
+        cluster:
+          ext_id: "{{ cluster_ext_id }}"
+        project_ext_id: "{{ project_ext_id }}"
+        nics:
+          - vm_profile_nic_ext_id: "{{ updated.response.vm_configuration.nics[0].ext_id }}"
+            subnet:
+              ext_id: "{{ subnet_ext_id }}"
+        disks:
+          - backing_info:
+              disk_size_bytes: 21474836480
+              data_source:
+                reference:
+                  image:
+                    image_ext_id: "{{ image_ext_id }}"
+        guest_customization:
+          config:
+            cloud_init:
+              datasource_type: CONFIG_DRIVE_V2
+              cloud_init_script:
+                user_data:
+                  value: "I2Nsb3VkLWNvbmZpZwpydW5jbWQ6CiAgLSBlY2hvIGhlbGxv"
+        wait: true
+      register: deployed
+      ignore_errors: true
+
+    - name: Print the deployed VM ext id
+      ansible.builtin.debug:
+        msg: "Deployed VM ext_id: {{ deployed.vm_ext_id | default('not available') }}"
+
+    - name: Share the VM profile with a project
+      nutanix.ncp.ntnx_vm_profile_share_v2:
+        state: present
+        ext_id: "{{ vm_profile_ext_id }}"
+        project_ext_id: "{{ project_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Unshare the VM profile from the project
+      nutanix.ncp.ntnx_vm_profile_share_v2:
+        state: absent
+        ext_id: "{{ vm_profile_ext_id }}"
+        project_ext_id: "{{ project_ext_id }}"
+      register: result
+      ignore_errors: true
