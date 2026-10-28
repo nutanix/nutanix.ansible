@@ -10,7 +10,5 @@
       nutanix_debug: "{{ nutanix_debug | default(omit) }}"
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
   block:
-    - name: Import enter_host_maintenance.yml
-      ansible.builtin.import_tasks: enter_host_maintenance.yml
-    - name: Import exit_host_maintenance.yml
-      ansible.builtin.import_tasks: exit_host_maintenance.yml
+    - name: Import host_maintenance.yml
+      ansible.builtin.import_tasks: host_maintenance.yml
