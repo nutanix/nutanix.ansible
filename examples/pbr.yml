@@ -31,6 +31,7 @@
         protocol:
           any: true
       register: result
+
     - name: Delete  pbrs
       nutanix.ncp.ntnx_pbrs:
         state: absent
