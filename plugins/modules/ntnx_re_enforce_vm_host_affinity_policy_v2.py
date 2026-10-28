@@ -14,14 +14,8 @@ module: ntnx_re_enforce_vm_host_affinity_policy_v2
 short_description: Re-enforce a VM-Host Affinity Policy in Nutanix Prism Central
 version_added: "2.7.0"
 description:
-  - This module re-enforces (re-applies) an existing VM-Host Affinity Policy against all
+  - This module re-enforces an existing VM-Host Affinity Policy against all
     the VMs currently associated with the policy in Nutanix Prism Central.
-  - Re-enforcement re-evaluates the affinity/anti-affinity rules and, if required, live-migrates
-    non-compliant VMs to hosts that satisfy the policy so that the policy compliance status
-    moves back to compliant.
-  - The referenced VM-Host Affinity Policy is identified by its external ID (C(ext_id)) and
-    must already exist. This module does not create, update or delete the policy — it only
-    triggers the re-enforce action.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -186,7 +180,6 @@ def re_enforce_vm_host_affinity_policy(module, result):
         result["response"] = strip_internal_attributes(current_policy.to_dict())
         return
 
-    # OpenAPI requires If-Match for re-enforce.
     etag = get_etag(data=current_policy)
     kwargs = {}
     if etag:
@@ -206,7 +199,6 @@ def re_enforce_vm_host_affinity_policy(module, result):
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
-
     if task_ext_id and module.params.get("wait"):
         task = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task.to_dict())
