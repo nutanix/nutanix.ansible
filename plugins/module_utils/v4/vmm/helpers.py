@@ -494,3 +494,23 @@ def get_vm_startup_policy_start_condition_conflict(
                 "start condition conflict using ext_id"
             ),
         )
+
+
+def get_guest_reboot_policy(module, api_instance, ext_id):
+    """
+    Get Guest Reboot Policy by ext_id.
+    Args:
+        module: Ansible module
+        api_instance: GuestRebootPoliciesApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of Guest Reboot Policy
+    Returns:
+        policy (obj): Guest Reboot Policy info object
+    """
+    try:
+        return api_instance.get_guest_reboot_policy_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Guest Reboot Policy info using ext_id",
+        )
