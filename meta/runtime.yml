@@ -311,6 +311,7 @@ action_groups:
     - ntnx_images_migrate_v2
     - ntnx_vm_stat_v2
     - ntnx_vm_stats_info_v2
+    - ntnx_vm_to_host_migration_v2
     - ntnx_vm_recovery_point_v2
     - ntnx_vm_recovery_points_info_v2
     - ntnx_vm_recovery_point_restore_v2
