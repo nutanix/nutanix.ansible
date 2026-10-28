@@ -201,6 +201,21 @@ def get_vm_anti_affinity_policies_api_instance(module):
     return ntnx_vmm_py_client.VmAntiAffinityPoliciesApi(api_client=api_client)
 
 
+def get_esxi_stats_api_instance(module):
+    """
+    This method will return the ESXi Stats API instance which is
+    used to fetch ESXi Virtual Machine, disk and NIC statistics.
+
+    Args:
+        module: Ansible module
+
+    Returns:
+        api_instance (obj): v4 EsxiStatsApi instance from ntnx_vmm_py_client SDK
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.EsxiStatsApi(api_client=api_client)
+
+
 def get_vm_recovery_points_api_instance(module):
     """
     This method will return AHV VM Recovery Points API instance.
@@ -211,3 +226,18 @@ def get_vm_recovery_points_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_vmm_py_client.VmRecoveryPointsApi(api_client=api_client)
+
+
+def get_stats_api_instance(module):
+    """
+    This method will return the Stats API instance which is used to fetch
+    Virtual Machine, disk and NIC statistics.
+
+    Args:
+        module: Ansible module
+
+    Returns:
+        api_instance (obj): v4 StatsApi instance from ntnx_vmm_py_client SDK
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.StatsApi(api_client=api_client)
