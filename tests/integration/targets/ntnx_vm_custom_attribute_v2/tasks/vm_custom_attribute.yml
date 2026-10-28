@@ -4,7 +4,7 @@
 # This test file exercises the Add/Remove Custom Attributes actions of the
 # Nutanix V4 VMM APIs against a real Prism Central. Custom Attributes are
 # user-defined key/value strings (format "key:value") attached to a VM or a
-# VM disk (see FEAT-<PHONE_1>: Custom Attributes Support in V4 VM and VmDisk APIs).
+# VM disk via the V4 VM / VmDisk custom-attributes action APIs.
 #
 # Coverage:
 #   1. Discover cluster (dynamically, no hardcoded UUIDs)
@@ -227,7 +227,7 @@
 #################################################################################
 # Attach a regular VM disk (backing_info.vm_disk) to exercise disk-level
 # custom attributes. Volume-Group backed disks and CD-ROMs are NOT eligible for
-# disk custom attributes (per FEAT-<PHONE_1>), so we create a plain VM disk.
+# disk custom attributes, so we create a plain VM disk.
 # We dynamically discover a storage container available on the cluster.
 #################################################################################
 
@@ -495,9 +495,9 @@
 #################################################################################
 
 - name: Delete the test VM
-  nutanix.ncp.ntnx_vms:
+  nutanix.ncp.ntnx_vms_v2:
     state: absent
-    vm_uuid: "{{ vm_uuid }}"
+    ext_id: "{{ vm_uuid }}"
   register: delete_vm
   ignore_errors: true
 

@@ -17,24 +17,31 @@ description:
   - This module allows you to add or remove user-defined custom attributes
     (key/value string tags) on an AHV VM, or on a specific VM disk, in
     Nutanix Prism Central.
-  - Each custom attribute is a string in the strict format C(key:value)
-    (e.g. C(environment:production)).
+  - Each custom attribute is a string in the format C(key:value)
+    (for example C(environment:production)).
   - If C(disk_ext_id) is provided, the operation is performed on the specified
     VM disk. Otherwise it is performed on the VM.
   - If C(state) is set to C(present), the supplied custom attributes are added.
   - If C(state) is set to C(absent), the supplied custom attributes are removed.
   - This module uses PC v4 APIs based SDKs.
 notes:
-    - >-
-      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
-      The required roles depend on the operation being performed.
-    - >-
-      B(Add / Remove VM custom attributes) -
-      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin (with C(Update_Virtual_Machine_Custom_Attributes) permission).
-    - >-
-      B(Add / Remove VM disk custom attributes) -
-      Required Roles: Prism Admin, Super Admin, Virtual Machine Admin (with C(Update_Virtual_Machine_Disk_Custom_Attributes) permission).
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
+  - >-
+    This module requires the following Nutanix IAM roles to be assigned to the
+    user performing the operation.
+    The required roles depend on the operation being performed.
+  - >-
+    B(Update Virtual Machine Custom Attributes) -
+    Required Roles: Account Owner, Administrator, User, Consumer, Developer,
+    Operator, Prism Admin, Project Admin, Project Manager,
+    Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin,
+    Backup Admin, Tenant Admin, Tenant Consumer
+  - >-
+    B(Update Virtual Machine Disk Custom Attributes) -
+    Required Roles: Account Owner, Administrator, User, Consumer, Developer,
+    Operator, Prism Admin, Project Admin, Project Manager,
+    Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin,
+    Backup Admin, Tenant Admin, Tenant Consumer
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
   state:
     description:
@@ -54,16 +61,19 @@ options:
   disk_ext_id:
     description:
       - The external ID of the VM disk on which custom attributes should be added or removed.
-      - When provided, custom attributes are added / removed on the disk rather than on the VM itself.
+      - When provided, custom attributes are added or removed on the disk rather than on the VM itself.
       - Volume Group backed disks and CD-ROMs are not eligible for disk custom attributes.
     type: str
     required: false
   custom_attributes:
     description:
-      - A list of user-defined custom attributes as strings in the C(key:value) format
+      - List of custom attributes to be added or removed.
+      - Each item is a string in C(key:value) format
         (for example C(environment:production), C(owner:engineering)).
-      - For C(state=present), the module will add only those attributes which are not already present.
-      - For C(state=absent), the module will remove only those attributes which are currently present.
+      - Keys must match the API pattern for custom attributes (lowercase key, optional value).
+      - Maximum of 64 attributes per request.
+      - For C(state=present), the module adds only those attributes which are not already present.
+      - For C(state=absent), the module removes only those attributes which are currently present.
     type: list
     elements: str
     required: true
@@ -178,22 +188,19 @@ response:
     }
 
 task_ext_id:
-  description:
-    - The external ID of the task associated with the add/remove custom attributes action.
+  description: The external ID of the task.
   returned: always
   type: str
   sample: "ZXJnb24=:90458bc7-a12b-4616-ac66-562fdb00c209"
 
 vm_ext_id:
-  description:
-    - The external ID of the VM on which custom attributes were added or removed.
+  description: The external ID of the VM.
   returned: always
   type: str
   sample: "ac5aff0c-6c68-4948-9088-b903e2be0ce7"
 
 disk_ext_id:
-  description:
-    - The external ID of the VM disk on which custom attributes were added or removed.
+  description: The external ID of the VM disk.
   returned: when C(disk_ext_id) is provided
   type: str
   sample: "0f34a2a7-6068-48ba-859d-1ced14d7f5da"
@@ -217,31 +224,26 @@ custom_attributes:
     - "owner:engineering"
 
 changed:
-  description: This indicates whether the task resulted in any changes.
+  description: This indicates whether the task resulted in any changes
   returned: always
   type: bool
   sample: true
 
 skipped:
-  description: This indicates whether the task was skipped because there was nothing to change.
-  returned: when the operation is a no-op
+  description: This indicates whether the task was skipped
+  returned: when the module is idempotent
   type: bool
   sample: true
 
-error:
-  description: This indicates the error message if any error occurred.
-  returned: when an error occurs
-  type: str
-
 failed:
-  description: This indicates whether the task failed.
+  description: This indicates whether the task failed
   returned: always
   type: bool
   sample: false
 
 msg:
-  description: Status / informational message returned by the module.
-  returned: When there is an error, module is idempotent, or in check mode
+  description: This indicates the message if any message occurred
+  returned: When there is an error, module is idempotent
   type: str
   sample: "Nothing to change."
 """
@@ -320,7 +322,7 @@ def _build_spec(attributes):
     return vmm_sdk.UpdateCustomAttributesParams(custom_attributes=attributes)
 
 
-def add_VmCustomAttribute(module, result, api_instance):
+def add_vm_custom_attributes(module, result, api_instance):
     vm_ext_id = module.params.get("vm_ext_id")
     disk_ext_id = module.params.get("disk_ext_id")
     requested = module.params.get("custom_attributes") or []
@@ -381,7 +383,7 @@ def add_VmCustomAttribute(module, result, api_instance):
     result["changed"] = True
 
 
-def remove_VmCustomAttribute(module, result, api_instance):
+def remove_vm_custom_attributes(module, result, api_instance):
     vm_ext_id = module.params.get("vm_ext_id")
     disk_ext_id = module.params.get("disk_ext_id")
     requested = module.params.get("custom_attributes") or []
@@ -460,17 +462,15 @@ def run_module():
         "response": None,
         "failed": False,
         "vm_ext_id": None,
-        "disk_ext_id": None,
         "ext_id": None,
-        "task_ext_id": None,
     }
 
     api_instance = get_vm_api_instance(module)
     state = module.params.get("state")
     if state == "present":
-        add_VmCustomAttribute(module, result, api_instance)
+        add_vm_custom_attributes(module, result, api_instance)
     else:
-        remove_VmCustomAttribute(module, result, api_instance)
+        remove_vm_custom_attributes(module, result, api_instance)
 
     module.exit_json(**result)
 

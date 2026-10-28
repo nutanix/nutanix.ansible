@@ -8,12 +8,13 @@
 #
 # The playbook does the following operations:
 # 1. Create a VM (prerequisite for attaching custom attributes)
-# 2. Add custom attributes to the VM
-# 3. Update / extend custom attributes on the VM (add another attribute)
-# 4. Add custom attributes to a specific VM disk
-# 5. Remove custom attributes from the VM disk
-# 6. Remove custom attributes from the VM
-# 7. Delete the VM (cleanup)
+# 2. Attach a disk (for disk-level custom attributes)
+# 3. Add custom attributes to the VM
+# 4. Add another custom attribute to the VM
+# 5. Add custom attributes to a specific VM disk
+# 6. Remove custom attributes from the VM disk
+# 7. Remove custom attributes from the VM
+# 8. Delete the VM (cleanup)
 
 - name: VM Custom Attribute playbook
   hosts: localhost
@@ -45,7 +46,7 @@
       ansible.builtin.set_fact:
         vm_uuid: "{{ create_vm.ext_id }}"
 
-    - name: Attach a disk to the VM (for demonstrating disk-level custom attributes)
+    - name: Attach a disk to the VM (for disk-level custom attributes)
       nutanix.ncp.ntnx_vms_disks_v2:
         state: present
         vm_ext_id: "{{ vm_uuid }}"
@@ -116,8 +117,8 @@
       ignore_errors: true
 
     - name: Delete the test VM (cleanup)
-      nutanix.ncp.ntnx_vms:
+      nutanix.ncp.ntnx_vms_v2:
         state: absent
-        vm_uuid: "{{ vm_uuid }}"
+        ext_id: "{{ vm_uuid }}"
       register: delete_vm
       ignore_errors: true
