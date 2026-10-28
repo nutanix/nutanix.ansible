@@ -11,15 +11,20 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_cluster_host_maintenance_v2
-short_description: Put a Nutanix cluster host into maintenance mode
+short_description: Enter or exit Nutanix cluster host maintenance mode
 version_added: 2.7.0
 description:
-  - Enter a Nutanix cluster host into maintenance mode using the v4 clustermgmt
-    Planned Outage Manager (POM) API.
+  - Enter or exit a Nutanix cluster host into/from maintenance mode using the
+    v4 clustermgmt Planned Outage Manager (POM) API.
+  - Use C(state=enter) to put a host into maintenance mode and C(state=exit) to
+    transition it back to normal operation.
+  - Entering maintenance migrates workloads, may shut down non-migratable UVMs
+    when consented, and shuts down the CVM safely. Exiting maintenance restores
+    VM locality, powers pinned VMs back on, and releases the cluster-wide
+    shutdown token.
   - The operation is orchestrated asynchronously; the SDK returns a task
     external ID that the module tracks until completion when C(wait) is C(true).
-  - Requires the cluster external ID and the host external ID of the host that
-    must be placed into maintenance mode.
+  - Requires the cluster external ID and the host external ID.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -28,18 +33,25 @@ notes:
   - >-
     B(Enter Cluster Host Maintenance) -
     Required Roles: Cluster Admin, Prism Admin, Super Admin
+  - >-
+    B(Exit Cluster Host Maintenance) -
+    Required Roles: Cluster Admin, Prism Admin, Super Admin
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   state:
     description:
-      - State of the module.
-      - If C(state) is C(present), the host is put into maintenance mode.
-      - This module does not support C(absent) — exiting host maintenance is not
-        covered by this API path.
+      - Desired maintenance action for the host.
+      - C(enter) puts the host into maintenance mode
+        (C(ClustersApi.enter_host_maintenance)).
+      - C(exit) takes the host out of maintenance mode
+        (C(ClustersApi.exit_host_maintenance)).
+      - C(should_rollback_on_failure) and C(should_shutdown_non_migratable_uvms)
+        apply only when C(state) is C(enter).
     type: str
     choices:
-      - present
-    default: present
+      - enter
+      - exit
+    default: enter
   cluster_ext_id:
     description:
       - External ID (UUID) of the cluster that owns the target host.
@@ -47,7 +59,7 @@ options:
     required: true
   ext_id:
     description:
-      - External ID (UUID) of the host to be put into maintenance mode.
+      - External ID (UUID) of the host to enter or exit maintenance mode.
     type: str
     required: true
   should_rollback_on_failure:
@@ -56,15 +68,17 @@ options:
         changes (e.g. power the CVM back on, restart previously stopped pinned
         VMs) if the maintenance workflow fails.
       - Defaults to C(true) on the server if left unset.
+      - Applicable only when C(state) is C(enter).
     type: bool
     required: false
   should_shutdown_non_migratable_uvms:
     description:
       - Whether to power off UVMs that cannot be migrated off the host (e.g.
-        pinned VMs or RF1 VMs) so the workflow can proceed.
+        pinned VMs or RF1 VMs) so the enter-maintenance workflow can proceed.
       - Callers usually query the C(compute-non-migratable-vms) API first and
         set this to C(true) to grant consent for the shutdown.
       - Defaults to C(false) on the server if left unset.
+      - Applicable only when C(state) is C(enter).
     type: bool
     required: false
   timeout_seconds:
@@ -76,7 +90,7 @@ options:
   vcenter_info:
     description:
       - vCenter connection information required for ESXi hosts so that Prism
-        can request that vCenter place the host into maintenance mode.
+        can coordinate maintenance enter/exit with vSphere.
       - Not required for AHV hosts.
       - When set, both C(address) and C(credentials) are required.
     type: dict
@@ -167,7 +181,7 @@ author:
 EXAMPLES = r"""
 - name: Enter an AHV host into maintenance mode
   nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-    state: present
+    state: enter
     cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
     ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
     should_rollback_on_failure: true
@@ -178,7 +192,7 @@ EXAMPLES = r"""
 
 - name: Enter an ESXi host into maintenance mode with vCenter info
   nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-    state: present
+    state: enter
     cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
     ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
     should_rollback_on_failure: true
@@ -194,14 +208,42 @@ EXAMPLES = r"""
         port: 443
   register: result
   ignore_errors: true
+
+- name: Exit an AHV host from maintenance mode
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    state: exit
+    cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
+    ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
+    timeout_seconds: 600
+  register: result
+  ignore_errors: true
+
+- name: Exit an ESXi host from maintenance mode with vCenter credentials
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    state: exit
+    cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
+    ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
+    timeout_seconds: 900
+    vcenter_info:
+      address:
+        ipv4:
+          value: "10.44.100.10"
+          prefix_length: 32
+      credentials:
+        username: "administrator@vsphere.local"
+        password: "vcenter-password"
+        port: 443
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
 response:
   description:
-    - Response for putting the host into maintenance mode.
+    - Response for the host maintenance enter or exit action.
     - Task details when C(wait) is true (task run to completion).
     - Task reference details when C(wait) is false.
+    - In check mode, the generated request body for the selected state.
   returned: always
   type: dict
   sample:
@@ -272,7 +314,7 @@ task_ext_id:
   sample: "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1"
 
 ext_id:
-  description: The external ID of the host that was put into maintenance mode.
+  description: The external ID of the host targeted by the maintenance action.
   returned: always
   type: str
   sample: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
@@ -368,7 +410,7 @@ def get_module_spec():
         ),
     )
     module_args = dict(
-        state=dict(type="str", default="present", choices=["present"]),
+        state=dict(type="str", default="enter", choices=["enter", "exit"]),
         cluster_ext_id=dict(type="str", required=True),
         ext_id=dict(type="str", required=True),
         should_rollback_on_failure=dict(type="bool", required=False),
@@ -425,6 +467,44 @@ def enter_host_maintenance(module, result, api_instance):
     result["changed"] = True
 
 
+def exit_host_maintenance(module, result, api_instance):
+    cluster_ext_id = module.params.get("cluster_ext_id")
+    ext_id = module.params.get("ext_id")
+    result["cluster_ext_id"] = cluster_ext_id
+    result["ext_id"] = ext_id
+
+    sg = SpecGenerator(module)
+    default_spec = cluster_management_sdk.HostMaintenanceCommonSpec()
+    spec, err = sg.generate_spec(obj=default_spec)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating exit host maintenance spec", **result)
+
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(spec.to_dict())
+        return
+
+    resp = None
+    try:
+        resp = api_instance.exit_host_maintenance(
+            clusterExtId=cluster_ext_id, extId=ext_id, body=spec
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while exiting host from maintenance mode",
+        )
+
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if task_ext_id and module.params.get("wait"):
+        task = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(task.to_dict())
+    result["changed"] = True
+
+
 def run_module():
     module = BaseModuleV4(
         argument_spec=get_module_spec(),
@@ -447,7 +527,11 @@ def run_module():
         "task_ext_id": None,
     }
     api_instance = get_clusters_api_instance(module)
-    enter_host_maintenance(module, result, api_instance)
+    state = module.params.get("state")
+    if state == "enter":
+        enter_host_maintenance(module, result, api_instance)
+    else:
+        exit_host_maintenance(module, result, api_instance)
 
     module.exit_json(**result)
 

@@ -12,3 +12,5 @@
   block:
     - name: Import enter_host_maintenance.yml
       ansible.builtin.import_tasks: enter_host_maintenance.yml
+    - name: Import exit_host_maintenance.yml
+      ansible.builtin.import_tasks: exit_host_maintenance.yml

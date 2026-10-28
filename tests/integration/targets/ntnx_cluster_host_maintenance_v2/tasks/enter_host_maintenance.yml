@@ -237,7 +237,7 @@
     success_msg: "Minimum-field check_mode spec generation passed"
 
 ############################################################
-# 8. state=absent must be rejected (choices=["present"] only)
+# 8. invalid state must be rejected (choices=["enter", "exit"] only)
 ############################################################
 
 - name: Enter host maintenance with unsupported state=absent

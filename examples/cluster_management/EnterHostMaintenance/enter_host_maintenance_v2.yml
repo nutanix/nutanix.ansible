@@ -19,9 +19,9 @@
   gather_facts: false
   module_defaults:
     group/nutanix.ncp.ntnx:
-      nutanix_host: "10.44.76.28"
-      nutanix_username: "admin"
-      nutanix_password: "Nutanix.123"
+      nutanix_host: "<pc_ip>"
+      nutanix_username: "<user>"
+      nutanix_password: "<pass>"
       validate_certs: false
   tasks:
     - name: List Prism Element clusters attached to this Prism Central
@@ -46,6 +46,7 @@
 
     - name: Enter AHV host into maintenance mode with rollback + shutdown consent
       nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+        state: enter
         cluster_ext_id: "{{ target_cluster_ext_id }}"
         ext_id: "{{ target_host_ext_id }}"
         should_rollback_on_failure: true
@@ -56,6 +57,7 @@
 
     - name: Enter ESXi host into maintenance mode with vCenter connection info
       nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+        state: enter
         cluster_ext_id: "{{ target_cluster_ext_id }}"
         ext_id: "{{ target_host_ext_id }}"
         should_rollback_on_failure: true
