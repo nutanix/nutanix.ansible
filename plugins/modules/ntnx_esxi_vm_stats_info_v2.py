@@ -9,7 +9,7 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
-module: ntnx_vm_stats_info_v2
+module: ntnx_esxi_vm_stats_info_v2
 short_description: Fetch information about ESXi VM stats
 version_added: "2.7.0"
 description:
@@ -89,7 +89,7 @@ author:
 
 EXAMPLES = r"""
 - name: List all ESXi VM stats within a time window
-  nutanix.ncp.ntnx_vm_stats_info_v2:
+  nutanix.ncp.ntnx_esxi_vm_stats_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -99,7 +99,7 @@ EXAMPLES = r"""
   register: all_vm_stats
 
 - name: List all ESXi VM stats with fetch_all
-  nutanix.ncp.ntnx_vm_stats_info_v2:
+  nutanix.ncp.ntnx_esxi_vm_stats_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -110,7 +110,7 @@ EXAMPLES = r"""
   register: all_vm_stats_fetch_all
 
 - name: List ESXi VM stats with sampling, aggregation, and paging
-  nutanix.ncp.ntnx_vm_stats_info_v2:
+  nutanix.ncp.ntnx_esxi_vm_stats_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -124,7 +124,7 @@ EXAMPLES = r"""
   register: paged_vm_stats
 
 - name: List ESXi VM stats filtered by hypervisor CPU usage
-  nutanix.ncp.ntnx_vm_stats_info_v2:
+  nutanix.ncp.ntnx_esxi_vm_stats_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -135,7 +135,7 @@ EXAMPLES = r"""
   register: filtered_vm_stats
 
 - name: Get ESXi VM stats using ext_id
-  nutanix.ncp.ntnx_vm_stats_info_v2:
+  nutanix.ncp.ntnx_esxi_vm_stats_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -148,7 +148,7 @@ EXAMPLES = r"""
   register: single_vm_stats
 
 - name: List ESXi VM stats with $select projection
-  nutanix.ncp.ntnx_vm_stats_info_v2:
+  nutanix.ncp.ntnx_esxi_vm_stats_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

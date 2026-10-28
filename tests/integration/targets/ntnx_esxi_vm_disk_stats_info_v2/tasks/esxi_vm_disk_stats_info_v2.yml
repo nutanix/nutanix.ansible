@@ -1,9 +1,9 @@
 ---
-# Integration tests for ntnx_vm_nic_stats_info_v2.
+# Integration tests for ntnx_esxi_vm_disk_stats_info_v2.
 
-- name: Start ntnx_vm_nic_stats_info_v2 integration tests
+- name: Start ntnx_esxi_vm_disk_stats_info_v2 integration tests
   ansible.builtin.debug:
-    msg: Start ntnx_vm_nic_stats_info_v2 integration tests
+    msg: Start ntnx_esxi_vm_disk_stats_info_v2 integration tests
 
 - name: Compute stats window start time (last 5 minutes)
   ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
@@ -15,8 +15,8 @@
   register: end_time
   changed_when: false
 
-- name: NIC stats module rejects missing required params
-  nutanix.ncp.ntnx_vm_nic_stats_info_v2: {}
+- name: Disk stats module rejects missing required params
+  nutanix.ncp.ntnx_esxi_vm_disk_stats_info_v2: {}
   register: result
   ignore_errors: true
 
@@ -31,13 +31,13 @@
           ('ext_id' in (result.msg | string)) or
           ('start_time' in (result.msg | string)) or
           ('end_time' in (result.msg | string))
-    fail_msg: NIC stats module did not reject missing required params
-    success_msg: NIC stats module correctly rejected missing required params
+    fail_msg: Disk stats module did not reject missing required params
+    success_msg: Disk stats module correctly rejected missing required params
 
-- name: NIC stats module rejects invalid stat_type
-  nutanix.ncp.ntnx_vm_nic_stats_info_v2:
+- name: Disk stats module rejects invalid stat_type
+  nutanix.ncp.ntnx_esxi_vm_disk_stats_info_v2:
     vm_ext_id: "83083083-0000-0000-0000-000000000001"
-    ext_id: "83083083-0000-0000-0000-000000000003"
+    ext_id: "83083083-0000-0000-0000-000000000002"
     start_time: "{{ start_time.stdout }}"
     end_time: "{{ end_time.stdout }}"
     stat_type: NOT_VALID
@@ -56,20 +56,20 @@
     fail_msg: Invalid stat_type was not rejected
     success_msg: Invalid stat_type correctly rejected
 
-- name: Fetch NIC stats for a non-existent VM/NIC
-  nutanix.ncp.ntnx_vm_nic_stats_info_v2:
+- name: Fetch disk stats for a non-existent VM/disk
+  nutanix.ncp.ntnx_esxi_vm_disk_stats_info_v2:
     vm_ext_id: "83083083-0000-0000-0000-000000000099"
-    ext_id: "83083083-0000-0000-0000-000000000097"
+    ext_id: "83083083-0000-0000-0000-000000000098"
     start_time: "{{ start_time.stdout }}"
     end_time: "{{ end_time.stdout }}"
   register: not_found_result
   ignore_errors: true
 
-- name: Assert clean error for non-existent NIC
+- name: Assert clean error for non-existent disk
   ansible.builtin.assert:
     that:
       - not_found_result.changed == false
       - not_found_result.failed == true
       - not_found_result.msg is defined
-    fail_msg: Non-existent NIC did not return a clean error
-    success_msg: Non-existent NIC returned a clean error
+    fail_msg: Non-existent disk did not return a clean error
+    success_msg: Non-existent disk returned a clean error
