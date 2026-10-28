@@ -309,6 +309,7 @@ action_groups:
     - ntnx_content_repository_sync_v2
     - ntnx_content_repository_items_info_v2
     - ntnx_images_migrate_v2
+    - ntnx_vm_to_host_migration_v2
     - ntnx_vm_recovery_point_v2
     - ntnx_vm_recovery_points_info_v2
     - ntnx_vm_recovery_point_restore_v2
