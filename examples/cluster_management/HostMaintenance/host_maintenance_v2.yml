@@ -1,14 +1,14 @@
 ---
 # Summary:
-# Demonstrates enter and exit host maintenance using
+# Demonstrates put a host into and out of maintenance mode using
 # ntnx_cluster_host_maintenance_v2 (Planned Outage Manager v4 API).
 #
 # High level flow:
 #   1. Discover a Prism Element (AOS) cluster and one of its hosts.
-#   2. Enter maintenance (AHV + ESXi with vCenter credentials).
-#   3. Exit maintenance (AHV + ESXi with vCenter credentials).
+#   2. Put the host into maintenance (AHV + ESXi with vCenter credentials).
+#   3. Take the host out of maintenance (AHV + ESXi with vCenter credentials).
 #
-# NOTE: entering/exiting maintenance is disruptive. Use a lab cluster
+# NOTE: maintenance enter/exit is disruptive. Use a lab cluster
 # with enough capacity, and prefer ignore_errors on these tasks when
 # running against single-node clusters (POM rejects them).
 
@@ -41,11 +41,11 @@
         target_host_ext_id: "{{ cluster_hosts.response[0].ext_id }}"
 
     ####################################################################
-    # Enter maintenance
+    # state=present — put host into maintenance
     ####################################################################
-    - name: Enter AHV host into maintenance mode
+    - name: Put AHV host into maintenance mode
       nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-        state: enter
+        state: present
         cluster_ext_id: "{{ target_cluster_ext_id }}"
         ext_id: "{{ target_host_ext_id }}"
         should_rollback_on_failure: true
@@ -54,9 +54,9 @@
       register: enter_maintenance_ahv
       ignore_errors: true
 
-    - name: Enter ESXi host into maintenance mode with vCenter info
+    - name: Put ESXi host into maintenance mode with vCenter info
       nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-        state: enter
+        state: present
         cluster_ext_id: "{{ target_cluster_ext_id }}"
         ext_id: "{{ target_host_ext_id }}"
         should_rollback_on_failure: true
@@ -74,20 +74,20 @@
       ignore_errors: true
 
     ####################################################################
-    # Exit maintenance
+    # state=absent — take host out of maintenance
     ####################################################################
-    - name: Exit AHV host from maintenance mode
+    - name: Take AHV host out of maintenance mode
       nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-        state: exit
+        state: absent
         cluster_ext_id: "{{ target_cluster_ext_id }}"
         ext_id: "{{ target_host_ext_id }}"
         timeout_seconds: 600
       register: exit_maintenance_ahv
       ignore_errors: true
 
-    - name: Exit ESXi host from maintenance mode with vCenter info
+    - name: Take ESXi host out of maintenance mode with vCenter info
       nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-        state: exit
+        state: absent
         cluster_ext_id: "{{ target_cluster_ext_id }}"
         ext_id: "{{ target_host_ext_id }}"
         timeout_seconds: 900

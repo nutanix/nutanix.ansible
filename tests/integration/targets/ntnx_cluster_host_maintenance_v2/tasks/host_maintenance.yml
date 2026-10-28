@@ -1,14 +1,14 @@
 ---
-# Test plan for ntnx_cluster_host_maintenance_v2 (enter + exit POM v4 API):
+# Test plan for ntnx_cluster_host_maintenance_v2 (present/absent POM v4 API):
 #
 #   1. Discover a real AOS cluster + host for exit/negative API calls.
-#   2. Enter check_mode: AHV all fields, ESXi + vcenter_info, minimum fields.
-#   3. Exit check_mode: minimal, full + vcenter_info, FQDN vCenter address.
+#   2. state=present check_mode: AHV all fields, ESXi + vcenter_info, minimum fields.
+#   3. state=absent check_mode: minimal, full + vcenter_info, FQDN vCenter address.
 #   4. Shared negatives: missing cluster_ext_id / ext_id, invalid state.
-#   5. Enter negatives: non-existent cluster/host ext_ids.
-#   6. Exit negatives: missing vcenter address/password, non-existent
+#   5. state=present negatives: non-existent cluster/host ext_ids.
+#   6. state=absent negatives: missing vcenter address/password, non-existent
 #      cluster/host, exit when host is not in maintenance.
-#   7. Exit check_mode idempotency re-run.
+#   7. state=absent check_mode idempotency re-run.
 #
 # Destructive live enter/exit success paths are not run here (would shut
 # down a CVM on shared lab PCs). Use the HostMaintenance example playbook
@@ -16,7 +16,7 @@
 
 - name: Start ntnx_cluster_host_maintenance_v2 tests
   ansible.builtin.debug:
-    msg: Start ntnx_cluster_host_maintenance_v2 enter/exit tests
+    msg: Start ntnx_cluster_host_maintenance_v2 present/absent tests
 
 - name: Set placeholder external IDs used by check_mode / negative tests
   ansible.builtin.set_fact:
@@ -79,7 +79,7 @@
 
 - name: Generate enter spec with all fields (AHV)
   nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-    state: enter
+    state: present
     cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
     ext_id: "{{ placeholder_host_ext_id }}"
     should_rollback_on_failure: true
@@ -104,7 +104,7 @@
 
 - name: Generate enter spec with all fields (ESXi)
   nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-    state: enter
+    state: present
     cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
     ext_id: "{{ placeholder_host_ext_id }}"
     should_rollback_on_failure: false
@@ -140,7 +140,7 @@
 
 - name: Generate enter spec with minimum fields
   nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-    state: enter
+    state: present
     cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
     ext_id: "{{ placeholder_host_ext_id }}"
   register: enter_min_result
@@ -166,7 +166,7 @@
 
 - name: Exit host maintenance in check_mode with minimal spec
   nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-    state: exit
+    state: absent
     cluster_ext_id: "{{ target_cluster_ext_id }}"
     ext_id: "{{ target_host_ext_id }}"
   check_mode: true
@@ -186,7 +186,7 @@
 
 - name: Exit host maintenance in check_mode with ALL attributes
   nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-    state: exit
+    state: absent
     cluster_ext_id: "{{ target_cluster_ext_id }}"
     ext_id: "{{ target_host_ext_id }}"
     timeout_seconds: 900
@@ -218,7 +218,7 @@
 
 - name: Exit check_mode with FQDN vCenter address
   nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-    state: exit
+    state: absent
     cluster_ext_id: "{{ target_cluster_ext_id }}"
     ext_id: "{{ target_host_ext_id }}"
     timeout_seconds: 1200
@@ -249,7 +249,7 @@
 
 - name: Negative — missing cluster_ext_id
   nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-    state: enter
+    state: present
     ext_id: "{{ placeholder_host_ext_id }}"
   register: neg_no_cluster_result
   ignore_errors: true
@@ -265,7 +265,7 @@
 
 - name: Negative — missing ext_id
   nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-    state: exit
+    state: absent
     cluster_ext_id: "{{ target_cluster_ext_id }}"
   register: neg_no_host_result
   ignore_errors: true
@@ -281,7 +281,7 @@
 
 - name: Negative — invalid state choice
   nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-    state: absent
+    state: invalid
     cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
     ext_id: "{{ placeholder_host_ext_id }}"
   register: neg_invalid_state_result
@@ -297,7 +297,7 @@
 
 - name: Negative — vcenter_info without required address
   nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-    state: exit
+    state: absent
     cluster_ext_id: "{{ target_cluster_ext_id }}"
     ext_id: "{{ target_host_ext_id }}"
     vcenter_info:
@@ -318,7 +318,7 @@
 
 - name: Negative — vcenter_info.credentials without password
   nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-    state: enter
+    state: present
     cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
     ext_id: "{{ placeholder_host_ext_id }}"
     vcenter_info:
@@ -339,13 +339,32 @@
     success_msg: "Credentials without password were correctly rejected"
     fail_msg: "Credentials without password were NOT rejected"
 
+- name: Negative — enter-only params with state=absent
+  nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+    state: absent
+    cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
+    ext_id: "{{ placeholder_host_ext_id }}"
+    should_rollback_on_failure: true
+  check_mode: true
+  register: neg_enter_only_on_absent
+  ignore_errors: true
+
+- name: Verify enter-only params are rejected when state=absent
+  ansible.builtin.assert:
+    that:
+      - neg_enter_only_on_absent.failed == true
+      - neg_enter_only_on_absent.changed == false
+      - "'should_rollback_on_failure' in (neg_enter_only_on_absent.msg | default(''))"
+    success_msg: "Enter-only params correctly rejected for state=absent"
+    fail_msg: "Enter-only params were NOT rejected for state=absent"
+
 ####################################################################
 # 5. Enter — real API negatives
 ####################################################################
 
 - name: Enter host maintenance with non-existent cluster_ext_id
   nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-    state: enter
+    state: present
     cluster_ext_id: "{{ fake_cluster_ext_id }}"
     ext_id: "{{ fake_host_ext_id }}"
     should_rollback_on_failure: true
@@ -365,7 +384,7 @@
 
 - name: Enter host maintenance with non-existent host ext_id
   nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-    state: enter
+    state: present
     cluster_ext_id: "{{ target_cluster_ext_id }}"
     ext_id: "{{ fake_host_ext_id }}"
     should_rollback_on_failure: true
@@ -389,7 +408,7 @@
 
 - name: Exit host maintenance with non-existent host ext_id
   nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-    state: exit
+    state: absent
     cluster_ext_id: "{{ target_cluster_ext_id }}"
     ext_id: "00000000-0000-0000-0000-deadbeefdead"
     timeout_seconds: 60
@@ -406,7 +425,7 @@
 
 - name: Exit host maintenance with non-existent cluster ext_id
   nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-    state: exit
+    state: absent
     cluster_ext_id: "00000000-0000-0000-0000-cafebabecafe"
     ext_id: "{{ target_host_ext_id }}"
     timeout_seconds: 60
@@ -423,7 +442,7 @@
 
 - name: Attempt to exit maintenance on a host that is not in maintenance
   nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-    state: exit
+    state: absent
     cluster_ext_id: "{{ target_cluster_ext_id }}"
     ext_id: "{{ target_host_ext_id }}"
     timeout_seconds: 60
@@ -445,7 +464,7 @@
 
 - name: Re-run exit minimal check_mode call
   nutanix.ncp.ntnx_cluster_host_maintenance_v2:
-    state: exit
+    state: absent
     cluster_ext_id: "{{ target_cluster_ext_id }}"
     ext_id: "{{ target_host_ext_id }}"
   check_mode: true
