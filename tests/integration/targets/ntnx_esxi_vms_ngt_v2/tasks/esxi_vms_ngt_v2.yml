@@ -1,0 +1,294 @@
+---
+# Integration tests for the ESXi NGT modules:
+#   ntnx_esxi_vms_ngt_v2, ntnx_esxi_vms_ngt_info_v2, ntnx_esxi_vms_ngt_update_v2,
+#   ntnx_esxi_vms_ngt_upgrade_v2, ntnx_esxi_vms_ngt_insert_iso_v2
+# Negative and check-mode tests use inline dummy ext_ids. These modules read the
+# NGT status before generating the spec, so a non-existent VM fails cleanly even
+# in check mode.
+
+- name: Start testing ESXi NGT modules
+  ansible.builtin.debug:
+    msg: Start testing ESXi NGT modules
+
+##################################################################################
+# Missing / invalid parameters
+##################################################################################
+
+- name: Install NGT without ext_id
+  nutanix.ncp.ntnx_esxi_vms_ngt_v2:
+    state: present
+    capabilities:
+      - VSS_SNAPSHOT
+  register: result
+  ignore_errors: true
+
+- name: Assert install NGT without ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'ext_id' in (result.msg | string)"
+    fail_msg: Missing ext_id was not rejected for NGT install
+    success_msg: Missing ext_id correctly rejected for NGT install
+
+- name: Install NGT with invalid capability
+  nutanix.ncp.ntnx_esxi_vms_ngt_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    capabilities:
+      - INVALID_CAPABILITY
+  register: result
+  ignore_errors: true
+
+- name: Assert install NGT with invalid capability fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'capabilities' in (result.msg | string)"
+    fail_msg: Invalid capability was not rejected for NGT install
+    success_msg: Invalid capability correctly rejected for NGT install
+
+- name: Install NGT with invalid reboot preference schedule_type
+  nutanix.ncp.ntnx_esxi_vms_ngt_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    reboot_preference:
+      schedule_type: INVALID_TYPE
+  register: result
+  ignore_errors: true
+
+- name: Assert install NGT with invalid schedule_type fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'schedule_type' in (result.msg | string)"
+    fail_msg: Invalid schedule_type was not rejected for NGT install
+    success_msg: Invalid schedule_type correctly rejected for NGT install
+
+- name: Fetch NGT info without ext_id
+  nutanix.ncp.ntnx_esxi_vms_ngt_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Assert fetch NGT info without ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'ext_id' in (result.msg | string)"
+    fail_msg: Missing ext_id was not rejected for NGT info
+    success_msg: Missing ext_id correctly rejected for NGT info
+
+- name: Update NGT without ext_id
+  nutanix.ncp.ntnx_esxi_vms_ngt_update_v2:
+    state: present
+    is_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Assert update NGT without ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'ext_id' in (result.msg | string)"
+    fail_msg: Missing ext_id was not rejected for NGT update
+    success_msg: Missing ext_id correctly rejected for NGT update
+
+- name: Update NGT without is_enabled and capabilities
+  nutanix.ncp.ntnx_esxi_vms_ngt_update_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Assert update NGT without is_enabled and capabilities fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - >-
+          ('capabilities' in (result.msg | string)) or
+          ('is_enabled' in (result.msg | string))
+    fail_msg: Missing is_enabled and capabilities was not rejected for NGT update
+    success_msg: Missing is_enabled and capabilities correctly rejected for NGT update
+
+- name: Upgrade NGT without ext_id
+  nutanix.ncp.ntnx_esxi_vms_ngt_upgrade_v2:
+    state: present
+    reboot_preference:
+      schedule_type: SKIP
+  register: result
+  ignore_errors: true
+
+- name: Assert upgrade NGT without ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'ext_id' in (result.msg | string)"
+    fail_msg: Missing ext_id was not rejected for NGT upgrade
+    success_msg: Missing ext_id correctly rejected for NGT upgrade
+
+- name: Insert NGT ISO without ext_id
+  nutanix.ncp.ntnx_esxi_vms_ngt_insert_iso_v2:
+    state: present
+    capabilities:
+      - SELF_SERVICE_RESTORE
+  register: result
+  ignore_errors: true
+
+- name: Assert insert NGT ISO without ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'ext_id' in (result.msg | string)"
+    fail_msg: Missing ext_id was not rejected for NGT insert ISO
+    success_msg: Missing ext_id correctly rejected for NGT insert ISO
+
+##################################################################################
+# Check mode and operations on a non-existent (dummy) ESXi VM
+##################################################################################
+
+- name: Install NGT on non-existent ESXi VM - check mode is enabled
+  nutanix.ncp.ntnx_esxi_vms_ngt_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    capabilities:
+      - VSS_SNAPSHOT
+    credential:
+      username: dummy_user
+      password: dummy_password
+    reboot_preference:
+      schedule_type: IMMEDIATE
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert install NGT check mode on non-existent ESXi VM fails cleanly
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+    fail_msg: Install NGT check mode on non-existent ESXi VM did not fail cleanly
+    success_msg: Install NGT check mode on non-existent ESXi VM failed cleanly
+
+- name: Uninstall NGT from non-existent ESXi VM - check mode is enabled
+  nutanix.ncp.ntnx_esxi_vms_ngt_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert uninstall NGT check mode on non-existent ESXi VM fails cleanly
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+    fail_msg: Uninstall NGT check mode on non-existent ESXi VM did not fail cleanly
+    success_msg: Uninstall NGT check mode on non-existent ESXi VM failed cleanly
+
+- name: Fetch NGT info of non-existent ESXi VM
+  nutanix.ncp.ntnx_esxi_vms_ngt_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Assert fetch NGT info of non-existent ESXi VM fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+    fail_msg: Fetch NGT info of non-existent ESXi VM did not fail
+    success_msg: Fetch NGT info of non-existent ESXi VM failed as expected
+
+- name: Update NGT on non-existent ESXi VM - check mode is enabled
+  nutanix.ncp.ntnx_esxi_vms_ngt_update_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    is_enabled: false
+    capabilities:
+      - VSS_SNAPSHOT
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert update NGT check mode on non-existent ESXi VM fails cleanly
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+    fail_msg: Update NGT check mode on non-existent ESXi VM did not fail cleanly
+    success_msg: Update NGT check mode on non-existent ESXi VM failed cleanly
+
+- name: Upgrade NGT on non-existent ESXi VM - check mode is enabled
+  nutanix.ncp.ntnx_esxi_vms_ngt_upgrade_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    reboot_preference:
+      schedule_type: SKIP
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert upgrade NGT check mode on non-existent ESXi VM fails cleanly
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+    fail_msg: Upgrade NGT check mode on non-existent ESXi VM did not fail cleanly
+    success_msg: Upgrade NGT check mode on non-existent ESXi VM failed cleanly
+
+- name: Insert NGT ISO in non-existent ESXi VM - check mode is enabled
+  nutanix.ncp.ntnx_esxi_vms_ngt_insert_iso_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    capabilities:
+      - SELF_SERVICE_RESTORE
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert insert NGT ISO check mode on non-existent ESXi VM fails cleanly
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+    fail_msg: Insert NGT ISO check mode on non-existent ESXi VM did not fail cleanly
+    success_msg: Insert NGT ISO check mode on non-existent ESXi VM failed cleanly
+
+- name: Insert NGT ISO in non-existent ESXi VM
+  nutanix.ncp.ntnx_esxi_vms_ngt_insert_iso_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    capabilities:
+      - SELF_SERVICE_RESTORE
+  register: result
+  ignore_errors: true
+
+- name: Assert insert NGT ISO in non-existent ESXi VM fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+    fail_msg: Insert NGT ISO in non-existent ESXi VM did not fail
+    success_msg: Insert NGT ISO in non-existent ESXi VM failed as expected

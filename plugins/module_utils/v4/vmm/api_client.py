@@ -216,6 +216,21 @@ def get_esxi_stats_api_instance(module):
     return ntnx_vmm_py_client.EsxiStatsApi(api_client=api_client)
 
 
+def get_esxi_vm_api_instance(module):
+    """
+    This method will return the ESXi VM API instance which is used to
+    manage ESXi Virtual Machines.
+
+    Args:
+        module: Ansible module
+
+    Returns:
+        api_instance (obj): v4 EsxiVmApi instance from ntnx_vmm_py_client SDK
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.EsxiVmApi(api_client=api_client)
+
+
 def get_vm_recovery_points_api_instance(module):
     """
     This method will return AHV VM Recovery Points API instance.
