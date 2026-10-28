@@ -1,0 +1,38 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Revert an ESXi VM from a recovery point
+# 2. Revert an ESXi VM from a recovery point without waiting for the task
+# Requires a Prism Central with an ESXi cluster registered via vCenter.
+
+- name: ESXi VM revert playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_ext_id: "<esxi_vm_ext_id>"
+        vm_recovery_point_ext_id: "<vm_recovery_point_ext_id>"
+
+    - name: Revert ESXi VM from recovery point
+      nutanix.ncp.ntnx_esxi_vm_revert_v2:
+        state: present
+        ext_id: "{{ vm_ext_id }}"
+        vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Revert ESXi VM from recovery point without waiting for the task
+      nutanix.ncp.ntnx_esxi_vm_revert_v2:
+        state: present
+        ext_id: "{{ vm_ext_id }}"
+        vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id }}"
+        wait: false
+      register: result
+      ignore_errors: true

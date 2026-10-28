@@ -1,0 +1,83 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Power off ESXi VM
+# 2. Power on ESXi VM
+# 3. Suspend ESXi VM
+# 4. Power on ESXi VM again after suspend
+# 5. Reset ESXi VM
+# 6. Shutdown ESXi VM using NGT (guest shutdown)
+# 7. Power on ESXi VM
+# 8. Reboot ESXi VM using NGT (guest reboot)
+# Guest actions require NGT to be installed and running in the VM.
+# Requires a Prism Central with an ESXi cluster registered via vCenter.
+
+- name: ESXi VM power actions playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_ext_id: "<esxi_vm_ext_id>"
+
+    - name: Power off ESXi VM
+      nutanix.ncp.ntnx_esxi_vms_power_actions_v2:
+        state: power_off
+        ext_id: "{{ vm_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Power on ESXi VM
+      nutanix.ncp.ntnx_esxi_vms_power_actions_v2:
+        state: power_on
+        ext_id: "{{ vm_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Suspend ESXi VM
+      nutanix.ncp.ntnx_esxi_vms_power_actions_v2:
+        state: suspend
+        ext_id: "{{ vm_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Power on ESXi VM after suspend
+      nutanix.ncp.ntnx_esxi_vms_power_actions_v2:
+        state: power_on
+        ext_id: "{{ vm_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Reset ESXi VM
+      nutanix.ncp.ntnx_esxi_vms_power_actions_v2:
+        state: reset
+        ext_id: "{{ vm_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Shutdown ESXi VM using NGT
+      nutanix.ncp.ntnx_esxi_vms_power_actions_v2:
+        state: guest_shutdown
+        ext_id: "{{ vm_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Power on ESXi VM after guest shutdown
+      nutanix.ncp.ntnx_esxi_vms_power_actions_v2:
+        state: power_on
+        ext_id: "{{ vm_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Reboot ESXi VM using NGT
+      nutanix.ncp.ntnx_esxi_vms_power_actions_v2:
+        state: guest_reboot
+        ext_id: "{{ vm_ext_id }}"
+      register: result
+      ignore_errors: true

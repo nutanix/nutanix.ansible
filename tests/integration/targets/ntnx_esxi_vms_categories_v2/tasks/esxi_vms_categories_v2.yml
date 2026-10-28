@@ -1,0 +1,165 @@
+---
+# Integration tests for ntnx_esxi_vms_categories_v2.
+# Check-mode and negative tests use inline dummy ext_ids. The module reads the
+# current VM categories before generating the spec, so a non-existent VM fails
+# cleanly even in check mode.
+
+- name: Start testing ntnx_esxi_vms_categories_v2 module
+  ansible.builtin.debug:
+    msg: Start testing ntnx_esxi_vms_categories_v2 module
+
+- name: Associate categories without vm_ext_id
+  nutanix.ncp.ntnx_esxi_vms_categories_v2:
+    state: present
+    categories:
+      - ext_id: "00000000-0000-0000-0000-000000000002"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing vm_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'vm_ext_id' in (result.msg | string)"
+    fail_msg: Missing vm_ext_id was not rejected
+    success_msg: Missing vm_ext_id correctly rejected
+
+- name: Associate categories without categories
+  nutanix.ncp.ntnx_esxi_vms_categories_v2:
+    state: present
+    vm_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing categories fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'categories' in (result.msg | string)"
+    fail_msg: Missing categories was not rejected
+    success_msg: Missing categories correctly rejected
+
+- name: Associate categories with invalid state
+  nutanix.ncp.ntnx_esxi_vms_categories_v2:
+    state: invalid_state
+    vm_ext_id: "00000000-0000-0000-0000-000000000001"
+    categories:
+      - ext_id: "00000000-0000-0000-0000-000000000002"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid state fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'state' in (result.msg | string)"
+    fail_msg: Invalid state was not rejected
+    success_msg: Invalid state correctly rejected
+
+- name: Associate categories to non-existent ESXi VM - check mode is enabled
+  nutanix.ncp.ntnx_esxi_vms_categories_v2:
+    state: present
+    vm_ext_id: "00000000-0000-0000-0000-000000000001"
+    categories:
+      - ext_id: "00000000-0000-0000-0000-000000000002"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert check mode on non-existent ESXi VM fails cleanly
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+    fail_msg: Check mode on non-existent ESXi VM did not fail cleanly
+    success_msg: Check mode on non-existent ESXi VM failed cleanly
+
+- name: Disassociate categories from non-existent ESXi VM - check mode is enabled
+  nutanix.ncp.ntnx_esxi_vms_categories_v2:
+    state: absent
+    vm_ext_id: "00000000-0000-0000-0000-000000000001"
+    categories:
+      - ext_id: "00000000-0000-0000-0000-000000000002"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert disassociate check mode on non-existent ESXi VM fails cleanly
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+    fail_msg: Disassociate check mode on non-existent ESXi VM did not fail cleanly
+    success_msg: Disassociate check mode on non-existent ESXi VM failed cleanly
+
+- name: Associate categories to non-existent ESXi VM
+  nutanix.ncp.ntnx_esxi_vms_categories_v2:
+    state: present
+    vm_ext_id: "00000000-0000-0000-0000-000000000001"
+    categories:
+      - ext_id: "00000000-0000-0000-0000-000000000002"
+  register: result
+  ignore_errors: true
+
+- name: Assert associating categories to non-existent ESXi VM fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+    fail_msg: Associating categories to non-existent ESXi VM did not fail
+    success_msg: Associating categories to non-existent ESXi VM failed as expected
+
+- name: List ESXi VMs to find a real VM
+  nutanix.ncp.ntnx_esxi_vms_info_v2:
+    limit: 1
+  register: vms
+  ignore_errors: true
+
+- name: List categories to find a real category
+  nutanix.ncp.ntnx_categories_info_v2:
+    limit: 1
+  register: categories
+  ignore_errors: true
+
+- name: Set ESXi VM and category ext_ids
+  ansible.builtin.set_fact:
+    esxi_vm_ext_id: "{{ vms.response[0].ext_id }}"
+    category_ext_id: "{{ categories.response[0].ext_id }}"
+  when:
+    - not vms.failed
+    - vms.response | length > 0
+    - not categories.failed
+    - categories.response | length > 0
+
+- name: Associate category to ESXi VM - check mode is enabled
+  nutanix.ncp.ntnx_esxi_vms_categories_v2:
+    state: present
+    vm_ext_id: "{{ esxi_vm_ext_id }}"
+    categories:
+      - ext_id: "{{ category_ext_id }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+  when: esxi_vm_ext_id is defined and category_ext_id is defined
+
+- name: Assert check mode generates associate spec or skips when already associated
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.vm_ext_id == esxi_vm_ext_id
+      - >-
+          (result.skipped | default(false)) or
+          (category_ext_id in (result.response.categories | map(attribute='ext_id') | list))
+    fail_msg: Unable to generate associate spec in check mode
+    success_msg: Associate spec generated in check mode
+  when: esxi_vm_ext_id is defined and category_ext_id is defined

@@ -1,0 +1,40 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Assign owner to an ESXi VM
+# 2. Assign owner to an ESXi VM without waiting for the task to complete
+# Requires a Prism Central with an ESXi cluster registered via vCenter.
+
+- name: ESXi VM assign owner playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_ext_id: "<esxi_vm_ext_id>"
+        owner_ext_id: "<owner_user_ext_id>"
+
+    - name: Assign owner to ESXi VM
+      nutanix.ncp.ntnx_esxi_vms_assign_owner_v2:
+        ext_id: "{{ vm_ext_id }}"
+        ownership_info:
+          owner:
+            ext_id: "{{ owner_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Assign owner to ESXi VM without waiting for the task
+      nutanix.ncp.ntnx_esxi_vms_assign_owner_v2:
+        ext_id: "{{ vm_ext_id }}"
+        ownership_info:
+          owner:
+            ext_id: "{{ owner_ext_id }}"
+        wait: false
+      register: result
+      ignore_errors: true

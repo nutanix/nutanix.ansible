@@ -1,0 +1,164 @@
+---
+# Integration tests for ntnx_esxi_vms_power_actions_v2.
+# Check mode does not call the API, so dummy ext_ids are used inline.
+
+- name: Start testing ntnx_esxi_vms_power_actions_v2 module
+  ansible.builtin.debug:
+    msg: Start testing ntnx_esxi_vms_power_actions_v2 module
+
+- name: Power action without ext_id
+  nutanix.ncp.ntnx_esxi_vms_power_actions_v2:
+    state: power_on
+  register: result
+  ignore_errors: true
+
+- name: Assert missing ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'ext_id' in (result.msg | string)"
+    fail_msg: Missing ext_id was not rejected
+    success_msg: Missing ext_id correctly rejected
+
+- name: Power action with invalid state
+  nutanix.ncp.ntnx_esxi_vms_power_actions_v2:
+    state: invalid_state
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid state fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'state' in (result.msg | string)"
+    fail_msg: Invalid state was not rejected
+    success_msg: Invalid state correctly rejected
+
+- name: Power on ESXi VM - check mode is enabled
+  nutanix.ncp.ntnx_esxi_vms_power_actions_v2:
+    state: power_on
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert power on check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "00000000-0000-0000-0000-000000000001"
+      - "'power_on' in result.msg"
+    fail_msg: Power on check mode failed
+    success_msg: Power on check mode passed
+
+- name: Power off ESXi VM - check mode is enabled
+  nutanix.ncp.ntnx_esxi_vms_power_actions_v2:
+    state: power_off
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert power off check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "00000000-0000-0000-0000-000000000001"
+      - "'power_off' in result.msg"
+    fail_msg: Power off check mode failed
+    success_msg: Power off check mode passed
+
+- name: Reset ESXi VM - check mode is enabled
+  nutanix.ncp.ntnx_esxi_vms_power_actions_v2:
+    state: reset
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert reset check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "00000000-0000-0000-0000-000000000001"
+      - "'reset' in result.msg"
+    fail_msg: Reset check mode failed
+    success_msg: Reset check mode passed
+
+- name: Suspend ESXi VM - check mode is enabled
+  nutanix.ncp.ntnx_esxi_vms_power_actions_v2:
+    state: suspend
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert suspend check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "00000000-0000-0000-0000-000000000001"
+      - "'suspend' in result.msg"
+    fail_msg: Suspend check mode failed
+    success_msg: Suspend check mode passed
+
+- name: Guest shutdown ESXi VM - check mode is enabled
+  nutanix.ncp.ntnx_esxi_vms_power_actions_v2:
+    state: guest_shutdown
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert guest shutdown check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "00000000-0000-0000-0000-000000000001"
+      - "'guest_shutdown' in result.msg"
+    fail_msg: Guest shutdown check mode failed
+    success_msg: Guest shutdown check mode passed
+
+- name: Guest reboot ESXi VM - check mode is enabled
+  nutanix.ncp.ntnx_esxi_vms_power_actions_v2:
+    state: guest_reboot
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert guest reboot check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "00000000-0000-0000-0000-000000000001"
+      - "'guest_reboot' in result.msg"
+    fail_msg: Guest reboot check mode failed
+    success_msg: Guest reboot check mode passed
+
+- name: Power on non-existent ESXi VM
+  nutanix.ncp.ntnx_esxi_vms_power_actions_v2:
+    state: power_on
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Assert power on of non-existent ESXi VM fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+    fail_msg: Power on of non-existent ESXi VM did not fail
+    success_msg: Power on of non-existent ESXi VM failed as expected

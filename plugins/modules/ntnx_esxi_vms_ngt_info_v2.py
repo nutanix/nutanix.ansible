@@ -1,0 +1,146 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# Copyright: (c) 2027, Nutanix
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+from __future__ import absolute_import, division, print_function
+
+__metaclass__ = type
+
+DOCUMENTATION = r"""
+module: ntnx_esxi_vms_ngt_info_v2
+short_description: Get Nutanix Guest Tools (NGT) current config for an ESXi virtual machine.
+description:
+  - This module retrieves Nutanix Guest Tools (NGT) current config for an ESXi virtual machine.
+  - This module uses PC v4 APIs based SDKs
+version_added: "2.7.0"
+author:
+  - Abhinav Bansal (@abhinavbansal29)
+  - George Ghawali (@george-ghawali)
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(View ESXi Virtual Machine NGT) -
+      Required Roles: Prism Admin, Prism Viewer, Project Manager, Self-Service Admin (deprecated), Super Admin, Storage Admin, Backup Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
+options:
+    ext_id:
+        description:
+            - The external ID of the ESXi virtual machine for which to retrieve NGT information.
+        type: str
+        required: true
+    read_timeout:
+        description: Read timeout in milliseconds for API calls.
+        type: int
+        required: false
+        default: 30000
+extends_documentation_fragment:
+    - nutanix.ncp.ntnx_credentials
+    - nutanix.ncp.ntnx_logger
+    - nutanix.ncp.ntnx_proxy_v2
+"""
+
+EXAMPLES = r"""
+- name: Get NGT info for an ESXi virtual machine
+  nutanix.ncp.ntnx_esxi_vms_ngt_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    ext_id: "98b9dc89-be08-3c56-b554-692b8b676fd1"
+  register: result
+"""
+
+RETURN = r"""
+response:
+    description: The NGT information for the ESXi virtual machine.
+    type: dict
+    returned: always
+    sample: {
+            "available_version": "4.1",
+            "capabilities": [
+                "SELF_SERVICE_RESTORE"
+            ],
+            "guest_os_version": "linux:64:CentOS Linux-7.3.1611",
+            "is_enabled": true,
+            "is_installed": true,
+            "is_iso_inserted": true,
+            "is_reachable": true,
+            "is_vm_mobility_drivers_installed": null,
+            "is_vss_snapshot_capable": null,
+            "version": "4.1"
+        }
+changed:
+    description: Indicates whether the NGT information has changed.
+    type: bool
+    returned: always
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while fetching ESXi VM NGT info for given vm"
+error:
+    description: The error message, if any.
+    type: str
+    returned: on error
+ext_id:
+    description: The external ID of the ESXi virtual machine.
+    type: str
+    returned: always
+"""
+
+import warnings  # noqa: E402
+
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
+from ..module_utils.v4.vmm.api_client import get_esxi_vm_api_instance  # noqa: E402
+from ..module_utils.v4.vmm.helpers import get_esxi_ngt  # noqa: E402
+
+# Suppress the InsecureRequestWarning
+warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
+
+
+def get_module_spec():
+    module_args = dict(ext_id=dict(type="str", required=True))
+    return module_args
+
+
+def get_ngt_config(module, result):
+    vmm = get_esxi_vm_api_instance(module)
+    ext_id = module.params.get("ext_id")
+    if not ext_id:
+        return module.fail_json(msg="ext_id is required to fetch NGT info", **result)
+
+    result["ext_id"] = ext_id
+
+    status = get_esxi_ngt(module, vmm, ext_id)
+    result["response"] = strip_internal_attributes(status.to_dict())
+
+
+def run_module():
+    module = BaseInfoModule(
+        argument_spec=get_module_spec(),
+        supports_check_mode=True,
+        skip_info_args=True,
+    )
+
+    remove_param_with_none_value(module.params)
+    result = {
+        "changed": False,
+        "error": None,
+        "response": None,
+        "ext_id": None,
+    }
+    get_ngt_config(module, result)
+    module.exit_json(**result)
+
+
+def main():
+    run_module()
+
+
+if __name__ == "__main__":
+    main()
