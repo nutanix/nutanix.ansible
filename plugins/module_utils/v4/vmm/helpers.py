@@ -436,3 +436,61 @@ def get_vm_nic_stats(module, api_instance, vm_ext_id, ext_id, **kwargs):
             exception=e,
             msg="Api Exception raised while fetching VM NIC stats using ext_id",
         )
+
+
+def get_vm_startup_policy_dependency_conflict(
+    module, api_instance, vm_startup_policy_ext_id, ext_id
+):
+    """
+    Get a VM startup policy dependency conflict by ext_id.
+
+    Args:
+        module: Ansible module
+        api_instance: VmStartupPoliciesApi instance from ntnx_vmm_py_client sdk
+        vm_startup_policy_ext_id: ext_id of the VM startup policy
+        ext_id: ext_id of the dependency conflict
+    Returns:
+        data (obj): Dependency conflict info object
+    """
+    try:
+        return api_instance.get_vm_startup_policy_dependency_conflict_by_id(
+            vmStartupPolicyExtId=vm_startup_policy_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching VM startup policy "
+                "dependency conflict using ext_id"
+            ),
+        )
+
+
+def get_vm_startup_policy_start_condition_conflict(
+    module, api_instance, vm_startup_policy_ext_id, ext_id
+):
+    """
+    Get a VM startup policy start condition conflict by ext_id.
+
+    Args:
+        module: Ansible module
+        api_instance: VmStartupPoliciesApi instance from ntnx_vmm_py_client sdk
+        vm_startup_policy_ext_id: ext_id of the VM startup policy
+        ext_id: ext_id of the start condition conflict
+    Returns:
+        data (obj): Start condition conflict info object
+    """
+    try:
+        return api_instance.get_vm_startup_policy_start_condition_conflict_by_id(
+            vmStartupPolicyExtId=vm_startup_policy_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching VM startup policy "
+                "start condition conflict using ext_id"
+            ),
+        )

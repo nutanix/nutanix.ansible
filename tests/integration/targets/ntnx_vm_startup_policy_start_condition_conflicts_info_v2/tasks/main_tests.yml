@@ -1,0 +1,53 @@
+---
+# Integration tests for ntnx_vm_startup_policy_start_condition_conflicts_info_v2.
+
+- name: Start ntnx_vm_startup_policy_start_condition_conflicts_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vm_startup_policy_start_condition_conflicts_info_v2 tests
+
+- name: Module rejects missing required params
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Assert missing required params fail
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'vm_startup_policy_ext_id' in (result.msg | string)"
+    fail_msg: Module did not reject missing required params
+    success_msg: Module correctly rejected missing required params
+
+- name: List start condition conflicts for non-existent policy
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+    vm_startup_policy_ext_id: "83083083-0000-0000-0000-000000000099"
+  register: list_result
+  ignore_errors: true
+
+- name: Assert list returns success or clean error
+  ansible.builtin.assert:
+    that:
+      - list_result.changed == false
+      - >-
+          (list_result.failed == false) or
+          (list_result.failed == true and list_result.msg is defined)
+    fail_msg: List start condition conflicts returned unexpected shape
+    success_msg: List start condition conflicts behaved correctly
+
+- name: Get non-existent start condition conflict
+  nutanix.ncp.ntnx_vm_startup_policy_start_condition_conflicts_info_v2:
+    vm_startup_policy_ext_id: "83083083-0000-0000-0000-000000000099"
+    ext_id: "83083083-0000-0000-0000-000000000098"
+  register: get_result
+  ignore_errors: true
+
+- name: Assert clean error for missing start condition conflict
+  ansible.builtin.assert:
+    that:
+      - get_result.changed == false
+      - get_result.failed == true
+      - get_result.msg is defined
+    fail_msg: Get did not return a clean error
+    success_msg: Get returned a clean error
