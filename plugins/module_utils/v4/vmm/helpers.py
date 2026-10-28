@@ -331,3 +331,108 @@ def get_image(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching image info using ext_id",
         )
+
+
+def get_vm_recovery_point(module, api_instance, ext_id):
+    """
+    Get AHV VM Recovery Point by ext_id.
+    Args:
+        module: Ansible module
+        api_instance: VmRecoveryPointsApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of the VM recovery point
+    Returns:
+        vm_recovery_point (obj): VM recovery point info object
+    """
+    try:
+        return api_instance.get_vm_recovery_point_by_ext_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM recovery point info using ext_id",
+        )
+
+
+def get_vm_stats(module, api_instance, ext_id, **kwargs):
+    """
+    Get VM stats by VM ext_id.
+
+    Works for both AHV and ESXi: pass StatsApi or EsxiStatsApi as
+    api_instance (paths differ: /ahv/stats vs /esxi/stats).
+
+    Args:
+        module: Ansible module
+        api_instance: StatsApi or EsxiStatsApi from ntnx_vmm_py_client sdk
+        ext_id: ext_id of VM
+        **kwargs: query kwargs (e.g. from SpecGenerator.get_stats_spec:
+            _startTime, _endTime, _samplingInterval, _statType, _select)
+
+    Returns:
+        data (obj): VM stats data object
+    """
+    try:
+        return api_instance.get_vm_stats_by_id(extId=ext_id, **kwargs).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM stats using ext_id",
+        )
+
+
+def get_vm_disk_stats(module, api_instance, vm_ext_id, ext_id, **kwargs):
+    """
+    Get VM disk stats by VM ext_id and disk ext_id.
+
+    Works for both AHV and ESXi: pass StatsApi or EsxiStatsApi as
+    api_instance (paths differ: /ahv/stats vs /esxi/stats).
+
+    Args:
+        module: Ansible module
+        api_instance: StatsApi or EsxiStatsApi from ntnx_vmm_py_client sdk
+        vm_ext_id: ext_id of the parent VM
+        ext_id: ext_id of the VM disk
+        **kwargs: query kwargs (e.g. from SpecGenerator.get_stats_spec)
+
+    Returns:
+        data (obj): VM disk stats data object
+    """
+    try:
+        return api_instance.get_disk_stats_by_id(
+            vmExtId=vm_ext_id, extId=ext_id, **kwargs
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM disk stats using ext_id",
+        )
+
+
+def get_vm_nic_stats(module, api_instance, vm_ext_id, ext_id, **kwargs):
+    """
+    Get VM NIC stats by VM ext_id and NIC ext_id.
+
+    Works for both AHV and ESXi: pass StatsApi or EsxiStatsApi as
+    api_instance (paths differ: /ahv/stats vs /esxi/stats).
+
+    Args:
+        module: Ansible module
+        api_instance: StatsApi or EsxiStatsApi from ntnx_vmm_py_client sdk
+        vm_ext_id: ext_id of the parent VM
+        ext_id: ext_id of the VM NIC
+        **kwargs: query kwargs (e.g. from SpecGenerator.get_stats_spec)
+
+    Returns:
+        data (obj): VM NIC stats data object
+    """
+    try:
+        return api_instance.get_nic_stats_by_id(
+            vmExtId=vm_ext_id, extId=ext_id, **kwargs
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM NIC stats using ext_id",
+        )

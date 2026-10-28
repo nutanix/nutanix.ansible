@@ -8,7 +8,10 @@
 # 5. List VM startup policies with filter
 # 6. List VM startup policies with limit
 # 7. Update VM startup policy
-# 8. Delete VM startup policy
+# 8. List VM compliance states for the policy
+# 9. List VM compliance states with limit
+# 10. List all VM compliance states with fetch_all
+# 11. Delete VM startup policy
 
 - name: VM Startup Policies playbook
   hosts: localhost
@@ -94,6 +97,26 @@
               power_on:
             delay_duration_secs: 30
         wait: true
+      register: result
+      ignore_errors: true
+
+    - name: List VM compliance states for the VM startup policy
+      nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+        ext_id: "{{ vm_startup_policy_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List VM compliance states with limit
+      nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+        ext_id: "{{ vm_startup_policy_ext_id }}"
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: List all VM compliance states with fetch_all
+      nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+        ext_id: "{{ vm_startup_policy_ext_id }}"
+        fetch_all: true
       register: result
       ignore_errors: true
 
