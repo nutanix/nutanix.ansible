@@ -218,7 +218,7 @@
       - result.ext_id == disk_uuid
       - result.vm_ext_id == vm_uuid
       - result.msg is defined
-      - "'already present' in result.msg"
+      - result.msg == "Nothing to change."
     fail_msg: "Idempotency (add) failed"
     success_msg: "Idempotency (add) passed"
 
@@ -310,7 +310,7 @@
       - result.ext_id == disk_uuid
       - result.vm_ext_id == vm_uuid
       - result.msg is defined
-      - "'None of the requested' in result.msg"
+      - result.msg == "Nothing to change."
     fail_msg: "Idempotency (remove) failed"
     success_msg: "Idempotency (remove) passed"
 
