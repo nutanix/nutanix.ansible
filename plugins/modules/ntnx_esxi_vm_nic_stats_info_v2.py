@@ -15,8 +15,7 @@ version_added: "2.7.0"
 description:
     - Fetch statistics for a NIC attached to an ESXi Virtual Machine in Nutanix
       Prism Central.
-    - Only ESXi Virtual Machines are supported. A vCenter instance must be
-      registered with the cluster; the endpoints fail for AHV VMs.
+    - Only ESXi Virtual Machines are supported.
     - This module uses PC v4 APIs based SDKs
 notes:
     - >-
@@ -116,22 +115,6 @@ EXAMPLES = r"""
     start_time: "2026-07-21T00:00:00.000Z"
     end_time: "2026-07-21T01:00:00.000Z"
   register: vm_nic_stats
-
-- name: Fetch ESXi VM NIC stats with sampling and aggregation
-  nutanix.ncp.ntnx_esxi_vm_nic_stats_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    vm_ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
-    ext_id: "a1c8fce7-1c1e-4c1c-9e19-11cbeeb2f0b1"
-    start_time: "2026-07-21T00:00:00.000Z"
-    end_time: "2026-07-21T01:00:00.000Z"
-    sampling_interval: 30
-    stat_type: SUM
-    select: >-
-      stats/networkDroppedReceivedPackets,stats/networkDroppedTransmittedPackets
-  register: vm_nic_stats_sum
 """
 
 RETURN = r"""
@@ -172,7 +155,11 @@ msg:
     description: This indicates the message if any message occurred
     type: str
     returned: When there is an error
-    sample: "Api Exception raised while fetching ESXi VM NIC stats using ext_id"
+    sample: "Failed fetching ESXi VM NIC stats"
+error:
+    description: This indicates the error message if any error occurred
+    type: str
+    returned: when an error occurs
 failed:
     description: This indicates whether the task failed
     type: bool
@@ -184,6 +171,7 @@ import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
 from ..module_utils.v4.vmm.api_client import get_esxi_stats_api_instance  # noqa: E402
 from ..module_utils.v4.vmm.helpers import get_esxi_vm_nic_stats  # noqa: E402
@@ -213,20 +201,22 @@ def get_vm_nic_stat(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     result["vm_ext_id"] = vm_ext_id
     result["ext_id"] = ext_id
+
+    sg = SpecGenerator(module)
+    kwargs, err = sg.get_stats_spec(attr=module.params)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating VM NIC stats info spec", **result)
+
+    if module.params.get("select") is not None:
+        kwargs["_select"] = module.params.get("select")
+
     resp = get_esxi_vm_nic_stats(
-        module,
-        api_instance,
-        vm_ext_id=vm_ext_id,
-        ext_id=ext_id,
-        start_time=module.params.get("start_time"),
-        end_time=module.params.get("end_time"),
-        sampling_interval=module.params.get("sampling_interval"),
-        stat_type=module.params.get("stat_type"),
-        select=module.params.get("select"),
+        module, api_instance, vm_ext_id, ext_id, **kwargs
     )
-    if resp is None or getattr(resp, "data", None) is None:
+    if resp is None:
         module.fail_json(msg="Failed fetching ESXi VM NIC stats", **result)
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    result["response"] = strip_internal_attributes(resp.to_dict())
 
 
 def run_module():

@@ -18,8 +18,7 @@ description:
     - If C(ext_id) is provided, fetch stats for that ESXi VM.
     - If C(ext_id) is not provided, list VM stats across ESXi Virtual Machines,
       optionally filtered, paginated, or ordered.
-    - Only ESXi Virtual Machines are supported. A vCenter instance must be
-      registered with the cluster; the endpoints fail for AHV VMs.
+    - Only ESXi Virtual Machines are supported.
     - This module uses PC v4 APIs based SDKs
 notes:
     - >-
@@ -146,18 +145,6 @@ EXAMPLES = r"""
     sampling_interval: 30
     stat_type: AVG
   register: single_vm_stats
-
-- name: List ESXi VM stats with $select projection
-  nutanix.ncp.ntnx_esxi_vm_stats_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    start_time: "2026-07-21T00:00:00.000Z"
-    end_time: "2026-07-21T01:00:00.000Z"
-    select: "extId,stats/hypervisorCpuUsagePpm"
-    limit: 5
-  register: projected_vm_stats
 """
 
 RETURN = r"""
@@ -246,19 +233,20 @@ def get_module_spec():
 def get_vm_stats_by_ext_id(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-    resp = get_esxi_vm_stats(
-        module,
-        api_instance,
-        ext_id=ext_id,
-        start_time=module.params.get("start_time"),
-        end_time=module.params.get("end_time"),
-        sampling_interval=module.params.get("sampling_interval"),
-        stat_type=module.params.get("stat_type"),
-        select=module.params.get("select"),
-    )
-    if resp is None or getattr(resp, "data", None) is None:
+
+    sg = SpecGenerator(module)
+    kwargs, err = sg.get_stats_spec(attr=module.params)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating VM stats info spec", **result)
+
+    if module.params.get("select") is not None:
+        kwargs["_select"] = module.params.get("select")
+
+    resp = get_esxi_vm_stats(module, api_instance, ext_id, **kwargs)
+    if resp is None:
         module.fail_json(msg="Failed fetching ESXi VM stats info", **result)
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    result["response"] = strip_internal_attributes(resp.to_dict())
 
 
 def list_vm_stats(module, api_instance, result):

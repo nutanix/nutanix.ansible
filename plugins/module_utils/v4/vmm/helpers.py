@@ -353,16 +353,7 @@ def get_vm_recovery_point(module, api_instance, ext_id):
         )
 
 
-def get_esxi_vm_stats(
-    module,
-    api_instance,
-    ext_id,
-    start_time,
-    end_time,
-    sampling_interval=None,
-    stat_type=None,
-    select=None,
-):
+def get_esxi_vm_stats(module, api_instance, ext_id, **kwargs):
     """
     Get ESXi VM stats by VM ext_id.
 
@@ -370,24 +361,15 @@ def get_esxi_vm_stats(
         module: Ansible module
         api_instance: EsxiStatsApi instance from ntnx_vmm_py_client sdk
         ext_id: ext_id of ESXi VM
-        start_time: ISO-8601 start time
-        end_time: ISO-8601 end time
-        sampling_interval: sampling interval in seconds
-        stat_type: down-sampling operator (SUM/AVG/...)
-        select: OData $select projection
+        **kwargs: query kwargs (e.g. from SpecGenerator.get_stats_spec /
+            get_info_spec: _startTime, _endTime, _samplingInterval, _statType,
+            _select)
 
     Returns:
-        response: raw SDK response object
+        data (obj): ESXi VM stats data object
     """
     try:
-        return api_instance.get_vm_stats_by_id(
-            extId=ext_id,
-            _startTime=start_time,
-            _endTime=end_time,
-            _samplingInterval=sampling_interval,
-            _statType=stat_type,
-            _select=select,
-        )
+        return api_instance.get_vm_stats_by_id(extId=ext_id, **kwargs).data
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -396,17 +378,7 @@ def get_esxi_vm_stats(
         )
 
 
-def get_esxi_vm_disk_stats(
-    module,
-    api_instance,
-    vm_ext_id,
-    ext_id,
-    start_time,
-    end_time,
-    sampling_interval=None,
-    stat_type=None,
-    select=None,
-):
+def get_esxi_vm_disk_stats(module, api_instance, vm_ext_id, ext_id, **kwargs):
     """
     Get ESXi VM disk stats by VM ext_id and disk ext_id.
 
@@ -415,20 +387,16 @@ def get_esxi_vm_disk_stats(
         api_instance: EsxiStatsApi instance from ntnx_vmm_py_client sdk
         vm_ext_id: ext_id of the parent ESXi VM
         ext_id: ext_id of the ESXi VM disk
+        **kwargs: query kwargs (e.g. from SpecGenerator.get_stats_spec /
+            get_info_spec)
 
     Returns:
-        response: raw SDK response object
+        data (obj): ESXi VM disk stats data object
     """
     try:
         return api_instance.get_disk_stats_by_id(
-            vmExtId=vm_ext_id,
-            extId=ext_id,
-            _startTime=start_time,
-            _endTime=end_time,
-            _samplingInterval=sampling_interval,
-            _statType=stat_type,
-            _select=select,
-        )
+            vmExtId=vm_ext_id, extId=ext_id, **kwargs
+        ).data
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -437,17 +405,7 @@ def get_esxi_vm_disk_stats(
         )
 
 
-def get_esxi_vm_nic_stats(
-    module,
-    api_instance,
-    vm_ext_id,
-    ext_id,
-    start_time,
-    end_time,
-    sampling_interval=None,
-    stat_type=None,
-    select=None,
-):
+def get_esxi_vm_nic_stats(module, api_instance, vm_ext_id, ext_id, **kwargs):
     """
     Get ESXi VM NIC stats by VM ext_id and NIC ext_id.
 
@@ -456,20 +414,16 @@ def get_esxi_vm_nic_stats(
         api_instance: EsxiStatsApi instance from ntnx_vmm_py_client sdk
         vm_ext_id: ext_id of the parent ESXi VM
         ext_id: ext_id of the ESXi VM NIC
+        **kwargs: query kwargs (e.g. from SpecGenerator.get_stats_spec /
+            get_info_spec)
 
     Returns:
-        response: raw SDK response object
+        data (obj): ESXi VM NIC stats data object
     """
     try:
         return api_instance.get_nic_stats_by_id(
-            vmExtId=vm_ext_id,
-            extId=ext_id,
-            _startTime=start_time,
-            _endTime=end_time,
-            _samplingInterval=sampling_interval,
-            _statType=stat_type,
-            _select=select,
-        )
+            vmExtId=vm_ext_id, extId=ext_id, **kwargs
+        ).data
     except Exception as e:
         raise_api_exception(
             module=module,

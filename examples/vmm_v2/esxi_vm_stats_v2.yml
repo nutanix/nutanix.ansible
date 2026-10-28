@@ -76,7 +76,6 @@
         end_time: "{{ end_time }}"
         sampling_interval: 30
         stat_type: AVG
-        select: "stats/controllerNumIops,stats/controllerAvgIoLatencyMicros"
       register: disk_stats
       ignore_errors: true
 
@@ -88,7 +87,5 @@
         end_time: "{{ end_time }}"
         sampling_interval: 30
         stat_type: SUM
-        select: >-
-          stats/networkDroppedReceivedPackets,stats/networkDroppedTransmittedPackets
       register: nic_stats
       ignore_errors: true
