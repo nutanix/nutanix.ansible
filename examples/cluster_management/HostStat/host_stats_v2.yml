@@ -6,9 +6,9 @@
 # It shows every operation supported by the module:
 #
 #   1. Discover a Prism Element cluster (registered under Prism Central).
-#   2. Discover a host in that cluster.
-#   3. Fetch stats for that single host using ntnx_host_stats_info_v2 (all attributes).
-#   4. Fetch stats for every host in the cluster using ntnx_host_stats_info_v2.
+#   2. Discover hosts in that cluster via ntnx_hosts_info_v2.
+#   3. Fetch stats for a single host using ntnx_host_stats_info_v2 (all attributes).
+#   4. Fetch stats for every host by looping ntnx_host_stats_info_v2 over hosts_info.
 #
 # There are no create / update / delete operations because the underlying v4
 # stats endpoint (GetHostStats) is read-only.
@@ -61,8 +61,10 @@
     - name: Fetch host stats for every host in the cluster
       nutanix.ncp.ntnx_host_stats_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ item.ext_id }}"
         start_time: "{{ stats_start_time }}"
         end_time: "{{ stats_end_time }}"
         sampling_interval: 60
         stat_type: "AVG"
+      loop: "{{ hosts_info.response }}"
       register: cluster_host_stats

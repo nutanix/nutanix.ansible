@@ -14,37 +14,33 @@ module: ntnx_host_stats_info_v2
 short_description: Fetch host statistics info in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module allows you to fetch host statistics info in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch stats for that specific host.
-  - If C(ext_id) is not provided, list hosts in C(cluster_ext_id) and fetch stats for each host.
+  - This module allows you to fetch statistics for a specific host in Nutanix Prism Central.
+  - This module wraps the C(GetHostStats) v4 API and requires both C(cluster_ext_id) and C(ext_id).
+  - To fetch stats for every host in a cluster, list hosts with C(ntnx_hosts_info_v2) and loop
+    this module over the returned host external IDs.
   - Server-side filter / limit / orderby / page are not supported by the underlying
     C(GetHostStats) v4 API, so those options are intentionally absent from this module.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the user
-    performing the operation. The required roles depend on the operation being performed.
+    performing the operation.
   - >-
     B(View Host Stats) -
     Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Project Manager,
     Super Admin, Self-Service Admin (deprecated)
-  - >-
-    B(View Cluster Host) -
-    Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, LocalAccountManager Admin,
-    LocalAccountManager Viewer, NCM Connector, Network Infra Admin, Prism Admin, Prism Viewer,
-    Project Manager, Super Admin, VPC Admin, Self-Service Admin (deprecated)
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   cluster_ext_id:
     description:
-      - The external ID of the cluster.
+      - The external ID of the cluster the host belongs to.
     type: str
     required: true
   ext_id:
     description:
       - The external ID of the host.
-      - If not provided, stats are fetched for every host in C(cluster_ext_id).
     type: str
+    required: true
   start_time:
     description:
       - The start time of the period for which stats should be reported.
@@ -116,22 +112,29 @@ EXAMPLES = r"""
     select: "controllerNumIops,hypervisorCpuUsagePpm"
   register: single_host_full
 
-- name: Fetch stats for every host in a cluster
-  nutanix.ncp.ntnx_host_stats_info_v2:
-    cluster_ext_id: "0006c9d0-abcd-1234-5678-0242ac110002"
-    start_time: "2026-07-19T00:00:00Z"
-    end_time: "2026-07-20T00:00:00Z"
-    sampling_interval: 60
-    stat_type: "AVG"
-  register: cluster_hosts
+- name: List hosts, then fetch stats for each host
+  block:
+    - name: List hosts in the cluster
+      nutanix.ncp.ntnx_hosts_info_v2:
+        cluster_ext_id: "0006c9d0-abcd-1234-5678-0242ac110002"
+      register: hosts_info
+
+    - name: Fetch stats for every host in the cluster
+      nutanix.ncp.ntnx_host_stats_info_v2:
+        cluster_ext_id: "0006c9d0-abcd-1234-5678-0242ac110002"
+        ext_id: "{{ item.ext_id }}"
+        start_time: "2026-07-19T00:00:00Z"
+        end_time: "2026-07-20T00:00:00Z"
+        sampling_interval: 60
+        stat_type: "AVG"
+      loop: "{{ hosts_info.response }}"
+      register: cluster_hosts
 """
 
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC host stats info v4 API.
-    - It can be a single host stats object if external ID is provided.
-    - It can be a list of host stats (one entry per host in the cluster) if external ID is not provided.
+    - The response from the Nutanix PC host stats info v4 API for the requested host.
   returned: always
   type: dict
   sample:
@@ -151,22 +154,16 @@ response:
     }
 
 cluster_ext_id:
-  description: The external ID of the cluster the stats were fetched from.
+  description: The external ID of the cluster the host belongs to.
   returned: always
   type: str
   sample: "0006c9d0-abcd-1234-5678-0242ac110002"
 
 ext_id:
   description: External ID of the host.
-  returned: when external ID is provided
+  returned: always
   type: str
   sample: "d7f28e12-cafe-babe-0000-1a2b3c4d5e6f"
-
-total_available_results:
-  description: The number of hosts that stats were fetched for.
-  returned: when external ID is not provided
-  type: int
-  sample: 3
 
 changed:
   description: This indicates whether the task resulted in any changes. Always false for info modules.
@@ -200,7 +197,6 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_clusters_api_instance,
 )
 from ..module_utils.v4.utils import (  # noqa: E402
-    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -213,7 +209,7 @@ def get_module_spec():
 
     module_args = dict(
         cluster_ext_id=dict(type="str", required=True),
-        ext_id=dict(type="str"),
+        ext_id=dict(type="str", required=True),
         start_time=dict(type="str", required=True),
         end_time=dict(type="str", required=True),
         sampling_interval=dict(type="int"),
@@ -227,7 +223,12 @@ def get_module_spec():
     return module_args
 
 
-def _build_stats_kwargs(module):
+def get_host_stats(module, api_instance, result):
+    cluster_ext_id = module.params.get("cluster_ext_id")
+    ext_id = module.params.get("ext_id")
+    result["cluster_ext_id"] = cluster_ext_id
+    result["ext_id"] = ext_id
+
     kwargs = {
         "_startTime": module.params.get("start_time"),
         "_endTime": module.params.get("end_time"),
@@ -238,16 +239,6 @@ def _build_stats_kwargs(module):
         kwargs["_statType"] = module.params.get("stat_type")
     if module.params.get("select") is not None:
         kwargs["_select"] = module.params.get("select")
-    return kwargs
-
-
-def get_host_stats_using_ext_id(module, api_instance, result):
-    cluster_ext_id = module.params.get("cluster_ext_id")
-    ext_id = module.params.get("ext_id")
-    result["cluster_ext_id"] = cluster_ext_id
-    result["ext_id"] = ext_id
-
-    kwargs = _build_stats_kwargs(module)
 
     resp = None
     try:
@@ -269,55 +260,6 @@ def get_host_stats_using_ext_id(module, api_instance, result):
         module.fail_json(msg="Failed fetching host stats info", **result)
 
 
-def get_host_stats_for_cluster(module, api_instance, result):
-    cluster_ext_id = module.params.get("cluster_ext_id")
-    result["cluster_ext_id"] = cluster_ext_id
-
-    try:
-        hosts_resp = list_entities(
-            api_instance.list_hosts_by_cluster_id,
-            fetch_all=True,
-            clusterExtId=cluster_ext_id,
-        )
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching hosts info",
-        )
-
-    hosts = []
-    if getattr(hosts_resp, "data", None):
-        hosts = strip_internal_attributes(hosts_resp.to_dict()).get("data") or []
-
-    kwargs = _build_stats_kwargs(module)
-
-    stats_list = []
-    for host in hosts:
-        host_ext_id = host.get("ext_id")
-        if not host_ext_id:
-            continue
-        try:
-            host_stats_resp = api_instance.get_host_stats(
-                clusterExtId=cluster_ext_id,
-                extId=host_ext_id,
-                **kwargs,
-            )
-        except Exception as e:
-            raise_api_exception(
-                module=module,
-                exception=e,
-                msg="Api Exception raised while fetching host stats info",
-            )
-        if getattr(host_stats_resp, "data", None):
-            stats_list.append(
-                strip_internal_attributes(host_stats_resp.to_dict()).get("data")
-            )
-
-    result["total_available_results"] = len(stats_list)
-    result["response"] = stats_list
-
-
 def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
@@ -332,12 +274,10 @@ def run_module():
         "failed": False,
         "error": None,
         "cluster_ext_id": None,
+        "ext_id": None,
     }
     api_instance = get_clusters_api_instance(module)
-    if module.params.get("ext_id"):
-        get_host_stats_using_ext_id(module, api_instance, result)
-    else:
-        get_host_stats_for_cluster(module, api_instance, result)
+    get_host_stats(module, api_instance, result)
 
     module.exit_json(**result)
 

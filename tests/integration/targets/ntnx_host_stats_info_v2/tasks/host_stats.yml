@@ -6,7 +6,7 @@
 #
 #   Prereq discovery (real cluster state)
 #     - Discover an AOS Prism Element cluster via ntnx_clusters_info_v2.
-#     - Discover a host under that cluster via ntnx_hosts_info_v2.
+#     - Discover hosts under that cluster via ntnx_hosts_info_v2.
 #     - Compute a valid ISO-8601 time window (last hour, UTC).
 #
 #   ntnx_host_stats_info_v2
@@ -14,8 +14,9 @@
 #     - Fetch stats for one host with ALL optional attributes populated.
 #     - Fetch stats for each valid $statType enum value (SUM/MIN/MAX/AVG/COUNT/LAST).
 #     - Fetch stats using $select to restrict returned properties.
-#     - Fetch stats for every host in the cluster (no ext_id).
+#     - Fetch stats for every host by looping over ntnx_hosts_info_v2 results.
 #     - Negative: missing cluster_ext_id.
+#     - Negative: missing ext_id.
 #     - Negative: missing start_time.
 #     - Negative: missing end_time.
 #     - Negative: invalid stat_type enum value.
@@ -217,33 +218,35 @@
     fail_msg: "$select projection did not return expected field"
 
 ########################################################################################
-# List all hosts in cluster and fetch stats
+# Fetch stats for every host via ntnx_hosts_info_v2 + loop
 ########################################################################################
 
 - name: Fetch stats for every host in the cluster
   nutanix.ncp.ntnx_host_stats_info_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ item.ext_id }}"
     start_time: "{{ stats_start_time }}"
     end_time: "{{ stats_end_time }}"
     sampling_interval: 60
     stat_type: "AVG"
-  register: result
+  register: cluster_host_stats
   ignore_errors: true
+  loop: "{{ hosts_info.response }}"
 
-- name: Verify bulk fetch returns one entry per host
+- name: Verify looped fetch returns one successful result per host
   ansible.builtin.assert:
     that:
-      - result is defined
-      - result.changed == false
-      - result.failed == false
-      - result.cluster_ext_id == cluster_ext_id
-      - result.response is defined
-      - result.response is iterable
-      - result.response | length == (cluster_host_count | int)
-      - result.total_available_results is defined
-      - result.total_available_results | int == (cluster_host_count | int)
-    success_msg: "Bulk fetch returned {{ cluster_host_count }} host stats"
-    fail_msg: "Bulk fetch did not return the expected number of host stats"
+      - cluster_host_stats is defined
+      - cluster_host_stats.results is defined
+      - cluster_host_stats.results | length == (cluster_host_count | int)
+      - item.failed == false
+      - item.changed == false
+      - item.response is defined
+      - item.response is mapping
+      - item.ext_id == item.item.ext_id
+    success_msg: "Looped fetch returned stats for host {{ item.item.ext_id }}"
+    fail_msg: "Looped fetch did not return stats for host {{ item.item.ext_id }}"
+  loop: "{{ cluster_host_stats.results }}"
 
 ########################################################################################
 # Negative: missing required parameters
@@ -266,6 +269,24 @@
       - "'cluster_ext_id' in result.msg"
     success_msg: "Missing cluster_ext_id rejected as expected"
     fail_msg: "Missing cluster_ext_id was NOT rejected as expected"
+
+- name: Fetch host stats missing ext_id
+  nutanix.ncp.ntnx_host_stats_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - "'ext_id' in result.msg"
+    success_msg: "Missing ext_id rejected as expected"
+    fail_msg: "Missing ext_id was NOT rejected as expected"
 
 - name: Fetch host stats missing start_time
   nutanix.ncp.ntnx_host_stats_info_v2:
