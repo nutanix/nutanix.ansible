@@ -350,3 +350,4 @@ action_groups:
     - ntnx_vm_startup_policy_sc_conflicts_info_v2
     - ntnx_vm_startup_policy_sc_conflict_dependee_vms_info_v2
     - ntnx_vm_startup_policy_sc_conflict_dependent_vms_info_v2
+    - ntnx_vm_transfer_files_to_guest_v2
