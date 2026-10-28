@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_re_enforce_vm_host_affinity_policy_v2
 short_description: Re-enforce a VM-Host Affinity Policy in Nutanix Prism Central
-version_added: 2.5.0
+version_added: "2.7.0"
 description:
   - This module re-enforces (re-applies) an existing VM-Host Affinity Policy against all
     the VMs currently associated with the policy in Nutanix Prism Central.
@@ -25,24 +25,18 @@ description:
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
-    This module requires the Nutanix IAM permission
-    B(Reenforce_VM_Host_Affinity_Policy). The following roles carry this permission
-    by default - Prism Admin, Super Admin.
+    This module requires the following Nutanix IAM roles to be assigned to the
+    user performing the operation.
+  - >-
+    B(Re-enforce the VM-host affinity policy) -
+    Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
   ext_id:
     description:
-      - The external ID (UUID) of the VM-Host Affinity Policy to re-enforce.
+      - The external ID of the VM-Host Affinity Policy to re-enforce.
     type: str
     required: true
-  state:
-    description:
-      - Kept for consistency with other v2 modules; only C(present) is meaningful for
-        this action module and it triggers a re-enforce.
-    type: str
-    choices:
-      - present
-    default: present
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -50,6 +44,7 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_proxy_v2
 author:
   - Abhinav Bansal (@abhinavbansal29)
+  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -108,40 +103,32 @@ response:
       "warnings": null
     }
 task_ext_id:
-  description:
-    - The external ID of the Prism task that was created for the re-enforce action.
+  description: The external ID of the task.
   returned: always
   type: str
   sample: "ZXJnb24=:adb28ae9-d8c1-50c8-b12f-8a25832a95eb"
 ext_id:
-  description:
-    - The external ID of the VM-Host Affinity Policy that was re-enforced.
+  description: The external ID of the VM-Host Affinity Policy.
   returned: always
   type: str
   sample: "d8cf7870-6162-474b-4e62-dfa249096ffe"
 changed:
-  description: This indicates whether the task resulted in any changes.
+  description: This indicates whether the task resulted in any changes
   returned: always
   type: bool
   sample: true
-skipped:
-  description:
-    - This indicates whether the task was skipped (e.g. in check mode).
-  returned: when applicable
-  type: bool
-  sample: false
 error:
-  description: This indicates the error message if any error occurred.
-  returned: When an error occurs
+  description: This indicates the error message if any error occurred
+  returned: when an error occurs
   type: str
 failed:
-  description: This indicates whether the task failed.
+  description: This indicates whether the task failed
   returned: always
   type: bool
   sample: false
 msg:
-  description: This indicates the message if any message occurred.
-  returned: When there is an error, module is idempotent or in check mode.
+  description: This indicates the message if any message occurred
+  returned: When there is an error or in check mode operation
   type: str
   sample: "VM-Host Affinity Policy with ext_id:d8cf7870-6162-474b-4e62-dfa249096ffe will be re-enforced."
 """
@@ -157,7 +144,6 @@ from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
-    validate_required_params,
 )
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_etag,
@@ -167,12 +153,9 @@ from ..module_utils.v4.vmm.helpers import get_vm_host_affinity_policy  # noqa: E
 
 SDK_IMP_ERROR = None
 try:
-    import ntnx_vmm_py_client as vmm_sdk  # noqa: E402  # pylint: disable=unused-import
+    import ntnx_vmm_py_client as vmm_sdk  # noqa: E402
 except ImportError:
-
-    from ..module_utils.v4.sdk_mock import (  # noqa: E402  # pylint: disable=unused-import
-        mock_sdk as vmm_sdk,
-    )
+    from ..module_utils.v4.sdk_mock import mock_sdk as vmm_sdk  # noqa: E402
 
     SDK_IMP_ERROR = traceback.format_exc()
 
@@ -182,17 +165,16 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str", required=True),
-        state=dict(type="str", choices=["present"], default="present"),
     )
     return module_args
 
 
-def re_enforce_vm_host_affinity_policy(module, result, api_instance):
+def re_enforce_vm_host_affinity_policy(module, result):
     """Trigger the re-enforce action on an existing VM-Host Affinity Policy."""
-    validate_required_params(module, ["ext_id"])
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
+    api_instance = get_vm_host_affinity_policies_api_instance(module)
     current_policy = get_vm_host_affinity_policy(module, api_instance, ext_id)
 
     if module.check_mode:
@@ -204,6 +186,7 @@ def re_enforce_vm_host_affinity_policy(module, result, api_instance):
         result["response"] = strip_internal_attributes(current_policy.to_dict())
         return
 
+    # OpenAPI requires If-Match for re-enforce.
     etag = get_etag(data=current_policy)
     kwargs = {}
     if etag:
@@ -245,16 +228,12 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
-        "task_ext_id": None,
-        "skipped": False,
         "failed": False,
     }
 
-    api_instance = get_vm_host_affinity_policies_api_instance(module)
-    re_enforce_vm_host_affinity_policy(module, result, api_instance)
+    re_enforce_vm_host_affinity_policy(module, result)
     module.exit_json(**result)
 
 
