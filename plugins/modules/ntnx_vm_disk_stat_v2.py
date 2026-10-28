@@ -9,16 +9,12 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
-module: ntnx_vm_stat_v2
-short_description: Fetch stats for a single ESXi VM, disk, or NIC
+module: ntnx_vm_disk_stat_v2
+short_description: Fetch stats for a single ESXi VM disk
 version_added: "2.7.0"
 description:
-    - Fetch statistics for a single ESXi Virtual Machine, or for a disk or NIC
-      attached to that VM, from Nutanix Prism Central.
-    - If only C(ext_id) is provided, VM-level stats are fetched.
-    - If C(disk_ext_id) is also provided, disk stats are fetched.
-    - If C(nic_ext_id) is also provided, NIC stats are fetched.
-    - C(disk_ext_id) and C(nic_ext_id) are mutually exclusive.
+    - Fetch statistics for a disk attached to an ESXi Virtual Machine in Nutanix
+      Prism Central.
     - Only ESXi Virtual Machines are supported. A vCenter instance must be
       registered with the cluster; the endpoints fail for AHV VMs.
     - This module uses PC v4 APIs based SDKs
@@ -27,44 +23,22 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the
       user performing the operation.
     - >-
-      B(Get VM stats for a given VM) -
-      Required Roles: Prism Admin, Prism Viewer, Project Manager,
-      Self-Service Admin (deprecated), Super Admin
-    - >-
       B(Get the stats for the specified VM disk) -
       Required Roles: Backup Admin, Prism Admin, Prism Viewer, Project Manager,
       Self-Service Admin (deprecated), Super Admin
-    - >-
-      B(Get the stats for the specified VM NIC) -
-      Required Roles: Account Owner, Administrator, Consumer, Developer,
-      Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin,
-      Project Manager, Self-Service Admin (deprecated), Storage Admin, Super Admin,
-      Tenant Admin, Tenant Consumer, User, Virtual Machine Admin,
-      Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
-    ext_id:
+    vm_ext_id:
         description:
-            - Retrieve statistics for the VM with the specified external ID.
-            - Required for VM, disk, and NIC stats.
+            - The VM external ID when retrieving the stats for a given VM disk.
         type: str
         required: true
-    disk_ext_id:
+    ext_id:
         description:
-            - External ID of the ESXi VM disk to retrieve stats for.
-            - When set, the module fetches disk-level stats instead of VM-level
-              stats.
-            - Mutually exclusive with C(nic_ext_id).
+            - The external ID of the VM disk when retrieving stats for a given
+              VM disk.
         type: str
-        required: false
-    nic_ext_id:
-        description:
-            - External ID of the ESXi VM NIC to retrieve stats for.
-            - When set, the module fetches NIC-level stats instead of VM-level
-              stats.
-            - Mutually exclusive with C(disk_ext_id).
-        type: str
-        required: false
+        required: true
     start_time:
         description:
             - The start time of the period for which stats should be reported.
@@ -128,96 +102,62 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Fetch ESXi VM stats using ext_id
-  nutanix.ncp.ntnx_vm_stat_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
-    start_time: "2026-07-21T00:00:00.000Z"
-    end_time: "2026-07-21T01:00:00.000Z"
-  register: vm_stats
-
-- name: Fetch ESXi VM stats with sampling and aggregation
-  nutanix.ncp.ntnx_vm_stat_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
-    start_time: "2026-07-21T00:00:00.000Z"
-    end_time: "2026-07-21T01:00:00.000Z"
-    sampling_interval: 30
-    stat_type: AVG
-    select: "stats/hypervisorCpuUsagePpm,stats/hypervisorMemoryUsagePpm"
-  register: vm_stats_avg
-
 - name: Fetch ESXi VM disk stats
-  nutanix.ncp.ntnx_vm_stat_v2:
+  nutanix.ncp.ntnx_vm_disk_stat_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
-    disk_ext_id: "6f7d5cf6-2e42-4b71-9e73-6a4d1e5a9b1c"
+    vm_ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+    ext_id: "6f7d5cf6-2e42-4b71-9e73-6a4d1e5a9b1c"
     start_time: "2026-07-21T00:00:00.000Z"
     end_time: "2026-07-21T01:00:00.000Z"
-    sampling_interval: 30
-    stat_type: AVG
   register: vm_disk_stats
 
-- name: Fetch ESXi VM NIC stats
-  nutanix.ncp.ntnx_vm_stat_v2:
+- name: Fetch ESXi VM disk stats with sampling and aggregation
+  nutanix.ncp.ntnx_vm_disk_stat_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
-    nic_ext_id: "a1c8fce7-1c1e-4c1c-9e19-11cbeeb2f0b1"
+    vm_ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+    ext_id: "6f7d5cf6-2e42-4b71-9e73-6a4d1e5a9b1c"
     start_time: "2026-07-21T00:00:00.000Z"
     end_time: "2026-07-21T01:00:00.000Z"
     sampling_interval: 30
-    stat_type: SUM
-  register: vm_nic_stats
+    stat_type: AVG
+    select: "stats/controllerNumIops,stats/controllerAvgIoLatencyMicros"
+  register: vm_disk_stats_avg
 """
 
 RETURN = r"""
 response:
-    description:
-        - The stats payload returned by the API.
-        - When C(disk_ext_id) or C(nic_ext_id) is not provided this contains the
-          VM-level stats.
-        - When C(disk_ext_id) is provided this contains disk-level stats.
-        - When C(nic_ext_id) is provided this contains NIC-level stats.
+    description: The disk stats payload returned by the API.
     returned: always
     type: dict
     sample:
         {
-            "ext_id": "2e40ff57-20aa-4d2b-b179-298db969c20d",
+            "ext_id": "6f7d5cf6-2e42-4b71-9e73-6a4d1e5a9b1c",
+            "vm_ext_id": "2e40ff57-20aa-4d2b-b179-298db969c20d",
             "links": null,
             "tenant_id": null,
             "stats": [
                 {
                     "timestamp": "2026-07-21T00:00:00+00:00",
-                    "hypervisor_cpu_usage_ppm": 12345,
-                    "hypervisor_memory_usage_ppm": 67890,
                     "controller_num_iops": 100,
                     "controller_avg_io_latency_micros": 950
                 }
             ]
         }
 ext_id:
-    description: The external ID of the ESXi Virtual Machine, disk, or NIC.
+    description: The external ID of the ESXi VM disk.
     type: str
     returned: always
-    sample: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+    sample: "6f7d5cf6-2e42-4b71-9e73-6a4d1e5a9b1c"
 vm_ext_id:
-    description:
-        - External ID of the parent ESXi Virtual Machine when disk or NIC stats
-          are fetched. It matches C(ext_id) in that case.
+    description: The external ID of the parent ESXi Virtual Machine.
     type: str
-    returned: when C(disk_ext_id) or C(nic_ext_id) is provided
+    returned: always
     sample: "2e40ff57-20aa-4d2b-b179-298db969c20d"
 changed:
     description: This indicates whether the task resulted in any changes
@@ -228,7 +168,7 @@ msg:
     description: This indicates the message if any message occurred
     type: str
     returned: When there is an error
-    sample: "Api Exception raised while fetching ESXi VM stats using ext_id"
+    sample: "Api Exception raised while fetching ESXi VM disk stats using ext_id"
 failed:
     description: This indicates whether the task failed
     type: bool
@@ -242,20 +182,15 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
 from ..module_utils.v4.vmm.api_client import get_esxi_stats_api_instance  # noqa: E402
-from ..module_utils.v4.vmm.helpers import (  # noqa: E402
-    get_esxi_vm_disk_stats,
-    get_esxi_vm_nic_stats,
-    get_esxi_vm_stats,
-)
+from ..module_utils.v4.vmm.helpers import get_esxi_vm_disk_stats  # noqa: E402
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
 def get_module_spec():
     module_args = dict(
+        vm_ext_id=dict(type="str", required=True),
         ext_id=dict(type="str", required=True),
-        disk_ext_id=dict(type="str", required=False),
-        nic_ext_id=dict(type="str", required=False),
         start_time=dict(type="str", required=True),
         end_time=dict(type="str", required=True),
         sampling_interval=dict(type="int", required=False),
@@ -269,18 +204,15 @@ def get_module_spec():
     return module_args
 
 
-def _serialize(resp):
-    if resp is None or getattr(resp, "data", None) is None:
-        return None
-    return strip_internal_attributes(resp.to_dict()).get("data")
-
-
-def get_vm_stat(module, api_instance, result):
+def get_vm_disk_stat(module, api_instance, result):
+    vm_ext_id = module.params.get("vm_ext_id")
     ext_id = module.params.get("ext_id")
+    result["vm_ext_id"] = vm_ext_id
     result["ext_id"] = ext_id
-    resp = get_esxi_vm_stats(
+    resp = get_esxi_vm_disk_stats(
         module,
         api_instance,
+        vm_ext_id=vm_ext_id,
         ext_id=ext_id,
         start_time=module.params.get("start_time"),
         end_time=module.params.get("end_time"),
@@ -288,54 +220,9 @@ def get_vm_stat(module, api_instance, result):
         stat_type=module.params.get("stat_type"),
         select=module.params.get("select"),
     )
-    data = _serialize(resp)
-    if data is None:
-        module.fail_json(msg="Failed fetching ESXi VM stats", **result)
-    result["response"] = data
-
-
-def get_vm_disk_stat(module, api_instance, result):
-    ext_id = module.params.get("ext_id")
-    disk_ext_id = module.params.get("disk_ext_id")
-    result["vm_ext_id"] = ext_id
-    result["ext_id"] = disk_ext_id
-    resp = get_esxi_vm_disk_stats(
-        module,
-        api_instance,
-        vm_ext_id=ext_id,
-        ext_id=disk_ext_id,
-        start_time=module.params.get("start_time"),
-        end_time=module.params.get("end_time"),
-        sampling_interval=module.params.get("sampling_interval"),
-        stat_type=module.params.get("stat_type"),
-        select=module.params.get("select"),
-    )
-    data = _serialize(resp)
-    if data is None:
+    if resp is None or getattr(resp, "data", None) is None:
         module.fail_json(msg="Failed fetching ESXi VM disk stats", **result)
-    result["response"] = data
-
-
-def get_vm_nic_stat(module, api_instance, result):
-    ext_id = module.params.get("ext_id")
-    nic_ext_id = module.params.get("nic_ext_id")
-    result["vm_ext_id"] = ext_id
-    result["ext_id"] = nic_ext_id
-    resp = get_esxi_vm_nic_stats(
-        module,
-        api_instance,
-        vm_ext_id=ext_id,
-        ext_id=nic_ext_id,
-        start_time=module.params.get("start_time"),
-        end_time=module.params.get("end_time"),
-        sampling_interval=module.params.get("sampling_interval"),
-        stat_type=module.params.get("stat_type"),
-        select=module.params.get("select"),
-    )
-    data = _serialize(resp)
-    if data is None:
-        module.fail_json(msg="Failed fetching ESXi VM NIC stats", **result)
-    result["response"] = data
+    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
 
 
 def run_module():
@@ -343,7 +230,6 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         skip_info_args=True,
-        mutually_exclusive=[("disk_ext_id", "nic_ext_id")],
     )
 
     remove_param_with_none_value(module.params)
@@ -354,14 +240,7 @@ def run_module():
     }
 
     api_instance = get_esxi_stats_api_instance(module)
-
-    if module.params.get("disk_ext_id"):
-        get_vm_disk_stat(module, api_instance, result)
-    elif module.params.get("nic_ext_id"):
-        get_vm_nic_stat(module, api_instance, result)
-    else:
-        get_vm_stat(module, api_instance, result)
-
+    get_vm_disk_stat(module, api_instance, result)
     module.exit_json(**result)
 
 

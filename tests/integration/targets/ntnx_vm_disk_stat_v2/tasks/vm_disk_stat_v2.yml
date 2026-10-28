@@ -1,0 +1,75 @@
+---
+# Integration tests for ntnx_vm_disk_stat_v2.
+
+- name: Start ntnx_vm_disk_stat_v2 integration tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vm_disk_stat_v2 integration tests
+
+- name: Compute stats window start time (last 5 minutes)
+  ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: start_time
+  changed_when: false
+
+- name: Compute stats window end time (now)
+  ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: end_time
+  changed_when: false
+
+- name: Disk stats module rejects missing required params
+  nutanix.ncp.ntnx_vm_disk_stat_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Assert missing required params fail
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - >-
+          ('vm_ext_id' in (result.msg | string)) or
+          ('ext_id' in (result.msg | string)) or
+          ('start_time' in (result.msg | string)) or
+          ('end_time' in (result.msg | string))
+    fail_msg: Disk stats module did not reject missing required params
+    success_msg: Disk stats module correctly rejected missing required params
+
+- name: Disk stats module rejects invalid stat_type
+  nutanix.ncp.ntnx_vm_disk_stat_v2:
+    vm_ext_id: "83083083-0000-0000-0000-000000000001"
+    ext_id: "83083083-0000-0000-0000-000000000002"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+    stat_type: NOT_VALID
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid enum fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - >-
+          ('stat_type' in (result.msg | string)) or
+          ('NOT_VALID' in (result.msg | string))
+    fail_msg: Invalid stat_type was not rejected
+    success_msg: Invalid stat_type correctly rejected
+
+- name: Fetch disk stats for a non-existent VM/disk
+  nutanix.ncp.ntnx_vm_disk_stat_v2:
+    vm_ext_id: "83083083-0000-0000-0000-000000000099"
+    ext_id: "83083083-0000-0000-0000-000000000098"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: not_found_result
+  ignore_errors: true
+
+- name: Assert clean error for non-existent disk
+  ansible.builtin.assert:
+    that:
+      - not_found_result.changed == false
+      - not_found_result.failed == true
+      - not_found_result.msg is defined
+    fail_msg: Non-existent disk did not return a clean error
+    success_msg: Non-existent disk returned a clean error

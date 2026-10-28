@@ -309,8 +309,6 @@ action_groups:
     - ntnx_content_repository_sync_v2
     - ntnx_content_repository_items_info_v2
     - ntnx_images_migrate_v2
-    - ntnx_vm_stat_v2
-    - ntnx_vm_stats_info_v2
     - ntnx_vm_to_host_migration_v2
     - ntnx_vm_recovery_point_v2
     - ntnx_vm_recovery_points_info_v2
@@ -335,3 +333,6 @@ action_groups:
     - ntnx_registrations_info_v2
     - ntnx_update_domain_manager_v2
     - ntnx_scale_up_domain_manager_by_id_v2
+    - ntnx_vm_stats_info_v2
+    - ntnx_vm_disk_stat_v2
+    - ntnx_vm_nic_stat_v2
