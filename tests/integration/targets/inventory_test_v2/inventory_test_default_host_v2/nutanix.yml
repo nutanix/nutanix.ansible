@@ -19,3 +19,4 @@ keyed_groups:
   - key: machine_type
     prefix: machine
     separator: "_"
+vm_name: "integration_test_vm"
