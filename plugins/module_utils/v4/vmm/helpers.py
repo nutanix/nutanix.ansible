@@ -193,7 +193,6 @@ def get_gpu(module, api_instance, ext_id, vm_ext_id):
         )
 
 
-
 def get_ova(module, api_instance, ext_id):
     """
     Get OVA by ext_id
@@ -333,6 +332,27 @@ def get_image(module, api_instance, ext_id):
             msg="Api Exception raised while fetching image info using ext_id",
         )
 
+
+def get_vm_recovery_point(module, api_instance, ext_id):
+    """
+    Get AHV VM Recovery Point by ext_id.
+    Args:
+        module: Ansible module
+        api_instance: VmRecoveryPointsApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of the VM recovery point
+    Returns:
+        vm_recovery_point (obj): VM recovery point info object
+    """
+    try:
+        return api_instance.get_vm_recovery_point_by_ext_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM recovery point info using ext_id",
+        )
+
+
 def get_esxi_vm_stats(
     module,
     api_instance,
@@ -456,4 +476,3 @@ def get_esxi_vm_nic_stats(
             exception=e,
             msg="Api Exception raised while fetching ESXi VM NIC stats using ext_id",
         )
-
