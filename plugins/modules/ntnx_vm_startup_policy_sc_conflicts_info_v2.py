@@ -125,8 +125,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The start condition conflict payload when C(ext_id) is provided.
-    - List of start condition conflicts when C(ext_id) is not provided.
+    - Response for fetching VM startup policy start condition conflicts info
+    - Specific start condition conflict info if External ID is provided
+    - List of multiple start condition conflicts info if External ID is not provided
   type: dict
   returned: always
   sample:

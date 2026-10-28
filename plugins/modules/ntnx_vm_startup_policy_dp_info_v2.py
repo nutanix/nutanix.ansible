@@ -125,8 +125,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The dependency conflict payload when C(ext_id) is provided.
-    - List of dependency conflicts when C(ext_id) is not provided.
+    - Response for fetching VM startup policy dependency conflicts info
+    - Specific dependency conflict info if External ID is provided
+    - List of multiple dependency conflicts info if External ID is not provided
   type: dict
   returned: always
   sample:

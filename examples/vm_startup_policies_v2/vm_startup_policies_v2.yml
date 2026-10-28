@@ -121,7 +121,6 @@
       register: result
       ignore_errors: true
 
-
     - name: List dependency conflicts for the VM startup policy
       nutanix.ncp.ntnx_vm_startup_policy_dp_info_v2:
         vm_startup_policy_ext_id: "{{ vm_startup_policy_ext_id }}"
