@@ -208,9 +208,7 @@ def get_vm_disk_stat(module, api_instance, result):
     if module.params.get("select") is not None:
         kwargs["_select"] = module.params.get("select")
 
-    resp = get_esxi_vm_disk_stats(
-        module, api_instance, vm_ext_id, ext_id, **kwargs
-    )
+    resp = get_esxi_vm_disk_stats(module, api_instance, vm_ext_id, ext_id, **kwargs)
     if resp is None:
         module.fail_json(msg="Failed fetching ESXi VM disk stats", **result)
     result["response"] = strip_internal_attributes(resp.to_dict())
