@@ -1,0 +1,85 @@
+---
+# Summary:
+# AHV VM recovery point create, info, restore, and delete:
+#
+#   1. Create an AHV VM recovery point
+#   2. Get the AHV VM recovery point by ext_id
+#   3. List AHV VM recovery points (including fetch_all)
+#   4. Restore a new VM from the AHV VM recovery point
+#   5. Delete the AHV VM recovery point
+
+- name: AHV VM recovery points playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_ext_id: "<vm_ext_id>"
+        vm_recovery_point_name: "ansible_vm_rp_example"
+        expiration_time: "2027-01-01T00:00:00+00:00"
+        domain_manager_ext_id: "<domain_manager_ext_id>"
+        cluster_ext_id: "<cluster_ext_id>"
+
+    - name: Create a crash-consistent AHV VM recovery point
+      nutanix.ncp.ntnx_vm_recovery_point_v2:
+        state: present
+        name: "{{ vm_recovery_point_name }}"
+        expiration_time: "{{ expiration_time }}"
+        recovery_point_type: CRASH_CONSISTENT
+        vm_ext_id: "{{ vm_ext_id }}"
+        source_location:
+          domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+          cluster_ext_ids:
+            - "{{ cluster_ext_id }}"
+      register: create_result
+      ignore_errors: true
+
+    - name: Set AHV VM recovery point ext_id
+      ansible.builtin.set_fact:
+        vm_recovery_point_ext_id: "{{ create_result.ext_id }}"
+
+    - name: Get AHV VM recovery point by ext_id
+      nutanix.ncp.ntnx_vm_recovery_points_info_v2:
+        ext_id: "{{ vm_recovery_point_ext_id }}"
+      register: get_result
+      ignore_errors: true
+
+    - name: List all AHV VM recovery points
+      nutanix.ncp.ntnx_vm_recovery_points_info_v2:
+      register: list_result
+      ignore_errors: true
+
+    - name: List AHV VM recovery points with limit
+      nutanix.ncp.ntnx_vm_recovery_points_info_v2:
+        limit: 5
+      register: list_limited_result
+      ignore_errors: true
+
+    - name: List all AHV VM recovery points with fetch_all
+      nutanix.ncp.ntnx_vm_recovery_points_info_v2:
+        fetch_all: true
+      register: list_fetch_all_result
+      ignore_errors: true
+
+    - name: Restore a new VM from the AHV VM recovery point
+      nutanix.ncp.ntnx_vm_recovery_point_restore_v2:
+        ext_id: "{{ vm_recovery_point_ext_id }}"
+        is_strict_mode: false
+        vm_config_override_spec:
+          name: "restored_vm_ansible"
+          description: "VM restored from AHV VM recovery point"
+      register: restore_result
+      ignore_errors: true
+
+    - name: Delete the AHV VM recovery point
+      nutanix.ncp.ntnx_vm_recovery_point_v2:
+        state: absent
+        ext_id: "{{ vm_recovery_point_ext_id }}"
+      register: delete_result
+      ignore_errors: true
