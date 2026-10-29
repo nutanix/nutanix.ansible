@@ -198,6 +198,7 @@ action_groups:
     - ntnx_cluster_host_maintenance_v2
     - ntnx_check_hypervisor_requirement_v2
     - ntnx_storage_containers_stats_v2
+    - ntnx_cluster_disk_stats_info_v2
     - ntnx_storage_containers_info_v2
     - ntnx_storage_containers_v2
     - ntnx_storage_config_v2

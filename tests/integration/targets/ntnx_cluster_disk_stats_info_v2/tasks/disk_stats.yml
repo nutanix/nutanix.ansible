@@ -1,0 +1,272 @@
+---
+################################################################################
+# Test plan for ntnx_cluster_disk_stats_info_v2
+#
+# Coverage matrix (see spec of get_module_spec()):
+#   * ext_id (required)              - covered by every test
+#   * start_time (required)          - covered by every test
+#   * end_time (required)            - covered by every test
+#   * sampling_interval (int, opt.)  - covered by the "all attributes" tests
+#   * stat_type (choices)            - covered by the enum coverage tests below
+#
+# Positive scenarios
+#   1. Fetch disk stats with the minimum required attributes.
+#   2. Fetch disk stats with ALL attributes (sampling_interval + stat_type).
+#   3. Enumerate every valid stat_type choice (SUM / MIN / MAX / AVG / COUNT / LAST).
+#   4. Idempotency: fetching stats twice returns the same shape and never sets
+#      changed=true (info operations are always changed=false).
+#
+# Negative scenarios
+#   1. Invalid ext_id  -> API error, failed=true, error is set.
+#   2. Invalid stat_type value -> spec validation rejects it, failed=true.
+#   3. Missing required field (ext_id / start_time / end_time) -> ansible spec
+#      validation returns failed=true with a "missing required arguments" msg.
+#   4. end_time earlier than start_time -> API error surfaced as failed=true.
+################################################################################
+
+- name: Start DiskStat tests
+  ansible.builtin.debug:
+    msg: Start DiskStat v2 integration tests
+
+- name: Generate ISO-8601 timestamps for the last 24 hours
+  ansible.builtin.set_fact:
+    start_time_iso: "{{ lookup('pipe', 'date -u -d \"1 day ago\" +%Y-%m-%dT%H:%M:%S.000Z') }}"
+    end_time_iso: "{{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%S.000Z') }}"
+
+- name: List disks in the cluster via v4 REST API to discover a real disk ext_id
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/clustermgmt/v4.2/config/disks?$limit=1"
+    method: GET
+    url_username: "{{ username }}"
+    url_password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    return_content: true
+    status_code: 200
+  register: disks_lookup
+  ignore_errors: true
+
+- name: Assert we found at least one disk on the cluster
+  ansible.builtin.assert:
+    that:
+      - disks_lookup.status == 200
+      - disks_lookup.json is defined
+      - disks_lookup.json.data is defined
+      - disks_lookup.json.data | length > 0
+    success_msg: "Discovered {{ disks_lookup.json.data | length }} disk(s) on the cluster."
+    fail_msg: "Failed to list disks via v4 API; DiskStat tests cannot run without a live disk ext_id."
+
+- name: Capture the first disk external ID
+  ansible.builtin.set_fact:
+    disk_ext_id: "{{ disks_lookup.json.data[0].extId }}"
+
+########################################################################################
+# 1. Minimum required attributes
+########################################################################################
+
+- name: Fetch disk stats info with minimum required attributes
+  nutanix.ncp.ntnx_cluster_disk_stats_info_v2:
+    ext_id: "{{ disk_ext_id }}"
+    start_time: "{{ start_time_iso }}"
+    end_time: "{{ end_time_iso }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert disk stats info fetch (minimum attributes) succeeded
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == disk_ext_id
+      - result.response is defined
+    success_msg: "DiskStat minimum-attributes fetch succeeded."
+    fail_msg: "DiskStat minimum-attributes fetch failed."
+
+########################################################################################
+# 2. ALL attributes (sampling_interval + stat_type)
+########################################################################################
+
+- name: Fetch disk stats info with ALL attributes (sampling_interval + stat_type=AVG)
+  nutanix.ncp.ntnx_cluster_disk_stats_info_v2:
+    ext_id: "{{ disk_ext_id }}"
+    start_time: "{{ start_time_iso }}"
+    end_time: "{{ end_time_iso }}"
+    sampling_interval: 30
+    stat_type: "AVG"
+  register: result_full
+  ignore_errors: true
+
+- name: Assert disk stats info fetch (all attributes) succeeded
+  ansible.builtin.assert:
+    that:
+      - result_full is defined
+      - result_full.changed == false
+      - result_full.failed == false
+      - result_full.ext_id == disk_ext_id
+      - result_full.response is defined
+    success_msg: "DiskStat all-attributes fetch succeeded."
+    fail_msg: "DiskStat all-attributes fetch failed."
+
+########################################################################################
+# 3. Enum coverage for the stat_type choices (SUM / MIN / MAX / AVG / COUNT / LAST)
+########################################################################################
+
+- name: Iterate over every valid stat_type value and confirm each is accepted
+  nutanix.ncp.ntnx_cluster_disk_stats_info_v2:
+    ext_id: "{{ disk_ext_id }}"
+    start_time: "{{ start_time_iso }}"
+    end_time: "{{ end_time_iso }}"
+    sampling_interval: 30
+    stat_type: "{{ item }}"
+  loop:
+    - SUM
+    - MIN
+    - MAX
+    - AVG
+    - COUNT
+    - LAST
+  register: enum_coverage
+  ignore_errors: true
+
+- name: Assert every stat_type choice returned a stats response
+  ansible.builtin.assert:
+    that:
+      - item.failed == false
+      - item.changed == false
+      - item.ext_id == disk_ext_id
+      - item.response is defined
+    success_msg: "stat_type={{ item.item }} accepted."
+    fail_msg: "stat_type={{ item.item }} rejected unexpectedly."
+  loop: "{{ enum_coverage.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+########################################################################################
+# 4. Idempotency - two consecutive fetches never flip changed to true
+########################################################################################
+
+- name: Fetch disk stats info the first time (idempotency check)
+  nutanix.ncp.ntnx_cluster_disk_stats_info_v2:
+    ext_id: "{{ disk_ext_id }}"
+    start_time: "{{ start_time_iso }}"
+    end_time: "{{ end_time_iso }}"
+  register: idem_first
+  ignore_errors: true
+
+- name: Fetch disk stats info the second time (idempotency check)
+  nutanix.ncp.ntnx_cluster_disk_stats_info_v2:
+    ext_id: "{{ disk_ext_id }}"
+    start_time: "{{ start_time_iso }}"
+    end_time: "{{ end_time_iso }}"
+  register: idem_second
+  ignore_errors: true
+
+- name: Assert both fetches reported changed=false and returned the same disk ext_id
+  ansible.builtin.assert:
+    that:
+      - idem_first.changed == false
+      - idem_second.changed == false
+      - idem_first.failed == false
+      - idem_second.failed == false
+      - idem_first.ext_id == idem_second.ext_id
+      - idem_first.ext_id == disk_ext_id
+    success_msg: "DiskStat fetch is idempotent (changed=false on repeated calls)."
+    fail_msg: "DiskStat fetch was not idempotent."
+
+########################################################################################
+# 5. Negative: invalid ext_id -> API error surfaced as failed=true
+########################################################################################
+
+- name: Attempt to fetch disk stats info with an invalid ext_id
+  nutanix.ncp.ntnx_cluster_disk_stats_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ start_time_iso }}"
+    end_time: "{{ end_time_iso }}"
+  register: bad_ext_id
+  ignore_errors: true
+
+- name: Assert invalid ext_id returned failed=true with an error message
+  ansible.builtin.assert:
+    that:
+      - bad_ext_id.failed == true
+      - (bad_ext_id.msg is defined) or (bad_ext_id.error is defined) or (bad_ext_id.response is defined)
+    success_msg: "Invalid ext_id was correctly rejected."
+    fail_msg: "Invalid ext_id should have failed but did not."
+
+########################################################################################
+# 6. Negative: invalid stat_type value -> Ansible spec validation rejects it
+########################################################################################
+
+- name: Attempt to fetch disk stats info with an invalid stat_type
+  nutanix.ncp.ntnx_cluster_disk_stats_info_v2:
+    ext_id: "{{ disk_ext_id }}"
+    start_time: "{{ start_time_iso }}"
+    end_time: "{{ end_time_iso }}"
+    stat_type: "NOT_A_REAL_TYPE"
+  register: bad_stat_type
+  ignore_errors: true
+
+- name: Assert invalid stat_type was rejected by spec validation
+  ansible.builtin.assert:
+    that:
+      - bad_stat_type.failed == true
+      - bad_stat_type.msg is defined
+    success_msg: "Invalid stat_type was correctly rejected."
+    fail_msg: "Invalid stat_type should have failed but did not."
+
+########################################################################################
+# 7. Negative: missing required arguments -> spec validation
+########################################################################################
+
+- name: Attempt to fetch disk stats info without ext_id
+  nutanix.ncp.ntnx_cluster_disk_stats_info_v2:
+    start_time: "{{ start_time_iso }}"
+    end_time: "{{ end_time_iso }}"
+  register: missing_ext_id
+  ignore_errors: true
+
+- name: Assert missing ext_id was rejected by spec validation
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id.failed == true
+      - missing_ext_id.msg is defined
+    success_msg: "Missing ext_id was correctly rejected."
+    fail_msg: "Missing ext_id should have failed but did not."
+
+- name: Attempt to fetch disk stats info without start_time / end_time
+  nutanix.ncp.ntnx_cluster_disk_stats_info_v2:
+    ext_id: "{{ disk_ext_id }}"
+  register: missing_times
+  ignore_errors: true
+
+- name: Assert missing start_time / end_time were rejected by spec validation
+  ansible.builtin.assert:
+    that:
+      - missing_times.failed == true
+      - missing_times.msg is defined
+    success_msg: "Missing start_time / end_time correctly rejected."
+    fail_msg: "Missing start_time / end_time should have failed but did not."
+
+########################################################################################
+# 8. Negative: end_time earlier than start_time -> API error surfaced
+########################################################################################
+
+- name: Attempt to fetch disk stats info with end_time earlier than start_time
+  nutanix.ncp.ntnx_cluster_disk_stats_info_v2:
+    ext_id: "{{ disk_ext_id }}"
+    start_time: "{{ end_time_iso }}"
+    end_time: "{{ start_time_iso }}"
+  register: inverted_range
+  ignore_errors: true
+
+- name: Assert inverted time range was rejected by the API
+  ansible.builtin.assert:
+    that:
+      - inverted_range.failed == true
+    success_msg: "Inverted time range was correctly rejected."
+    fail_msg: "Inverted time range should have failed but did not."
+
+- name: Finish DiskStat tests
+  ansible.builtin.debug:
+    msg: Finished DiskStat v2 integration tests
