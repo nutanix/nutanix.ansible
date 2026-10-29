@@ -331,3 +331,206 @@ def get_image(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching image info using ext_id",
         )
+
+
+def get_vm_recovery_point(module, api_instance, ext_id):
+    """
+    Get AHV VM Recovery Point by ext_id.
+    Args:
+        module: Ansible module
+        api_instance: VmRecoveryPointsApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of the VM recovery point
+    Returns:
+        vm_recovery_point (obj): VM recovery point info object
+    """
+    try:
+        return api_instance.get_vm_recovery_point_by_ext_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM recovery point info using ext_id",
+        )
+
+
+def get_vm_stats(module, api_instance, ext_id, **kwargs):
+    """
+    Get VM stats by VM ext_id.
+
+    Works for both AHV and ESXi: pass StatsApi or EsxiStatsApi as
+    api_instance (paths differ: /ahv/stats vs /esxi/stats).
+
+    Args:
+        module: Ansible module
+        api_instance: StatsApi or EsxiStatsApi from ntnx_vmm_py_client sdk
+        ext_id: ext_id of VM
+        **kwargs: query kwargs (e.g. from SpecGenerator.get_stats_spec:
+            _startTime, _endTime, _samplingInterval, _statType, _select)
+
+    Returns:
+        data (obj): VM stats data object
+    """
+    try:
+        return api_instance.get_vm_stats_by_id(extId=ext_id, **kwargs).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM stats using ext_id",
+        )
+
+
+def get_vm_disk_stats(module, api_instance, vm_ext_id, ext_id, **kwargs):
+    """
+    Get VM disk stats by VM ext_id and disk ext_id.
+
+    Works for both AHV and ESXi: pass StatsApi or EsxiStatsApi as
+    api_instance (paths differ: /ahv/stats vs /esxi/stats).
+
+    Args:
+        module: Ansible module
+        api_instance: StatsApi or EsxiStatsApi from ntnx_vmm_py_client sdk
+        vm_ext_id: ext_id of the parent VM
+        ext_id: ext_id of the VM disk
+        **kwargs: query kwargs (e.g. from SpecGenerator.get_stats_spec)
+
+    Returns:
+        data (obj): VM disk stats data object
+    """
+    try:
+        return api_instance.get_disk_stats_by_id(
+            vmExtId=vm_ext_id, extId=ext_id, **kwargs
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM disk stats using ext_id",
+        )
+
+
+def get_vm_nic_stats(module, api_instance, vm_ext_id, ext_id, **kwargs):
+    """
+    Get VM NIC stats by VM ext_id and NIC ext_id.
+
+    Works for both AHV and ESXi: pass StatsApi or EsxiStatsApi as
+    api_instance (paths differ: /ahv/stats vs /esxi/stats).
+
+    Args:
+        module: Ansible module
+        api_instance: StatsApi or EsxiStatsApi from ntnx_vmm_py_client sdk
+        vm_ext_id: ext_id of the parent VM
+        ext_id: ext_id of the VM NIC
+        **kwargs: query kwargs (e.g. from SpecGenerator.get_stats_spec)
+
+    Returns:
+        data (obj): VM NIC stats data object
+    """
+    try:
+        return api_instance.get_nic_stats_by_id(
+            vmExtId=vm_ext_id, extId=ext_id, **kwargs
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM NIC stats using ext_id",
+        )
+
+
+def get_vm_startup_policy_dependency_conflict(
+    module, api_instance, vm_startup_policy_ext_id, ext_id
+):
+    """
+    Get a VM startup policy dependency conflict by ext_id.
+
+    Args:
+        module: Ansible module
+        api_instance: VmStartupPoliciesApi instance from ntnx_vmm_py_client sdk
+        vm_startup_policy_ext_id: ext_id of the VM startup policy
+        ext_id: ext_id of the dependency conflict
+    Returns:
+        data (obj): Dependency conflict info object
+    """
+    try:
+        return api_instance.get_vm_startup_policy_dependency_conflict_by_id(
+            vmStartupPolicyExtId=vm_startup_policy_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching VM startup policy "
+                "dependency conflict using ext_id"
+            ),
+        )
+
+
+def get_vm_startup_policy_start_condition_conflict(
+    module, api_instance, vm_startup_policy_ext_id, ext_id
+):
+    """
+    Get a VM startup policy start condition conflict by ext_id.
+
+    Args:
+        module: Ansible module
+        api_instance: VmStartupPoliciesApi instance from ntnx_vmm_py_client sdk
+        vm_startup_policy_ext_id: ext_id of the VM startup policy
+        ext_id: ext_id of the start condition conflict
+    Returns:
+        data (obj): Start condition conflict info object
+    """
+    try:
+        return api_instance.get_vm_startup_policy_start_condition_conflict_by_id(
+            vmStartupPolicyExtId=vm_startup_policy_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching VM startup policy "
+                "start condition conflict using ext_id"
+            ),
+        )
+
+
+def get_vm_profile(module, api_instance, ext_id):
+    """
+    Get VM profile by ext_id.
+    Args:
+        module: Ansible module
+        api_instance: VmProfileApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of the VM profile
+    Returns:
+        vm_profile (obj): VM profile info object
+    """
+    try:
+        return api_instance.get_vm_profile_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM profile info using ext_id",
+        )
+
+
+def get_guest_reboot_policy(module, api_instance, ext_id):
+    """
+    Get Guest Reboot Policy by ext_id.
+    Args:
+        module: Ansible module
+        api_instance: GuestRebootPoliciesApi instance from ntnx_vmm_py_client sdk
+        ext_id: ext_id of Guest Reboot Policy
+    Returns:
+        policy (obj): Guest Reboot Policy info object
+    """
+    try:
+        return api_instance.get_guest_reboot_policy_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Guest Reboot Policy info using ext_id",
+        )
