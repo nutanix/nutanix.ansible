@@ -1,5 +1,5 @@
 ---
-- name: Set module_defaults
+- name: Set module defaults
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: "{{ ip }}"
@@ -10,5 +10,5 @@
       nutanix_debug: "{{ nutanix_debug | default(omit) }}"
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
   block:
-    - name: Import publish_template_version.yml
-      ansible.builtin.import_tasks: publish_template_version.yml
+    - name: Import publish_template_version_operations.yml
+      ansible.builtin.import_tasks: "publish_template_version_operations.yml"

@@ -137,7 +137,6 @@ action_groups:
     - ntnx_templates_info_v2
     - ntnx_templates_version_v2
     - ntnx_templates_versions_info_v2
-    - ntnx_publish_template_version_v2
     - ntnx_vms_clone_v2
     - ntnx_vms_power_actions_v2
     - ntnx_routes_v2
@@ -249,3 +248,4 @@ action_groups:
     - ntnx_virtual_switches_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_publish_template_version_v2

@@ -1,0 +1,183 @@
+---
+- name: Start testing ntnx_publish_template_version_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_publish_template_version_v2
+
+- name: Generate random name suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set entity names
+  ansible.builtin.set_fact:
+    source_vm_name: "{{ random_name }}_pt_src"
+    template_name: "{{ random_name }}_pt_tpl"
+    version_2_name: "{{ random_name }}_pt_v2"
+
+- name: Publish template version with check mode enabled
+  nutanix.ncp.ntnx_publish_template_version_v2:
+    state: present
+    ext_id: "83083083-0000-0000-0000-000000000001"
+    version_id: "83083083-0000-0000-0000-000000000002"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Publish template version with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.version_id == "83083083-0000-0000-0000-000000000002"
+    fail_msg: Publish template version with check mode enabled failed
+    success_msg: Publish template version with check mode enabled passed
+
+- name: Create a source VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ source_vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Create source VM status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+    fail_msg: Unable to create source VM
+    success_msg: Source VM created successfully
+
+- name: Capture the source VM ext_id
+  ansible.builtin.set_fact:
+    source_vm_uuid: "{{ result.ext_id }}"
+
+- name: Create a template from the source VM
+  nutanix.ncp.ntnx_templates_v2:
+    template_name: "{{ template_name }}"
+    template_description: publish template version test
+    template_version_spec:
+      version_source:
+        template_vm_reference:
+          ext_id: "{{ source_vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Create template status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.template_version_spec is defined
+      - result.response.template_version_spec.ext_id is defined
+    fail_msg: Unable to create template
+    success_msg: Template created successfully
+
+- name: Capture template and version 1 ext_ids
+  ansible.builtin.set_fact:
+    template_uuid: "{{ result.ext_id }}"
+    version_1_uuid: "{{ result.response.template_version_spec.ext_id }}"
+
+- name: Create a second template version
+  nutanix.ncp.ntnx_templates_v2:
+    ext_id: "{{ template_uuid }}"
+    template_version_spec:
+      version_name: "{{ version_2_name }}"
+      version_description: second version for publish test
+      version_source:
+        template_version_reference:
+          version_id: "{{ version_1_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Create second template version status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.template_version_spec is defined
+      - result.response.template_version_spec.ext_id is defined
+    fail_msg: Unable to create second template version
+    success_msg: Second template version created successfully
+
+- name: Capture version 2 ext_id
+  ansible.builtin.set_fact:
+    version_2_uuid: "{{ result.response.template_version_spec.ext_id }}"
+
+- name: Publish version 1 as the active version
+  nutanix.ncp.ntnx_publish_template_version_v2:
+    state: present
+    ext_id: "{{ template_uuid }}"
+    version_id: "{{ version_1_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Publish version 1 status
+  ansible.builtin.assert:
+    that:
+      - result.ext_id == template_uuid
+      - result.failed == false
+      - result.changed == true
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.template_version_spec.ext_id == version_1_uuid
+      - result.response.template_version_spec.is_active_version == true
+    fail_msg: Publish version 1 failed
+    success_msg: Publish version 1 passed
+
+- name: Publish version 2 as the active version
+  nutanix.ncp.ntnx_publish_template_version_v2:
+    state: present
+    ext_id: "{{ template_uuid }}"
+    version_id: "{{ version_2_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Publish version 2 status
+  ansible.builtin.assert:
+    that:
+      - result.ext_id == template_uuid
+      - result.failed == false
+      - result.changed == true
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.template_version_spec.ext_id == version_2_uuid
+      - result.response.template_version_spec.is_active_version == true
+    fail_msg: Publish version 2 failed
+    success_msg: Publish version 2 passed
+
+- name: Delete the template
+  nutanix.ncp.ntnx_templates_v2:
+    state: absent
+    ext_id: "{{ template_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete template status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+    fail_msg: Unable to delete the template
+    success_msg: Template deleted successfully
+
+- name: Delete the source VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ source_vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete source VM status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+    fail_msg: Unable to delete the source VM
+    success_msg: Source VM deleted successfully
