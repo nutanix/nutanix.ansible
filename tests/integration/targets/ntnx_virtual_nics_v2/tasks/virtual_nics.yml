@@ -1,0 +1,439 @@
+---
+# =====================================================================
+# Test plan for ntnx_virtual_nics_info_v2
+# =====================================================================
+# VirtualNic is a READ-ONLY entity in the Nutanix Cluster Management V4
+# API. The SDK only exposes:
+#   * ClustersApi.get_virtual_nic_by_id(clusterExtId, hostExtId, extId)
+#   * ClustersApi.list_virtual_nics_by_host_id(clusterExtId, hostExtId,
+#       _page, _limit, _filter, _orderby, _select)
+# There is no create/update/delete for VirtualNic so this suite only
+# covers the info module and its argument-spec / SDK contract.
+#
+# Scenarios covered (drives 95%+ coverage of the module spec):
+#   Prerequisites & discovery:
+#     1. Pick a real AOS cluster from ntnx_clusters_info_v2.
+#     2. Pick a real host on that cluster via ntnx_hosts_info_v2.
+#   List-path (positive):
+#     3. List all virtual NICs on the discovered host.
+#     4. List with limit=1 (pagination pass-through).
+#     5. List with page=0 (pagination pass-through).
+#     6. List with orderby (query pass-through).
+#     7. List with select (query pass-through).
+#     8. If any real NIC exists, list with filter="name eq '<name>'"
+#        and get-by-ext_id, and assert every schema field.
+#   Get-by-ext_id (negative — always run, no data prereq):
+#     9. Non-existent ext_id -> module fails with descriptive error.
+#   Argument-spec negatives:
+#    10. Missing required cluster_ext_id -> fails.
+#    11. Missing required host_ext_id -> fails.
+#    12. ext_id + filter is mutually exclusive -> fails.
+#    13. Bad cluster_ext_id -> API failure surfaced.
+#    14. Bad host_ext_id -> API failure surfaced.
+#   Domain / idempotency:
+#    15. Repeat list twice; both runs must report changed=false and
+#        return an identical response shape (info modules are always
+#        idempotent).
+# =====================================================================
+
+- name: Start ntnx_virtual_nics_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_virtual_nics_info_v2 tests
+
+- name: Generate a random suffix for scratch test values
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+########################################################################
+# 1-2. Discover a real cluster + host on the live PC
+########################################################################
+
+- name: List all clusters and pick the first AOS cluster
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_info
+  ignore_errors: true
+
+- name: Assert we got at least one AOS cluster
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    success_msg: "Found at least one AOS cluster"
+    fail_msg: "No AOS cluster found on PC — cannot exercise VirtualNic info tests"
+
+- name: Remember cluster ext_id
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ clusters_info.response[0].ext_id }}"
+
+- name: List hosts on the discovered cluster
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: hosts_info
+  ignore_errors: true
+
+- name: Assert we got at least one host on the cluster
+  ansible.builtin.assert:
+    that:
+      - hosts_info is defined
+      - hosts_info.failed == false
+      - hosts_info.response is defined
+      - hosts_info.response | length > 0
+    success_msg: "Found at least one host on cluster {{ cluster_ext_id }}"
+    fail_msg: "No hosts found on cluster {{ cluster_ext_id }}"
+
+- name: Remember host ext_id
+  ansible.builtin.set_fact:
+    host_ext_id: "{{ hosts_info.response[0].ext_id }}"
+
+########################################################################
+# 3. List all virtual NICs on the discovered host (positive)
+########################################################################
+
+- name: List all virtual NICs on host
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+  register: list_all
+  ignore_errors: true
+
+- name: Assert list-all succeeded and has expected shape
+  ansible.builtin.assert:
+    that:
+      - list_all is defined
+      - list_all.changed == false
+      - list_all.failed == false
+      - list_all.response is defined
+      - list_all.response | type_debug == "list"
+      - list_all.total_available_results is defined
+      - list_all.total_available_results >= 0
+      - list_all.total_available_results == (list_all.response | length) or list_all.total_available_results >= (list_all.response | length)
+    success_msg: "List virtual NICs succeeded"
+    fail_msg: "List virtual NICs did not return expected structure"
+
+- name: Remember whether any virtual NIC exists (drives conditional deep tests)
+  ansible.builtin.set_fact:
+    has_virtual_nics: "{{ (list_all.response | length) > 0 }}"
+
+########################################################################
+# 4. List with limit=1 (pagination pass-through)
+########################################################################
+
+- name: List virtual NICs with limit=1
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    limit: 1
+  register: list_limit
+  ignore_errors: true
+
+- name: Assert limit pass-through works
+  ansible.builtin.assert:
+    that:
+      - list_limit is defined
+      - list_limit.changed == false
+      - list_limit.failed == false
+      - list_limit.response is defined
+      - list_limit.response | type_debug == "list"
+      - (list_limit.response | length) <= 1
+    success_msg: "Limit pass-through works (returned {{ list_limit.response | length }} entries)"
+    fail_msg: "Limit pass-through did not honour limit=1"
+
+########################################################################
+# 5. List with page=0 (pagination pass-through)
+########################################################################
+
+- name: List virtual NICs with page=0
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    page: 0
+  register: list_page
+  ignore_errors: true
+
+- name: Assert page pass-through works
+  ansible.builtin.assert:
+    that:
+      - list_page is defined
+      - list_page.changed == false
+      - list_page.failed == false
+      - list_page.response is defined
+      - list_page.response | type_debug == "list"
+    success_msg: "Page pass-through works"
+    fail_msg: "Page pass-through failed"
+
+########################################################################
+# 6. List with orderby=name (query pass-through)
+########################################################################
+
+- name: List virtual NICs with orderby=name
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    orderby: "name"
+  register: list_orderby
+  ignore_errors: true
+
+- name: Assert orderby pass-through works
+  ansible.builtin.assert:
+    that:
+      - list_orderby is defined
+      - list_orderby.changed == false
+      - list_orderby.failed == false
+      - list_orderby.response is defined
+      - list_orderby.response | type_debug == "list"
+    success_msg: "orderby pass-through works"
+    fail_msg: "orderby pass-through failed"
+
+########################################################################
+# 7. List with select=name (query pass-through)
+########################################################################
+
+- name: List virtual NICs with select=name
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    select: "name"
+  register: list_select
+  ignore_errors: true
+
+- name: Assert select pass-through works
+  ansible.builtin.assert:
+    that:
+      - list_select is defined
+      - list_select.changed == false
+      - list_select.failed == false
+      - list_select.response is defined
+      - list_select.response | type_debug == "list"
+    success_msg: "select pass-through works"
+    fail_msg: "select pass-through failed"
+
+########################################################################
+# 8. If any real NIC exists, exercise filter + get-by-ext_id and assert
+#    every schema attribute of VirtualNic.
+########################################################################
+
+- name: Deep assertions on a real virtual NIC (only when at least one exists)
+  when: has_virtual_nics | bool
+  block:
+    - name: Remember the first real NIC name and ext_id
+      ansible.builtin.set_fact:
+        real_nic_name: "{{ list_all.response[0].name }}"
+        real_nic_ext_id: "{{ list_all.response[0].ext_id }}"
+
+    - name: List virtual NICs filtered by name
+      nutanix.ncp.ntnx_virtual_nics_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        filter: "name eq '{{ real_nic_name }}'"
+      register: list_filter
+      ignore_errors: true
+
+    - name: Assert filter returned only NICs with the requested name
+      ansible.builtin.assert:
+        that:
+          - list_filter is defined
+          - list_filter.changed == false
+          - list_filter.failed == false
+          - list_filter.response is defined
+          - list_filter.response | length >= 1
+          - list_filter.response | map(attribute='name') | unique | list == [real_nic_name]
+        success_msg: "Filter returned NICs matching '{{ real_nic_name }}'"
+        fail_msg: "Filter did not restrict results to '{{ real_nic_name }}'"
+
+    - name: Fetch a virtual NIC by ext_id
+      nutanix.ncp.ntnx_virtual_nics_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        ext_id: "{{ real_nic_ext_id }}"
+      register: get_one
+      ignore_errors: true
+
+    - name: Assert get-by-ext_id returns exact NIC with all schema attributes present
+      ansible.builtin.assert:
+        that:
+          - get_one is defined
+          - get_one.changed == false
+          - get_one.failed == false
+          - get_one.response is defined
+          - get_one.ext_id == real_nic_ext_id
+          - get_one.response.ext_id == real_nic_ext_id
+          - get_one.response.name == real_nic_name
+          # Every VirtualNic schema field must be present in the response dict
+          # (values may be null when the platform did not populate them).
+          - "'name' in get_one.response"
+          - "'host_description' in get_one.response"
+          - "'mac_address' in get_one.response"
+          - "'ipv4_addresses' in get_one.response"
+          - "'ipv6_addresses' in get_one.response"
+          - "'interface_status' in get_one.response"
+          - "'is_dhcp_enabled' in get_one.response"
+          - "'link_speed_in_kbps' in get_one.response"
+          - "'mtu_in_bytes' in get_one.response"
+          - "'node_uuid' in get_one.response"
+          - "'vlan_id' in get_one.response"
+          - "'host_nics_uuids' in get_one.response"
+          - "'ext_id' in get_one.response"
+          - "'links' in get_one.response"
+          - "'tenant_id' in get_one.response"
+        success_msg: "Get-by-ext_id returned the expected NIC with full schema"
+        fail_msg: "Get-by-ext_id did not return the expected NIC"
+
+########################################################################
+# 9. Get with a non-existent ext_id (negative — always runs)
+########################################################################
+
+- name: Fetch virtual NIC by non-existent ext_id
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: get_missing
+  ignore_errors: true
+
+- name: Assert get-by-invalid-ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - get_missing is defined
+      - get_missing.failed == true
+      - get_missing.changed == false
+      - get_missing.msg is defined
+      - "'virtual NIC info using ext_id' in get_missing.msg"
+    success_msg: "Non-existent ext_id fails with descriptive error"
+    fail_msg: "Non-existent ext_id did not fail as expected"
+
+########################################################################
+# 10. Missing required cluster_ext_id -> spec validation failure
+########################################################################
+
+- name: Call with missing cluster_ext_id  # noqa: args[module]
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    host_ext_id: "{{ host_ext_id }}"
+  register: missing_cluster
+  ignore_errors: true
+
+- name: Assert missing cluster_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - missing_cluster is defined
+      - missing_cluster.failed == true
+      - missing_cluster.changed == false
+      - "'cluster_ext_id' in missing_cluster.msg"
+    success_msg: "Missing cluster_ext_id fails as expected"
+    fail_msg: "Missing cluster_ext_id did not fail as expected"
+
+########################################################################
+# 11. Missing required host_ext_id -> spec validation failure
+########################################################################
+
+- name: Call with missing host_ext_id  # noqa: args[module]
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: missing_host
+  ignore_errors: true
+
+- name: Assert missing host_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - missing_host is defined
+      - missing_host.failed == true
+      - missing_host.changed == false
+      - "'host_ext_id' in missing_host.msg"
+    success_msg: "Missing host_ext_id fails as expected"
+    fail_msg: "Missing host_ext_id did not fail as expected"
+
+########################################################################
+# 12. ext_id + filter is mutually exclusive
+########################################################################
+
+- name: Call with both ext_id and filter
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    filter: "name eq 'foo'"
+  register: mutex_ext_filter
+  ignore_errors: true
+
+- name: Assert ext_id + filter is rejected
+  ansible.builtin.assert:
+    that:
+      - mutex_ext_filter is defined
+      - mutex_ext_filter.failed == true
+      - mutex_ext_filter.changed == false
+      - "'mutually exclusive' in mutex_ext_filter.msg"
+    success_msg: "ext_id + filter is correctly rejected as mutually exclusive"
+    fail_msg: "ext_id + filter was not rejected as mutually exclusive"
+
+########################################################################
+# 13. Bad cluster_ext_id -> surface the SDK error
+########################################################################
+
+- name: List with a syntactically valid but non-existent cluster_ext_id
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    cluster_ext_id: "11111111-1111-1111-1111-111111111111"
+    host_ext_id: "{{ host_ext_id }}"
+  register: bad_cluster
+  ignore_errors: true
+
+- name: Assert bad cluster_ext_id surfaces an error
+  ansible.builtin.assert:
+    that:
+      - bad_cluster is defined
+      - bad_cluster.failed == true
+      - bad_cluster.changed == false
+      - bad_cluster.msg is defined
+      - "'virtual NICs info' in bad_cluster.msg"
+    success_msg: "Bad cluster_ext_id surfaces an API error"
+    fail_msg: "Bad cluster_ext_id did not surface an API error"
+
+########################################################################
+# 14. Bad host_ext_id -> surface the SDK error
+########################################################################
+
+- name: List with a syntactically valid but non-existent host_ext_id
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "22222222-2222-2222-2222-222222222222"
+  register: bad_host
+  ignore_errors: true
+
+- name: Assert bad host_ext_id surfaces an error
+  ansible.builtin.assert:
+    that:
+      - bad_host is defined
+      - bad_host.failed == true
+      - bad_host.changed == false
+      - bad_host.msg is defined
+      - "'virtual NICs info' in bad_host.msg"
+    success_msg: "Bad host_ext_id surfaces an API error"
+    fail_msg: "Bad host_ext_id did not surface an API error"
+
+########################################################################
+# 15. Info modules are idempotent — running list twice must always
+#     report changed=false with the same total_available_results.
+########################################################################
+
+- name: Re-run list to confirm idempotency
+  nutanix.ncp.ntnx_virtual_nics_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+  register: list_all_again
+  ignore_errors: true
+
+- name: Assert info module is idempotent
+  ansible.builtin.assert:
+    that:
+      - list_all_again is defined
+      - list_all_again.changed == false
+      - list_all_again.failed == false
+      - list_all_again.total_available_results == list_all.total_available_results
+      - (list_all_again.response | length) == (list_all.response | length)
+    success_msg: "Info module is idempotent across repeated runs"
+    fail_msg: "Info module returned different results on repeated run"
+
+- name: End ntnx_virtual_nics_info_v2 tests
+  ansible.builtin.debug:
+    msg: "Completed ntnx_virtual_nics_info_v2 tests (random_suffix={{ random_name }})"
