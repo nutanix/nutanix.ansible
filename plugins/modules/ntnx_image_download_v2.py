@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -11,27 +11,23 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_image_download_v2
-short_description: Download an image file from Nutanix Prism Central
-version_added: 2.5.0
+short_description: Download an image
+version_added: "2.7.0"
 description:
-    - Download an image file from Nutanix Prism Central using its external ID.
-    - Wraps the VMM v4.2 C(GetFileByImageId) API
-      (C(GET /api/vmm/v4.2/content/images/{imageExtId}/file)).
-    - The image bytes are streamed by Prism Central from the hosting Prism
-      Element cluster; the module returns the local path where the SDK
-      persisted the downloaded file.
-    - This module uses PC v4 APIs based SDKs.
+    - Download an image.
+    - Downloads the image with the given external identifier.
+    - This module uses PC v4 APIs based SDKs
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(Download an Image) -
+      B(Download an image) -
       Required Roles: Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     image_ext_id:
         description:
-            - External ID of the image whose file should be downloaded.
+            - The external identifier of an image.
         type: str
         required: true
 extends_documentation_fragment:
@@ -41,11 +37,16 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_proxy_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
-- name: Download image using ext_id
+- name: Download an image
   nutanix.ncp.ntnx_image_download_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     image_ext_id: "12345678-1234-1234-1234-123456789012"
   register: result
 """
@@ -53,9 +54,8 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - The path where the image file has been downloaded on the Ansible
-          controller host.
-        - Populated on a successful download.
+        - Response for downloading an image.
+        - Contains the local path where the SDK persisted the downloaded file.
     type: dict
     returned: always
     sample:
@@ -63,37 +63,28 @@ response:
             "path": "/tmp/tmpabc123/image_file.qcow2"
         }
 ext_id:
-    description:
-        - The external ID of the image that was downloaded.
+    description: The external ID of the image.
     type: str
     returned: always
     sample: "12345678-1234-1234-1234-123456789012"
 changed:
-    description:
-        - Indicates whether the download action was performed.
-        - Always C(True) after a real (non check_mode) download because a new
-          file is written to disk.
+    description: This indicates whether the task resulted in any changes
     type: bool
     returned: always
     sample: true
-msg:
-    description:
-        - This indicates the message if any message occurred.
-        - Populated on error or in check_mode.
-    type: str
-    returned: When there is an error or in check_mode operation
-    sample: "Api Exception raised while downloading image"
-error:
-    description: The error message if an error occurred.
-    type: str
-    returned: When an error occurs
 failed:
-    description: Indicates whether the module execution failed.
+    description: This indicates whether the task failed
     type: bool
     returned: always
     sample: false
+msg:
+    description: This indicates the message if any message occurred
+    returned: When there is an error or in check mode operation
+    type: str
+    sample: "Image with ext_id:12345678-1234-1234-1234-123456789012 will be downloaded."
 """
 
+import traceback  # noqa: E402
 import warnings  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
@@ -104,8 +95,11 @@ from ..module_utils.v4.utils import raise_api_exception  # noqa: E402
 from ..module_utils.v4.vmm.api_client import get_image_api_instance  # noqa: E402
 
 SDK_IMP_ERROR = None
+try:
+    import ntnx_vmm_py_client  # noqa: E402, F401  # pylint: disable=unused-import
+except ImportError:
+    SDK_IMP_ERROR = traceback.format_exc()
 
-# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
@@ -116,7 +110,7 @@ def get_module_spec():
     return module_args
 
 
-def download_image(module, api_instance, result):
+def download_image(module, result, api_instance):
     image_ext_id = module.params.get("image_ext_id")
     result["ext_id"] = image_ext_id
 
@@ -124,6 +118,7 @@ def download_image(module, api_instance, result):
         result["msg"] = "Image with ext_id:{0} will be downloaded.".format(image_ext_id)
         return
 
+    resp = None
     try:
         resp = api_instance.get_file_by_image_id(imageExtId=image_ext_id)
     except Exception as e:
@@ -147,18 +142,19 @@ def run_module():
     )
     if SDK_IMP_ERROR:
         module.fail_json(
-            msg=missing_required_lib("ntnx_vmm_py_client"), exception=SDK_IMP_ERROR
+            msg=missing_required_lib("ntnx_vmm_py_client"),
+            exception=SDK_IMP_ERROR,
         )
 
     remove_param_with_none_value(module.params)
     result = {
+        "changed": False,
         "response": None,
         "ext_id": None,
-        "changed": False,
+        "failed": False,
     }
     api_instance = get_image_api_instance(module)
-    download_image(module, api_instance, result)
-
+    download_image(module, result, api_instance)
     module.exit_json(**result)
 
 

@@ -249,4 +249,3 @@ action_groups:
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
     - ntnx_image_download_v2
-    - ntnx_file_by_image_ids_info_v2
