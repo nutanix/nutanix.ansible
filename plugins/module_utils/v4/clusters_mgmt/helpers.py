@@ -187,6 +187,47 @@ def get_ssl_certificates(module, api_instance, ext_id):
         )
 
 
+def get_encryption_config(module, api_instance, cluster_ext_id):
+    """
+    This method will return the encryption configuration of a cluster
+    using the cluster external ID.
+    Args:
+        module: Ansible module
+        api_instance: EncryptionApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+    return:
+        encryption config API response (object): full get encryption config API response
+    """
+    try:
+        return api_instance.get_encryption_config(clusterExtId=cluster_ext_id)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching encryption config using cluster ext_id",
+        )
+
+
+def download_encryption_keys_backup(module, api_instance, ext_id):
+    """
+    This method will download the encryption keys backup identified by ext_id.
+    Args:
+        module: Ansible module
+        api_instance: EncryptionApi instance from sdk
+        ext_id (str): encryption keys backup external ID
+    return:
+        download response (object): SDK download encryption keys backup API response
+    """
+    try:
+        return api_instance.download_encryption_keys_backup(extId=ext_id)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while downloading encryption keys backup",
+        )
+
+
 def get_cvm(module, api_instance, ext_id, cluster_ext_id):
     """
     This method will return CVM info using external ID.

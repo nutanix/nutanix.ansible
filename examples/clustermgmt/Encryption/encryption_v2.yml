@@ -1,0 +1,70 @@
+---
+# Summary:
+# This playbook demonstrates the usage of the Nutanix clustermgmt Encryption v4 modules.
+# It will do:
+# 1. Get the encryption configuration of a cluster (info)
+# 2. Update (configure) the encryption configuration of a cluster
+# 3. Rotate the encryption keys of a cluster (action)
+# 4. Prepare an encryption keys backup for cluster(s) (action)
+# 5. Download the encryption keys backup (action)
+#
+# NOTE: All the modules in this playbook talk to Prism Central (PC).
+
+- name: Encryption playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_ext_id: "00062db3-c8a6-4b3d-8b9a-7f4d9b2c1a55"
+        backup_password: "Backup.Password.123"
+
+    - name: Get encryption configuration of a cluster using cluster ext_id
+      nutanix.ncp.ntnx_encryption_info_v2:
+        ext_id: "{{ cluster_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update encryption configuration of a cluster
+      nutanix.ncp.ntnx_encryption_v2:
+        state: present
+        ext_id: "{{ cluster_ext_id }}"
+        type:
+          - SOFTWARE
+        scope: CLUSTER
+        kms_spec:
+          kms_type: NATIVE_LOCAL
+      register: result
+      ignore_errors: true
+
+    - name: Rotate encryption keys for a cluster
+      nutanix.ncp.ntnx_rotate_encryption_keys_v2:
+        ext_id: "{{ cluster_ext_id }}"
+        encryption_types:
+          - SOFTWARE
+      register: result
+      ignore_errors: true
+
+    - name: Prepare encryption keys backup for clusters
+      nutanix.ncp.ntnx_prepare_encryption_keys_backup_v2:
+        backup_password: "{{ backup_password }}"
+        cluster_ext_ids:
+          - "{{ cluster_ext_id }}"
+      register: prepare_result
+      ignore_errors: true
+
+    - name: Set encryption keys backup ext_id
+      ansible.builtin.set_fact:
+        backup_ext_id: "{{ prepare_result.response.ext_id | default('') }}"
+
+    - name: Download encryption keys backup
+      nutanix.ncp.ntnx_download_encryption_keys_backup_v2:
+        ext_id: "{{ backup_ext_id }}"
+      register: result
+      ignore_errors: true
