@@ -24,7 +24,7 @@ notes:
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
     B(Rotate encryption keys) -
-    Required Roles: Prism Admin, Super Admin.
+    Required Roles: Prism Admin, Security Admin, Super Admin.
   - The referenced cluster must exist and have software encryption enabled before rotating keys.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:

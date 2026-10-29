@@ -23,7 +23,7 @@ notes:
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
     B(Update the encryption configuration of a cluster) -
-    Required Roles: Prism Admin, Super Admin.
+    Required Roles: Prism Admin, Security Admin, Super Admin.
   - The cluster referenced by C(ext_id) must exist before configuring encryption.
   - Software encryption cannot be disabled once enabled on a cluster.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"

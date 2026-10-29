@@ -23,7 +23,7 @@ notes:
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
     B(Get the encryption configuration of a cluster) -
-    Required Roles: Prism Admin, Prism Viewer, Super Admin.
+    Required Roles: Prism Admin, Prism Viewer, Security Admin, Security Viewer, Super Admin.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   ext_id:

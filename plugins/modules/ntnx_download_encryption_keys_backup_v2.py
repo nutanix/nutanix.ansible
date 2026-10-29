@@ -24,7 +24,7 @@ notes:
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
     B(Download encryption keys backup) -
-    Required Roles: Prism Admin, Super Admin.
+    Required Roles: Prism Admin, Security Admin, Super Admin.
   - >-
     The C(ext_id) is the ID of the encryption key backup, which can be fetched as part of the
     prepare encryption keys backup task response.
