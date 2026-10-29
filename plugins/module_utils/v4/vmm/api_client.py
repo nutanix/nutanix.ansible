@@ -253,3 +253,15 @@ def get_vm_profile_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_vmm_py_client.VmProfileApi(api_client=api_client)
+
+
+def get_guest_reboot_policies_api_instance(module):
+    """
+    This method will return Guest Reboot Policies API instance.
+    Args:
+        module (obj): Ansible module object with connection parameters
+    Returns:
+        GuestRebootPoliciesApi: v4 Guest Reboot Policies api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.GuestRebootPoliciesApi(api_client=api_client)

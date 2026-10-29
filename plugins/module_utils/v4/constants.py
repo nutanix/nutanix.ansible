@@ -63,6 +63,7 @@ class Tasks:
         PROJECT = "multidomain:config:Project"
         RESOURCE_GROUP = "multidomain:config:nutanix-resource-group"
         CONTENT_REPOSITORY = "multidomain:content:content-repository"
+        GUEST_REBOOT_POLICY = "vmm:ahv:policies:guest-reboot-policy"
         VM_PROFILE = "vmm:ahv:config:vm-profile"
 
     class CompletetionDetailsName:
