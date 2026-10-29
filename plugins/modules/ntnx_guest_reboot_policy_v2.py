@@ -37,7 +37,6 @@ options:
     name:
         description:
             - Name of the Guest Reboot Policy.
-            - Must be between 1 and 80 characters long.
             - Required for creating the Guest Reboot Policy.
         type: str
         required: false
@@ -49,7 +48,6 @@ options:
     categories:
         description:
             - Categories of the Guest Reboot Policy.
-            - Must contain between 1 and 20 unique categories.
             - Required for creating the Guest Reboot Policy.
         type: list
         elements: dict
@@ -96,7 +94,6 @@ options:
                     time_of_day:
                         description:
                             - Time of the day to reboot, in the Guest Reboot Policy.
-                            - Must be in 24-hour C(HH:MM) format.
                         type: str
                         required: true
     project_ext_id:

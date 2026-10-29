@@ -14,7 +14,7 @@ module: ntnx_guest_reboot_policies_info_v2
 short_description: Fetch Guest Reboot Policies info
 version_added: "2.7.0"
 description:
-    - Fetch a Guest Reboot Policy using its external ID or list all the Guest Reboot Policies
+    - Fetch a Guest Reboot Policy using its external ID or list all the Guest Reboot Policies with optional filters.
     - This module uses PC v4 APIs based SDKs
 options:
     ext_id:
@@ -210,9 +210,12 @@ def get_guest_reboot_policies(module, api_instance, result):
             msg="Api Exception raised while fetching Guest Reboot Policies info",
         )
 
-    result["total_available_results"] = resp.metadata.total_available_results
-    resp_data = strip_internal_attributes(resp.to_dict()).get("data")
-    result["response"] = resp_data if resp_data else []
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        resp = []
+    result["response"] = resp
 
 
 def run_module():
