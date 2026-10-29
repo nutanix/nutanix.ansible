@@ -1,5 +1,5 @@
 ---
-- name: Set module defaults for ntnx_disk_stat_v2 integration tests
+- name: Set module defaults for ntnx_cluster_disk_stats_info_v2 integration tests
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: "{{ ip }}"

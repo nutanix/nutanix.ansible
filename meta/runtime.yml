@@ -197,7 +197,6 @@ action_groups:
     - ntnx_discover_unconfigured_nodes_v2
     - ntnx_check_hypervisor_requirement_v2
     - ntnx_storage_containers_stats_v2
-    - ntnx_disk_stat_v2
     - ntnx_cluster_disk_stats_info_v2
     - ntnx_storage_containers_info_v2
     - ntnx_storage_containers_v2
