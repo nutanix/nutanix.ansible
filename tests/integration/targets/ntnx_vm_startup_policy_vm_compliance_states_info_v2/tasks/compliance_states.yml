@@ -1,0 +1,169 @@
+---
+# Test plan for ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+#   1. Create a VM startup policy via ntnx_vm_startup_policy_v2
+#   2. List all VM compliance states
+#   3. List with limit=1
+#   4. List with fetch_all and assert response length == total_available_results
+#   5. Negative: missing required ext_id
+#   6. Negative: invalid parent ext_id
+#   7. Delete the created policy
+
+- name: Start testing ntnx_vm_startup_policy_vm_compliance_states_info_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_vm_startup_policy_vm_compliance_states_info_v2
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set unique test policy name
+  ansible.builtin.set_fact:
+    policy_name: "vmm_compliance_states_ansible_{{ random_name }}"
+
+- name: List categories for VM startup policy creation
+  nutanix.ncp.ntnx_categories_info_v2:
+    limit: 2
+  register: categories_info
+  ignore_errors: true
+
+- name: Assert categories were fetched
+  ansible.builtin.assert:
+    that:
+      - categories_info.failed == false
+      - categories_info.response is defined
+      - categories_info.response | length >= 2
+    success_msg: "Categories fetched successfully"
+    fail_msg: "Failed to fetch categories for VM startup policy setup"
+
+- name: Set category ext_ids
+  ansible.builtin.set_fact:
+    category_ext_id_1: "{{ categories_info.response[0].ext_id }}"
+    category_ext_id_2: "{{ categories_info.response[1].ext_id }}"
+
+- name: Create VM startup policy for compliance states tests
+  nutanix.ncp.ntnx_vm_startup_policy_v2:
+    state: present
+    name: "{{ policy_name }}"
+    description: "Ansible integration test policy for VM compliance states info"
+    groups:
+      - categories:
+          - ext_id: "{{ category_ext_id_1 }}"
+      - categories:
+          - ext_id: "{{ category_ext_id_2 }}"
+    start_conditions:
+      - power_state_criteria:
+          power_on: {}
+  register: create_result
+  ignore_errors: true
+
+- name: Assert VM startup policy was created
+  ansible.builtin.assert:
+    that:
+      - create_result.failed == false
+      - create_result.changed == true
+      - create_result.ext_id is defined
+    success_msg: "VM startup policy created successfully"
+    fail_msg: "Failed to create VM startup policy for compliance states tests"
+
+- name: Set policy ext_id
+  ansible.builtin.set_fact:
+    policy_ext_id: "{{ create_result.ext_id }}"
+
+- name: List all VM compliance states of the created policy
+  nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+    ext_id: "{{ policy_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: List all VM compliance states status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.response is defined
+      - result.total_available_results is defined
+      - result.total_available_results >= 0
+    success_msg: "List all VM compliance states passed"
+    fail_msg: "List all VM compliance states failed"
+
+- name: List VM compliance states with limit 1
+  nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+    ext_id: "{{ policy_ext_id }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List with limit status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.response is defined
+      - result.response | length <= 1
+    success_msg: "List VM compliance states with limit passed"
+    fail_msg: "List VM compliance states with limit failed"
+
+- name: List all VM compliance states with fetch_all
+  nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+    ext_id: "{{ policy_ext_id }}"
+    fetch_all: true
+  register: result
+  ignore_errors: true
+
+- name: Fetch_all status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.response is defined
+      - result.total_available_results is defined
+      - result.response | length == result.total_available_results
+    success_msg: "List VM compliance states with fetch_all passed"
+    fail_msg: "List VM compliance states with fetch_all failed"
+
+- name: Missing required ext_id
+  nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Missing required ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.msg is defined
+      - "'ext_id' in result.msg"
+    success_msg: "Missing required ext_id failed as expected"
+    fail_msg: "Missing required ext_id did not fail as expected"
+
+- name: Invalid parent ext_id
+  nutanix.ncp.ntnx_vm_startup_policy_vm_compliance_states_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Invalid parent ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - >-
+          'Api Exception raised while fetching VM startup policy VM compliance
+          states' in result.msg
+    success_msg: "Invalid parent ext_id failed as expected"
+    fail_msg: "Invalid parent ext_id did not fail as expected"
+
+- name: Delete the test VM startup policy
+  nutanix.ncp.ntnx_vm_startup_policy_v2:
+    state: absent
+    ext_id: "{{ policy_ext_id }}"
+  register: delete_result
+  ignore_errors: true
+
+- name: Delete status
+  ansible.builtin.assert:
+    that:
+      - delete_result.failed == false
+      - delete_result.changed == true
+    success_msg: "Test VM startup policy deleted successfully"
+    fail_msg: "Failed to delete test VM startup policy"

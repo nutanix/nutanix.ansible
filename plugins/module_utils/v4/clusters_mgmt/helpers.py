@@ -51,6 +51,32 @@ def get_host(module, api_instance, ext_id, cluster_ext_id):
         )
 
 
+def get_host_nic(module, api_instance, ext_id, cluster_ext_id, host_ext_id):
+    """
+    This method will return host NIC info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        ext_id (str): host NIC external ID
+        cluster_ext_id (str): cluster external ID
+        host_ext_id (str): host external ID
+    return:
+        host NIC info (object): host NIC info
+    """
+    try:
+        return api_instance.get_host_nic_by_id(
+            clusterExtId=cluster_ext_id,
+            hostExtId=host_ext_id,
+            extId=ext_id,
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching host NIC info using ext_id",
+        )
+
+
 def get_storage_container(module, api_instance, ext_id):
     """
     This method will return storage container info using external ID.
@@ -69,6 +95,55 @@ def get_storage_container(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching storage container info using ext_id",
         )
+
+
+def list_data_stores_by_cluster_id(module, api_instance, cluster_ext_id, **kwargs):
+    """
+    This method will return the list of datastores associated with a cluster.
+    Args:
+        module: Ansible module
+        api_instance: StorageContainersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        kwargs (dict): additional query parameters (_page, _limit, _filter, _orderby)
+    return:
+        datastores list API response (object)
+    """
+    try:
+        return api_instance.list_data_stores_by_cluster_id(
+            clusterExtId=cluster_ext_id, **kwargs
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while listing datastores for cluster with ext_id: {0}".format(
+                cluster_ext_id
+            ),
+        )
+
+
+def find_data_store_by_name(module, api_instance, cluster_ext_id, datastore_name):
+    """
+    This method will return the datastore matching ``datastore_name`` inside
+    the cluster identified by ``cluster_ext_id``.
+    Args:
+        module: Ansible module
+        api_instance: StorageContainersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        datastore_name (str): datastore name to look up
+    return:
+        datastore info (object) or None if not found
+    """
+    resp = list_data_stores_by_cluster_id(
+        module,
+        api_instance,
+        cluster_ext_id,
+        _filter="datastoreName eq '{0}'".format(datastore_name),
+    )
+    data_stores = getattr(resp, "data", None) or []
+    if data_stores:
+        return data_stores[0]
+    return None
 
 
 def get_storage_config(module, api_instance, cluster_ext_id):
@@ -178,6 +253,100 @@ def get_cluster_profile(module, api_instance, ext_id):
             module=module,
             exception=e,
             msg="Api Exception raised while fetching cluster profile info using ext_id",
+        )
+
+
+def get_cluster_stats(module, api_instance, ext_id, **kwargs):
+    """
+    This method will return cluster stats using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        ext_id (str): cluster external ID
+        kwargs (dict): additional query parameters
+            (_startTime, _endTime, _samplingInterval, _statType, _select)
+    return:
+        cluster stats info (object): cluster stats info
+    """
+    try:
+        return api_instance.get_cluster_stats(extId=ext_id, **kwargs).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching cluster stats using ext_id",
+        )
+
+
+def get_bmc_info(module, api_instance, cluster_ext_id, host_ext_id):
+    """
+    This method will return BMC info for a specific host in a cluster.
+    Args:
+        module: Ansible module
+        api_instance: BmcApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        host_ext_id (str): host external ID
+    return:
+        bmc info (object): BMC info entity
+    """
+    try:
+        return api_instance.get_bmc_info(
+            clusterExtId=cluster_ext_id, extId=host_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching BMC info using cluster and host ext_id",
+        )
+
+
+def get_rackable_unit(module, api_instance, ext_id, cluster_ext_id):
+    """
+    This method will return rackable unit info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        ext_id (str): rackable unit external ID
+        cluster_ext_id (str): parent cluster external ID
+    return:
+        rackable unit info (object): rackable unit info
+    """
+    try:
+        return api_instance.get_rackable_unit_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching rackable unit info using ext_id",
+        )
+
+
+def get_virtual_nic(module, api_instance, ext_id, cluster_ext_id, host_ext_id):
+    """
+    This method will return virtual NIC info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        ext_id (str): virtual NIC external ID
+        cluster_ext_id (str): parent cluster external ID
+        host_ext_id (str): parent host external ID
+    return:
+        virtual NIC info (object): virtual NIC info
+    """
+    try:
+        return api_instance.get_virtual_nic_by_id(
+            clusterExtId=cluster_ext_id,
+            hostExtId=host_ext_id,
+            extId=ext_id,
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching virtual NIC info using ext_id",
         )
 
 
