@@ -1,0 +1,56 @@
+---
+# Summary:
+# Create, get, list, and delete PCIe devices attached to a VM.
+# Create requires a cluster-level PCIe device UUID (device_ext_id).
+
+- name: VM PCIe device playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Create a PCIe device for a VM
+      nutanix.ncp.ntnx_vm_pcie_device_v2:
+        state: present
+        vm_ext_id: "<vm_ext_id>"
+        backing_info:
+          device_ext_id: "<pcie_device_ext_id>"
+      register: create_result
+
+    - name: Print create PCIe device result
+      ansible.builtin.debug:
+        msg: "{{ create_result }}"
+
+    - name: Get a PCIe device by ext_id
+      nutanix.ncp.ntnx_vm_pcie_devices_info_v2:
+        vm_ext_id: "<vm_ext_id>"
+        ext_id: "{{ create_result.ext_id }}"
+      register: get_result
+
+    - name: Print get PCIe device result
+      ansible.builtin.debug:
+        msg: "{{ get_result }}"
+
+    - name: List PCIe devices attached to a VM
+      nutanix.ncp.ntnx_vm_pcie_devices_info_v2:
+        vm_ext_id: "<vm_ext_id>"
+      register: list_result
+
+    - name: Print list PCIe devices result
+      ansible.builtin.debug:
+        msg: "{{ list_result }}"
+
+    - name: Delete a PCIe device from a VM
+      nutanix.ncp.ntnx_vm_pcie_device_v2:
+        state: absent
+        vm_ext_id: "<vm_ext_id>"
+        ext_id: "{{ create_result.ext_id }}"
+      register: delete_result
+
+    - name: Print delete PCIe device result
+      ansible.builtin.debug:
+        msg: "{{ delete_result }}"

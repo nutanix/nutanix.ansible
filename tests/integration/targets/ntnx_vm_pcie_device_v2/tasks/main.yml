@@ -10,5 +10,5 @@
       nutanix_debug: "{{ nutanix_debug | default(omit) }}"
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
   block:
-    - name: Import pcie_devices.yml
-      ansible.builtin.import_tasks: pcie_devices.yml
+    - name: Import pcie_device_operations.yml
+      ansible.builtin.import_tasks: "pcie_device_operations.yml"
