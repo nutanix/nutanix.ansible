@@ -4,11 +4,12 @@
 # Scenarios covered:
 #   1. check_mode - uplink_nodes spec with ALL fields (asserts every attribute
 #      round-trips through get_module_spec → SpecGenerator → SDK body).
-#   2. check_mode - uplink_nodes spec with only the required cvm_ip.
+#   2. check_mode - uplink_nodes spec with only the required cvm_ip + networks.
 #   3. check_mode - bundle_param spec with ALL fields (bundle_info + node_list
 #      with every NodeInfo attribute including IPv4 + IPv6 addresses and
 #      digital-certificate map list).
-#   4. check_mode - bundle_param spec with only the required fields.
+#   4. check_mode - bundle_param spec with only the required fields
+#      (bundle_info + node_list).
 #   5. Negative - both bundle_param and uplink_nodes given → mutually_exclusive
 #      failure.
 #   6. Negative - neither bundle_param nor uplink_nodes given → required_one_of
@@ -125,7 +126,7 @@
     success_msg: "check_mode uplink_nodes full spec generation succeeded"
 
 ########################################################################################
-# 2. check_mode – uplink_nodes with only the required cvm_ip (single entry)
+# 2. check_mode – uplink_nodes with only the required cvm_ip + networks
 ########################################################################################
 
 - name: Generate spec for validating node uplinks using check_mode with only required fields
@@ -136,6 +137,8 @@
           ipv4:
             value: "10.44.76.41"
             prefix_length: 24
+        networks:
+          - name: "br0"
   check_mode: true
   register: result
   ignore_errors: true
@@ -148,7 +151,8 @@
       - result.response.spec | length == 1
       - result.response.spec[0].cvm_ip.ipv4.value == "10.44.76.41"
       - result.response.spec[0].hypervisor_ip is none
-      - result.response.spec[0].networks is none
+      - result.response.spec[0].networks | length == 1
+      - result.response.spec[0].networks[0].name == "br0"
     fail_msg: "check_mode uplink_nodes minimal spec generation failed"
     success_msg: "check_mode uplink_nodes minimal spec generation succeeded"
 
@@ -249,6 +253,8 @@
     bundle_param:
       bundle_info:
         name: "AHV-minimal-{{ random_suffix }}.iso"
+      node_list:
+        - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
   check_mode: true
   register: result
   ignore_errors: true
@@ -259,7 +265,8 @@
       - result.changed == false
       - result.failed == false
       - result.response.spec.bundle_info.name == "AHV-minimal-" + random_suffix + ".iso"
-      - result.response.spec.node_list is none
+      - result.response.spec.node_list | length == 1
+      - result.response.spec.node_list[0].node_uuid == "54b7581b-2e35-413e-8608-0531b065a5d8"
     fail_msg: "check_mode bundle_param minimal spec generation failed"
     success_msg: "check_mode bundle_param minimal spec generation succeeded"
 
@@ -273,11 +280,15 @@
     bundle_param:
       bundle_info:
         name: "AHV.iso"
+      node_list:
+        - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
     uplink_nodes:
       - cvm_ip:
           ipv4:
             value: "10.44.76.31"
             prefix_length: 24
+        networks:
+          - name: "br0"
   register: result
   ignore_errors: true
 
@@ -320,6 +331,8 @@
           ipv4:
             value: "10.44.76.31"
             prefix_length: 24
+        networks:
+          - name: "br0"
   register: result
   ignore_errors: true
 

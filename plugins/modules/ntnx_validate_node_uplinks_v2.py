@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -22,20 +22,28 @@ description:
   - Exactly one of C(bundle_param) or C(uplink_nodes) must be provided. Both
     map to the C(spec) field of the SDK C(ValidateNodeParam) request which is
     a OneOf between hypervisor-bundle and a list of node uplinks.
+  - The API is asynchronous. When C(wait) is true and C(bundle_param) is used,
+    the module polls the task and fetches the validated bundle info via
+    C(fetchTaskResponse) with response type C(VALIDATE_BUNDLE_INFO). For
+    C(uplink_nodes), the module returns the completed task details.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the
     user performing the operation.
   - >-
-    B(Validate node uplinks / hypervisor bundle) -
-    Required Roles: Cluster Admin, Prism Admin, Super Admin
+    B(Validate Cluster Node) -
+    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer,
+    Project Manager, Super Admin, Self-Service Admin (deprecated)
+  - This API is not supported for the C(XEN) hypervisor type.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   state:
     description:
       - State of the module.
-      - Only C(present) is supported because this is an action module.
+      - If state is present, the module will validate node uplinks or
+        hypervisor bundle compatibility.
+      - If state is not present, the module will fail.
     type: str
     choices:
       - present
@@ -71,9 +79,10 @@ options:
         description:
           - List of target node attributes to validate against the hypervisor
             bundle.
+          - Required when C(bundle_param) is provided.
         type: list
         elements: dict
-        required: false
+        required: true
         suboptions:
           node_uuid:
             description:
@@ -159,9 +168,9 @@ options:
                   prefix_length:
                     description:
                       - Prefix length of the IPv4 address.
+                      - Defaults to 32 on the server if left unset.
                     type: int
                     required: false
-                    default: 32
               ipv6:
                 description:
                   - IPv6 address.
@@ -176,9 +185,9 @@ options:
                   prefix_length:
                     description:
                       - Prefix length of the IPv6 address.
+                      - Defaults to 128 on the server if left unset.
                     type: int
                     required: false
-                    default: 128
           cvm_ip:
             description:
               - Controller VM (CVM) IP address of the node.
@@ -199,9 +208,9 @@ options:
                   prefix_length:
                     description:
                       - Prefix length of the IPv4 address.
+                      - Defaults to 32 on the server if left unset.
                     type: int
                     required: false
-                    default: 32
               ipv6:
                 description:
                   - IPv6 address.
@@ -216,9 +225,9 @@ options:
                   prefix_length:
                     description:
                       - Prefix length of the IPv6 address.
+                      - Defaults to 128 on the server if left unset.
                     type: int
                     required: false
-                    default: 128
           hypervisor_ip:
             description:
               - Hypervisor IP address of the node.
@@ -239,9 +248,9 @@ options:
                   prefix_length:
                     description:
                       - Prefix length of the IPv4 address.
+                      - Defaults to 32 on the server if left unset.
                     type: int
                     required: false
-                    default: 32
               ipv6:
                 description:
                   - IPv6 address.
@@ -256,9 +265,9 @@ options:
                   prefix_length:
                     description:
                       - Prefix length of the IPv6 address.
+                      - Defaults to 128 on the server if left unset.
                     type: int
                     required: false
-                    default: 128
           digital_certificate_map_list:
             description:
               - List of digital certificate mappings for the node.
@@ -308,9 +317,9 @@ options:
               prefix_length:
                 description:
                   - Prefix length of the IPv4 address.
+                  - Defaults to 32 on the server if left unset.
                 type: int
                 required: false
-                default: 32
           ipv6:
             description:
               - IPv6 address.
@@ -325,9 +334,9 @@ options:
               prefix_length:
                 description:
                   - Prefix length of the IPv6 address.
+                  - Defaults to 128 on the server if left unset.
                 type: int
                 required: false
-                default: 128
       hypervisor_ip:
         description:
           - Hypervisor IP address of the node to validate.
@@ -348,9 +357,9 @@ options:
               prefix_length:
                 description:
                   - Prefix length of the IPv4 address.
+                  - Defaults to 32 on the server if left unset.
                 type: int
                 required: false
-                default: 32
           ipv6:
             description:
               - IPv6 address.
@@ -365,16 +374,17 @@ options:
               prefix_length:
                 description:
                   - Prefix length of the IPv6 address.
+                  - Defaults to 128 on the server if left unset.
                 type: int
                 required: false
-                default: 128
       networks:
         description:
           - Active and standby uplink information of the target node grouped
             by uplink network name.
+          - Required for every entry in C(uplink_nodes).
         type: list
         elements: dict
-        required: false
+        required: true
         suboptions:
           name:
             description:
@@ -455,10 +465,6 @@ author:
 EXAMPLES = r"""
 - name: Validate node uplinks before cluster expansion
   nutanix.ncp.ntnx_validate_node_uplinks_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     cluster_ext_id: "0005b289-8340-119a-0000-00000000a31f"
     uplink_nodes:
       - cvm_ip:
@@ -488,10 +494,6 @@ EXAMPLES = r"""
 
 - name: Validate hypervisor bundle compatibility for a list of unconfigured nodes
   nutanix.ncp.ntnx_validate_node_uplinks_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     cluster_ext_id: "0005b289-8340-119a-0000-00000000a31f"
     bundle_param:
       bundle_info:
@@ -520,14 +522,32 @@ EXAMPLES = r"""
               prefix_length: 24
   register: bundle_validation
   ignore_errors: true
+
+- name: Validate node uplinks without waiting for task completion
+  nutanix.ncp.ntnx_validate_node_uplinks_v2:
+    cluster_ext_id: "0005b289-8340-119a-0000-00000000a31f"
+    wait: false
+    uplink_nodes:
+      - cvm_ip:
+          ipv4:
+            value: "10.44.76.31"
+        networks:
+          - name: "br0"
+  register: uplinks_validation
+  ignore_errors: true
 """
 
 RETURN = r"""
 response:
   description:
-    - Response returned by the C(validate-node) API.
-    - Task metadata when C(wait) is C(false), full task response when
-      C(wait) is C(true).
+    - Response for the validate-node action.
+    - When C(wait) is C(true) and C(bundle_param) is used, this contains the
+      resolved task response from C(fetchTaskResponse) with
+      C(taskResponseType=VALIDATE_BUNDLE_INFO).
+    - When C(wait) is C(true) and C(uplink_nodes) is used, this contains the
+      completed task details.
+    - When C(wait) is C(false), this contains the initial task reference.
+    - When C(check_mode) is set, this contains the generated request spec.
   returned: always
   type: dict
   sample:
@@ -566,7 +586,7 @@ changed:
   description: This indicates whether the task resulted in any changes.
   returned: always
   type: bool
-  sample: true
+  sample: false
 
 msg:
   description: This indicates the message if any message occurred.
@@ -575,9 +595,7 @@ msg:
   sample: "Api Exception raised while validating node"
 
 error:
-  description:
-    - This field typically holds information about if the task have errors
-      that occurred during the task execution.
+  description: Error message if an error occurs.
   returned: when an error occurs
   type: str
   sample: "Failed generating validate-node spec"
@@ -620,11 +638,11 @@ from ..module_utils.v4.utils import (  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
-    import ntnx_clustermgmt_py_client as cluster_management_sdk  # noqa: E402
+    import ntnx_clustermgmt_py_client as clustermgmt_sdk  # noqa: E402
 except ImportError:
 
-    from ..module_utils.v4.sdk_mock import (  # noqa: E402
-        mock_sdk as cluster_management_sdk,
+    from ..module_utils.v4.sdk_mock import (  # noqa: E402  # fmt: skip
+        mock_sdk as clustermgmt_sdk,
     )
 
     SDK_IMP_ERROR = traceback.format_exc()
@@ -636,14 +654,14 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def _get_ipv4_spec():
     return dict(
         value=dict(type="str", required=True),
-        prefix_length=dict(type="int", required=False, default=32),
+        prefix_length=dict(type="int", required=False),
     )
 
 
 def _get_ipv6_spec():
     return dict(
         value=dict(type="str", required=True),
-        prefix_length=dict(type="int", required=False, default=128),
+        prefix_length=dict(type="int", required=False),
     )
 
 
@@ -652,13 +670,13 @@ def _get_ip_address_spec():
         ipv4=dict(
             type="dict",
             options=_get_ipv4_spec(),
-            obj=cluster_management_sdk.IPv4Address,
+            obj=clustermgmt_sdk.IPv4Address,
             required=False,
         ),
         ipv6=dict(
             type="dict",
             options=_get_ipv6_spec(),
-            obj=cluster_management_sdk.IPv6Address,
+            obj=clustermgmt_sdk.IPv6Address,
             required=False,
         ),
     )
@@ -678,14 +696,14 @@ def _get_uplinks_spec():
             type="list",
             elements="dict",
             options=_get_uplinks_field_spec(),
-            obj=cluster_management_sdk.UplinksField,
+            obj=clustermgmt_sdk.UplinksField,
             required=False,
         ),
         standby=dict(
             type="list",
             elements="dict",
             options=_get_uplinks_field_spec(),
-            obj=cluster_management_sdk.UplinksField,
+            obj=clustermgmt_sdk.UplinksField,
             required=False,
         ),
     )
@@ -699,7 +717,7 @@ def _get_uplink_network_item_spec():
         uplinks=dict(
             type="dict",
             options=_get_uplinks_spec(),
-            obj=cluster_management_sdk.Uplinks,
+            obj=clustermgmt_sdk.Uplinks,
             required=False,
         ),
     )
@@ -717,7 +735,7 @@ def _get_node_info_spec():
         hypervisor_type=dict(
             type="str",
             choices=["AHV", "ESX", "HYPERV", "XEN", "NATIVEHOST"],
-            obj=cluster_management_sdk.HypervisorType,
+            obj=clustermgmt_sdk.HypervisorType,
             required=False,
         ),
         hypervisor_hostname=dict(type="str", required=False),
@@ -730,26 +748,26 @@ def _get_node_info_spec():
         ipmi_ip=dict(
             type="dict",
             options=_get_ip_address_spec(),
-            obj=cluster_management_sdk.IPAddress,
+            obj=clustermgmt_sdk.IPAddress,
             required=False,
         ),
         cvm_ip=dict(
             type="dict",
             options=_get_ip_address_spec(),
-            obj=cluster_management_sdk.IPAddress,
+            obj=clustermgmt_sdk.IPAddress,
             required=False,
         ),
         hypervisor_ip=dict(
             type="dict",
             options=_get_ip_address_spec(),
-            obj=cluster_management_sdk.IPAddress,
+            obj=clustermgmt_sdk.IPAddress,
             required=False,
         ),
         digital_certificate_map_list=dict(
             type="list",
             elements="dict",
             options=digital_certificate_map_list_spec,
-            obj=cluster_management_sdk.DigitalCertificateMapReference,
+            obj=clustermgmt_sdk.DigitalCertificateMapReference,
             required=False,
         ),
     )
@@ -764,15 +782,15 @@ def get_module_spec():
         bundle_info=dict(
             type="dict",
             options=bundle_info_spec,
-            obj=cluster_management_sdk.BundleInfo,
+            obj=clustermgmt_sdk.BundleInfo,
             required=True,
         ),
         node_list=dict(
             type="list",
             elements="dict",
             options=_get_node_info_spec(),
-            obj=cluster_management_sdk.NodeInfo,
-            required=False,
+            obj=clustermgmt_sdk.NodeInfo,
+            required=True,
         ),
     )
 
@@ -780,21 +798,21 @@ def get_module_spec():
         cvm_ip=dict(
             type="dict",
             options=_get_ip_address_spec(),
-            obj=cluster_management_sdk.IPAddress,
+            obj=clustermgmt_sdk.IPAddress,
             required=True,
         ),
         hypervisor_ip=dict(
             type="dict",
             options=_get_ip_address_spec(),
-            obj=cluster_management_sdk.IPAddress,
+            obj=clustermgmt_sdk.IPAddress,
             required=False,
         ),
         networks=dict(
             type="list",
             elements="dict",
             options=_get_uplink_network_item_spec(),
-            obj=cluster_management_sdk.UplinkNetworkItem,
-            required=False,
+            obj=clustermgmt_sdk.UplinkNetworkItem,
+            required=True,
         ),
     )
 
@@ -804,14 +822,14 @@ def get_module_spec():
         bundle_param=dict(
             type="dict",
             options=bundle_param_spec,
-            obj=cluster_management_sdk.BundleParam,
+            obj=clustermgmt_sdk.BundleParam,
             required=False,
         ),
         uplink_nodes=dict(
             type="list",
             elements="dict",
             options=uplink_node_spec,
-            obj=cluster_management_sdk.UplinkNode,
+            obj=clustermgmt_sdk.UplinkNode,
             required=False,
         ),
     )
@@ -827,10 +845,10 @@ def _build_spec_object(module):
     is C(List<clustermgmt.v4.config.UplinkNode>)).
     """
     sg = SpecGenerator(module)
-    body = cluster_management_sdk.ValidateNodeParam()
+    body = clustermgmt_sdk.ValidateNodeParam()
 
     if module.params.get("bundle_param"):
-        default_spec = cluster_management_sdk.BundleParam()
+        default_spec = clustermgmt_sdk.BundleParam()
         inner_spec, err = sg.generate_spec(
             obj=default_spec,
             attr=module.params.get("bundle_param"),
@@ -845,7 +863,7 @@ def _build_spec_object(module):
     uplink_nodes = []
     for item in module.params.get("uplink_nodes") or []:
         inner_spec, err = sg.generate_spec(
-            obj=cluster_management_sdk.UplinkNode(),
+            obj=clustermgmt_sdk.UplinkNode(),
             attr=item,
             module_args=uplink_node_options,
         )
@@ -856,7 +874,7 @@ def _build_spec_object(module):
     return body, None
 
 
-def validate_node(module, clusters_api, result):
+def validate_node(module, api_instance, result):
     cluster_ext_id = module.params.get("cluster_ext_id")
     result["ext_id"] = cluster_ext_id
 
@@ -871,7 +889,7 @@ def validate_node(module, clusters_api, result):
 
     resp = None
     try:
-        resp = clusters_api.validate_node(clusterExtId=cluster_ext_id, body=spec)
+        resp = api_instance.validate_node(clusterExtId=cluster_ext_id, body=spec)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -882,10 +900,19 @@ def validate_node(module, clusters_api, result):
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
+
     if task_ext_id and module.params.get("wait"):
         task_status = wait_for_completion(module, task_ext_id)
-        result["response"] = strip_internal_attributes(task_status.to_dict())
-    result["changed"] = True
+        if module.params.get("bundle_param"):
+            if ":" in task_ext_id:
+                task_ext_id = task_ext_id.split(":")[1]
+            task_status = api_instance.fetch_task_response(
+                extId=task_ext_id,
+                taskResponseType="VALIDATE_BUNDLE_INFO",
+            )
+            result["response"] = strip_internal_attributes(task_status.data.to_dict())
+        else:
+            result["response"] = strip_internal_attributes(task_status.to_dict())
 
 
 def run_module():
@@ -905,12 +932,13 @@ def run_module():
     result = {
         "changed": False,
         "error": None,
+        "failed": False,
         "response": None,
         "ext_id": None,
         "task_ext_id": None,
     }
-    clusters_api = get_clusters_api_instance(module)
-    validate_node(module, clusters_api, result)
+    api_instance = get_clusters_api_instance(module)
+    validate_node(module, api_instance, result)
 
     module.exit_json(**result)
 
