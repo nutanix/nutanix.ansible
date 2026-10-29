@@ -429,9 +429,7 @@ def delete_csr(module, result, api_instance):
 
     resp = None
     try:
-        resp = api_instance.delete_csr_by_id(
-            clusterExtId=cluster_ext_id, extId=ext_id
-        )
+        resp = api_instance.delete_csr_by_id(clusterExtId=cluster_ext_id, extId=ext_id)
     except Exception as e:
         raise_api_exception(
             module=module,
