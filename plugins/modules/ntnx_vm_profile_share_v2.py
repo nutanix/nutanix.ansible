@@ -149,9 +149,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-from ..module_utils.v4.vmm.api_client import (  # noqa: E402
-    get_vm_profile_api_instance,
-)
+from ..module_utils.v4.vmm.api_client import get_vm_profile_api_instance  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
