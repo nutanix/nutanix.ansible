@@ -274,11 +274,11 @@ action_groups:
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
     - ntnx_certificate_manager_v2
-    - ntnx_create_certificate_authority_by_cluster_id_v2
-    - ntnx_create_certificate_by_cluster_id_v2
-    - ntnx_create_csr_by_cluster_id_v2
-    - ntnx_download_csr_by_id_v2
-    - ntnx_certificate_managers_info_v2
+    - ntnx_certificate_authority_v2
+    - ntnx_cluster_certificate_v2
+    - ntnx_csr_v2
+    - ntnx_csr_download_v2
+    - ntnx_certificate_manager_info_v2
     - ntnx_cluster_stats_info_v2
     - ntnx_cluster_bmc_v2
     - ntnx_cluster_bmc_info_v2

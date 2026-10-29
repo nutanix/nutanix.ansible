@@ -10,67 +10,41 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_create_certificate_by_cluster_id_v2
-short_description: Add a Certificate to a cluster in Nutanix Prism Central
+module: ntnx_certificate_authority_v2
+short_description: Add a Certificate Authority (CA) to a cluster in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module adds a Certificate to a cluster in Nutanix Prism Central.
+  - This module adds a Certificate Authority (CA) to a cluster in Nutanix Prism Central.
   - This is an action module that triggers a task-based operation.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
-    B(Create Cluster Certificate) -
+    B(Create Cluster Certificate Authority) -
     Required Roles: Cluster Admin, Prism Admin, Super Admin
   - This module talks to B(Prism Central) (PC). It does not target FCVM/Foundation.
-  - The referenced cluster must exist before adding a Certificate to it.
-  - When C(csr_ext_id) is provided, the corresponding Certificate Signing Request (CSR) must already exist on the cluster.
+  - The referenced cluster must exist before adding a Certificate Authority to it.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   cluster_ext_id:
     description:
-      - The external ID of the cluster on which the Certificate will be added.
+      - The external ID of the cluster on which the Certificate Authority will be added.
     type: str
     required: true
   certificate:
     description:
-      - Base64 encoded certificate data.
+      - Base64 encoded certificate data of the Certificate Authority.
     type: str
-    required: false
-  certificate_chain:
-    description:
-      - Base64 encoded certificate chain data.
-    type: str
-    required: false
-  certificate_bundle:
-    description:
-      - Base64 encoded certificate bundle data containing the certificate and certificate chain.
-    type: str
-    required: false
-  csr_ext_id:
-    description:
-      - External identifier of the Certificate Signing Request (CSR).
-    type: str
-    required: false
-  private_key:
-    description:
-      - Base64 encoded private key data.
-    type: str
-    required: false
-  private_key_passphrase:
-    description:
-      - Passphrase for the private key.
-    type: str
-    required: false
+    required: true
   description:
     description:
-      - Description of the certificate.
+      - Description of the Certificate Authority.
     type: str
     required: false
   purpose:
     description:
-      - Purpose of the certificate.
+      - Purpose of the Certificate Authority.
     type: str
     required: false
 extends_documentation_fragment:
@@ -84,14 +58,11 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Add a Certificate to a cluster
-  nutanix.ncp.ntnx_create_certificate_by_cluster_id_v2:
+- name: Add a Certificate Authority to a cluster
+  nutanix.ncp.ntnx_certificate_authority_v2:
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
-    certificate: "{{ certificate_base64 }}"
-    certificate_chain: "{{ certificate_chain_base64 }}"
-    private_key: "{{ private_key_base64 }}"
-    csr_ext_id: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
-    description: "Certificate added by Ansible"
+    certificate: "{{ ca_certificate_base64 }}"
+    description: "Certificate Authority added by Ansible"
     purpose: "SERVER_AUTH"
   register: result
   ignore_errors: true
@@ -100,7 +71,7 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - Response for adding a Certificate to a cluster.
+    - Response for adding a Certificate Authority to a cluster.
     - Task details when C(wait) is true.
   returned: always
   type: dict
@@ -112,14 +83,14 @@ response:
       "entities_affected": [
         {
           "ext_id": "2e40ff57-20aa-4d2b-b179-298db969c20d",
-          "name": "certificate",
-          "rel": "clustermgmt:config:certificate"
+          "name": "certificate-authority",
+          "rel": "clustermgmt:config:certificate-authority"
         }
       ],
       "error_messages": null,
       "ext_id": "ZXJnb24=:90458bc7-a12b-4616-ac66-562fdb00c209",
-      "operation": "CreateCertificate",
-      "operation_description": "Add Certificates to the cluster",
+      "operation": "CreateCertificateAuthority",
+      "operation_description": "Add Certificate Authorities",
       "progress_percentage": 100,
       "status": "SUCCEEDED"
     }
@@ -133,7 +104,7 @@ task_ext_id:
 
 ext_id:
   description:
-    - The external ID of the created Certificate.
+    - The external ID of the created Certificate Authority.
   returned: when applicable
   type: str
   sample: "2e40ff57-20aa-4d2b-b179-298db969c20d"
@@ -159,7 +130,7 @@ msg:
   description: This indicates the status/error message if any message occurred.
   returned: When there is an error or in check mode
   type: str
-  sample: "Certificate will be added to cluster with ext_id: 00061fa4-ef93-7dd8-185b-ac1f6b6f97e2."
+  sample: "Certificate Authority will be added to cluster with ext_id: 00061fa4-ef93-7dd8-185b-ac1f6b6f97e2."
 """
 
 import traceback  # noqa: E402
@@ -199,46 +170,45 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         cluster_ext_id=dict(type="str", required=True),
-        certificate=dict(type="str", no_log=True),
-        certificate_chain=dict(type="str", no_log=True),
-        certificate_bundle=dict(type="str", no_log=True),
-        csr_ext_id=dict(type="str"),
-        private_key=dict(type="str", no_log=True),
-        private_key_passphrase=dict(type="str", no_log=True),
+        certificate=dict(type="str", required=True, no_log=True),
         description=dict(type="str"),
         purpose=dict(type="str"),
     )
     return module_args
 
 
-def create_certificate(module, result, api_instance):
-    validate_required_params(module, ["cluster_ext_id"])
+def create_certificate_authority(module, result, api_instance):
+    validate_required_params(module, ["cluster_ext_id", "certificate"])
     cluster_ext_id = module.params.get("cluster_ext_id")
 
     sg = SpecGenerator(module)
-    default_spec = clustermgmt_sdk.Certificate()
+    default_spec = clustermgmt_sdk.CertificateAuthority()
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating create certificate spec", **result)
+        module.fail_json(
+            msg="Failed generating create certificate authority spec", **result
+        )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
-        result["msg"] = "Certificate will be added to cluster with ext_id: {0}.".format(
-            cluster_ext_id
+        result["msg"] = (
+            "Certificate Authority will be added to cluster with ext_id: {0}.".format(
+                cluster_ext_id
+            )
         )
         return
 
     resp = None
     try:
-        resp = api_instance.create_certificate_by_cluster_id(
+        resp = api_instance.create_certificate_authority_by_cluster_id(
             clusterExtId=cluster_ext_id, body=spec
         )
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while adding certificate to cluster with ext_id: {0}".format(
+            msg="Api Exception raised while adding certificate authority to cluster with ext_id: {0}".format(
                 cluster_ext_id
             ),
         )
@@ -275,7 +245,7 @@ def run_module():
         "task_ext_id": None,
     }
     api_instance = get_certificate_manager_api_instance(module)
-    create_certificate(module, result, api_instance)
+    create_certificate_authority(module, result, api_instance)
     module.exit_json(**result)
 
 

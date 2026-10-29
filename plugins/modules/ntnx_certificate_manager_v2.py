@@ -16,7 +16,7 @@ version_added: 2.7.0
 description:
   - This module allows you to delete Certificate Authorities (CA) and Certificate Signing Requests (CSR) on a cluster in Nutanix Prism Central.
   - Certificate Authorities and Certificate Signing Requests are created using the dedicated action modules
-    M(nutanix.ncp.ntnx_create_certificate_authority_by_cluster_id_v2) and M(nutanix.ncp.ntnx_create_csr_by_cluster_id_v2).
+    M(nutanix.ncp.ntnx_certificate_authority_v2) and M(nutanix.ncp.ntnx_csr_v2).
   - This module only supports delete operations as the underlying v4 API for Certificate Authority and
     Certificate Signing Request supports only delete on an existing entity.
   - This module uses PC v4 APIs based SDKs.
@@ -260,8 +260,8 @@ def run_module():
         module.fail_json(
             msg="Certificate manager entities are created using the dedicated action modules. "
             "This module only supports state=absent (delete). "
-            "Use ntnx_create_certificate_authority_by_cluster_id_v2 or "
-            "ntnx_create_csr_by_cluster_id_v2 to create entities.",
+            "Use ntnx_certificate_authority_v2 or "
+            "ntnx_csr_v2 to create entities.",
             **result,
         )
     else:

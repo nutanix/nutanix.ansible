@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_certificate_managers_info_v2
+module: ntnx_certificate_manager_info_v2
 short_description: Fetch Certificate Authorities, Certificates and Certificate Signing Requests info in Nutanix Prism Central
 version_added: 2.7.0
 description:
@@ -73,7 +73,7 @@ author:
 
 EXAMPLES = r"""
 - name: Get a Certificate Authority using ext_id
-  nutanix.ncp.ntnx_certificate_managers_info_v2:
+  nutanix.ncp.ntnx_certificate_manager_info_v2:
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
     type: CERTIFICATE_AUTHORITY
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
@@ -81,21 +81,21 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List all Certificate Authorities on a cluster
-  nutanix.ncp.ntnx_certificate_managers_info_v2:
+  nutanix.ncp.ntnx_certificate_manager_info_v2:
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
     type: CERTIFICATE_AUTHORITY
   register: result
   ignore_errors: true
 
 - name: List all Certificates on a cluster
-  nutanix.ncp.ntnx_certificate_managers_info_v2:
+  nutanix.ncp.ntnx_certificate_manager_info_v2:
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
     type: CERTIFICATE
   register: result
   ignore_errors: true
 
 - name: List Certificate Signing Requests with filter
-  nutanix.ncp.ntnx_certificate_managers_info_v2:
+  nutanix.ncp.ntnx_certificate_manager_info_v2:
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
     type: CSR
     filter: "purpose eq 'SERVER_AUTH'"
@@ -103,7 +103,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List Certificate Signing Requests with limit
-  nutanix.ncp.ntnx_certificate_managers_info_v2:
+  nutanix.ncp.ntnx_certificate_manager_info_v2:
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
     type: CSR
     limit: 1
@@ -111,7 +111,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List all Certificate Authorities with fetch_all
-  nutanix.ncp.ntnx_certificate_managers_info_v2:
+  nutanix.ncp.ntnx_certificate_manager_info_v2:
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
     type: CERTIFICATE_AUTHORITY
     fetch_all: true

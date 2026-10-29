@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_create_csr_by_cluster_id_v2
+module: ntnx_csr_v2
 short_description: Generate a Certificate Signing Request (CSR) on a cluster in Nutanix Prism Central
 version_added: 2.7.0
 description:
@@ -148,7 +148,7 @@ author:
 
 EXAMPLES = r"""
 - name: Generate a Certificate Signing Request on a cluster
-  nutanix.ncp.ntnx_create_csr_by_cluster_id_v2:
+  nutanix.ncp.ntnx_csr_v2:
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
     certificate_info:
       common_name: "ansible.nutanix.com"

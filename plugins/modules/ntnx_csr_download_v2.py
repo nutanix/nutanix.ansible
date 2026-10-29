@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_download_csr_by_id_v2
+module: ntnx_csr_download_v2
 short_description: Download a Certificate Signing Request (CSR) from a cluster in Nutanix Prism Central
 version_added: 2.7.0
 description:
@@ -60,14 +60,14 @@ author:
 
 EXAMPLES = r"""
 - name: Download a Certificate Signing Request from a cluster
-  nutanix.ncp.ntnx_download_csr_by_id_v2:
+  nutanix.ncp.ntnx_csr_download_v2:
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
     csr_ext_id: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
   register: result
   ignore_errors: true
 
 - name: Download a Certificate Signing Request to a specific destination path
-  nutanix.ncp.ntnx_download_csr_by_id_v2:
+  nutanix.ncp.ntnx_csr_download_v2:
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
     csr_ext_id: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
     dest: "/tmp/ansible_csr.pem"

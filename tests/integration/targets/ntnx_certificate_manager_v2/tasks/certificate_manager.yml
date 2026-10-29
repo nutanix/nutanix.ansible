@@ -4,11 +4,11 @@
 #
 # These tests exercise the clustermgmt CertificateManager v4 modules end-to-end against a
 # live Prism Central + Prism Element (AOS) cluster:
-#   - ntnx_create_csr_by_cluster_id_v2 (action)
-#   - ntnx_create_certificate_authority_by_cluster_id_v2 (action)
-#   - ntnx_create_certificate_by_cluster_id_v2 (action)
-#   - ntnx_download_csr_by_id_v2 (action)
-#   - ntnx_certificate_managers_info_v2 (info: get-by-id + list, type = CA/CERTIFICATE/CSR)
+#   - ntnx_csr_v2 (action)
+#   - ntnx_certificate_authority_v2 (action)
+#   - ntnx_cluster_certificate_v2 (action)
+#   - ntnx_csr_download_v2 (action)
+#   - ntnx_certificate_manager_info_v2 (info: get-by-id + list, type = CA/CERTIFICATE/CSR)
 #   - ntnx_certificate_manager_v2 (CRUD: delete CA and CSR)
 #
 # Scenarios covered:
@@ -69,7 +69,7 @@
 ########################################################################################
 
 - name: Generate spec for creating CSR using check mode with all attributes
-  nutanix.ncp.ntnx_create_csr_by_cluster_id_v2:
+  nutanix.ncp.ntnx_csr_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     certificate_info:
       common_name: "{{ csr_cn_full }}"
@@ -122,7 +122,7 @@
 ########################################################################################
 
 - name: Create CSR with minimum attributes
-  nutanix.ncp.ntnx_create_csr_by_cluster_id_v2:
+  nutanix.ncp.ntnx_csr_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     certificate_info:
       common_name: "{{ csr_cn_min }}"
@@ -155,7 +155,7 @@
 # Info: list CSRs and resolve the created (minimum) CSR ext_id
 
 - name: List all CSRs on the cluster
-  nutanix.ncp.ntnx_certificate_managers_info_v2:
+  nutanix.ncp.ntnx_certificate_manager_info_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     type: CSR
   register: csr_list
@@ -189,7 +189,7 @@
     fail_msg: "Created minimum CSR ext_id could not be resolved"
 
 - name: List CSRs with limit
-  nutanix.ncp.ntnx_certificate_managers_info_v2:
+  nutanix.ncp.ntnx_certificate_manager_info_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     type: CSR
     limit: 1
@@ -212,7 +212,7 @@
 ########################################################################################
 
 - name: Get CSR using ext_id
-  nutanix.ncp.ntnx_certificate_managers_info_v2:
+  nutanix.ncp.ntnx_certificate_manager_info_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     type: CSR
     ext_id: "{{ csr_min_ext_id }}"
@@ -235,7 +235,7 @@
     fail_msg: "Get CSR using ext_id failed"
 
 - name: Get CSR using wrong ext_id
-  nutanix.ncp.ntnx_certificate_managers_info_v2:
+  nutanix.ncp.ntnx_certificate_manager_info_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     type: CSR
     ext_id: "00000000-0000-0000-0000-000000000000"
@@ -256,7 +256,7 @@
 ########################################################################################
 
 - name: Download CSR with check mode
-  nutanix.ncp.ntnx_download_csr_by_id_v2:
+  nutanix.ncp.ntnx_csr_download_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     csr_ext_id: "{{ csr_min_ext_id }}"
   check_mode: true
@@ -274,7 +274,7 @@
     fail_msg: "CSR download check mode failed"
 
 - name: Download CSR by ext_id
-  nutanix.ncp.ntnx_download_csr_by_id_v2:
+  nutanix.ncp.ntnx_csr_download_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     csr_ext_id: "{{ csr_min_ext_id }}"
   register: result
@@ -359,7 +359,7 @@
 ########################################################################################
 
 - name: Create CSR with all attributes
-  nutanix.ncp.ntnx_create_csr_by_cluster_id_v2:
+  nutanix.ncp.ntnx_csr_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     certificate_info:
       common_name: "{{ csr_cn_full }}"
@@ -388,7 +388,7 @@
     fail_msg: "CSR with all attributes creation failed"
 
 - name: List CSRs to resolve full CSR ext_id
-  nutanix.ncp.ntnx_certificate_managers_info_v2:
+  nutanix.ncp.ntnx_certificate_manager_info_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     type: CSR
   register: csr_list_full
@@ -403,7 +403,7 @@
     label: "{{ item.ext_id }}"
 
 - name: Get full CSR and assert all attributes
-  nutanix.ncp.ntnx_certificate_managers_info_v2:
+  nutanix.ncp.ntnx_certificate_manager_info_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     type: CSR
     ext_id: "{{ csr_full_ext_id }}"
@@ -451,7 +451,7 @@
 ########################################################################################
 
 - name: Create CSR without required certificate_info
-  nutanix.ncp.ntnx_create_csr_by_cluster_id_v2:
+  nutanix.ncp.ntnx_csr_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     purpose: "SERVER_AUTH"
   register: result
@@ -468,7 +468,7 @@
     fail_msg: "Create CSR without certificate_info did not fail as expected"
 
 - name: Create CSR with invalid enum value
-  nutanix.ncp.ntnx_create_csr_by_cluster_id_v2:
+  nutanix.ncp.ntnx_csr_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     certificate_info:
       common_name: "invalid-enum.nutanix.com"
@@ -486,7 +486,7 @@
     fail_msg: "Create CSR with invalid enum did not fail as expected"
 
 - name: Create Certificate without required certificate
-  nutanix.ncp.ntnx_create_certificate_by_cluster_id_v2:
+  nutanix.ncp.ntnx_cluster_certificate_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     description: "Certificate without body"
   register: result
@@ -503,7 +503,7 @@
     fail_msg: "Create Certificate without certificate did not fail as expected"
 
 - name: Create Certificate Authority (check mode)
-  nutanix.ncp.ntnx_create_certificate_authority_by_cluster_id_v2:
+  nutanix.ncp.ntnx_certificate_authority_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     certificate: "{{ '-----BEGIN CERTIFICATE-----' | b64encode }}"
     description: "CA check mode"
@@ -526,7 +526,7 @@
     fail_msg: "CA create check mode spec generation failed"
 
 - name: Create Certificate Authority with invalid certificate (should fail)
-  nutanix.ncp.ntnx_create_certificate_authority_by_cluster_id_v2:
+  nutanix.ncp.ntnx_certificate_authority_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     certificate: "not-a-valid-base64-certificate"
     description: "CA with invalid certificate"
@@ -547,7 +547,7 @@
 ########################################################################################
 
 - name: List all Certificate Authorities on the cluster
-  nutanix.ncp.ntnx_certificate_managers_info_v2:
+  nutanix.ncp.ntnx_certificate_manager_info_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     type: CERTIFICATE_AUTHORITY
   register: result
@@ -565,7 +565,7 @@
     fail_msg: "Certificate Authorities list failed"
 
 - name: List all Certificates on the cluster
-  nutanix.ncp.ntnx_certificate_managers_info_v2:
+  nutanix.ncp.ntnx_certificate_manager_info_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
     type: CERTIFICATE
   register: result
