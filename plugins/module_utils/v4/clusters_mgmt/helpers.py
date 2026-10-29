@@ -325,6 +325,31 @@ def get_csr(module, api_instance, ext_id, cluster_ext_id):
         )
 
 
+def download_csr(module, api_instance, cluster_ext_id, csr_ext_id):
+    """
+    This method will download a Certificate Signing Request (CSR) file.
+    Args:
+        module: Ansible module
+        api_instance: CertificateManagerApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        csr_ext_id (str): CSR external ID
+    return:
+        download response (object): SDK download CSR API response
+    """
+    try:
+        return api_instance.download_csr_by_id(
+            clusterExtId=cluster_ext_id, csrExtId=csr_ext_id
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while downloading CSR with ext_id: {0}".format(
+                csr_ext_id
+            ),
+        )
+
+
 def get_cluster_stats(module, api_instance, ext_id, **kwargs):
     """
     This method will return cluster stats using external ID.
@@ -579,4 +604,3 @@ def get_snmp_config(module, api_instance, cluster_ext_id):
             exception=e,
             msg="Api Exception raised while fetching snmp config info using cluster ext_id",
         )
-

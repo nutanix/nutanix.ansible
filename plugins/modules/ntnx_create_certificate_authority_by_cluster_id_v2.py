@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -21,9 +21,9 @@ notes:
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
-    B(Add a Certificate Authority) -
-    Required Roles: Prism Admin, Super Admin
-  - This module talks to Prism Central (PC), not FCVM/Foundation.
+    B(Create Cluster Certificate Authority) -
+    Required Roles: Cluster Admin, Prism Admin, Super Admin
+  - This module talks to B(Prism Central) (PC). It does not target FCVM/Foundation.
   - The referenced cluster must exist before adding a Certificate Authority to it.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
@@ -60,10 +60,6 @@ author:
 EXAMPLES = r"""
 - name: Add a Certificate Authority to a cluster
   nutanix.ncp.ntnx_create_certificate_authority_by_cluster_id_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
     certificate: "{{ ca_certificate_base64 }}"
     description: "Certificate Authority added by Ansible"
@@ -243,6 +239,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "failed": False,
         "response": None,
         "ext_id": None,
         "task_ext_id": None,

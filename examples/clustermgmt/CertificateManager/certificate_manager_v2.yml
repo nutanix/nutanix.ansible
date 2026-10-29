@@ -40,7 +40,6 @@
           state: "California"
           country_code: "US"
           private_key_algorithm: "RSA_2048"
-          key_size_bit: 2048
           signature_algorithm: "SHA256_WITH_RSA_ENCRYPTION"
           extended_key_usages:
             - "SERVER_AUTH"

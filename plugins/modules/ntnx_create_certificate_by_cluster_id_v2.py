@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -21,9 +21,9 @@ notes:
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
-    B(Add a Certificate) -
-    Required Roles: Prism Admin, Super Admin
-  - This module talks to Prism Central (PC), not FCVM/Foundation.
+    B(Create Cluster Certificate) -
+    Required Roles: Cluster Admin, Prism Admin, Super Admin
+  - This module talks to B(Prism Central) (PC). It does not target FCVM/Foundation.
   - The referenced cluster must exist before adding a Certificate to it.
   - When C(csr_ext_id) is provided, the corresponding Certificate Signing Request (CSR) must already exist on the cluster.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
@@ -37,7 +37,7 @@ options:
     description:
       - Base64 encoded certificate data.
     type: str
-    required: true
+    required: false
   certificate_chain:
     description:
       - Base64 encoded certificate chain data.
@@ -45,22 +45,22 @@ options:
     required: false
   certificate_bundle:
     description:
-      - Base64 encoded certificate bundle data.
+      - Base64 encoded certificate bundle data containing the certificate and certificate chain.
     type: str
     required: false
   csr_ext_id:
     description:
-      - The external ID of the Certificate Signing Request (CSR) associated with this certificate.
+      - External identifier of the Certificate Signing Request (CSR).
     type: str
     required: false
   private_key:
     description:
-      - Base64 encoded private key associated with the certificate.
+      - Base64 encoded private key data.
     type: str
     required: false
   private_key_passphrase:
     description:
-      - Passphrase used to decrypt the private key, if the private key is encrypted.
+      - Passphrase for the private key.
     type: str
     required: false
   description:
@@ -86,10 +86,6 @@ author:
 EXAMPLES = r"""
 - name: Add a Certificate to a cluster
   nutanix.ncp.ntnx_create_certificate_by_cluster_id_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
     certificate: "{{ certificate_base64 }}"
     certificate_chain: "{{ certificate_chain_base64 }}"
@@ -203,7 +199,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         cluster_ext_id=dict(type="str", required=True),
-        certificate=dict(type="str", required=True, no_log=True),
+        certificate=dict(type="str", no_log=True),
         certificate_chain=dict(type="str", no_log=True),
         certificate_bundle=dict(type="str", no_log=True),
         csr_ext_id=dict(type="str"),
@@ -216,7 +212,7 @@ def get_module_spec():
 
 
 def create_certificate(module, result, api_instance):
-    validate_required_params(module, ["cluster_ext_id", "certificate"])
+    validate_required_params(module, ["cluster_ext_id"])
     cluster_ext_id = module.params.get("cluster_ext_id")
 
     sg = SpecGenerator(module)
@@ -273,6 +269,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "failed": False,
         "response": None,
         "ext_id": None,
         "task_ext_id": None,

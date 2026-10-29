@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -25,12 +25,12 @@ notes:
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     The required roles depend on the operation being performed.
   - >-
-    B(Delete a Certificate Authority) -
-    Required Roles: Prism Admin, Super Admin
+    B(Delete Cluster Certificate Authority) -
+    Required Roles: Cluster Admin, Prism Admin, Super Admin
   - >-
-    B(Delete a Certificate Signing Request) -
-    Required Roles: Prism Admin, Super Admin
-  - This module talks to Prism Central (PC), not FCVM/Foundation.
+    B(Delete Cluster Certificate Signing Request) -
+    Required Roles: Cluster Admin, Prism Admin, Super Admin
+  - This module talks to B(Prism Central) (PC). It does not target FCVM/Foundation.
   - The referenced cluster must exist before deleting a Certificate Authority or Certificate Signing Request from it.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
@@ -82,10 +82,6 @@ author:
 EXAMPLES = r"""
 - name: Delete a Certificate Authority
   nutanix.ncp.ntnx_certificate_manager_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: absent
     type: CERTIFICATE_AUTHORITY
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
@@ -95,10 +91,6 @@ EXAMPLES = r"""
 
 - name: Delete a Certificate Signing Request (CSR)
   nutanix.ncp.ntnx_certificate_manager_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: absent
     type: CSR
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
@@ -241,7 +233,7 @@ def delete_certificate_manager(module, result, api_instance):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
 
@@ -260,6 +252,7 @@ def run_module():
         "response": None,
         "failed": False,
         "ext_id": None,
+        "task_ext_id": None,
     }
     api_instance = get_certificate_manager_api_instance(module)
     state = module.params.get("state")

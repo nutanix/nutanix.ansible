@@ -17,7 +17,7 @@
 #   3.  Create CSR with minimum attributes; assert task + changed.
 #   4.  Create CSR with all attributes (enums, SANs, key usages); assert task.
 #   5.  Info: list CSRs, list with limit, get CSR by ext_id, get with wrong ext_id.
-#   6.  Download CSR by id; assert PEM content is returned.
+#   6.  Download CSR by id; assert local file path is returned.
 #   7.  Negative: create CSR without required certificate_info; invalid enum value.
 #   8.  Negative: create CA with invalid certificate (task fails).
 #   9.  Negative: create Certificate without required certificate.
@@ -80,7 +80,6 @@
       state: "California"
       country_code: "US"
       private_key_algorithm: "RSA_2048"
-      key_size_bit: 2048
       signature_algorithm: "SHA256_WITH_RSA_ENCRYPTION"
       extended_key_usages:
         - "SERVER_AUTH"
@@ -108,7 +107,6 @@
       - result.response.certificate_info.state == "California"
       - result.response.certificate_info.country_code == "US"
       - result.response.certificate_info.private_key_algorithm == "RSA_2048"
-      - result.response.certificate_info.key_size_bit == 2048
       - result.response.certificate_info.signature_algorithm == "SHA256_WITH_RSA_ENCRYPTION"
       - result.response.certificate_info.extended_key_usages | length == 2
       - result.response.certificate_info.key_usages | length == 2
@@ -290,9 +288,25 @@
       - result.failed == false
       - result.ext_id == csr_min_ext_id
       - result.response is defined
-      - "'CERTIFICATE REQUEST' in result.response"
+      - result.response.path is defined
+      - result.response.path | length > 0
     success_msg: "CSR downloaded successfully"
     fail_msg: "CSR download failed"
+
+- name: Read downloaded CSR file content
+  ansible.builtin.slurp:
+    src: "{{ result.response.path }}"
+  register: csr_file
+  ignore_errors: true
+
+- name: Assert downloaded CSR file contains PEM content
+  ansible.builtin.assert:
+    that:
+      - csr_file is defined
+      - csr_file.failed == false
+      - "'CERTIFICATE REQUEST' in (csr_file.content | b64decode)"
+    success_msg: "Downloaded CSR file contains PEM content"
+    fail_msg: "Downloaded CSR file does not contain expected PEM content"
 
 ########################################################################################
 # Delete the minimum CSR via CRUD module (check mode + real delete)

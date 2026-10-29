@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -21,9 +21,9 @@ notes:
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
-    B(Generate a Certificate Signing Request) -
-    Required Roles: Prism Admin, Super Admin
-  - This module talks to Prism Central (PC), not FCVM/Foundation.
+    B(Create Cluster Certificate Signing Request) -
+    Required Roles: Cluster Admin, Prism Admin, Super Admin
+  - This module talks to B(Prism Central) (PC). It does not target FCVM/Foundation.
   - The referenced cluster must exist before generating a Certificate Signing Request on it.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
@@ -35,58 +35,49 @@ options:
   certificate_info:
     description:
       - Details of the certificate configuration used to generate the Certificate Signing Request.
-      - The API requires C(common_name), C(city), C(state), and C(country_code) to be provided.
+      - The API requires C(common_name), C(city), C(state), C(country_code), and C(private_key_algorithm).
     type: dict
     required: true
     suboptions:
       common_name:
         description:
           - Common Name (CN) for the certificate request.
-          - Required by the API when generating a Certificate Signing Request.
         type: str
-        required: false
+        required: true
       subject_alternative_names:
         description:
-          - List of Subject Alternative Names (SAN) for the certificate request.
+          - Subject Alternative Names (SANs) for the certificate request.
         type: list
         elements: str
         required: false
       city:
         description:
-          - City (L) for the certificate request.
-          - Required by the API when generating a Certificate Signing Request.
+          - City or Locality (L) for the certificate request.
         type: str
-        required: false
+        required: true
       state:
         description:
-          - State (ST) for the certificate request.
-          - Required by the API when generating a Certificate Signing Request.
+          - State or Province (ST) for the certificate request.
         type: str
-        required: false
+        required: true
       country_code:
         description:
-          - Country code (C) for the certificate request.
-          - Required by the API when generating a Certificate Signing Request.
+          - Country Code (C) for the certificate request.
         type: str
-        required: false
+        required: true
       private_key_algorithm:
         description:
-          - Private key algorithm used for the certificate request.
+          - Algorithm used for the private key.
         type: str
-        required: false
+        required: true
         choices:
           - ECDSA_256
           - ECDSA_384
           - RSA_2048
           - RSA_4096
-      key_size_bit:
-        description:
-          - Key size in bits for the certificate request.
-        type: int
-        required: false
       signature_algorithm:
         description:
-          - Signature algorithm used for the certificate request.
+          - Signature algorithm for the certificate.
         type: str
         required: false
         choices:
@@ -99,7 +90,7 @@ options:
           - SHA512_WITH_RSA_ENCRYPTION
       extended_key_usages:
         description:
-          - List of extended key usages for the certificate request.
+          - Extended key usages for the certificate.
         type: list
         elements: str
         required: false
@@ -116,7 +107,7 @@ options:
           - TIMESTAMPING
       key_usages:
         description:
-          - List of key usages for the certificate request.
+          - Key usages for the certificate.
         type: list
         elements: str
         required: false
@@ -132,17 +123,17 @@ options:
           - KEY_ENCIPHERMENT
       organization:
         description:
-          - Organization (O) for the certificate request.
+          - Organization (O) for the certificate.
         type: str
         required: false
       organizational_unit:
         description:
-          - Organizational Unit (OU) for the certificate request.
+          - Organizational Unit (OU) for the certificate.
         type: str
         required: false
   purpose:
     description:
-      - Purpose of the Certificate Signing Request.
+      - Purpose of the certificate signing request.
     type: str
     required: false
 extends_documentation_fragment:
@@ -158,10 +149,6 @@ author:
 EXAMPLES = r"""
 - name: Generate a Certificate Signing Request on a cluster
   nutanix.ncp.ntnx_create_csr_by_cluster_id_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
     certificate_info:
       common_name: "ansible.nutanix.com"
@@ -172,7 +159,6 @@ EXAMPLES = r"""
       state: "California"
       country_code: "US"
       private_key_algorithm: "RSA_2048"
-      key_size_bit: 2048
       signature_algorithm: "SHA256_WITH_RSA_ENCRYPTION"
       extended_key_usages:
         - "SERVER_AUTH"
@@ -288,16 +274,16 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     certificate_config_info_spec = dict(
-        common_name=dict(type="str"),
+        common_name=dict(type="str", required=True),
         subject_alternative_names=dict(type="list", elements="str"),
-        city=dict(type="str"),
-        state=dict(type="str"),
-        country_code=dict(type="str"),
+        city=dict(type="str", required=True),
+        state=dict(type="str", required=True),
+        country_code=dict(type="str", required=True),
         private_key_algorithm=dict(
             type="str",
+            required=True,
             choices=["ECDSA_256", "ECDSA_384", "RSA_2048", "RSA_4096"],
         ),
-        key_size_bit=dict(type="int"),
         signature_algorithm=dict(
             type="str",
             choices=[
@@ -418,6 +404,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "failed": False,
         "response": None,
         "ext_id": None,
         "task_ext_id": None,
