@@ -199,3 +199,69 @@ def get_vm_anti_affinity_policies_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_vmm_py_client.VmAntiAffinityPoliciesApi(api_client=api_client)
+
+
+def get_esxi_stats_api_instance(module):
+    """
+    This method will return the ESXi Stats API instance which is
+    used to fetch ESXi Virtual Machine, disk and NIC statistics.
+
+    Args:
+        module: Ansible module
+
+    Returns:
+        api_instance (obj): v4 EsxiStatsApi instance from ntnx_vmm_py_client SDK
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.EsxiStatsApi(api_client=api_client)
+
+
+def get_vm_recovery_points_api_instance(module):
+    """
+    This method will return AHV VM Recovery Points API instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        VmRecoveryPointsApi: v4 VmRecoveryPointsApi instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.VmRecoveryPointsApi(api_client=api_client)
+
+
+def get_stats_api_instance(module):
+    """
+    This method will return the Stats API instance which is used to fetch
+    Virtual Machine, disk and NIC statistics.
+
+    Args:
+        module: Ansible module
+
+    Returns:
+        api_instance (obj): v4 StatsApi instance from ntnx_vmm_py_client SDK
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.StatsApi(api_client=api_client)
+
+
+def get_vm_profile_api_instance(module):
+    """
+    This method will return VM Profile API instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        VmProfileApi: v4 VmProfileApi instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.VmProfileApi(api_client=api_client)
+
+
+def get_guest_reboot_policies_api_instance(module):
+    """
+    This method will return Guest Reboot Policies API instance.
+    Args:
+        module (obj): Ansible module object with connection parameters
+    Returns:
+        GuestRebootPoliciesApi: v4 Guest Reboot Policies api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_vmm_py_client.GuestRebootPoliciesApi(api_client=api_client)
