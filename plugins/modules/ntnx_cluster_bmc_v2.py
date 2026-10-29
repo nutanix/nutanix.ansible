@@ -23,7 +23,8 @@ description:
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
-    This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    This module requires the following Nutanix IAM roles to be assigned to the
+    user performing the operation.
   - >-
     B(Update BMC Info) -
     Required Roles: Cluster Admin, Prism Admin, Super Admin
@@ -32,7 +33,7 @@ options:
   state:
     description:
       - Specify state.
-      - If C(state) is set to C(present), the module will update the BMC info.
+      - If C(state) is set to C(present), the module will update the BMC credentials.
       - C(absent) is not supported because the underlying v4 API does not expose delete.
     type: str
     choices:
@@ -40,29 +41,32 @@ options:
     default: present
   ext_id:
     description:
-      - The external ID of the host whose BMC info should be updated.
+      - External identifier (UUID) of the host whose BMC info should be updated.
     type: str
     required: true
   cluster_ext_id:
     description:
-      - The external ID of the cluster that owns the host.
+      - External identifier (UUID) of the cluster that owns the host.
     type: str
     required: true
   credential:
     description:
-      - Basic authentication credential (username / password) used by Prism / LCM to
-        talk to the BMC over its OOB channel.
+      - BMC credentials (basic authentication username / password) used by Prism / LCM
+        to talk to the BMC over its OOB channel.
+      - Corresponds to C(credential) on the clustermgmt C(BmcInfo) update body; the only
+        writable field on update (C(ip_address) and C(status) are read-only).
     type: dict
-    required: false
+    required: true
     suboptions:
       username:
         description:
-          - Username configured on the BMC.
+          - Username required for the basic auth scheme on the BMC.
         type: str
         required: true
       password:
         description:
-          - Password configured on the BMC. Handled as a secret and never logged.
+          - Password required for the basic auth scheme on the BMC.
+          - Handled as a secret and never logged.
         type: str
         required: true
 extends_documentation_fragment:
@@ -149,12 +153,6 @@ changed:
   type: bool
   sample: true
 
-skipped:
-  description: This indicates whether the operation was skipped due to idempotency.
-  returned: when applicable
-  type: bool
-  sample: false
-
 error:
   description: This indicates the error message if any error occurred.
   returned: When an error occurs
@@ -167,15 +165,14 @@ failed:
   sample: false
 
 msg:
-  description: This indicates the message when there is an error, on idempotency, or in check mode.
-  returned: When there is an error, module is idempotent or in check mode
+  description: This indicates the message if any message occurred.
+  returned: When there is an error
   type: str
-  sample: "Nothing to change."
+  sample: "Failed generating update BMC info spec"
 """
 
 import traceback  # noqa: E402
 import warnings  # noqa: E402
-from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
@@ -225,27 +222,10 @@ def get_module_spec():
             type="dict",
             options=credential_spec,
             obj=cluster_management_sdk.BasicAuth,
-            required=False,
+            required=True,
         ),
     )
     return module_args
-
-
-def check_idempotency(old_spec_dict, update_spec_dict):
-    """Return True if the update payload matches the current BMC info spec."""
-    old = strip_internal_attributes(deepcopy(old_spec_dict))
-    new = strip_internal_attributes(deepcopy(update_spec_dict))
-    # Read-only fields — ignore in diff.
-    for field in _BMC_INFO_READ_ONLY_FIELDS:
-        old.pop(field, None)
-        new.pop(field, None)
-    # BMC never echoes the password back, so an update that only re-sets the
-    # password must never be reported as no-op.
-    old_cred = old.get("credential") or {}
-    new_cred = new.get("credential") or {}
-    if new_cred.get("password") is not None:
-        return False
-    return old_cred.get("username") == new_cred.get("username")
 
 
 def update_BmcInfo(module, result, api_instance):
@@ -254,19 +234,18 @@ def update_BmcInfo(module, result, api_instance):
     result["cluster_ext_id"] = cluster_ext_id
     result["ext_id"] = host_ext_id
 
-    # Build a preview spec from user params on top of a fresh default so that
-    # check_mode does NOT depend on the live BMC endpoint (which is documented
-    # to return 503 on small PCs). This mirrors ntnx_ssl_certificates_v2.
+    # Build the update body from a fresh default so that check_mode does NOT
+    # depend on the live BMC endpoint (which is documented to return 503 on
+    # small PCs). This mirrors ntnx_ssl_certificates_v2.
     sg = SpecGenerator(module)
     default_spec = cluster_management_sdk.BmcInfo()
-    preview_spec, err = sg.generate_spec(obj=default_spec)
+    spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating update BMC info spec", **result)
 
     if module.check_mode:
-        strip_read_only_fields(preview_spec, fields=_BMC_INFO_READ_ONLY_FIELDS)
-        result["response"] = strip_internal_attributes(preview_spec.to_dict())
+        result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
     current_spec = get_bmc_info(module, api_instance, cluster_ext_id, host_ext_id)
@@ -276,17 +255,7 @@ def update_BmcInfo(module, result, api_instance):
             msg="Unable to fetch etag for updating BMC info", **result
         )
 
-    update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
-    if err:
-        result["error"] = err
-        module.fail_json(msg="Failed generating update BMC info spec", **result)
-
-    if check_idempotency(current_spec.to_dict(), update_spec.to_dict()):
-        result["skipped"] = True
-        result["response"] = strip_internal_attributes(current_spec.to_dict())
-        module.exit_json(msg="Nothing to change.", **result)
-
-    strip_read_only_fields(update_spec, fields=_BMC_INFO_READ_ONLY_FIELDS)
+    strip_read_only_fields(spec, fields=_BMC_INFO_READ_ONLY_FIELDS)
 
     kwargs = {"if_match": etag}
     resp = None
@@ -294,7 +263,7 @@ def update_BmcInfo(module, result, api_instance):
         resp = api_instance.update_bmc_info(
             clusterExtId=cluster_ext_id,
             extId=host_ext_id,
-            body=update_spec,
+            body=spec,
             **kwargs,
         )
     except Exception as e:

@@ -188,6 +188,9 @@
     state: absent
     cluster_ext_id: "00000000-0000-0000-0000-000000000000"
     ext_id: "00000000-0000-0000-0000-000000000000"
+    credential:
+      username: "ADMIN"
+      password: "dummy"
   register: result
   ignore_errors: true
 
@@ -205,6 +208,9 @@
   nutanix.ncp.ntnx_cluster_bmc_v2:
     cluster_ext_id: "00000000-0000-0000-0000-000000000000"
     ext_id: "00000000-0000-0000-0000-000000000000"
+    credential:
+      username: "ADMIN"
+      password: "dummy"
     ip_address:
       ipv4:
         value: "10.44.60.10"

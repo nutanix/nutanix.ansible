@@ -16,12 +16,13 @@ version_added: 2.7.0
 description:
   - This module allows you to fetch information about the BMC (Baseboard Management Controller)
     of a host that belongs to a cluster registered with Nutanix Prism Central.
-  - The v4.2 clustermgmt API only exposes a Get-by-host endpoint for BMC info (there is no
+  - The v4 clustermgmt API only exposes a Get-by-host endpoint for BMC info (there is no
     list endpoint), so both C(cluster_ext_id) and C(ext_id) are required.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
-    This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    This module requires the following Nutanix IAM roles to be assigned to the
+    user performing the operation.
   - >-
     B(Get BMC Info) -
     Required Roles: Cluster Admin, Prism Admin, Prism Viewer, Super Admin, User Admin
@@ -29,12 +30,12 @@ notes:
 options:
   ext_id:
     description:
-      - The external ID of the host whose BMC info should be fetched.
+      - External identifier (UUID) of the host whose BMC info should be fetched.
     type: str
     required: true
   cluster_ext_id:
     description:
-      - The external ID of the cluster that owns the host.
+      - External identifier (UUID) of the cluster that owns the host.
     type: str
     required: true
   read_timeout:
@@ -55,15 +56,15 @@ EXAMPLES = r"""
   nutanix.ncp.ntnx_cluster_bmc_info_v2:
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     ext_id: "8300384a-56ee-4750-aeb8-3d1c42908bee"
-  register: bmc_info
+  register: result
   ignore_errors: true
 """
 
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC BmcInfo info v4 API.
-    - Always a single BMC info entity for the given (cluster_ext_id, ext_id).
+    - The response from the Nutanix BMC info v4 API.
+    - Always a single BMC info entity for the given C(cluster_ext_id) and C(ext_id).
   returned: always
   type: dict
   sample:
@@ -97,7 +98,7 @@ cluster_ext_id:
   sample: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
 
 changed:
-  description: Always false for info modules.
+  description: This indicates whether the task resulted in any changes. Always false for info modules.
   returned: always
   type: bool
   sample: false
@@ -109,12 +110,12 @@ msg:
   sample: "Api Exception raised while fetching BMC info using cluster and host ext_id"
 
 error:
-  description: Error details if any.
-  returned: When an error occurs
+  description: This field typically holds information about if the task have errors that occurred during the task execution.
   type: str
+  returned: when an error occurs
 
 failed:
-  description: True on failure.
+  description: This field typically holds information about if the task have failed.
   returned: always
   type: bool
   sample: false
@@ -160,14 +161,7 @@ def run_module():
     )
 
     remove_param_with_none_value(module.params)
-    result = {
-        "changed": False,
-        "error": None,
-        "response": None,
-        "failed": False,
-        "ext_id": None,
-        "cluster_ext_id": None,
-    }
+    result = {"changed": False, "error": None, "response": None, "failed": False}
     api_instance = get_bmc_api_instance(module)
     get_bmc_info_by_ids(module, api_instance, result)
     module.exit_json(**result)
