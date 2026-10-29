@@ -1,0 +1,61 @@
+---
+- name: Start testing ntnx_image_download_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_image_download_v2
+
+- name: Download image with check mode enabled
+  nutanix.ncp.ntnx_image_download_v2:
+    image_ext_id: "83083083-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Download image with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg is defined
+      - result.msg is search("will be downloaded")
+      - result.msg is search("83083083-0000-0000-0000-000000000001")
+    fail_msg: Download image with check mode enabled failed
+    success_msg: Download image with check mode enabled passed
+
+- name: List DISK_IMAGE images
+  nutanix.ncp.ntnx_images_info_v2:
+    filter: "type eq Vmm.Content.ImageType'DISK_IMAGE'"
+    limit: 5
+  register: images_result
+  ignore_errors: true
+
+- name: List DISK_IMAGE images status
+  ansible.builtin.assert:
+    that:
+      - images_result.failed == false
+      - images_result.response is defined
+      - images_result.response | length > 0
+      - images_result.response[0].ext_id is defined
+    fail_msg: Unable to discover a DISK_IMAGE for download tests
+    success_msg: DISK_IMAGE discovered for download tests
+
+- name: Capture the image ext_id
+  ansible.builtin.set_fact:
+    image_uuid: "{{ images_result.response[0].ext_id }}"
+
+- name: Download the image
+  nutanix.ncp.ntnx_image_download_v2:
+    image_ext_id: "{{ image_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Download image status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+      - result.ext_id == image_uuid
+      - result.response is defined
+      - result.response.path is defined
+      - result.response.path | length > 0
+    fail_msg: Download image failed
+    success_msg: Download image passed
