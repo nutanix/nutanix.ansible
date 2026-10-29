@@ -205,7 +205,6 @@
     fail_msg: Create entity group with check mode enabled with multiple allowed entities failed
     success_msg: Create entity group with check mode enabled with multiple allowed entities passed
 
-
 ###################################################################################################
 
 - name: Create entity group
@@ -608,7 +607,24 @@
     fail_msg: List all entity groups failed
     success_msg: All entity groups listed successfully
 
-###################################################################################################
+#######################################################################################
+
+- name: List all entity groups with fetch_all
+  nutanix.ncp.ntnx_entity_groups_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_entity_groups_info_v2
+  ignore_errors: true
+
+- name: List all entity groups with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_entity_groups_info_v2.changed == false
+      - fetch_all_ntnx_entity_groups_info_v2.failed == false
+      - fetch_all_ntnx_entity_groups_info_v2.response is defined
+      - fetch_all_ntnx_entity_groups_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_entity_groups_info_v2.response | default([]) | length) == (fetch_all_ntnx_entity_groups_info_v2.total_available_results | int)
+    fail_msg: "Unable to list all entity groups with fetch_all"
+    success_msg: "Listed all entity groups with fetch_all successfully"
 
 - name: List entity group using filter
   nutanix.ncp.ntnx_entity_groups_info_v2:

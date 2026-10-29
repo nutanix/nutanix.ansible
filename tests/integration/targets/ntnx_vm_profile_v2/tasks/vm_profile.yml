@@ -1,0 +1,633 @@
+---
+# Integration tests for ntnx_vm_profiles_info_v2, ntnx_vm_profile_v2, ntnx_vm_profile_deploy_v2
+# and ntnx_vm_profile_share_v2.
+#
+# VM profiles are pre-existing entities in Prism Central, so the live scenarios run against the first
+# VM profile returned by the list API and are skipped when the PC has no VM profiles.
+# Check mode tasks use inline dummy values.
+
+- name: Start testing ntnx_vm_profile_v2 modules
+  ansible.builtin.debug:
+    msg: Start testing ntnx_vm_profile_v2 modules
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: >-
+      ansible_{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}
+
+- name: Set names
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_vm_from_profile"
+    project_name: "{{ random_name }}-ansible-project"
+    todelete: []
+
+##################################################################################
+# Info - list
+##################################################################################
+
+- name: List all VM profiles
+  nutanix.ncp.ntnx_vm_profiles_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all VM profiles status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results is defined
+    fail_msg: List all VM profiles failed
+    success_msg: List all VM profiles passed
+
+- name: Set VM profiles facts
+  ansible.builtin.set_fact:
+    vm_profiles_exist: "{{ (result.response | length) > 0 }}"
+    vm_profile_ext_id: "{{ (result.response | map(attribute='ext_id') | list | first) if (result.response | length) > 0 else '' }}"
+
+- name: Print VM profile availability
+  ansible.builtin.debug:
+    msg: >-
+      VM profiles available: {{ vm_profiles_exist }}.
+      Live scenarios are skipped when no VM profile exists.
+
+- name: List all VM profiles with fetch_all
+  nutanix.ncp.ntnx_vm_profiles_info_v2:
+    fetch_all: true
+  register: result
+  ignore_errors: true
+
+- name: List all VM profiles with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results is defined
+      - (result.response | length) == (result.total_available_results | int)
+    fail_msg: List all VM profiles with fetch_all failed
+    success_msg: List all VM profiles with fetch_all passed
+
+- name: List VM profiles with limit
+  nutanix.ncp.ntnx_vm_profiles_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List VM profiles with limit status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - (result.response | length) <= 1
+    fail_msg: List VM profiles with limit failed
+    success_msg: List VM profiles with limit passed
+
+- name: Get VM profile using non-existent ext_id
+  nutanix.ncp.ntnx_vm_profiles_info_v2:
+    ext_id: "83083083-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Get VM profile using non-existent ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+    fail_msg: Get VM profile using non-existent ext_id did not fail
+    success_msg: Get VM profile using non-existent ext_id failed as expected
+
+##################################################################################
+# Check mode - no VM profile required
+##################################################################################
+
+- name: Deploy VM from VM profile with check mode enabled
+  nutanix.ncp.ntnx_vm_profile_deploy_v2:
+    state: present
+    ext_id: "83083083-0000-0000-0000-000000000001"
+    vm_name: "test-vm-from-profile"
+    vm_description: "test-vm-from-profile-description"
+    project_ext_id: "83083083-0000-0000-0000-000000000002"
+    cluster:
+      ext_id: "83083083-0000-0000-0000-000000000003"
+    categories:
+      - ext_id: "83083083-0000-0000-0000-000000000004"
+    nics:
+      - vm_profile_nic_ext_id: "83083083-0000-0000-0000-000000000005"
+        subnet:
+          ext_id: "83083083-0000-0000-0000-000000000006"
+    disks:
+      - backing_info:
+          disk_size_bytes: 21474836480
+          data_source:
+            reference:
+              image:
+                image_ext_id: "83083083-0000-0000-0000-000000000007"
+    guest_customization:
+      config:
+        cloud_init:
+          datasource_type: CONFIG_DRIVE_V2
+          cloud_init_script:
+            user_data:
+              value: "I2Nsb3VkLWNvbmZpZwpydW5jbWQ6CiAgLSBlY2hvIGhlbGxv"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Deploy VM from VM profile with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "83083083-0000-0000-0000-000000000001"
+      - result.response.vm_name == "test-vm-from-profile"
+      - result.response.vm_description == "test-vm-from-profile-description"
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000002"
+      - result.response.cluster.ext_id == "83083083-0000-0000-0000-000000000003"
+      - result.response.categories | length == 1
+      - result.response.categories[0].ext_id == "83083083-0000-0000-0000-000000000004"
+      - result.response.nics | length == 1
+      - result.response.nics[0].vm_profile_nic_ext_id == "83083083-0000-0000-0000-000000000005"
+      - result.response.nics[0].subnet.ext_id == "83083083-0000-0000-0000-000000000006"
+      - result.response.disks | length == 1
+      - result.response.disks[0].backing_info.disk_size_bytes == 21474836480
+      - result.response.disks[0].backing_info.data_source.reference.image_ext_id == "83083083-0000-0000-0000-000000000007"
+      - result.response.guest_customization.config.datasource_type == "CONFIG_DRIVE_V2"
+      - result.response.guest_customization.config.cloud_init_script.value == "I2Nsb3VkLWNvbmZpZwpydW5jbWQ6CiAgLSBlY2hvIGhlbGxv"
+    fail_msg: Deploy VM from VM profile with check mode enabled failed
+    success_msg: Deploy VM from VM profile with check mode enabled passed
+
+- name: Deploy VM from VM profile with custom key values using check mode enabled
+  nutanix.ncp.ntnx_vm_profile_deploy_v2:
+    state: present
+    ext_id: "83083083-0000-0000-0000-000000000001"
+    vm_name: "test-vm-from-profile-kv"
+    guest_customization:
+      config:
+        cloud_init:
+          cloud_init_script:
+            custom_key_values:
+              key_value_pairs:
+                - name: hostname
+                  value: test-vm-from-profile
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Deploy VM from VM profile with custom key values using check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.vm_name == "test-vm-from-profile-kv"
+      - result.response.guest_customization.config.cloud_init_script.key_value_pairs | length == 1
+      - result.response.guest_customization.config.cloud_init_script.key_value_pairs[0].name == "hostname"
+      - result.response.guest_customization.config.cloud_init_script.key_value_pairs[0].value == "test-vm-from-profile"
+    fail_msg: Deploy VM from VM profile with custom key values using check mode enabled failed
+    success_msg: Deploy VM from VM profile with custom key values using check mode enabled passed
+
+- name: Share VM profile with project using check mode enabled
+  nutanix.ncp.ntnx_vm_profile_share_v2:
+    state: present
+    ext_id: "83083083-0000-0000-0000-000000000001"
+    project_ext_id: "83083083-0000-0000-0000-000000000002"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Share VM profile with project using check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "83083083-0000-0000-0000-000000000001"
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000002"
+    fail_msg: Share VM profile with project using check mode enabled failed
+    success_msg: Share VM profile with project using check mode enabled passed
+
+- name: Unshare VM profile from project using check mode enabled
+  nutanix.ncp.ntnx_vm_profile_share_v2:
+    state: absent
+    ext_id: "83083083-0000-0000-0000-000000000001"
+    project_ext_id: "83083083-0000-0000-0000-000000000002"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Unshare VM profile from project using check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "83083083-0000-0000-0000-000000000001"
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000002"
+    fail_msg: Unshare VM profile from project using check mode enabled failed
+    success_msg: Unshare VM profile from project using check mode enabled passed
+
+##################################################################################
+# Negative scenarios - no VM profile required
+##################################################################################
+
+- name: Update VM profile using non-existent ext_id
+  nutanix.ncp.ntnx_vm_profile_v2:
+    state: present
+    ext_id: "83083083-0000-0000-0000-000000000001"
+    vm_configuration:
+      memory_size_bytes: 4294967296
+      num_cores: 2
+      nics:
+        - backing_info:
+            dp_offload_nic:
+              nic_profile_reference:
+                ext_id: "83083083-0000-0000-0000-000000000002"
+  register: result
+  ignore_errors: true
+
+- name: Update VM profile using non-existent ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+    fail_msg: Update VM profile using non-existent ext_id did not fail
+    success_msg: Update VM profile using non-existent ext_id failed as expected
+
+- name: Update VM profile without ext_id
+  nutanix.ncp.ntnx_vm_profile_v2:
+    state: present
+    vm_configuration:
+      num_cores: 2
+  register: result
+  ignore_errors: true
+
+- name: Update VM profile without ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'ext_id' in (result.msg | default(''))"
+    fail_msg: Argspec did not reject missing ext_id for update
+    success_msg: Argspec rejected missing ext_id for update
+
+- name: Share VM profile without project_ext_id
+  nutanix.ncp.ntnx_vm_profile_share_v2:
+    state: present
+    ext_id: "83083083-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Share VM profile without project_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'project_ext_id' in (result.msg | default(''))"
+    fail_msg: Argspec did not reject missing project_ext_id for share
+    success_msg: Argspec rejected missing project_ext_id for share
+
+- name: Deploy VM from VM profile without ext_id
+  nutanix.ncp.ntnx_vm_profile_deploy_v2:
+    state: present
+    vm_name: "test-vm-from-profile"
+  register: result
+  ignore_errors: true
+
+- name: Deploy VM from VM profile without ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - "'ext_id' in (result.msg | default(''))"
+    fail_msg: Argspec did not reject missing ext_id for deploy
+    success_msg: Argspec rejected missing ext_id for deploy
+
+##################################################################################
+# Live scenarios - require an existing VM profile
+##################################################################################
+
+- name: Run live scenarios against an existing VM profile
+  when: vm_profiles_exist | bool
+  block:
+    ##############################################################################
+    # Info - get and filter
+    ##############################################################################
+
+    - name: Get VM profile using ext_id
+      nutanix.ncp.ntnx_vm_profiles_info_v2:
+        ext_id: "{{ vm_profile_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Get VM profile using ext_id status
+      ansible.builtin.assert:
+        that:
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.ext_id == vm_profile_ext_id
+          - result.response.ext_id == vm_profile_ext_id
+          - result.response.vm_configuration is defined
+        fail_msg: Get VM profile using ext_id failed
+        success_msg: Get VM profile using ext_id passed
+
+    - name: Save the original VM configuration
+      ansible.builtin.set_fact:
+        orig_num_cores: "{{ result.response.vm_configuration.num_cores }}"
+        orig_memory_size_bytes: "{{ result.response.vm_configuration.memory_size_bytes }}"
+        orig_nics: "{{ result.response.vm_configuration.nics | default([]) }}"
+
+    - name: List VM profiles with filter
+      nutanix.ncp.ntnx_vm_profiles_info_v2:
+        filter: "extId eq '{{ vm_profile_ext_id }}'"
+      register: result
+      ignore_errors: true
+
+    - name: List VM profiles with filter status
+      ansible.builtin.assert:
+        that:
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response | length == 1
+          - result.response[0].ext_id == vm_profile_ext_id
+        fail_msg: List VM profiles with filter failed
+        success_msg: List VM profiles with filter passed
+
+    ##############################################################################
+    # Update
+    ##############################################################################
+
+    # Update fetches the current VM profile (for the If-Match etag) before generating the spec,
+    # so the ext_id here is a real VM profile and the vm_configuration values are inline dummies.
+    - name: Update VM profile with check mode enabled
+      nutanix.ncp.ntnx_vm_profile_v2:
+        state: present
+        ext_id: "{{ vm_profile_ext_id }}"
+        vm_configuration:
+          memory_size_bytes: 4294967296
+          num_cores: 2
+          nics:
+            - backing_info:
+                dp_offload_nic:
+                  nic_profile_reference:
+                    ext_id: "83083083-0000-0000-0000-000000000002"
+      register: result
+      ignore_errors: true
+      check_mode: true
+
+    - name: Update VM profile with check mode enabled status
+      ansible.builtin.assert:
+        that:
+          - result.response is defined
+          - result.changed == false
+          - result.failed == false
+          - result.ext_id == vm_profile_ext_id
+          - result.response.vm_configuration.memory_size_bytes == 4294967296
+          - result.response.vm_configuration.num_cores == 2
+          - result.response.vm_configuration.nics | length == 1
+          - >-
+            result.response.vm_configuration.nics[0].backing_info.nic_profile_reference.ext_id ==
+            "83083083-0000-0000-0000-000000000002"
+        fail_msg: Update VM profile with check mode enabled failed
+        success_msg: Update VM profile with check mode enabled passed
+
+    - name: Update VM profile num_cores
+      nutanix.ncp.ntnx_vm_profile_v2:
+        state: present
+        ext_id: "{{ vm_profile_ext_id }}"
+        vm_configuration:
+          num_cores: "{{ (orig_num_cores | int) + 1 }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update VM profile num_cores status
+      ansible.builtin.assert:
+        that:
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id == vm_profile_ext_id
+          - result.task_ext_id is defined
+          - result.response.ext_id == vm_profile_ext_id
+          - result.response.vm_configuration.num_cores == (orig_num_cores | int) + 1
+          - result.response.vm_configuration.memory_size_bytes == (orig_memory_size_bytes | int)
+        fail_msg: Update VM profile num_cores failed
+        success_msg: Update VM profile num_cores passed
+
+    - name: Update VM profile num_cores again to check idempotency
+      nutanix.ncp.ntnx_vm_profile_v2:
+        state: present
+        ext_id: "{{ vm_profile_ext_id }}"
+        vm_configuration:
+          num_cores: "{{ (orig_num_cores | int) + 1 }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update VM profile num_cores idempotency status
+      ansible.builtin.assert:
+        that:
+          - result.changed == false
+          - result.failed == false
+          - result.skipped == true
+          - result.msg == "Nothing to change."
+        fail_msg: Update VM profile idempotency check failed
+        success_msg: Update VM profile idempotency check passed
+
+    - name: Restore the original VM profile num_cores
+      nutanix.ncp.ntnx_vm_profile_v2:
+        state: present
+        ext_id: "{{ vm_profile_ext_id }}"
+        vm_configuration:
+          num_cores: "{{ orig_num_cores | int }}"
+      register: result
+      ignore_errors: true
+
+    - name: Restore the original VM profile num_cores status
+      ansible.builtin.assert:
+        that:
+          - result.changed == true
+          - result.failed == false
+          - result.response.vm_configuration.num_cores == (orig_num_cores | int)
+        fail_msg: Restore the original VM profile num_cores failed
+        success_msg: Restore the original VM profile num_cores passed
+
+    ##############################################################################
+    # Deploy
+    ##############################################################################
+
+    - name: Deploy VM from VM profile
+      nutanix.ncp.ntnx_vm_profile_deploy_v2:
+        state: present
+        ext_id: "{{ vm_profile_ext_id }}"
+        vm_name: "{{ vm_name }}"
+        vm_description: "VM deployed from a VM profile by ansible tests"
+        cluster:
+          ext_id: "{{ cluster.uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: Deploy VM from VM profile status
+      ansible.builtin.assert:
+        that:
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id == vm_profile_ext_id
+          - result.task_ext_id is defined
+          - result.vm_ext_id is defined
+          - result.response.status == "SUCCEEDED"
+        fail_msg: Deploy VM from VM profile failed
+        success_msg: Deploy VM from VM profile passed
+
+    - name: Add the deployed VM to the delete list
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + [result.vm_ext_id] }}"
+
+    - name: Fetch the deployed VM
+      nutanix.ncp.ntnx_vms_info_v2:
+        ext_id: "{{ todelete[0] }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch the deployed VM status
+      ansible.builtin.assert:
+        that:
+          - result.failed == false
+          - result.response.name == vm_name
+          - result.response.cluster.ext_id == cluster.uuid
+        fail_msg: Fetch the deployed VM failed
+        success_msg: Fetch the deployed VM passed
+
+    ##############################################################################
+    # Share and unshare
+    ##############################################################################
+
+    - name: Create project for share tests
+      nutanix.ncp.ntnx_project_v2:
+        state: present
+        name: "{{ project_name }}"
+        project_id: "{{ project_name }}-id"
+      register: result
+      ignore_errors: true
+
+    - name: Create project for share tests status
+      ansible.builtin.assert:
+        that:
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id is defined
+          - result.response.state == "ACTIVE"
+        fail_msg: Unable to create project for share tests
+        success_msg: Project for share tests created successfully
+
+    - name: Set project ext_id
+      ansible.builtin.set_fact:
+        project_ext_id: "{{ result.ext_id }}"
+
+    - name: Share VM profile with project
+      nutanix.ncp.ntnx_vm_profile_share_v2:
+        state: present
+        ext_id: "{{ vm_profile_ext_id }}"
+        project_ext_id: "{{ project_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Share VM profile with project status
+      ansible.builtin.assert:
+        that:
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id == vm_profile_ext_id
+          - result.task_ext_id is defined
+          - result.response.status == "SUCCEEDED"
+        fail_msg: Share VM profile with project failed
+        success_msg: Share VM profile with project passed
+
+    - name: Fetch the shared VM profile
+      nutanix.ncp.ntnx_vm_profiles_info_v2:
+        ext_id: "{{ vm_profile_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch the shared VM profile status
+      ansible.builtin.assert:
+        that:
+          - result.failed == false
+          - project_ext_id in result.response.shared_with_projects
+        fail_msg: VM profile is not shared with the project
+        success_msg: VM profile is shared with the project
+
+    - name: Unshare VM profile from project
+      nutanix.ncp.ntnx_vm_profile_share_v2:
+        state: absent
+        ext_id: "{{ vm_profile_ext_id }}"
+        project_ext_id: "{{ project_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Unshare VM profile from project status
+      ansible.builtin.assert:
+        that:
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id == vm_profile_ext_id
+          - result.task_ext_id is defined
+          - result.response.status == "SUCCEEDED"
+        fail_msg: Unshare VM profile from project failed
+        success_msg: Unshare VM profile from project passed
+
+    - name: Fetch the unshared VM profile
+      nutanix.ncp.ntnx_vm_profiles_info_v2:
+        ext_id: "{{ vm_profile_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Fetch the unshared VM profile status
+      ansible.builtin.assert:
+        that:
+          - result.failed == false
+          - project_ext_id not in (result.response.shared_with_projects | default([]))
+        fail_msg: VM profile is still shared with the project
+        success_msg: VM profile is no longer shared with the project
+
+    ##############################################################################
+    # Cleanup
+    ##############################################################################
+
+    - name: Delete the project created for share tests
+      nutanix.ncp.ntnx_project_v2:
+        state: absent
+        ext_id: "{{ project_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete the project created for share tests status
+      ansible.builtin.assert:
+        that:
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id == project_ext_id
+        fail_msg: Unable to delete the project created for share tests
+        success_msg: Project created for share tests deleted successfully
+
+    - name: Delete the deployed VM
+      nutanix.ncp.ntnx_vms_v2:
+        state: absent
+        ext_id: "{{ item }}"
+      register: result
+      ignore_errors: true
+      loop: "{{ todelete }}"
+
+    - name: Delete the deployed VM status
+      ansible.builtin.assert:
+        that:
+          - item.failed == false
+          - item.ext_id == todelete[0]
+        fail_msg: Unable to delete the deployed VM
+        success_msg: Deployed VM deleted successfully
+      loop: "{{ result.results }}"
+
+    - name: Reset the delete list
+      ansible.builtin.set_fact:
+        todelete: []

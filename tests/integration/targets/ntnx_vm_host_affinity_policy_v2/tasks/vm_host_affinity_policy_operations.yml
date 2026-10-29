@@ -306,7 +306,25 @@
 
 ##################################################################################
 # List Host Affinity Policies with filter
-##################################################################################
+######################################################################
+
+- name: List all VM host affinity policies with fetch_all
+  nutanix.ncp.ntnx_vm_host_affinity_policies_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_vm_host_affinity_policies_info_v2
+  ignore_errors: true
+
+- name: List all VM host affinity policies with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_vm_host_affinity_policies_info_v2.changed == false
+      - fetch_all_ntnx_vm_host_affinity_policies_info_v2.failed == false
+      - fetch_all_ntnx_vm_host_affinity_policies_info_v2.response is defined
+      - fetch_all_ntnx_vm_host_affinity_policies_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_vm_host_affinity_policies_info_v2.response | default([]) | length) ==
+        (fetch_all_ntnx_vm_host_affinity_policies_info_v2.total_available_results | int)
+    fail_msg: "Unable to list all VM host affinity policies with fetch_all"
+    success_msg: "Listed all VM host affinity policies with fetch_all successfully"
 
 - name: List VM host affinity policies with filter by name
   nutanix.ncp.ntnx_vm_host_affinity_policies_info_v2:
@@ -527,6 +545,83 @@
       - re_enforce_negative_result.response.data.error | length > 0
     fail_msg: "Re-enforce non-existent VM host affinity policy failed"
     success_msg: "Re-enforce non-existent VM host affinity policy passed"
+
+##################################################################################
+# List VM-host affinity policy compliance states
+##################################################################################
+
+- name: List VM-host affinity policy compliance states
+  nutanix.ncp.ntnx_vm_host_affinity_policy_compliance_info_v2:
+    ext_id: "{{ todelete[1] }}"
+  register: compliance_result
+  ignore_errors: true
+
+- name: Verify list of VM-host affinity policy compliance states
+  ansible.builtin.assert:
+    that:
+      - compliance_result.changed == false
+      - compliance_result.failed == false
+      - compliance_result.response is defined
+      - compliance_result.response is iterable
+      - compliance_result.total_available_results is defined
+      - compliance_result.total_available_results >= 0
+    fail_msg: "Verify list of VM-host affinity policy compliance states failed"
+    success_msg: "Verify list of VM-host affinity policy compliance states passed"
+
+- name: List VM-host affinity policy compliance states with limit
+  nutanix.ncp.ntnx_vm_host_affinity_policy_compliance_info_v2:
+    ext_id: "{{ todelete[1] }}"
+    limit: 1
+  register: compliance_limit_result
+  ignore_errors: true
+
+- name: Verify list of VM-host affinity policy compliance states with limit
+  ansible.builtin.assert:
+    that:
+      - compliance_limit_result.changed == false
+      - compliance_limit_result.failed == false
+      - compliance_limit_result.response is defined
+      - (compliance_limit_result.response | default([]) | length) <= 1
+      - compliance_limit_result.total_available_results is defined
+    fail_msg: "Verify list of VM-host affinity policy compliance states with limit failed"
+    success_msg: "Verify list of VM-host affinity policy compliance states with limit passed"
+
+- name: List all VM host affinity policy compliance with fetch_all
+  nutanix.ncp.ntnx_vm_host_affinity_policy_compliance_info_v2:
+    ext_id: "{{ todelete[1] }}"
+    fetch_all: true
+  register: fetch_all_ntnx_vm_host_affinity_policy_compliance_info_v2
+  ignore_errors: true
+
+- name: List all VM host affinity policy compliance with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_vm_host_affinity_policy_compliance_info_v2.changed == false
+      - fetch_all_ntnx_vm_host_affinity_policy_compliance_info_v2.failed == false
+      - fetch_all_ntnx_vm_host_affinity_policy_compliance_info_v2.response is defined
+      - fetch_all_ntnx_vm_host_affinity_policy_compliance_info_v2.total_available_results is defined
+      - >-
+        (fetch_all_ntnx_vm_host_affinity_policy_compliance_info_v2.response
+        | default([]) | length)
+        ==
+        (fetch_all_ntnx_vm_host_affinity_policy_compliance_info_v2.total_available_results
+        | int)
+    fail_msg: "Unable to list all VM host affinity policy compliance with fetch_all"
+    success_msg: "Listed all VM host affinity policy compliance with fetch_all successfully"
+
+- name: List compliance states for a non-existent VM host affinity policy
+  nutanix.ncp.ntnx_vm_host_affinity_policy_compliance_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: compliance_missing_policy
+  ignore_errors: true
+
+- name: Verify compliance states for a non-existent VM host affinity policy
+  ansible.builtin.assert:
+    that:
+      - compliance_missing_policy.changed == false
+      - compliance_missing_policy.failed == true
+    fail_msg: "Non-existent policy compliance lookup did not fail as expected"
+    success_msg: "Non-existent policy compliance lookup failed as expected"
 
 ##################################################################################
 # Delete policy with check mode enabled
