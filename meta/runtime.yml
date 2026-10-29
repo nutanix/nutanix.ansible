@@ -273,6 +273,7 @@ action_groups:
     - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_validate_node_uplinks_v2
     - ntnx_encryption_v2
     - ntnx_encryption_info_v2
     - ntnx_download_encryption_keys_backup_v2
