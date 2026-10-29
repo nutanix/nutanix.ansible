@@ -273,7 +273,6 @@ action_groups:
     - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
-    - ntnx_certificate_manager_v2
     - ntnx_certificate_authority_v2
     - ntnx_cluster_certificate_v2
     - ntnx_csr_v2

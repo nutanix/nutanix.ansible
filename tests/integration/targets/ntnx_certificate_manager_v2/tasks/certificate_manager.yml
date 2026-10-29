@@ -4,12 +4,11 @@
 #
 # These tests exercise the clustermgmt CertificateManager v4 modules end-to-end against a
 # live Prism Central + Prism Element (AOS) cluster:
-#   - ntnx_csr_v2 (action)
-#   - ntnx_certificate_authority_v2 (action)
-#   - ntnx_cluster_certificate_v2 (action)
-#   - ntnx_csr_download_v2 (action)
+#   - ntnx_csr_v2 (create/delete CSR via state present/absent)
+#   - ntnx_certificate_authority_v2 (create/delete CA via state present/absent)
+#   - ntnx_cluster_certificate_v2 (create certificate)
+#   - ntnx_csr_download_v2 (download CSR)
 #   - ntnx_certificate_manager_info_v2 (info: get-by-id + list, type = CA/CERTIFICATE/CSR)
-#   - ntnx_certificate_manager_v2 (CRUD: delete CA and CSR)
 #
 # Scenarios covered:
 #   1.  Discover a Prism Element (AOS) cluster ext_id from the live PC.
@@ -22,8 +21,8 @@
 #   8.  Negative: create CA with invalid certificate (task fails).
 #   9.  Negative: create Certificate without required certificate.
 #   10. check_mode delete for CSR and CA.
-#   11. Delete created CSR(s) via CRUD module; idempotency / wrong id checks.
-#   12. Negative: delete with missing required params (ext_id / cluster_ext_id / type).
+#   11. Delete created CSR(s) via ntnx_csr_v2; wrong id checks.
+#   12. Negative: delete with missing required params (ext_id).
 ############################################################################################
 
 - name: Start Certificate Manager tests
@@ -309,13 +308,12 @@
     fail_msg: "Downloaded CSR file does not contain expected PEM content"
 
 ########################################################################################
-# Delete the minimum CSR via CRUD module (check mode + real delete)
+# Delete the minimum CSR via ntnx_csr_v2 (check mode + real delete)
 ########################################################################################
 
 - name: Delete CSR with check mode
-  nutanix.ncp.ntnx_certificate_manager_v2:
+  nutanix.ncp.ntnx_csr_v2:
     state: absent
-    type: CSR
     cluster_ext_id: "{{ cluster_ext_id }}"
     ext_id: "{{ csr_min_ext_id }}"
   check_mode: true
@@ -333,9 +331,8 @@
     fail_msg: "Delete CSR check mode failed"
 
 - name: Delete the minimum CSR
-  nutanix.ncp.ntnx_certificate_manager_v2:
+  nutanix.ncp.ntnx_csr_v2:
     state: absent
-    type: CSR
     cluster_ext_id: "{{ cluster_ext_id }}"
     ext_id: "{{ csr_min_ext_id }}"
   register: result
@@ -428,9 +425,8 @@
     fail_msg: "Full CSR attribute verification failed"
 
 - name: Delete the full CSR
-  nutanix.ncp.ntnx_certificate_manager_v2:
+  nutanix.ncp.ntnx_csr_v2:
     state: absent
-    type: CSR
     cluster_ext_id: "{{ cluster_ext_id }}"
     ext_id: "{{ csr_full_ext_id }}"
   register: result
@@ -587,9 +583,8 @@
 ########################################################################################
 
 - name: Delete Certificate Authority with check mode
-  nutanix.ncp.ntnx_certificate_manager_v2:
+  nutanix.ncp.ntnx_certificate_authority_v2:
     state: absent
-    type: CERTIFICATE_AUTHORITY
     cluster_ext_id: "{{ cluster_ext_id }}"
     ext_id: "00000000-0000-0000-0000-000000000000"
   check_mode: true
@@ -608,9 +603,8 @@
     fail_msg: "Delete CA check mode failed"
 
 - name: Delete CSR with wrong ext_id
-  nutanix.ncp.ntnx_certificate_manager_v2:
+  nutanix.ncp.ntnx_csr_v2:
     state: absent
-    type: CSR
     cluster_ext_id: "{{ cluster_ext_id }}"
     ext_id: "00000000-0000-0000-0000-000000000000"
   register: result
@@ -630,9 +624,8 @@
 ########################################################################################
 
 - name: Delete with missing ext_id
-  nutanix.ncp.ntnx_certificate_manager_v2:
+  nutanix.ncp.ntnx_csr_v2:
     state: absent
-    type: CSR
     cluster_ext_id: "{{ cluster_ext_id }}"
   register: result
   ignore_errors: true
@@ -647,41 +640,22 @@
     success_msg: "Delete with missing ext_id failed as expected"
     fail_msg: "Delete with missing ext_id did not fail as expected"
 
-- name: Delete with missing type
-  nutanix.ncp.ntnx_certificate_manager_v2:
+- name: Delete CA with missing ext_id
+  nutanix.ncp.ntnx_certificate_authority_v2:
     state: absent
     cluster_ext_id: "{{ cluster_ext_id }}"
-    ext_id: "00000000-0000-0000-0000-000000000000"
   register: result
   ignore_errors: true
 
-- name: Assert delete with missing type fails
+- name: Assert delete CA with missing ext_id fails
   ansible.builtin.assert:
     that:
       - result is defined
       - result.changed == false
       - result.failed == true
-      - "'type' in result.msg"
-    success_msg: "Delete with missing type failed as expected"
-    fail_msg: "Delete with missing type did not fail as expected"
-
-- name: Attempt state present (unsupported) on CRUD module
-  nutanix.ncp.ntnx_certificate_manager_v2:
-    state: present
-    type: CSR
-    cluster_ext_id: "{{ cluster_ext_id }}"
-  register: result
-  ignore_errors: true
-
-- name: Assert state present is rejected
-  ansible.builtin.assert:
-    that:
-      - result is defined
-      - result.changed == false
-      - result.failed == true
-      - "'dedicated action modules' in result.msg"
-    success_msg: "state present rejected as expected"
-    fail_msg: "state present was not rejected as expected"
+      - "'ext_id' in result.msg"
+    success_msg: "Delete CA with missing ext_id failed as expected"
+    fail_msg: "Delete CA with missing ext_id did not fail as expected"
 
 - name: Finish Certificate Manager tests
   ansible.builtin.debug:

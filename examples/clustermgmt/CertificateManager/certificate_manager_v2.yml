@@ -134,9 +134,8 @@
       ignore_errors: true
 
     - name: Delete a Certificate Authority
-      nutanix.ncp.ntnx_certificate_manager_v2:
+      nutanix.ncp.ntnx_certificate_authority_v2:
         state: absent
-        type: CERTIFICATE_AUTHORITY
         cluster_ext_id: "{{ cluster_ext_id }}"
         ext_id: "{{ ca_ext_id }}"
       register: result
@@ -144,9 +143,8 @@
       when: ca_ext_id is defined
 
     - name: Delete a Certificate Signing Request
-      nutanix.ncp.ntnx_certificate_manager_v2:
+      nutanix.ncp.ntnx_csr_v2:
         state: absent
-        type: CSR
         cluster_ext_id: "{{ cluster_ext_id }}"
         ext_id: "{{ csr_ext_id }}"
       register: result

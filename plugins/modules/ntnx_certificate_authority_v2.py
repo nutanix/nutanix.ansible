@@ -11,11 +11,13 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_certificate_authority_v2
-short_description: Add a Certificate Authority (CA) to a cluster in Nutanix Prism Central
+short_description: Create or delete a Certificate Authority (CA) on a cluster in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module adds a Certificate Authority (CA) to a cluster in Nutanix Prism Central.
-  - This is an action module that triggers a task-based operation.
+  - This module creates or deletes a Certificate Authority (CA) on a cluster in Nutanix Prism Central.
+  - When C(state) is C(present), a Certificate Authority is added (create).
+  - When C(state) is C(absent), the Certificate Authority identified by C(ext_id) is deleted.
+  - The underlying v4 API does not support updating an existing Certificate Authority.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -23,28 +25,40 @@ notes:
   - >-
     B(Create Cluster Certificate Authority) -
     Required Roles: Cluster Admin, Prism Admin, Super Admin
+  - >-
+    B(Delete Cluster Certificate Authority) -
+    Required Roles: Cluster Admin, Prism Admin, Super Admin
   - This module talks to B(Prism Central) (PC). It does not target FCVM/Foundation.
-  - The referenced cluster must exist before adding a Certificate Authority to it.
+  - The referenced cluster must exist before adding or deleting a Certificate Authority on it.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   cluster_ext_id:
     description:
-      - The external ID of the cluster on which the Certificate Authority will be added.
+      - The external ID of the cluster that owns the Certificate Authority.
     type: str
     required: true
+  ext_id:
+    description:
+      - The external ID of the Certificate Authority to delete.
+      - Required when C(state) is C(absent).
+    type: str
+    required: false
   certificate:
     description:
       - Base64 encoded certificate data of the Certificate Authority.
+      - Required when C(state) is C(present).
     type: str
-    required: true
+    required: false
   description:
     description:
       - Description of the Certificate Authority.
+      - Only applicable when C(state) is C(present).
     type: str
     required: false
   purpose:
     description:
       - Purpose of the Certificate Authority.
+      - Only applicable when C(state) is C(present).
     type: str
     required: false
 extends_documentation_fragment:
@@ -60,10 +74,19 @@ author:
 EXAMPLES = r"""
 - name: Add a Certificate Authority to a cluster
   nutanix.ncp.ntnx_certificate_authority_v2:
+    state: present
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
     certificate: "{{ ca_certificate_base64 }}"
     description: "Certificate Authority added by Ansible"
     purpose: "SERVER_AUTH"
+  register: result
+  ignore_errors: true
+
+- name: Delete a Certificate Authority
+  nutanix.ncp.ntnx_certificate_authority_v2:
+    state: absent
+    cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
+    ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
   register: result
   ignore_errors: true
 """
@@ -71,7 +94,7 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - Response for adding a Certificate Authority to a cluster.
+    - Response for creating or deleting a Certificate Authority on a cluster.
     - Task details when C(wait) is true.
   returned: always
   type: dict
@@ -104,7 +127,7 @@ task_ext_id:
 
 ext_id:
   description:
-    - The external ID of the created Certificate Authority.
+    - The external ID of the Certificate Authority.
   returned: when applicable
   type: str
   sample: "2e40ff57-20aa-4d2b-b179-298db969c20d"
@@ -170,7 +193,8 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         cluster_ext_id=dict(type="str", required=True),
-        certificate=dict(type="str", required=True, no_log=True),
+        ext_id=dict(type="str"),
+        certificate=dict(type="str", no_log=True),
         description=dict(type="str"),
         purpose=dict(type="str"),
     )
@@ -225,10 +249,49 @@ def create_certificate_authority(module, result, api_instance):
     result["changed"] = True
 
 
+def delete_certificate_authority(module, result, api_instance):
+    validate_required_params(module, ["ext_id", "cluster_ext_id"])
+    ext_id = module.params.get("ext_id")
+    cluster_ext_id = module.params.get("cluster_ext_id")
+    result["ext_id"] = ext_id
+
+    if module.check_mode:
+        result["msg"] = (
+            "Certificate Authority with ext_id: {0} will be deleted.".format(ext_id)
+        )
+        return
+
+    resp = None
+    try:
+        resp = api_instance.delete_certificate_authority_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while deleting Certificate Authority with ext_id: {0}".format(
+                ext_id
+            ),
+        )
+
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if task_ext_id and module.params.get("wait"):
+        task_status = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(task_status.to_dict())
+    result["changed"] = True
+
+
 def run_module():
     module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        required_if=[
+            ("state", "present", ("certificate",)),
+            ("state", "absent", ("ext_id",)),
+        ],
     )
     if SDK_IMP_ERROR:
         module.fail_json(
@@ -245,7 +308,10 @@ def run_module():
         "task_ext_id": None,
     }
     api_instance = get_certificate_manager_api_instance(module)
-    create_certificate_authority(module, result, api_instance)
+    if module.params.get("state") == "present":
+        create_certificate_authority(module, result, api_instance)
+    else:
+        delete_certificate_authority(module, result, api_instance)
     module.exit_json(**result)
 
 

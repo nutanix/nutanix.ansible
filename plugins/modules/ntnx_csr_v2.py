@@ -11,11 +11,13 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_csr_v2
-short_description: Generate a Certificate Signing Request (CSR) on a cluster in Nutanix Prism Central
+short_description: Create or delete a Certificate Signing Request (CSR) on a cluster in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module generates a Certificate Signing Request (CSR) on a cluster in Nutanix Prism Central.
-  - This is an action module that triggers a task-based operation.
+  - This module creates or deletes a Certificate Signing Request (CSR) on a cluster in Nutanix Prism Central.
+  - When C(state) is C(present), a CSR is generated (create).
+  - When C(state) is C(absent), the CSR identified by C(ext_id) is deleted.
+  - The underlying v4 API does not support updating an existing CSR.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -23,21 +25,32 @@ notes:
   - >-
     B(Create Cluster Certificate Signing Request) -
     Required Roles: Cluster Admin, Prism Admin, Super Admin
+  - >-
+    B(Delete Cluster Certificate Signing Request) -
+    Required Roles: Cluster Admin, Prism Admin, Super Admin
   - This module talks to B(Prism Central) (PC). It does not target FCVM/Foundation.
-  - The referenced cluster must exist before generating a Certificate Signing Request on it.
+  - The referenced cluster must exist before creating or deleting a Certificate Signing Request on it.
+  - A cluster allows only one CSR at a time.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   cluster_ext_id:
     description:
-      - The external ID of the cluster on which the Certificate Signing Request will be generated.
+      - The external ID of the cluster that owns the Certificate Signing Request.
     type: str
     required: true
+  ext_id:
+    description:
+      - The external ID of the Certificate Signing Request to delete.
+      - Required when C(state) is C(absent).
+    type: str
+    required: false
   certificate_info:
     description:
       - Details of the certificate configuration used to generate the Certificate Signing Request.
+      - Required when C(state) is C(present).
       - The API requires C(common_name), C(city), C(state), C(country_code), and C(private_key_algorithm).
     type: dict
-    required: true
+    required: false
     suboptions:
       common_name:
         description:
@@ -134,6 +147,7 @@ options:
   purpose:
     description:
       - Purpose of the certificate signing request.
+      - Only applicable when C(state) is C(present).
     type: str
     required: false
 extends_documentation_fragment:
@@ -149,6 +163,7 @@ author:
 EXAMPLES = r"""
 - name: Generate a Certificate Signing Request on a cluster
   nutanix.ncp.ntnx_csr_v2:
+    state: present
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
     certificate_info:
       common_name: "ansible.nutanix.com"
@@ -171,12 +186,20 @@ EXAMPLES = r"""
     purpose: "SERVER_AUTH"
   register: result
   ignore_errors: true
+
+- name: Delete a Certificate Signing Request
+  nutanix.ncp.ntnx_csr_v2:
+    state: absent
+    cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
+    ext_id: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
 response:
   description:
-    - Response for generating a Certificate Signing Request on a cluster.
+    - Response for creating or deleting a Certificate Signing Request on a cluster.
     - Task details when C(wait) is true.
   returned: always
   type: dict
@@ -209,7 +232,7 @@ task_ext_id:
 
 ext_id:
   description:
-    - The external ID of the created Certificate Signing Request.
+    - The external ID of the Certificate Signing Request.
   returned: when applicable
   type: str
   sample: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
@@ -333,9 +356,9 @@ def get_module_spec():
 
     module_args = dict(
         cluster_ext_id=dict(type="str", required=True),
+        ext_id=dict(type="str"),
         certificate_info=dict(
             type="dict",
-            required=True,
             options=certificate_config_info_spec,
             obj=clustermgmt_sdk.CertificateConfigInfo,
         ),
@@ -390,10 +413,51 @@ def create_csr(module, result, api_instance):
     result["changed"] = True
 
 
+def delete_csr(module, result, api_instance):
+    validate_required_params(module, ["ext_id", "cluster_ext_id"])
+    ext_id = module.params.get("ext_id")
+    cluster_ext_id = module.params.get("cluster_ext_id")
+    result["ext_id"] = ext_id
+
+    if module.check_mode:
+        result["msg"] = (
+            "Certificate Signing Request with ext_id: {0} will be deleted.".format(
+                ext_id
+            )
+        )
+        return
+
+    resp = None
+    try:
+        resp = api_instance.delete_csr_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while deleting Certificate Signing Request with ext_id: {0}".format(
+                ext_id
+            ),
+        )
+
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if task_ext_id and module.params.get("wait"):
+        task_status = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(task_status.to_dict())
+    result["changed"] = True
+
+
 def run_module():
     module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        required_if=[
+            ("state", "present", ("certificate_info",)),
+            ("state", "absent", ("ext_id",)),
+        ],
     )
     if SDK_IMP_ERROR:
         module.fail_json(
@@ -410,7 +474,10 @@ def run_module():
         "task_ext_id": None,
     }
     api_instance = get_certificate_manager_api_instance(module)
-    create_csr(module, result, api_instance)
+    if module.params.get("state") == "present":
+        create_csr(module, result, api_instance)
+    else:
+        delete_csr(module, result, api_instance)
     module.exit_json(**result)
 
 
