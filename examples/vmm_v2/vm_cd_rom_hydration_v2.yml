@@ -1,0 +1,36 @@
+---
+# Summary:
+# Enable and disable hydration for a VM CD-ROM.
+# Requires a CD-ROM backed by an external data source for a successful hydrate.
+
+- name: VM CD-ROM hydration playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Enable hydration for a VM CD-ROM
+      nutanix.ncp.ntnx_vm_cd_rom_hydration_v2:
+        state: present
+        vm_ext_id: "<vm_ext_id>"
+        ext_id: "<cd_rom_ext_id>"
+      register: enable_result
+
+    - name: Print enable hydration result
+      ansible.builtin.debug:
+        msg: "{{ enable_result }}"
+
+    - name: Disable hydration for a VM CD-ROM
+      nutanix.ncp.ntnx_vm_cd_rom_hydration_v2:
+        state: absent
+        vm_ext_id: "<vm_ext_id>"
+        ext_id: "<cd_rom_ext_id>"
+      register: disable_result
+
+    - name: Print disable hydration result
+      ansible.builtin.debug:
+        msg: "{{ disable_result }}"
