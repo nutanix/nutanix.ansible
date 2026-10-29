@@ -263,6 +263,7 @@ action_groups:
     - ntnx_iam_entities_info_v2
     - ntnx_virtual_switch_v2
     - ntnx_virtual_switches_info_v2
+    - ntnx_clear_thick_provisioned_space_v2
     - ntnx_cluster_host_nics_info_v2
     - ntnx_host_stats_info_v2
     - ntnx_virtual_nics_info_v2
@@ -272,6 +273,7 @@ action_groups:
     - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_cluster_stats_info_v2
     - ntnx_cluster_bmc_v2
     - ntnx_cluster_bmc_info_v2
     - ntnx_re_enforce_vm_host_affinity_policy_v2
@@ -317,6 +319,8 @@ action_groups:
     - ntnx_content_repository_sync_v2
     - ntnx_content_repository_items_info_v2
     - ntnx_images_migrate_v2
+    - ntnx_rsyslog_server_v2
+    - ntnx_rsyslog_servers_info_v2
     - ntnx_vm_to_host_migration_v2
     - ntnx_vm_recovery_point_v2
     - ntnx_vm_recovery_points_info_v2
