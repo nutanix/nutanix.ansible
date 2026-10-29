@@ -111,6 +111,8 @@ action_groups:
     - ntnx_images_info_v2
     - ntnx_image_placement_policies_v2
     - ntnx_image_placement_policies_info_v2
+    - ntnx_image_rate_limit_policy_v2
+    - ntnx_image_rate_limit_policies_info_v2
     - ntnx_vms_ngt_v2
     - ntnx_vms_ngt_update_v2
     - ntnx_vms_ngt_upgrade_v2
@@ -155,8 +157,12 @@ action_groups:
     - ntnx_roles_info_v2
     - ntnx_directory_services_v2
     - ntnx_directory_services_info_v2
+    - ntnx_directory_services_connection_v2
+    - ntnx_directory_service_search_v2
     - ntnx_saml_identity_providers_v2
     - ntnx_saml_identity_providers_info_v2
+    - ntnx_saml_sp_metadata_info_v2
+    - ntnx_saml_identity_providers_sp_metadata_download_v2
     - ntnx_user_groups_v2
     - ntnx_user_groups_info_v2
     - ntnx_users_v2
@@ -166,6 +172,8 @@ action_groups:
     - ntnx_authorization_policies_info_v2
     - ntnx_security_rules_v2
     - ntnx_security_rules_info_v2
+    - ntnx_security_rules_export_v2
+    - ntnx_security_rules_import_v2
     - ntnx_service_groups_v2
     - ntnx_service_groups_info_v2
     - ntnx_address_groups_v2
@@ -181,13 +189,20 @@ action_groups:
     - ntnx_recovery_point_replicate_v2
     - ntnx_gpus_v2
     - ntnx_gpus_info_v2
+    - ntnx_pcie_devices_info_v2
+    - ntnx_gpu_profiles_info_v2
     - ntnx_clusters_nodes_v2
     - ntnx_nodes_network_info_v2
     - ntnx_pc_registration_v2
     - ntnx_discover_unconfigured_nodes_v2
+    - ntnx_cluster_host_maintenance_v2
+    - ntnx_check_hypervisor_requirement_v2
     - ntnx_storage_containers_stats_v2
+    - ntnx_cluster_disk_stats_info_v2
     - ntnx_storage_containers_info_v2
     - ntnx_storage_containers_v2
+    - ntnx_storage_config_v2
+    - ntnx_storage_config_info_v2
     - ntnx_pc_unregistration_v2
     - ntnx_pc_backup_target_info_v2
     - ntnx_pc_backup_target_v2
@@ -218,6 +233,8 @@ action_groups:
     - ntnx_object_stores_info_v2
     - ntnx_object_stores_certificate_v2
     - ntnx_object_stores_certificate_info_v2
+    - ntnx_object_stores_certificate_download_v2
+    - ntnx_object_stores_stats_info_v2
     - ntnx_password_managers_info_v2
     - ntnx_password_managers_v2
     - ntnx_ova_v2
@@ -246,6 +263,14 @@ action_groups:
     - ntnx_iam_entities_info_v2
     - ntnx_virtual_switch_v2
     - ntnx_virtual_switches_info_v2
+    - ntnx_clear_thick_provisioned_space_v2
+    - ntnx_cluster_host_nics_info_v2
+    - ntnx_host_stats_info_v2
+    - ntnx_virtual_nics_info_v2
+    - ntnx_load_balancer_session_v2
+    - ntnx_load_balancer_sessions_info_v2
+    - ntnx_vpc_virtual_switch_mapping_v2
+    - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
     - ntnx_certificate_manager_v2
@@ -254,3 +279,91 @@ action_groups:
     - ntnx_create_csr_by_cluster_id_v2
     - ntnx_download_csr_by_id_v2
     - ntnx_certificate_managers_info_v2
+    - ntnx_cluster_stats_info_v2
+    - ntnx_cluster_bmc_v2
+    - ntnx_cluster_bmc_info_v2
+    - ntnx_re_enforce_vm_host_affinity_policy_v2
+    - ntnx_cluster_rackable_units_info_v2
+    - ntnx_cluster_cvm_v2
+    - ntnx_cluster_cvms_info_v2
+    - ntnx_vcenter_extension_v2
+    - ntnx_vcenter_extensions_info_v2
+    - ntnx_lcm_bundle_v2
+    - ntnx_lcm_bundles_info_v2
+    - ntnx_snmp_user_v2
+    - ntnx_snmp_user_info_v2
+    - ntnx_snmp_trap_v2
+    - ntnx_snmp_trap_info_v2
+    - ntnx_snmp_transport_v2
+    - ntnx_snmp_status_v2
+    - ntnx_snmp_config_info_v2
+    - ntnx_vm_startup_policy_v2
+    - ntnx_vm_startup_policies_info_v2
+    - ntnx_category_mapping_v2
+    - ntnx_category_mappings_info_v2
+    - ntnx_directory_server_config_v2
+    - ntnx_directory_server_configs_info_v2
+    - ntnx_template_placement_policy_v2
+    - ntnx_template_placement_policies_info_v2
+    - ntnx_vm_guest_customization_profile_v2
+    - ntnx_vm_guest_customization_profiles_info_v2
+    - ntnx_vm_host_affinity_policy_v2
+    - ntnx_vm_host_affinity_policies_info_v2
+    - ntnx_vm_host_affinity_policy_re_enforce_v2
+    - ntnx_vm_anti_affinity_policy_v2
+    - ntnx_vm_anti_affinity_policies_info_v2
+    - ntnx_vm_anti_affinity_policy_compliance_info_v2
+    - ntnx_project_v2
+    - ntnx_projects_info_v2
+    - ntnx_resource_group_v2
+    - ntnx_resource_groups_info_v2
+    - ntnx_role_membership_v2
+    - ntnx_role_memberships_info_v2
+    - ntnx_content_repository_v2
+    - ntnx_content_repositories_info_v2
+    - ntnx_content_repository_subscribe_v2
+    - ntnx_content_repository_sync_v2
+    - ntnx_content_repository_items_info_v2
+    - ntnx_images_migrate_v2
+    - ntnx_vm_to_host_migration_v2
+    - ntnx_vm_recovery_point_v2
+    - ntnx_vm_recovery_points_info_v2
+    - ntnx_vm_recovery_point_restore_v2
+    - ntnx_vm_startup_policy_vm_compliance_states_info_v2
+    - ntnx_effective_rate_limit_policies_info_v2
+    - ntnx_import_image_v2
+    - ntnx_vm_host_affinity_policy_compliance_info_v2
+    - ntnx_certificate_auth_provider_v2
+    - ntnx_certificate_auth_providers_info_v2
+    - ntnx_registered_clients_info_v2
+    - ntnx_user_password_v2
+    - ntnx_iam_welcome_banner_v2
+    - ntnx_iam_welcome_banner_info_v2
+    - ntnx_user_state_v2
+    - ntnx_login_providers_info_v2
+    - ntnx_role_membership_summary_info_v2
+    - ntnx_batch_v2
+    - ntnx_batches_info_v2
+    - ntnx_task_jobs_info_v2
+    - ntnx_task_entities_info_v2
+    - ntnx_registrations_info_v2
+    - ntnx_update_domain_manager_v2
+    - ntnx_scale_up_domain_manager_by_id_v2
+    - ntnx_esxi_vm_stats_info_v2
+    - ntnx_esxi_vm_disk_stats_info_v2
+    - ntnx_esxi_vm_nic_stats_info_v2
+    - ntnx_vm_stats_info_v2
+    - ntnx_vm_disk_stats_info_v2
+    - ntnx_vm_nic_stats_info_v2
+    - ntnx_vm_startup_policy_dp_info_v2
+    - ntnx_vm_startup_policy_dp_dependee_vms_info_v2
+    - ntnx_vm_startup_policy_dp_dependent_vms_info_v2
+    - ntnx_vm_startup_policy_sc_conflicts_info_v2
+    - ntnx_vm_startup_policy_sc_conflict_dependee_vms_info_v2
+    - ntnx_vm_startup_policy_sc_conflict_dependent_vms_info_v2
+    - ntnx_guest_reboot_policy_v2
+    - ntnx_guest_reboot_policies_info_v2
+    - ntnx_vm_profiles_info_v2
+    - ntnx_vm_profile_v2
+    - ntnx_vm_profile_deploy_v2
+    - ntnx_vm_profile_share_v2
