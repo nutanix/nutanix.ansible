@@ -10,5 +10,5 @@
       nutanix_debug: "{{ nutanix_debug | default(omit) }}"
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
   block:
-    - name: Import cluster_stat_v2 tests
-      ansible.builtin.import_tasks: "cluster_stat_v2.yml"
+    - name: Import cluster_stats.yml
+      ansible.builtin.import_tasks: cluster_stats.yml

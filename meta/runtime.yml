@@ -272,7 +272,6 @@ action_groups:
     - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
-    - ntnx_cluster_stat_v2
     - ntnx_cluster_stats_info_v2
     - ntnx_cluster_bmc_v2
     - ntnx_cluster_bmc_info_v2
