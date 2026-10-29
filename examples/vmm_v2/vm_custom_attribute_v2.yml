@@ -1,0 +1,38 @@
+---
+# Summary:
+# Add and remove custom attributes on a VM.
+
+- name: VM custom attribute playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Add custom attributes to a VM
+      nutanix.ncp.ntnx_vm_custom_attribute_v2:
+        state: present
+        ext_id: "<vm_ext_id>"
+        custom_attributes:
+          - "environment:production"
+          - "owner:engineering"
+      register: add_result
+
+    - name: Print add custom attributes result
+      ansible.builtin.debug:
+        msg: "{{ add_result }}"
+
+    - name: Remove custom attributes from a VM
+      nutanix.ncp.ntnx_vm_custom_attribute_v2:
+        state: absent
+        ext_id: "<vm_ext_id>"
+        custom_attributes:
+          - "environment:production"
+      register: remove_result
+
+    - name: Print remove custom attributes result
+      ansible.builtin.debug:
+        msg: "{{ remove_result }}"

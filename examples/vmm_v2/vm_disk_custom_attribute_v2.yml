@@ -1,0 +1,40 @@
+---
+# Summary:
+# Add and remove custom attributes on a VM disk.
+
+- name: VM disk custom attribute playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Add custom attributes to a VM disk
+      nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+        state: present
+        vm_ext_id: "<vm_ext_id>"
+        ext_id: "<disk_ext_id>"
+        custom_attributes:
+          - "storageclass:premium"
+          - "backup:daily"
+      register: add_result
+
+    - name: Print add disk custom attributes result
+      ansible.builtin.debug:
+        msg: "{{ add_result }}"
+
+    - name: Remove custom attributes from a VM disk
+      nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+        state: absent
+        vm_ext_id: "<vm_ext_id>"
+        ext_id: "<disk_ext_id>"
+        custom_attributes:
+          - "backup:daily"
+      register: remove_result
+
+    - name: Print remove disk custom attributes result
+      ansible.builtin.debug:
+        msg: "{{ remove_result }}"
