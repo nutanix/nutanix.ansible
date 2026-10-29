@@ -268,7 +268,7 @@ action_groups:
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
     - ntnx_cluster_bmc_v2
-    - ntnx_cluster_bmcs_info_v2
+    - ntnx_cluster_bmc_info_v2
     - ntnx_cluster_cvm_v2
     - ntnx_cluster_cvms_info_v2
     - ntnx_vcenter_extension_v2

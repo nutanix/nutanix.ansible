@@ -43,7 +43,7 @@
         host_ext_id: "{{ hosts_info.response[0].ext_id }}"
 
     - name: Fetch BMC info for a host
-      nutanix.ncp.ntnx_cluster_bmcs_info_v2:
+      nutanix.ncp.ntnx_cluster_bmc_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
         ext_id: "{{ host_ext_id }}"
       register: bmc_info_before

@@ -67,7 +67,7 @@
 # ---------------------------------------------------------------------------
 
 - name: Fetch BMC info for the host (live, best-effort)
-  nutanix.ncp.ntnx_cluster_bmcs_info_v2:
+  nutanix.ncp.ntnx_cluster_bmc_info_v2:
     cluster_ext_id: "{{ bmc_cluster_ext_id }}"
     ext_id: "{{ bmc_host_ext_id }}"
   register: bmc_get_result
@@ -93,7 +93,7 @@
 # ---------------------------------------------------------------------------
 
 - name: Fetch BMC info with missing ext_id (should fail)
-  nutanix.ncp.ntnx_cluster_bmcs_info_v2:
+  nutanix.ncp.ntnx_cluster_bmc_info_v2:
     cluster_ext_id: "{{ bmc_cluster_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
   register: result
   ignore_errors: true
@@ -109,7 +109,7 @@
     success_msg: "Missing ext_id failed as expected"
 
 - name: Fetch BMC info with missing cluster_ext_id (should fail)
-  nutanix.ncp.ntnx_cluster_bmcs_info_v2:
+  nutanix.ncp.ntnx_cluster_bmc_info_v2:
     ext_id: "00000000-0000-0000-0000-000000000000"
   register: result
   ignore_errors: true
@@ -125,7 +125,7 @@
     success_msg: "Missing cluster_ext_id failed as expected"
 
 - name: Fetch BMC info with invalid cluster + host ext_id (expect API exception)
-  nutanix.ncp.ntnx_cluster_bmcs_info_v2:
+  nutanix.ncp.ntnx_cluster_bmc_info_v2:
     cluster_ext_id: "00000000-0000-0000-0000-000000000000"
     ext_id: "00000000-0000-0000-0000-000000000000"
   register: result

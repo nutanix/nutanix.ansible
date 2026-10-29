@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_cluster_bmcs_info_v2
+module: ntnx_cluster_bmc_info_v2
 short_description: Fetch BMC (Baseboard Management Controller) info of a host in Nutanix Prism Central
 version_added: 2.7.0
 description:
@@ -52,7 +52,7 @@ author:
 
 EXAMPLES = r"""
 - name: Fetch BMC info of a host
-  nutanix.ncp.ntnx_cluster_bmcs_info_v2:
+  nutanix.ncp.ntnx_cluster_bmc_info_v2:
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     ext_id: "8300384a-56ee-4750-aeb8-3d1c42908bee"
   register: bmc_info
