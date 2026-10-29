@@ -277,7 +277,9 @@ action_groups:
     - ntnx_cluster_certificate_v2
     - ntnx_csr_v2
     - ntnx_csr_download_v2
-    - ntnx_certificate_manager_info_v2
+    - ntnx_certificate_authority_info_v2
+    - ntnx_cluster_certificate_info_v2
+    - ntnx_csr_info_v2
     - ntnx_cluster_stats_info_v2
     - ntnx_cluster_bmc_v2
     - ntnx_cluster_bmc_info_v2

@@ -56,9 +56,8 @@
     # The CSR create task does not return the real CSR external ID, so resolve it
     # from the list API using the common name that was requested.
     - name: List CSRs to resolve the created CSR ext_id
-      nutanix.ncp.ntnx_certificate_manager_info_v2:
+      nutanix.ncp.ntnx_csr_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
-        type: CSR
       register: csr_list
       ignore_errors: true
 
@@ -104,32 +103,28 @@
       ignore_errors: true
 
     - name: Get a Certificate Authority using ext_id
-      nutanix.ncp.ntnx_certificate_manager_info_v2:
+      nutanix.ncp.ntnx_certificate_authority_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
-        type: CERTIFICATE_AUTHORITY
         ext_id: "{{ ca_ext_id }}"
       register: result
       ignore_errors: true
       when: ca_ext_id is defined
 
     - name: List all Certificate Authorities on a cluster
-      nutanix.ncp.ntnx_certificate_manager_info_v2:
+      nutanix.ncp.ntnx_certificate_authority_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
-        type: CERTIFICATE_AUTHORITY
       register: result
       ignore_errors: true
 
     - name: List all Certificates on a cluster
-      nutanix.ncp.ntnx_certificate_manager_info_v2:
+      nutanix.ncp.ntnx_cluster_certificate_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
-        type: CERTIFICATE
       register: result
       ignore_errors: true
 
     - name: List all Certificate Signing Requests on a cluster
-      nutanix.ncp.ntnx_certificate_manager_info_v2:
+      nutanix.ncp.ntnx_csr_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
-        type: CSR
       register: result
       ignore_errors: true
 
