@@ -28,6 +28,7 @@ options:
         description:
             - Specify state.
             - If C(state) is set to C(present), a VM is deployed from the VM profile identified by C(ext_id).
+            - If C(state) is set to C(absent), the module will fail.
         type: str
         choices:
             - present
@@ -40,7 +41,6 @@ options:
     vm_name:
         description:
             - VM name.
-            - Maximum length is 80 characters.
         type: str
     vm_description:
         description:
@@ -109,7 +109,6 @@ options:
                     disk_size_bytes:
                         description:
                             - Size of the disk in bytes.
-                            - Minimum value is 1.
                         type: int
                     data_source:
                         description:
@@ -162,7 +161,6 @@ options:
                                     - >-
                                       The contents of the meta_data configuration for cloud-init. This can be formatted
                                       as YAML or JSON. The value must be base64 encoded.
-                                    - Maximum length is 32000 characters.
                                 type: str
                             cloud_init_script:
                                 description:
@@ -181,7 +179,6 @@ options:
                                             value:
                                                 description:
                                                     - The value for the cloud-init user_data.
-                                                    - Maximum length is 128000 characters.
                                                 type: str
                                                 required: true
                                     custom_key_values:
@@ -266,7 +263,8 @@ RETURN = r"""
 response:
     description:
         - Response for deploying a VM from a VM profile.
-        - Task details.
+        - If C(wait) is true, the response will contain the VM details.
+        - If C(wait) is false, the response will contain the task details.
     type: dict
     returned: always
     sample:
@@ -300,11 +298,6 @@ ext_id:
     type: str
     returned: always
     sample: "a4c0a5d2-6e2f-4a52-9d3e-5d7b1f1c8e11"
-vm_ext_id:
-    description: The external ID of the deployed VM.
-    type: str
-    returned: when C(wait) is true and the VM is deployed
-    sample: "16023bcc-c1e2-4131-76eb-6bad6e0ddb66"
 changed:
     description: This indicates whether the task resulted in any changes
     type: bool
@@ -346,6 +339,8 @@ from ..module_utils.v4.utils import (  # noqa: E402
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_vm_profile_api_instance,
 )
+from ..module_utils.v4.vmm.helpers import get_vm  # noqa: E402
+
 
 SDK_IMP_ERROR = None
 try:
@@ -521,7 +516,8 @@ def deploy_vm_from_vm_profile(module, result, api_instance):
             task_status, rel=TASK_CONSTANTS.RelEntityType.VM
         )
         if vm_ext_id:
-            result["vm_ext_id"] = vm_ext_id
+            response = get_vm(module, api_instance, vm_ext_id)
+            result["response"] = strip_internal_attributes(response.to_dict())
     result["changed"] = True
 
 

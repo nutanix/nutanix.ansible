@@ -85,7 +85,8 @@ RETURN = r"""
 response:
     description:
         - Response for sharing or unsharing a VM profile.
-        - Task details.
+        - If C(wait) is true, it will contain the final task payload after completion.
+        - If C(wait) is false, it will contain the initial task details.
     type: dict
     returned: always
     sample:

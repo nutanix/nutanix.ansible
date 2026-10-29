@@ -28,6 +28,7 @@ options:
         description:
             - Specify state.
             - If C(state) is set to C(present), the VM profile identified by C(ext_id) is updated.
+            - If C(state) is set to C(absent), the module will fail.
         type: str
         choices:
             - present
@@ -45,12 +46,10 @@ options:
             memory_size_bytes:
                 description:
                     - Memory size in bytes.
-                    - Minimum value is 1.
                 type: int
             num_cores:
                 description:
                     - Number of CPU cores.
-                    - Minimum value is 1.
                 type: int
             nics:
                 description:
@@ -315,10 +314,11 @@ def update_vm_profile(module, result, api_instance):
 
     strip_read_only_fields(update_spec, fields=_VM_PROFILE_READ_ONLY_FIELDS)
 
+    kwargs = {"if_match": etag}
     resp = None
     try:
         resp = api_instance.update_vm_profile_by_id(
-            extId=ext_id, body=update_spec, if_match=etag
+            extId=ext_id, body=update_spec, **kwargs
         )
     except Exception as e:
         raise_api_exception(

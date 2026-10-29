@@ -67,7 +67,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    filter: "name eq 'ai.xlarge.h100.8gpu'"
+    filter: "name eq 'test-vm-profile'"
   register: result
 
 - name: List VM profiles with limit
@@ -211,9 +211,14 @@ def get_vm_profiles(module, api_instance, result):
             msg="Api Exception raised while fetching VM profiles info",
         )
 
-    result["total_available_results"] = resp.metadata.total_available_results
-    resp_data = strip_internal_attributes(resp.to_dict()).get("data")
-    result["response"] = resp_data if resp_data else []
+    resp = strip_internal_attributes(resp.to_dict())
+    total_available_results = resp.get("metadata").get("total_available_results")
+    result["total_available_results"] = total_available_results
+    resp = resp.get("data")
+
+    if not resp:
+        resp = []
+    result["response"] = resp
 
 
 def run_module():
