@@ -272,6 +272,7 @@ action_groups:
     - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_vm_disk_hydration_v2
     - ntnx_cluster_bmc_v2
     - ntnx_cluster_bmc_info_v2
     - ntnx_re_enforce_vm_host_affinity_policy_v2
