@@ -1,0 +1,179 @@
+---
+- name: Start testing ntnx_vm_custom_attribute_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_vm_custom_attribute_v2
+
+- name: Generate random name suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_vm_custom_attr"
+
+- name: Add custom attributes with check mode enabled
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: present
+    ext_id: "83083083-0000-0000-0000-000000000001"
+    custom_attributes:
+      - "environment:production"
+      - "owner:engineering"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Add custom attributes with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.custom_attributes is defined
+      - >-
+        result.response.custom_attributes ==
+        ['environment:production', 'owner:engineering']
+    fail_msg: Add custom attributes with check mode enabled failed
+    success_msg: Add custom attributes with check mode enabled passed
+
+- name: Remove custom attributes with check mode enabled
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: absent
+    ext_id: "83083083-0000-0000-0000-000000000001"
+    custom_attributes:
+      - "environment:production"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Remove custom attributes with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.custom_attributes is defined
+      - result.response.custom_attributes == ['environment:production']
+    fail_msg: Remove custom attributes with check mode enabled failed
+    success_msg: Remove custom attributes with check mode enabled passed
+
+- name: Create a VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Create VM status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+    fail_msg: Unable to create VM
+    success_msg: VM created successfully
+
+- name: Capture the VM ext_id
+  ansible.builtin.set_fact:
+    vm_uuid: "{{ result.ext_id }}"
+
+- name: Add custom attributes to the VM
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "environment:production"
+      - "owner:engineering"
+  register: result
+  ignore_errors: true
+
+- name: Add custom attributes status
+  ansible.builtin.assert:
+    that:
+      - result.ext_id == vm_uuid
+      - result.failed == false
+      - result.changed == true
+      - result.task_ext_id is defined
+      - result.response is defined
+      - "'environment:production' in result.response"
+      - "'owner:engineering' in result.response"
+    fail_msg: Add custom attributes failed
+    success_msg: Add custom attributes passed
+
+- name: Add the same custom attributes again for idempotency
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: present
+    ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "environment:production"
+      - "owner:engineering"
+  register: result
+  ignore_errors: true
+
+- name: Add custom attributes idempotency status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: Add custom attributes idempotency failed
+    success_msg: Add custom attributes idempotency passed
+
+- name: Remove custom attributes from the VM
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "environment:production"
+  register: result
+  ignore_errors: true
+
+- name: Remove custom attributes status
+  ansible.builtin.assert:
+    that:
+      - result.ext_id == vm_uuid
+      - result.failed == false
+      - result.changed == true
+      - result.task_ext_id is defined
+      - result.response is defined
+      - "'environment:production' not in result.response"
+      - "'owner:engineering' in result.response"
+    fail_msg: Remove custom attributes failed
+    success_msg: Remove custom attributes passed
+
+- name: Remove the same custom attributes again for idempotency
+  nutanix.ncp.ntnx_vm_custom_attribute_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+    custom_attributes:
+      - "environment:production"
+  register: result
+  ignore_errors: true
+
+- name: Remove custom attributes idempotency status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: Remove custom attributes idempotency failed
+    success_msg: Remove custom attributes idempotency passed
+
+- name: Delete the VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete VM status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+    fail_msg: Unable to delete the VM
+    success_msg: VM deleted successfully

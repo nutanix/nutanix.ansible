@@ -1,0 +1,200 @@
+---
+- name: Start testing ntnx_vm_disk_custom_attribute_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_vm_disk_custom_attribute_v2
+
+- name: Generate random name suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_disk_custom_attr"
+
+- name: Add disk custom attributes with check mode enabled
+  nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+    state: present
+    vm_ext_id: "83083083-0000-0000-0000-000000000001"
+    ext_id: "83083083-0000-0000-0000-000000000002"
+    custom_attributes:
+      - "storageclass:premium"
+      - "backup:daily"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Add disk custom attributes with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.custom_attributes is defined
+      - >-
+        result.response.custom_attributes ==
+        ['storageclass:premium', 'backup:daily']
+    fail_msg: Add disk custom attributes with check mode enabled failed
+    success_msg: Add disk custom attributes with check mode enabled passed
+
+- name: Remove disk custom attributes with check mode enabled
+  nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+    state: absent
+    vm_ext_id: "83083083-0000-0000-0000-000000000001"
+    ext_id: "83083083-0000-0000-0000-000000000002"
+    custom_attributes:
+      - "backup:daily"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Remove disk custom attributes with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.custom_attributes is defined
+      - result.response.custom_attributes == ['backup:daily']
+    fail_msg: Remove disk custom attributes with check mode enabled failed
+    success_msg: Remove disk custom attributes with check mode enabled passed
+
+- name: Create a VM with a disk
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 1073741824
+            storage_container:
+              ext_id: "{{ storage_container.uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 0
+  register: result
+  ignore_errors: true
+
+- name: Create VM status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.disks is defined
+      - result.response.disks | length >= 1
+      - result.response.disks[0].ext_id is defined
+    fail_msg: Unable to create VM with a disk
+    success_msg: VM with a disk created successfully
+
+- name: Capture the VM and disk ext_ids
+  ansible.builtin.set_fact:
+    vm_uuid: "{{ result.ext_id }}"
+    disk_uuid: "{{ result.response.disks[0].ext_id }}"
+
+- name: Add custom attributes to the VM disk
+  nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+    custom_attributes:
+      - "storageclass:premium"
+      - "backup:daily"
+  register: result
+  ignore_errors: true
+
+- name: Add disk custom attributes status
+  ansible.builtin.assert:
+    that:
+      - result.ext_id == disk_uuid
+      - result.vm_ext_id == vm_uuid
+      - result.failed == false
+      - result.changed == true
+      - result.task_ext_id is defined
+      - result.response is defined
+      - "'storageclass:premium' in result.response"
+      - "'backup:daily' in result.response"
+    fail_msg: Add disk custom attributes failed
+    success_msg: Add disk custom attributes passed
+
+- name: Add the same disk custom attributes again for idempotency
+  nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+    custom_attributes:
+      - "storageclass:premium"
+      - "backup:daily"
+  register: result
+  ignore_errors: true
+
+- name: Add disk custom attributes idempotency status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: Add disk custom attributes idempotency failed
+    success_msg: Add disk custom attributes idempotency passed
+
+- name: Remove custom attributes from the VM disk
+  nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+    custom_attributes:
+      - "backup:daily"
+  register: result
+  ignore_errors: true
+
+- name: Remove disk custom attributes status
+  ansible.builtin.assert:
+    that:
+      - result.ext_id == disk_uuid
+      - result.vm_ext_id == vm_uuid
+      - result.failed == false
+      - result.changed == true
+      - result.task_ext_id is defined
+      - result.response is defined
+      - "'backup:daily' not in result.response"
+      - "'storageclass:premium' in result.response"
+    fail_msg: Remove disk custom attributes failed
+    success_msg: Remove disk custom attributes passed
+
+- name: Remove the same disk custom attributes again for idempotency
+  nutanix.ncp.ntnx_vm_disk_custom_attribute_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+    custom_attributes:
+      - "backup:daily"
+  register: result
+  ignore_errors: true
+
+- name: Remove disk custom attributes idempotency status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: Remove disk custom attributes idempotency failed
+    success_msg: Remove disk custom attributes idempotency passed
+
+- name: Delete the VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete VM status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+    fail_msg: Unable to delete the VM
+    success_msg: VM deleted successfully
