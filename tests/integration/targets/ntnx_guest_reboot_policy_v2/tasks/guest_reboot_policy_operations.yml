@@ -1,0 +1,559 @@
+---
+- name: Start testing ntnx_guest_reboot_policy_v2 and ntnx_guest_reboot_policies_info_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_guest_reboot_policy_v2 and ntnx_guest_reboot_policies_info_v2
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name:
+      "ansible_{{ query('community.general.random_string', numbers=false,
+      special=false, length=12)[0] }}"
+
+- name: Set policy names
+  ansible.builtin.set_fact:
+    policy_name_1: "{{ random_name }}_reboot_policy_1"
+    policy_name_2: "{{ random_name }}_reboot_policy_2"
+    policy_name_updated: "{{ random_name }}_reboot_policy_updated"
+    todelete: []
+    todelete_categories: []
+
+##################################################################################
+# Prerequisites - categories
+##################################################################################
+
+- name: Create categories for Guest Reboot Policy tests
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{ random_name }}_reboot_key_{{ item }}"
+    value: "{{ random_name }}_reboot_value_{{ item }}"
+    description: "ansible guest reboot policy category"
+  register: category_create_result
+  ignore_errors: true
+  loop: "{{ range(0, 2) | list }}"
+
+- name: Create categories for Guest Reboot Policy tests status
+  ansible.builtin.assert:
+    that:
+      - category_create_result.changed == true
+      - category_create_result.results | length == 2
+      - category_create_result.msg == "All items completed"
+      - item.failed == false
+      - item.response is defined
+      - item.response.ext_id is defined
+    fail_msg: "Categories creation failed"
+    success_msg: "Categories created successfully"
+  loop: "{{ category_create_result.results }}"
+
+- name: Save categories ext_id to delete list
+  ansible.builtin.set_fact:
+    todelete_categories: "{{ todelete_categories + [ item.response.ext_id ] }}"
+  loop: "{{ category_create_result.results }}"
+
+##################################################################################
+# Create - Check mode
+##################################################################################
+
+- name: Create Guest Reboot Policy with later reboot schedule with check mode enabled
+  nutanix.ncp.ntnx_guest_reboot_policy_v2:
+    state: present
+    name: "{{ policy_name_1 }}"
+    description: "test-ansible-guest-reboot-policy-desc"
+    categories:
+      - ext_id: "00065133-7ad0-1d82-451d-5254003d8207"
+      - ext_id: "00065133-7ad0-1d82-451d-5254003d8209"
+    reboot_schedule:
+      later:
+        day_of_week: SUNDAY
+        time_of_day: "02:30"
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Create Guest Reboot Policy with later reboot schedule with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == policy_name_1
+      - result.response.description == "test-ansible-guest-reboot-policy-desc"
+      - result.response.categories | length == 2
+      - result.response.categories[0].ext_id == "00065133-7ad0-1d82-451d-5254003d8207"
+      - result.response.categories[1].ext_id == "00065133-7ad0-1d82-451d-5254003d8209"
+      - result.response.reboot_schedule.day_of_week == "SUNDAY"
+      - result.response.reboot_schedule.time_of_day == "02:30"
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
+    fail_msg: Create Guest Reboot Policy with later reboot schedule with check mode enabled failed
+    success_msg: Create Guest Reboot Policy with later reboot schedule with check mode enabled passed
+
+- name: Create Guest Reboot Policy with immediate reboot schedule with check mode enabled
+  nutanix.ncp.ntnx_guest_reboot_policy_v2:
+    state: present
+    name: "{{ policy_name_2 }}"
+    categories:
+      - ext_id: "00065133-7ad0-1d82-451d-5254003d8207"
+    reboot_schedule:
+      immediate: {}
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Create Guest Reboot Policy with immediate reboot schedule with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == policy_name_2
+      - result.response.categories | length == 1
+      - result.response.reboot_schedule.day_of_week is not defined
+      - result.response.reboot_schedule.time_of_day is not defined
+    fail_msg: Create Guest Reboot Policy with immediate reboot schedule with check mode enabled failed
+    success_msg: Create Guest Reboot Policy with immediate reboot schedule with check mode enabled passed
+
+##################################################################################
+# Create - negative scenarios
+##################################################################################
+
+- name: Create Guest Reboot Policy without categories and reboot_schedule
+  nutanix.ncp.ntnx_guest_reboot_policy_v2:
+    state: present
+    name: "{{ policy_name_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Create Guest Reboot Policy without categories and reboot_schedule status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'Missing required parameter(s)' in result.msg"
+    fail_msg: Create Guest Reboot Policy without categories and reboot_schedule did not fail
+    success_msg: Create Guest Reboot Policy without categories and reboot_schedule failed as expected
+
+- name: Create Guest Reboot Policy with both immediate and later reboot schedules
+  nutanix.ncp.ntnx_guest_reboot_policy_v2:
+    state: present
+    name: "{{ policy_name_1 }}"
+    categories:
+      - ext_id: "{{ todelete_categories[0] }}"
+    reboot_schedule:
+      immediate: {}
+      later:
+        day_of_week: SUNDAY
+        time_of_day: "02:30"
+  register: result
+  ignore_errors: true
+
+- name: Create Guest Reboot Policy with both immediate and later reboot schedules status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    fail_msg: Create Guest Reboot Policy with both reboot schedules did not fail
+    success_msg: Create Guest Reboot Policy with both reboot schedules failed as expected
+
+##################################################################################
+# Create
+##################################################################################
+
+- name: Create Guest Reboot Policy with later reboot schedule
+  nutanix.ncp.ntnx_guest_reboot_policy_v2:
+    state: present
+    name: "{{ policy_name_1 }}"
+    description: "test-ansible-guest-reboot-policy-desc"
+    categories:
+      - ext_id: "{{ todelete_categories[0] }}"
+      - ext_id: "{{ todelete_categories[1] }}"
+    reboot_schedule:
+      later:
+        day_of_week: SUNDAY
+        time_of_day: "02:30"
+  register: result
+  ignore_errors: true
+
+- name: Create Guest Reboot Policy with later reboot schedule status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response.ext_id == result.ext_id
+      - result.response.name == policy_name_1
+      - result.response.description == "test-ansible-guest-reboot-policy-desc"
+      - result.response.categories | length == 2
+      - result.response.reboot_schedule.day_of_week == "SUNDAY"
+      - result.response.reboot_schedule.time_of_day == "02:30"
+    fail_msg: Create Guest Reboot Policy with later reboot schedule failed
+    success_msg: Create Guest Reboot Policy with later reboot schedule passed
+
+- name: Add the Guest Reboot Policy to the delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+- name: Create Guest Reboot Policy with immediate reboot schedule
+  nutanix.ncp.ntnx_guest_reboot_policy_v2:
+    state: present
+    name: "{{ policy_name_2 }}"
+    categories:
+      - ext_id: "{{ todelete_categories[0] }}"
+    reboot_schedule:
+      immediate: {}
+  register: result
+  ignore_errors: true
+
+- name: Create Guest Reboot Policy with immediate reboot schedule status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response.ext_id == result.ext_id
+      - result.response.name == policy_name_2
+      - result.response.categories | length == 1
+      - result.response.reboot_schedule.day_of_week is not defined
+    fail_msg: Create Guest Reboot Policy with immediate reboot schedule failed
+    success_msg: Create Guest Reboot Policy with immediate reboot schedule passed
+
+- name: Add the Guest Reboot Policy to the delete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+##################################################################################
+# Update - Check mode
+##################################################################################
+
+- name: Update Guest Reboot Policy with check mode enabled
+  nutanix.ncp.ntnx_guest_reboot_policy_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    name: "{{ policy_name_updated }}"
+    description: "test-ansible-guest-reboot-policy-desc-updated"
+    reboot_schedule:
+      later:
+        day_of_week: FRIDAY
+        time_of_day: "23:00"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update Guest Reboot Policy with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == policy_name_updated
+      - result.response.description == "test-ansible-guest-reboot-policy-desc-updated"
+      - result.response.reboot_schedule.day_of_week == "FRIDAY"
+      - result.response.reboot_schedule.time_of_day == "23:00"
+    fail_msg: Update Guest Reboot Policy with check mode enabled failed
+    success_msg: Update Guest Reboot Policy with check mode enabled passed
+
+##################################################################################
+# Update
+##################################################################################
+
+- name: Update Guest Reboot Policy name, description and reboot schedule
+  nutanix.ncp.ntnx_guest_reboot_policy_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    name: "{{ policy_name_updated }}"
+    description: "test-ansible-guest-reboot-policy-desc-updated"
+    reboot_schedule:
+      later:
+        day_of_week: FRIDAY
+        time_of_day: "23:00"
+  register: result
+  ignore_errors: true
+
+- name: Update Guest Reboot Policy name, description and reboot schedule status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == todelete[0]
+      - result.task_ext_id is defined
+      - result.response.name == policy_name_updated
+      - result.response.description == "test-ansible-guest-reboot-policy-desc-updated"
+      - result.response.categories | length == 2
+      - result.response.reboot_schedule.day_of_week == "FRIDAY"
+      - result.response.reboot_schedule.time_of_day == "23:00"
+    fail_msg: Update Guest Reboot Policy name, description and reboot schedule failed
+    success_msg: Update Guest Reboot Policy name, description and reboot schedule passed
+
+- name: Update Guest Reboot Policy from immediate to later reboot schedule
+  nutanix.ncp.ntnx_guest_reboot_policy_v2:
+    state: present
+    ext_id: "{{ todelete[1] }}"
+    reboot_schedule:
+      later:
+        day_of_week: MONDAY
+        time_of_day: "06:15"
+  register: result
+  ignore_errors: true
+
+- name: Update Guest Reboot Policy from immediate to later reboot schedule status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == todelete[1]
+      - result.response.name == policy_name_2
+      - result.response.reboot_schedule.day_of_week == "MONDAY"
+      - result.response.reboot_schedule.time_of_day == "06:15"
+    fail_msg: Update Guest Reboot Policy from immediate to later reboot schedule failed
+    success_msg: Update Guest Reboot Policy from immediate to later reboot schedule passed
+
+- name: Update Guest Reboot Policy from later to immediate reboot schedule
+  nutanix.ncp.ntnx_guest_reboot_policy_v2:
+    state: present
+    ext_id: "{{ todelete[1] }}"
+    reboot_schedule:
+      immediate: {}
+  register: result
+  ignore_errors: true
+
+- name: Update Guest Reboot Policy from later to immediate reboot schedule status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == todelete[1]
+      - result.response.reboot_schedule.day_of_week is not defined
+      - result.response.reboot_schedule.time_of_day is not defined
+    fail_msg: Update Guest Reboot Policy from later to immediate reboot schedule failed
+    success_msg: Update Guest Reboot Policy from later to immediate reboot schedule passed
+
+##################################################################################
+# Update - Idempotency
+##################################################################################
+
+- name: Update Guest Reboot Policy with same values to check idempotency
+  nutanix.ncp.ntnx_guest_reboot_policy_v2:
+    state: present
+    ext_id: "{{ todelete[0] }}"
+    name: "{{ policy_name_updated }}"
+    description: "test-ansible-guest-reboot-policy-desc-updated"
+    reboot_schedule:
+      later:
+        day_of_week: FRIDAY
+        time_of_day: "23:00"
+  register: result
+  ignore_errors: true
+
+- name: Update Guest Reboot Policy with same values to check idempotency status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: Update Guest Reboot Policy idempotency check failed
+    success_msg: Update Guest Reboot Policy idempotency check passed
+
+##################################################################################
+# Info - Get by ext_id
+##################################################################################
+
+- name: Get Guest Reboot Policy using ext_id
+  nutanix.ncp.ntnx_guest_reboot_policies_info_v2:
+    ext_id: "{{ todelete[0] }}"
+  register: result
+  ignore_errors: true
+
+- name: Get Guest Reboot Policy using ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == todelete[0]
+      - result.response.ext_id == todelete[0]
+      - result.response.name == policy_name_updated
+      - result.response.reboot_schedule.day_of_week == "FRIDAY"
+      - result.response.reboot_schedule.time_of_day == "23:00"
+    fail_msg: Get Guest Reboot Policy using ext_id failed
+    success_msg: Get Guest Reboot Policy using ext_id passed
+
+- name: Get Guest Reboot Policy using non-existent ext_id
+  nutanix.ncp.ntnx_guest_reboot_policies_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Get Guest Reboot Policy using non-existent ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+    fail_msg: Get Guest Reboot Policy using non-existent ext_id did not fail
+    success_msg: Get Guest Reboot Policy using non-existent ext_id failed as expected
+
+##################################################################################
+# Info - List
+##################################################################################
+
+- name: List all Guest Reboot Policies
+  nutanix.ncp.ntnx_guest_reboot_policies_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all Guest Reboot Policies status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+      - result.response | length >= 2
+    fail_msg: List all Guest Reboot Policies failed
+    success_msg: List all Guest Reboot Policies passed
+
+- name: List Guest Reboot Policies with limit
+  nutanix.ncp.ntnx_guest_reboot_policies_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List Guest Reboot Policies with limit status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1
+    fail_msg: List Guest Reboot Policies with limit failed
+    success_msg: List Guest Reboot Policies with limit passed
+
+- name: List Guest Reboot Policies with filter
+  nutanix.ncp.ntnx_guest_reboot_policies_info_v2:
+    filter: "name eq '{{ policy_name_updated }}'"
+  register: result
+  ignore_errors: true
+
+- name: List Guest Reboot Policies with filter status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1
+      - result.response[0].ext_id == todelete[0]
+      - result.response[0].name == policy_name_updated
+    fail_msg: List Guest Reboot Policies with filter failed
+    success_msg: List Guest Reboot Policies with filter passed
+
+- name: List all Guest Reboot Policies with fetch_all
+  nutanix.ncp.ntnx_guest_reboot_policies_info_v2:
+    fetch_all: true
+  register: result
+  ignore_errors: true
+
+- name: List all Guest Reboot Policies with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+      - (result.response | length) == (result.total_available_results | int)
+    fail_msg: List all Guest Reboot Policies with fetch_all failed
+    success_msg: List all Guest Reboot Policies with fetch_all passed
+
+- name: Get Guest Reboot Policy using both ext_id and filter
+  nutanix.ncp.ntnx_guest_reboot_policies_info_v2:
+    ext_id: "{{ todelete[0] }}"
+    filter: "name eq '{{ policy_name_updated }}'"
+  register: result
+  ignore_errors: true
+
+- name: Get Guest Reboot Policy using both ext_id and filter status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    fail_msg: Get Guest Reboot Policy using both ext_id and filter did not fail
+    success_msg: Get Guest Reboot Policy using both ext_id and filter failed as expected
+
+##################################################################################
+# Delete - Check mode
+##################################################################################
+
+- name: Delete Guest Reboot Policy with check mode enabled
+  nutanix.ncp.ntnx_guest_reboot_policy_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete Guest Reboot Policy with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "00000000-0000-0000-0000-000000000001"
+      - result.msg == "Guest Reboot Policy with ext_id:00000000-0000-0000-0000-000000000001 will be deleted."
+    fail_msg: Delete Guest Reboot Policy with check mode enabled failed
+    success_msg: Delete Guest Reboot Policy with check mode enabled passed
+
+##################################################################################
+# Delete
+##################################################################################
+
+- name: Delete all Guest Reboot Policies
+  nutanix.ncp.ntnx_guest_reboot_policy_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+
+- name: Delete all Guest Reboot Policies status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.msg == "All items completed"
+      - result.results | length == todelete | length
+      - item.changed == true
+      - item.failed == false
+      - item.response is defined
+      - item.response.status == "SUCCEEDED"
+    fail_msg: Delete Guest Reboot Policies failed
+    success_msg: Delete Guest Reboot Policies passed
+  loop: "{{ result.results }}"
+
+- name: Reset the delete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+- name: Delete created categories
+  nutanix.ncp.ntnx_categories_v2:
+    ext_id: "{{ item }}"
+    state: absent
+  register: result
+  loop: "{{ todelete_categories }}"
+  ignore_errors: true
+
+- name: Delete created categories status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.msg == "All items completed"
+      - result.results | length == todelete_categories | length
+      - item.failed == false
+      - item.changed == true
+    fail_msg: Unable to delete categories
+    success_msg: Categories deleted successfully
+  loop: "{{ result.results }}"
