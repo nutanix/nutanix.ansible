@@ -1,0 +1,169 @@
+---
+- name: Start testing ntnx_vm_pcie_device_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_vm_pcie_device_v2
+
+- name: Generate random name suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_pcie_vm"
+
+- name: Create PCIe device with check mode enabled
+  nutanix.ncp.ntnx_vm_pcie_device_v2:
+    state: present
+    vm_ext_id: "83083083-0000-0000-0000-000000000001"
+    backing_info:
+      device_ext_id: "83083083-0000-0000-0000-000000000002"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Create PCIe device with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.backing_info is defined
+      - >-
+        result.response.backing_info.device_ext_id ==
+        "83083083-0000-0000-0000-000000000002"
+    fail_msg: Create PCIe device with check mode enabled failed
+    success_msg: Create PCIe device with check mode enabled passed
+
+- name: Delete PCIe device with check mode enabled
+  nutanix.ncp.ntnx_vm_pcie_device_v2:
+    state: absent
+    vm_ext_id: "83083083-0000-0000-0000-000000000001"
+    ext_id: "83083083-0000-0000-0000-000000000003"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete PCIe device with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg is defined
+      - >-
+        result.msg ==
+        'PCIe device with ext_id:83083083-0000-0000-0000-000000000003 will be deleted.'
+    fail_msg: Delete PCIe device with check mode enabled failed
+    success_msg: Delete PCIe device with check mode enabled passed
+
+- name: Create a VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Create VM status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+    fail_msg: Unable to create VM
+    success_msg: VM created successfully
+
+- name: Capture the VM ext_id
+  ansible.builtin.set_fact:
+    vm_uuid: "{{ result.ext_id }}"
+
+- name: List PCIe devices attached to the VM
+  nutanix.ncp.ntnx_vm_pcie_devices_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: List PCIe devices status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.response is defined
+      - result.total_available_results is defined
+      - result.response is iterable
+    fail_msg: List PCIe devices failed
+    success_msg: List PCIe devices passed
+
+- name: Create a PCIe device when a physical device is configured
+  when: pcie_device is defined and pcie_device.ext_id is defined
+  nutanix.ncp.ntnx_vm_pcie_device_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    backing_info:
+      device_ext_id: "{{ pcie_device.ext_id }}"
+  register: create_pcie
+  ignore_errors: true
+
+- name: Create PCIe device status
+  when: pcie_device is defined and pcie_device.ext_id is defined
+  ansible.builtin.assert:
+    that:
+      - create_pcie.failed == false
+      - create_pcie.changed == true
+      - create_pcie.ext_id is defined
+      - create_pcie.response is defined
+    fail_msg: Create PCIe device failed
+    success_msg: Create PCIe device passed
+
+- name: Get the PCIe device by ext_id
+  when: create_pcie is defined and create_pcie.ext_id is defined
+  nutanix.ncp.ntnx_vm_pcie_devices_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ create_pcie.ext_id }}"
+  register: get_pcie
+  ignore_errors: true
+
+- name: Get PCIe device status
+  when: create_pcie is defined and create_pcie.ext_id is defined
+  ansible.builtin.assert:
+    that:
+      - get_pcie.failed == false
+      - get_pcie.changed == false
+      - get_pcie.ext_id == create_pcie.ext_id
+      - get_pcie.response is defined
+    fail_msg: Get PCIe device failed
+    success_msg: Get PCIe device passed
+
+- name: Delete the PCIe device
+  when: create_pcie is defined and create_pcie.ext_id is defined
+  nutanix.ncp.ntnx_vm_pcie_device_v2:
+    state: absent
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ create_pcie.ext_id }}"
+  register: delete_pcie
+  ignore_errors: true
+
+- name: Delete PCIe device status
+  when: create_pcie is defined and create_pcie.ext_id is defined
+  ansible.builtin.assert:
+    that:
+      - delete_pcie.failed == false
+      - delete_pcie.changed == true
+    fail_msg: Delete PCIe device failed
+    success_msg: Delete PCIe device passed
+
+- name: Delete the VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete VM status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+    fail_msg: Unable to delete the VM
+    success_msg: VM deleted successfully
