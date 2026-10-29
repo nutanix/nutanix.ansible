@@ -256,6 +256,28 @@ def get_cluster_profile(module, api_instance, ext_id):
         )
 
 
+def get_cluster_stats(module, api_instance, ext_id, **kwargs):
+    """
+    This method will return cluster stats using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        ext_id (str): cluster external ID
+        kwargs (dict): additional query parameters
+            (_startTime, _endTime, _samplingInterval, _statType, _select)
+    return:
+        cluster stats info (object): cluster stats info
+    """
+    try:
+        return api_instance.get_cluster_stats(extId=ext_id, **kwargs).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching cluster stats using ext_id",
+        )
+
+
 def get_bmc_info(module, api_instance, cluster_ext_id, host_ext_id):
     """
     This method will return BMC info for a specific host in a cluster.
