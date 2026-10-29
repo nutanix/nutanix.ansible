@@ -505,7 +505,7 @@
 - name: Create Certificate Authority (check mode)
   nutanix.ncp.ntnx_create_certificate_authority_by_cluster_id_v2:
     cluster_ext_id: "{{ cluster_ext_id }}"
-    certificate: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0t"
+    certificate: "{{ '-----BEGIN CERTIFICATE-----' | b64encode }}"
     description: "CA check mode"
     purpose: "SERVER_AUTH"
   check_mode: true
