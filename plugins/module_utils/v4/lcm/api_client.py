@@ -169,19 +169,12 @@ def get_entity_api_instance(module):
 def get_foundation_central_config_api_instance(module):
     """
     This method will return Foundation Central config API instance.
-
-    Note:
-        The Foundation Central configuration APIs are served by the Foundation
-        Central VM (FCVM)/Foundation endpoint and NOT by Prism Central. The
-        caller must set ``nutanix_host``/``nutanix_port`` to the FCVM/Foundation
-        endpoint (default port 9440).
     Args:
         module (object): Ansible module object
     return:
         api_instance (object): v4 Foundation Central config api instance
     """
-    # The Foundation Central config endpoint only exists at API version v4.3.
-    # Disable version negotiation so the SDK does not get downgraded to an
-    # older version (e.g. v4.2) that returns 404 for this endpoint.
+    # Foundation Central config exists at v4.3; disable negotiation so the SDK
+    # is not downgraded to an older version that returns 404 for this endpoint.
     api_client = get_api_client(module, allow_version_negotiation=False)
     return ntnx_lifecycle_py_client.FoundationCentralConfigApi(api_client=api_client)

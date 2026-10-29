@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
@@ -11,45 +12,34 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_foundation_central_config_v2
 short_description: Update Foundation Central configuration
+version_added: "2.7.0"
 description:
-    - This module updates the Foundation Central (FC) service configuration.
-    - The Foundation Central configuration is a singleton resource, so only the
-      update operation is supported (C(state=present)).
-    - This module supports idempotency and check mode.
-version_added: 2.6.0
-author:
-    - Abhinav Bansal (@abhinavbansal29)
-    - George Ghawali (@george-ghawali)
+    - Updates the configuration settings of the Foundation Central service.
+    - This module uses PC v4 APIs based SDKs
 notes:
-    - This module talks to the Foundation Central VM (FCVM)/Foundation endpoint,
-      B(not) Prism Central. Set C(nutanix_host)/C(nutanix_port) to the
-      FCVM/Foundation endpoint (default port C(9440)).
     - >-
-      B(Update the Foundation Central configuration.) -
-      Requires an Admin role on the Foundation Central VM (FCVM).
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    - >-
+      B(Update Foundation Central configuration) -
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
     state:
         description:
-            - State of the Foundation Central configuration.
-            - If C(present), the module will update the Foundation Central configuration.
+            - State of the module.
+            - If C(state) is C(present), the module will update the Foundation Central configuration.
         type: str
         choices:
             - present
         default: present
-    tls_certificate_fingerprint:
-        description:
-            - The TLS certificate fingerprint used by the Foundation Central service.
-        type: str
-        required: false
     aos_download_timeout_minutes:
         description:
-            - The timeout, in minutes, for downloading an AOS package.
+            - Timeout in minutes for AOS download.
         type: int
         required: false
     ahv_installation_timeout_minutes:
         description:
-            - The timeout, in minutes, for installing AHV.
+            - Timeout in minutes for AHV installation.
         type: int
         required: false
 extends_documentation_fragment:
@@ -57,72 +47,74 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
     - nutanix.ncp.ntnx_proxy_v2
+author:
+    - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
 - name: Update Foundation Central configuration
   nutanix.ncp.ntnx_foundation_central_config_v2:
-    nutanix_host: <fcvm_ip>
-    nutanix_username: <user>
-    nutanix_password: <pass>
-    aos_download_timeout_minutes: 60
-    ahv_installation_timeout_minutes: 30
-    tls_certificate_fingerprint: "AA:BB:CC:DD:EE:FF"
-  register: fc_config_update
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    aos_download_timeout_minutes: 90
+    ahv_installation_timeout_minutes: 60
+  register: result
 """
 
 RETURN = r"""
 response:
-    description: The response from the Nutanix Foundation Central config v4 API (served by FCVM/Foundation).
+    description:
+        - Response for updating Foundation Central configuration.
+        - Configuration details after the update operation.
     type: dict
     returned: always
     sample:
         {
-            "ahv_installation_timeout_minutes": 50,
-            "aos_download_timeout_minutes": 60,
-            "commit_id": "8701b044",
-            "tls_certificate_fingerprint": "0789169a1c913336750712ad51ce22a27abcb6ba3a1bbce8a3155decf53c8757",
+            "ahv_installation_timeout_minutes": 60,
+            "aos_download_timeout_minutes": 90,
+            "commit_id": "f3fdb87d",
+            "tls_certificate_fingerprint": "0a96886f32a7a03b0f729ecee1d217575c7a6f5f6e544ab1485b982b2323223b",
             "version": "2.2"
         }
 changed:
-    description: Whether the module made any changes.
+    description: This indicates whether the task resulted in any changes
     type: bool
     returned: always
     sample: true
-ext_id:
-    description: The external ID of the Foundation Central configuration.
-    type: str
+failed:
+    description: This indicates whether the task failed
+    type: bool
     returned: always
-    sample: null
-task_ext_id:
-    description: The task external ID of the update operation, if returned by the API.
-    type: str
-    returned: always
-    sample: null
+    sample: false
 skipped:
-    description: Indicates if the operation was skipped due to idempotency.
+    description: This indicates whether the task was skipped
     type: bool
     returned: When the operation was skipped
     sample: true
+task_ext_id:
+    description: The external ID of the task.
+    type: str
+    returned: always
+    sample: "ZXJnb24=:1a1a1a1a-2b2b-3c3c-4d4d-5e5e5e5e5e5e"
 msg:
-    description: A status or informational message.
-    returned: When applicable
+    description: This indicates the message if any message occurred
+    returned: When there is an error or module is idempotent
     type: str
     sample: "Nothing to change."
 error:
-    description: Error details, if any error occurred during the task execution.
+    description: This indicates the error message if any error occurred
     type: str
     returned: When an error occurs
-    sample: "Api Exception raised while updating Foundation Central config"
-failed:
-    description: Indicates whether the task failed.
-    type: bool
-    returned: When something fails
-    sample: false
 """
 
 import copy  # noqa: E402
+import traceback  # noqa: E402
 import warnings  # noqa: E402
+
+from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
@@ -139,38 +131,35 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_users_empty_attributes,
 )
 
-# Suppress the InsecureRequestWarning
+SDK_IMP_ERROR = None
+try:
+    import ntnx_lifecycle_py_client  # noqa: E402, F401  # pylint: disable=unused-import
+except ImportError:
+
+    from ..module_utils.v4.sdk_mock import (  # noqa: E402, F401  # pylint: disable=unused-import
+        mock_sdk as ntnx_lifecycle_py_client,
+    )
+
+    SDK_IMP_ERROR = traceback.format_exc()
+
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
+
+WRITABLE_FIELDS = (
+    "aos_download_timeout_minutes",
+    "ahv_installation_timeout_minutes",
+)
 
 
 def get_module_spec():
-
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
-        tls_certificate_fingerprint=dict(type="str"),
         aos_download_timeout_minutes=dict(type="int"),
         ahv_installation_timeout_minutes=dict(type="int"),
     )
     return module_args
 
 
-# Writable fields of the Foundation Central config (i.e. accepted on the
-# update request body). Read-only fields such as ``version`` and ``commit_id``
-# are intentionally excluded from the idempotency comparison.
-WRITABLE_FIELDS = (
-    "tls_certificate_fingerprint",
-    "aos_download_timeout_minutes",
-    "ahv_installation_timeout_minutes",
-)
-
-
 def check_foundation_central_config_idempotency(current_spec, update_spec):
-    """Return True if the update spec introduces no changes to the current config.
-
-    Only the writable fields are compared. Read-only/server-populated fields
-    (e.g. ``version``, ``commit_id``) are ignored so an unchanged update is
-    correctly detected as idempotent.
-    """
     for field in WRITABLE_FIELDS:
         if getattr(current_spec, field, None) != getattr(update_spec, field, None):
             return False
@@ -178,26 +167,16 @@ def check_foundation_central_config_idempotency(current_spec, update_spec):
 
 
 def update_foundation_central_config(module, result, api_instance):
-    """Update the Foundation Central configuration (singleton resource).
-
-    The update API is a full replace (HTTP PUT), so the spec is seeded from the
-    current configuration and only the fields the user provided are overridden.
-    This preserves unspecified writable fields and read-only/server-populated
-    fields.
-    """
-    current_config = get_foundation_central_config(module, api_instance)
-    etag_value = get_etag(current_config)
+    current_spec = get_foundation_central_config(module, api_instance)
+    etag_value = get_etag(data=current_spec)
     if not etag_value:
         module.fail_json(
             msg="Failed to get etag value from the current Foundation Central config",
             **result,
         )
 
-    current_spec = current_config.data
     strip_users_empty_attributes(current_spec)
 
-    # Seed the update spec from the current config so unspecified fields keep
-    # their current values (the API performs a full replace).
     sg = SpecGenerator(module)
     default_spec = copy.deepcopy(current_spec)
     update_spec, err = sg.generate_spec(obj=default_spec)
@@ -219,11 +198,10 @@ def update_foundation_central_config(module, result, api_instance):
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
+    kwargs = {"if_match": etag_value}
     resp = None
     try:
-        resp = api_instance.update_foundation_central_config(
-            body=update_spec, if_match=etag_value
-        )
+        resp = api_instance.update_foundation_central_config(body=update_spec, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -237,7 +215,7 @@ def update_foundation_central_config(module, result, api_instance):
         wait_for_completion(module, task_ext_id)
 
     updated_config = get_foundation_central_config(module, api_instance)
-    result["response"] = strip_internal_attributes(updated_config.data.to_dict())
+    result["response"] = strip_internal_attributes(updated_config.to_dict())
     result["changed"] = True
 
 
@@ -246,13 +224,17 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )
+    if SDK_IMP_ERROR:
+        module.fail_json(
+            msg=missing_required_lib("ntnx_lifecycle_py_client"),
+            exception=SDK_IMP_ERROR,
+        )
 
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
         "response": None,
-        "ext_id": None,
-        "task_ext_id": None,
+        "failed": False,
     }
     api_instance = get_foundation_central_config_api_instance(module)
     update_foundation_central_config(module, result, api_instance)

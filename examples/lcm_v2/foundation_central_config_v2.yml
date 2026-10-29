@@ -1,0 +1,31 @@
+---
+# Summary:
+# Get and update Foundation Central configuration.
+
+- name: Foundation Central configuration playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Get Foundation Central configuration
+      nutanix.ncp.ntnx_foundation_central_config_info_v2:
+      register: result
+
+    - name: Print Foundation Central configuration
+      ansible.builtin.debug:
+        msg: "{{ result }}"
+
+    - name: Update Foundation Central configuration
+      nutanix.ncp.ntnx_foundation_central_config_v2:
+        aos_download_timeout_minutes: 90
+        ahv_installation_timeout_minutes: 60
+      register: result
+
+    - name: Print updated Foundation Central configuration
+      ansible.builtin.debug:
+        msg: "{{ result }}"
