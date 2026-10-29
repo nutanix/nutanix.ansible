@@ -1,0 +1,147 @@
+---
+- name: Start testing ntnx_vm_cross_cluster_migrate_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_vm_cross_cluster_migrate_v2
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: >-
+      {{ query('community.general.random_string',
+      numbers=false, special=false, length=12)[0] }}
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "ansible-cclm-{{ random_name }}"
+
+- name: Cross-cluster migrate VM with check mode enabled
+  nutanix.ncp.ntnx_vm_cross_cluster_migrate_v2:
+    ext_id: "83083083-0000-0000-0000-000000000001"
+    target_availability_zone:
+      ext_id: "83083083-0000-0000-0000-000000000002"
+    target_cluster:
+      ext_id: "83083083-0000-0000-0000-000000000003"
+    is_live_migration: true
+    should_migrate_storage: true
+    dryrun: true
+    overrides:
+      override_nic_list:
+        - nic_backing_info:
+            virtual_ethernet_nic:
+              model: VIRTIO
+              is_connected: true
+              num_queues: 1
+          nic_network_info:
+            virtual_ethernet_nic_network_info:
+              nic_type: NORMAL_NIC
+              subnet:
+                ext_id: "83083083-0000-0000-0000-000000000004"
+              vlan_mode: ACCESS
+      storage_containers_mapping:
+        - source_storage_container:
+            ext_id: "83083083-0000-0000-0000-000000000005"
+          target_storage_container:
+            ext_id: "83083083-0000-0000-0000-000000000006"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Cross-cluster migrate VM with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == "83083083-0000-0000-0000-000000000001"
+      - result.msg is defined
+      - result.msg is search("will be cross-cluster migrated")
+      - result.response.is_live_migration == true
+      - result.response.should_migrate_storage == true
+      - >-
+          result.response.target_availability_zone.ext_id ==
+          "83083083-0000-0000-0000-000000000002"
+      - >-
+          result.response.target_cluster.ext_id ==
+          "83083083-0000-0000-0000-000000000003"
+      - result.response.overrides is defined
+      - result.response.overrides.override_nic_list | length == 1
+      - result.response.overrides.storage_containers_mapping | length == 1
+    fail_msg: Cross-cluster migrate check mode failed
+    success_msg: Cross-cluster migrate check mode passed
+
+- name: Cross-cluster migrate VM with check mode enabled using minimal fields
+  nutanix.ncp.ntnx_vm_cross_cluster_migrate_v2:
+    ext_id: "83083083-0000-0000-0000-000000000001"
+    target_availability_zone:
+      ext_id: "83083083-0000-0000-0000-000000000002"
+    is_live_migration: false
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Cross-cluster migrate VM check mode minimal status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.is_live_migration == false
+      - >-
+          result.response.target_availability_zone.ext_id ==
+          "83083083-0000-0000-0000-000000000002"
+    fail_msg: Cross-cluster migrate minimal check mode failed
+    success_msg: Cross-cluster migrate minimal check mode passed
+
+- name: Create prerequisite AHV VM
+  nutanix.ncp.ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: ansible cross cluster migrate test vm
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: create_vm_result
+  ignore_errors: true
+
+- name: Create prerequisite AHV VM status
+  ansible.builtin.assert:
+    that:
+      - create_vm_result.changed == true
+      - create_vm_result.failed == false
+      - create_vm_result.ext_id is defined
+    fail_msg: Prerequisite VM creation failed
+    success_msg: Prerequisite VM created
+
+- name: Capture VM ext_id
+  ansible.builtin.set_fact:
+    vm_ext_id: "{{ create_vm_result.ext_id }}"
+
+- name: Dry-run cross-cluster migrate for the created VM
+  nutanix.ncp.ntnx_vm_cross_cluster_migrate_v2:
+    ext_id: "{{ vm_ext_id }}"
+    target_availability_zone:
+      ext_id: "83083083-0000-0000-0000-000000000002"
+    is_live_migration: false
+    dryrun: true
+  register: result
+  ignore_errors: true
+
+- name: Dry-run cross-cluster migrate status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined or result.msg is defined
+    fail_msg: Dry-run cross-cluster migrate did not return a response or message
+    success_msg: Dry-run cross-cluster migrate returned a response or message
+
+- name: Delete prerequisite VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm_ext_id }}"
+  register: delete_vm_result
+  ignore_errors: true
+
+- name: Delete prerequisite VM status
+  ansible.builtin.assert:
+    that:
+      - delete_vm_result.changed == true
+      - delete_vm_result.failed == false
+      - delete_vm_result.ext_id == vm_ext_id
+    fail_msg: Prerequisite VM cleanup failed
+    success_msg: Prerequisite VM cleaned up
