@@ -67,7 +67,7 @@
 # ---------------------------------------------------------------------------
 
 - name: Fetch BMC info for the host (live, best-effort)
-  nutanix.ncp.ntnx_bmc_infos_info_v2:
+  nutanix.ncp.ntnx_cluster_bmcs_info_v2:
     cluster_ext_id: "{{ bmc_cluster_ext_id }}"
     ext_id: "{{ bmc_host_ext_id }}"
   register: bmc_get_result
@@ -93,7 +93,7 @@
 # ---------------------------------------------------------------------------
 
 - name: Fetch BMC info with missing ext_id (should fail)
-  nutanix.ncp.ntnx_bmc_infos_info_v2:
+  nutanix.ncp.ntnx_cluster_bmcs_info_v2:
     cluster_ext_id: "{{ bmc_cluster_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
   register: result
   ignore_errors: true
@@ -109,7 +109,7 @@
     success_msg: "Missing ext_id failed as expected"
 
 - name: Fetch BMC info with missing cluster_ext_id (should fail)
-  nutanix.ncp.ntnx_bmc_infos_info_v2:
+  nutanix.ncp.ntnx_cluster_bmcs_info_v2:
     ext_id: "00000000-0000-0000-0000-000000000000"
   register: result
   ignore_errors: true
@@ -125,7 +125,7 @@
     success_msg: "Missing cluster_ext_id failed as expected"
 
 - name: Fetch BMC info with invalid cluster + host ext_id (expect API exception)
-  nutanix.ncp.ntnx_bmc_infos_info_v2:
+  nutanix.ncp.ntnx_cluster_bmcs_info_v2:
     cluster_ext_id: "00000000-0000-0000-0000-000000000000"
     ext_id: "00000000-0000-0000-0000-000000000000"
   register: result
@@ -146,7 +146,7 @@
 # ---------------------------------------------------------------------------
 
 - name: Update BMC info with missing ext_id (should fail)
-  nutanix.ncp.ntnx_bmc_info_v2:
+  nutanix.ncp.ntnx_cluster_bmc_v2:
     cluster_ext_id: "00000000-0000-0000-0000-000000000000"
     credential:
       username: "ADMIN"
@@ -165,7 +165,7 @@
     success_msg: "Missing ext_id failed as expected"
 
 - name: Update BMC info with missing cluster_ext_id (should fail)
-  nutanix.ncp.ntnx_bmc_info_v2:
+  nutanix.ncp.ntnx_cluster_bmc_v2:
     ext_id: "00000000-0000-0000-0000-000000000000"
     credential:
       username: "ADMIN"
@@ -184,7 +184,7 @@
     success_msg: "Missing cluster_ext_id failed as expected"
 
 - name: Update BMC info with state=absent (invalid choice)
-  nutanix.ncp.ntnx_bmc_info_v2:
+  nutanix.ncp.ntnx_cluster_bmc_v2:
     state: absent
     cluster_ext_id: "00000000-0000-0000-0000-000000000000"
     ext_id: "00000000-0000-0000-0000-000000000000"
@@ -202,7 +202,7 @@
     success_msg: "state=absent was rejected as expected"
 
 - name: Update BMC info with both ipv4 and ipv6 (mutually exclusive)
-  nutanix.ncp.ntnx_bmc_info_v2:
+  nutanix.ncp.ntnx_cluster_bmc_v2:
     cluster_ext_id: "00000000-0000-0000-0000-000000000000"
     ext_id: "00000000-0000-0000-0000-000000000000"
     ip_address:
@@ -230,7 +230,7 @@
 # ---------------------------------------------------------------------------
 
 - name: Generate spec for updating BMC info in check_mode with all attributes
-  nutanix.ncp.ntnx_bmc_info_v2:
+  nutanix.ncp.ntnx_cluster_bmc_v2:
     cluster_ext_id: "{{ bmc_cluster_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
     ext_id: "{{ bmc_host_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
     ip_address:
@@ -268,7 +268,7 @@
     success_msg: "check_mode preview includes all provided attributes"
 
 - name: Generate spec for updating BMC info in check_mode with only IP (ipv4)
-  nutanix.ncp.ntnx_bmc_info_v2:
+  nutanix.ncp.ntnx_cluster_bmc_v2:
     cluster_ext_id: "{{ bmc_cluster_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
     ext_id: "{{ bmc_host_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
     ip_address:
@@ -292,7 +292,7 @@
     success_msg: "check_mode preview with only IP is correct"
 
 - name: Generate spec for updating BMC info in check_mode with only credential
-  nutanix.ncp.ntnx_bmc_info_v2:
+  nutanix.ncp.ntnx_cluster_bmc_v2:
     cluster_ext_id: "{{ bmc_cluster_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
     ext_id: "{{ bmc_host_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
     credential:
@@ -317,7 +317,7 @@
     success_msg: "check_mode preview with only credential is correct"
 
 - name: Generate spec for updating BMC info in check_mode with ipv6 address
-  nutanix.ncp.ntnx_bmc_info_v2:
+  nutanix.ncp.ntnx_cluster_bmc_v2:
     cluster_ext_id: "{{ bmc_cluster_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
     ext_id: "{{ bmc_host_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
     ip_address:
@@ -347,7 +347,7 @@
 # ---------------------------------------------------------------------------
 
 - name: Attempt live BMC update with a non-existent cluster ext_id (expect API exception)
-  nutanix.ncp.ntnx_bmc_info_v2:
+  nutanix.ncp.ntnx_cluster_bmc_v2:
     cluster_ext_id: "00000000-0000-0000-0000-000000000000"
     ext_id: "00000000-0000-0000-0000-000000000000"
     credential:
