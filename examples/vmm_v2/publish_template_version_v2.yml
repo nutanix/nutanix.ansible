@@ -1,0 +1,24 @@
+---
+# Summary:
+# Set an active version for a template.
+
+- name: Publish template version playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set an active version for a template
+      nutanix.ncp.ntnx_publish_template_version_v2:
+        state: present
+        ext_id: "<template_ext_id>"
+        version_id: "<version_id>"
+      register: result
+
+    - name: Print publish template version result
+      ansible.builtin.debug:
+        msg: "{{ result }}"
