@@ -11,4 +11,4 @@
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
   block:
     - name: Import cross_cluster_migrate_vm.yml
-      ansible.builtin.import_tasks: "cross_cluster_migrate_vm.yml"
+      ansible.builtin.import_tasks: cross_cluster_migrate_vm.yml
