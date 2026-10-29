@@ -201,7 +201,7 @@
     fail_msg: "state=absent was not rejected as expected"
     success_msg: "state=absent was rejected as expected"
 
-- name: Update BMC info with both ipv4 and ipv6 (mutually exclusive)
+- name: Update BMC info with unsupported ip_address param (should fail)
   nutanix.ncp.ntnx_cluster_bmc_v2:
     cluster_ext_id: "00000000-0000-0000-0000-000000000000"
     ext_id: "00000000-0000-0000-0000-000000000000"
@@ -209,34 +209,27 @@
       ipv4:
         value: "10.44.60.10"
         prefix_length: 24
-      ipv6:
-        value: "2001:db8::1"
-        prefix_length: 64
   register: result
   ignore_errors: true
 
-- name: Assert ipv4 + ipv6 mutual exclusion is enforced
+- name: Assert unsupported ip_address param is rejected
   ansible.builtin.assert:
     that:
       - result is defined
       - result.changed == false
       - result.failed == true
-      - "'mutually exclusive' in result.msg"
-    fail_msg: "ipv4/ipv6 mutual exclusion was not enforced"
-    success_msg: "ipv4/ipv6 mutual exclusion enforced as expected"
+      - "'ip_address' in result.msg or 'unsupported parameter' in (result.msg | lower)"
+    fail_msg: "Unsupported ip_address param was not rejected"
+    success_msg: "Unsupported ip_address param rejected as expected"
 
 # ---------------------------------------------------------------------------
 # CRUD module — check_mode preview (no API call)
 # ---------------------------------------------------------------------------
 
-- name: Generate spec for updating BMC info in check_mode with all attributes
+- name: Generate spec for updating BMC credential in check_mode
   nutanix.ncp.ntnx_cluster_bmc_v2:
     cluster_ext_id: "{{ bmc_cluster_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
     ext_id: "{{ bmc_host_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
-    ip_address:
-      ipv4:
-        value: "10.44.60.10"
-        prefix_length: 24
     credential:
       username: "ADMIN"
       password: "dummy_password"
@@ -244,103 +237,25 @@
   register: result
   ignore_errors: true
 
-- name: Assert check_mode preview contains all attributes
+- name: Assert check_mode preview contains credential and omits read-only fields
   ansible.builtin.assert:
     that:
       - result is defined
       - result.changed == false
       - result.failed == false
       - result.response is defined
-      - result.response.ip_address is defined
-      - result.response.ip_address.ipv4 is defined
-      - result.response.ip_address.ipv4.value == "10.44.60.10"
-      - result.response.ip_address.ipv4.prefix_length == 24
-      - result.response.ip_address.ipv6 is none
       - result.response.credential is defined
       - result.response.credential.username == "ADMIN"
       # Ansible masks no_log values in output as "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
       # so we only assert on presence, not on the actual password value.
       - result.response.credential.password is defined
       - result.response.credential.password != ""
+      - result.response.ip_address is not defined or result.response.ip_address is none
+      - result.response.status is not defined or result.response.status is none
       - result.ext_id == (bmc_host_ext_id | default('00000000-0000-0000-0000-000000000000'))
       - result.cluster_ext_id == (bmc_cluster_ext_id | default('00000000-0000-0000-0000-000000000000'))
-    fail_msg: "check_mode preview did not include all provided attributes"
-    success_msg: "check_mode preview includes all provided attributes"
-
-- name: Generate spec for updating BMC info in check_mode with only IP (ipv4)
-  nutanix.ncp.ntnx_cluster_bmc_v2:
-    cluster_ext_id: "{{ bmc_cluster_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
-    ext_id: "{{ bmc_host_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
-    ip_address:
-      ipv4:
-        value: "10.44.60.11"
-        prefix_length: 24
-  check_mode: true
-  register: result
-  ignore_errors: true
-
-- name: Assert check_mode preview only sets ip_address (no credential)
-  ansible.builtin.assert:
-    that:
-      - result is defined
-      - result.changed == false
-      - result.failed == false
-      - result.response is defined
-      - result.response.ip_address.ipv4.value == "10.44.60.11"
-      - result.response.credential is none
-    fail_msg: "check_mode preview with only IP did not match expectation"
-    success_msg: "check_mode preview with only IP is correct"
-
-- name: Generate spec for updating BMC info in check_mode with only credential
-  nutanix.ncp.ntnx_cluster_bmc_v2:
-    cluster_ext_id: "{{ bmc_cluster_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
-    ext_id: "{{ bmc_host_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
-    credential:
-      username: "ADMIN2"
-      password: "dummy_password_2"
-  check_mode: true
-  register: result
-  ignore_errors: true
-
-- name: Assert check_mode preview only sets credential (no ip_address)
-  ansible.builtin.assert:
-    that:
-      - result is defined
-      - result.changed == false
-      - result.failed == false
-      - result.response is defined
-      - result.response.credential.username == "ADMIN2"
-      - result.response.credential.password is defined
-      - result.response.credential.password != ""
-      - result.response.ip_address is none
-    fail_msg: "check_mode preview with only credential did not match expectation"
-    success_msg: "check_mode preview with only credential is correct"
-
-- name: Generate spec for updating BMC info in check_mode with ipv6 address
-  nutanix.ncp.ntnx_cluster_bmc_v2:
-    cluster_ext_id: "{{ bmc_cluster_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
-    ext_id: "{{ bmc_host_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
-    ip_address:
-      ipv6:
-        value: "2001:db8::1"
-        prefix_length: 64
-  check_mode: true
-  register: result
-  ignore_errors: true
-
-- name: Assert check_mode preview accepts ipv6 too
-  ansible.builtin.assert:
-    that:
-      - result is defined
-      - result.changed == false
-      - result.failed == false
-      - result.response is defined
-      - result.response.ip_address.ipv6 is defined
-      - result.response.ip_address.ipv6.value == "2001:db8::1"
-      - result.response.ip_address.ipv6.prefix_length == 64
-      - result.response.ip_address.ipv4 is none
-    fail_msg: "check_mode preview with ipv6 did not match expectation"
-    success_msg: "check_mode preview with ipv6 is correct"
+    fail_msg: "check_mode preview did not match credential-only expectation"
+    success_msg: "check_mode preview includes credential and omits read-only fields"
 
 # ---------------------------------------------------------------------------
 # CRUD module — live update (best-effort, expected to surface 503 on small PC)

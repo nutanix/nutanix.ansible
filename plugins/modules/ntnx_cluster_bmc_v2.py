@@ -14,13 +14,12 @@ module: ntnx_cluster_bmc_v2
 short_description: Update BMC (Baseboard Management Controller) info of a host in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module allows you to update the out-of-band Baseboard Management Controller (BMC) info
-    (IP address and basic-auth credentials) of a host that belongs to a cluster registered with
-    Nutanix Prism Central.
-  - BMC info is a sub-resource of a host in a cluster; the v4.2 clustermgmt APIs only expose
+  - This module allows you to update the out-of-band Baseboard Management Controller (BMC)
+    credentials of a host that belongs to a cluster registered with Nutanix Prism Central.
+  - BMC info is a sub-resource of a host in a cluster; the v4 clustermgmt APIs only expose
     Get and Update operations on this resource, so this module only supports the update flow.
-  - The C(status) attribute of BMC info is server-populated (V(VALID)/V(INVALID)/V(UNAVAILABLE))
-    and is treated as read-only by this module.
+  - Per the API schema, only C(credential) is writable on update. C(ip_address) and C(status)
+    are server-populated / read-only and are not accepted as module inputs.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -49,46 +48,6 @@ options:
       - The external ID of the cluster that owns the host.
     type: str
     required: true
-  ip_address:
-    description:
-      - IP address of the BMC. Provide exactly one of C(ipv4) or C(ipv6).
-    type: dict
-    required: false
-    suboptions:
-      ipv4:
-        description:
-          - IPv4 address of the BMC.
-        type: dict
-        required: false
-        suboptions:
-          value:
-            description:
-              - IPv4 address value.
-            type: str
-            required: true
-          prefix_length:
-            description:
-              - Prefix length of the IPv4 address.
-            type: int
-            required: false
-            default: 32
-      ipv6:
-        description:
-          - IPv6 address of the BMC.
-        type: dict
-        required: false
-        suboptions:
-          value:
-            description:
-              - IPv6 address value.
-            type: str
-            required: true
-          prefix_length:
-            description:
-              - Prefix length of the IPv6 address.
-            type: int
-            required: false
-            default: 128
   credential:
     description:
       - Basic authentication credential (username / password) used by Prism / LCM to
@@ -116,22 +75,18 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Update BMC IP address and credential of a host
+- name: Update BMC credential of a host
   nutanix.ncp.ntnx_cluster_bmc_v2:
     state: present
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     ext_id: "8300384a-56ee-4750-aeb8-3d1c42908bee"
-    ip_address:
-      ipv4:
-        value: "10.44.60.10"
-        prefix_length: 24
     credential:
       username: "ADMIN"
       password: "SuperSecret.123"
   register: result
   ignore_errors: true
 
-- name: Rotate only the BMC credential (keep existing IP)
+- name: Rotate the BMC credential
   nutanix.ncp.ntnx_cluster_bmc_v2:
     state: present
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
@@ -251,36 +206,11 @@ except ImportError:
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
-# Server-populated attribute that must NOT be sent back in the update body.
-_BMC_INFO_READ_ONLY_FIELDS = ("status",)
+# Schema-marked readOnly fields that must NOT be sent in the update body.
+_BMC_INFO_READ_ONLY_FIELDS = ("status", "ip_address")
 
 
 def get_module_spec():
-
-    ipv4_address_spec = dict(
-        value=dict(type="str", required=True),
-        prefix_length=dict(type="int", required=False, default=32),
-    )
-
-    ipv6_address_spec = dict(
-        value=dict(type="str", required=True),
-        prefix_length=dict(type="int", required=False, default=128),
-    )
-
-    ip_address_spec = dict(
-        ipv4=dict(
-            type="dict",
-            options=ipv4_address_spec,
-            obj=cluster_management_sdk.IPv4Address,
-            required=False,
-        ),
-        ipv6=dict(
-            type="dict",
-            options=ipv6_address_spec,
-            obj=cluster_management_sdk.IPv6Address,
-            required=False,
-        ),
-    )
 
     credential_spec = dict(
         username=dict(type="str", required=True),
@@ -291,13 +221,6 @@ def get_module_spec():
         state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         cluster_ext_id=dict(type="str", required=True),
-        ip_address=dict(
-            type="dict",
-            options=ip_address_spec,
-            obj=cluster_management_sdk.IPAddress,
-            required=False,
-            mutually_exclusive=[("ipv4", "ipv6")],
-        ),
         credential=dict(
             type="dict",
             options=credential_spec,
@@ -312,18 +235,17 @@ def check_idempotency(old_spec_dict, update_spec_dict):
     """Return True if the update payload matches the current BMC info spec."""
     old = strip_internal_attributes(deepcopy(old_spec_dict))
     new = strip_internal_attributes(deepcopy(update_spec_dict))
-    # `status` is server-populated (VALID/INVALID/UNAVAILABLE) — ignore in diff.
-    old.pop("status", None)
-    new.pop("status", None)
+    # Read-only fields — ignore in diff.
+    for field in _BMC_INFO_READ_ONLY_FIELDS:
+        old.pop(field, None)
+        new.pop(field, None)
     # BMC never echoes the password back, so an update that only re-sets the
     # password must never be reported as no-op.
     old_cred = old.get("credential") or {}
     new_cred = new.get("credential") or {}
     if new_cred.get("password") is not None:
         return False
-    if old_cred.get("username") != new_cred.get("username"):
-        return False
-    return old.get("ip_address") == new.get("ip_address")
+    return old_cred.get("username") == new_cred.get("username")
 
 
 def update_BmcInfo(module, result, api_instance):
@@ -343,6 +265,7 @@ def update_BmcInfo(module, result, api_instance):
         module.fail_json(msg="Failed generating update BMC info spec", **result)
 
     if module.check_mode:
+        strip_read_only_fields(preview_spec, fields=_BMC_INFO_READ_ONLY_FIELDS)
         result["response"] = strip_internal_attributes(preview_spec.to_dict())
         return
 

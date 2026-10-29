@@ -1,14 +1,15 @@
 ---
 # Summary:
 # BMC (Baseboard Management Controller) info playbook — demonstrates the two
-# operations the v4.2 clustermgmt BMC API exposes:
+# operations the v4 clustermgmt BMC API exposes:
 #   1. Fetch BMC info for a host in a cluster
-#   2. Update BMC info (IP + credentials) for the same host
+#   2. Update BMC credentials for the same host
 #
 # The BMC info resource is a sub-resource of a host in a cluster. There is
 # no create or delete operation on this resource — only Get and Update.
+# On update, only credential is writable; ip_address and status are read-only.
 #
-# Note: the v4.2 BMC endpoint may return HTTP 503 "Grpc server unavailable"
+# Note: the BMC endpoint may return HTTP 503 "Grpc server unavailable"
 # on smaller PC deployments (documented in Nutanix' QA "clustermgmt v4 API
 # Coverage" page). The example uses `ignore_errors: true` so that a 503 on
 # such deployments does not stop the whole playbook; on a Large/X-Large PC
@@ -49,15 +50,11 @@
       register: bmc_info_before
       ignore_errors: true
 
-    - name: Update BMC info (IP address + credential) for a host
+    - name: Update BMC credential for a host
       nutanix.ncp.ntnx_cluster_bmc_v2:
         state: present
         cluster_ext_id: "{{ cluster_ext_id }}"
         ext_id: "{{ host_ext_id }}"
-        ip_address:
-          ipv4:
-            value: "10.44.60.10"
-            prefix_length: 24
         credential:
           username: "ADMIN"
           password: "SuperSecret.123"
