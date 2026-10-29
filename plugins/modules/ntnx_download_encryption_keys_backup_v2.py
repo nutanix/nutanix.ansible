@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,18 +12,18 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_download_encryption_keys_backup_v2
 short_description: Download the encryption keys backup for cluster(s) in Nutanix Prism Central
+version_added: 2.7.0
 description:
   - This module downloads the encryption key backup for the cluster(s) in Nutanix Prism Central.
   - This is an action module that retrieves the previously prepared encryption keys backup.
   - The backup must first be prepared using M(nutanix.ncp.ntnx_prepare_encryption_keys_backup_v2).
   - This module uses PC v4 APIs based SDKs.
-version_added: 2.7.0
 notes:
   - This module talks to Prism Central (PC).
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
-    B(Download encryption keys backup) -
+    B(View Encryption Keys Backup) -
     Required Roles: Prism Admin, Security Admin, Super Admin.
   - >-
     The C(ext_id) is the ID of the encryption key backup, which can be fetched as part of the
@@ -32,13 +32,18 @@ notes:
 options:
   ext_id:
     description:
-      - The external ID of the encryption key backup to download.
-      - This ID is returned as part of the prepare encryption keys backup task response.
+      - ID of the encryption key backup.
+      - This ID can be fetched as part of the encryption task response from
+        M(nutanix.ncp.ntnx_prepare_encryption_keys_backup_v2).
     type: str
     required: true
+  read_timeout:
+    description: Read timeout in milliseconds for API calls.
+    type: int
+    required: false
+    default: 30000
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
-  - nutanix.ncp.ntnx_operations_v2
   - nutanix.ncp.ntnx_logger
   - nutanix.ncp.ntnx_proxy_v2
 author:
@@ -49,10 +54,6 @@ author:
 EXAMPLES = r"""
 - name: Download encryption keys backup
   nutanix.ncp.ntnx_download_encryption_keys_backup_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     ext_id: "3f8a6d2c-1b4e-4c7a-9d5e-2a1b3c4d5e6f"
   register: result
   ignore_errors: true
@@ -83,12 +84,6 @@ changed:
   type: bool
   sample: false
 
-skipped:
-  description: This indicates whether the action was skipped (e.g. in check mode).
-  returned: when applicable
-  type: bool
-  sample: false
-
 error:
   description: This indicates the error message if any error occurred.
   returned: when an error occurs
@@ -104,20 +99,20 @@ msg:
   description: This indicates the status/error message if any occurred.
   returned: When there is an error or in check mode.
   type: str
-  sample: "Api Exception raised while downloading encryption keys backup"
+  sample: "Encryption keys backup with ext_id: 3f8a6d2c-1b4e-4c7a-9d5e-2a1b3c4d5e6f will be downloaded."
 """
 
 import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
-from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
+from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_encryption_api_instance,
 )
-from ..module_utils.v4.utils import (  # noqa: E402
-    raise_api_exception,
-    strip_internal_attributes,
+from ..module_utils.v4.clusters_mgmt.helpers import (  # noqa: E402
+    download_encryption_keys_backup as download_encryption_keys_backup_helper,
 )
+from ..module_utils.v4.utils import strip_internal_attributes  # noqa: E402
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -135,22 +130,12 @@ def download_encryption_keys_backup(module, result, api_instance):
     result["ext_id"] = ext_id
 
     if module.check_mode:
-        result["skipped"] = True
         result["msg"] = (
-            "Encryption keys backup with ext_id:{0} would be downloaded. "
-            "Check mode.".format(ext_id)
+            "Encryption keys backup with ext_id: {0} will be downloaded.".format(ext_id)
         )
         return
 
-    resp = None
-    try:
-        resp = api_instance.download_encryption_keys_backup(extId=ext_id)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while downloading encryption keys backup",
-        )
+    resp = download_encryption_keys_backup_helper(module, api_instance, ext_id)
     data = resp.data
     if hasattr(data, "to_dict"):
         result["response"] = strip_internal_attributes(data.to_dict())
@@ -159,9 +144,10 @@ def download_encryption_keys_backup(module, result, api_instance):
 
 
 def run_module():
-    module = BaseModuleV4(
+    module = BaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        skip_info_args=True,
     )
 
     remove_param_with_none_value(module.params)

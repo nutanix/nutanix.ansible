@@ -12,9 +12,9 @@
 #   2. Info: get encryption config by valid cluster ext_id (assert changed/failed/response).
 #   3. Info: get encryption config with invalid cluster ext_id (negative - not found).
 #   4. CRUD check_mode: update encryption config with ALL fields (assert spec, no API call).
-#   5. Rotate check_mode: assert spec + skipped, no API call.
-#   6. Prepare backup check_mode: assert spec + skipped, no API call.
-#   7. Download backup check_mode: assert skipped, no API call.
+#   5. Rotate check_mode: assert spec, no API call.
+#   6. Prepare backup check_mode: assert spec, no API call.
+#   7. Download backup check_mode: assert msg, no API call.
 #   8. Negative: update with missing required field `type`.
 #   9. Negative: rotate with missing required field `encryption_types`.
 #  10. Negative: prepare with missing required field `backup_password`.
@@ -150,11 +150,9 @@
     that:
       - result.changed == false
       - result.failed == false
-      - result.skipped == true
       - result.ext_id == target_cluster_ext_id
       - result.response is defined
       - result.response.encryption_types == ["SOFTWARE"]
-      - "'Check mode' in result.msg"
     fail_msg: "Failed to generate rotate encryption keys spec using check mode"
     success_msg: "Rotate encryption keys spec generated successfully using check mode"
 
@@ -175,10 +173,8 @@
     that:
       - result.changed == false
       - result.failed == false
-      - result.skipped == true
       - result.response is defined
       - result.response.cluster_ext_ids == [target_cluster_ext_id]
-      - "'Check mode' in result.msg"
     fail_msg: "Failed to generate prepare encryption keys backup spec using check mode"
     success_msg: "Prepare encryption keys backup spec generated successfully using check mode"
 
@@ -197,9 +193,8 @@
     that:
       - result.changed == false
       - result.failed == false
-      - result.skipped == true
       - result.ext_id == invalid_backup_ext_id
-      - "'Check mode' in result.msg"
+      - "'will be downloaded' in result.msg"
     fail_msg: "Download encryption keys backup check mode did not behave as expected"
     success_msg: "Download encryption keys backup check mode behaved as expected"
 

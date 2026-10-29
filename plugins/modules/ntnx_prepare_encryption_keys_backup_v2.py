@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,31 +12,31 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_prepare_encryption_keys_backup_v2
 short_description: Prepare an encryption keys backup for cluster(s) in Nutanix Prism Central
+version_added: 2.7.0
 description:
   - This module prepares the encryption key backup for the specified cluster(s) in Nutanix Prism Central.
   - This is an action module that triggers a task-based operation.
   - The prepared backup can later be downloaded using M(nutanix.ncp.ntnx_download_encryption_keys_backup_v2).
   - This module uses PC v4 APIs based SDKs.
-version_added: 2.7.0
 notes:
   - This module talks to Prism Central (PC).
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
-    B(Prepare encryption keys backup) -
+    B(Prepare Encryption Keys Backup) -
     Required Roles: Prism Admin, Security Admin, Super Admin.
   - The referenced cluster(s) must exist and have software encryption enabled before preparing a backup.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   backup_password:
     description:
-      - Password used to encrypt the encryption keys backup.
+      - Password to encrypt the encryption key backup.
       - Required for the prepare backup operation.
     type: str
     required: false
   cluster_ext_ids:
     description:
-      - List of cluster external IDs for which the encryption keys backup is prepared.
+      - List of cluster IDs for which the encryption keys backup is prepared.
     type: list
     elements: str
     required: false
@@ -53,10 +53,6 @@ author:
 EXAMPLES = r"""
 - name: Prepare encryption keys backup for clusters
   nutanix.ncp.ntnx_prepare_encryption_keys_backup_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     backup_password: "Backup.Password.123"
     cluster_ext_ids:
       - "00062db3-c8a6-4b3d-8b9a-7f4d9b2c1a55"
@@ -95,12 +91,6 @@ changed:
   returned: always
   type: bool
   sample: true
-
-skipped:
-  description: This indicates whether the action was skipped (e.g. in check mode).
-  returned: when applicable
-  type: bool
-  sample: false
 
 error:
   description: This indicates the error message if any error occurred.
@@ -172,8 +162,6 @@ def prepare_encryption_keys_backup(module, result, api_instance):
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
-        result["skipped"] = True
-        result["msg"] = "Encryption keys backup would be prepared. Check mode."
         return
 
     resp = None

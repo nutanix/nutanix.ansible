@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,18 +12,18 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_rotate_encryption_keys_v2
 short_description: Rotate the encryption keys of a cluster in Nutanix Prism Central
+version_added: 2.7.0
 description:
   - This module rotates the data-at-rest encryption keys on a cluster in Nutanix Prism Central.
   - This is an action module that triggers a task-based operation.
   - Key rotation can only be performed for the C(SOFTWARE) encryption type.
   - This module uses PC v4 APIs based SDKs.
-version_added: 2.7.0
 notes:
   - This module talks to Prism Central (PC).
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
-    B(Rotate encryption keys) -
+    B(Rotate Encryption Keys) -
     Required Roles: Prism Admin, Security Admin, Super Admin.
   - The referenced cluster must exist and have software encryption enabled before rotating keys.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
@@ -35,7 +35,7 @@ options:
     required: true
   encryption_types:
     description:
-      - List of encryption types for which the keys are rotated.
+      - List of encryption types.
       - Key rotation can be performed only for the C(SOFTWARE) encryption type.
       - Required for the rotate operation.
     type: list
@@ -56,10 +56,6 @@ author:
 EXAMPLES = r"""
 - name: Rotate encryption keys for a cluster
   nutanix.ncp.ntnx_rotate_encryption_keys_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     ext_id: "00062db3-c8a6-4b3d-8b9a-7f4d9b2c1a55"
     encryption_types:
       - SOFTWARE
@@ -105,12 +101,6 @@ changed:
   returned: always
   type: bool
   sample: true
-
-skipped:
-  description: This indicates whether the action was skipped (e.g. in check mode).
-  returned: when applicable
-  type: bool
-  sample: false
 
 error:
   description: This indicates the error message if any error occurred.
@@ -188,11 +178,6 @@ def rotate_encryption_keys(module, result, api_instance):
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
-        result["skipped"] = True
-        result["msg"] = (
-            "Encryption keys for cluster with ext_id:{0} would be rotated. "
-            "Check mode.".format(cluster_ext_id)
-        )
         return
 
     resp = None
