@@ -16,8 +16,6 @@ version_added: 2.7.0
 description:
     - This module allows you to clear (release) the thick provisioned space of a Storage Container
       in Nutanix Prism Central.
-    - This is an asynchronous action that removes the implicit vDisk reservations backing the
-      Storage Container so the underlying physical capacity can be reclaimed.
     - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
