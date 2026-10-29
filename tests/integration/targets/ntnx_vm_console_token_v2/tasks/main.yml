@@ -11,4 +11,4 @@
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
   block:
     - name: Import vm_console_token.yml
-      ansible.builtin.import_tasks: "vm_console_token.yml"
+      ansible.builtin.import_tasks: vm_console_token.yml
