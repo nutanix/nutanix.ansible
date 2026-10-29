@@ -4,8 +4,9 @@
 # 1. Create LDAP user group
 # 2. Create SAML user group
 # 3. List all user groups
-# 4. List user groups using filter criteria
-# 5. Delete created user group
+# 4. List all user groups with fetch_all
+# 5. List user groups using filter criteria
+# 6. Delete created user group
 
 - name: User groups playbook
   hosts: localhost
@@ -42,6 +43,12 @@
     - name: List all user groups
       nutanix.ncp.ntnx_user_groups_info_v2:
       register: user_groups
+      ignore_errors: true
+
+    - name: List all user groups with fetch_all
+      nutanix.ncp.ntnx_user_groups_info_v2:
+        fetch_all: true
+      register: result
       ignore_errors: true
 
     - name: List user groups using filter criteria

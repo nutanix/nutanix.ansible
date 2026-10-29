@@ -5,7 +5,7 @@
   gather_facts: false
   tasks:
     - name: Configure ipmi
-    # check_mode: yes
+      # check_mode: yes
       nutanix.ncp.ntnx_foundation_bmc_ipmi_config:
         nutanix_host: 10.xx.xx.xx
         ipmi_user: <ipmi-username>

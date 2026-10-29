@@ -479,6 +479,14 @@ def create_entity_group(module, entity_group, result):
             resp = get_entity_group(module, entity_group, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Entity Group"
+                ),
+                msg="Failed to get entity ext_id from task for Entity Group",
+            )
 
     result["changed"] = True
 
