@@ -31,6 +31,7 @@ options:
         description:
             - Specify state.
             - If C(state) is C(present), set the active version for the template.
+            - If C(state) is C(absent), the module will fail.
         type: str
         choices:
             - present
@@ -223,15 +224,12 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
         "failed": False,
     }
     api_instance = get_templates_api_instance(module)
-    state = module.params.get("state")
-    if state == "present":
-        publish_template_version(module, result, api_instance)
+    publish_template_version(module, result, api_instance)
 
     module.exit_json(**result)
 
