@@ -194,7 +194,9 @@ def get_guest_reboot_policies(module, api_instance, result):
     kwargs, err = sg.get_info_spec(attr=module.params)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating Guest Reboot Policies info Spec", **result)
+        module.fail_json(
+            msg="Failed generating Guest Reboot Policies info Spec", **result
+        )
 
     try:
         resp = list_entities(
