@@ -31,6 +31,7 @@ options:
     description:
       - State of the module.
       - If C(state) is C(present), the module transfers files to the guest VM.
+      - If C(state) is C(absent), the module will fail.
     type: str
     choices:
       - present
@@ -66,9 +67,8 @@ options:
     suboptions:
       transfer_files_from_volume_disk:
         description:
-          - Mounts a vdisk file from a volume group to copy data from a
-            specified source path inside the disk to a destination path in
-            the guest OS.
+          - Mounts a virtual disk from a volume group and copies data from a
+            specified source path on the disk to a destination path in the guest OS.
         type: dict
         suboptions:
           volume_disk_reference:
@@ -107,9 +107,9 @@ options:
                 type: bool
       transfer_files_from_external_data_source_disk:
         description:
-          - Mounts a vdisk file from an external repository via NFS to copy
-            data from a specified source path inside the disk to a destination
-            path in the guest OS.
+          - Mounts a virtual disk from an external NFS data source and copies data
+            from a specified source path on the disk to a destination path in the
+            guest OS.
         type: dict
         suboptions:
           external_data_source_disk_reference:
