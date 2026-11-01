@@ -556,3 +556,24 @@ def get_pcie_device(module, api_instance, ext_id, vm_ext_id):
             exception=e,
             msg="Api Exception raised while fetching VM PCIe device info using ext_id",
         )
+
+
+def get_esxi_ngt(module, api_instance, vm_ext_id):
+    """
+    Get ESXi VM Nutanix Guest Tools by VM ext_id.
+
+    Args:
+        module: Ansible module
+        api_instance: EsxiVmApi instance from ntnx_vmm_py_client sdk
+        vm_ext_id: ext_id of the ESXi VM
+    Returns:
+        ngt (obj): Nutanix Guest Tools info object
+    """
+    try:
+        return api_instance.get_nutanix_guest_tools_by_id(extId=vm_ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching ESXi VM NGT info for given vm",
+        )
