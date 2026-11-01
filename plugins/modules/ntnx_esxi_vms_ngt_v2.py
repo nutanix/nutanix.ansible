@@ -61,8 +61,8 @@ options:
     credential:
         description:
             - The credentials to authenticate with the ESXi VM.
+            - Required when C(state) is C(present).
         type: dict
-        required: true
         suboptions:
             username:
                 description:
@@ -340,6 +340,7 @@ def run_module():
     module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        required_if=[("state", "present", ["credential"])],
     )
     if SDK_IMP_ERROR:
         module.fail_json(
