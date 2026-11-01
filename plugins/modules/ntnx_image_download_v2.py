@@ -16,13 +16,14 @@ version_added: "2.7.0"
 description:
     - Download an image.
     - Downloads the image with the given external identifier.
+    - The local downloaded file path is returned under C(response.path).
     - This module uses PC v4 APIs based SDKs
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Download an image) -
-      Required Roles: Prism Admin, Prism Viewer, Super Admin
+      Required Roles: Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Tenant Admin, Tenant Consumer
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     image_ext_id:
@@ -30,6 +31,12 @@ options:
             - The external identifier of an image.
         type: str
         required: true
+    dest:
+        description:
+            - Local destination file path where the downloaded image should be saved.
+            - The parent directory is created if it does not already exist.
+            - If not provided, the image is saved to the SDK default download location and that path is returned.
+        type: path
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -49,18 +56,28 @@ EXAMPLES = r"""
     validate_certs: false
     image_ext_id: "12345678-1234-1234-1234-123456789012"
   register: result
+
+- name: Download an image to a specific destination path
+  nutanix.ncp.ntnx_image_download_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    image_ext_id: "12345678-1234-1234-1234-123456789012"
+    dest: "/tmp/downloaded_image.qcow2"
+  register: result
 """
 
 RETURN = r"""
 response:
     description:
         - Response for downloading an image.
-        - Contains the local path where the SDK persisted the downloaded file.
+        - Contains the local path where the downloaded file was saved.
     type: dict
     returned: always
     sample:
         {
-            "path": "/tmp/tmpabc123/image_file.qcow2"
+            "path": "/tmp/downloaded_image.qcow2"
         }
 ext_id:
     description: The external ID of the image.
@@ -84,21 +101,14 @@ msg:
     sample: "Image with ext_id:12345678-1234-1234-1234-123456789012 will be downloaded."
 """
 
-import traceback  # noqa: E402
+import os  # noqa: E402
+import shutil  # noqa: E402
 import warnings  # noqa: E402
-
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.utils import raise_api_exception  # noqa: E402
 from ..module_utils.v4.vmm.api_client import get_image_api_instance  # noqa: E402
-
-SDK_IMP_ERROR = None
-try:
-    import ntnx_vmm_py_client  # noqa: E402, F401  # pylint: disable=unused-import
-except ImportError:
-    SDK_IMP_ERROR = traceback.format_exc()
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
@@ -106,17 +116,35 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         image_ext_id=dict(type="str", required=True),
+        dest=dict(type="path"),
     )
     return module_args
 
 
 def download_image(module, result, api_instance):
     image_ext_id = module.params.get("image_ext_id")
+    dest = module.params.get("dest")
     result["ext_id"] = image_ext_id
 
     if module.check_mode:
-        result["msg"] = "Image with ext_id:{0} will be downloaded.".format(image_ext_id)
+        if dest:
+            result["msg"] = (
+                "Image with ext_id:{0} will be downloaded to destination path:{1}".format(
+                    image_ext_id, dest
+                )
+            )
+            result["response"] = {"path": dest}
+        else:
+            result["msg"] = "Image with ext_id:{0} will be downloaded.".format(
+                image_ext_id
+            )
         return
+
+    if dest:
+        dest_dir = os.path.dirname(os.path.abspath(dest))
+        if not os.path.isdir(dest_dir):
+            os.makedirs(dest_dir)
+        api_instance.api_client.configuration.download_directory = dest_dir
 
     resp = None
     try:
@@ -128,9 +156,25 @@ def download_image(module, result, api_instance):
             msg="Api Exception raised while downloading image",
         )
 
-    path = resp.to_dict().get("data", {}).get("path")
+    data = resp.to_dict().get("data")
+    if isinstance(data, dict):
+        downloaded_path = data.get("path")
+    else:
+        downloaded_path = getattr(data, "path", None)
+
+    if not downloaded_path:
+        module.fail_json(
+            msg="Failed to determine the downloaded image file path",
+            **result,
+        )
+
+    downloaded_path = str(downloaded_path)
+    if dest and os.path.abspath(downloaded_path) != os.path.abspath(dest):
+        shutil.move(downloaded_path, dest)
+        downloaded_path = dest
+
     result["response"] = {
-        "path": path,
+        "path": downloaded_path,
     }
     result["changed"] = True
 
@@ -140,12 +184,6 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )
-    if SDK_IMP_ERROR:
-        module.fail_json(
-            msg=missing_required_lib("ntnx_vmm_py_client"),
-            exception=SDK_IMP_ERROR,
-        )
-
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
