@@ -1,0 +1,135 @@
+---
+- name: Start testing ntnx_image_download_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_image_download_v2
+
+- name: Download image with check mode enabled
+  nutanix.ncp.ntnx_image_download_v2:
+    image_ext_id: "83083083-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Download image with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg is defined
+      - result.msg is search("will be downloaded")
+      - result.msg is search("83083083-0000-0000-0000-000000000001")
+    fail_msg: Download image with check mode enabled failed
+    success_msg: Download image with check mode enabled passed
+
+- name: Download image to destination path with check mode enabled
+  nutanix.ncp.ntnx_image_download_v2:
+    image_ext_id: "83083083-0000-0000-0000-000000000001"
+    dest: "/tmp/img_dl_check.qcow2"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Download image to destination path with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.path == "/tmp/img_dl_check.qcow2"
+      - result.msg is search("will be downloaded to destination path")
+      - result.msg is search("/tmp/img_dl_check.qcow2")
+      - result.msg is search("83083083-0000-0000-0000-000000000001")
+    fail_msg: Download image to dest with check mode failed
+    success_msg: Download image to dest with check mode passed
+
+- name: List DISK_IMAGE images
+  nutanix.ncp.ntnx_images_info_v2:
+    filter: "type eq Vmm.Content.ImageType'DISK_IMAGE'"
+    limit: 5
+  register: images_result
+  ignore_errors: true
+
+- name: List DISK_IMAGE images status
+  ansible.builtin.assert:
+    that:
+      - images_result.failed == false
+      - images_result.response is defined
+      - images_result.response | length > 0
+      - images_result.response[0].ext_id is defined
+    fail_msg: Unable to discover a DISK_IMAGE for download tests
+    success_msg: DISK_IMAGE discovered for download tests
+
+- name: Capture the image ext_id
+  ansible.builtin.set_fact:
+    image_uuid: "{{ images_result.response[0].ext_id }}"
+
+- name: Download the image without a destination path
+  nutanix.ncp.ntnx_image_download_v2:
+    image_ext_id: "{{ image_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Set the default location image file path
+  ansible.builtin.set_fact:
+    image_default_path: "{{ result.response.path }}"
+  when: result.response.path is defined
+
+- name: Stat the downloaded image file at the default location
+  ansible.builtin.stat:
+    path: "{{ image_default_path }}"
+  register: image_default_file_stat
+  when: image_default_path is defined
+  failed_when: false
+
+- name: Download image without a destination path status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+      - result.ext_id == image_uuid
+      - result.response is defined
+      - result.response.path is defined
+      - result.response.path | length > 0
+      - image_default_file_stat.stat.exists
+      - image_default_file_stat.stat.size > 0
+    fail_msg: Download image without a destination path failed
+    success_msg: Download image without a destination path passed
+
+- name: Remove the downloaded image file at the default location
+  ansible.builtin.file:
+    path: "{{ image_default_path }}"
+    state: absent
+  when: image_default_path is defined
+  failed_when: false
+
+- name: Download the image to a destination path
+  nutanix.ncp.ntnx_image_download_v2:
+    image_ext_id: "{{ image_uuid }}"
+    dest: "/tmp/ansible_downloaded_image.qcow2"
+  register: result
+  ignore_errors: true
+
+- name: Stat the downloaded image file at the destination path
+  ansible.builtin.stat:
+    path: "{{ result.response.path }}"
+  register: image_dest_file_stat
+  when: result.response.path is defined
+  failed_when: false
+
+- name: Download image to a destination path status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+      - result.ext_id == image_uuid
+      - result.response is defined
+      - result.response.path == "/tmp/ansible_downloaded_image.qcow2"
+      - image_dest_file_stat.stat.exists
+      - image_dest_file_stat.stat.size > 0
+    fail_msg: Download image to a destination path failed
+    success_msg: Download image to a destination path passed
+
+- name: Remove the downloaded image file at the destination path
+  ansible.builtin.file:
+    path: "/tmp/ansible_downloaded_image.qcow2"
+    state: absent
+  failed_when: false
