@@ -27,12 +27,3 @@
         vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id }}"
       register: result
       ignore_errors: true
-
-    - name: Revert ESXi VM from recovery point without waiting for the task
-      nutanix.ncp.ntnx_esxi_vm_revert_v2:
-        state: present
-        ext_id: "{{ vm_ext_id }}"
-        vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id }}"
-        wait: false
-      register: result
-      ignore_errors: true

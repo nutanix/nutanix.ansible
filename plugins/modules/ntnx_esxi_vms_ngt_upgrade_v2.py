@@ -29,8 +29,8 @@ options:
     state:
         description:
             - State of the module.
-            - If state is present, the module will upgrade the NGT on an ESXi VM.
-            - If state is not present, the module will fail.
+            - If C(state) is set to C(present), the module will upgrade the NGT on an ESXi VM.
+            - If C(state) is set to C(absent), the module will fail.
         type: str
         choices:
             - present
@@ -118,10 +118,12 @@ ext_id:
     description: The external ID of the ESXi VM.
     type: str
     returned: always
+    sample: "98b9dc89-be08-3c56-b554-692b8b676fd1"
 task_ext_id:
     description: The external ID of the task associated with the NGT upgrade.
     type: str
     returned: when the task_ext_id is available
+    sample: "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1"
 msg:
     description: This indicates the message if any message occurred
     returned: When there is an error
@@ -131,6 +133,11 @@ error:
     description: The error message, if any.
     type: str
     returned: when an error occurs
+failed:
+    description: Indicates whether the module execution failed.
+    type: bool
+    returned: always
+    sample: false
 """
 
 import traceback  # noqa: E402
@@ -190,11 +197,7 @@ def get_module_spec():
 def upgrade_ngt(module, result):
     vmm = get_esxi_vm_api_instance(module)
     ext_id = module.params.get("ext_id")
-    if not ext_id:
-        return module.fail_json(msg="ext_id is required to upgrade NGT", **result)
-
     result["ext_id"] = ext_id
-
     status = get_esxi_ngt(module, vmm, ext_id)
     etag = get_etag(status)
 
@@ -244,7 +247,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "ext_id": None,
     }

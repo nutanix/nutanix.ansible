@@ -48,8 +48,8 @@ options:
     required: true
   state:
     description:
-      - If set to "present", the categories will be associated with the VM.
-      - If set to "absent", the categories will be disassociated from the VM.
+      - If C(state) is set to C(present), the categories will be associated with the VM.
+      - If C(state) is set C(absent), the categories will be disassociated from the VM.
     type: str
     choices: [present, absent]
     default: present
@@ -140,7 +140,7 @@ task_ext_id:
   description: The external ID of the task.
   type: str
   returned: when a task is triggered
-  sample: "530567f3-abda-4913-b5d0-0ab6758ec168"
+  sample: "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1"
 vm_ext_id:
   description: The external ID of the ESXi VM.
   type: str
@@ -164,7 +164,7 @@ from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_esxi_vm_api_instance,
     get_etag,
 )
-from ..module_utils.v4.vmm.helpers import get_esxi_vm  # noqa: E402
+from ..module_utils.v4.vmm.helpers import get_vm  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
@@ -198,7 +198,7 @@ def get_module_spec():
 
 
 def get_vm_categories_uuid_list(module, api_instance, vm_ext_id):
-    vm = get_esxi_vm(module, api_instance, vm_ext_id)
+    vm = get_vm(module, api_instance, vm_ext_id)
     categories = []
     if vm.categories is not None:
         for item in vm.categories:
@@ -223,16 +223,16 @@ def associate_categories(module, result):
 
     spec = vmm_sdk.EsxiConfigAssociateVmCategoriesParams(categories=add_categories)
 
-    if not spec.categories:
-        result["skipped"] = True
-        module.exit_json(msg="Nothing to change.", **result)
-
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
+    if not spec.categories:
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.", **result)
+
     # get etag of vm current state
-    vm = get_esxi_vm(module, vmm, vm_ext_id)
+    vm = get_vm(module, vmm, vm_ext_id)
     etag = get_etag(vm)
 
     kwargs = {"if_match": etag}
@@ -251,7 +251,7 @@ def associate_categories(module, result):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
-        vm = get_esxi_vm(module, vmm, vm_ext_id)
+        vm = get_vm(module, vmm, vm_ext_id)
         categories = vm.categories
         if categories is not None:
             categories = [item.ext_id for item in categories]
@@ -277,16 +277,16 @@ def disassociate_categories(module, result):
         categories=remove_categories
     )
 
-    if not spec.categories:
-        result["skipped"] = True
-        module.exit_json(msg="Nothing to change.", **result)
-
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
+    if not spec.categories:
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.", **result)
+
     # get etag of vm current state
-    vm = get_esxi_vm(module, vmm, vm_ext_id)
+    vm = get_vm(module, vmm, vm_ext_id)
     etag = get_etag(vm)
 
     kwargs = {"if_match": etag}
@@ -305,7 +305,7 @@ def disassociate_categories(module, result):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
-        vm = get_esxi_vm(module, vmm, vm_ext_id)
+        vm = get_vm(module, vmm, vm_ext_id)
         categories = vm.categories
         if categories is not None:
             categories = [item.ext_id for item in categories]

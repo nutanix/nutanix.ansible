@@ -42,9 +42,8 @@ options:
             - VSS_SNAPSHOT
     state:
         description:
-            - If state is present, the module will insert the NGT ISO into the ESXi virtual machine.
-            - Valid choices are "present" only.
-            - If state is not present, the module will fail.
+            - If C(state) is set to C(present), the module will insert the NGT ISO into the ESXi virtual machine.
+            - If C(state) is set to C(absent), the module will fail.
         type: str
         choices: ['present']
         default: present
@@ -73,6 +72,7 @@ changed:
     description: Indicates whether the state of the system has changed.
     returned: always
     type: bool
+    sample: true
 msg:
     description: This indicates the message if any message occurred
     returned: When there is an error
@@ -106,10 +106,12 @@ ext_id:
     description: The external ID of the ESXi virtual machine.
     returned: always
     type: str
+    sample: "98b9dc89-be08-3c56-b554-692b8b676fd1"
 task_ext_id:
     description: The external ID of the task created for inserting the NGT ISO.
     returned: when the task is created
     type: str
+    sample: "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1"
 """
 
 import traceback  # noqa: E402
@@ -157,7 +159,9 @@ def get_module_spec():
     return module_args
 
 
-def insert_ngt_iso(module, ext_id, result):
+def insert_ngt_iso(module, result):
+    ext_id = module.params.get("ext_id")
+    result["ext_id"] = ext_id
     vmm = get_esxi_vm_api_instance(module)
 
     status = get_esxi_ngt(module, vmm, ext_id)
@@ -209,17 +213,11 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "ext_id": None,
     }
-    ext_id = module.params.get("ext_id")
-    if not ext_id:
-        return module.fail_json(
-            msg="vm ext_id is required to inserting NGT iso", **result
-        )
-    result["ext_id"] = ext_id
-    insert_ngt_iso(module, ext_id, result)
+    insert_ngt_iso(module, result)
     module.exit_json(**result)
 
 

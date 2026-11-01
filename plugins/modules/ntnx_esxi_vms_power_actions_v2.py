@@ -161,7 +161,6 @@ task_ext_id:
 response:
     description:
         - The task response of the power action.
-        - In check mode, the response is not set.
     type: dict
     returned: always
     sample: {
@@ -191,16 +190,9 @@ msg:
     type: str
     returned: when there is an error, the module is idempotent or in check mode
     sample: "Nothing to change."
-error:
-    description: The error message if an error occurred.
-    type: str
-    returned: when an error occurs
 """
 
-import traceback  # noqa: E402
 import warnings  # noqa: E402
-
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
@@ -213,28 +205,10 @@ from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_esxi_vm_api_instance,
     get_etag,
 )
-from ..module_utils.v4.vmm.helpers import get_esxi_vm  # noqa: E402
-
-SDK_IMP_ERROR = None
-try:
-    import ntnx_vmm_py_client as vmm_sdk  # noqa: E402,F401
-except ImportError:
-
-    from ..module_utils.v4.sdk_mock import mock_sdk as vmm_sdk  # noqa: E402,F401
-
-    SDK_IMP_ERROR = traceback.format_exc()
+from ..module_utils.v4.vmm.helpers import get_vm  # noqa: E402
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
-
-POWER_ACTION_METHODS = {
-    "power_on": "power_on_vm",
-    "power_off": "power_off_vm",
-    "reset": "reset_vm",
-    "suspend": "suspend_vm",
-    "guest_shutdown": "shutdown_guest_vm",
-    "guest_reboot": "reboot_guest_vm",
-}
 
 
 def get_module_spec():
@@ -242,26 +216,21 @@ def get_module_spec():
         ext_id=dict(type="str", required=True),
         state=dict(
             type="str",
-            choices=list(POWER_ACTION_METHODS),
+            choices=[
+                "power_on",
+                "power_off",
+                "reset",
+                "suspend",
+                "guest_shutdown",
+                "guest_reboot",
+            ],
             default="power_on",
         ),
     )
     return module_args
 
 
-def is_action_needed(power_state, state):
-    """
-    Check whether the requested power action changes the current power state.
-    """
-    if state == "power_on":
-        return power_state != "ON"
-    if state == "suspend":
-        return power_state not in ("OFF", "SUSPENDED")
-    return power_state != "OFF"
-
-
-def power_actions(module, state, result):
-    vmm = get_esxi_vm_api_instance(module)
+def power_actions(module, api_instance, state, result):
     vm_ext_id = module.params["ext_id"]
     result["ext_id"] = vm_ext_id
 
@@ -273,8 +242,12 @@ def power_actions(module, state, result):
         )
         return
 
-    vm = get_esxi_vm(module, vmm, vm_ext_id)
-    if not is_action_needed(vm.power_state, state):
+    vm = get_vm(module, api_instance, vm_ext_id)
+    if (
+        (vm.power_state == "ON" and state == "power_on")
+        or (state == "suspend" and vm.power_state in ("OFF", "SUSPENDED"))
+        or (state not in ("power_on", "suspend") and vm.power_state == "OFF")
+    ):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
@@ -282,8 +255,26 @@ def power_actions(module, state, result):
     kwargs = {"if_match": etag}
     resp = None
     try:
-        action = getattr(vmm, POWER_ACTION_METHODS[state])
-        resp = action(extId=vm_ext_id, **kwargs)
+        if state == "power_on":
+            resp = api_instance.power_on_vm(extId=vm_ext_id, **kwargs)
+
+        elif state == "power_off":
+            resp = api_instance.power_off_vm(extId=vm_ext_id, **kwargs)
+
+        elif state == "reset":
+            resp = api_instance.reset_vm(extId=vm_ext_id, **kwargs)
+
+        elif state == "suspend":
+            resp = api_instance.suspend_vm(extId=vm_ext_id, **kwargs)
+
+        elif state == "guest_shutdown":
+            resp = api_instance.shutdown_guest_vm(extId=vm_ext_id, **kwargs)
+
+        elif state == "guest_reboot":
+            resp = api_instance.reboot_guest_vm(extId=vm_ext_id, **kwargs)
+
+        else:
+            module.fail_json(msg="Action is not supported", **result)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -295,7 +286,6 @@ def power_actions(module, state, result):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
 
-    # poll for the last unfinished task
     if task_ext_id and module.params.get("wait"):
         task = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task.to_dict())
@@ -308,10 +298,6 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )
-    if SDK_IMP_ERROR:
-        module.fail_json(
-            msg=missing_required_lib("ntnx_vmm_py_client"), exception=SDK_IMP_ERROR
-        )
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
@@ -320,7 +306,8 @@ def run_module():
         "ext_id": None,
     }
     state = module.params.get("state")
-    power_actions(module, state, result)
+    api_instance = get_esxi_vm_api_instance(module)
+    power_actions(module, api_instance, state, result)
     module.exit_json(**result)
 
 

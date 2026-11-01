@@ -29,8 +29,8 @@ options:
     state:
         description:
             - State of the module.
-            - If state is present, the module will update the NGT configuration for an ESXi VM.
-            - If state is not present, the module will fail.
+            - If C(state) is set to C(present), the module will update the NGT configuration for an ESXi VM.
+            - If C(state) is set to C(absent), the module will fail.
         type: str
         choices:
             - present
@@ -48,6 +48,7 @@ options:
     capabilities:
         description:
             - The list of NGT capabilities to enable for the ESXi VM.
+            - Valid choices are "SELF_SERVICE_RESTORE" and "VSS_SNAPSHOT".
         type: list
         elements: str
         choices:
@@ -106,22 +107,21 @@ msg:
     returned: When there is an error or module is idempotent
     type: str
     sample: "Nothing to change."
-error:
-    description: The error message, if any.
-    type: str
-    returned: on error
 ext_id:
     description: The external ID of the ESXi virtual machine.
     type: str
     returned: always
+    sample: "98b9dc89-be08-3c56-b554-692b8b676fd1"
 task_ext_id:
-    description: The external ID of the task, if the update operation is asynchronous.
+    description: The external ID of the task created for updating the NGT configuration.
     type: str
-    returned: when the update operation is asynchronous
+    returned: always
+    sample: "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1"
 skipped:
     description: Indicates whether the NGT configuration update was skipped due to idempotency.
     type: bool
     returned: when the NGT configuration is already up to date
+    sample: true
 """
 
 import warnings  # noqa: E402
@@ -171,13 +171,9 @@ def check_idempotency(current_spec, update_spec):
 
 
 def update_ngt_config(module, result):
-    vmm = get_esxi_vm_api_instance(module)
     ext_id = module.params.get("ext_id")
-    if not ext_id:
-        return module.fail_json(msg="vm ext_id is required to update NGT", **result)
-
     result["ext_id"] = ext_id
-
+    vmm = get_esxi_vm_api_instance(module)
     current_spec = get_esxi_ngt(module, vmm, ext_id)
 
     spec = deepcopy(current_spec)
@@ -225,7 +221,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "ext_id": None,
     }

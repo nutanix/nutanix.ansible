@@ -19,7 +19,6 @@ author:
   - Abhinav Bansal (@abhinavbansal29)
   - George Ghawali (@george-ghawali)
 notes:
-    - Module will skip if install/uninstall is not required checking the current installation status.
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
@@ -53,6 +52,7 @@ options:
     capabilities:
         description:
             - List of NGT capabilities to enable.
+            - Valid choices are "SELF_SERVICE_RESTORE" and "VSS_SNAPSHOT".
         type: list
         elements: str
         choices:
@@ -62,6 +62,7 @@ options:
         description:
             - The credentials to authenticate with the ESXi VM.
         type: dict
+        required: true
         suboptions:
             username:
                 description:
@@ -159,10 +160,12 @@ task_ext_id:
     description: The external ID of the task associated with the NGT operation.
     type: str
     returned: when the task is created
+    sample: "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1"
 changed:
     description: Indicates whether the NGT installation or uninstallation changed the state of the ESXi VM.
     type: bool
     returned: always
+    sample: true
 msg:
     description: This indicates the message if any message occurred
     returned: When there is an error or module is idempotent
@@ -176,10 +179,17 @@ ext_id:
     description: The external ID of the ESXi VM on which the NGT operation was performed.
     type: str
     returned: always
+    sample: "98b9dc89-be08-3c56-b554-692b8b676fd1"
 skipped:
     description: Indicates whether the operation was skipped due to idempotency.
     type: bool
     returned: when NGT is already in the desired state
+    sample: true
+failed:
+    description: Indicates whether the module execution failed.
+    type: bool
+    returned: always
+    sample: false
 """
 
 import traceback  # noqa: E402
@@ -249,9 +259,6 @@ def get_module_spec():
 def install_ngt(module, result):
     vmm = get_esxi_vm_api_instance(module)
     ext_id = module.params.get("ext_id")
-    if not ext_id:
-        return module.fail_json(msg="ext_id is required to install NGT", **result)
-
     result["ext_id"] = ext_id
 
     status = get_esxi_ngt(module, vmm, ext_id)
@@ -296,11 +303,6 @@ def install_ngt(module, result):
 def uninstall_ngt(module, result):
     vmm = get_esxi_vm_api_instance(module)
     ext_id = module.params.get("ext_id")
-    if not ext_id:
-        return module.fail_json(
-            msg="vm ext_id is required to uninstalling NGT", **result
-        )
-
     result["ext_id"] = ext_id
 
     status = get_esxi_ngt(module, vmm, ext_id)
@@ -347,7 +349,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "ext_id": None,
     }

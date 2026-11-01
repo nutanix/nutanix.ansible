@@ -23,18 +23,8 @@
     - name: Assign owner to ESXi VM
       nutanix.ncp.ntnx_esxi_vms_assign_owner_v2:
         ext_id: "{{ vm_ext_id }}"
-        ownership_info:
-          owner:
-            ext_id: "{{ owner_ext_id }}"
-      register: result
-      ignore_errors: true
-
-    - name: Assign owner to ESXi VM without waiting for the task
-      nutanix.ncp.ntnx_esxi_vms_assign_owner_v2:
-        ext_id: "{{ vm_ext_id }}"
-        ownership_info:
-          owner:
-            ext_id: "{{ owner_ext_id }}"
-        wait: false
+        owner:
+          entity_type: USER
+          ext_id: "{{ owner_ext_id }}"
       register: result
       ignore_errors: true

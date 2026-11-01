@@ -21,7 +21,7 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Revert ESXi Virtual Machine) -
-      Required Roles: Prism Admin, Project Manager, Self-Service Admin (deprecated), Super Admin, Disaster Recovery Admin, Backup Admin
+      Required Roles: Backup Admin, Disaster Recovery Admin, Prism Admin, Project Manager, Self-Service Admin (deprecated), Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     state:
@@ -67,8 +67,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - Task details of the revert operation.
-        - In check mode, the request spec which would be sent.
+        - Response details of the revert operation.
+        - When C(wait) is true the response is replaced by the final task details.
+        - When C(wait) is false the response is the initial task reference returned by the revert API.
     returned: always
     type: dict
     sample:
@@ -138,7 +139,7 @@ from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_esxi_vm_api_instance,
     get_etag,
 )
-from ..module_utils.v4.vmm.helpers import get_esxi_vm  # noqa: E402
+from ..module_utils.v4.vmm.helpers import get_vm  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
@@ -179,7 +180,7 @@ def revert_vm_from_recovery_point(module, result):
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
-    vm = get_esxi_vm(module, vms, ext_id)
+    vm = get_vm(module, vms, ext_id)
     etag = get_etag(vm)
     if not etag:
         module.fail_json(msg="Failed to get etag for ESXi VM", **result)

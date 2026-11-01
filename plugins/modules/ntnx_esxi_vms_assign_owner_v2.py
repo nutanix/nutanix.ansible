@@ -28,24 +28,23 @@ options:
       - The external ID of the ESXi VM.
     type: str
     required: true
-  ownership_info:
+  owner:
     description:
-      - The ownership information for the ESXi VM.
-      - Uses the assign VM owner API to change the owner of the VM.
+      - Owner reference.
     type: dict
     required: true
     suboptions:
-      owner:
+      entity_type:
         description:
-          - The owner reference for the VM.
-        type: dict
+          - Type of the entity that the owner reference is pointing to.
+        type: str
+        choices:
+          - USER
+      ext_id:
+        description:
+          - The globally unique identifier of an instance of type UUID.
+        type: str
         required: true
-        suboptions:
-          ext_id:
-            description:
-              - A globally unique identifier of the VM owner.
-            type: str
-            required: true
   wait:
     description:
       - Wait for the assign-owner task to complete before returning.
@@ -70,22 +69,24 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     ext_id: "530567f3-abda-4913-b5d0-0ab6758ec165"
-    ownership_info:
-      owner:
-        ext_id: "00000000-0000-0000-0000-000000000000"
+    owner:
+      entity_type: USER
+      ext_id: "00000000-0000-0000-0000-000000000000"
 """
 
 RETURN = r"""
 response:
   description:
-    - The ESXi VM response after owner assignment when wait is true.
-    - The task response when wait is false.
+    - Response details of the assign-owner operation.
+    - When C(wait) is true the response is the VM info after owner assignment.
+    - When C(wait) is false the response is the initial task reference returned by the assign-owner API.
   type: dict
   returned: always
   sample: {
             "ext_id": "9d199d16-1c8e-4ddf-40f5-20a2d78aa918",
             "ownership_info": {
                 "owner": {
+                    "entity_type": "USER",
                     "ext_id": "00000000-0000-0000-0000-000000000000"
                 }
             }
@@ -99,7 +100,7 @@ task_ext_id:
   description: The external ID of the task.
   type: str
   returned: always
-  sample: "530567f3-abda-4913-b5d0-0ab6758ec168"
+  sample: "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1"
 changed:
   description: This indicates whether the task resulted in any changes
   type: bool
@@ -134,12 +135,13 @@ from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
+from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
 from ..module_utils.v4.vmm.api_client import get_esxi_vm_api_instance  # noqa: E402
-from ..module_utils.v4.vmm.helpers import get_esxi_vm  # noqa: E402
+from ..module_utils.v4.vmm.helpers import get_vm  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
@@ -154,22 +156,24 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     owner_reference_spec = dict(
+        entity_type=dict(type="str", choices=["USER"]),
         ext_id=dict(type="str", required=True),
-    )
-    ownership_info_spec = dict(
-        owner=dict(type="dict", options=owner_reference_spec, required=True),
     )
     module_args = dict(
         ext_id=dict(type="str", required=True),
-        ownership_info=dict(type="dict", options=ownership_info_spec, required=True),
+        owner=dict(
+            type="dict",
+            options=owner_reference_spec,
+            obj=vmm_sdk.EsxiConfigOwnerReference,
+            required=True,
+        ),
     )
     return module_args
 
 
 def _is_owner_change_needed(current_spec, module):
     """Check if the ESXi VM owner needs to be changed."""
-    ownership_info_params = module.params.get("ownership_info")
-    requested_owner_ext_id = ownership_info_params["owner"]["ext_id"]
+    requested_owner_ext_id = module.params["owner"]["ext_id"]
     current_ownership = getattr(
         getattr(current_spec, "ownership_info", None), "owner", None
     )
@@ -177,32 +181,32 @@ def _is_owner_change_needed(current_spec, module):
     return current_ext_id != requested_owner_ext_id
 
 
-def assign_vm_owner(module, result):
+def assign_vm_owner(module, api_instance, result):
     """Assign a new owner to the ESXi VM."""
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
-    vms = get_esxi_vm_api_instance(module)
-    current_spec = get_esxi_vm(module, vms, ext_id)
-
-    ownership_info_params = module.params.get("ownership_info")
-    owner_ext_id = ownership_info_params["owner"]["ext_id"]
-    owner_ref = vmm_sdk.EsxiConfigOwnerReference(ext_id=owner_ext_id)
-    body = vmm_sdk.EsxiConfigOwnershipInfo(owner=owner_ref)
+    sg = SpecGenerator(module)
+    default_spec = vmm_sdk.EsxiConfigOwnershipInfo()
+    spec, err = sg.generate_spec(obj=default_spec)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating ESXi VM assign owner spec", **result)
 
     if module.check_mode:
-        result["response"] = strip_internal_attributes(body.to_dict())
+        result["response"] = strip_internal_attributes(spec.to_dict())
         result["msg"] = "ESXi VM with ext_id:{0} will have owner assigned.".format(
             ext_id
         )
         return
 
+    current_spec = get_vm(module, api_instance, ext_id)
     if not _is_owner_change_needed(current_spec, module):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
     try:
-        resp = vms.assign_vm_owner(extId=ext_id, body=body)
+        resp = api_instance.assign_vm_owner(extId=ext_id, body=spec)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -215,7 +219,7 @@ def assign_vm_owner(module, result):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
-        resp = get_esxi_vm(module, vms, ext_id)
+        resp = get_vm(module, api_instance, ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
 
     result["changed"] = True
@@ -240,7 +244,8 @@ def run_module():
         "failed": False,
     }
 
-    assign_vm_owner(module, result)
+    api_instance = get_esxi_vm_api_instance(module)
+    assign_vm_owner(module, api_instance, result)
     module.exit_json(**result)
 
 

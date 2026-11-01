@@ -55,7 +55,9 @@ EXAMPLES = r"""
 
 RETURN = r"""
 response:
-    description: The NGT information for the ESXi virtual machine.
+    description:
+        - Response for fetching NGT info for the ESXi virtual machine.
+        - It will contain the NGT info for the ESXi virtual machine.
     type: dict
     returned: always
     sample: {
@@ -76,19 +78,16 @@ changed:
     description: Indicates whether the NGT information has changed.
     type: bool
     returned: always
-msg:
-    description: This indicates the message if any message occurred
-    returned: When there is an error
-    type: str
-    sample: "Api Exception raised while fetching ESXi VM NGT info for given vm"
-error:
-    description: The error message, if any.
-    type: str
-    returned: on error
+    sample: true
 ext_id:
     description: The external ID of the ESXi virtual machine.
     type: str
     returned: always
+failed:
+    description: Indicates whether the module execution failed.
+    type: bool
+    returned: always
+    sample: false
 """
 
 import warnings  # noqa: E402
@@ -111,11 +110,7 @@ def get_module_spec():
 def get_ngt_config(module, result):
     vmm = get_esxi_vm_api_instance(module)
     ext_id = module.params.get("ext_id")
-    if not ext_id:
-        return module.fail_json(msg="ext_id is required to fetch NGT info", **result)
-
     result["ext_id"] = ext_id
-
     status = get_esxi_ngt(module, vmm, ext_id)
     result["response"] = strip_internal_attributes(status.to_dict())
 
@@ -123,14 +118,14 @@ def get_ngt_config(module, result):
 def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
-        supports_check_mode=True,
+        supports_check_mode=False,
         skip_info_args=True,
     )
 
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "ext_id": None,
     }

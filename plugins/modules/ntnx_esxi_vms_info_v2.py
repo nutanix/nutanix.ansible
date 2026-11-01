@@ -52,6 +52,23 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
 
+- name: Fetch information about all ESXi VMs with limit
+  nutanix.ncp.ntnx_esxi_vms_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    limit: 10
+
+
+- name: Fetch information about all ESXi VMs with filter
+  nutanix.ncp.ntnx_esxi_vms_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter: "name eq 'esxi-vm-1'"
+
 - name: Fetch information about a specific ESXi VM
   nutanix.ncp.ntnx_esxi_vms_info_v2:
     nutanix_host: "{{ ip }}"
@@ -135,6 +152,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_internal_attributes,
 )
 from ..module_utils.v4.vmm.api_client import get_esxi_vm_api_instance  # noqa: E402
+from ..module_utils.v4.vmm.helpers import get_vm  # noqa: E402
 
 
 def get_module_spec():
@@ -144,25 +162,14 @@ def get_module_spec():
     return module_args
 
 
-def get_vm(module, result):
-    vmm = get_esxi_vm_api_instance(module)
+def get_vm_using_ext_id(module, vmm, result):
     ext_id = module.params.get("ext_id")
-
-    try:
-        resp = vmm.get_vm_by_id(extId=ext_id)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching ESXi VM info",
-        )
-
+    resp = get_vm(module, vmm, ext_id)
     result["ext_id"] = ext_id
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    result["response"] = strip_internal_attributes(resp.to_dict())
 
 
-def get_vms(module, result):
-    vmm = get_esxi_vm_api_instance(module)
+def get_vms(module, vmm, result):
 
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
@@ -202,10 +209,11 @@ def run_module():
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "failed": False, "response": None}
+    vmm = get_esxi_vm_api_instance(module)
     if module.params.get("ext_id"):
-        get_vm(module, result)
+        get_vm_using_ext_id(module, vmm, result)
     else:
-        get_vms(module, result)
+        get_vms(module, vmm, result)
 
     module.exit_json(**result)
 
