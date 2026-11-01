@@ -150,7 +150,6 @@ msg:
     sample: "PCIe device with ext_id:0e6d0dcc-a7e4-47a5-54eb-d58396649a49 will be deleted."
 """
 
-import copy  # noqa: E402
 import traceback  # noqa: E402
 import warnings  # noqa: E402
 
@@ -167,6 +166,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    validate_required_params,
 )
 from ..module_utils.v4.vmm.api_client import get_vm_api_instance  # noqa: E402
 from ..module_utils.v4.vmm.helpers import get_pcie_device  # noqa: E402
@@ -203,39 +203,15 @@ def get_module_spec():
     return module_args
 
 
-def _find_pcie_device_ext_id(module, api_instance, vm_ext_id, device_ext_id):
-    try:
-        resp = api_instance.list_pcie_devices_by_vm_id(vmExtId=vm_ext_id)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while listing VM PCIe devices",
-        )
-    for pcie in resp.data or []:
-        backing = getattr(pcie, "backing_info", None)
-        if (
-            backing is not None
-            and getattr(backing, "device_ext_id", None) == device_ext_id
-        ):
-            return pcie.ext_id
-    return None
-
-
 def create_pcie_device(module, result, api_instance):
+    validate_required_params(module, ["backing_info"])
+
     vm_ext_id = module.params.get("vm_ext_id")
     result["vm_ext_id"] = vm_ext_id
 
-    if not module.params.get("backing_info"):
-        module.fail_json(msg="Missing required parameter: backing_info", **result)
-
     sg = SpecGenerator(module)
     default_spec = vmm_sdk.PcieDevice()
-    create_params = copy.deepcopy(module.params)
-    create_params.pop("ext_id", None)
-    create_params.pop("vm_ext_id", None)
-    create_params.pop("state", None)
-    spec, err = sg.generate_spec(obj=default_spec, attr=create_params)
+    spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating create VM PCIe device spec", **result)
@@ -263,18 +239,18 @@ def create_pcie_device(module, result, api_instance):
         ext_id = get_entity_ext_id_from_task(
             task_status, rel=TASK_CONSTANTS.RelEntityType.PCIE_DEVICE
         )
-        if not ext_id:
-            backing_info = module.params.get("backing_info") or {}
-            ext_id = _find_pcie_device_ext_id(
-                module,
-                api_instance,
-                vm_ext_id,
-                backing_info.get("device_ext_id"),
-            )
         if ext_id:
             result["ext_id"] = ext_id
             pcie = get_pcie_device(module, api_instance, ext_id, vm_ext_id)
             result["response"] = strip_internal_attributes(pcie.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for VM PCIe device"
+                ),
+                msg="Failed to get entity ext_id from task for VM PCIe device",
+            )
     result["changed"] = True
 
 
@@ -325,7 +301,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "failed": False,
         "ext_id": None,

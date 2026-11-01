@@ -13,12 +13,18 @@
       nutanix_password: <pass>
       validate_certs: false
   tasks:
+
+    - name: Set variables
+      ansible.builtin.set_fact:
+        vm_ext_id: "<vm_ext_id>"
+        pcie_device_ext_id: "<pcie_device_ext_id>"
+
     - name: Create a PCIe device for a VM
       nutanix.ncp.ntnx_vm_pcie_device_v2:
         state: present
-        vm_ext_id: "<vm_ext_id>"
+        vm_ext_id: "{{ vm_ext_id }}"
         backing_info:
-          device_ext_id: "<pcie_device_ext_id>"
+          device_ext_id: "{{ pcie_device_ext_id }}"
       register: create_result
 
     - name: Print create PCIe device result
@@ -27,7 +33,7 @@
 
     - name: Get a PCIe device by ext_id
       nutanix.ncp.ntnx_vm_pcie_devices_info_v2:
-        vm_ext_id: "<vm_ext_id>"
+        vm_ext_id: "{{ vm_ext_id }}"
         ext_id: "{{ create_result.ext_id }}"
       register: get_result
 
@@ -35,9 +41,29 @@
       ansible.builtin.debug:
         msg: "{{ get_result }}"
 
-    - name: List PCIe devices attached to a VM
+    - name: List all PCIe devices attached to a VM
       nutanix.ncp.ntnx_vm_pcie_devices_info_v2:
-        vm_ext_id: "<vm_ext_id>"
+        vm_ext_id: "{{ vm_ext_id }}"
+      register: list_result
+
+    - name: Print list PCIe devices result
+      ansible.builtin.debug:
+        msg: "{{ list_result }}"
+
+    - name: List PCIe devices attached to a VM with limit
+      nutanix.ncp.ntnx_vm_pcie_devices_info_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        limit: 1
+      register: list_result
+
+    - name: Print list PCIe devices result
+      ansible.builtin.debug:
+        msg: "{{ list_result }}"
+
+    - name: List PCIe devices attached to a VM with fetch all PCIe devices
+      nutanix.ncp.ntnx_vm_pcie_devices_info_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        fetch_all: true
       register: list_result
 
     - name: Print list PCIe devices result
@@ -47,7 +73,7 @@
     - name: Delete a PCIe device from a VM
       nutanix.ncp.ntnx_vm_pcie_device_v2:
         state: absent
-        vm_ext_id: "<vm_ext_id>"
+        vm_ext_id: "{{ vm_ext_id }}"
         ext_id: "{{ create_result.ext_id }}"
       register: delete_result
 

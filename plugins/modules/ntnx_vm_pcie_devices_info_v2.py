@@ -43,9 +43,37 @@ options:
             - A globally unique identifier of a VM of type UUID.
         type: str
         required: true
+    page:
+        description:
+            - A URL query parameter that specifies the page number of the result set.
+            - It must be a positive integer between 0 and the maximum number of pages that are available for that resource.
+            - Any number out of this range might lead to no results.
+        type: int
+        required: false
+    limit:
+        description:
+            - A URL query parameter that specifies the total number of records returned in the result set.
+            - Must be a positive integer between 1 and 100.
+            - Any number out of this range will lead to a validation error.
+            - If the limit is not provided, a default value of 50 records will be returned in the result set.
+        type: int
+        required: false
+    read_timeout:
+        description: Read timeout in milliseconds for API calls.
+        type: int
+        required: false
+        default: 30000
+    fetch_all:
+        description:
+            - When C(true), paginate through the list API until all available entities are returned.
+              C(page) and C(limit) are ignored; each request uses the maximum page size (100).
+            - When C(false), return a single page (API default limit).
+            - Does not apply when fetching a single entity by C(ext_id).
+        type: bool
+        required: false
+        default: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
-    - nutanix.ncp.ntnx_info_v2
     - nutanix.ncp.ntnx_logger
     - nutanix.ncp.ntnx_proxy_v2
 author:
@@ -82,6 +110,16 @@ EXAMPLES = r"""
     vm_ext_id: "c4d28fba-7adb-46b4-5495-01d795d8260b"
     page: 0
     limit: 10
+  register: result
+
+- name: List PCIe devices attached to a VM with fetch all PCIe devices
+  nutanix.ncp.ntnx_vm_pcie_devices_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    vm_ext_id: "c4d28fba-7adb-46b4-5495-01d795d8260b"
+    fetch_all: true
   register: result
 """
 
@@ -142,6 +180,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -155,6 +194,9 @@ def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str"),
         vm_ext_id=dict(type="str", required=True),
+        page=dict(type="int"),
+        limit=dict(type="int"),
+        fetch_all=dict(type="bool", required=False, default=False),
     )
     return module_args
 
@@ -178,12 +220,12 @@ def get_pcie_devices(module, api_instance, result):
         result["error"] = err
         module.fail_json(msg="Failed generating VM PCIe devices info Spec", **result)
 
-    # List API supports only page and limit.
-    for extra in ("_filter", "_orderby", "_select"):
-        kwargs.pop(extra, None)
-
     try:
-        resp = api_instance.list_pcie_devices_by_vm_id(vmExtId=vm_ext_id, **kwargs)
+        resp = list_entities(
+            api_instance.list_pcie_devices_by_vm_id,
+            kwargs=kwargs,
+            vmExtId=vm_ext_id,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -202,16 +244,13 @@ def get_pcie_devices(module, api_instance, result):
 
 def run_module():
     module = BaseInfoModule(
+        skip_info_args=True,
         argument_spec=get_module_spec(),
         supports_check_mode=False,
-        mutually_exclusive=[
-            ("ext_id", "filter"),
-        ],
     )
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "failed": False,
     }
