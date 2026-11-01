@@ -156,6 +156,30 @@ def get_ssl_certificates_api_instance(module):
     return ntnx_clustermgmt_py_client.SSLCertificateApi(client)
 
 
+def get_encryption_api_instance(module):
+    """
+    This method will return encryption api instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        EncryptionApi: EncryptionApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.EncryptionApi(client)
+
+
+def get_certificate_manager_api_instance(module):
+    """
+    This method will return certificate manager api instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        CertificateManagerApi: CertificateManagerApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.CertificateManagerApi(client)
+
+
 def get_bmc_api_instance(module):
     """
     This method will return BMC api instance from sdk.
