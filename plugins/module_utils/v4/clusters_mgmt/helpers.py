@@ -187,6 +187,47 @@ def get_ssl_certificates(module, api_instance, ext_id):
         )
 
 
+def get_encryption_config(module, api_instance, cluster_ext_id):
+    """
+    This method will return the encryption configuration of a cluster
+    using the cluster external ID.
+    Args:
+        module: Ansible module
+        api_instance: EncryptionApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+    return:
+        encryption config API response (object): full get encryption config API response
+    """
+    try:
+        return api_instance.get_encryption_config(clusterExtId=cluster_ext_id)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching encryption config using cluster ext_id",
+        )
+
+
+def download_encryption_keys_backup(module, api_instance, ext_id):
+    """
+    This method will download the encryption keys backup identified by ext_id.
+    Args:
+        module: Ansible module
+        api_instance: EncryptionApi instance from sdk
+        ext_id (str): encryption keys backup external ID
+    return:
+        download response (object): SDK download encryption keys backup API response
+    """
+    try:
+        return api_instance.download_encryption_keys_backup(extId=ext_id)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while downloading encryption keys backup",
+        )
+
+
 def get_cvm(module, api_instance, ext_id, cluster_ext_id):
     """
     This method will return CVM info using external ID.
@@ -253,6 +294,122 @@ def get_cluster_profile(module, api_instance, ext_id):
             module=module,
             exception=e,
             msg="Api Exception raised while fetching cluster profile info using ext_id",
+        )
+
+
+def get_certificate_authority(module, api_instance, ext_id, cluster_ext_id):
+    """
+    This method will return Certificate Authority (CA) info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: CertificateManagerApi instance from sdk
+        ext_id (str): Certificate Authority external ID
+        cluster_ext_id (str): cluster external ID
+    return:
+        certificate authority info (object): certificate authority info
+    """
+    try:
+        return api_instance.get_certificate_authority_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching certificate authority info using ext_id",
+        )
+
+
+def get_certificate(module, api_instance, ext_id, cluster_ext_id):
+    """
+    This method will return Certificate info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: CertificateManagerApi instance from sdk
+        ext_id (str): Certificate external ID
+        cluster_ext_id (str): cluster external ID
+    return:
+        certificate info (object): certificate info
+    """
+    try:
+        return api_instance.get_certificate_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching certificate info using ext_id",
+        )
+
+
+def get_csr(module, api_instance, ext_id, cluster_ext_id):
+    """
+    This method will return Certificate Signing Request (CSR) info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: CertificateManagerApi instance from sdk
+        ext_id (str): CSR external ID
+        cluster_ext_id (str): cluster external ID
+    return:
+        csr info (object): csr info
+    """
+    try:
+        return api_instance.get_csr_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching CSR info using ext_id",
+        )
+
+
+def download_csr(module, api_instance, cluster_ext_id, csr_ext_id):
+    """
+    This method will download a Certificate Signing Request (CSR) file.
+    Args:
+        module: Ansible module
+        api_instance: CertificateManagerApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        csr_ext_id (str): CSR external ID
+    return:
+        download response (object): SDK download CSR API response
+    """
+    try:
+        return api_instance.download_csr_by_id(
+            clusterExtId=cluster_ext_id, csrExtId=csr_ext_id
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while downloading CSR with ext_id: {0}".format(
+                csr_ext_id
+            ),
+        )
+
+
+def get_cluster_stats(module, api_instance, ext_id, **kwargs):
+    """
+    This method will return cluster stats using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        ext_id (str): cluster external ID
+        kwargs (dict): additional query parameters
+            (_startTime, _endTime, _samplingInterval, _statType, _select)
+    return:
+        cluster stats info (object): cluster stats info
+    """
+    try:
+        return api_instance.get_cluster_stats(extId=ext_id, **kwargs).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching cluster stats using ext_id",
         )
 
 
@@ -487,4 +644,49 @@ def get_snmp_config(module, api_instance, cluster_ext_id):
             module=module,
             exception=e,
             msg="Api Exception raised while fetching snmp config info using cluster ext_id",
+        )
+
+
+def get_rsyslog_server(module, api_instance, cluster_ext_id, ext_id):
+    """
+    This method will return rsyslog server info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        ext_id (str): rsyslog server external ID
+    return:
+        rsyslog server info (object): rsyslog server info
+    """
+    try:
+        return api_instance.get_rsyslog_server_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching rsyslog server info using ext_id",
+        )
+
+
+def list_rsyslog_servers(module, api_instance, cluster_ext_id):
+    """
+    List RSYSLOG servers for a cluster.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+    return:
+        ListRsyslogServersByClusterIdApiResponse instance
+    """
+    try:
+        return api_instance.list_rsyslog_servers_by_cluster_id(
+            clusterExtId=cluster_ext_id
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching RSYSLOG servers info",
         )
