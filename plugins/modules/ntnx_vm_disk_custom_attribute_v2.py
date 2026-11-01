@@ -205,14 +205,13 @@ def add_vm_disk_custom_attributes(module, result, api_instance):
     result["vm_ext_id"] = vm_ext_id
     result["ext_id"] = ext_id
 
-    if module.check_mode:
-        spec = vmm_sdk.UpdateCustomAttributesParams(custom_attributes=requested)
-        result["response"] = strip_internal_attributes(spec.to_dict())
-        return
-
     current = _get_current_custom_attributes(module, api_instance, vm_ext_id, ext_id)
     to_add = [attr for attr in requested if attr not in set(current)]
     spec = vmm_sdk.UpdateCustomAttributesParams(custom_attributes=to_add)
+
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(spec.to_dict())
+        return
 
     if not to_add:
         result["skipped"] = True
@@ -248,14 +247,13 @@ def remove_vm_disk_custom_attributes(module, result, api_instance):
     result["vm_ext_id"] = vm_ext_id
     result["ext_id"] = ext_id
 
-    if module.check_mode:
-        spec = vmm_sdk.UpdateCustomAttributesParams(custom_attributes=requested)
-        result["response"] = strip_internal_attributes(spec.to_dict())
-        return
-
     current = _get_current_custom_attributes(module, api_instance, vm_ext_id, ext_id)
     to_remove = [attr for attr in requested if attr in set(current)]
     spec = vmm_sdk.UpdateCustomAttributesParams(custom_attributes=to_remove)
+
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(spec.to_dict())
+        return
 
     if not to_remove:
         result["skipped"] = True

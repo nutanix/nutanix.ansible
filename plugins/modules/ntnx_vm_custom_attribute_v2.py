@@ -15,8 +15,6 @@ short_description: Add or remove custom attributes on a VM
 version_added: "2.7.0"
 description:
     - Add or remove custom attributes on a VM.
-    - Adds to the custom attributes of the VM.
-    - Removes from the custom attributes of the VM.
     - This module uses PC v4 APIs based SDKs
 notes:
     - >-
@@ -190,14 +188,13 @@ def add_vm_custom_attributes(module, result, api_instance):
     requested = module.params.get("custom_attributes") or []
     result["ext_id"] = ext_id
 
-    if module.check_mode:
-        spec = vmm_sdk.UpdateCustomAttributesParams(custom_attributes=requested)
-        result["response"] = strip_internal_attributes(spec.to_dict())
-        return
-
     current = _get_current_custom_attributes(module, api_instance, ext_id)
     to_add = [attr for attr in requested if attr not in set(current)]
     spec = vmm_sdk.UpdateCustomAttributesParams(custom_attributes=to_add)
+
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(spec.to_dict())
+        return
 
     if not to_add:
         result["skipped"] = True
@@ -229,14 +226,13 @@ def remove_vm_custom_attributes(module, result, api_instance):
     requested = module.params.get("custom_attributes") or []
     result["ext_id"] = ext_id
 
-    if module.check_mode:
-        spec = vmm_sdk.UpdateCustomAttributesParams(custom_attributes=requested)
-        result["response"] = strip_internal_attributes(spec.to_dict())
-        return
-
     current = _get_current_custom_attributes(module, api_instance, ext_id)
     to_remove = [attr for attr in requested if attr in set(current)]
     spec = vmm_sdk.UpdateCustomAttributesParams(custom_attributes=to_remove)
+
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(spec.to_dict())
+        return
 
     if not to_remove:
         result["skipped"] = True
