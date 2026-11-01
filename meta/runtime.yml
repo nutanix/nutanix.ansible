@@ -274,6 +274,7 @@ action_groups:
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
     - ntnx_vm_cross_cluster_migrate_v2
+    - ntnx_vm_console_token_v2
     - ntnx_vm_pcie_device_v2
     - ntnx_vm_pcie_devices_info_v2
     - ntnx_vm_disk_hydration_v2
