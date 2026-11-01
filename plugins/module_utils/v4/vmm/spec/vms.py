@@ -220,6 +220,7 @@ class VmSpecs:
             type="dict",
             options=reference_spec,
             obj=vmm_sdk.NicProfileReference,
+            no_log=False,
         ),
     )
 
@@ -227,7 +228,11 @@ class VmSpecs:
         virtual_ethernet_nic=dict(type="dict", options=virtual_ethernet_nic_spec),
         sriov_nic=dict(type="dict", options=sriov_nic_spec),
         dp_offload_nic=dict(type="dict", options=dp_offload_nic_spec),
-        pcie_passthrough_nic=dict(type="dict", options=pcie_passthrough_nic_spec),
+        pcie_passthrough_nic=dict(
+            type="dict",
+            options=pcie_passthrough_nic_spec,
+            no_log=False,
+        ),
     )
 
     nic_info_spec = dict(
