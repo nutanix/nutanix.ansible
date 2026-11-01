@@ -273,9 +273,7 @@ class VmSpecs:
         virtual_ethernet_nic_network_info=dict(
             type="dict", options=virtual_ethernet_nic_network_info_spec
         ),
-        sriov_nic_network_info=dict(
-            type="dict", options=sriov_nic_network_info_spec
-        ),
+        sriov_nic_network_info=dict(type="dict", options=sriov_nic_network_info_spec),
         dp_offload_nic_network_info=dict(
             type="dict", options=dp_offload_nic_network_info_spec
         ),
