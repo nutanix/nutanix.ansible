@@ -258,11 +258,6 @@ options:
               - The on-prem VLAN to deploy the gateway on.
             type: int
             required: false
-          mtu:
-            description:
-              - MTU of management interface.
-            type: int
-            required: false
           address:
             description:
               - IP address.
@@ -359,11 +354,6 @@ options:
             description:
               - MAC address of this gateway interface.
             type: str
-            required: false
-          mtu:
-            description:
-              - MTU of this gateway interface.
-            type: int
             required: false
           ip_address:
             description:
@@ -1149,10 +1139,6 @@ author:
 EXAMPLES = r"""
 - name: Create a local VTEP gateway
   nutanix.ncp.ntnx_gateway_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: present
     name: "gw_local_vtep_ansible"
     description: "Local VTEP gateway created by Ansible"
@@ -1203,39 +1189,31 @@ EXAMPLES = r"""
         local_vtep_service:
           vxlan_port: 4789
   register: result
+  ignore_errors: true
 
 - name: Update gateway name and description
   nutanix.ncp.ntnx_gateway_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: present
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
     name: "gw_local_vtep_ansible_updated"
     description: "Updated description for gateway with all attributes"
   register: result
+  ignore_errors: true
 
 - name: Upgrade an existing gateway to the latest supported version
   nutanix.ncp.ntnx_gateway_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: present
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
     upgrade: true
   register: result
+  ignore_errors: true
 
 - name: Delete a gateway
   nutanix.ncp.ntnx_gateway_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: absent
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
   register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -1385,30 +1363,30 @@ ext_id:
   sample: "c13bf194-4017-4efb-abbf-d44c837818a9"
 
 changed:
-  description: This indicates whether the task resulted in any changes
+  description: This indicates whether the task resulted in any changes.
   returned: always
   type: bool
   sample: true
 
 skipped:
-  description: This indicates whether the task was skipped
-  returned: always
+  description: This indicates whether the task was skipped, for example during idempotency checks.
+  returned: when applicable
   type: bool
   sample: true
 
 error:
-  description: This indicates the error message if any error occurred
+  description: This indicates the error message if any error occurred.
   returned: When an error occurs
   type: str
 
 failed:
-  description: This indicates whether the task failed
+  description: This indicates whether the task failed.
   returned: always
   type: bool
   sample: false
 
 msg:
-  description: This indicates the message if any message occurred
+  description: This indicates the message if any message occurred.
   returned: When there is an error, module is idempotent or check mode (in delete operation)
   type: str
   sample: "Api Exception raised while creating gateway"
@@ -1449,6 +1427,7 @@ except ImportError:
 
     SDK_IMP_ERROR = traceback.format_exc()
 
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
@@ -1458,6 +1437,8 @@ READ_ONLY_FIELDS = (
     "status",
     "vpc",
     "vm",
+    "vm_reference",
+    "is_active",
     "links",
     "ext_id",
     "tenant_id",
@@ -1510,7 +1491,6 @@ def _get_management_interface_spec():
     return dict(
         subnet_reference=dict(type="str", required=False),
         vlan_id=dict(type="int", required=False),
-        mtu=dict(type="int", required=False),
         address=dict(
             type="dict",
             options=_get_ip_address_spec(),
@@ -1530,7 +1510,6 @@ def _get_gateway_interface_spec():
     return dict(
         subnet_reference=dict(type="str", required=False),
         mac_address=dict(type="str", required=False),
-        mtu=dict(type="int", required=False),
         ip_address=dict(
             type="dict",
             options=_get_ip_address_spec(),
@@ -1885,7 +1864,7 @@ def get_module_spec():
     return module_args
 
 
-def create_Gateway(module, api_instance, result):
+def create_gateway(module, api_instance, result):
     validate_required_params(module, ["name"])
     sg = SpecGenerator(module)
     default_spec = networking_sdk.Gateway()
@@ -1942,13 +1921,15 @@ def check_for_idempotency(old_spec_dict, update_spec_dict):
     return old == new
 
 
-def update_Gateway(module, api_instance, result):
+def update_gateway(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
     old_spec = get_gateway(module, api_instance, ext_id)
     etag = get_etag(data=old_spec)
     if not etag:
-        return module.fail_json("Unable to fetch etag for updating gateway", **result)
+        return module.fail_json(
+            msg="Unable to fetch etag for updating gateway", **result
+        )
     kwargs = {"if_match": etag}
 
     # Clear existing OneOf services so SpecGenerator instantiates the correct
@@ -1994,7 +1975,7 @@ def update_Gateway(module, api_instance, result):
     result["changed"] = True
 
 
-def upgrade_Gateway(module, api_instance, result):
+def upgrade_gateway(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -2015,12 +1996,12 @@ def upgrade_Gateway(module, api_instance, result):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        task_resp = wait_for_completion(module, task_ext_id, True)
+        task_resp = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_resp.to_dict())
     result["changed"] = True
 
 
-def delete_Gateway(module, api_instance, result):
+def delete_gateway(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -2046,7 +2027,7 @@ def delete_Gateway(module, api_instance, result):
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
 
@@ -2083,13 +2064,13 @@ def run_module():
         if module.params.get("upgrade"):
             if not module.params.get("ext_id"):
                 module.fail_json(msg="ext_id is required when upgrade=true", **result)
-            upgrade_Gateway(module, api_instance, result)
+            upgrade_gateway(module, api_instance, result)
         elif module.params.get("ext_id"):
-            update_Gateway(module, api_instance, result)
+            update_gateway(module, api_instance, result)
         else:
-            create_Gateway(module, api_instance, result)
+            create_gateway(module, api_instance, result)
     else:
-        delete_Gateway(module, api_instance, result)
+        delete_gateway(module, api_instance, result)
     module.exit_json(**result)
 
 

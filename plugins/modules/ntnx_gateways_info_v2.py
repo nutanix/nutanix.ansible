@@ -14,26 +14,27 @@ module: ntnx_gateways_info_v2
 short_description: Fetch network gateways information in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module allows you to fetch information about Gateway in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific Gateway.
-  - If C(ext_id) is not provided, list multiple Gateway optionally filtered / paginated.
+  - This module allows you to fetch network gateways info or a specific network gateway in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch a particular network gateway info using its external ID.
+  - If C(ext_id) is not provided, fetch multiple network gateways info with/without using filters, limit, etc.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(Get network gateway by ext_id) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Super Admin,
-      Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
+      B(Get a Network Gateway by ext_id) -
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Prism Viewer, Project Admin,
+      Super Admin, Tenant Admin, User, VPC Admin
     - >-
       B(Get list of Network Gateways) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Super Admin,
-      Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Prism Viewer, Project Admin,
+      Super Admin, Tenant Admin, User, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   ext_id:
     description:
       - The external ID of the network gateway.
+      - If provided, a single network gateway is returned.
     type: str
   expand:
     description:
@@ -53,27 +54,37 @@ EXAMPLES = r"""
   nutanix.ncp.ntnx_gateways_info_v2:
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
   register: result
+  ignore_errors: true
 
 - name: List all network gateways
   nutanix.ncp.ntnx_gateways_info_v2:
   register: result
+  ignore_errors: true
 
 - name: List network gateways with filter
   nutanix.ncp.ntnx_gateways_info_v2:
     filter: "name eq 'gw_local_vpn_ansible'"
   register: result
+  ignore_errors: true
 
 - name: List network gateways with limit
   nutanix.ncp.ntnx_gateways_info_v2:
     limit: 1
   register: result
+  ignore_errors: true
+
+- name: List all network gateways with fetch_all
+  nutanix.ncp.ntnx_gateways_info_v2:
+    fetch_all: true
+  register: result
+  ignore_errors: true
 """
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC Gateway info v4 API.
-    - It can be a single Gateway if external ID is provided.
-    - List of multiple Gateway if external ID is not provided with optional filter or limit.
+    - The response from the Nutanix PC network gateways info v4 API.
+    - It can be a single network gateway if external ID is provided.
+    - It is a list of multiple network gateways if external ID is not provided, with optional filter or limit.
   returned: always
   type: dict
   sample:
@@ -120,38 +131,38 @@ response:
     }
 
 changed:
-  description: This indicates whether the task resulted in any changes
+  description: This indicates whether the task resulted in any changes. Always false for info modules.
   returned: always
   type: bool
   sample: false
 
 msg:
-  description: This indicates the message if any message occurred
+  description: This indicates the message if any message occurred.
   returned: When there is an error
   type: str
   sample: "Api Exception raised while fetching gateways info"
 
 error:
-  description: This field typically holds information about if the task have errors that occurred during the task execution
+  description: This field typically holds information about any errors that occurred during the task execution.
   type: str
-  returned: when an error occurs
+  returned: When an error occurs
 
 failed:
-  description: This field typically holds information about if the task have failed
+  description: This field indicates whether the task failed.
   returned: always
   type: bool
   sample: false
 
 ext_id:
-  description: External ID of the network gateway
+  description: External ID of the network gateway.
   type: str
-  returned: when external ID is provided
+  returned: When external ID is provided
   sample: "7bea69e9-684c-4736-7805-d658ee17c1b6"
 
 total_available_results:
   description: The total number of available network gateways in PC.
   type: int
-  returned: when all network gateways are fetched
+  returned: When all network gateways are fetched
   sample: 5
 """
 
@@ -163,10 +174,12 @@ from ..module_utils.v4.network.api_client import get_gateways_api_instance  # no
 from ..module_utils.v4.network.helpers import get_gateway  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
 
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
@@ -196,7 +209,10 @@ def get_gateways(module, api_instance, result):
         module.fail_json(msg="Failed generating gateways info spec", **result)
 
     try:
-        resp = api_instance.list_gateways(**kwargs)
+        resp = list_entities(
+            api_instance.list_gateways,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -204,13 +220,12 @@ def get_gateways(module, api_instance, result):
             msg="Api Exception raised while fetching gateways info",
         )
 
-    resp = strip_internal_attributes(resp.to_dict())
-    total_available_results = resp.get("metadata").get("total_available_results")
+    total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    resp = resp.get("data")
-    if not resp:
-        resp = []
-    result["response"] = resp
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    else:
+        result["response"] = []
 
 
 def run_module():

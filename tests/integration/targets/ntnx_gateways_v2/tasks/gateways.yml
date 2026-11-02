@@ -218,7 +218,6 @@
       management_interface:
         subnet_reference: "d3333333-3333-3333-3333-333333333333"
         vlan_id: 113
-        mtu: 1500
         address:
           ipv4:
             value: "10.30.30.230"
@@ -230,7 +229,6 @@
       interfaces:
         - subnet_reference: "d3333333-3333-3333-3333-333333333333"
           mac_address: "00:11:22:33:44:55"
-          mtu: 1500
           ip_address:
             ipv4:
               value: "10.30.30.231"
@@ -293,7 +291,6 @@
       - result.response.deployment.dns_servers[0].ipv4.value == "8.8.8.8"
       - result.response.deployment.management_interface.subnet_reference == "d3333333-3333-3333-3333-333333333333"
       - result.response.deployment.management_interface.vlan_id == 113
-      - result.response.deployment.management_interface.mtu == 1500
       - result.response.deployment.management_interface.address.ipv4.value == "10.30.30.230"
       - result.response.deployment.management_interface.default_gateway.ipv4.value == "10.30.30.254"
       - result.response.deployment.interfaces | length == 1
@@ -805,7 +802,6 @@
       management_interface:
         subnet_reference: "d3333333-3333-3333-3333-333333333333"
         vlan_id: 113
-        mtu: 1500
         address:
           ipv4:
             value: "10.30.30.230"
@@ -817,7 +813,6 @@
       interfaces:
         - subnet_reference: "d3333333-3333-3333-3333-333333333333"
           mac_address: "00:11:22:33:44:55"
-          mtu: 1500
           ip_address:
             ipv4:
               value: "10.30.30.231"
