@@ -201,3 +201,23 @@ def get_vnic_by_subnet_and_ext_id(module, subnets_api, subnet_ext_id, vnic_ext_i
         if getattr(vnic, "ext_id", None) == vnic_ext_id:
             return vnic
     return None
+
+
+def get_load_balancer_session(module, api_instance, ext_id):
+    """
+    This method will return load balancer session info using its ext_id
+    Args:
+        module: Ansible module
+        api_instance: LoadBalancerSessionsApi instance from ntnx_networking_py_client sdk
+        ext_id (str): load balancer session external ID
+    return:
+        info (object): load balancer session info
+    """
+    try:
+        return api_instance.get_load_balancer_session_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching load balancer session info using ext_id",
+        )
