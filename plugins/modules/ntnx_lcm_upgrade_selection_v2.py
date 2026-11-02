@@ -215,12 +215,10 @@ from ..module_utils.v4.utils import (  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
-    import ntnx_lifecycle_py_client as life_cycle_management_sdk  # noqa: E402
+    import ntnx_lifecycle_py_client as lifecycle_sdk  # noqa: E402
 except ImportError:
 
-    from ..module_utils.v4.sdk_mock import (
-        mock_sdk as life_cycle_management_sdk,
-    )  # noqa: E402
+    from ..module_utils.v4.sdk_mock import mock_sdk as lifecycle_sdk  # noqa: E402
 
     SDK_IMP_ERROR = traceback.format_exc()
 
@@ -240,7 +238,7 @@ def get_module_spec():
             type="list",
             elements="dict",
             options=entity_update_spec,
-            obj=life_cycle_management_sdk.EntityUpdateSpec,
+            obj=lifecycle_sdk.EntityUpdateSpec,
         ),
     )
     return module_args
@@ -249,7 +247,7 @@ def get_module_spec():
 def create_upgrade_selection(module, api_instance, result):
     validate_required_params(module, ["selected_upgrades"])
     sg = SpecGenerator(module)
-    default_spec = life_cycle_management_sdk.UpgradeSelection()
+    default_spec = lifecycle_sdk.UpgradeSelection()
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
