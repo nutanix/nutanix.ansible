@@ -156,12 +156,10 @@ from ..module_utils.v4.utils import (  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
-    import ntnx_lifecycle_py_client as life_cycle_management_sdk  # noqa: E402
+    import ntnx_lifecycle_py_client as lifecycle_sdk  # noqa: E402
 except ImportError:
 
-    from ..module_utils.v4.sdk_mock import (
-        mock_sdk as life_cycle_management_sdk,
-    )  # noqa: E402
+    from ..module_utils.v4.sdk_mock import mock_sdk as lifecycle_sdk  # noqa: E402
 
     SDK_IMP_ERROR = traceback.format_exc()
 
@@ -180,7 +178,7 @@ def export_lcm_histories(module, api_instance, result):
     validate_required_params(module, ["file_format"])
 
     sg = SpecGenerator(module)
-    default_spec = life_cycle_management_sdk.ExportHistorySpec()
+    default_spec = lifecycle_sdk.ExportHistorySpec()
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
