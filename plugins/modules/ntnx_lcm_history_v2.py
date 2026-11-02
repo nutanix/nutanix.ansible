@@ -159,7 +159,9 @@ try:
     import ntnx_lifecycle_py_client as life_cycle_management_sdk  # noqa: E402
 except ImportError:
 
-    from ..module_utils.v4.sdk_mock import mock_sdk as life_cycle_management_sdk  # noqa: E402
+    from ..module_utils.v4.sdk_mock import (
+        mock_sdk as life_cycle_management_sdk,
+    )  # noqa: E402
 
     SDK_IMP_ERROR = traceback.format_exc()
 
