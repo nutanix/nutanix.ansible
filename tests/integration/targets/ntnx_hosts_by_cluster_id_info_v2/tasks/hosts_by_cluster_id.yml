@@ -1,0 +1,123 @@
+---
+# Test plan for ntnx_hosts_by_cluster_id_info_v2 (ListHostsByClusterId)
+# 1. Discover AOS cluster
+# 2. List hosts for cluster; validate shape
+# 3. limit / filter / fetch_all
+# 4. Negatives: missing cluster_ext_id, bogus cluster_ext_id
+
+- name: Start hosts by cluster id info tests
+  ansible.builtin.debug:
+    msg: Start ntnx_hosts_by_cluster_id_info_v2 tests
+
+- name: Discover AOS cluster
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: >-
+      config/clusterFunction/any(t:t eq
+      Clustermgmt.Config.ClusterFunctionRef'AOS')
+  register: aos_clusters
+  ignore_errors: true
+
+- name: Assert AOS cluster found
+  ansible.builtin.assert:
+    that:
+      - not aos_clusters.changed
+      - aos_clusters is succeeded
+      - aos_clusters.response | length > 0
+    fail_msg: "No AOS cluster available"
+    success_msg: "AOS cluster discovered"
+
+- name: Set cluster_ext_id
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ aos_clusters.response[0].ext_id }}"
+
+- name: List hosts by cluster id
+  nutanix.ncp.ntnx_hosts_by_cluster_id_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: hosts_info
+  ignore_errors: true
+
+- name: Assert hosts listed
+  ansible.builtin.assert:
+    that:
+      - not hosts_info.changed
+      - hosts_info is succeeded
+      - hosts_info.response is defined
+      - hosts_info.response | length > 0
+      - hosts_info.response[0].ext_id is defined
+      - hosts_info.total_available_results | int >= 1
+    fail_msg: "Failed to list hosts by cluster id"
+    success_msg: "Hosts listed by cluster id"
+
+- name: List hosts by cluster id with limit
+  nutanix.ncp.ntnx_hosts_by_cluster_id_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    limit: 1
+  register: hosts_limit
+  ignore_errors: true
+
+- name: Assert limit
+  ansible.builtin.assert:
+    that:
+      - not hosts_limit.changed
+      - hosts_limit is succeeded
+      - hosts_limit.response | length <= 1
+    fail_msg: "Limit failed"
+    success_msg: "Limit succeeded"
+
+- name: List hosts by cluster id with filter
+  nutanix.ncp.ntnx_hosts_by_cluster_id_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    filter: "hostName eq '{{ hosts_info.response[0].host_name }}'"
+  register: hosts_filter
+  ignore_errors: true
+  when: hosts_info.response[0].host_name is defined
+
+- name: Assert filter
+  ansible.builtin.assert:
+    that:
+      - not hosts_filter.changed
+      - hosts_filter is succeeded
+    fail_msg: "Filter failed"
+    success_msg: "Filter succeeded"
+  when: hosts_filter is not skipped
+
+- name: List hosts by cluster id with fetch_all
+  nutanix.ncp.ntnx_hosts_by_cluster_id_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    fetch_all: true
+  register: hosts_fetch_all
+  ignore_errors: true
+
+- name: Assert fetch_all
+  ansible.builtin.assert:
+    that:
+      - not hosts_fetch_all.changed
+      - hosts_fetch_all is succeeded
+      - hosts_fetch_all.response | length == hosts_fetch_all.total_available_results
+    fail_msg: "fetch_all failed"
+    success_msg: "fetch_all succeeded"
+
+- name: Negative - missing cluster_ext_id
+  nutanix.ncp.ntnx_hosts_by_cluster_id_info_v2:
+  register: missing_cluster
+  ignore_errors: true
+
+- name: Assert missing cluster fails
+  ansible.builtin.assert:
+    that:
+      - missing_cluster is failed
+    fail_msg: "Expected missing cluster_ext_id failure"
+    success_msg: "Missing cluster_ext_id rejected"
+
+- name: Negative - invalid cluster_ext_id
+  nutanix.ncp.ntnx_hosts_by_cluster_id_info_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_cluster
+  ignore_errors: true
+
+- name: Assert invalid cluster fails
+  ansible.builtin.assert:
+    that:
+      - bad_cluster is failed
+    fail_msg: "Expected invalid cluster failure"
+    success_msg: "Invalid cluster rejected"

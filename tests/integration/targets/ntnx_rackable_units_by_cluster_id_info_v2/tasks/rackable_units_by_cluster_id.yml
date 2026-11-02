@@ -1,0 +1,83 @@
+---
+# Test plan for ntnx_rackable_units_by_cluster_id_info_v2
+# 1. Discover AOS cluster
+# 2. List rackable units; validate core fields
+# 3. Negatives: missing / invalid cluster_ext_id
+
+- name: Start rackable units by cluster id tests
+  ansible.builtin.debug:
+    msg: Start ntnx_rackable_units_by_cluster_id_info_v2 tests
+
+- name: Discover AOS cluster
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: >-
+      config/clusterFunction/any(t:t eq
+      Clustermgmt.Config.ClusterFunctionRef'AOS')
+  register: aos_clusters
+  ignore_errors: true
+
+- name: Assert AOS cluster found
+  ansible.builtin.assert:
+    that:
+      - aos_clusters is succeeded
+      - aos_clusters.response | length > 0
+    fail_msg: "No AOS cluster"
+    success_msg: "AOS cluster found"
+
+- name: Set cluster_ext_id
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ aos_clusters.response[0].ext_id }}"
+
+- name: List rackable units by cluster id
+  nutanix.ncp.ntnx_rackable_units_by_cluster_id_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: rackable_units
+  ignore_errors: true
+
+- name: Assert rackable units listed
+  ansible.builtin.assert:
+    that:
+      - not rackable_units.changed
+      - rackable_units is succeeded
+      - rackable_units.response is defined
+      - rackable_units.total_available_results is defined
+    fail_msg: "Failed to list rackable units"
+    success_msg: "Rackable units listed"
+
+- name: Domain check core fields when results exist
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.serial is defined
+      - item.model is defined
+    fail_msg: "Rackable unit missing core fields"
+    success_msg: "Rackable unit {{ item.ext_id }} well-formed"
+  loop: "{{ rackable_units.response | default([]) }}"
+  loop_control:
+    label: "{{ item.ext_id | default('unknown') }}"
+  when: rackable_units.response | default([]) | length > 0
+
+- name: Negative - missing cluster_ext_id
+  nutanix.ncp.ntnx_rackable_units_by_cluster_id_info_v2:
+  register: missing_cluster
+  ignore_errors: true
+
+- name: Assert missing cluster fails
+  ansible.builtin.assert:
+    that:
+      - missing_cluster is failed
+    fail_msg: "Expected missing cluster failure"
+    success_msg: "Missing cluster rejected"
+
+- name: Negative - invalid cluster_ext_id
+  nutanix.ncp.ntnx_rackable_units_by_cluster_id_info_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_cluster
+  ignore_errors: true
+
+- name: Assert invalid cluster fails
+  ansible.builtin.assert:
+    that:
+      - bad_cluster is failed
+    fail_msg: "Expected invalid cluster failure"
+    success_msg: "Invalid cluster rejected"

@@ -690,3 +690,29 @@ def list_rsyslog_servers(module, api_instance, cluster_ext_id):
             exception=e,
             msg="Api Exception raised while fetching RSYSLOG servers info",
         )
+
+
+def get_non_migratable_vms_result(module, api_instance, cluster_ext_id, ext_id):
+    """
+    Return non-migratable VMs result using cluster and result external IDs.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        ext_id (str): non-migratable VMs result external ID
+    return:
+        NonMigratableVmsResult info (object)
+    """
+    try:
+        return api_instance.get_non_migratable_vms_result_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching non-migratable VMs "
+                "result using ext_id"
+            ),
+        )

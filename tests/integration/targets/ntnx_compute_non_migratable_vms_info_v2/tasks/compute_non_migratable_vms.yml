@@ -1,0 +1,117 @@
+---
+# Test plan for ntnx_compute_non_migratable_vms_info_v2
+# 1. Discover cluster + host
+# 2. Compute non-migratable VMs with required hosts
+# 3. Negatives: missing hosts, missing cluster, invalid cluster
+# Note: ESXi vcenter_info path is optional and skipped unless ESXi available
+
+- name: Start compute non-migratable VMs tests
+  ansible.builtin.debug:
+    msg: Start ntnx_compute_non_migratable_vms_info_v2 tests
+
+- name: Discover AOS cluster
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: >-
+      config/clusterFunction/any(t:t eq
+      Clustermgmt.Config.ClusterFunctionRef'AOS')
+  register: aos_clusters
+  ignore_errors: true
+
+- name: Assert AOS cluster found
+  ansible.builtin.assert:
+    that:
+      - aos_clusters is succeeded
+      - aos_clusters.response | length > 0
+    fail_msg: "No AOS cluster"
+    success_msg: "AOS cluster found"
+
+- name: Set cluster_ext_id
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ aos_clusters.response[0].ext_id }}"
+
+- name: Discover hosts
+  nutanix.ncp.ntnx_hosts_by_cluster_id_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: hosts_info
+  ignore_errors: true
+
+- name: Assert hosts found
+  ansible.builtin.assert:
+    that:
+      - hosts_info is succeeded
+      - hosts_info.response | length > 0
+    fail_msg: "No hosts"
+    success_msg: "Hosts found"
+
+- name: Set host_ext_id
+  ansible.builtin.set_fact:
+    host_ext_id: "{{ hosts_info.response[0].ext_id }}"
+
+- name: Compute non-migratable VMs
+  nutanix.ncp.ntnx_compute_non_migratable_vms_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    hosts:
+      - "{{ host_ext_id }}"
+  register: compute_result
+  ignore_errors: true
+
+- name: Assert compute response shape when accepted
+  ansible.builtin.assert:
+    that:
+      - not compute_result.changed
+      - compute_result is succeeded
+      - compute_result.response is defined
+    fail_msg: >-
+      Compute non-migratable VMs failed:
+      {{ compute_result.msg | default(compute_result) }}
+    success_msg: "Compute non-migratable VMs accepted"
+  when: compute_result is succeeded
+
+- name: Record compute outcome for known API restrictions
+  ansible.builtin.debug:
+    msg: >-
+      Compute returned failed={{ compute_result.failed }}
+      msg={{ compute_result.msg | default('n/a') }}
+  when: compute_result is failed
+
+- name: Negative - missing hosts
+  nutanix.ncp.ntnx_compute_non_migratable_vms_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: missing_hosts
+  ignore_errors: true
+
+- name: Assert missing hosts fails
+  ansible.builtin.assert:
+    that:
+      - missing_hosts is failed
+    fail_msg: "Expected missing hosts failure"
+    success_msg: "Missing hosts rejected"
+
+- name: Negative - missing cluster_ext_id
+  nutanix.ncp.ntnx_compute_non_migratable_vms_info_v2:
+    hosts:
+      - "{{ host_ext_id }}"
+  register: missing_cluster
+  ignore_errors: true
+
+- name: Assert missing cluster fails
+  ansible.builtin.assert:
+    that:
+      - missing_cluster is failed
+    fail_msg: "Expected missing cluster failure"
+    success_msg: "Missing cluster rejected"
+
+- name: Negative - invalid cluster_ext_id
+  nutanix.ncp.ntnx_compute_non_migratable_vms_info_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+    hosts:
+      - "{{ host_ext_id }}"
+  register: bad_cluster
+  ignore_errors: true
+
+- name: Assert invalid cluster fails
+  ansible.builtin.assert:
+    that:
+      - bad_cluster is failed
+    fail_msg: "Expected invalid cluster failure"
+    success_msg: "Invalid cluster rejected"

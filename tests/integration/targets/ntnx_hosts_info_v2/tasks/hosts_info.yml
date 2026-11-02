@@ -1,0 +1,173 @@
+---
+# Test plan for ntnx_hosts_info_v2 (ListHosts)
+# 1. List all hosts and validate response shape
+# 2. List with limit / filter / fetch_all
+# 3. List by cluster_ext_id and get-by-id (compat paths)
+# 4. Negative: invalid filter / missing cluster for get-by-id
+# 5. Idempotency: repeated list keeps changed == false
+
+- name: Start hosts info tests
+  ansible.builtin.debug:
+    msg: Start ntnx_hosts_info_v2 tests
+
+- name: List all hosts
+  nutanix.ncp.ntnx_hosts_info_v2:
+  register: hosts_list
+  ignore_errors: true
+
+- name: Assert list all hosts
+  ansible.builtin.assert:
+    that:
+      - not hosts_list.changed
+      - hosts_list is succeeded
+      - hosts_list.response is defined
+      - hosts_list.response is iterable
+      - hosts_list.total_available_results is defined
+      - hosts_list.total_available_results | int >= 0
+    fail_msg: "Failed to list hosts"
+    success_msg: "Hosts listed successfully"
+
+- name: List hosts with limit
+  nutanix.ncp.ntnx_hosts_info_v2:
+    limit: 1
+  register: hosts_limit
+  ignore_errors: true
+
+- name: Assert hosts limit
+  ansible.builtin.assert:
+    that:
+      - not hosts_limit.changed
+      - hosts_limit is succeeded
+      - hosts_limit.response | length <= 1
+    fail_msg: "Limit query failed"
+    success_msg: "Limit query succeeded"
+
+- name: List hosts with filter using hostName
+  nutanix.ncp.ntnx_hosts_info_v2:
+    filter: "hostName eq '{{ hosts_list.response[0].host_name }}'"
+  register: hosts_filter
+  ignore_errors: true
+  when:
+    - hosts_list.response | default([]) | length > 0
+    - hosts_list.response[0].host_name is defined
+
+- name: Assert hosts filter
+  ansible.builtin.assert:
+    that:
+      - not hosts_filter.changed
+      - hosts_filter is succeeded
+      - hosts_filter.response is defined
+    fail_msg: "Filter query failed"
+    success_msg: "Filter query succeeded"
+  when: hosts_filter is not skipped
+
+- name: List hosts with fetch_all
+  nutanix.ncp.ntnx_hosts_info_v2:
+    fetch_all: true
+  register: hosts_fetch_all
+  ignore_errors: true
+
+- name: Assert fetch_all hosts
+  ansible.builtin.assert:
+    that:
+      - not hosts_fetch_all.changed
+      - hosts_fetch_all is succeeded
+      - hosts_fetch_all.response | length == hosts_fetch_all.total_available_results
+    fail_msg: "fetch_all did not return all hosts"
+    success_msg: "fetch_all returned all hosts"
+
+- name: Discover AOS cluster for compat paths
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: >-
+      config/clusterFunction/any(t:t eq
+      Clustermgmt.Config.ClusterFunctionRef'AOS')
+  register: aos_clusters
+  ignore_errors: true
+
+- name: Set cluster_ext_id
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ aos_clusters.response[0].ext_id }}"
+  when:
+    - aos_clusters is succeeded
+    - aos_clusters.response | default([]) | length > 0
+
+- name: List hosts by cluster_ext_id (compat)
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: hosts_by_cluster
+  ignore_errors: true
+  when: cluster_ext_id is defined
+
+- name: Assert hosts by cluster
+  ansible.builtin.assert:
+    that:
+      - not hosts_by_cluster.changed
+      - hosts_by_cluster is succeeded
+      - hosts_by_cluster.response | length > 0
+    fail_msg: "List by cluster_ext_id failed"
+    success_msg: "List by cluster_ext_id succeeded"
+  when: hosts_by_cluster is not skipped
+
+- name: Get host by ext_id (compat)
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ hosts_by_cluster.response[0].ext_id }}"
+  register: host_by_id
+  ignore_errors: true
+  when:
+    - hosts_by_cluster is not skipped
+    - hosts_by_cluster.response | default([]) | length > 0
+
+- name: Assert get host by id
+  ansible.builtin.assert:
+    that:
+      - not host_by_id.changed
+      - host_by_id is succeeded
+      - host_by_id.ext_id == hosts_by_cluster.response[0].ext_id
+      - host_by_id.response.ext_id == hosts_by_cluster.response[0].ext_id
+    fail_msg: "Get host by id failed"
+    success_msg: "Get host by id succeeded"
+  when: host_by_id is not skipped
+
+- name: Negative - get by id without cluster_ext_id
+  nutanix.ncp.ntnx_hosts_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: missing_cluster
+  ignore_errors: true
+
+- name: Assert missing cluster fails
+  ansible.builtin.assert:
+    that:
+      - missing_cluster is failed
+    fail_msg: "Expected failure when cluster_ext_id missing"
+    success_msg: "Missing cluster_ext_id correctly rejected"
+
+- name: Negative - invalid host ext_id
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_host
+  ignore_errors: true
+  when: cluster_ext_id is defined
+
+- name: Assert invalid host fails
+  ansible.builtin.assert:
+    that:
+      - bad_host is failed
+    fail_msg: "Expected failure for invalid host ext_id"
+    success_msg: "Invalid host ext_id correctly rejected"
+  when: bad_host is not skipped
+
+- name: Idempotent list hosts again
+  nutanix.ncp.ntnx_hosts_info_v2:
+    limit: 1
+  register: hosts_again
+  ignore_errors: true
+
+- name: Assert idempotent list
+  ansible.builtin.assert:
+    that:
+      - not hosts_again.changed
+      - hosts_again is succeeded
+    fail_msg: "Repeated list unexpectedly changed"
+    success_msg: "Repeated list remains unchanged"

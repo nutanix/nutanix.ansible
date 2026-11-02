@@ -1,0 +1,178 @@
+---
+# Summary:
+# This playbook demonstrates clustermgmt Clusters info modules:
+# 1. List hosts across Prism Central
+# 2. List hosts by cluster ID
+# 3. List host NICs globally and by host ID
+# 4. List virtual NICs by host ID
+# 5. List rackable units by cluster ID
+# 6. Compute non-migratable VMs and fetch result by ID
+
+- name: Clusters info modules playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') }}"
+      nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default(9440, true) }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        cluster_ext_id: "<cluster_ext_id>"
+        host_ext_id: "<host_ext_id>"
+        non_migratable_vms_result_ext_id: "<non_migratable_vms_result_ext_id>"
+
+    - name: Discover clusters when placeholders are unset
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: >-
+          config/clusterFunction/any(t:t eq
+          Clustermgmt.Config.ClusterFunctionRef'AOS')
+      register: aos_clusters
+      when: cluster_ext_id is match('^<')
+      ignore_errors: true
+
+    - name: Set discovered cluster_ext_id
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ aos_clusters.response[0].ext_id }}"
+      when:
+        - cluster_ext_id is match('^<')
+        - aos_clusters is defined
+        - aos_clusters is succeeded
+        - aos_clusters.response | default([]) | length > 0
+
+    - name: Discover hosts for the cluster
+      nutanix.ncp.ntnx_hosts_by_cluster_id_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: discovered_hosts
+      when: host_ext_id is match('^<')
+      ignore_errors: true
+
+    - name: Set discovered host_ext_id
+      ansible.builtin.set_fact:
+        host_ext_id: "{{ discovered_hosts.response[0].ext_id }}"
+      when:
+        - host_ext_id is match('^<')
+        - discovered_hosts is defined
+        - discovered_hosts is succeeded
+        - discovered_hosts.response | default([]) | length > 0
+
+    - name: List all hosts
+      nutanix.ncp.ntnx_hosts_info_v2:
+      register: hosts_list
+
+    - name: List hosts with limit
+      nutanix.ncp.ntnx_hosts_info_v2:
+        limit: 5
+      register: hosts_limit
+
+    - name: List hosts with filter
+      nutanix.ncp.ntnx_hosts_info_v2:
+        filter: "hostName eq '{{ hosts_list.response[0].host_name }}'"
+      register: hosts_filter
+      when: hosts_list.response | default([]) | length > 0
+
+    - name: List all hosts with fetch_all
+      nutanix.ncp.ntnx_hosts_info_v2:
+        fetch_all: true
+      register: hosts_fetch_all
+
+    - name: List hosts by cluster ID
+      nutanix.ncp.ntnx_hosts_by_cluster_id_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: hosts_by_cluster
+
+    - name: List hosts by cluster ID with limit
+      nutanix.ncp.ntnx_hosts_by_cluster_id_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        limit: 5
+      register: hosts_by_cluster_limit
+
+    - name: List hosts by cluster ID with fetch_all
+      nutanix.ncp.ntnx_hosts_by_cluster_id_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        fetch_all: true
+      register: hosts_by_cluster_fetch_all
+
+    - name: List all host NICs
+      nutanix.ncp.ntnx_host_nics_info_v2:
+      register: host_nics_list
+
+    - name: List host NICs with limit
+      nutanix.ncp.ntnx_host_nics_info_v2:
+        limit: 5
+      register: host_nics_limit
+
+    - name: List host NICs with filter
+      nutanix.ncp.ntnx_host_nics_info_v2:
+        filter: "name eq '{{ host_nics_list.response[0].name }}'"
+      register: host_nics_filter
+      when: host_nics_list.response | default([]) | length > 0
+
+    - name: List all host NICs with fetch_all
+      nutanix.ncp.ntnx_host_nics_info_v2:
+        fetch_all: true
+      register: host_nics_fetch_all
+
+    - name: List host NICs by host ID
+      nutanix.ncp.ntnx_host_nics_by_host_id_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+      register: host_nics_by_host
+
+    - name: List host NICs by host ID with limit
+      nutanix.ncp.ntnx_host_nics_by_host_id_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        limit: 5
+      register: host_nics_by_host_limit
+
+    - name: List host NICs by host ID with fetch_all
+      nutanix.ncp.ntnx_host_nics_by_host_id_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        fetch_all: true
+      register: host_nics_by_host_fetch_all
+
+    - name: List virtual NICs by host ID
+      nutanix.ncp.ntnx_virtual_nics_by_host_id_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+      register: virtual_nics_by_host
+
+    - name: List virtual NICs by host ID with limit
+      nutanix.ncp.ntnx_virtual_nics_by_host_id_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        limit: 5
+      register: virtual_nics_by_host_limit
+
+    - name: List virtual NICs by host ID with fetch_all
+      nutanix.ncp.ntnx_virtual_nics_by_host_id_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        fetch_all: true
+      register: virtual_nics_by_host_fetch_all
+
+    - name: List rackable units by cluster ID
+      nutanix.ncp.ntnx_rackable_units_by_cluster_id_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: rackable_units
+
+    - name: Compute non-migratable VMs
+      nutanix.ncp.ntnx_compute_non_migratable_vms_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        hosts:
+          - "{{ host_ext_id }}"
+      register: compute_non_migratable
+      ignore_errors: true
+
+    - name: Fetch non-migratable VMs result by ID
+      nutanix.ncp.ntnx_non_migratable_vms_result_by_id_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ non_migratable_vms_result_ext_id }}"
+      register: non_migratable_result
+      ignore_errors: true
+      when: not (non_migratable_vms_result_ext_id is match('^<'))

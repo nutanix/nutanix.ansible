@@ -1,0 +1,117 @@
+---
+# Test plan for ntnx_non_migratable_vms_result_by_id_info_v2
+# 1. Discover cluster
+# 2. Attempt compute to obtain a result ext_id when possible
+# 3. Get result by id when available
+# 4. Negatives: missing ids, bogus ext_id
+
+- name: Start non-migratable VMs result by id tests
+  ansible.builtin.debug:
+    msg: Start ntnx_non_migratable_vms_result_by_id_info_v2 tests
+
+- name: Discover AOS cluster
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: >-
+      config/clusterFunction/any(t:t eq
+      Clustermgmt.Config.ClusterFunctionRef'AOS')
+  register: aos_clusters
+  ignore_errors: true
+
+- name: Assert AOS cluster found
+  ansible.builtin.assert:
+    that:
+      - aos_clusters is succeeded
+      - aos_clusters.response | length > 0
+    fail_msg: "No AOS cluster"
+    success_msg: "AOS cluster found"
+
+- name: Set cluster_ext_id
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ aos_clusters.response[0].ext_id }}"
+
+- name: Discover hosts
+  nutanix.ncp.ntnx_hosts_by_cluster_id_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: hosts_info
+  ignore_errors: true
+
+- name: Set host_ext_id when available
+  ansible.builtin.set_fact:
+    host_ext_id: "{{ hosts_info.response[0].ext_id }}"
+  when:
+    - hosts_info is defined
+    - hosts_info is succeeded
+    - hosts_info.response | default([]) | length > 0
+
+- name: Compute non-migratable VMs to seed a result
+  nutanix.ncp.ntnx_compute_non_migratable_vms_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    hosts:
+      - "{{ host_ext_id }}"
+  register: compute_result
+  ignore_errors: true
+  when: host_ext_id is defined
+
+- name: Negative - missing ext_id
+  nutanix.ncp.ntnx_non_migratable_vms_result_by_id_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: missing_ext_id
+  ignore_errors: true
+
+- name: Assert missing ext_id fails
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id is failed
+    fail_msg: "Expected missing ext_id failure"
+    success_msg: "Missing ext_id rejected"
+
+- name: Negative - missing cluster_ext_id
+  nutanix.ncp.ntnx_non_migratable_vms_result_by_id_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: missing_cluster
+  ignore_errors: true
+
+- name: Assert missing cluster fails
+  ansible.builtin.assert:
+    that:
+      - missing_cluster is failed
+    fail_msg: "Expected missing cluster failure"
+    success_msg: "Missing cluster rejected"
+
+- name: Negative - invalid result ext_id
+  nutanix.ncp.ntnx_non_migratable_vms_result_by_id_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_result
+  ignore_errors: true
+
+- name: Assert invalid result fails
+  ansible.builtin.assert:
+    that:
+      - bad_result is failed
+    fail_msg: "Expected invalid result failure"
+    success_msg: "Invalid result rejected"
+
+- name: Fetch result by id when compute returned an entity ext_id
+  nutanix.ncp.ntnx_non_migratable_vms_result_by_id_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ compute_result.response.ext_id }}"
+  register: result_by_id
+  ignore_errors: true
+  when:
+    - compute_result is defined
+    - compute_result is not skipped
+    - compute_result is succeeded
+    - compute_result.response.ext_id is defined
+    - "'ZXJnb24=' not in (compute_result.response.ext_id | default(''))"
+
+- name: Assert get result by id when available
+  ansible.builtin.assert:
+    that:
+      - not result_by_id.changed
+      - result_by_id is succeeded
+      - result_by_id.response is defined
+      - result_by_id.ext_id is defined
+    fail_msg: "Get result by id failed"
+    success_msg: "Get result by id succeeded"
+  when: result_by_id is not skipped

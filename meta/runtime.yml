@@ -396,3 +396,10 @@ action_groups:
     - ntnx_vm_profile_deploy_v2
     - ntnx_vm_profile_share_v2
     - ntnx_publish_template_version_v2
+    - ntnx_compute_non_migratable_vms_info_v2
+    - ntnx_non_migratable_vms_result_by_id_info_v2
+    - ntnx_host_nics_info_v2
+    - ntnx_host_nics_by_host_id_info_v2
+    - ntnx_hosts_by_cluster_id_info_v2
+    - ntnx_rackable_units_by_cluster_id_info_v2
+    - ntnx_virtual_nics_by_host_id_info_v2

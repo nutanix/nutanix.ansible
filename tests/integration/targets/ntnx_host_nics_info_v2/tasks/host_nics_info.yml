@@ -1,0 +1,99 @@
+---
+# Test plan for ntnx_host_nics_info_v2 (ListHostNics)
+# 1. List all host NICs
+# 2. limit / filter / fetch_all
+# 3. Domain: returned NICs expose ext_id/name
+# 4. Idempotent repeat
+
+- name: Start host NICs info tests
+  ansible.builtin.debug:
+    msg: Start ntnx_host_nics_info_v2 tests
+
+- name: List all host NICs
+  nutanix.ncp.ntnx_host_nics_info_v2:
+  register: nics
+  ignore_errors: true
+
+- name: Assert list host NICs
+  ansible.builtin.assert:
+    that:
+      - not nics.changed
+      - nics is succeeded
+      - nics.response is defined
+      - nics.total_available_results is defined
+    fail_msg: "Failed to list host NICs"
+    success_msg: "Host NICs listed"
+
+- name: List host NICs with limit
+  nutanix.ncp.ntnx_host_nics_info_v2:
+    limit: 1
+  register: nics_limit
+  ignore_errors: true
+
+- name: Assert limit
+  ansible.builtin.assert:
+    that:
+      - not nics_limit.changed
+      - nics_limit is succeeded
+      - nics_limit.response | length <= 1
+    fail_msg: "Limit failed"
+    success_msg: "Limit succeeded"
+
+- name: List host NICs with filter
+  nutanix.ncp.ntnx_host_nics_info_v2:
+    filter: "name eq '{{ nics.response[0].name }}'"
+  register: nics_filter
+  ignore_errors: true
+  when:
+    - nics.response | default([]) | length > 0
+    - nics.response[0].name is defined
+
+- name: Assert filter
+  ansible.builtin.assert:
+    that:
+      - not nics_filter.changed
+      - nics_filter is succeeded
+    fail_msg: "Filter failed"
+    success_msg: "Filter succeeded"
+  when: nics_filter is not skipped
+
+- name: List host NICs with fetch_all
+  nutanix.ncp.ntnx_host_nics_info_v2:
+    fetch_all: true
+  register: nics_fetch_all
+  ignore_errors: true
+
+- name: Assert fetch_all
+  ansible.builtin.assert:
+    that:
+      - not nics_fetch_all.changed
+      - nics_fetch_all is succeeded
+      - nics_fetch_all.response | length == nics_fetch_all.total_available_results
+    fail_msg: "fetch_all failed"
+    success_msg: "fetch_all succeeded"
+
+- name: Domain check returned NIC fields
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.name is defined
+    fail_msg: "NIC missing core fields"
+    success_msg: "NIC {{ item.ext_id }} well-formed"
+  loop: "{{ nics.response | default([]) }}"
+  loop_control:
+    label: "{{ item.ext_id | default('unknown') }}"
+  when: nics.response | default([]) | length > 0
+
+- name: Idempotent list again
+  nutanix.ncp.ntnx_host_nics_info_v2:
+    limit: 1
+  register: nics_again
+  ignore_errors: true
+
+- name: Assert idempotent
+  ansible.builtin.assert:
+    that:
+      - not nics_again.changed
+      - nics_again is succeeded
+    fail_msg: "Repeated list changed unexpectedly"
+    success_msg: "Repeated list unchanged"
