@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,27 +12,26 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_bgp_sessions_info_v2
 short_description: Fetch BGP sessions info in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
-  - This module allows you to fetch information about BgpSession in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific BgpSession.
-  - If C(ext_id) is not provided, list multiple BgpSession optionally filtered / paginated.
+  - This module allows you to fetch BGP sessions info or a specific BGP session in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch a particular BGP session info using its external ID.
+  - If C(ext_id) is not provided, fetch multiple BGP sessions info with/without using filters, limit, etc.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(Get BGP session by ext_id) -
-      Required Roles: Consumer, Developer, Network Admin, Prism Admin, Prism Viewer, Super Admin, VPC Admin
-    - >-
-      B(Get list of BGP sessions) -
-      Required Roles: Consumer, Developer, Network Admin, Prism Admin, Prism Viewer, Super Admin, VPC Admin
+      B(View Bgp Session) -
+      Required Roles: Prism Admin, Prism Viewer, Project Admin, Super Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   ext_id:
     description:
       - The external ID of the BGP session.
+      - If provided, a single BGP session is returned.
     type: str
+    required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
@@ -46,40 +45,30 @@ author:
 EXAMPLES = r"""
 - name: Get BGP session using ext_id
   nutanix.ncp.ntnx_bgp_sessions_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     ext_id: "6f8bd5f3-1234-4702-4c2d-b769fd5f94b0"
   register: result
   ignore_errors: true
 
 - name: List all BGP sessions
   nutanix.ncp.ntnx_bgp_sessions_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
   register: result
   ignore_errors: true
 
 - name: List BGP sessions with filter
   nutanix.ncp.ntnx_bgp_sessions_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     filter: "name eq 'bgp_session_ansible'"
   register: result
   ignore_errors: true
 
 - name: List BGP sessions with limit
   nutanix.ncp.ntnx_bgp_sessions_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List all BGP sessions with fetch_all
+  nutanix.ncp.ntnx_bgp_sessions_info_v2:
+    fetch_all: true
   register: result
   ignore_errors: true
 """
@@ -87,9 +76,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC BgpSession info v4 API.
-    - It can be a single BgpSession if external ID is provided.
-    - List of multiple BgpSession if external ID is not provided with optional filter or limit.
+    - The response from the Nutanix PC BGP sessions info v4 API.
+    - It can be a single BGP session if external ID is provided.
+    - List of multiple BGP sessions if external ID is not provided with optional filter or limit.
   returned: always
   type: dict
   sample:
@@ -110,6 +99,7 @@ response:
       "name": "bgp_session_ansible",
       "password": null,
       "prepended_autonomous_system_path": null,
+      "project_ext_id": "add64586-d3d4-407c-8ef6-3873c12f2a6a",
       "remote_gateway": null,
       "remote_gateway_reference": "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0",
       "should_advertise_all_externally_routable_prefixes": true,
@@ -118,7 +108,7 @@ response:
     }
 
 changed:
-  description: This indicates whether the task resulted in any changes
+  description: This indicates whether the task resulted in any changes. Always false for info modules.
   returned: always
   type: bool
   sample: false
@@ -163,10 +153,12 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 from ..module_utils.v4.network.helpers import get_bgp_session  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
 
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
@@ -194,7 +186,10 @@ def get_bgp_sessions(module, api_instance, result):
         module.fail_json(msg="Failed generating BGP sessions info spec", **result)
 
     try:
-        resp = api_instance.list_bgp_sessions(**kwargs)
+        resp = list_entities(
+            api_instance.list_bgp_sessions,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -204,10 +199,10 @@ def get_bgp_sessions(module, api_instance, result):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
-    if not resp:
-        resp = []
-    result["response"] = resp
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    else:
+        result["response"] = []
 
 
 def run_module():

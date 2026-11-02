@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_bgp_session_v2
 short_description: Create, Update and Delete BGP sessions in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to create, update and delete BGP sessions in Nutanix Prism Central.
   - A BGP session represents the peering relationship between a local BGP gateway (Flow / Transit VPC gateway)
@@ -23,14 +23,14 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
       The required roles depend on the operation being performed.
     - >-
-      B(Create a BGP Session) -
-      Required Roles: Network Admin, Prism Admin, Super Admin, VPC Admin
+      B(Create Bgp Session) -
+      Required Roles: Prism Admin, Project Admin, Super Admin, VPC Admin
     - >-
-      B(Update a BGP Session) -
-      Required Roles: Network Admin, Prism Admin, Super Admin, VPC Admin
+      B(Update Bgp Session) -
+      Required Roles: Prism Admin, Project Admin, Super Admin, VPC Admin
     - >-
-      B(Delete a BGP Session) -
-      Required Roles: Network Admin, Prism Admin, Super Admin, VPC Admin
+      B(Delete Bgp Session) -
+      Required Roles: Prism Admin, Project Admin, Super Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
@@ -50,34 +50,40 @@ options:
       - Required for update and delete operations.
     type: str
     required: false
+  project_ext_id:
+    description:
+      - UUID of the project that owns this entity.
+      - Update of this field is not supported.
+    type: str
+    required: false
   name:
     description:
       - BGP session name.
       - Required for create operation.
+      - Maximum 128 characters.
     type: str
     required: false
   description:
     description:
-      - Description of the BGP session.
+      - BGP session description.
+      - Maximum 1000 characters.
     type: str
     required: false
   local_gateway_reference:
     description:
-      - External ID (UUID) of the local BGP gateway (Flow / Transit VPC gateway) that owns this session.
+      - Local BGP gateway reference (UUID).
       - Required for create operation.
     type: str
     required: false
   remote_gateway_reference:
     description:
-      - External ID (UUID) of the remote BGP gateway that represents the external peer.
+      - Remote BGP gateway reference (UUID).
       - Required for create operation.
     type: str
     required: false
   local_gateway_interface_ip_address:
     description:
-      - IP address of the local gateway interface that establishes the peering.
-      - Used to disambiguate which of the local BGP gateway's interfaces the session
-        should be brought up on.
+      - Local gateway interface or service IP address used to configure this BGP session.
     type: dict
     required: false
     suboptions:
@@ -89,12 +95,13 @@ options:
         suboptions:
           value:
             description:
-              - The IPv4 address value.
+              - The IPv4 address of the host.
             type: str
             required: true
           prefix_length:
             description:
-              - Prefix length of the network (0-32).
+              - The prefix length of the network to which this host IPv4 address belongs.
+              - Valid range is 0..32.
             type: int
             required: false
             default: 32
@@ -106,40 +113,39 @@ options:
         suboptions:
           value:
             description:
-              - The IPv6 address value.
+              - The IPv6 address of the host.
             type: str
             required: true
           prefix_length:
             description:
-              - Prefix length of the network (0-128).
+              - The prefix length of the network to which this host IPv6 address belongs.
+              - Valid range is 0..128.
             type: int
             required: false
             default: 128
   dynamic_route_priority:
     description:
-      - Priority for routes learned/advertised over this session.
-      - Used to influence route selection when multiple sessions can advertise the same prefix.
-      - Valid range is 300..1000 (SDK-enforced).
+      - Priority assigned to routes received over this BGP session.
+      - Valid range is 300..1000.
     type: int
     required: false
   password:
     description:
-      - MD5 password used to authenticate the BGP session with the remote peer.
-      - The remote peer MUST be configured with the same password.
+      - BGP password used to authenticate the session with the remote peer.
+      - Write-only; not returned in GET responses.
     type: str
     required: false
   should_advertise_all_externally_routable_prefixes:
     description:
-      - When true, all Externally Routable Prefixes (ERPs) configured on the local BGP
-        gateway/VPC are advertised over this session.
-      - When false, only the prefixes explicitly listed in
+      - Advertise all VPC externally-routable prefixes.
+      - When C(false), only the prefixes explicitly listed in
         I(externally_routable_prefixes_to_advertise) are advertised.
     type: bool
     required: false
   externally_routable_prefixes_to_advertise:
     description:
-      - Explicit list of IP subnets (Externally Routable Prefixes) to advertise over this
-        BGP session.
+      - VPC externally-routable prefixes to advertise.
+      - Maximum 100 items.
       - Ignored (or should be omitted) when
         I(should_advertise_all_externally_routable_prefixes) is C(true).
     type: list
@@ -148,71 +154,75 @@ options:
     suboptions:
       ipv4:
         description:
-          - IPv4 subnet specification.
+          - IPv4 subnet.
         type: dict
         required: false
         suboptions:
           ip:
             description:
-              - The IPv4 address specification.
+              - IP address of the IPv4 subnet.
             type: dict
             required: true
             suboptions:
               value:
                 description:
-                  - The IPv4 address value.
+                  - The IPv4 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the network (0-32).
+                  - The prefix length of the network to which this host IPv4 address belongs.
+                  - Valid range is 0..32.
                 type: int
                 required: false
                 default: 32
           prefix_length:
             description:
               - Prefix length of the IPv4 subnet.
+              - Valid range is 0..32.
             type: int
             required: true
       ipv6:
         description:
-          - IPv6 subnet specification.
+          - IPv6 subnet.
         type: dict
         required: false
         suboptions:
           ip:
             description:
-              - The IPv6 address specification.
+              - IP address of the IPv6 subnet.
             type: dict
             required: true
             suboptions:
               value:
                 description:
-                  - The IPv6 address value.
+                  - The IPv6 address of the host.
                 type: str
                 required: true
               prefix_length:
                 description:
-                  - Prefix length of the network (0-128).
+                  - The prefix length of the network to which this host IPv6 address belongs.
+                  - Valid range is 0..128.
                 type: int
                 required: false
                 default: 128
           prefix_length:
             description:
               - Prefix length of the IPv6 subnet.
+              - Valid range is 0..128.
             type: int
             required: true
   prepended_autonomous_system_path:
     description:
-      - Ordered list of Autonomous System Numbers that will be prepended to the AS path
-        of routes advertised over this session.
-      - Used to influence inbound route selection at the remote peer.
+      - List of ASNs to prepend to the AS_path attribute of BGP updates for this session.
+      - Maximum 10 items; each ASN is in range 1..4294967294.
     type: list
     elements: int
     required: false
   advertised_routes_communities:
     description:
-      - BGP communities that will be attached to routes advertised over this session.
+      - BGP community tags for advertised routes.
+      - Maximum 20 items.
     type: list
     elements: dict
     required: false
@@ -220,14 +230,46 @@ options:
       autonomous_system_number:
         description:
           - Autonomous System Number that originated the community.
-          - Valid range is 1..65535 (SDK-enforced).
+          - Valid range is 1..65535.
         type: int
-        required: false
+        required: true
       community_value:
         description:
-          - Community value.
-          - Valid range is 1..65535 (SDK-enforced).
+          - Unique number assigned by the autonomous system.
+          - Valid range is 1..65535.
         type: int
+        required: true
+  metadata:
+    description:
+      - Metadata associated with this resource.
+    type: dict
+    required: false
+    suboptions:
+      owner_reference_id:
+        description:
+          - A globally unique identifier that represents the owner of this resource.
+        type: str
+        required: false
+      owner_user_name:
+        description:
+          - The userName of the owner of this resource.
+        type: str
+        required: false
+      project_reference_id:
+        description:
+          - A globally unique identifier that represents the project this resource belongs to.
+        type: str
+        required: false
+      project_name:
+        description:
+          - The name of the project this resource belongs to.
+        type: str
+        required: false
+      category_ids:
+        description:
+          - A list of globally unique identifiers that represent all the categories the resource is associated with.
+        type: list
+        elements: str
         required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
@@ -242,13 +284,10 @@ author:
 EXAMPLES = r"""
 - name: Create BGP session
   nutanix.ncp.ntnx_bgp_session_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: present
     name: "bgp_session_ansible"
     description: "BGP session created by Ansible"
+    project_ext_id: "add64586-d3d4-407c-8ef6-3873c12f2a6a"
     local_gateway_reference: "3e0f9d59-8fa2-4b7f-9e21-2b3a4d5e6f70"
     remote_gateway_reference: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
     local_gateway_interface_ip_address:
@@ -275,10 +314,6 @@ EXAMPLES = r"""
 
 - name: Update BGP session
   nutanix.ncp.ntnx_bgp_session_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: present
     ext_id: "6f8bd5f3-1234-4702-4c2d-b769fd5f94b0"
     name: "bgp_session_ansible_updated"
@@ -290,10 +325,6 @@ EXAMPLES = r"""
 
 - name: Delete BGP session
   nutanix.ncp.ntnx_bgp_session_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: absent
     ext_id: "6f8bd5f3-1234-4702-4c2d-b769fd5f94b0"
   register: result
@@ -335,6 +366,7 @@ response:
       "name": "bgp_session_ansible",
       "password": null,
       "prepended_autonomous_system_path": [65001, 65001],
+      "project_ext_id": "add64586-d3d4-407c-8ef6-3873c12f2a6a",
       "remote_gateway": null,
       "remote_gateway_reference": "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0",
       "should_advertise_all_externally_routable_prefixes": false,
@@ -364,7 +396,7 @@ changed:
 
 skipped:
   description: This indicates whether the task was skipped
-  returned: always
+  returned: when the task is idempotent
   type: bool
   sample: false
 
@@ -407,6 +439,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
     strip_read_only_fields,
     validate_required_params,
@@ -421,6 +454,7 @@ except ImportError:
 
     SDK_IMP_ERROR = traceback.format_exc()
 
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
@@ -430,7 +464,6 @@ READ_ONLY_FIELDS = (
     "remote_gateway",
     "links",
     "tenant_id",
-    "metadata",
     "ext_id",
 )
 
@@ -498,12 +531,21 @@ def get_module_spec():
     )
 
     bgp_community_spec = dict(
-        autonomous_system_number=dict(type="int", required=False),
-        community_value=dict(type="int", required=False),
+        autonomous_system_number=dict(type="int", required=True),
+        community_value=dict(type="int", required=True),
+    )
+
+    metadata_spec = dict(
+        owner_reference_id=dict(type="str", required=False),
+        owner_user_name=dict(type="str", required=False),
+        project_reference_id=dict(type="str", required=False),
+        project_name=dict(type="str", required=False),
+        category_ids=dict(type="list", elements="str", required=False),
     )
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         local_gateway_reference=dict(type="str"),
@@ -531,6 +573,11 @@ def get_module_spec():
             elements="dict",
             options=bgp_community_spec,
             obj=networking_sdk.BgpCommunity,
+        ),
+        metadata=dict(
+            type="dict",
+            options=metadata_spec,
+            obj=networking_sdk.Metadata,
         ),
     )
     return module_args
@@ -615,6 +662,10 @@ def update_bgp_session(module, api_instance, result):
         result["error"] = err
         module.fail_json(msg="Failed generating update BGP session spec", **result)
 
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
+
     if check_bgp_session_idempotency(current_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
@@ -677,7 +728,7 @@ def delete_bgp_session(module, api_instance, result):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, raise_error=True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
 
