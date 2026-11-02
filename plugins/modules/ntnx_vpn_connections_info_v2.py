@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -21,18 +21,21 @@ description:
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
     - >-
-      B(Get VPN connection by ext_id) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Super Admin, VPC Admin
+      B(View Vpn Connection) -
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Prism Viewer, Project Admin, Super Admin, Tenant Admin, User, VPC Admin
     - >-
-      B(Get list of VPN connections) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Super Admin, VPC Admin
+      B(View Vpn Connection) (List) -
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Prism Viewer, Project Admin, Super Admin, Tenant Admin, User, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   ext_id:
     description:
       - The external ID of the VPN connection.
+      - If provided, a single VPN connection is returned.
     type: str
+    required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
@@ -46,40 +49,30 @@ author:
 EXAMPLES = r"""
 - name: Get VPN connection using ext_id
   nutanix.ncp.ntnx_vpn_connections_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     ext_id: "6b0d70b5-6ce8-4116-b46a-4b1c9e8f83fd"
   register: result
   ignore_errors: true
 
 - name: List all VPN connections
   nutanix.ncp.ntnx_vpn_connections_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
   register: result
   ignore_errors: true
 
 - name: List VPN connections with filter
   nutanix.ncp.ntnx_vpn_connections_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     filter: "name eq 'vpn_connection_ansible'"
   register: result
   ignore_errors: true
 
 - name: List VPN connections with limit
   nutanix.ncp.ntnx_vpn_connections_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List all VPN connections with fetch_all
+  nutanix.ncp.ntnx_vpn_connections_info_v2:
+    fetch_all: true
   register: result
   ignore_errors: true
 """
@@ -146,7 +139,7 @@ response:
     }
 
 changed:
-  description: This indicates whether the task resulted in any changes.
+  description: This indicates whether the task resulted in any changes. Always false for info modules.
   returned: always
   type: bool
   sample: false
@@ -191,10 +184,12 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 from ..module_utils.v4.network.helpers import get_vpn_connection  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
 
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
@@ -218,13 +213,15 @@ def get_vpn_connections(module, api_instance, result):
 
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
-
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating VPN connections info spec", **result)
 
     try:
-        resp = api_instance.list_vpn_connections(**kwargs)
+        resp = list_entities(
+            api_instance.list_vpn_connections,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -234,10 +231,10 @@ def get_vpn_connections(module, api_instance, result):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
-    if not resp:
-        resp = []
-    result["response"] = resp
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    else:
+        result["response"] = []
 
 
 def run_module():

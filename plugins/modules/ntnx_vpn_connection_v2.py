@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -24,13 +24,13 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
       The required roles depend on the operation being performed.
     - >-
-      B(Create a VPN Connection) -
+      B(Create Vpn Connection) -
       Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin, Super Admin, Tenant Admin, VPC Admin
     - >-
-      B(Update a VPN Connection) -
+      B(Update Vpn Connection) -
       Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin, Super Admin, Tenant Admin, VPC Admin
     - >-
-      B(Delete a VPN Connection) -
+      B(Delete Vpn Connection) -
       Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin, Super Admin, Tenant Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
@@ -135,6 +135,7 @@ options:
       pre_shared_key:
         description:
           - Shared secret for authentication between gateway peers.
+          - Required for create operation.
         type: str
         required: false
       local_vti_ip:
@@ -338,21 +339,18 @@ author:
 EXAMPLES = r"""
 - name: Create VPN connection with minimum attributes
   nutanix.ncp.ntnx_vpn_connection_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: present
     name: "vpn_connection_ansible"
     local_gateway_reference: "2e40ff57-20aa-4d2b-b179-298db969c20d"
     remote_gateway_reference: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
+    local_gateway_role: "INITIATOR"
+    ipsec_config:
+      pre_shared_key: "Nutanix.Ipsec.Psk.123"
+  register: result
+  ignore_errors: true
 
 - name: Create VPN connection with all attributes
   nutanix.ncp.ntnx_vpn_connection_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: present
     name: "vpn_connection_ansible_full"
     description: "VPN connection created by Ansible with all attributes"
@@ -386,13 +384,11 @@ EXAMPLES = r"""
     qos_config:
       ingress_limit_mbps: 100
       egress_limit_mbps: 100
+  register: result
+  ignore_errors: true
 
 - name: Update VPN connection
   nutanix.ncp.ntnx_vpn_connection_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: present
     ext_id: "6b0d70b5-6ce8-4116-b46a-4b1c9e8f83fd"
     name: "vpn_connection_ansible_updated"
@@ -400,15 +396,15 @@ EXAMPLES = r"""
     local_gateway_reference: "2e40ff57-20aa-4d2b-b179-298db969c20d"
     remote_gateway_reference: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
     dynamic_route_priority: 200
+  register: result
+  ignore_errors: true
 
 - name: Delete VPN connection
   nutanix.ncp.ntnx_vpn_connection_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: absent
     ext_id: "6b0d70b5-6ce8-4116-b46a-4b1c9e8f83fd"
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -494,10 +490,10 @@ changed:
   sample: true
 
 skipped:
-  description: This indicates whether the operation was skipped due to idempotency.
-  returned: always
+  description: This indicates whether the task was skipped, for example during idempotency checks.
+  returned: when applicable
   type: bool
-  sample: false
+  sample: true
 
 error:
   description: This indicates the error message if any error occurred.
@@ -780,6 +776,7 @@ def update_vpn_connection(module, api_instance, result):
             "ipsec_tunnel_status",
             "ebgp_status",
             "learned_prefixes",
+            "advertised_prefixes",
         ],
     )
 
@@ -814,9 +811,12 @@ def delete_vpn_connection(module, api_instance, result):
 
     current_spec = get_vpn_connection(module, api_instance, ext_id)
     etag = get_etag(data=current_spec)
-    kwargs = {}
-    if etag:
-        kwargs["if_match"] = etag
+    if not etag:
+        return module.fail_json(
+            "Unable to fetch etag for deleting VPN connection", **result
+        )
+
+    kwargs = {"if_match": etag}
 
     resp = None
     try:
@@ -829,8 +829,9 @@ def delete_vpn_connection(module, api_instance, result):
         )
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
 
