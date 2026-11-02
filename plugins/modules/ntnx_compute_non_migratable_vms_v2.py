@@ -333,6 +333,14 @@ def compute_non_migratable_vms(module, result, api_instance):
         )
         if ext_id:
             result["ext_id"] = ext_id
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for non-migratable VMs"
+                ),
+                msg="Failed to get entity ext_id from task for non-migratable VMs",
+            )
     result["changed"] = True
 
 

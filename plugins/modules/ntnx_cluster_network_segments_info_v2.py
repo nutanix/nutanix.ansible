@@ -36,54 +36,15 @@ options:
     description:
       - Network Segment UUID used to fetch a specific network segment.
     type: str
-  filter:
-    description:
-      - A URL query parameter that allows clients to filter a collection of
-        resources.
-      - The filter can be applied to the following fields - name, serviceName
-    type: str
-  page:
-    description:
-      - A URL query parameter that specifies the page number of the result set.
-    type: int
-  limit:
-    description:
-      - A URL query parameter that specifies the total number of records
-        returned in the result set.
-    type: int
-  orderby:
-    description:
-      - A URL query parameter that allows clients to specify the sort criteria
-        for the returned list of objects.
-    type: str
-  select:
-    description:
-      - A URL query parameter that allows clients to request a specific set of
-        properties for each entity.
-    type: str
   expand:
     description:
       - A URL query parameter that allows clients to request related resources
         when a resource that satisfies a particular request is retrieved.
       - Supported expand value is C(ipPool).
     type: str
-  fetch_all:
-    description:
-      - When C(true), paginate through the list API until all available entities
-        are returned. C(page) and C(limit) are ignored; each request uses the
-        maximum page size (100).
-      - When C(false), return a single page (API default limit).
-      - Does not apply when fetching a single entity by C(ext_id).
-    type: bool
-    required: false
-    default: false
-  read_timeout:
-    description: Read timeout in milliseconds for API calls.
-    type: int
-    required: false
-    default: 30000
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
+  - nutanix.ncp.ntnx_info_v2
   - nutanix.ncp.ntnx_logger
   - nutanix.ncp.ntnx_proxy_v2
 author:
@@ -215,13 +176,7 @@ def get_module_spec():
     module_args = dict(
         cluster_ext_id=dict(type="str", required=True),
         ext_id=dict(type="str"),
-        filter=dict(type="str"),
-        page=dict(type="int"),
-        limit=dict(type="int"),
-        orderby=dict(type="str"),
-        select=dict(type="str"),
         expand=dict(type="str"),
-        fetch_all=dict(type="bool", required=False, default=False),
     )
     return module_args
 
@@ -266,7 +221,6 @@ def get_network_segments(module, api_instance, result):
 
 def run_module():
     module = BaseInfoModule(
-        skip_info_args=True,
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         mutually_exclusive=[
