@@ -1,0 +1,125 @@
+---
+# Integration tests for ntnx_esxi_vms_info_v2.
+# ESXi VM APIs require a vCenter-registered ESXi cluster. On AHV-only Prism
+# Centrals, list/get calls are expected to fail cleanly.
+
+- name: Start testing ntnx_esxi_vms_info_v2 module
+  ansible.builtin.debug:
+    msg: Start testing ntnx_esxi_vms_info_v2 module
+
+- name: Info module rejects ext_id with filter
+  nutanix.ncp.ntnx_esxi_vms_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    filter: name eq 'dummy'
+  register: result
+  ignore_errors: true
+
+- name: Assert mutually exclusive ext_id/filter fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - >-
+          ('mutually exclusive' in (result.msg | string)) or
+          ('ext_id' in (result.msg | string))
+    fail_msg: Mutually exclusive params were not rejected
+    success_msg: Mutually exclusive params correctly rejected
+
+- name: Fetch ESXi VM using non-existent dummy ext_id
+  nutanix.ncp.ntnx_esxi_vms_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Assert fetching non-existent ESXi VM fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+    fail_msg: Fetching non-existent ESXi VM did not fail
+    success_msg: Fetching non-existent ESXi VM failed as expected
+
+- name: List all ESXi VMs
+  nutanix.ncp.ntnx_esxi_vms_info_v2:
+  register: list_result
+  ignore_errors: true
+
+- name: Assert list ESXi VMs success or clean error
+  ansible.builtin.assert:
+    that:
+      - list_result.changed == false
+      - >-
+          (list_result.failed == false) or
+          (list_result.failed == true and list_result.msg is defined)
+    fail_msg: List ESXi VMs returned unexpected shape
+    success_msg: List ESXi VMs behaved correctly
+
+- name: Assert list metadata when list succeeds
+  ansible.builtin.assert:
+    that:
+      - list_result.response is iterable
+      - list_result.total_available_results is defined
+    fail_msg: List ESXi VMs did not return list metadata
+    success_msg: List ESXi VMs returned list with total_available_results
+  when: not list_result.failed
+
+- name: List ESXi VMs with limit
+  nutanix.ncp.ntnx_esxi_vms_info_v2:
+    limit: 1
+  register: limit_result
+  ignore_errors: true
+
+- name: Assert limit when list succeeds
+  ansible.builtin.assert:
+    that:
+      - limit_result.changed == false
+      - limit_result.failed == false
+      - limit_result.response | length <= 1
+    fail_msg: Limit was not honoured
+    success_msg: Limit honoured
+  when: not limit_result.failed
+
+- name: List ESXi VMs with fetch_all
+  nutanix.ncp.ntnx_esxi_vms_info_v2:
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: Assert fetch_all when list succeeds
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result.changed == false
+      - fetch_all_result.failed == false
+      - fetch_all_result.total_available_results is defined
+      - >-
+          (fetch_all_result.response | length) ==
+          (fetch_all_result.total_available_results | int)
+    fail_msg: fetch_all did not return full result set
+    success_msg: fetch_all returned all available results
+  when: not fetch_all_result.failed
+
+- name: Set ESXi VM ext_id from list
+  ansible.builtin.set_fact:
+    esxi_vm_ext_id: "{{ fetch_all_result.response[0].ext_id }}"
+  when:
+    - not fetch_all_result.failed
+    - fetch_all_result.response | length > 0
+
+- name: Fetch ESXi VM using ext_id
+  nutanix.ncp.ntnx_esxi_vms_info_v2:
+    ext_id: "{{ esxi_vm_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: esxi_vm_ext_id is defined
+
+- name: Assert fetch ESXi VM by ext_id
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.ext_id == esxi_vm_ext_id
+      - result.ext_id == esxi_vm_ext_id
+    fail_msg: Unable to fetch ESXi VM using ext_id
+    success_msg: ESXi VM fetched using ext_id
+  when: esxi_vm_ext_id is defined
