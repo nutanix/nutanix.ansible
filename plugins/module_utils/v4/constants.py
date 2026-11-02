@@ -67,6 +67,11 @@ class Tasks:
         CONTENT_REPOSITORY = "multidomain:content:content-repository"
         GUEST_REBOOT_POLICY = "vmm:ahv:policies:guest-reboot-policy"
         VM_PROFILE = "vmm:ahv:config:vm-profile"
+        IP_POOL = "clustermgmt:config:cluster:ip_pool"
+        NETWORK_SEGMENT = "clustermgmt:config:cluster:network_segment"
+        NON_MIGRATABLE_VMS_RESULT = (
+            "clustermgmt:config:cluster:non-migratable-vms-result"
+        )
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
