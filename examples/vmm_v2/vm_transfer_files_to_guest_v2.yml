@@ -1,0 +1,61 @@
+---
+# Summary:
+# Transfer files into an AHV guest VM using the v4 VMM transfer-files-to-guest
+# action. Supports a volume-disk source or an external data-source disk source.
+# 1. Transfer files from a volume disk
+# 2. Transfer files from an external data source disk
+
+- name: Transfer files to guest VM playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_ext_id: "<vm_ext_id>"
+        volume_disk_ext_id: "<volume_disk_ext_id>"
+        volume_group_ext_id: "<volume_group_ext_id>"
+        external_repository_ext_id: "<external_repository_ext_id>"
+        guest_username: "<guest_username>"
+        guest_password: "<guest_password>"
+
+    - name: Transfer files to guest from a volume disk
+      nutanix.ncp.ntnx_vm_transfer_files_to_guest_v2:
+        ext_id: "{{ vm_ext_id }}"
+        guest_authentication:
+          username: "{{ guest_username }}"
+          password: "{{ guest_password }}"
+        transfer_files_spec:
+          transfer_files_from_volume_disk:
+            volume_disk_reference:
+              disk_ext_id: "{{ volume_disk_ext_id }}"
+              volume_group_ext_id: "{{ volume_group_ext_id }}"
+            files_to_transfer:
+              - source_path: "payload/app.bin"
+                destination_path: "/tmp/app.bin"
+                should_overwrite: true
+      register: transfer_from_volume
+      ignore_errors: true
+
+    - name: Transfer files to guest from an external data source disk
+      nutanix.ncp.ntnx_vm_transfer_files_to_guest_v2:
+        ext_id: "{{ vm_ext_id }}"
+        guest_authentication:
+          username: "{{ guest_username }}"
+          password: "{{ guest_password }}"
+        transfer_files_spec:
+          transfer_files_from_external_data_source_disk:
+            external_data_source_disk_reference:
+              external_repository_ext_id: "{{ external_repository_ext_id }}"
+              external_disk_relative_path: "disks/source.vmdk"
+            files_to_transfer:
+              - source_path: "scripts/setup.sh"
+                destination_path: "/tmp/setup.sh"
+                should_overwrite: false
+      register: transfer_from_external
+      ignore_errors: true

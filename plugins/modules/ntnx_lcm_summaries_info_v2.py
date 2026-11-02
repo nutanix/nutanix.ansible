@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,13 +12,11 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_lcm_summaries_info_v2
 short_description: Fetch LCM (Life Cycle Manager) summaries info in Nutanix Prism Central
-version_added: 2.5.0
+version_added: "2.7.0"
 description:
   - This module allows you to fetch information about LcmSummary in Nutanix Prism Central.
   - If C(ext_id) is provided, fetch details of the specific LcmSummary.
   - If C(ext_id) is not provided, list multiple LcmSummary optionally filtered / paginated.
-  - The LCM summary is a cluster wide, read-only snapshot that is refreshed
-    after every inventory or upgrade operation.
   - This module uses PC v4 APIs based SDKs
 notes:
   - >-
@@ -59,9 +57,9 @@ EXAMPLES = r"""
   register: lcm_summaries_limited
   ignore_errors: true
 
-- name: List LCM summaries filtered by hasAvailableUpgrades=true
+- name: List LCM summaries filtered by clusterType=PRISM_CENTRAL
   nutanix.ncp.ntnx_lcm_summaries_info_v2:
-    filter: "hasAvailableUpgrades eq true"
+    filter: "clusterType eq Lifecycle.Common.ClusterType'PRISM_CENTRAL'"
   register: upgradable_summaries
   ignore_errors: true
 
@@ -144,6 +142,8 @@ failed:
 import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+
+from ..module_utils.v4.utils import list_entities  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.lcm.api_client import (  # noqa: E402
     get_lcm_summaries_api_instance,
@@ -184,7 +184,10 @@ def get_lcm_summaries(module, api_instance, result):
         module.fail_json(msg="Failed generating LCM summaries info spec", **result)
 
     try:
-        resp = api_instance.list_lcm_summaries(**kwargs)
+        resp = list_entities(
+            api_instance.list_entities,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
