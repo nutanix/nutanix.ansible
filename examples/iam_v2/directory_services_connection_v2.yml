@@ -1,6 +1,7 @@
 ---
 # Summary:
 # This playbook will check the connection to an existing directory service using its external ID.
+# 1. Check connection to directory service
 
 - name: Directory Services Connection playbook
   hosts: localhost
