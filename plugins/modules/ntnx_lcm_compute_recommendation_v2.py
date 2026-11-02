@@ -13,9 +13,7 @@ module: ntnx_lcm_compute_recommendation_v2
 short_description: Compute LCM update recommendations for a set of entities
 version_added: "2.7.0"
 description:
-    - Compute LCM (Life Cycle Manager) update recommendations for a set of entities.
-    - Returns a task reference. When C(wait) is true, the recommendation resource
-      external ID is taken from the task C(completion_details).
+    - Compute LCM update recommendations for a set of entities.
     - An LCM inventory should be completed before calling this module.
     - This module uses PC v4 APIs based SDKs
 author:
@@ -32,7 +30,8 @@ options:
     state:
         description:
             - State of the module.
-            - If state is C(present), the module will compute LCM update recommendations.
+            - If C(state) is C(present), the module will compute LCM update recommendations.
+            - If C(state) is C(absent), the module will fail.
         type: str
         choices:
             - present
@@ -44,140 +43,137 @@ options:
             - Passed to the API as the C(X-Cluster-Id) header.
         type: str
         required: false
-    entity_types:
+    recommendation_spec:
         description:
-            - List of LCM entity types to compute recommendations for.
-            - Mutually exclusive with I(entity_update_specs), I(target_entities)
-              and I(entity_deploy_specs).
-        type: list
-        elements: str
-        choices:
-            - FIRMWARE
-            - SOFTWARE
-    entity_update_specs:
-        description:
-            - Explicit list of update specifications for recommendations.
-            - Mutually exclusive with I(entity_types), I(target_entities) and
-              I(entity_deploy_specs).
-        type: list
-        elements: dict
+            - Specification for computing upgrade recommendations.
+            - Corresponds to the API C(recommendationSpec) oneOf body field.
+            - Exactly one of the mutually exclusive suboptions must be provided.
+        type: dict
+        required: true
         suboptions:
-            entity_uuid:
+            entity_types:
                 description:
-                    - External identifier of the LCM entity to update.
-                type: str
-                required: true
-            to_version:
-                description:
-                    - Target version for the entity update.
-                type: str
-                required: true
-    target_entities:
-        description:
-            - Explicit list of target entities for recommendations.
-            - Mutually exclusive with I(entity_types), I(entity_update_specs)
-              and I(entity_deploy_specs).
-        type: list
-        elements: dict
-        suboptions:
-            version:
-                description:
-                    - Target version for the entity.
-                type: str
-                required: true
-            device_id:
-                description:
-                    - Device identifier for firmware entities.
-                type: str
-            entity_class:
-                description:
-                    - Entity class as reported by LCM inventory.
-                type: str
-            entity_model:
-                description:
-                    - Entity model as reported by LCM inventory.
-                type: str
-            entity_type:
-                description:
-                    - Type of the LCM entity.
-                type: str
+                    - List of LCM entity types to compute recommendations for.
+                    - Mutually exclusive with I(entity_update_specs), I(target_entities)
+                      and I(entity_deploy_specs).
+                type: list
+                elements: str
                 choices:
                     - FIRMWARE
                     - SOFTWARE
-            entity_version:
+            entity_update_specs:
                 description:
-                    - Current version of the entity as reported by LCM inventory.
-                type: str
-            hardware_family:
-                description:
-                    - Hardware family for firmware entities.
-                type: str
-            ext_id:
-                description:
-                    - External identifier of the LCM entity.
-                type: str
-            location_info:
-                description:
-                    - Location on which the entity lives.
-                type: dict
+                    - Explicit list of update specifications for recommendations.
+                    - Mutually exclusive with I(entity_types), I(target_entities) and
+                      I(entity_deploy_specs).
+                type: list
+                elements: dict
                 suboptions:
-                    uuid:
+                    entity_uuid:
                         description:
-                            - External identifier of the location.
+                            - External identifier of the LCM entity to update.
                         type: str
-                    location_type:
+                        required: true
+                    to_version:
                         description:
-                            - Type of the location.
+                            - Target version for the entity update.
                         type: str
-                        choices:
-                            - PC
-                            - CLUSTER
-                            - NODE
-                    location_name:
-                        description:
-                            - Human readable name of the location.
-                        type: str
-    entity_deploy_specs:
-        description:
-            - Explicit list of deploy specifications for recommendations.
-            - Mutually exclusive with I(entity_types), I(entity_update_specs)
-              and I(target_entities).
-        type: list
-        elements: dict
-        suboptions:
-            entity_identifier:
+                        required: true
+            target_entities:
                 description:
-                    - LCM entity identifier used to select the entity to deploy.
-                type: dict
-                required: true
+                    - Explicit list of target entities for recommendations.
+                    - Mutually exclusive with I(entity_types), I(entity_update_specs)
+                      and I(entity_deploy_specs).
+                type: list
+                elements: dict
                 suboptions:
-                    ext_id:
+                    version:
                         description:
-                            - External identifier of the entity.
+                            - The requested update version of an LCM entity.
+                        type: str
+                        required: true
+                    device_id:
+                        description:
+                            - Unique identifier of an LCM entity, for example an HDD serial number.
                         type: str
                     entity_class:
                         description:
-                            - Entity class as reported by LCM inventory.
+                            - LCM entity class (for example C(Core Cluster)).
                         type: str
                     entity_model:
                         description:
-                            - Entity model as reported by LCM inventory.
+                            - LCM entity model (for example C(AOS)).
                         type: str
                     entity_type:
                         description:
-                            - Type of the LCM entity.
+                            - Type of an LCM entity.
                         type: str
                         choices:
                             - FIRMWARE
                             - SOFTWARE
                     entity_version:
                         description:
-                            - Current version of the entity.
+                            - Current version of an LCM entity.
                         type: str
                     hardware_family:
                         description:
-                            - Hardware family for firmware entities.
+                            - Hardware family for an LCM entity (for example C(dell_gen_12)).
                         type: str
+                    location_info:
+                        description:
+                            - Location info for the entity (location type and optional name).
+                            - C(uuid) is read-only in the API and is not accepted by this module.
+                        type: dict
+                        suboptions:
+                            location_type:
+                                description:
+                                    - Scope of the entity location (PC, cluster, or node).
+                                type: str
+                                choices:
+                                    - PC
+                                    - CLUSTER
+                                    - NODE
+                            location_name:
+                                description:
+                                    - Name of the location (for example a node hostname).
+                                type: str
+            entity_deploy_specs:
+                description:
+                    - Explicit list of deploy specifications for recommendations.
+                    - Mutually exclusive with I(entity_types), I(entity_update_specs)
+                      and I(target_entities).
+                type: list
+                elements: dict
+                suboptions:
+                    entity_identifier:
+                        description:
+                            - LCM entity identifier used to select the entity to deploy.
+                        type: dict
+                        required: true
+                        suboptions:
+                            entity_class:
+                                description:
+                                    - LCM entity class (for example C(Core Cluster)).
+                                type: str
+                            entity_model:
+                                description:
+                                    - LCM entity model (for example C(AOS)).
+                                type: str
+                            entity_type:
+                                description:
+                                    - Type of an LCM entity.
+                                type: str
+                                choices:
+                                    - FIRMWARE
+                                    - SOFTWARE
+                            entity_version:
+                                description:
+                                    - Current version of an LCM entity.
+                                type: str
+                            hardware_family:
+                                description:
+                                    - Hardware family for an LCM entity (for example C(dell_gen_12)).
+                                type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -191,8 +187,9 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    entity_types:
-      - SOFTWARE
+    recommendation_spec:
+      entity_types:
+        - SOFTWARE
   register: recommendations_task
 
 - name: Compute LCM recommendations for a specific entity target version
@@ -201,9 +198,10 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
-    entity_update_specs:
-      - entity_uuid: "3c196eac-e1d5-4c8a-9b01-c133f6907ca2"
-        to_version: "4.0.0"
+    recommendation_spec:
+      entity_update_specs:
+        - entity_uuid: "3c196eac-e1d5-4c8a-9b01-c133f6907ca2"
+          to_version: "4.0.0"
   register: recommendations_task
 
 - name: Compute LCM recommendations for a target entity descriptor
@@ -211,11 +209,12 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    target_entities:
-      - entity_type: SOFTWARE
-        entity_model: "Calm Policy Engine"
-        entity_version: "3.8.0"
-        version: "4.0.0"
+    recommendation_spec:
+      target_entities:
+        - entity_type: SOFTWARE
+          entity_model: "Calm Policy Engine"
+          entity_version: "3.8.0"
+          version: "4.0.0"
   register: recommendations_task
 """
 
@@ -267,7 +266,11 @@ msg:
     description: This indicates the message if any message occurred
     type: str
     returned: When there is an error or in check mode operation
-    sample: "Api Exception raised while computing LCM recommendations"
+    sample: "Failed generating LCM compute recommendations Spec"
+error:
+    description: This indicates the error message if any error occurred
+    type: str
+    returned: When an error occurs
 """
 
 import traceback  # noqa: E402
@@ -284,6 +287,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
     get_ext_id_from_task_completion_details,
     wait_for_completion,
 )
+from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
@@ -304,8 +308,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 ENTITY_TYPE_CHOICES = ["FIRMWARE", "SOFTWARE"]
 LOCATION_TYPE_CHOICES = ["PC", "CLUSTER", "NODE"]
 
-# RecommendationSpec.recommendation_spec is a oneOf; Ansible exposes each
-# flavour as a mutually exclusive top-level option.
+# recommendation_spec oneOf flavours (mutually exclusive suboptions).
 RECOMMENDATION_SPEC_INPUTS = (
     "entity_types",
     "entity_update_specs",
@@ -317,7 +320,6 @@ RECOMMENDATION_SPEC_INPUTS = (
 def get_module_spec():
 
     location_info_spec = dict(
-        uuid=dict(type="str"),
         location_type=dict(type="str", choices=LOCATION_TYPE_CHOICES),
         location_name=dict(type="str"),
     )
@@ -335,12 +337,14 @@ def get_module_spec():
         entity_type=dict(type="str", choices=ENTITY_TYPE_CHOICES),
         entity_version=dict(type="str"),
         hardware_family=dict(type="str"),
-        ext_id=dict(type="str"),
-        location_info=dict(type="dict", options=location_info_spec),
+        location_info=dict(
+            type="dict",
+            options=location_info_spec,
+            obj=lifecycle_sdk.LocationInfo,
+        ),
     )
 
     entity_base_model_spec = dict(
-        ext_id=dict(type="str"),
         entity_class=dict(type="str"),
         entity_model=dict(type="str"),
         entity_type=dict(type="str", choices=ENTITY_TYPE_CHOICES),
@@ -352,13 +356,12 @@ def get_module_spec():
         entity_identifier=dict(
             type="dict",
             options=entity_base_model_spec,
+            obj=lifecycle_sdk.EntityBaseModel,
             required=True,
         ),
     )
 
-    module_args = dict(
-        state=dict(type="str", default="present", choices=["present"]),
-        cluster_ext_id=dict(type="str"),
+    recommendation_spec_options = dict(
         entity_types=dict(
             type="list",
             elements="str",
@@ -368,124 +371,82 @@ def get_module_spec():
             type="list",
             elements="dict",
             options=entity_update_spec,
+            obj=lifecycle_sdk.EntityUpdateSpec,
         ),
         target_entities=dict(
             type="list",
             elements="dict",
             options=target_entity_spec,
+            obj=lifecycle_sdk.TargetEntity,
         ),
         entity_deploy_specs=dict(
             type="list",
             elements="dict",
             options=entity_deploy_spec,
+            obj=lifecycle_sdk.EntityDeploySpec,
+        ),
+    )
+
+    module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
+        cluster_ext_id=dict(type="str"),
+        recommendation_spec=dict(
+            type="dict",
+            required=True,
+            options=recommendation_spec_options,
+            mutually_exclusive=[list(RECOMMENDATION_SPEC_INPUTS)],
+            required_one_of=[list(RECOMMENDATION_SPEC_INPUTS)],
         ),
     )
 
     return module_args
 
 
-def _build_location_info(data):
-    if not data:
-        return None
-    loc = lifecycle_sdk.LocationInfo()
-    if data.get("uuid") is not None:
-        loc.uuid = data["uuid"]
-    if data.get("location_type") is not None:
-        loc.location_type = getattr(lifecycle_sdk.LocationType, data["location_type"])
-    if data.get("location_name") is not None:
-        loc.location_name = data["location_name"]
-    return loc
+def _prepare_recommendation_spec_for_generator(module):
+    """Expand nested oneOf into the SDK recommendation_spec list field.
 
+    SpecGenerator matches module param names to SDK attributes. The API field is
+    C(recommendationSpec) (a oneOf list); Ansible nests the four flavours under
+    C(recommendation_spec) for mutual exclusion. Flatten the selected flavour so
+    C(sg.generate_spec(obj=RecommendationSpec())) works like other modules.
+    """
+    rec = module.params.get("recommendation_spec") or {}
+    selected = [name for name in RECOMMENDATION_SPEC_INPUTS if rec.get(name)]
+    flavour = selected[0]
+    value = rec[flavour]
+    flavour_schema = module.argument_spec_with_extra_keys["recommendation_spec"][
+        "options"
+    ][flavour]
 
-def _copy_entity_base_fields(target, data):
-    """Copy shared LCM entity fields from a dict on to an SDK object."""
-
-    if data.get("ext_id") is not None:
-        target.ext_id = data["ext_id"]
-    if data.get("entity_class") is not None:
-        target.entity_class = data["entity_class"]
-    if data.get("entity_model") is not None:
-        target.entity_model = data["entity_model"]
-    if data.get("entity_type") is not None:
-        target.entity_type = getattr(lifecycle_sdk.EntityType, data["entity_type"])
-    if data.get("entity_version") is not None:
-        target.entity_version = data["entity_version"]
-    if data.get("hardware_family") is not None:
-        target.hardware_family = data["hardware_family"]
-
-
-def _build_entity_update_specs(items):
-    specs = []
-    for item in items:
-        spec = lifecycle_sdk.EntityUpdateSpec(
-            entity_uuid=item["entity_uuid"],
-            to_version=item["to_version"],
-        )
-        specs.append(spec)
-    return specs
-
-
-def _build_target_entities(items):
-    specs = []
-    for item in items:
-        te = lifecycle_sdk.TargetEntity()
-        _copy_entity_base_fields(te, item)
-        if item.get("version") is not None:
-            te.version = item["version"]
-        if item.get("device_id") is not None:
-            te.device_id = item["device_id"]
-        loc = _build_location_info(item.get("location_info"))
-        if loc is not None:
-            te.location_info = loc
-        specs.append(te)
-    return specs
-
-
-def _build_entity_deploy_specs(items):
-    specs = []
-    for item in items:
-        ident_data = item.get("entity_identifier") or {}
-        identifier = lifecycle_sdk.EntityBaseModel()
-        _copy_entity_base_fields(identifier, ident_data)
-        deploy_spec = lifecycle_sdk.EntityDeploySpec(entity_identifier=identifier)
-        specs.append(deploy_spec)
-    return specs
-
-
-def _build_recommendation_spec_body(module):
-    """Assemble the SDK RecommendationSpec body (oneOf recommendation_spec)."""
-
-    # required_one_of + mutually_exclusive guarantee exactly one flavour.
-    selected = [name for name in RECOMMENDATION_SPEC_INPUTS if module.params.get(name)]
-    body = lifecycle_sdk.RecommendationSpec()
-    input_name = selected[0]
-    params = module.params
-
-    if input_name == "entity_types":
-        body.recommendation_spec = [
-            getattr(lifecycle_sdk.EntityType, value) for value in params["entity_types"]
+    if flavour == "entity_types":
+        module.params["recommendation_spec"] = [
+            getattr(lifecycle_sdk.EntityType, item) for item in value
         ]
-    elif input_name == "entity_update_specs":
-        body.recommendation_spec = _build_entity_update_specs(
-            params["entity_update_specs"]
+        module.argument_spec_with_extra_keys["recommendation_spec"] = dict(
+            type="list",
+            elements="str",
+            choices=ENTITY_TYPE_CHOICES,
         )
-    elif input_name == "target_entities":
-        body.recommendation_spec = _build_target_entities(params["target_entities"])
-    elif input_name == "entity_deploy_specs":
-        body.recommendation_spec = _build_entity_deploy_specs(
-            params["entity_deploy_specs"]
-        )
+        return
 
-    return body
+    module.params["recommendation_spec"] = value
+    module.argument_spec_with_extra_keys["recommendation_spec"] = flavour_schema
 
 
 def compute_lcm_recommendations(module, api_instance, result):
     cluster_ext_id = module.params.get("cluster_ext_id")
 
-    # Build request body once before check_mode (same object for live path).
-    # RecommendationSpec.recommendation_spec is a oneOf list; builders map each
-    # mutually exclusive Ansible flavour onto the matching SDK list type.
-    spec = _build_recommendation_spec_body(module)
+    _prepare_recommendation_spec_for_generator(module)
+
+    sg = SpecGenerator(module)
+    default_spec = lifecycle_sdk.RecommendationSpec()
+    spec, err = sg.generate_spec(obj=default_spec)
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed generating LCM compute recommendations Spec",
+            **result,
+        )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
@@ -541,12 +502,6 @@ def run_module():
     module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        mutually_exclusive=[
-            list(RECOMMENDATION_SPEC_INPUTS),
-        ],
-        required_one_of=[
-            list(RECOMMENDATION_SPEC_INPUTS),
-        ],
     )
     if SDK_IMP_ERROR:
         module.fail_json(

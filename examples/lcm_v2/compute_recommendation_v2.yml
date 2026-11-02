@@ -52,8 +52,9 @@
     - name: Compute LCM recommendations for all SOFTWARE entities
       nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
         cluster_ext_id: "{{ prism_central_external_id }}"
-        entity_types:
-          - SOFTWARE
+        recommendation_spec:
+          entity_types:
+            - SOFTWARE
       register: recommendation_by_entity_types
       ignore_errors: true
 
@@ -69,9 +70,10 @@
     - name: Compute LCM recommendations with entity_update_specs
       nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
         cluster_ext_id: "{{ prism_central_external_id }}"
-        entity_update_specs:
-          - entity_uuid: "{{ sample_entity_ext_id }}"
-            to_version: "{{ sample_entity_version }}"
+        recommendation_spec:
+          entity_update_specs:
+            - entity_uuid: "{{ sample_entity_ext_id }}"
+              to_version: "{{ sample_entity_version }}"
         wait: false
       register: recommendation_by_update_specs
       when: sample_entity_ext_id is defined
@@ -80,15 +82,15 @@
     - name: Compute LCM recommendations with target_entities
       nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
         cluster_ext_id: "{{ prism_central_external_id }}"
-        target_entities:
-          - entity_type: SOFTWARE
-            entity_model: "{{ sample_entity_model }}"
-            entity_version: "{{ sample_entity_version }}"
-            version: "{{ sample_entity_version }}"
-            ext_id: "{{ sample_entity_ext_id }}"
-            location_info:
-              location_type: PC
-              uuid: "{{ prism_central_external_id }}"
+        recommendation_spec:
+          target_entities:
+            - entity_type: SOFTWARE
+              entity_model: "{{ sample_entity_model }}"
+              entity_version: "{{ sample_entity_version }}"
+              version: "{{ sample_entity_version }}"
+              location_info:
+                location_type: PC
+                location_name: "prism-central"
         wait: false
       register: recommendation_by_target_entities
       when: sample_entity_ext_id is defined
