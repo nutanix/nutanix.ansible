@@ -21,17 +21,12 @@ except ImportError:
     SDK_IMP_ERROR = traceback.format_exc()
 
 
-def get_api_client(module, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION):
+def get_api_client(module):
     """
     This method will return client to be used in api connection using
     given connection details.
     Args:
         module (object): Ansible module object
-        allow_version_negotiation (bool): Whether the SDK should negotiate the
-            API version with the server. Some endpoints (e.g. the Foundation
-            Central config APIs, which only exist at v4.3) must disable
-            negotiation because the server can otherwise negotiate the client
-            down to an older API version that does not expose the endpoint.
     return:
         client (object): api client object
     """
@@ -59,14 +54,14 @@ def get_api_client(module, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION):
     config.verify_ssl = module.params.get("validate_certs")
     try:
         client = ntnx_lifecycle_py_client.ApiClient(
-            configuration=config, allow_version_negotiation=allow_version_negotiation
+            configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
         )
     except TypeError:
         client = ntnx_lifecycle_py_client.ApiClient(configuration=config)
     config.read_timeout = module.params.get("read_timeout")
     _apply_proxy_from_env(config, module)
     client = ntnx_lifecycle_py_client.ApiClient(
-        configuration=config, allow_version_negotiation=allow_version_negotiation
+        configuration=config, allow_version_negotiation=ALLOW_VERSION_NEGOTIATION
     )
     if not api_key:
         cred = "{0}:{1}".format(config.username, config.password)
@@ -176,7 +171,7 @@ def get_foundation_central_config_api_instance(module):
     """
     # Foundation Central config exists at v4.3; disable negotiation so the SDK
     # is not downgraded to an older version that returns 404 for this endpoint.
-    api_client = get_api_client(module, allow_version_negotiation=False)
+    api_client = get_api_client(module)
     return ntnx_lifecycle_py_client.FoundationCentralConfigApi(api_client=api_client)
 
 
