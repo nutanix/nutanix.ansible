@@ -51,6 +51,7 @@ class Tasks:
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
         LOAD_BALANCER_SESSION = "networking:config:load-balancer-session"
         ENTITY_GROUP = "microseg:config:entity-group"
+        UPGRADE_SELECTION = "lifecycle:config:upgrade-selection"
         PCIE_DEVICE = "vmm:ahv:config:vm:pcie-device"
         EXTERNAL_STORAGE = "clustermgmt:config:external-storages"
         LCM_BUNDLE = "lifecycle:resources:bundle"
