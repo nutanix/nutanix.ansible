@@ -161,6 +161,18 @@ def get_entity_api_instance(module):
     return ntnx_lifecycle_py_client.EntitiesApi(api_client=api_client)
 
 
+def get_lcm_summaries_api_instance(module):
+    """
+    This method will return LCM summaries API instance
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 LCM summaries api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.LcmSummariesApi(api_client=api_client)
+
+
 def get_foundation_central_config_api_instance(module):
     """
     This method will return Foundation Central config API instance.

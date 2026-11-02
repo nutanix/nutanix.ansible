@@ -129,3 +129,26 @@ def get_upgrade_selection(module, api_instance, ext_id):
                 ext_id
             ),
         )
+
+
+def get_lcm_summary(module, api_instance, ext_id):
+    """
+    This method will return the LCM summary for a specific cluster using its
+    external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LcmSummaries api instance
+        ext_id (str): External id of the LCM summary (cluster UUID)
+    Returns:
+        lcm_summary_info (object): LCM summary info
+    """
+    try:
+        return api_instance.get_lcm_summary_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM summary with ext_id: {0}".format(
+                ext_id
+            ),
+        )
