@@ -61,6 +61,14 @@ EXAMPLES = r"""
     validate_certs: false
     limit: 1
   register: result
+
+- name: List all VPC virtual switch mappings with fetch_all
+  nutanix.ncp.ntnx_vpc_virtual_switch_mappings_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -121,6 +129,7 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -146,7 +155,10 @@ def get_vpc_virtual_switch_mappings(module, api_instance, result):
         )
 
     try:
-        resp = api_instance.list_vpc_virtual_switch_mappings(**kwargs)
+        resp = list_entities(
+            api_instance.list_vpc_virtual_switch_mappings,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
