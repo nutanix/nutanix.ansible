@@ -1,18 +1,17 @@
 ---
 # Summary:
 # This playbook demonstrates the LCM Upgrade Selection v4 module:
-# 1. Perform LCM inventory (prerequisite - populates available upgrade candidates).
-# 2. Discover an LCM entity that has at least one available version.
-# 3. Create an LCM upgrade selection for that entity.
-# 4. Fetch the created upgrade selection by ext_id.
-# 5. List all upgrade selections, then filter/limit examples.
-# 6. Export the upgrade selection (generates darksite download_helper.zip).
-# 7. Delete the upgrade selection.
-#
+# 1. Create an LCM upgrade selection.
+# 2. Get the created upgrade selection by ext_id.
+# 3. List all LCM upgrade selections.
+# 4. List LCM upgrade selections with fetch_all.
+# 5. List LCM upgrade selections with a filter on status.
+# 6. List LCM upgrade selections with a limit.
+# 7. Export the LCM upgrade selection.
+# 8. Delete the LCM upgrade selection.
 # Notes:
-#  - An LCM Upgrade Selection is IMMUTABLE - the underlying API does not expose an
-#    update endpoint. Passing state=present with ext_id without export=true will
-#    result in a skipped/no-op with a descriptive message.
+#  - An LCM Upgrade Selection is immutable - the underlying API does not expose an
+#    update endpoint. Passing state=present with ext_id will result in a skipped/no-op with a descriptive message.
 
 - name: LCM Upgrade Selection v4 playbook
   hosts: localhost
@@ -104,14 +103,6 @@
         ext_id: "{{ upgrade_selection_ext_id }}"
         export: true
       register: export_result
-      when: upgrade_selection_ext_id is defined
-      ignore_errors: true
-
-    - name: Attempt to update - immutable resource returns skipped
-      nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
-        state: present
-        ext_id: "{{ upgrade_selection_ext_id }}"
-      register: skipped_update_result
       when: upgrade_selection_ext_id is defined
       ignore_errors: true
 

@@ -14,12 +14,8 @@ module: ntnx_lcm_upgrade_selection_v2
 short_description: Create, Export or Delete an LCM Upgrade Selection in Nutanix Prism Central
 version_added: 2.7.0
 description:
+  - This module allows you to Manage saved upgrade selections for dark-site upgrade workflows
   - This module allows you to create, export and delete an LCM Upgrade Selection in Nutanix Prism Central.
-  - An LCM Upgrade Selection is used by the Dark Site Upgrade Orchestrator (DUO) to lock a set of
-    selected LCM upgrade targets (entity_uuid + to_version) for a cluster and to generate the
-    darksite download_helper.zip helper bundle for offline binary download.
-  - When C(ext_id) is provided together with C(state=present) and C(export=true),
-    the module triggers the export action which produces the download_helper.zip helper bundle.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -27,23 +23,20 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create an LCM Upgrade Selection) -
-      Required Roles: Prism Admin, Super Admin
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
     - >-
       B(Export an LCM Upgrade Selection) -
-      Required Roles: Prism Admin, Super Admin
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
     - >-
       B(Delete an LCM Upgrade Selection) -
-      Required Roles: Prism Admin, Super Admin
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
   state:
     description:
-      - If C(state) is set to C(present) and C(ext_id) is not provided then the operation will create an LCM upgrade selection.
-      - If C(state) is set to C(present) and C(ext_id) is provided with C(export=true)
-        then the export action will run on the existing selection.
-      - If C(state) is set to C(present) and C(ext_id) is provided without C(export=true)
-        then the module reports skipped because there are no changes to apply.
-      - If C(state) is set to C(absent) then the operation will delete the LCM upgrade selection identified by C(ext_id).
+      - If C(state) is set to C(present) and C(ext_id) is not provided, then the operation will create an LCM upgrade selection.
+      - If C(state) is set to C(present) and C(ext_id) is provided, then the operation will export the LCM upgrade selection.
+      - If C(state) is set to C(absent) and C(ext_id) is provided, then the operation will delete the LCM upgrade selection.
     type: str
     required: false
     choices:
@@ -53,7 +46,7 @@ options:
   ext_id:
     description:
       - The external ID of the LCM Upgrade Selection.
-      - Required for delete and export operations.
+      - Required for export and delete operations
     type: str
     required: false
   selected_upgrades:
@@ -75,16 +68,11 @@ options:
           - Target version of the LCM entity.
         type: str
         required: true
-  export:
+  cluster_ext_id:
     description:
-      - When C(true) and C(ext_id) is provided together with C(state=present),
-        the module invokes the export action which produces the darksite
-        C(download_helper.zip) helper bundle for the specified upgrade selection.
-      - When omitted or C(false) with C(ext_id) and C(state=present), the module
-        reports C(skipped=true) since LCM Upgrade Selections are immutable.
-    type: bool
+      - The external ID of the cluster.
+    type: str
     required: false
-    default: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -106,10 +94,11 @@ EXAMPLES = r"""
     selected_upgrades:
       - entity_uuid: "15570c98-beaf-4633-afd2-b6a306ff1001"
         to_version: "5.0.0"
+    cluster_ext_id: "00062e00-87eb-ef15-0000-00000000b71a"
   register: result
   ignore_errors: true
 
-- name: Export an LCM upgrade selection (download helper zip)
+- name: Export an LCM upgrade selection
   nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -117,7 +106,6 @@ EXAMPLES = r"""
     validate_certs: false
     state: present
     ext_id: "b7dbcf46-8ba3-4dcd-a7c3-4b09b0f7a11a"
-    export: true
   register: result
   ignore_errors: true
 
@@ -137,10 +125,9 @@ RETURN = r"""
 response:
   description:
     - Response for creating, exporting or deleting an LCM upgrade selection.
-    - If the operation is create and C(wait) is C(true), it returns the LCM upgrade selection details.
-    - If the operation is create and C(wait) is C(false), it returns the task details.
-    - If the operation is export, it returns the task details (the actual helper zip is streamed by the server).
-    - If the operation is delete, it returns the task details.
+    - If C(state) is C(present) and C(ext_id) is provided, it returns the upgrade selection export details.
+    - If C(state) is C(present) and C(ext_id) is not provided, it returns the upgrade selection details.
+    - If C(state) is C(absent) and C(ext_id) is provided, it returns the task details for deleting the upgrade selection.
   returned: always
   type: dict
   sample:
@@ -180,10 +167,8 @@ changed:
 
 skipped:
   description:
-    - This indicates whether the task was skipped.
-    - Set to C(true) when C(state=present) with C(ext_id) and C(export=false),
-      because there are no changes to apply.
-  returned: always
+    - This indicates whether the operation was skipped.
+  returned: when the operation is skipped
   type: bool
   sample: false
 
@@ -200,11 +185,9 @@ failed:
 
 msg:
   description: This indicates the message if any message occurred.
-  returned: When there is an error, the module reports skipped, or in check mode
+  returned: When there is an error, the module is idempotent, or in check mode
   type: str
-  sample: >-
-    LCM upgrade selection with ext_id: b7dbcf46-8ba3-4dcd-a7c3-4b09b0f7a11a is
-    immutable. Nothing to update; pass export=true to export the download helper.
+  sample: "Api Exception raised while creating LCM upgrade selection"
 """
 
 import traceback  # noqa: E402
@@ -235,7 +218,9 @@ try:
     import ntnx_lifecycle_py_client as life_cycle_management_sdk  # noqa: E402
 except ImportError:
 
-    from ..module_utils.v4.sdk_mock import mock_sdk as life_cycle_management_sdk  # noqa: E402
+    from ..module_utils.v4.sdk_mock import (
+        mock_sdk as life_cycle_management_sdk,
+    )  # noqa: E402
 
     SDK_IMP_ERROR = traceback.format_exc()
 
@@ -257,7 +242,6 @@ def get_module_spec():
             options=entity_update_spec,
             obj=life_cycle_management_sdk.EntityUpdateSpec,
         ),
-        export=dict(type="bool", default=False),
     )
     return module_args
 
@@ -311,28 +295,14 @@ def create_upgrade_selection(module, api_instance, result):
     result["changed"] = True
 
 
-def update_upgrade_selection(module, api_instance, result):
-    """
-    LCM Upgrade Selections are immutable - the SDK/API deliberately does not
-    expose a PUT/update endpoint. When ext_id is provided together with
-    state=present, we either trigger the export action (when export=true) or
-    report a skipped/idempotent no-op with a descriptive message.
-    """
+def export_upgrade_selection(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-
-    if module.params.get("export"):
-        export_upgrade_selection(module, api_instance, result)
-        return
-
     if module.check_mode:
-        result["skipped"] = True
-        result["changed"] = False
         module.exit_json(
-            msg=(
-                "LCM upgrade selection with ext_id: {0} is immutable. Nothing to "
-                "update; pass export=true to export the download helper."
-            ).format(ext_id),
+            msg=("LCM upgrade selection with ext_id: {0} will be exported.").format(
+                ext_id
+            ),
             **result,
         )
 
@@ -347,19 +317,6 @@ def update_upgrade_selection(module, api_instance, result):
         ).format(ext_id),
         **result,
     )
-
-
-def export_upgrade_selection(module, api_instance, result):
-    ext_id = module.params.get("ext_id")
-    result["ext_id"] = ext_id
-
-    if module.check_mode:
-        result["msg"] = (
-            "LCM upgrade selection with ext_id: {0} will be exported "
-            "(download_helper.zip)."
-        ).format(ext_id)
-        return
-
     resp = None
     try:
         resp = api_instance.export_upgrade_selection(extId=ext_id)
@@ -405,10 +362,9 @@ def delete_upgrade_selection(module, api_instance, result):
 
     task_ext_id = getattr(resp.data, "ext_id", None)
     result["task_ext_id"] = task_ext_id
-    if resp.data is not None:
-        result["response"] = strip_internal_attributes(resp.data.to_dict())
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, raise_error=False)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
 
@@ -438,7 +394,7 @@ def run_module():
     state = module.params.get("state")
     if state == "present":
         if module.params.get("ext_id"):
-            update_upgrade_selection(module, api_instance, result)
+            export_upgrade_selection(module, api_instance, result)
         else:
             create_upgrade_selection(module, api_instance, result)
     else:

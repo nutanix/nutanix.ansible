@@ -23,15 +23,16 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get LCM upgrade selection by ext_id) -
-      Required Roles: Prism Admin, Prism Viewer, Super Admin
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Security Dashboard Admin, Security Dashboard Viewer, Super Admin
     - >-
       B(Get list of LCM upgrade selections) -
-      Required Roles: Prism Admin, Prism Viewer, Super Admin
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Security Dashboard Admin, Security Dashboard Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
   ext_id:
     description:
       - The external ID of the LCM Upgrade Selection.
+      - Required for get LCM upgrade selection by ext_id.
     type: str
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
