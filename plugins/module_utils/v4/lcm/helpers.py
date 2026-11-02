@@ -152,3 +152,25 @@ def get_lcm_summary(module, api_instance, ext_id):
                 ext_id
             ),
         )
+
+
+def get_lcm_history(module, api_instance, ext_id):
+    """
+    This method will return an LCM history entry using its external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LCM histories api instance
+        ext_id (str): External id of the LCM history entry
+    Returns:
+        lcm_history_info (dict): LCM history info
+    """
+    try:
+        return api_instance.get_lcm_history_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM history with ext_id: {0}".format(
+                ext_id
+            ),
+        )
