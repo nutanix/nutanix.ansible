@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_lcm_upgrade_selection_v2
 short_description: Create, Export or Delete an LCM Upgrade Selection in Nutanix Prism Central
-version_added: 2.7.0
+version_added: "2.7.0"
 description:
   - This module allows you to Manage saved upgrade selections for dark-site upgrade workflows
   - This module allows you to create, export and delete an LCM Upgrade Selection in Nutanix Prism Central.
@@ -240,6 +240,7 @@ def get_module_spec():
             options=entity_update_spec,
             obj=lifecycle_sdk.EntityUpdateSpec,
         ),
+        cluster_ext_id=dict(type="str"),
     )
     return module_args
 
@@ -311,7 +312,7 @@ def export_upgrade_selection(module, api_instance, result):
     module.exit_json(
         msg=(
             "LCM upgrade selection with ext_id: {0} is immutable. Nothing to "
-            "update; pass export=true to export the download helper."
+            "update."
         ).format(ext_id),
         **result,
     )

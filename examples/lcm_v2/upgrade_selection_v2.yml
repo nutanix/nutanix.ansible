@@ -76,7 +76,7 @@
 
     - name: List all LCM upgrade selections
       nutanix.ncp.ntnx_lcm_upgrade_selection_info_v2:
-        register: list_result
+      register: list_result
       ignore_errors: true
 
     - name: List LCM upgrade selections with fetch_all
@@ -101,7 +101,6 @@
       nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
         state: present
         ext_id: "{{ upgrade_selection_ext_id }}"
-        export: true
       register: export_result
       when: upgrade_selection_ext_id is defined
       ignore_errors: true

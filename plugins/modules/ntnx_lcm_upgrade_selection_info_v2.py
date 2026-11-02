@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_lcm_upgrade_selection_info_v2
 short_description: Fetch LCM Upgrade Selection info in Nutanix Prism Central
-version_added: 2.7.0
+version_added: "2.7.0"
 description:
   - This module allows you to fetch information about UpgradeSelection in Nutanix Prism Central.
   - If C(ext_id) is provided, fetch details of the specific UpgradeSelection.

@@ -14,8 +14,8 @@
 #   7. List-all info module (assert response is list, total_available_results present).
 #   8. List with limit=1 - asserts <= 1 result.
 #   9. List with filter on status - asserts filtered result.
-#  10. Update path (state=present + ext_id, export=false) - asserts skipped=True.
-#  11. Real Export action (state=present + ext_id + export=true).
+#  10. Update path (state=present + ext_id) - asserts skipped=True.
+#  11. Present + ext_id path again (export entrypoint).
 #  12. Real Delete.
 #  13. Negative: create without selected_upgrades - asserts failed with descriptive msg.
 #  14. Negative: delete non-existent ext_id - asserts failed with descriptive msg.
@@ -113,21 +113,24 @@
     success_msg: "check_mode Create returned the expected spec"
     fail_msg: "check_mode Create returned an unexpected result"
 
-- name: Check_mode - Update path (immutable) state=present + ext_id, no export
+- name: Check_mode - Update path (immutable) state=present + ext_id
   nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
     state: present
     ext_id: "00000000-0000-0000-0000-000000000000"
   check_mode: true
-  register: cm_update
+  register: lcm_update
   ignore_errors: true
 
-- name: Assert check_mode Update path is either skipped or gracefully errored
+- name: Assert check_mode Update/export path
   ansible.builtin.assert:
     that:
-      - cm_update is defined
-      - (cm_update.skipped | default(false) == true) or (cm_update.failed == true)
-    success_msg: "check_mode Update path correctly reported skipped/failed"
-    fail_msg: "check_mode Update path returned unexpected result"
+      - lcm_update is defined
+      - lcm_update.failed == false
+      - lcm_update.changed == false
+      - lcm_update.msg is defined
+      - "'will be exported' in lcm_update.msg"
+    success_msg: "check_mode present+ext_id path returned expected export msg"
+    fail_msg: "check_mode present+ext_id path returned unexpected result"
 
 - name: Check_mode - Delete LCM upgrade selection
   nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
@@ -183,7 +186,7 @@
     success_msg: "Negative delete of non-existent ext_id correctly failed"
     fail_msg: "Negative delete of non-existent ext_id did NOT fail as expected"
 
-  - name: Negative - info by invalid ext_id
+- name: Negative - info by invalid ext_id
   nutanix.ncp.ntnx_lcm_upgrade_selection_info_v2:
     ext_id: "deadbeef-dead-beef-dead-beefdeadbeef"
   register: neg_info_bad
@@ -324,7 +327,7 @@
     success_msg: "Info List with filter returned a list"
     fail_msg: "Info List with filter returned an unexpected result"
 
-- name: Immutable "update" path (state=present + ext_id, no export) - expect skipped=true
+- name: Immutable "update" path (state=present + ext_id) - expect skipped=true
   nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
     state: present
     ext_id: "{{ created_upgrade_selection_ext_id }}"
@@ -364,22 +367,21 @@
     fail_msg: "Immutable update path was NOT idempotent"
   when: created_upgrade_selection_ext_id is defined
 
-- name: Export - trigger export action for download_helper.zip
+- name: Present + ext_id path (export entrypoint)
   nutanix.ncp.ntnx_lcm_upgrade_selection_v2:
     state: present
     ext_id: "{{ created_upgrade_selection_ext_id }}"
-    export: true
   register: real_export
   when: created_upgrade_selection_ext_id is defined
   ignore_errors: true
 
-- name: Assert Export result shape
+- name: Assert present + ext_id path result shape
   ansible.builtin.assert:
     that:
       - real_export is defined
       - real_export.ext_id == created_upgrade_selection_ext_id
-    success_msg: "Export returned expected ext_id"
-    fail_msg: "Export returned an unexpected result: {{ real_export | default({}) }}"
+    success_msg: "Present + ext_id path returned expected ext_id"
+    fail_msg: "Present + ext_id path returned an unexpected result: {{ real_export | default({}) }}"
   when: created_upgrade_selection_ext_id is defined
 
 - name: Real Delete LCM upgrade selection
