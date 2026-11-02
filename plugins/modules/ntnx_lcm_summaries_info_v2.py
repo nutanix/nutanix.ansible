@@ -184,7 +184,7 @@ def get_lcm_summaries(module, api_instance, result):
 
     try:
         resp = list_entities(
-            api_instance.list_entities,
+            api_instance.list_lcm_summaries,
             kwargs=kwargs,
         )
     except Exception as e:
