@@ -68,6 +68,69 @@ def get_lcm_entity(module, api_instance, ext_id):
         )
 
 
+def get_lcm_bundle(module, api_instance, ext_id):
+    """
+    This method will return LCM bundle info using external identifier of the bundle.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LCM Bundles api instance
+        ext_id (str): External id of the LCM bundle
+    Returns:
+        bundle_info (object): LCM bundle info
+    """
+    try:
+        return api_instance.get_bundle_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM bundle info using ext_id {0}".format(
+                ext_id
+            ),
+        )
+
+
+def get_foundation_central_config(module, api_instance):
+    """
+    This method will return the Foundation Central configuration.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Foundation Central config api instance
+    Returns:
+        foundation_central_config (object): Foundation Central config data
+    """
+    try:
+        return api_instance.get_foundation_central_config().data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Foundation Central config info",
+        )
+
+
+def get_upgrade_selection(module, api_instance, ext_id):
+    """
+    This method fetches details of a single LCM Upgrade Selection using its external id.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LCM UpgradeSelections api instance
+        ext_id (str): External id of the LCM Upgrade Selection
+    Returns:
+        upgrade_selection (object): LCM Upgrade Selection SDK object
+    """
+    try:
+        return api_instance.get_upgrade_selection_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM upgrade selection with ext_id: {0}".format(
+                ext_id
+            ),
+        )
+
+
 def get_lcm_notification(module, api_instance, ext_id):
     """
     This method will fetch an LCM upgrade notification using its external identifier.
@@ -84,7 +147,7 @@ def get_lcm_notification(module, api_instance, ext_id):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while fetching LCM notification info using external identifier of the notification: {0}".format(
+            msg="Api Exception raised while fetching LCM upgrade notification with ext_id: {0}".format(
                 ext_id
             ),
         )
