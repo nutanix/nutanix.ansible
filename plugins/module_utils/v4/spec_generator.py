@@ -54,20 +54,25 @@ class SpecGenerator(object):
                 kwargs["module_args"] = options
 
                 _obj = schema.get("obj")
+                elements = schema.get("elements")
 
-                # for attributes with dynamic obj
+                # for attributes with dynamic obj (SDK oneOf). The selected
+                # suboption may be a dict or a list[dict]; adopt that branch's
+                # type/elements so list oneOf variants (e.g. ValidateNodeParam.spec)
+                # are built the same way as dict variants.
                 if type(_obj) is dict:
 
                     for dynamic_obj_key, dynamic_obj_value in attr[key].items():
 
+                        selected_schema = options.get(dynamic_obj_key) or {}
                         _obj = _obj.get(dynamic_obj_key)
                         attr[key] = dynamic_obj_value
-                        kwargs["module_args"] = options.get(dynamic_obj_key).get(
-                            "options"
-                        )
+                        kwargs["module_args"] = selected_schema.get("options")
+                        if selected_schema.get("type"):
+                            attr_type = selected_schema.get("type")
+                        if "elements" in selected_schema:
+                            elements = selected_schema.get("elements")
                         break
-
-                elements = schema.get("elements")
 
                 # for dict type attribute, recursively create spec objects
                 if attr_type == "dict" and options is not None and _obj is not None:

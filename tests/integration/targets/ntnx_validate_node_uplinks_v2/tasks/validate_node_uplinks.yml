@@ -2,18 +2,17 @@
 # Test plan for ntnx_validate_node_uplinks_v2
 #
 # Scenarios covered:
-#   1. check_mode - uplink_nodes spec with ALL fields (asserts every attribute
+#   1. check_mode - spec.uplink_nodes with ALL fields (asserts every attribute
 #      round-trips through get_module_spec → SpecGenerator → SDK body).
-#   2. check_mode - uplink_nodes spec with only the required cvm_ip + networks.
-#   3. check_mode - bundle_param spec with ALL fields (bundle_info + node_list
+#   2. check_mode - spec.uplink_nodes with only the required cvm_ip + networks.
+#   3. check_mode - spec.bundle_param with ALL fields (bundle_info + node_list
 #      with every NodeInfo attribute including IPv4 + IPv6 addresses and
 #      digital-certificate map list).
-#   4. check_mode - bundle_param spec with only the required fields
+#   4. check_mode - spec.bundle_param with only the required fields
 #      (bundle_info + node_list).
-#   5. Negative - both bundle_param and uplink_nodes given → mutually_exclusive
-#      failure.
-#   6. Negative - neither bundle_param nor uplink_nodes given → required_one_of
-#      failure.
+#   5. Negative - both bundle_param and uplink_nodes under spec →
+#      mutually_exclusive failure.
+#   6. Negative - empty spec → required_one_of failure.
 #   7. Negative - missing cluster_ext_id (required=True) failure.
 #   8. Negative - invalid hypervisor_type choice (bad enum) failure.
 #   9. Live validate-node call for a hypervisor bundle - asserts a well-formed
@@ -22,7 +21,7 @@
 #      well-formed response (success or a descriptive API error).
 #
 # These scenarios combine SDK knowledge (OneOf between BundleParam and
-# list[UplinkNode], IP address / uplink sub-structs), module spec analysis
+# list[UplinkNode] under ValidateNodeParam.spec), module spec analysis
 # (required fields, choices, mutually_exclusive, required_one_of) and domain
 # knowledge (validate-node is a pre-check for cluster expansion, XEN not
 # supported).
@@ -56,36 +55,37 @@
 - name: Generate spec for validating node uplinks using check_mode with ALL attributes
   nutanix.ncp.ntnx_validate_node_uplinks_v2:
     cluster_ext_id: "0005b289-8340-119a-0000-00000000a31f"
-    uplink_nodes:
-      - cvm_ip:
-          ipv4:
-            value: "10.44.76.31"
-            prefix_length: 24
-          ipv6:
-            value: "2001:db8:3333:4444:5555:6666:7777:8881"
-            prefix_length: 64
-        hypervisor_ip:
-          ipv4:
-            value: "10.44.76.32"
-            prefix_length: 24
-          ipv6:
-            value: "2001:db8:3333:4444:5555:6666:7777:8882"
-            prefix_length: 64
-        networks:
-          - name: "br0"
-            vswitch_ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
-            networks:
-              - "Management"
-              - "Backplane"
-            uplinks:
-              active:
-                - mac: "1c:f4:7b:5f:a9:2a"
-                  name: "eth1"
-                  value: "eth1"
-              standby:
-                - mac: "12:ee:23:33:2f:43"
-                  name: "eth2"
-                  value: "eth2"
+    spec:
+      uplink_nodes:
+        - cvm_ip:
+            ipv4:
+              value: "10.44.76.31"
+              prefix_length: 24
+            ipv6:
+              value: "2001:db8:3333:4444:5555:6666:7777:8881"
+              prefix_length: 64
+          hypervisor_ip:
+            ipv4:
+              value: "10.44.76.32"
+              prefix_length: 24
+            ipv6:
+              value: "2001:db8:3333:4444:5555:6666:7777:8882"
+              prefix_length: 64
+          networks:
+            - name: "br0"
+              vswitch_ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+              networks:
+                - "Management"
+                - "Backplane"
+              uplinks:
+                active:
+                  - mac: "1c:f4:7b:5f:a9:2a"
+                    name: "eth1"
+                    value: "eth1"
+                standby:
+                  - mac: "12:ee:23:33:2f:43"
+                    name: "eth2"
+                    value: "eth2"
   check_mode: true
   register: result
   ignore_errors: true
@@ -132,13 +132,14 @@
 - name: Generate spec for validating node uplinks using check_mode with only required fields
   nutanix.ncp.ntnx_validate_node_uplinks_v2:
     cluster_ext_id: "0005b289-8340-119a-0000-00000000a31f"
-    uplink_nodes:
-      - cvm_ip:
-          ipv4:
-            value: "10.44.76.41"
-            prefix_length: 24
-        networks:
-          - name: "br0"
+    spec:
+      uplink_nodes:
+        - cvm_ip:
+            ipv4:
+              value: "10.44.76.41"
+              prefix_length: 24
+          networks:
+            - name: "br0"
   check_mode: true
   register: result
   ignore_errors: true
@@ -163,47 +164,48 @@
 - name: Generate spec for validating hypervisor bundle using check_mode with ALL attributes
   nutanix.ncp.ntnx_validate_node_uplinks_v2:
     cluster_ext_id: "0005b289-8340-119a-0000-00000000a31f"
-    bundle_param:
-      bundle_info:
-        name: "AHV-{{ random_suffix }}.iso"
-      node_list:
-        - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
-          block_id: "18SM8B010159"
-          node_position: "B"
-          hypervisor_type: "AHV"
-          hypervisor_hostname: "unconfigured-node-{{ random_suffix }}"
-          hypervisor_version: "10.0-793"
-          nos_version: "7.0"
-          model: "NX-3060-G5"
-          is_light_compute: false
-          is_robo_mixed_hypervisor: true
-          current_network_interface: "eth1"
-          cvm_ip:
-            ipv4:
-              value: "10.44.76.51"
-              prefix_length: 24
-            ipv6:
-              value: "2001:db8:3333:4444:5555:6666:7777:aaaa"
-              prefix_length: 64
-          hypervisor_ip:
-            ipv4:
-              value: "10.44.76.52"
-              prefix_length: 24
-            ipv6:
-              value: "2001:db8:3333:4444:5555:6666:7777:bbbb"
-              prefix_length: 64
-          ipmi_ip:
-            ipv4:
-              value: "10.44.76.53"
-              prefix_length: 24
-            ipv6:
-              value: "2001:db8:3333:4444:5555:6666:7777:cccc"
-              prefix_length: 64
-          digital_certificate_map_list:
-            - key: "cert-key-1"
-              value: "cert-value-1"
-            - key: "cert-key-2"
-              value: "cert-value-2"
+    spec:
+      bundle_param:
+        bundle_info:
+          name: "AHV-{{ random_suffix }}.iso"
+        node_list:
+          - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
+            block_id: "18SM8B010159"
+            node_position: "B"
+            hypervisor_type: "AHV"
+            hypervisor_hostname: "unconfigured-node-{{ random_suffix }}"
+            hypervisor_version: "10.0-793"
+            nos_version: "7.0"
+            model: "NX-3060-G5"
+            is_light_compute: false
+            is_robo_mixed_hypervisor: true
+            current_network_interface: "eth1"
+            cvm_ip:
+              ipv4:
+                value: "10.44.76.51"
+                prefix_length: 24
+              ipv6:
+                value: "2001:db8:3333:4444:5555:6666:7777:aaaa"
+                prefix_length: 64
+            hypervisor_ip:
+              ipv4:
+                value: "10.44.76.52"
+                prefix_length: 24
+              ipv6:
+                value: "2001:db8:3333:4444:5555:6666:7777:bbbb"
+                prefix_length: 64
+            ipmi_ip:
+              ipv4:
+                value: "10.44.76.53"
+                prefix_length: 24
+              ipv6:
+                value: "2001:db8:3333:4444:5555:6666:7777:cccc"
+                prefix_length: 64
+            digital_certificate_map_list:
+              - key: "cert-key-1"
+                value: "cert-value-1"
+              - key: "cert-key-2"
+                value: "cert-value-2"
   check_mode: true
   register: result
   ignore_errors: true
@@ -250,11 +252,12 @@
 - name: Generate spec for validating hypervisor bundle using check_mode with only required fields
   nutanix.ncp.ntnx_validate_node_uplinks_v2:
     cluster_ext_id: "0005b289-8340-119a-0000-00000000a31f"
-    bundle_param:
-      bundle_info:
-        name: "AHV-minimal-{{ random_suffix }}.iso"
-      node_list:
-        - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
+    spec:
+      bundle_param:
+        bundle_info:
+          name: "AHV-minimal-{{ random_suffix }}.iso"
+        node_list:
+          - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
   check_mode: true
   register: result
   ignore_errors: true
@@ -277,18 +280,19 @@
 - name: Try validate-node with both bundle_param and uplink_nodes (mutually exclusive)
   nutanix.ncp.ntnx_validate_node_uplinks_v2:
     cluster_ext_id: "0005b289-8340-119a-0000-00000000a31f"
-    bundle_param:
-      bundle_info:
-        name: "AHV.iso"
-      node_list:
-        - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
-    uplink_nodes:
-      - cvm_ip:
-          ipv4:
-            value: "10.44.76.31"
-            prefix_length: 24
-        networks:
-          - name: "br0"
+    spec:
+      bundle_param:
+        bundle_info:
+          name: "AHV.iso"
+        node_list:
+          - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
+      uplink_nodes:
+        - cvm_ip:
+            ipv4:
+              value: "10.44.76.31"
+              prefix_length: 24
+          networks:
+            - name: "br0"
   register: result
   ignore_errors: true
 
@@ -308,6 +312,7 @@
 - name: Try validate-node without bundle_param or uplink_nodes
   nutanix.ncp.ntnx_validate_node_uplinks_v2:
     cluster_ext_id: "0005b289-8340-119a-0000-00000000a31f"
+    spec: {}
   register: result
   ignore_errors: true
 
@@ -326,13 +331,14 @@
 
 - name: Try validate-node without cluster_ext_id
   nutanix.ncp.ntnx_validate_node_uplinks_v2:
-    uplink_nodes:
-      - cvm_ip:
-          ipv4:
-            value: "10.44.76.31"
-            prefix_length: 24
-        networks:
-          - name: "br0"
+    spec:
+      uplink_nodes:
+        - cvm_ip:
+            ipv4:
+              value: "10.44.76.31"
+              prefix_length: 24
+          networks:
+            - name: "br0"
   register: result
   ignore_errors: true
 
@@ -352,12 +358,13 @@
 - name: Try validate-node with an invalid hypervisor_type enum
   nutanix.ncp.ntnx_validate_node_uplinks_v2:
     cluster_ext_id: "0005b289-8340-119a-0000-00000000a31f"
-    bundle_param:
-      bundle_info:
-        name: "AHV.iso"
-      node_list:
-        - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
-          hypervisor_type: "INVALID_HYPERVISOR"
+    spec:
+      bundle_param:
+        bundle_info:
+          name: "AHV.iso"
+        node_list:
+          - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
+            hypervisor_type: "INVALID_HYPERVISOR"
   register: result
   ignore_errors: true
 
@@ -377,17 +384,18 @@
 - name: Live validate-node call for a hypervisor bundle
   nutanix.ncp.ntnx_validate_node_uplinks_v2:
     cluster_ext_id: "{{ discovered_cluster_ext_id }}"
-    bundle_param:
-      bundle_info:
-        name: "AHV-nonexistent-bundle-{{ random_suffix }}.iso"
-      node_list:
-        - node_uuid: "00000000-0000-0000-0000-00000000dead"
-          block_id: "FAKE_BLOCK"
-          node_position: "A"
-          hypervisor_type: "AHV"
-          hypervisor_version: "0.0"
-          nos_version: "0.0"
-          model: "NX-FAKE"
+    spec:
+      bundle_param:
+        bundle_info:
+          name: "AHV-nonexistent-bundle-{{ random_suffix }}.iso"
+        node_list:
+          - node_uuid: "00000000-0000-0000-0000-00000000dead"
+            block_id: "FAKE_BLOCK"
+            node_position: "A"
+            hypervisor_type: "AHV"
+            hypervisor_version: "0.0"
+            nos_version: "0.0"
+            model: "NX-FAKE"
   register: live_bundle
   ignore_errors: true
 
@@ -407,26 +415,27 @@
 - name: Live validate-node call for a list of uplink nodes (fabricated data)
   nutanix.ncp.ntnx_validate_node_uplinks_v2:
     cluster_ext_id: "{{ discovered_cluster_ext_id }}"
-    uplink_nodes:
-      - cvm_ip:
-          ipv4:
-            value: "203.0.113.31"
-            prefix_length: 24
-        hypervisor_ip:
-          ipv4:
-            value: "203.0.113.32"
-            prefix_length: 24
-        networks:
-          - name: "br0-fake"
-            vswitch_ext_id: "00000000-0000-0000-0000-000000000000"
-            networks:
-              - "FakeNetwork"
-            uplinks:
-              active:
-                - mac: "aa:bb:cc:dd:ee:ff"
-                  name: "eth99"
-                  value: "eth99"
-              standby: []
+    spec:
+      uplink_nodes:
+        - cvm_ip:
+            ipv4:
+              value: "203.0.113.31"
+              prefix_length: 24
+          hypervisor_ip:
+            ipv4:
+              value: "203.0.113.32"
+              prefix_length: 24
+          networks:
+            - name: "br0-fake"
+              vswitch_ext_id: "00000000-0000-0000-0000-000000000000"
+              networks:
+                - "FakeNetwork"
+              uplinks:
+                active:
+                  - mac: "aa:bb:cc:dd:ee:ff"
+                    name: "eth99"
+                    value: "eth99"
+                standby: []
   register: live_uplinks
   ignore_errors: true
 
