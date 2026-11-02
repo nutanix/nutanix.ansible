@@ -67,6 +67,14 @@ EXAMPLES = r"""
     validate_certs: false
     vm_ext_id: 530567f3-abda-4913-b5d0-0ab6758ec16e
     ext_id: 530567f3-abda-4913-b5d0-0ab6758ec1653
+
+- name: List all VM disks with fetch_all
+  nutanix.ncp.ntnx_vms_disks_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 
@@ -130,6 +138,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -169,7 +178,11 @@ def get_disks(module, vmm, result):
         module.fail_json(msg="Failed generating vm disks info Spec", **result)
 
     try:
-        resp = vmm.list_disks_by_vm_id(vmExtId=vm_ext_id, **kwargs)
+        resp = list_entities(
+            vmm.list_disks_by_vm_id,
+            kwargs=kwargs,
+            vmExtId=vm_ext_id,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

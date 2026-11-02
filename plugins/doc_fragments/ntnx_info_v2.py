@@ -33,6 +33,15 @@ options:
     description:
       - The attribute name to select
     type: str
+  fetch_all:
+    description:
+      - When C(true), lists all the entities available using pagination. C(page) and C(limit) are ignored
+      - When C(false), return a single page using the API default page size (50)
+        unless C(limit)/C(page) are set.
+      - Does not apply when fetching a single entity by C(ext_id).
+    type: bool
+    required: false
+    default: false
   read_timeout:
     description: Read timeout in milliseconds for API calls.
     type: int

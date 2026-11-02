@@ -66,3 +66,111 @@ def get_lcm_entity(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching entity info using external identifier of the entity",
         )
+
+
+def get_lcm_bundle(module, api_instance, ext_id):
+    """
+    This method will return LCM bundle info using external identifier of the bundle.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LCM Bundles api instance
+        ext_id (str): External id of the LCM bundle
+    Returns:
+        bundle_info (object): LCM bundle info
+    """
+    try:
+        return api_instance.get_bundle_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM bundle info using ext_id {0}".format(
+                ext_id
+            ),
+        )
+
+
+def get_foundation_central_config(module, api_instance):
+    """
+    This method will return the Foundation Central configuration.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Foundation Central config api instance
+    Returns:
+        foundation_central_config (object): Foundation Central config data
+    """
+    try:
+        return api_instance.get_foundation_central_config().data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Foundation Central config info",
+        )
+
+
+def get_upgrade_selection(module, api_instance, ext_id):
+    """
+    This method fetches details of a single LCM Upgrade Selection using its external id.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LCM UpgradeSelections api instance
+        ext_id (str): External id of the LCM Upgrade Selection
+    Returns:
+        upgrade_selection (object): LCM Upgrade Selection SDK object
+    """
+    try:
+        return api_instance.get_upgrade_selection_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM upgrade selection with ext_id: {0}".format(
+                ext_id
+            ),
+        )
+
+
+def get_lcm_summary(module, api_instance, ext_id):
+    """
+    This method will return the LCM summary for a specific cluster using its
+    external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LcmSummaries api instance
+        ext_id (str): External id of the LCM summary (cluster UUID)
+    Returns:
+        lcm_summary_info (object): LCM summary info
+    """
+    try:
+        return api_instance.get_lcm_summary_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM summary with ext_id: {0}".format(
+                ext_id
+            ),
+        )
+
+
+def get_lcm_history(module, api_instance, ext_id):
+    """
+    This method will return an LCM history entry using its external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LCM histories api instance
+        ext_id (str): External id of the LCM history entry
+    Returns:
+        lcm_history_info (dict): LCM history info
+    """
+    try:
+        return api_instance.get_lcm_history_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM history with ext_id: {0}".format(
+                ext_id
+            ),
+        )
