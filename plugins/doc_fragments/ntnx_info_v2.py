@@ -35,6 +35,10 @@ options:
       type: str
   fetch_all:
     description:
+      - The attribute name to select
+    type: str
+  fetch_all:
+    description:
       - When C(true), lists all the entities available using pagination. C(page) and C(limit) are ignored
       - When C(false), return a single page using the API default page size (50)
         unless C(limit)/C(page) are set.

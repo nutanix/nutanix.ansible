@@ -126,7 +126,6 @@ class SpecGenerator(object):
 
         fetch_all_param = attr.get("fetch_all")
         fetch_all = False if fetch_all_param is None else bool(fetch_all_param)
-
         if attr.get("name"):
             _filter = attr.get("filter")
             if _filter:
