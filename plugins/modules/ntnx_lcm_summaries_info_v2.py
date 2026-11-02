@@ -142,14 +142,13 @@ failed:
 import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
-
-from ..module_utils.v4.utils import list_entities  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.lcm.api_client import (  # noqa: E402
     get_lcm_summaries_api_instance,
 )
 from ..module_utils.v4.lcm.helpers import get_lcm_summary  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
+from ..module_utils.v4.utils import list_entities  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
