@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,13 +12,14 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_unreserve_ips_by_subnet_id_v2
 short_description: Unreserve IP addresses on a managed subnet in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to unreserve IP addresses on a managed subnet in Nutanix Prism Central.
   - The unreserve action supports three modes selected via C(unreserve_type).
   - C(IP_ADDRESS_LIST) releases a specific list of previously reserved IPs.
   - C(IP_ADDRESS_RANGE) releases C(count) consecutive IPs starting from C(start_ip_address).
   - C(CONTEXT) releases every reservation that was originally created with the supplied C(client_context) tag.
+  - This is an action module that triggers a task-based operation.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -26,18 +27,18 @@ notes:
     The required roles depend on the operation being performed.
   - >-
     B(Unreserve IP addresses on a subnet) -
-    Required Roles: Account Owner, Administrator, Prism Admin, Project Admin, Super Admin, VPC Admin
+    Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Super Admin,
+    Tenant Admin, VPC Admin
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
     description:
-      - If C(state) is set to C(present) the module performs the unreserve action against the given subnet.
-      - C(absent) is not supported for this action module and will fail with a descriptive error.
+      - State of the module.
+      - Only C(present) is supported — this action module triggers a one-shot unreserve operation.
     type: str
     required: false
     choices:
       - present
-      - absent
     default: present
   ext_id:
     description:
@@ -152,6 +153,7 @@ options:
       - The client context tag originally used to reserve the IPs.
       - Required when C(unreserve_type) is C(CONTEXT).
       - Every reservation that was created with this tag on the given subnet is released.
+      - Length must be between 1 and 64 characters.
     type: str
     required: false
 extends_documentation_fragment:
@@ -166,11 +168,6 @@ author:
 EXAMPLES = r"""
 - name: Unreserve a specific list of IPs from a subnet
   nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    state: present
     ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
     unreserve_type: IP_ADDRESS_LIST
     ip_addresses:
@@ -179,14 +176,10 @@ EXAMPLES = r"""
       - ipv4:
           value: "10.30.30.82"
   register: result
+  ignore_errors: true
 
 - name: Unreserve a range of IPs from a subnet
   nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    state: present
     ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
     unreserve_type: IP_ADDRESS_RANGE
     start_ip_address:
@@ -194,18 +187,15 @@ EXAMPLES = r"""
         value: "10.30.30.80"
     count: 3
   register: result
+  ignore_errors: true
 
 - name: Unreserve every IP tagged with a client context
   nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    state: present
     ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
     unreserve_type: CONTEXT
     client_context: "ansible-context-tag"
   register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -272,30 +262,24 @@ task_ext_id:
   sample: "ZXJnb24=:521746d7-f26f-4652-b5fb-1b38c89a1dca"
 
 changed:
-  description: This indicates whether the module made any change on the cluster.
+  description: This indicates whether the action resulted in any changes.
   returned: always
   type: bool
   sample: true
 
-skipped:
-  description: This indicates whether the module skipped execution (only set when applicable).
-  returned: when applicable
-  type: bool
-  sample: false
-
 msg:
-  description: Status or error message emitted by the module.
-  returned: contextual
+  description: This indicates the status/error message if any occurred.
+  returned: When there is an error or in check mode.
   type: str
-  sample: "IP addresses will be unreserved on subnet '61959708-6efc-4d80-8c86-92c01f080672'."
+  sample: "Api Exception raised while unreserving IPs on subnet"
 
 error:
-  description: Error details when the module fails.
-  returned: When an error occurs
+  description: This indicates the error message if any error occurred.
+  returned: when an error occurs
   type: str
 
 failed:
-  description: Whether the module failed.
+  description: This indicates whether the task failed.
   returned: always
   type: bool
   sample: false
@@ -316,7 +300,6 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
-    validate_required_params,
 )
 
 SDK_IMP_ERROR = None
@@ -328,6 +311,7 @@ except ImportError:
 
     SDK_IMP_ERROR = traceback.format_exc()
 
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
@@ -358,6 +342,7 @@ def get_module_spec():
     )
 
     module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         unreserve_type=dict(
             type="str",
@@ -384,22 +369,6 @@ def get_module_spec():
     return module_args
 
 
-def _validate_unreserve_params(module):
-    """
-    Validate that the parameters required for the chosen unreserve_type are
-    present. The v4 API rejects requests that mix modes or omit the mandatory
-    payload for the selected mode, so fail early in Ansible with a clear
-    message.
-    """
-    unreserve_type = module.params.get("unreserve_type")
-    if unreserve_type == "IP_ADDRESS_LIST":
-        validate_required_params(module, ["ip_addresses"])
-    elif unreserve_type == "IP_ADDRESS_RANGE":
-        validate_required_params(module, ["start_ip_address", "count"])
-    elif unreserve_type == "CONTEXT":
-        validate_required_params(module, ["client_context"])
-
-
 def unreserve_ips_by_subnet_id(module, result, api_instance):
     """
     Perform the unreserve action against the given subnet.
@@ -408,8 +377,6 @@ def unreserve_ips_by_subnet_id(module, result, api_instance):
     IPAddress/IPv4Address/IPv6Address suboptions are materialised as proper
     SDK objects before being sent to the API.
     """
-    _validate_unreserve_params(module)
-
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -424,9 +391,6 @@ def unreserve_ips_by_subnet_id(module, result, api_instance):
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
-        result["msg"] = "IP addresses will be unreserved on subnet '{0}'.".format(
-            ext_id
-        )
         return
 
     resp = None
@@ -474,17 +438,6 @@ def run_module():
         "ext_id": None,
         "task_ext_id": None,
     }
-
-    state = module.params.get("state")
-    if state == "absent":
-        module.fail_json(
-            msg=(
-                "state=absent is not supported by ntnx_unreserve_ips_by_subnet_id_v2. "
-                "Use state=present with the appropriate unreserve_type to release "
-                "reserved IPs on a subnet."
-            ),
-            **result,
-        )
 
     api_instance = get_subnet_ip_reservation_api_instance(module)
     unreserve_ips_by_subnet_id(module, result, api_instance)

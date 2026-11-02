@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,13 +12,13 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_unreserve_ips_by_subnet_ids_info_v2
 short_description: List the currently reserved IPs on a managed subnet
-version_added: 2.5.0
+version_added: 2.7.0
 description:
-  - This module allows you to fetch information about UnreserveIpsBySubnetId in Nutanix Prism Central.
-  - It lists every IP address that is currently reserved on the given managed subnet, together with the
-    C(client_context) tag that owns each reservation.
+  - This module lists every IP address that is currently reserved on a managed subnet in
+    Nutanix Prism Central, together with the C(client_context) tag that owns each reservation.
   - Use this before invoking C(ntnx_unreserve_ips_by_subnet_id_v2) to confirm which IPs will be released.
-  - If C(ext_id) is not provided, list multiple UnreserveIpsBySubnetId optionally filtered / paginated.
+  - Results can be filtered / paginated using C(filter), C(page), C(limit), C(orderby), C(select),
+    or C(fetch_all).
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -26,14 +26,13 @@ notes:
     The required roles depend on the operation being performed.
   - >-
     B(List reserved IPs of a managed subnet) -
-    Required Roles: Account Owner, Administrator, Consumer, Developer, Network Infra Admin,
-    Network Shared Resources Viewer, Operator, Prism Admin, Prism Viewer, Project Admin,
-    Project Manager, Super Admin, VPC Admin
+    Required Roles: Network Infra Admin, Prism Admin, Super Admin, VPC Admin
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   subnet_ext_id:
     description:
       - External ID (UUID) of the managed subnet whose reserved IPs are being listed.
+      - Required — the v4 SDK C(list_reserved_ips_by_subnet_id) endpoint is scoped to a specific subnet.
     type: str
     required: true
 extends_documentation_fragment:
@@ -48,43 +47,44 @@ author:
 EXAMPLES = r"""
 - name: List all reserved IPs on a managed subnet
   nutanix.ncp.ntnx_unreserve_ips_by_subnet_ids_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     subnet_ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
   register: result
+  ignore_errors: true
 
 - name: List reserved IPs owned by a specific client_context
   nutanix.ncp.ntnx_unreserve_ips_by_subnet_ids_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     subnet_ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
     filter: "clientContext eq 'ansible-context-tag'"
     limit: 25
+  register: result
+  ignore_errors: true
 
-- name: Order reserved IPs by client_context descending
+- name: Order reserved IPs by ipv4Address ascending
   nutanix.ncp.ntnx_unreserve_ips_by_subnet_ids_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     subnet_ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
-    orderby: "clientContext desc"
+    orderby: "ipv4Address"
+  register: result
+  ignore_errors: true
+
+- name: List all reserved IPs with fetch_all
+  nutanix.ncp.ntnx_unreserve_ips_by_subnet_ids_info_v2:
+    subnet_ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
+    fetch_all: true
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC UnreserveIpsBySubnetId info v4 API.
-    - It is a list of currently reserved IPs on the given subnet.
-    - Optionally filtered / paginated using C(filter), C(page), C(limit), C(orderby), or C(select).
-    - The C(orderby) query parameter only supports fields the SDK exposes for sorting — namely
-      C(ipv4Address). Sorting by C(clientContext) is rejected by the API with an OData error.
+    - List of currently reserved IPs on the given subnet from the PC v4
+      C(listReservedIpsBySubnetId) API.
+    - Optionally filtered / paginated using C(filter), C(page), C(limit), C(orderby), C(select),
+      or C(fetch_all).
+    - The C(orderby) query parameter only supports C(ipv4Address). Sorting by C(clientContext)
+      is rejected by the API with an OData error.
   returned: always
-  type: dict
+  type: list
   sample:
     - client_context: "example-range-setup"
       ext_id: null
@@ -97,33 +97,40 @@ response:
       links: null
       tenant_id: null
 
+subnet_ext_id:
+  description: External ID of the managed subnet whose reserved IPs were listed.
+  type: str
+  returned: always
+  sample: "61959708-6efc-4d80-8c86-92c01f080672"
+
 total_available_results:
   description:
-    - Total number of currently reserved IPs on the given subnet.
-  returned: always
+    - Total number of currently reserved IPs on the given subnet
+      (as reported by the PC pagination metadata).
+  returned: when reserved IPs are fetched
   type: int
   sample: 7
 
 changed:
-  description: Info modules never change cluster state.
+  description: This indicates whether the task resulted in any changes. Always false for info modules.
   returned: always
   type: bool
   sample: false
 
 failed:
-  description: Whether the module failed.
+  description: This field indicates whether the task failed.
   returned: always
   type: bool
   sample: false
 
 error:
-  description: Error details when the module fails.
-  returned: When an error occurs
+  description: This field typically holds information about any errors that occurred during the task execution.
+  returned: when an error occurs
   type: str
 
 msg:
-  description: Status or error message emitted by the module.
-  returned: contextual
+  description: This indicates the message if any message occurred.
+  returned: When there is an error
   type: str
   sample: "Api Exception raised while fetching reserved IPs on subnet"
 """
@@ -137,10 +144,12 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
 
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
@@ -158,6 +167,7 @@ def list_reserved_ips(module, result, api_instance):
     other info modules in this collection.
     """
     subnet_ext_id = module.params.get("subnet_ext_id")
+    result["subnet_ext_id"] = subnet_ext_id
 
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
@@ -166,8 +176,10 @@ def list_reserved_ips(module, result, api_instance):
         module.fail_json(msg="Failed generating reserved IPs info spec", **result)
 
     try:
-        resp = api_instance.list_reserved_ips_by_subnet_id(
-            subnetExtId=subnet_ext_id, **kwargs
+        resp = list_entities(
+            api_instance.list_reserved_ips_by_subnet_id,
+            kwargs=kwargs,
+            subnetExtId=subnet_ext_id,
         )
     except Exception as e:
         raise_api_exception(
@@ -178,10 +190,10 @@ def list_reserved_ips(module, result, api_instance):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
-    if not resp:
-        resp = []
-    result["response"] = resp
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    else:
+        result["response"] = []
 
 
 def run_module():
@@ -190,7 +202,7 @@ def run_module():
         supports_check_mode=False,
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "response": None, "failed": False}
 
     api_instance = get_subnet_ip_reservation_api_instance(module)
     list_reserved_ips(module, result, api_instance)
