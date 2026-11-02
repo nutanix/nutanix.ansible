@@ -28,6 +28,7 @@ options:
         description:
             - State of the module.
             - If C(state) is C(present), the module will update the Foundation Central configuration.
+            - If C(state) is C(absent), the module will fail.
         type: str
         choices:
             - present
@@ -68,7 +69,8 @@ RETURN = r"""
 response:
     description:
         - Response for updating Foundation Central configuration.
-        - Configuration details after the update operation.
+        - If C(wait) is True, the response will be the configuration details after the update operation is completed.
+        - If C(wait) is False, the response will be task details.
     type: dict
     returned: always
     sample:
@@ -111,10 +113,7 @@ error:
 """
 
 import copy  # noqa: E402
-import traceback  # noqa: E402
 import warnings  # noqa: E402
-
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
@@ -130,17 +129,6 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_internal_attributes,
     strip_users_empty_attributes,
 )
-
-SDK_IMP_ERROR = None
-try:
-    import ntnx_lifecycle_py_client  # noqa: E402, F401  # pylint: disable=unused-import
-except ImportError:
-
-    from ..module_utils.v4.sdk_mock import (  # noqa: E402, F401  # pylint: disable=unused-import
-        mock_sdk as ntnx_lifecycle_py_client,
-    )
-
-    SDK_IMP_ERROR = traceback.format_exc()
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
@@ -187,16 +175,13 @@ def update_foundation_central_config(module, result, api_instance):
             **result,
         )
 
-    if check_foundation_central_config_idempotency(current_spec, update_spec):
-        result["skipped"] = True
-        result["response"] = strip_internal_attributes(current_spec.to_dict())
-        if module.check_mode:
-            return
-        module.exit_json(msg="Nothing to change.", **result)
-
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
+
+    if check_foundation_central_config_idempotency(current_spec, update_spec):
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.", **result)
 
     kwargs = {"if_match": etag_value}
     resp = None
@@ -211,11 +196,11 @@ def update_foundation_central_config(module, result, api_instance):
 
     task_ext_id = getattr(resp.data, "ext_id", None)
     result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
-
-    updated_config = get_foundation_central_config(module, api_instance)
-    result["response"] = strip_internal_attributes(updated_config.to_dict())
+        updated_config = get_foundation_central_config(module, api_instance)
+        result["response"] = strip_internal_attributes(updated_config.to_dict())
     result["changed"] = True
 
 
@@ -224,11 +209,6 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )
-    if SDK_IMP_ERROR:
-        module.fail_json(
-            msg=missing_required_lib("ntnx_lifecycle_py_client"),
-            exception=SDK_IMP_ERROR,
-        )
 
     remove_param_with_none_value(module.params)
     result = {
