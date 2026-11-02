@@ -1,0 +1,38 @@
+---
+- name: Start ntnx_registered_clients_info_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_registered_clients_info_v2 tests
+
+- name: Fetch registered client using a valid external ID
+  nutanix.ncp.ntnx_registered_clients_info_v2:
+    ext_id: "{{ registered_client_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert fetch by valid ext_id succeeded
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == registered_client_ext_id
+      - result.response.name == registered_client_name
+      - result.ext_id == registered_client_ext_id
+    fail_msg: Fetch registered client by valid ext_id failed
+    success_msg: Fetch registered client by valid ext_id passed
+
+- name: Fetch registered client with a non-existent external ID
+  nutanix.ncp.ntnx_registered_clients_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result_missing
+  ignore_errors: true
+
+- name: Assert non-existent ext_id fails with the expected error message
+  ansible.builtin.assert:
+    that:
+      - result_missing.changed == false
+      - result_missing.failed == true
+      - result_missing.msg == "Api Exception raised while fetching registered client info using ext_id"
+      - result_missing.response.data.error | length > 0
+    fail_msg: Non-existent registered client did not fail with the expected error
+    success_msg: Non-existent registered client failed as expected

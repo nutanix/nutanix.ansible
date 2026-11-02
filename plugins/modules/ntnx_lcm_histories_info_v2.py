@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_lcm_histories_info_v2
 short_description: Fetch information about LCM histories from Nutanix Prism Central
-version_added: 2.5.0
+version_added: "2.7.0"
 description:
     - This module allows you to fetch information about LcmHistory in Nutanix Prism Central.
     - If C(ext_id) is provided, fetch details of the specific LcmHistory.
@@ -32,8 +32,7 @@ options:
         description:
             - The external ID of the LCM history entry to fetch.
             - If provided, only the specific LCM history entry is returned.
-            - If omitted, a list of LCM history entries is returned (subject to
-              the optional filter / limit / page / orderby / select parameters).
+            - If omitted, a list of LCM history entries is returned.
         type: str
         required: false
 extends_documentation_fragment:
@@ -43,6 +42,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_proxy_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -72,16 +72,6 @@ EXAMPLES = r"""
     validate_certs: false
     filter: "operationType eq Lcm.Common.OperationType'INVENTORY'"
   register: lcm_histories_filtered
-
-- name: List LCM histories sorted by startTime descending
-  nutanix.ncp.ntnx_lcm_histories_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    orderby: "startTime desc"
-    limit: 10
-  register: lcm_histories_sorted
 
 - name: Fetch a particular LCM history entry using external ID
   nutanix.ncp.ntnx_lcm_histories_info_v2:
@@ -140,7 +130,7 @@ failed:
     returned: always
     sample: false
 msg:
-    description: Status/error message.
+    description: This indicates the message if any message occurred
     type: str
     returned: When there is an error
     sample: "Api Exception raised while fetching LCM histories info"
@@ -148,7 +138,6 @@ error:
     description: Error details if any error occurred.
     type: str
     returned: When an error occurs
-    sample: "Failed to generate info spec for LCM histories"
 """
 
 import warnings  # noqa: E402
@@ -163,6 +152,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    list_entities,
 )
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -191,7 +181,10 @@ def get_lcm_histories(module, api_instance, result):
         module.fail_json(msg="Failed to generate info spec for LCM histories", **result)
 
     try:
-        resp = api_instance.list_lcm_histories(**kwargs)
+        resp = list_entities(
+            api_instance.list_lcm_histories,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

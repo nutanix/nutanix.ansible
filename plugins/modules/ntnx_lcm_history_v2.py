@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,11 +12,9 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_lcm_history_v2
 short_description: Export LCM history information from connected clusters
-version_added: 2.5.0
+version_added: "2.7.0"
 description:
-    - This module exports the history information of LCM operations from connected clusters.
-    - It invokes the LCM Histories export action on Prism Central and returns the export task details.
-    - The export currently supports CSV file format for the returned history data.
+    - This module Exports the LCM operation history of connected clusters as a downloadable file
     - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -30,7 +28,7 @@ options:
         description:
             - State of the module.
             - If state is C(present), the module will trigger an LCM histories export.
-            - The C(absent) state is not supported for this action module.
+            - If C(state) is C(absent) the module will fail.
         type: str
         choices:
             - present
@@ -50,6 +48,7 @@ extends_documentation_fragment:
     - nutanix.ncp.ntnx_proxy_v2
 author:
     - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -121,11 +120,6 @@ changed:
     type: bool
     returned: always
     sample: true
-skipped:
-    description: Whether the operation was skipped (e.g. no-op in check mode).
-    type: bool
-    returned: when applicable
-    sample: false
 failed:
     description: Whether the task failed.
     type: bool
@@ -135,11 +129,8 @@ error:
     description: Error details if any error occurred.
     type: str
     returned: When an error occurs
-    sample: "Api Exception raised while exporting LCM histories"
 msg:
-    description:
-        - Status/error message.
-        - Populated when the module is running in check mode or when an error occurs.
+    description: This indicates the message if any message occurred
     type: str
     returned: When there is an error or the module runs in check mode
     sample: "LCM histories will be exported in 'CSV' format."
@@ -244,8 +235,6 @@ def run_module():
     result = {
         "changed": False,
         "response": None,
-        "task_ext_id": None,
-        "ext_id": None,
         "failed": False,
     }
     api_instance = get_lcm_histories_api_instance(module)
