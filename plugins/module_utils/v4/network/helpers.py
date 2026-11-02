@@ -1,11 +1,11 @@
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-from ..utils import raise_api_exception  # noqa: E402
+from ..utils import list_entities, raise_api_exception  # noqa: E402
 
 
 def get_routing_policy(module, api_instance, ext_id):
@@ -178,8 +178,9 @@ def get_vnic_by_subnet_and_ext_id(module, subnets_api, subnet_ext_id, vnic_ext_i
 
     The Nutanix networking v4 SDK does not expose a `get_vnic_by_id`
     endpoint; vNICs are always listed in the context of their parent
-    subnet. This helper wraps `list_vnics_by_subnet_id` and returns the
-    matching entry, or None when the vNIC is not present on the subnet.
+    subnet. This helper filters ``list_vnics_by_subnet_id`` by ``extId``
+    via ``list_entities`` and returns the matching entry, or None when
+    the vNIC is not present on the subnet.
 
     Args:
         module: Ansible module.
@@ -190,7 +191,11 @@ def get_vnic_by_subnet_and_ext_id(module, subnets_api, subnet_ext_id, vnic_ext_i
         vnic (object|None): The matching vNIC SDK object, or None if not found.
     """
     try:
-        resp = subnets_api.list_vnics_by_subnet_id(subnetExtId=subnet_ext_id)
+        resp = list_entities(
+            subnets_api.list_vnics_by_subnet_id,
+            kwargs={"_filter": "extId eq '{0}'".format(vnic_ext_id)},
+            subnetExtId=subnet_ext_id,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

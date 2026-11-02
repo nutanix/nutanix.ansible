@@ -1,4 +1,4 @@
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -200,11 +200,6 @@ def get_bridges_api_instance(module):
 def get_subnet_migrations_api_instance(module):
     """
     This method will return SubnetMigrationsApi instance.
-
-    Used for VLAN subnet migration (`migrate_subnets`) as well as for
-    migrating an individual virtual NIC (`migrate_vnic_by_id`) between the
-    Acropolis (legacy) and Atlas (advanced / VPC) networking stacks.
-
     Args:
         module (object): Ansible module object
     return:

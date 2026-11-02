@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -14,36 +14,33 @@ module: ntnx_vnics_info_v2
 short_description: Fetch information about virtual NICs (vNICs) attached to a subnet in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module allows you to fetch information about Vnic in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific Vnic (looked up under its parent
-    C(subnet_ext_id)).
-  - If C(ext_id) is not provided, list multiple Vnic optionally filtered / paginated on the subnet
-    identified by C(subnet_ext_id).
-  - The Nutanix Networking v4 API does not expose a stand-alone C(get_vnic_by_id) endpoint; vNICs
-    are always fetched in the context of their parent subnet, hence C(subnet_ext_id) is always
-    required.
+  - This module allows you to fetch vNIC information for a subnet in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch a particular vNIC looked up under its parent C(subnet_ext_id).
+  - If C(ext_id) is not provided, fetch multiple vNICs with/without using filters, limit, etc. on
+    C(subnet_ext_id).
+  - The networking v4 API scopes vNIC reads to a parent subnet, so C(subnet_ext_id) is always required.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
-    B(List virtual NICs on a subnet) -
-    Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer,
-    Project Admin, Super Admin, Virtual Machine Admin, Virtual Machine Operator,
-    Virtual Machine Viewer, VPC Admin
+    B(View Subnet Vnic) -
+    Required Roles: Backup Admin, Network Infra Admin, Prism Admin, Project Admin, Project Manager,
+    Super Admin, Tenant Admin, Tenant Consumer, VPC Admin
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   ext_id:
     description:
       - External ID (UUID) of the vNIC to fetch.
-      - When provided, the module returns the single matching vNIC on
-        C(subnet_ext_id).
+      - When provided, the module returns the single matching vNIC on C(subnet_ext_id).
+      - There is no dedicated get-by-id API; the module lists vNICs on the subnet and selects the match.
     type: str
     required: false
   subnet_ext_id:
     description:
-      - External ID (UUID) of the parent subnet whose vNICs should be listed / fetched.
-      - Required for all operations because the networking v4 API scopes vNIC reads to a subnet.
+      - External ID (UUID) of the parent subnet whose vNICs should be listed or fetched.
+      - Maps to the path parameter C(subnetExtId) of C(listVnicsBySubnetId).
+      - Required because the networking v4 API scopes vNIC reads to a subnet.
     type: str
     required: true
 extends_documentation_fragment:
@@ -79,14 +76,20 @@ EXAMPLES = r"""
     subnet_ext_id: "7131f3ca-47ce-4f1d-990c-fa17800bd94d"
     filter: "macAddress eq '50:6b:8d:f9:de:e7'"
   register: result
+
+- name: List all vNICs on a subnet with fetch_all
+  nutanix.ncp.ntnx_vnics_info_v2:
+    subnet_ext_id: "7131f3ca-47ce-4f1d-990c-fa17800bd94d"
+    fetch_all: true
+  register: result
 """
 
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC Vnic info v4 API.
-    - It can be a single Vnic if external ID is provided.
-    - List of multiple Vnic if external ID is not provided with optional filter or limit.
+    - The response from the Nutanix PC vNIC info v4 API.
+    - It can be a single vNIC if external ID is provided.
+    - List of multiple vNICs if external ID is not provided with optional filter or limit.
   returned: always
   type: dict
   sample:
@@ -104,43 +107,42 @@ response:
         "links": null,
         "mac_address": "50:6b:8d:f9:de:e7",
         "metadata": null,
-        "project_ext_id": null,
         "tenant_id": null,
         "vm_reference": "521ab899-2398-4a23-62cb-8cd5e46ee5d2"
       }
     ]
 
 changed:
-  description: This indicates whether the task resulted in any changes
+  description: This indicates whether the task resulted in any changes. Always false for info modules.
   returned: always
   type: bool
   sample: false
 
 msg:
-  description: This indicates the message if any message occurred
+  description: This indicates the message if any message occurred.
   returned: When there is an error
   type: str
   sample: "Api Exception raised while fetching vnics info"
 
 error:
-  description: This field typically holds information about if the task have errors that occurred during the task execution
+  description: This field typically holds information about if the task have errors that occurred during the task execution.
   type: str
   returned: when an error occurs
 
 failed:
-  description: This field typically holds information about if the task have failed
+  description: This field typically holds information about if the task have failed.
   returned: always
   type: bool
   sample: false
 
 ext_id:
-  description: External ID of the vNIC
+  description: External ID of the vNIC.
   type: str
   returned: when external ID is provided
   sample: "7147b563-7b80-4be5-96b5-d8ff63187a5c"
 
 subnet_ext_id:
-  description: External ID of the parent subnet whose vNICs were listed/fetched.
+  description: External ID of the parent subnet whose vNICs were listed or fetched.
   type: str
   returned: always
   sample: "7131f3ca-47ce-4f1d-990c-fa17800bd94d"
@@ -157,8 +159,12 @@ import warnings  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.network.api_client import get_subnet_api_instance  # noqa: E402
+from ..module_utils.v4.network.helpers import (  # noqa: E402
+    get_vnic_by_subnet_and_ext_id,
+)
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -178,32 +184,14 @@ def get_module_spec():
 
 
 def get_vnic_by_ext_id(module, subnets_api, result):
-    """Fetch a single vNIC on the given subnet by external ID.
-
-    The networking v4 SDK does not expose a direct get-by-id for vNICs, so
-    we iterate the list of vNICs on the parent subnet and pick the match.
-    """
     subnet_ext_id = module.params.get("subnet_ext_id")
     vnic_ext_id = module.params.get("ext_id")
     result["ext_id"] = vnic_ext_id
     result["subnet_ext_id"] = subnet_ext_id
 
-    try:
-        resp = subnets_api.list_vnics_by_subnet_id(subnetExtId=subnet_ext_id)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching vnic info using ext_id",
-        )
-
-    data = getattr(resp, "data", None) or []
-    match = None
-    for vnic in data:
-        if getattr(vnic, "ext_id", None) == vnic_ext_id:
-            match = vnic
-            break
-
+    match = get_vnic_by_subnet_and_ext_id(
+        module, subnets_api, subnet_ext_id, vnic_ext_id
+    )
     if match is None:
         result["msg"] = "vNIC with ext_id '{0}' was not found on subnet '{1}'.".format(
             vnic_ext_id, subnet_ext_id
@@ -215,7 +203,6 @@ def get_vnic_by_ext_id(module, subnets_api, result):
 
 
 def list_vnics_by_subnet(module, subnets_api, result):
-    """List all vNICs attached to the given subnet, honoring info filters."""
     subnet_ext_id = module.params.get("subnet_ext_id")
     result["subnet_ext_id"] = subnet_ext_id
 
@@ -225,10 +212,12 @@ def list_vnics_by_subnet(module, subnets_api, result):
         result["error"] = err
         module.fail_json(msg="Failed generating vnics info spec", **result)
 
-    kwargs["subnetExtId"] = subnet_ext_id
-
     try:
-        resp = subnets_api.list_vnics_by_subnet_id(**kwargs)
+        resp = list_entities(
+            subnets_api.list_vnics_by_subnet_id,
+            kwargs=kwargs,
+            subnetExtId=subnet_ext_id,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -238,10 +227,10 @@ def list_vnics_by_subnet(module, subnets_api, result):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
-    if not resp:
-        resp = []
-    result["response"] = resp
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    else:
+        result["response"] = []
 
 
 def run_module():
@@ -253,13 +242,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {
-        "changed": False,
-        "response": None,
-        "failed": False,
-        "ext_id": None,
-        "subnet_ext_id": None,
-    }
+    result = {"changed": False, "response": None, "failed": False}
     subnets_api = get_subnet_api_instance(module)
     if module.params.get("ext_id"):
         get_vnic_by_ext_id(module, subnets_api, result)

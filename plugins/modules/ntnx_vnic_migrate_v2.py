@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -19,15 +19,15 @@ description:
     Atlas (advanced VLAN / VPC) stack, or vice-versa, without recreating the underlying interface.
   - The vNIC is identified by its external ID and re-attached to the destination subnet supplied via
     C(network_uuid).
-  - Optionally, one or more C(requested_ip_addresses) may be passed to retain / request specific IPs
-    on the destination subnet.
+  - Optionally, C(requested_ip_addresses) may be passed to retain or request a specific IP
+    on the destination subnet (API allows at most one entry).
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
-    B(Migrate a vNIC to another subnet) -
-    Required Roles: Network Infra Admin, Prism Admin, Super Admin, VPC Admin
+    B(Migrate VNIC) -
+    Required Roles: Network Infra Admin, Prism Admin, Super Admin
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
@@ -41,18 +41,19 @@ options:
     default: present
   ext_id:
     description:
-      - The external ID (UUID) of the vNIC to be migrated.
+      - UUID of the NIC to be migrated.
     type: str
     required: true
   network_uuid:
     description:
-      - UUID of the destination subnet the vNIC will be re-attached to.
+      - NIC network UUID for the destination subnet.
       - Required for the migrate operation.
     type: str
     required: true
   requested_ip_addresses:
     description:
-      - Optional list of IP addresses to assign / retain on the vNIC after migration.
+      - Optional list of IP addresses to assign or retain on the vNIC after migration.
+      - API allows at most one IP address entry.
       - If omitted, IP assignment is left to the destination subnet's configuration.
     type: list
     elements: dict
@@ -60,44 +61,70 @@ options:
     suboptions:
       ipv4:
         description:
-          - IPv4 address to assign on the destination subnet.
+          - IPv4 address specification.
         type: dict
         required: false
         suboptions:
           value:
             description:
-              - The IPv4 address value.
+              - The IPv4 address of the host.
             type: str
             required: true
           prefix_length:
             description:
-              - Prefix length of the IPv4 address.
+              - The prefix length of the network to which this host IPv4 address belongs.
             type: int
             required: false
             default: 32
       ipv6:
         description:
-          - IPv6 address to assign on the destination subnet.
+          - IPv6 address specification.
         type: dict
         required: false
         suboptions:
           value:
             description:
-              - The IPv6 address value.
+              - The IPv6 address of the host.
             type: str
             required: true
           prefix_length:
             description:
-              - Prefix length of the IPv6 address.
+              - The prefix length of the network to which this host IPv6 address belongs.
             type: int
             required: false
             default: 128
   project_ext_id:
     description:
-      - External ID of the Prism Central project to associate with the migrated vNIC for
-        multi-tenancy and RBAC purposes.
+      - UUID of the project that owns this entity.
     type: str
     required: false
+  metadata:
+    description:
+      - Metadata associated with this resource.
+    type: dict
+    required: false
+    suboptions:
+      owner_reference_id:
+        description:
+          - A globally unique identifier that represents the owner of this resource.
+        type: str
+      owner_user_name:
+        description:
+          - The userName of the owner of this resource.
+        type: str
+      project_reference_id:
+        description:
+          - A globally unique identifier that represents the project this resource belongs to.
+        type: str
+      project_name:
+        description:
+          - The name of the project this resource belongs to.
+        type: str
+      category_ids:
+        description:
+          - A list of globally unique identifiers that represent all the categories the resource is associated with.
+        type: list
+        elements: str
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -119,6 +146,13 @@ EXAMPLES = r"""
           value: "10.51.144.137"
           prefix_length: 32
     project_ext_id: "8f0ed6e-30c8-48be-9c8f-e7cb4153416a"
+  register: result
+
+- name: Migrate vNIC without waiting for task completion
+  nutanix.ncp.ntnx_vnic_migrate_v2:
+    ext_id: "7147b563-7b80-4be5-96b5-d8ff63187a5c"
+    network_uuid: "7131f3ca-47ce-4f1d-990c-fa17800bd94d"
+    wait: false
   register: result
 """
 
@@ -186,12 +220,6 @@ changed:
   type: bool
   sample: true
 
-skipped:
-  description: This indicates whether the task was skipped
-  returned: always
-  type: bool
-  sample: false
-
 error:
   description: This indicates the error message if any error occurred
   returned: When an error occurs
@@ -205,7 +233,7 @@ failed:
 
 msg:
   description: This indicates the message if any message occurred
-  returned: When there is an error, module is idempotent or check mode
+  returned: When there is an error or check mode
   type: str
   sample: "Api Exception raised while migrating vNIC"
 """
@@ -225,7 +253,6 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
-    validate_required_params,
 )
 
 SDK_IMP_ERROR = None
@@ -268,6 +295,14 @@ def get_module_spec():
         ),
     )
 
+    metadata_spec = dict(
+        owner_reference_id=dict(type="str"),
+        owner_user_name=dict(type="str"),
+        project_reference_id=dict(type="str"),
+        project_name=dict(type="str"),
+        category_ids=dict(type="list", elements="str"),
+    )
+
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
@@ -280,25 +315,26 @@ def get_module_spec():
             obj=networking_sdk.IPAddress,
         ),
         project_ext_id=dict(type="str", required=False),
+        metadata=dict(
+            type="dict",
+            options=metadata_spec,
+            required=False,
+            obj=networking_sdk.Metadata,
+        ),
     )
     return module_args
 
 
 def migrate_vnic(module, subnet_migrations_api, result):
-    """Perform the vNIC migrate action.
-
-    Builds a VnicMigrationItemSpec from the module parameters, invokes the
-    networking v4 `migrate_vnic_by_id` API, and (optionally) waits for the
-    resulting task to complete before returning.
-    """
-    validate_required_params(module, ["ext_id", "network_uuid"])
-
     vnic_ext_id = module.params.get("ext_id")
     result["ext_id"] = vnic_ext_id
 
     sg = SpecGenerator(module)
     default_spec = networking_sdk.VnicMigrationItemSpec()
-    spec, err = sg.generate_spec(obj=default_spec)
+    # Path param C(ext_id) is also a read-only base-model attribute; keep it out of the body.
+    attr = dict(module.params)
+    attr.pop("ext_id", None)
+    spec, err = sg.generate_spec(obj=default_spec, attr=attr)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating migrate vNIC spec", **result)
@@ -340,11 +376,9 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "response": None,
         "failed": False,
+        "response": None,
         "ext_id": None,
-        "task_ext_id": None,
-        "skipped": False,
     }
     subnet_migrations_api = get_subnet_migrations_api_instance(module)
     migrate_vnic(module, subnet_migrations_api, result)
