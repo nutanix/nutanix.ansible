@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,16 +12,14 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_notification_v2
 short_description: Compute LCM upgrade plan and notifications for a set of entities
-version_added: 2.7.0
+version_added: "2.7.0"
 description:
-  - This module allows you to compute the LCM (Life Cycle Manager) upgrade plan and
-    notifications for a set of LCM entities and their target versions in Nutanix Prism Central.
-  - The compute-notifications API generates upgrade notifications (for example, host
-    location moves, entity-level warnings, non-migratable VM information) that must be
-    reviewed before actually performing the upgrade.
-  - This is an asynchronous API; the module creates a task and, when C(wait) is true,
-    waits for the task to complete and fetches the resulting notification resource by
-    its external ID.
+  - Compute upgrade notifications for a set of LCM entities and their target versions.
+  - Notifications describe the impact of the planned upgrade on cluster nodes and entities,
+    including disruptive actions such as host reboots, VM migrations, and maintenance-mode entry.
+  - Submit a NotificationsSpec containing entity update specifications
+    (entity UUID and target version pairs) and optional credentials for third-party
+    vendor management.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -30,51 +28,199 @@ notes:
   - >-
     B(Compute LCM upgrade notifications) -
     Required Roles: Cluster Admin, Prism Admin, Super Admin
-  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle&version=v4.3"
 options:
   state:
     description:
       - State of the module.
       - If C(state) is C(present) the module will compute LCM upgrade notifications.
-      - Notifications resource does not expose an update or delete API, so C(absent)
-        is not supported.
+      - If C(state) is C(absent) the module will fail.
     type: str
     choices:
       - present
     default: present
   notifications_spec:
     description:
-      - List of LCM entities and the target versions for which the upgrade plan and
-        notifications should be computed.
-      - Corresponds to the C(notificationsSpec) body attribute of the LCM v4
-        compute-notifications API.
-      - Required for the compute-notifications operation.
+      - List of entity update specifications (entity UUID and target version pairs)
+        describing the intended upgrade for which notifications are computed.
+      - Corresponds to the API C(notificationsSpec) request field.
     type: list
     elements: dict
     required: true
     suboptions:
       entity_uuid:
         description:
-          - UUID of the LCM entity to be upgraded.
-          - Can be obtained via M(nutanix.ncp.ntnx_lcm_entities_info_v2) after running
-            an LCM inventory.
+          - UUID of the LCM entity.
         type: str
         required: true
       to_version:
         description:
-          - Version to upgrade the entity to.
-          - Must be one of the available versions reported for the entity by LCM.
+          - The target version that the entity will be upgraded to.
         type: str
         required: true
+  credentials:
+    description:
+      - Credentials to be provided by the user for LCM operations that require
+        authentication with external systems such as vCenter or Intersight.
+    type: list
+    elements: dict
+    required: false
+    suboptions:
+      credential_detail:
+        description:
+          - The credential details, provided as either a reference to a pre-created
+            credential in the credential store (CredentialReference) or raw vendor
+            management credentials (VendorManagementCredential).
+          - Exactly one of the mutually exclusive suboptions must be provided.
+        type: dict
+        required: true
+        suboptions:
+          credential_reference:
+            description:
+              - A reference to a pre-created credential in the Nutanix credential
+                store, identified by its UUID.
+              - Mutually exclusive with I(vendor_management_credential).
+            type: dict
+            suboptions:
+              credential_ext_id:
+                description:
+                  - The UUID of the credential stored in the credential store.
+                type: str
+                required: true
+          vendor_management_credential:
+            description:
+              - Credentials for third-party vendor management platforms
+                (for example vCenter, Intersight, UCS).
+              - Mutually exclusive with I(credential_reference).
+            type: dict
+            suboptions:
+              credential_spec:
+                description:
+                  - Credentials to be provided by the user for LCM operations that
+                    require authentication with external systems such as vCenter
+                    or Intersight.
+                  - Exactly one of the mutually exclusive suboptions must be provided.
+                type: dict
+                required: true
+                suboptions:
+                  vcenter_credential:
+                    description:
+                      - A credential used for authentication with VCenter server.
+                      - Mutually exclusive with I(intersight_credential).
+                    type: dict
+                    suboptions:
+                      address:
+                        description:
+                          - Vcenter IP address or FQDN.
+                          - An unique address that identifies a device on the internet
+                            or a local network in IPv4/IPv6 format or a Fully Qualified
+                            Domain Name.
+                        type: dict
+                        required: true
+                        suboptions:
+                          ipv4:
+                            description:
+                              - An unique address that identifies a device on the
+                                internet or a local network in IPv4 format.
+                            type: dict
+                            suboptions:
+                              value:
+                                description:
+                                  - The IPv4 address of the host.
+                                type: str
+                                required: true
+                              prefix_length:
+                                description:
+                                  - The prefix length of the network to which this
+                                    host IPv4 address belongs.
+                                type: int
+                          ipv6:
+                            description:
+                              - An unique address that identifies a device on the
+                                internet or a local network in IPv6 format.
+                            type: dict
+                            suboptions:
+                              value:
+                                description:
+                                  - The IPv6 address of the host.
+                                type: str
+                                required: true
+                              prefix_length:
+                                description:
+                                  - The prefix length of the network to which this
+                                    host IPv6 address belongs.
+                                type: int
+                          fqdn:
+                            description:
+                              - A fully qualified domain name that specifies its exact
+                                location in the tree hierarchy of the Domain Name System.
+                            type: dict
+                            suboptions:
+                              value:
+                                description:
+                                  - The fully qualified domain name of the host.
+                                type: str
+                      credential:
+                        description:
+                          - An authentication scheme that requires the client to present
+                            a username and password.
+                        type: dict
+                        required: true
+                        suboptions:
+                          username:
+                            description:
+                              - Username required for the basic auth scheme.
+                              - As per RFC 2617 usernames might be case sensitive.
+                            type: str
+                            required: true
+                          password:
+                            description:
+                              - Password required for the basic auth scheme.
+                            type: str
+                            required: true
+                  intersight_credential:
+                    description:
+                      - Intersight connection used for authentication.
+                      - Mutually exclusive with I(vcenter_credential).
+                    type: dict
+                    suboptions:
+                      url:
+                        description:
+                          - Intersight connection url.
+                        type: str
+                        required: true
+                      deployment_type:
+                        description:
+                          - Type of Intersight connection.
+                        type: str
+                        required: true
+                        choices:
+                          - INTERSIGHT_SAAS
+                          - INTERSIGHT_VIRTUAL_APPLIANCE
+                      credential:
+                        description:
+                          - Secret fields of a key based authentication credential.
+                        type: dict
+                        required: true
+                        suboptions:
+                          api_key:
+                            description:
+                              - Intersight connection API key.
+                            type: str
+                            required: true
+                          secret_key:
+                            description:
+                              - Secret key of the Intersight connection.
+                            type: str
+                            required: true
   cluster_ext_id:
     description:
-      - Cluster external ID on which the compute-notifications operation should be
+      - The cluster UUID on which the resource is present or the operation is being
         performed.
-      - If not provided, the operation targets the Prism Central itself; if the
-        external ID of a Prism Element cluster is provided, the operation targets
-        that PE cluster.
-      - We can get the external ID of a cluster using
-        M(nutanix.ncp.ntnx_clusters_info_v2).
+      - Passed to the API as the C(X-Cluster-Id) header.
+      - When omitted, the operation targets the Prism Central cluster itself; when a
+        Prism Element cluster external ID is provided, the operation targets that PE
+        cluster.
     type: str
     required: false
 extends_documentation_fragment:
@@ -111,6 +257,43 @@ EXAMPLES = r"""
         to_version: "5.0.0"
       - entity_uuid: "7f8e2a1c-1234-4321-9abc-def012345678"
         to_version: "3.2.1"
+  register: notification_result
+
+- name: Compute LCM upgrade notifications using a stored credential reference
+  nutanix.ncp.ntnx_notification_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    notifications_spec:
+      - entity_uuid: "3c196eac-e1d5-4c8a-9b01-c133f6907ca2"
+        to_version: "4.1.0"
+    credentials:
+      - credential_detail:
+          credential_reference:
+            credential_ext_id: "2270f0dd-6d2b-4af5-9940-83f9017c707f"
+  register: notification_result
+
+- name: Compute LCM upgrade notifications with inline vCenter credentials
+  nutanix.ncp.ntnx_notification_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    notifications_spec:
+      - entity_uuid: "3c196eac-e1d5-4c8a-9b01-c133f6907ca2"
+        to_version: "4.1.0"
+    credentials:
+      - credential_detail:
+          vendor_management_credential:
+            credential_spec:
+              vcenter_credential:
+                address:
+                  ipv4:
+                    value: "10.0.0.2"
+                credential:
+                  username: "admin"
+                  password: "password"
   register: notification_result
 """
 
@@ -154,7 +337,7 @@ response:
 
 task_ext_id:
   description:
-    - The external ID of the compute-notifications task.
+    - The external ID of the task.
   returned: always
   type: str
   sample: "ZXJnb24=:a784c0b7-1038-49cf-40b5-2845231d242f"
@@ -170,25 +353,25 @@ ext_id:
   sample: "b9c1a8a0-1e5f-4e07-9c9e-90a1c2d3e4f5"
 
 changed:
-  description: This indicates whether the module made any changes.
+  description: This indicates whether the task resulted in any changes
   returned: always
   type: bool
   sample: true
 
 msg:
-  description: Status/error message emitted by the module.
+  description: This indicates the message if any message occurred
   returned: When there is an error or an informational message is emitted
   type: str
   sample: "Api Exception raised while computing LCM upgrade notifications"
 
 error:
-  description: Error details if the module failed.
+  description: This indicates the error message if any error occurred
   returned: When an error occurs
   type: str
   sample: "Failed generating spec for computing LCM upgrade notifications"
 
 failed:
-  description: This indicates whether the module failed.
+  description: This indicates whether the task failed
   returned: always
   type: bool
   sample: false
@@ -219,14 +402,17 @@ from ..module_utils.v4.utils import (  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
-    import ntnx_lifecycle_py_client as life_cycle_management_sdk  # noqa: E402
+    import ntnx_lifecycle_py_client as lifecycle_sdk  # noqa: E402
 except ImportError:
 
-    from ..module_utils.v4.sdk_mock import (  # noqa: E402
-        mock_sdk as life_cycle_management_sdk,
-    )
+    from ..module_utils.v4.sdk_mock import mock_sdk as lifecycle_sdk  # noqa: E402
 
+    BasicAuth = None
     SDK_IMP_ERROR = traceback.format_exc()
+else:
+    from ntnx_lifecycle_py_client.models.common.v1.config.BasicAuth import (  # noqa: E402
+        BasicAuth,
+    )
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
@@ -238,6 +424,141 @@ def get_module_spec():
         to_version=dict(type="str", required=True),
     )
 
+    ipv4_address_spec = dict(
+        value=dict(type="str", required=True),
+        prefix_length=dict(type="int"),
+    )
+    ipv6_address_spec = dict(
+        value=dict(type="str", required=True),
+        prefix_length=dict(type="int"),
+    )
+    fqdn_spec = dict(
+        value=dict(type="str"),
+    )
+    ip_address_or_fqdn_spec = dict(
+        ipv4=dict(
+            type="dict",
+            options=ipv4_address_spec,
+            obj=lifecycle_sdk.IPv4Address,
+        ),
+        ipv6=dict(
+            type="dict",
+            options=ipv6_address_spec,
+            obj=lifecycle_sdk.IPv6Address,
+        ),
+        fqdn=dict(
+            type="dict",
+            options=fqdn_spec,
+            obj=lifecycle_sdk.FQDN,
+        ),
+    )
+
+    basic_auth_spec = dict(
+        username=dict(type="str", required=True),
+        password=dict(type="str", required=True, no_log=True),
+    )
+
+    key_based_auth_spec = dict(
+        api_key=dict(type="str", required=True, no_log=True),
+        secret_key=dict(type="str", required=True, no_log=True),
+    )
+
+    vcenter_credential_spec = dict(
+        address=dict(
+            type="dict",
+            required=True,
+            options=ip_address_or_fqdn_spec,
+            obj=lifecycle_sdk.IPAddressOrFQDN,
+            mutually_exclusive=[("ipv4", "ipv6", "fqdn")],
+            required_one_of=[("ipv4", "ipv6", "fqdn")],
+        ),
+        credential=dict(
+            type="dict",
+            required=True,
+            options=basic_auth_spec,
+            obj=BasicAuth,
+            no_log=True,
+        ),
+    )
+
+    intersight_credential_spec = dict(
+        url=dict(type="str", required=True),
+        deployment_type=dict(
+            type="str",
+            required=True,
+            choices=["INTERSIGHT_SAAS", "INTERSIGHT_VIRTUAL_APPLIANCE"],
+        ),
+        credential=dict(
+            type="dict",
+            required=True,
+            options=key_based_auth_spec,
+            obj=lifecycle_sdk.KeyBasedAuth,
+            no_log=True,
+        ),
+    )
+
+    credential_spec_options = dict(
+        vcenter_credential=dict(
+            type="dict",
+            options=vcenter_credential_spec,
+            obj=lifecycle_sdk.VcenterCredential,
+        ),
+        intersight_credential=dict(
+            type="dict",
+            options=intersight_credential_spec,
+            obj=lifecycle_sdk.IntersightCredential,
+        ),
+    )
+
+    vendor_management_credential_spec = dict(
+        credential_spec=dict(
+            type="dict",
+            required=True,
+            options=credential_spec_options,
+            mutually_exclusive=[("vcenter_credential", "intersight_credential")],
+            required_one_of=[("vcenter_credential", "intersight_credential")],
+            obj={
+                "vcenter_credential": lifecycle_sdk.VcenterCredential,
+                "intersight_credential": lifecycle_sdk.IntersightCredential,
+            },
+        ),
+    )
+
+    credential_reference_spec = dict(
+        credential_ext_id=dict(type="str", required=True),
+    )
+
+    credential_detail_options = dict(
+        credential_reference=dict(
+            type="dict",
+            options=credential_reference_spec,
+            obj=lifecycle_sdk.CredentialReference,
+        ),
+        vendor_management_credential=dict(
+            type="dict",
+            options=vendor_management_credential_spec,
+            obj=lifecycle_sdk.VendorManagementCredential,
+        ),
+    )
+
+    credential_spec = dict(
+        credential_detail=dict(
+            type="dict",
+            required=True,
+            options=credential_detail_options,
+            mutually_exclusive=[
+                ("credential_reference", "vendor_management_credential")
+            ],
+            required_one_of=[
+                ("credential_reference", "vendor_management_credential")
+            ],
+            obj={
+                "credential_reference": lifecycle_sdk.CredentialReference,
+                "vendor_management_credential": lifecycle_sdk.VendorManagementCredential,
+            },
+        ),
+    )
+
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
         notifications_spec=dict(
@@ -245,7 +566,13 @@ def get_module_spec():
             elements="dict",
             options=entity_update_spec,
             required=True,
-            obj=life_cycle_management_sdk.EntityUpdateSpec,
+            obj=lifecycle_sdk.EntityUpdateSpec,
+        ),
+        credentials=dict(
+            type="list",
+            elements="dict",
+            options=credential_spec,
+            obj=lifecycle_sdk.Credential,
         ),
         cluster_ext_id=dict(type="str", required=False),
     )
@@ -276,7 +603,7 @@ def compute_notifications(module, api_instance, result):
     validate_required_params(module, ["notifications_spec"])
 
     sg = SpecGenerator(module)
-    default_spec = life_cycle_management_sdk.NotificationsSpec(notifications_spec=[])
+    default_spec = lifecycle_sdk.NotificationsSpec(notifications_spec=[])
     spec, err = sg.generate_spec(obj=default_spec)
 
     if err:
