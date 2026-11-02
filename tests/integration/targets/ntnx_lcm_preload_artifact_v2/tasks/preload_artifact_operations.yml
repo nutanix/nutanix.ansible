@@ -140,10 +140,10 @@
 
 - name: Generate preload spec using check mode with ALL attributes
   nutanix.ncp.ntnx_lcm_preload_artifact_v2:
-    cluster_ext_id: "{{ prism_central_external_id }}"
+    cluster_ext_id: "83083083-0000-0000-0000-000000000000"
     entity_update_specs:
-      - entity_uuid: "{{ lcm_entity_external_id }}"
-        to_version: "{{ lcm_entity_model_version }}"
+      - entity_uuid: "3c196eac-e1d5-4c8a-9b01-c133f6907ca2"
+        to_version: "4.0.0"
       - entity_uuid: "15570c98-beaf-4633-afd2-b6a306ff1001"
         to_version: "5.0.0"
   check_mode: true
@@ -159,8 +159,8 @@
       - preload_check_mode.task_ext_id is none or preload_check_mode.task_ext_id is undefined or preload_check_mode.task_ext_id == None
       - preload_check_mode.response.entity_update_specs is defined
       - preload_check_mode.response.entity_update_specs | length == 2
-      - preload_check_mode.response.entity_update_specs[0].entity_uuid == lcm_entity_external_id
-      - preload_check_mode.response.entity_update_specs[0].to_version == lcm_entity_model_version
+      - preload_check_mode.response.entity_update_specs[0].entity_uuid == "3c196eac-e1d5-4c8a-9b01-c133f6907ca2"
+      - preload_check_mode.response.entity_update_specs[0].to_version == "4.0.0"
       - preload_check_mode.response.entity_update_specs[1].entity_uuid == "15570c98-beaf-4633-afd2-b6a306ff1001"
       - preload_check_mode.response.entity_update_specs[1].to_version == "5.0.0"
     fail_msg: "check_mode preload spec did not render the expected fields"
@@ -230,8 +230,8 @@
 - name: Generate preload spec (check_mode) with multiple entity_update_specs
   nutanix.ncp.ntnx_lcm_preload_artifact_v2:
     entity_update_specs:
-      - entity_uuid: "{{ lcm_entity_external_id }}"
-        to_version: "{{ lcm_entity_model_version }}"
+      - entity_uuid: "3c196eac-e1d5-4c8a-9b01-c133f6907ca2"
+        to_version: "4.0.0"
       - entity_uuid: "aaaaaaaa-1111-2222-3333-444444444444"
         to_version: "1.0.0"
       - entity_uuid: "bbbbbbbb-5555-6666-7777-888888888888"
@@ -247,8 +247,8 @@
       - preload_multi_check.changed == false
       - preload_multi_check.failed == false
       - preload_multi_check.response.entity_update_specs | length == 3
-      - preload_multi_check.response.entity_update_specs[0].entity_uuid == lcm_entity_external_id
-      - preload_multi_check.response.entity_update_specs[0].to_version == lcm_entity_model_version
+      - preload_multi_check.response.entity_update_specs[0].entity_uuid == "3c196eac-e1d5-4c8a-9b01-c133f6907ca2"
+      - preload_multi_check.response.entity_update_specs[0].to_version == "4.0.0"
       - preload_multi_check.response.entity_update_specs[1].entity_uuid == "aaaaaaaa-1111-2222-3333-444444444444"
       - preload_multi_check.response.entity_update_specs[1].to_version == "1.0.0"
       - preload_multi_check.response.entity_update_specs[2].entity_uuid == "bbbbbbbb-5555-6666-7777-888888888888"

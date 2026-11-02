@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -32,8 +32,8 @@ options:
     state:
         description:
             - State of the module.
-            - If state is present, the module will trigger preload of LCM artifacts.
-            - Any other value is not supported.
+            - If C(state) is C(present), the module will trigger preload of LCM artifacts.
+            - If C(state) is C(absent), the module will fail.
         type: str
         choices:
             - present
@@ -201,12 +201,10 @@ from ..module_utils.v4.utils import (  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
-    import ntnx_lifecycle_py_client as life_cycle_management_sdk  # noqa: E402
+    import ntnx_lifecycle_py_client as lifecycle_sdk  # noqa: E402
 except ImportError:
 
-    from ..module_utils.v4.sdk_mock import (  # noqa: E402
-        mock_sdk as life_cycle_management_sdk,
-    )
+    from ..module_utils.v4.sdk_mock import mock_sdk as lifecycle_sdk  # noqa: E402
 
     SDK_IMP_ERROR = traceback.format_exc()
 
@@ -227,7 +225,7 @@ def get_module_spec():
             elements="dict",
             options=entity_update_spec,
             required=True,
-            obj=life_cycle_management_sdk.EntityUpdateSpec,
+            obj=lifecycle_sdk.EntityUpdateSpec,
         ),
         cluster_ext_id=dict(type="str"),
     )
@@ -245,7 +243,7 @@ def preload_artifacts(module, api_instance, result):
     cluster_ext_id = module.params.get("cluster_ext_id")
 
     sg = SpecGenerator(module)
-    default_spec = life_cycle_management_sdk.PreloadSpec()
+    default_spec = lifecycle_sdk.PreloadSpec()
     spec, err = sg.generate_spec(obj=default_spec)
 
     if err:

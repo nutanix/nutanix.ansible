@@ -6,16 +6,15 @@
 # subsequent upgrade window is shorter.
 #
 # High-level flow:
-#   1. Locate the Prism Central cluster external ID.
-#   2. Run an LCM inventory so the LCM entities are populated.
-#   3. Pick one LCM entity + available target version to preload.
-#   4. Preload artifacts for that entity (a) against Prism Central and
+#   1. Run an LCM inventory so the LCM entities are populated.
+#   2. Pick one LCM entity + available target version to preload.
+#   3. Preload artifacts for that entity (a) against Prism Central and
 #      (b) against a specific Prism Element cluster via cluster_ext_id
 #         (which is passed as the X-Cluster-Id header).
 #
-# Note: cluster_ext_id maps to the X-Cluster-Id header. Set it to the Prism Element
-# cluster external ID to run the preload on a specific PE cluster; leave it unset to
-# target Prism Central itself.
+# Note: cluster_ext_id maps to the X-Cluster-Id header. Set it to a Prism Element
+# cluster external ID to run the preload on a specific PE cluster; leave it unset
+# to target Prism Central itself. The example below uses a placeholder PE ext_id.
 
 - name: LCM PreloadArtifact playbook
   hosts: localhost
@@ -27,20 +26,14 @@
       nutanix_password: <pass>
       validate_certs: false
   tasks:
-    - name: List all clusters to get prism central external ID
-      nutanix.ncp.ntnx_clusters_info_v2:
-        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
-      register: pc_result
-      ignore_errors: true
-
-    - name: Get prism central external ID
-      ansible.builtin.set_fact:
-        prism_central_external_id: "{{ pc_result.response[0].ext_id }}"
-
     - name: Perform inventory of LCM to populate LCM entities (best-effort)
       nutanix.ncp.ntnx_lcm_inventory_v2:
       register: lcm_inventory
       ignore_errors: true
+
+    - name: Set the Prism Element cluster external ID (replace with a real PE ext_id)
+      ansible.builtin.set_fact:
+        pe_cluster_ext_id: "00062db4-a450-e685-0fda-cdf9ca935bfd"
 
     - name: List up to 50 LCM entities so we have one with a target version
       nutanix.ncp.ntnx_lcm_entities_info_v2:
@@ -52,9 +45,9 @@
       ansible.builtin.set_fact:
         lcm_entity_pick: >-
           {{ (lcm_entities.response | default([])
-                | selectattr('available_versions', 'defined')
-                | rejectattr('available_versions', 'equalto', None)
-                | list) }}
+                  | selectattr('available_versions', 'defined')
+                  | rejectattr('available_versions', 'equalto', None)
+                  | list) }}
 
     - name: Set the LCM entity + version to preload
       ansible.builtin.set_fact:
@@ -73,7 +66,7 @@
 
     - name: Preload LCM artifacts on a specific Prism Element cluster (via X-Cluster-Id header)
       nutanix.ncp.ntnx_lcm_preload_artifact_v2:
-        cluster_ext_id: "{{ prism_central_external_id }}"
+        cluster_ext_id: "{{ pe_cluster_ext_id }}"
         entity_update_specs:
           - entity_uuid: "{{ lcm_entity_external_id }}"
             to_version: "{{ lcm_entity_model_version }}"
