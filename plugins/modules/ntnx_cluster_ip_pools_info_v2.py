@@ -105,7 +105,42 @@ response:
     - List of IP pools if C(ext_id) is not provided.
   returned: always
   type: dict
-  sample: {}
+  sample:
+    [
+        {
+            "ext_id": "f8832e28-0bb5-4a5e-af73-ed65711b7522",
+            "is_in_use": false,
+            "links": null,
+            "name": "ansible-ip-pool-updated",
+            "netmask": {
+                "ipv4": {
+                    "prefix_length": null,
+                    "value": "255.255.255.0"
+                },
+                "ipv6": null
+            },
+            "ranges": [
+                {
+                    "end_address": {
+                        "ipv4": {
+                            "prefix_length": null,
+                            "value": "10.77.88.40"
+                        },
+                        "ipv6": null
+                    },
+                    "start_address": {
+                        "ipv4": {
+                            "prefix_length": null,
+                            "value": "10.77.88.30"
+                        },
+                        "ipv6": null
+                    }
+                }
+            ],
+            "tenant_id": null,
+            "type": "PE_IP_POOL"
+        }
+    ]
 ext_id:
   description:
     - The external ID of the IP pool.
@@ -130,7 +165,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error
   type: str
-  sample: "Failed generating IP pools info Spec"
+  sample: "f8832e28-0bb5-4a5e-af73-ed65711b7522"
 total_available_results:
   description: The total number of available IP pools in PC.
   returned: when all IP pools are fetched

@@ -121,7 +121,7 @@ response:
     - List of network segments if C(ext_id) is not provided.
   returned: always
   type: dict
-  sample: {}
+  sample: <Need to add sample>
 ext_id:
   description:
     - The external ID of the network segment.

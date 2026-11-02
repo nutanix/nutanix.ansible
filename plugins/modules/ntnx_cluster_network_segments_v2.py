@@ -438,7 +438,10 @@ response:
     - Task details if C(wait) is false, or for delete.
   returned: always
   type: dict
-  sample: {}
+  sample:
+    {
+        "ext_id": "ZXJnb24=:fc0f5074-4da9-5593-bfdc-a08c13df963d"
+    }
 task_ext_id:
   description:
     - The external ID of the task.
@@ -469,7 +472,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error or in check mode operation
   type: str
-  sample: "Api Exception raised while creating network segment"
+  sample: "ZXJnb24=:fc0f5074-4da9-5593-bfdc-a08c13df963d"
 """
 
 import traceback  # noqa: E402

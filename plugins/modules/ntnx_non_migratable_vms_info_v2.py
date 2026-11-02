@@ -68,7 +68,7 @@ response:
     - Response for fetching non-migratable VMs result info.
   returned: always
   type: dict
-  sample: {}
+  sample: <Need to add sample>
 ext_id:
   description:
     - The external ID of the non-migratable VMs result.

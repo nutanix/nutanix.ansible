@@ -83,7 +83,55 @@ response:
     - Task details if C(wait) is false.
   returned: always
   type: dict
-  sample: {}
+  sample:
+    {
+        "app_name": null,
+        "batch_summary": null,
+        "cluster_ext_ids": null,
+        "completed_time": "2026-11-02T16:39:47.793064+00:00",
+        "completion_details": null,
+        "created_time": "2026-11-02T16:39:47.549134+00:00",
+        "entities_affected": null,
+        "error_messages": [
+            {
+                "arguments_map": null,
+                "code": "TSKS-20801",
+                "error_group": "LEGACY_ERROR",
+                "locale": "en_US",
+                "message": "Operation failed due to legacy error and 'legacyErrorMessage' should be referred to for details",
+                "severity": "ERROR"
+            }
+        ],
+        "ext_id": "ZXJnb24=:cabde2bd-a456-5d34-be27-3bdff7a4bfcd",
+        "is_background_task": false,
+        "is_cancelable": false,
+        "last_updated_time": "2026-11-02T16:39:47.793063+00:00",
+        "legacy_error_message": "CVM name update is not supported on single and two node clusters",
+        "number_of_entities_affected": 0,
+        "number_of_subtasks": 1,
+        "operation": "updateCvm",
+        "operation_description": "Update CVM",
+        "owned_by": {
+            "ext_id": "00000000-0000-0000-0000-000000000000",
+            "name": "admin"
+        },
+        "parent_task": null,
+        "progress_percentage": 100,
+        "project_ext_id": "00000000-0000-0000-0000-000000000000",
+        "resource_links": null,
+        "root_task": null,
+        "started_time": "2026-11-02T16:39:47.559171+00:00",
+        "status": "FAILED",
+        "sub_steps": null,
+        "sub_tasks": [
+            {
+                "ext_id": "ZXJnb24=:792f5ed9-004d-4aaa-63db-2355ffad5c54",
+                "href": "https://10.44.76.16:9440/api/prism/v4.4/config/tasks/ZXJnb24=:792f5ed9-004d-4aaa-63db-2355ffad5c54",
+                "rel": "subtask"
+            }
+        ],
+        "warnings": null
+    }
 task_ext_id:
   description:
     - The external ID of the task.
@@ -119,7 +167,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error, module is idempotent or check mode
   type: str
-  sample: "Nothing to change."
+  sample: "ZXJnb24=:cabde2bd-a456-5d34-be27-3bdff7a4bfcd"
 """
 
 import warnings  # noqa: E402

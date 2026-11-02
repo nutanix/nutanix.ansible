@@ -252,7 +252,40 @@ response:
     - Task details if C(wait) is false, or for delete.
   returned: always
   type: dict
-  sample: {}
+  sample:
+    {
+        "ext_id": "f8832e28-0bb5-4a5e-af73-ed65711b7522",
+        "is_in_use": false,
+        "links": null,
+        "name": "ansible-ip-pool-updated",
+        "netmask": {
+            "ipv4": {
+                "prefix_length": null,
+                "value": "255.255.255.0"
+            },
+            "ipv6": null
+        },
+        "ranges": [
+            {
+                "end_address": {
+                    "ipv4": {
+                        "prefix_length": null,
+                        "value": "10.77.88.40"
+                    },
+                    "ipv6": null
+                },
+                "start_address": {
+                    "ipv4": {
+                        "prefix_length": null,
+                        "value": "10.77.88.30"
+                    },
+                    "ipv6": null
+                }
+            }
+        ],
+        "tenant_id": null,
+        "type": "PE_IP_POOL"
+    }
 task_ext_id:
   description:
     - The external ID of the task.
@@ -288,7 +321,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error, module is idempotent or check mode
   type: str
-  sample: "Api Exception raised while creating IP pool"
+  sample: "ZXJnb24=:1de4c007-0111-5e63-b92c-e505dcf0f2aa"
 """
 
 import traceback  # noqa: E402

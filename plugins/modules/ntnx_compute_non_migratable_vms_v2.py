@@ -162,7 +162,63 @@ response:
     - If C(wait) is false, it will contain the initial task details.
   returned: always
   type: dict
-  sample: {}
+  sample:
+    {
+        "app_name": null,
+        "batch_summary": null,
+        "cluster_ext_ids": [
+            "00065ea6-bab3-6489-0000-000000028f57"
+        ],
+        "completed_time": "2026-11-02T16:39:54.032049+00:00",
+        "completion_details": null,
+        "created_time": "2026-11-02T16:39:48.934046+00:00",
+        "entities_affected": [
+            {
+                "ext_id": "5ea6f9df-5b04-4151-b8d6-391385198c69",
+                "name": null,
+                "rel": "clustermgmt:config:host"
+            }
+        ],
+        "error_messages": [
+            {
+                "arguments_map": null,
+                "code": "TSKS-20801",
+                "error_group": "LEGACY_ERROR",
+                "locale": "en_US",
+                "message": "Operation failed due to legacy error and 'legacyErrorMessage' should be referred to for details",
+                "severity": "ERROR"
+            }
+        ],
+        "ext_id": "ZXJnb24=:d41ea163-dd07-4ad5-bd07-9950d7f33370",
+        "is_background_task": false,
+        "is_cancelable": false,
+        "last_updated_time": "2026-11-02T16:39:54.032048+00:00",
+        "legacy_error_message": "Failed to check if host '10.46.137.27' can enter maintenance mode. Error: Error seen on EnterMaintenanceModeCheckAsync. host_uuid: 5ea6f9df-5b04-4151-b8d6-391385198c69, error: Cannot evacuate VMs on a single node setup",
+        "number_of_entities_affected": 1,
+        "number_of_subtasks": 1,
+        "operation": "Compute Non Migratable VMs",
+        "operation_description": "Compute Non Migratable VMs",
+        "owned_by": {
+            "ext_id": "00000000-0000-0000-0000-000000000000",
+            "name": "admin"
+        },
+        "parent_task": null,
+        "progress_percentage": 100,
+        "project_ext_id": "00000000-0000-0000-0000-000000000000",
+        "resource_links": null,
+        "root_task": null,
+        "started_time": "2026-11-02T16:39:48.948574+00:00",
+        "status": "FAILED",
+        "sub_steps": null,
+        "sub_tasks": [
+            {
+                "ext_id": "ZXJnb24=:a84fd7a4-65d9-4d84-6e8c-6786b68a64e3",
+                "href": "https://10.44.76.16:9440/api/prism/v4.4/config/tasks/ZXJnb24=:a84fd7a4-65d9-4d84-6e8c-6786b68a64e3",
+                "rel": "subtask"
+            }
+        ],
+        "warnings": null
+    }
 task_ext_id:
   description:
     - The external ID of the task.
@@ -194,7 +250,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error
   type: str
-  sample: "Api Exception raised while computing non-migratable VMs"
+  sample: "ZXJnb24=:d41ea163-dd07-4ad5-bd07-9950d7f33370"
 """
 
 import traceback  # noqa: E402
