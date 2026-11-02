@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -23,13 +23,13 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
       The required roles depend on the operation being performed.
     - >-
-      B(Create a Layer2 Stretch) -
+      B(Create Layer2 Stretch) -
       Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin, Super Admin, Tenant Admin, VPC Admin
     - >-
-      B(Update a Layer2 Stretch) -
+      B(Update Layer2 Stretch) -
       Required Roles: Network Infra Admin, Prism Admin, Project Admin, Super Admin, Tenant Admin, VPC Admin
     - >-
-      B(Delete a Layer2 Stretch) -
+      B(Delete Layer2 Stretch) -
       Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin, Super Admin, Tenant Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
@@ -78,11 +78,6 @@ options:
     description:
       - The VXLAN network identifier used to uniquely identify the VXLAN tunnel.
     type: int
-    required: false
-  project_ext_id:
-    description:
-      - UUID of the project that owns this entity.
-    type: str
     required: false
   metadata:
     description:
@@ -399,10 +394,6 @@ author:
 EXAMPLES = r"""
 - name: Create Layer2 Stretch over VPN
   nutanix.ncp.ntnx_layer2_stretch_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: present
     name: "l2_stretch_vpn_ansible"
     description: "Layer2 Stretch over VPN created by Ansible"
@@ -420,10 +411,6 @@ EXAMPLES = r"""
 
 - name: Create Layer2 Stretch over VXLAN
   nutanix.ncp.ntnx_layer2_stretch_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: present
     name: "l2_stretch_vxlan_ansible"
     description: "Layer2 Stretch over VXLAN created by Ansible"
@@ -443,10 +430,6 @@ EXAMPLES = r"""
 
 - name: Update Layer2 Stretch description
   nutanix.ncp.ntnx_layer2_stretch_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: present
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
     name: "l2_stretch_vpn_ansible_updated"
@@ -457,10 +440,6 @@ EXAMPLES = r"""
 
 - name: Delete Layer2 Stretch
   nutanix.ncp.ntnx_layer2_stretch_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: absent
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
   register: result
@@ -591,15 +570,15 @@ except ImportError:
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
-# # Read-only fields returned by the API that must never be sent back on update
-# READ_ONLY_FIELDS = (
-#     "stretch_status",
-#     "remote_stretch_status",
-#     "high_availability_status",
-#     "metadata",
-#     "links",
-#     "tenant_id",
-# )
+# Read-only fields returned by the API that must never be sent back on update
+READ_ONLY_FIELDS = (
+    "stretch_status",
+    "remote_stretch_status",
+    "high_availability_status",
+    "links",
+    "tenant_id",
+)
+SITE_PARAMS_READ_ONLY_FIELDS = ("high_availability_group",)
 
 
 def get_module_spec():
@@ -672,7 +651,6 @@ def get_module_spec():
         ),
         mtu=dict(type="int"),
         vni=dict(type="int"),
-        project_ext_id=dict(type="str"),
         metadata=dict(
             type="dict",
             options=metadata_spec,
@@ -692,7 +670,7 @@ def get_module_spec():
     return module_args
 
 
-def create_layer2_stretche(module, result, api_instance):
+def create_layer2_stretch(module, api_instance, result):
     validate_required_params(module, ["name"])
     sg = SpecGenerator(module)
     default_spec = networking_sdk.Layer2Stretch()
@@ -741,13 +719,13 @@ def create_layer2_stretche(module, result, api_instance):
 def check_for_idempotency(old_spec_dict, update_spec_dict):
     old_spec_dict = strip_internal_attributes(deepcopy(old_spec_dict))
     update_spec_dict = strip_internal_attributes(deepcopy(update_spec_dict))
-    # for field in READ_ONLY_FIELDS:
-    #     old_spec_dict.pop(field, None)
-    #     update_spec_dict.pop(field, None)
+    for field in READ_ONLY_FIELDS:
+        old_spec_dict.pop(field, None)
+        update_spec_dict.pop(field, None)
     return old_spec_dict == update_spec_dict
 
 
-def update_layer2_stretche(module, result, api_instance):
+def update_layer2_stretch(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -771,12 +749,13 @@ def update_layer2_stretche(module, result, api_instance):
 
     if check_for_idempotency(old_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
-        module.exit_json(
-            msg="Nothing to change.",
-            **result,
-        )
+        module.exit_json(msg="Nothing to change.", **result)
 
-    # strip_read_only_fields(update_spec, fields=READ_ONLY_FIELDS)
+    strip_read_only_fields(update_spec, fields=READ_ONLY_FIELDS)
+    for site_attr in ("local_site_params", "remote_site_params"):
+        site_params = getattr(update_spec, site_attr, None)
+        if site_params is not None:
+            strip_read_only_fields(site_params, fields=SITE_PARAMS_READ_ONLY_FIELDS)
 
     resp = None
     try:
@@ -799,7 +778,7 @@ def update_layer2_stretche(module, result, api_instance):
     result["changed"] = True
 
 
-def delete_layer2_stretche(module, result, api_instance):
+def delete_layer2_stretch(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -819,7 +798,7 @@ def delete_layer2_stretche(module, result, api_instance):
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
 
@@ -850,11 +829,11 @@ def run_module():
     state = module.params.get("state")
     if state == "present":
         if module.params.get("ext_id"):
-            update_layer2_stretche(module, result, api_instance)
+            update_layer2_stretch(module, api_instance, result)
         else:
-            create_layer2_stretche(module, result, api_instance)
+            create_layer2_stretch(module, api_instance, result)
     else:
-        delete_layer2_stretche(module, result, api_instance)
+        delete_layer2_stretch(module, api_instance, result)
     module.exit_json(**result)
 
 

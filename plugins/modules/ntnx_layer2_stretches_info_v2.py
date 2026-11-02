@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -22,10 +22,10 @@ notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(Get Layer2 Stretch by ext_id) -
+      B(View Layer2 Stretch) -
       Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Prism Viewer, Project Admin, Super Admin, Tenant Admin, User, VPC Admin
     - >-
-      B(Get list of Layer2 Stretches) -
+      B(View Layer2 Stretch) (List) -
       Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Prism Viewer, Project Admin, Super Admin, Tenant Admin, User, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
@@ -45,40 +45,30 @@ author:
 EXAMPLES = r"""
 - name: Get Layer2 Stretch using ext_id
   nutanix.ncp.ntnx_layer2_stretches_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
   register: result
   ignore_errors: true
 
 - name: List all Layer2 Stretches
   nutanix.ncp.ntnx_layer2_stretches_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
   register: result
   ignore_errors: true
 
 - name: List Layer2 Stretches with filter
   nutanix.ncp.ntnx_layer2_stretches_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     filter: "name eq 'l2_stretch_ansible'"
   register: result
   ignore_errors: true
 
 - name: List Layer2 Stretches with limit
   nutanix.ncp.ntnx_layer2_stretches_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List all Layer2 Stretches with fetch_all
+  nutanix.ncp.ntnx_layer2_stretches_info_v2:
+    fetch_all: true
   register: result
   ignore_errors: true
 """
@@ -170,10 +160,12 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 from ..module_utils.v4.network.helpers import get_layer2_stretch  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
 
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
@@ -203,7 +195,10 @@ def get_layer2_stretches(module, api_instance, result):
         module.fail_json(msg="Failed generating Layer2 Stretches info spec", **result)
 
     try:
-        resp = api_instance.list_layer2_stretches(**kwargs)
+        resp = list_entities(
+            api_instance.list_layer2_stretches,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -213,10 +208,10 @@ def get_layer2_stretches(module, api_instance, result):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
-    if not resp:
-        resp = []
-    result["response"] = resp
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    else:
+        result["response"] = []
 
 
 def run_module():
