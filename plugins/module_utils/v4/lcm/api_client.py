@@ -161,6 +161,20 @@ def get_entity_api_instance(module):
     return ntnx_lifecycle_py_client.EntitiesApi(api_client=api_client)
 
 
+def get_foundation_central_config_api_instance(module):
+    """
+    This method will return Foundation Central config API instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 Foundation Central config api instance
+    """
+    # Foundation Central config exists at v4.3; disable negotiation so the SDK
+    # is not downgraded to an older version that returns 404 for this endpoint.
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.FoundationCentralConfigApi(api_client=api_client)
+
+
 def get_bundles_api_instance(module):
     """
     This method will return LCM bundles API instance

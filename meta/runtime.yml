@@ -273,6 +273,8 @@ action_groups:
     - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_foundation_central_config_v2
+    - ntnx_foundation_central_config_info_v2
     - ntnx_validate_node_uplinks_v2
     - ntnx_image_download_v2
     - ntnx_vm_console_token_v2
