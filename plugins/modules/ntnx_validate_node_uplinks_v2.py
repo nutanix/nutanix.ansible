@@ -862,13 +862,44 @@ def get_module_spec():
     return module_args
 
 
+def _build_validate_node_spec(module):
+    """Build ValidateNodeParam.
+
+    C(spec) is a OneOf: BundleParam (dict) or list[UplinkNode]. SpecGenerator's
+    dynamic obj map handles the dict branch; the list branch is built here
+    because SpecGenerator does not support list-typed OneOf variants.
+    """
+    sg = SpecGenerator(module)
+    spec_params = module.params.get("spec") or {}
+    body = clustermgmt_sdk.ValidateNodeParam()
+
+    if spec_params.get("bundle_param"):
+        # Dict OneOf branch — standard SpecGenerator dynamic obj path.
+        spec, err = sg.generate_spec(obj=body)
+        return spec, err
+
+    uplink_node_options = get_module_spec()["spec"]["options"]["uplink_nodes"][
+        "options"
+    ]
+    uplink_nodes = []
+    for item in spec_params.get("uplink_nodes") or []:
+        inner_spec, err = sg.generate_spec(
+            obj=clustermgmt_sdk.UplinkNode(),
+            attr=item,
+            module_args=uplink_node_options,
+        )
+        if err:
+            return None, err
+        uplink_nodes.append(inner_spec)
+    body.spec = uplink_nodes
+    return body, None
+
+
 def validate_node(module, api_instance, result):
     cluster_ext_id = module.params.get("cluster_ext_id")
     result["ext_id"] = cluster_ext_id
 
-    sg = SpecGenerator(module)
-    default_spec = clustermgmt_sdk.ValidateNodeParam()
-    spec, err = sg.generate_spec(obj=default_spec)
+    spec, err = _build_validate_node_spec(module)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating validate-node spec", **result)
