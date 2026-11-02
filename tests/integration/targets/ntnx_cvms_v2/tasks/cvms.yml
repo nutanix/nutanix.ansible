@@ -99,7 +99,7 @@
 - name: Set fact when live update succeeded
   ansible.builtin.set_fact:
     cvm_live_update_succeeded: true
-  when: result.failed == false
+  when: not result.failed
 
 - name: Test CVM update idempotency with current name
   nutanix.ncp.ntnx_cvms_v2:

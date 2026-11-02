@@ -149,7 +149,7 @@
 - name: Wait briefly when create was accepted
   ansible.builtin.pause:
     seconds: 5
-  when: result.failed == false
+  when: not result.failed
 
 - name: Resolve created network segment ext_id via info filter
   nutanix.ncp.ntnx_cluster_network_segments_info_v2:
@@ -157,14 +157,14 @@
     filter: "name eq '{{ segment_name }}'"
   register: segment_info
   ignore_errors: true
-  when: result.failed == false
+  when: not result.failed
 
 - name: Track network segment for cleanup
   ansible.builtin.set_fact:
     segment_ext_id: "{{ segment_info.response[0].ext_id }}"
     todelete_segments: "{{ todelete_segments + [segment_info.response[0].ext_id] }}"
   when:
-    - result.failed == false
+    - not result.failed
     - segment_info is defined
     - segment_info.response is defined
     - segment_info.response | length > 0

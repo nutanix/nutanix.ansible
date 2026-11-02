@@ -97,7 +97,7 @@
   ansible.builtin.set_fact:
     nmv_result_ext_id: "{{ result.ext_id }}"
   when:
-    - result.failed == false
+    - not result.failed
     - result.ext_id is defined
 
 - name: Get non-migratable VMs result by ID

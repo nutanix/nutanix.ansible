@@ -193,7 +193,7 @@ response:
         "is_background_task": false,
         "is_cancelable": false,
         "last_updated_time": "2026-11-02T16:39:54.032048+00:00",
-        "legacy_error_message": "Failed to check if host '10.46.137.27' can enter maintenance mode. Error: Error seen on EnterMaintenanceModeCheckAsync. host_uuid: 5ea6f9df-5b04-4151-b8d6-391385198c69, error: Cannot evacuate VMs on a single node setup",
+        "legacy_error_message": "Cannot evacuate VMs on a single node setup",
         "number_of_entities_affected": 1,
         "number_of_subtasks": 1,
         "operation": "Compute Non Migratable VMs",
