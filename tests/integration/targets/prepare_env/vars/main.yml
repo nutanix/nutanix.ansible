@@ -175,13 +175,13 @@
 
 # # variables generated from prepare_env.yml
 
-# # BEGIN ANSIBLE MANAGED BLOCK insertion 0
-# ip: "pc_ip"
-# username: "username"
-# password: "password"
-# recovery_site_ip: "recovery_site_ip"
-# validate_certs: false
-# # END ANSIBLE MANAGED BLOCK insertion 0
+# BEGIN ANSIBLE MANAGED BLOCK insertion 0
+ip: "10.44.76.16"
+username: "admin"
+password: "Nutanix.123"
+recovery_site_ip: "recovery_site_ip"
+validate_certs: false
+# END ANSIBLE MANAGED BLOCK insertion 0
 # # BEGIN ANSIBLE MANAGED BLOCK insertion 1
 # external_nat_subnet:
 #   name: "external_nat_subnet"

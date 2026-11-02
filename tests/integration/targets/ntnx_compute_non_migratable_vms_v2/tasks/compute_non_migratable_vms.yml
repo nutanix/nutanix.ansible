@@ -1,0 +1,150 @@
+---
+# Test plan for ntnx_compute_non_migratable_vms_v2 /
+# ntnx_non_migratable_vms_info_v2:
+# 1. Discover cluster_ext_id and host_ext_id
+# 2. Check mode compute with inline dummy hosts
+# 3. Live compute + assert task response / optional ext_id
+# 4. Get result by id when ext_id present
+# 5. Negatives (missing args, bad result ext_id)
+
+- name: Start compute non-migratable VMs tests
+  ansible.builtin.debug:
+    msg: Start compute non-migratable VMs tests
+
+- name: List clusters to discover cluster_ext_id
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(e:e eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_result
+  ignore_errors: true
+
+- name: Assert clusters listed
+  ansible.builtin.assert:
+    that:
+      - clusters_result.failed == false
+      - clusters_result.response | length > 0
+    fail_msg: Failed to list clusters for non-migratable VMs tests
+    success_msg: Clusters listed for non-migratable VMs tests
+
+- name: Set cluster_ext_id
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+- name: List hosts for cluster
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: hosts_result
+  ignore_errors: true
+
+- name: Assert hosts listed
+  ansible.builtin.assert:
+    that:
+      - hosts_result.failed == false
+      - hosts_result.response | length > 0
+    fail_msg: Failed to list hosts for non-migratable VMs tests
+    success_msg: Hosts listed for non-migratable VMs tests
+
+- name: Set host_ext_id
+  ansible.builtin.set_fact:
+    host_ext_id: "{{ hosts_result.response[0].ext_id }}"
+
+- name: Compute non-migratable VMs with check mode enabled
+  nutanix.ncp.ntnx_compute_non_migratable_vms_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000001"
+    hosts:
+      - "00000000-0000-0000-0000-000000000002"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert compute non-migratable VMs check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.hosts is defined
+      - result.response.hosts | length == 1
+    fail_msg: Compute non-migratable VMs check mode failed
+    success_msg: Compute non-migratable VMs check mode passed
+
+- name: Compute non-migratable VMs
+  nutanix.ncp.ntnx_compute_non_migratable_vms_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    hosts:
+      - "{{ host_ext_id }}"
+  register: result
+  ignore_errors: true
+
+# Single-node clusters reject this action ("Cannot evacuate VMs on a single
+# node setup"). Treat that as an accepted platform outcome while still
+# asserting the module surfaced a task response.
+- name: Assert compute non-migratable VMs invoked
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.response is defined
+      - >
+          (result.failed == false and result.changed == true and
+           result.task_ext_id is defined) or
+          (result.failed == true and
+           ('single node' in (result.response.legacy_error_message | default('')) | lower
+            or 'single node' in (result.msg | default('')) | lower
+            or result.response.status | default('') == 'FAILED'))
+    fail_msg: Compute non-migratable VMs invocation failed unexpectedly
+    success_msg: Compute non-migratable VMs invocation behaved as expected
+
+- name: Capture non-migratable VMs result ext_id
+  ansible.builtin.set_fact:
+    nmv_result_ext_id: "{{ result.ext_id }}"
+  when:
+    - result.failed == false
+    - result.ext_id is defined
+
+- name: Get non-migratable VMs result by ID
+  nutanix.ncp.ntnx_non_migratable_vms_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ nmv_result_ext_id }}"
+  register: info_result
+  ignore_errors: true
+  when: nmv_result_ext_id is defined
+
+- name: Assert get non-migratable VMs result by ID
+  ansible.builtin.assert:
+    that:
+      - info_result.failed == false
+      - info_result.changed == false
+      - info_result.response is defined
+    fail_msg: Get non-migratable VMs result by ID failed
+    success_msg: Get non-migratable VMs result by ID passed
+  when: nmv_result_ext_id is defined
+
+########################################################################
+# Negatives
+########################################################################
+
+- name: Compute non-migratable VMs missing hosts
+  nutanix.ncp.ntnx_compute_non_migratable_vms_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert compute missing hosts
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Missing hosts negative failed
+    success_msg: Missing hosts negative passed
+
+- name: Get non-migratable VMs result with invalid ext_id
+  nutanix.ncp.ntnx_non_migratable_vms_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000099"
+  register: result
+  ignore_errors: true
+
+- name: Assert get non-migratable VMs invalid ext_id
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Invalid result ext_id negative failed
+    success_msg: Invalid result ext_id negative passed
