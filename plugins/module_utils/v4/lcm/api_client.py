@@ -178,3 +178,15 @@ def get_foundation_central_config_api_instance(module):
     # is not downgraded to an older version that returns 404 for this endpoint.
     api_client = get_api_client(module, allow_version_negotiation=False)
     return ntnx_lifecycle_py_client.FoundationCentralConfigApi(api_client=api_client)
+
+
+def get_bundles_api_instance(module):
+    """
+    This method will return LCM bundles API instance
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 LCM bundles api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.BundlesApi(api_client=api_client)

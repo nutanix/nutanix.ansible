@@ -1,0 +1,81 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Install NGT in ESXi VM with reboot preference set to IMMEDIATE
+# 2. Fetch NGT config of ESXi VM
+# 3. Update NGT in ESXi VM (disable + VSS_SNAPSHOT capability)
+# 4. Upgrade NGT in ESXi VM
+# 5. Insert NGT ISO in ESXi VM
+# 6. Uninstall NGT from ESXi VM
+# Requires a Prism Central with an ESXi cluster registered via vCenter.
+
+- name: ESXi VM ngt playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_ext_id: "<esxi_vm_ext_id>"
+        vm_username: "<vm_username>"
+        vm_password: "<vm_password>"
+
+    - name: Install NGT in ESXi VM with reboot preference set to IMMEDIATE
+      nutanix.ncp.ntnx_esxi_vms_ngt_v2:
+        state: present
+        ext_id: "{{ vm_ext_id }}"
+        capabilities:
+          - VSS_SNAPSHOT
+        credential:
+          username: "{{ vm_username }}"
+          password: "{{ vm_password }}"
+        reboot_preference:
+          schedule_type: IMMEDIATE
+      register: result
+      ignore_errors: true
+
+    - name: Fetch NGT config of ESXi VM
+      nutanix.ncp.ntnx_esxi_vms_ngt_info_v2:
+        ext_id: "{{ vm_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Update NGT in ESXi VM (disable + VSS_SNAPSHOT)
+      nutanix.ncp.ntnx_esxi_vms_ngt_update_v2:
+        state: present
+        ext_id: "{{ vm_ext_id }}"
+        is_enabled: false
+        capabilities:
+          - VSS_SNAPSHOT
+      register: result
+      ignore_errors: true
+
+    - name: Upgrade NGT in ESXi VM
+      nutanix.ncp.ntnx_esxi_vms_ngt_upgrade_v2:
+        state: present
+        ext_id: "{{ vm_ext_id }}"
+        reboot_preference:
+          schedule_type: SKIP
+      register: result
+      ignore_errors: true
+
+    - name: Insert NGT ISO in ESXi VM
+      nutanix.ncp.ntnx_esxi_vms_ngt_insert_iso_v2:
+        state: present
+        ext_id: "{{ vm_ext_id }}"
+        capabilities:
+          - SELF_SERVICE_RESTORE
+      register: result
+      ignore_errors: true
+
+    - name: Uninstall NGT from ESXi VM
+      nutanix.ncp.ntnx_esxi_vms_ngt_v2:
+        state: absent
+        ext_id: "{{ vm_ext_id }}"
+      register: result
+      ignore_errors: true
