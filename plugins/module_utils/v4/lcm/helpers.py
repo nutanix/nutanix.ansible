@@ -90,6 +90,25 @@ def get_lcm_bundle(module, api_instance, ext_id):
         )
 
 
+def get_foundation_central_config(module, api_instance):
+    """
+    This method will return the Foundation Central configuration.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Foundation Central config api instance
+    Returns:
+        foundation_central_config (object): Foundation Central config data
+    """
+    try:
+        return api_instance.get_foundation_central_config().data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Foundation Central config info",
+        )
+
+
 def get_upgrade_selection(module, api_instance, ext_id):
     """
     This method fetches details of a single LCM Upgrade Selection using its external id.
