@@ -22,8 +22,15 @@ description:
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
     - >-
-      B(Create/Update/Delete a Network Controller) -
+      B(Create Network Controller) -
+      Required Roles: Prism Admin, Super Admin
+    - >-
+      B(Update Network Controller) -
+      Required Roles: Prism Admin, Super Admin
+    - >-
+      B(Delete Network Controller) -
       Required Roles: Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
@@ -53,6 +60,9 @@ options:
   cloud_substrate:
     description:
       - Cloud substrate of the network controller, for e.g. Azure.
+      - C(AWS) - Network controller substrate is AWS.
+      - C(AZURE) - Network controller substrate is Azure.
+      - C(GCP) - Network controller substrate is GCP.
     type: str
     required: false
     choices:
@@ -61,7 +71,9 @@ options:
       - GCP
   default_vlan_stack:
     description:
-      - Default VLAN stack(Legacy or Advanced) to instantiate VLAN-backed subnets on if advanced networking is enabled.
+      - Default VLAN stack (Legacy or Advanced) to instantiate VLAN-backed subnets on if advanced networking is enabled.
+      - C(ADVANCED) - Advanced networking stack.
+      - C(LEGACY) - Legacy networking stack.
     type: str
     required: false
     choices:
@@ -80,23 +92,30 @@ options:
         required: false
         default: false
   metadata:
-    description: Metadata associated with this resource.
+    description:
+      - An object containing standard resource metadata.
+      - This includes ownership, project association, and categorization details.
     type: dict
     suboptions:
       owner_reference_id:
-        description: A globally unique identifier that represents the owner of this resource.
+        description:
+          - A globally unique identifier that represents the owner of this resource.
         type: str
       owner_user_name:
-        description: The userName of the owner of this resource.
+        description:
+          - The userName of the owner of this resource.
         type: str
       project_reference_id:
-        description: A globally unique identifier that represents the project this resource belongs to.
+        description:
+          - A globally unique identifier that represents the project this resource belongs to.
         type: str
       project_name:
-        description: The name of the project this resource belongs to.
+        description:
+          - The name of the project this resource belongs to.
         type: str
       category_ids:
-        description: A list of globally unique identifiers that represent all the categories the resource is associated with.
+        description:
+          - A list of globally unique identifiers that represent all the categories the resource is associated with.
         type: list
         elements: str
 extends_documentation_fragment:
@@ -140,10 +159,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - Response for creating, updating, or deleting network controller
-    - If the operation is create or update and C(wait) is true, it will return the network controller details
-    - If the operation is create or update and C(wait) is false, it will return the task details
-    - If the operation is delete, it will return the task details
+    - Response for creating, updating, or deleting network controller.
+    - Network controller details if C(wait) is true and the operation is create or update.
+    - Task details if C(wait) is false or the operation is delete.
   returned: always
   type: dict
   sample:
@@ -177,13 +195,6 @@ ext_id:
   returned: always
   type: str
   sample: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
-
-project_ext_id:
-  description:
-    - The external ID of the project that owns this network controller.
-  returned: always
-  type: str
-  sample: "12345678-1234-1234-1234-123456789012"
 
 changed:
   description: This indicates whether the task resulted in any changes
@@ -249,6 +260,7 @@ except ImportError:
 
     SDK_IMP_ERROR = traceback.format_exc()
 
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
@@ -289,7 +301,7 @@ def get_module_spec():
     return module_args
 
 
-def create_NetworkController(module, result, api_instance):
+def create_network_controller(module, result, api_instance):
     sg = SpecGenerator(module)
     default_spec = networking_sdk.NetworkController()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -338,18 +350,18 @@ def create_NetworkController(module, result, api_instance):
     result["changed"] = True
 
 
-def check_for_idempotency(old_spec_dict, update_spec_dict):
-    old = strip_internal_attributes(deepcopy(old_spec_dict))
-    new = strip_internal_attributes(deepcopy(update_spec_dict))
-    return old == new
+def check_network_controller_idempotency(old_spec, update_spec):
+    old_spec = strip_internal_attributes(deepcopy(old_spec.to_dict()))
+    update_spec = strip_internal_attributes(deepcopy(update_spec.to_dict()))
+    return old_spec == update_spec
 
 
-def update_NetworkController(module, result, api_instance):
+def update_network_controller(module, result, api_instance):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
-    old_spec = get_network_controller(module, api_instance, ext_id)
-    etag = get_etag(data=old_spec)
+    current_spec = get_network_controller(module, api_instance, ext_id)
+    etag = get_etag(data=current_spec)
     if not etag:
         return module.fail_json(
             msg="Unable to fetch etag for updating network controller", **result
@@ -357,20 +369,22 @@ def update_NetworkController(module, result, api_instance):
     kwargs = {"if_match": etag}
 
     sg = SpecGenerator(module)
-    update_spec, err = sg.generate_spec(obj=deepcopy(old_spec))
+    update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
     if err:
         result["error"] = err
         module.fail_json(
             msg="Failed generating update network controller spec", **result
         )
 
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
+
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
-    raise_unsupported_update_fields(module, old_spec, update_spec, ["project_ext_id"])
-
-    if check_for_idempotency(old_spec.to_dict(), update_spec.to_dict()):
+    if check_network_controller_idempotency(current_spec, update_spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
@@ -397,7 +411,7 @@ def update_NetworkController(module, result, api_instance):
     result["changed"] = True
 
 
-def delete_NetworkController(module, result, api_instance):
+def delete_network_controller(module, result, api_instance):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -419,8 +433,10 @@ def delete_NetworkController(module, result, api_instance):
 
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
+
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
 
@@ -442,19 +458,19 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "error": None,
         "response": None,
-        "failed": False,
         "ext_id": None,
     }
     api_instance = get_network_controllers_api_instance(module)
     state = module.params.get("state")
     if state == "present":
         if module.params.get("ext_id"):
-            update_NetworkController(module, result, api_instance)
+            update_network_controller(module, result, api_instance)
         else:
-            create_NetworkController(module, result, api_instance)
+            create_network_controller(module, result, api_instance)
     else:
-        delete_NetworkController(module, result, api_instance)
+        delete_network_controller(module, result, api_instance)
     module.exit_json(**result)
 
 

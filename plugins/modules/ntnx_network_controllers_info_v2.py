@@ -14,41 +14,30 @@ module: ntnx_network_controllers_info_v2
 short_description: Fetch network controllers info in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module allows you to fetch information about NetworkController in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific NetworkController.
-  - If C(ext_id) is not provided, list multiple NetworkController optionally paginated.
-  - This module uses PC v4 APIs based SDKs
+  - This module allows you to fetch network controllers info or a specific network controller in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch a particular network controller info using its external ID.
+  - If C(ext_id) is not provided, fetch multiple network controllers info with/without using filters, limit, etc.
+  - This module uses PC v4 APIs based SDKs.
 notes:
-    - >-
-      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
-    - >-
-      B(Get Network Controller by ext_id) -
-      Required Roles: Prism Admin, Prism User, Super Admin
-    - >-
-      B(Get list of Network Controllers) -
-      Required Roles: Prism Admin, Prism User, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
+  - >-
+    This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+  - >-
+    B(Get Network Controller by ext_id) -
+    Required Roles: Prism Admin, Prism User, Super Admin
+  - >-
+    B(Get list of Network Controllers) -
+    Required Roles: Prism Admin, Prism User, Super Admin
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   ext_id:
     description:
       - The external ID of the network controller.
-      - If provided, only the specific controller is fetched; otherwise all controllers are listed.
+      - If provided, a single network controller is returned.
     type: str
-  page:
-    description:
-      - The number of page
-    type: int
-  limit:
-    description:
-      - The number of records
-    type: int
-  read_timeout:
-        description: Read timeout in milliseconds for API calls.
-        type: int
-        required: false
-        default: 30000
+    required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
+  - nutanix.ncp.ntnx_info_v2
   - nutanix.ncp.ntnx_logger
   - nutanix.ncp.ntnx_proxy_v2
 author:
@@ -66,18 +55,30 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
+- name: List network controllers with filter
+  nutanix.ncp.ntnx_network_controllers_info_v2:
+    filter: "controllerStatus eq 'UP'"
+  register: result
+  ignore_errors: true
+
 - name: List network controllers with limit
   nutanix.ncp.ntnx_network_controllers_info_v2:
     limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List all network controllers with fetch_all
+  nutanix.ncp.ntnx_network_controllers_info_v2:
+    fetch_all: true
   register: result
   ignore_errors: true
 """
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC NetworkController info v4 API.
-    - It can be a single NetworkController if external ID is provided.
-    - List of multiple NetworkController if external ID is not provided with optional limit.
+    - The response from the Nutanix network controllers info v4 API.
+    - It can be a single network controller if external ID is provided.
+    - It is a list of multiple network controllers if external ID is not provided, with optional filter or limit.
   returned: always
   type: dict
   sample:
@@ -98,38 +99,38 @@ response:
     }
 
 changed:
-  description: This indicates whether the task resulted in any changes
+  description: This indicates whether the task resulted in any changes. Always false for info modules.
   returned: always
   type: bool
   sample: false
 
 msg:
-  description: This indicates the message if any message occurred
+  description: This indicates the message if any message occurred.
   returned: When there is an error
   type: str
   sample: "Api Exception raised while fetching network controllers info"
 
 error:
-  description: This field typically holds information about if the task have errors that occurred during the task execution
+  description: This field typically holds information about any errors that occurred during the task execution.
   type: str
-  returned: when an error occurs
+  returned: When an error occurs
 
 failed:
-  description: This field typically holds information about if the task have failed
+  description: This field indicates whether the task failed.
   returned: always
   type: bool
   sample: false
 
 ext_id:
-  description: External ID of the network controller
+  description: External ID of the network controller.
   type: str
-  returned: when external ID is provided
+  returned: When external ID is provided
   sample: "7bea69e9-684c-4736-7805-d658ee17c1b6"
 
 total_available_results:
   description: The total number of available network controllers in PC.
   type: int
-  returned: when all network controllers are fetched
+  returned: When all network controllers are fetched
   sample: 1
 """
 
@@ -143,10 +144,12 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 from ..module_utils.v4.network.helpers import get_network_controller  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
 
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
@@ -154,8 +157,6 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
-        page=dict(type="int"),
-        limit=dict(type="int"),
     )
     return module_args
 
@@ -177,7 +178,10 @@ def get_network_controllers(module, api_instance, result):
         )
 
     try:
-        resp = api_instance.list_network_controllers(**kwargs)
+        resp = list_entities(
+            api_instance.list_network_controllers,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -187,17 +191,19 @@ def get_network_controllers(module, api_instance, result):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
-    if not resp:
-        resp = []
-    result["response"] = resp
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    else:
+        result["response"] = []
 
 
 def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
-        skip_info_args=True,
         supports_check_mode=False,
+        mutually_exclusive=[
+            ("ext_id", "filter"),
+        ],
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "response": None, "failed": False}
