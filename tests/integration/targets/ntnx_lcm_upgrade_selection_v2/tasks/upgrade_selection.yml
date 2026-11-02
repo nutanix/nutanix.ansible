@@ -1,5 +1,5 @@
 ---
-# Test plan for ntnx_lcm_upgrade_selection_v2 and ntnx_lcm_upgrade_selections_info_v2.
+# Test plan for ntnx_lcm_upgrade_selection_v2 and ntnx_lcm_upgrade_selection_info_v2.
 #
 # Feature under test: LCM Upgrade Selection (DUO - Dark Site Upgrade Orchestrator).
 # The resource is immutable (no PUT); it supports Create, Get, List, Export, Delete.
@@ -21,6 +21,7 @@
 #  14. Negative: delete non-existent ext_id - asserts failed with descriptive msg.
 #  15. Negative: get info with invalid ext_id - asserts failed with descriptive msg.
 #  16. Idempotency: delete same ext_id twice - second call should gracefully fail.
+#  17. Info - List with fetch_all - asserts total_available_results == response length.
 #
 # NOTE: The LCM upgrade selection API needs at least one LCM entity with an available
 #       upgrade version to succeed on the "real" create path. We run inventory first and
@@ -182,8 +183,8 @@
     success_msg: "Negative delete of non-existent ext_id correctly failed"
     fail_msg: "Negative delete of non-existent ext_id did NOT fail as expected"
 
-- name: Negative - info by invalid ext_id
-  nutanix.ncp.ntnx_lcm_upgrade_selections_info_v2:
+  - name: Negative - info by invalid ext_id
+  nutanix.ncp.ntnx_lcm_upgrade_selection_info_v2:
     ext_id: "deadbeef-dead-beef-dead-beefdeadbeef"
   register: neg_info_bad
   ignore_errors: true
@@ -235,7 +236,7 @@
     - real_create_min.ext_id | length > 0
 
 - name: Info - Get by ext_id
-  nutanix.ncp.ntnx_lcm_upgrade_selections_info_v2:
+  nutanix.ncp.ntnx_lcm_upgrade_selection_info_v2:
     ext_id: "{{ created_upgrade_selection_ext_id }}"
   register: info_by_id
   when: created_upgrade_selection_ext_id is defined
@@ -257,7 +258,7 @@
   when: created_upgrade_selection_ext_id is defined
 
 - name: Info - List all
-  nutanix.ncp.ntnx_lcm_upgrade_selections_info_v2:
+  nutanix.ncp.ntnx_lcm_upgrade_selection_info_v2:
   register: info_list
   ignore_errors: true
 
@@ -275,7 +276,7 @@
     fail_msg: "Info List returned an unexpected result"
 
 - name: Info - List with limit=1
-  nutanix.ncp.ntnx_lcm_upgrade_selections_info_v2:
+  nutanix.ncp.ntnx_lcm_upgrade_selection_info_v2:
     limit: 1
   register: info_list_limit
   ignore_errors: true
@@ -290,8 +291,26 @@
     success_msg: "Info List limit=1 respected the limit"
     fail_msg: "Info List limit=1 returned more than 1 item"
 
+- name: Info - List with fetch_all
+  nutanix.ncp.ntnx_lcm_upgrade_selection_info_v2:
+    fetch_all: true
+  register: info_list_fetch_all
+  ignore_errors: true
+
+- name: Assert Info List fetch_all returned a list
+  ansible.builtin.assert:
+    that:
+      - info_list_fetch_all is defined
+      - info_list_fetch_all.failed == false
+      - info_list_fetch_all.response is defined
+      - info_list_fetch_all.response is iterable
+      - info_list_fetch_all.total_available_results is defined
+      - info_list_fetch_all.total_available_results == info_list_fetch_all.response | length
+    success_msg: "Info List fetch_all returned all entities"
+    fail_msg: "Info List fetch_all returned an unexpected result"
+
 - name: Info - List with filter on status (enum UPGRADE_READY)
-  nutanix.ncp.ntnx_lcm_upgrade_selections_info_v2:
+  nutanix.ncp.ntnx_lcm_upgrade_selection_info_v2:
     filter: "status eq 'UPGRADE_READY'"
   register: info_list_filter
   ignore_errors: true

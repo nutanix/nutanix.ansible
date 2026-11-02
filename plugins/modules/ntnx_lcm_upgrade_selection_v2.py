@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -18,11 +18,8 @@ description:
   - An LCM Upgrade Selection is used by the Dark Site Upgrade Orchestrator (DUO) to lock a set of
     selected LCM upgrade targets (entity_uuid + to_version) for a cluster and to generate the
     darksite download_helper.zip helper bundle for offline binary download.
-  - An LCM Upgrade Selection is immutable after creation - the underlying API deliberately
-    does not expose a PUT/update endpoint. When C(ext_id) is provided together with
-    C(state=present), this module will trigger the export action (download_helper.zip)
-    on the existing selection if C(export) is C(true); otherwise the module reports
-    C(skipped=true) because there is nothing to update.
+  - When C(ext_id) is provided together with C(state=present) and C(export=true),
+    the module triggers the export action which produces the download_helper.zip helper bundle.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -45,7 +42,7 @@ options:
       - If C(state) is set to C(present) and C(ext_id) is provided with C(export=true)
         then the export action will run on the existing selection.
       - If C(state) is set to C(present) and C(ext_id) is provided without C(export=true)
-        then the module reports skipped (the selection is immutable).
+        then the module reports skipped because there are no changes to apply.
       - If C(state) is set to C(absent) then the operation will delete the LCM upgrade selection identified by C(ext_id).
     type: str
     required: false
@@ -57,13 +54,6 @@ options:
     description:
       - The external ID of the LCM Upgrade Selection.
       - Required for delete and export operations.
-    type: str
-    required: false
-  cluster_ext_id:
-    description:
-      - External ID of the cluster on which the LCM Upgrade Selection is scoped.
-      - This is a read-only attribute on the entity itself; the value returned in
-        the response reflects the cluster the selection is bound to.
     type: str
     required: false
   selected_upgrades:
@@ -170,7 +160,7 @@ response:
 
 task_ext_id:
   description:
-    - The external ID of the task associated with the operation, when the API returns a task reference.
+    - The external ID of the task.
   returned: always
   type: str
   sample: "ZXJnb24=:90458bc7-a12b-4616-ac66-562fdb00c209"
@@ -183,7 +173,7 @@ ext_id:
   sample: "b7dbcf46-8ba3-4dcd-a7c3-4b09b0f7a11a"
 
 changed:
-  description: This indicates whether the task resulted in any changes.
+  description: This indicates whether the task resulted in any changes
   returned: always
   type: bool
   sample: true
@@ -192,25 +182,25 @@ skipped:
   description:
     - This indicates whether the task was skipped.
     - Set to C(true) when C(state=present) with C(ext_id) and C(export=false),
-      because LCM upgrade selections are immutable.
+      because there are no changes to apply.
   returned: always
   type: bool
   sample: false
 
 error:
-  description: This indicates the error message if any error occurred.
+  description: This indicates the error message if any error occurred
   returned: When an error occurs
   type: str
 
 failed:
-  description: This indicates whether the task failed.
+  description: This indicates whether the task failed
   returned: always
   type: bool
   sample: false
 
 msg:
   description: This indicates the message if any message occurred.
-  returned: When there is an error, module is idempotent, or check mode (in delete/export operation)
+  returned: When there is an error, the module reports skipped, or in check mode
   type: str
   sample: >-
     LCM upgrade selection with ext_id: b7dbcf46-8ba3-4dcd-a7c3-4b09b0f7a11a is
@@ -245,9 +235,7 @@ try:
     import ntnx_lifecycle_py_client as life_cycle_management_sdk  # noqa: E402
 except ImportError:
 
-    from ..module_utils.v4.sdk_mock import (  # noqa: E402
-        mock_sdk as life_cycle_management_sdk,
-    )
+    from ..module_utils.v4.sdk_mock import mock_sdk as life_cycle_management_sdk  # noqa: E402
 
     SDK_IMP_ERROR = traceback.format_exc()
 
@@ -263,7 +251,6 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
-        cluster_ext_id=dict(type="str"),
         selected_upgrades=dict(
             type="list",
             elements="dict",
@@ -337,6 +324,17 @@ def update_upgrade_selection(module, api_instance, result):
     if module.params.get("export"):
         export_upgrade_selection(module, api_instance, result)
         return
+
+    if module.check_mode:
+        result["skipped"] = True
+        result["changed"] = False
+        module.exit_json(
+            msg=(
+                "LCM upgrade selection with ext_id: {0} is immutable. Nothing to "
+                "update; pass export=true to export the download helper."
+            ).format(ext_id),
+            **result,
+        )
 
     entity = get_upgrade_selection(module, api_instance, ext_id)
     result["response"] = strip_internal_attributes(entity.to_dict())
@@ -435,8 +433,6 @@ def run_module():
         "response": None,
         "failed": False,
         "ext_id": None,
-        "task_ext_id": None,
-        "skipped": False,
     }
     api_instance = get_upgrade_selections_api_instance(module)
     state = module.params.get("state")
