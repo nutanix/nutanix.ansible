@@ -275,6 +275,7 @@ action_groups:
     - ntnx_entity_groups_info_v2
     - ntnx_lcm_upgrade_selection_v2
     - ntnx_lcm_upgrade_selection_info_v2
+    - ntnx_validate_node_uplinks_v2
     - ntnx_image_download_v2
     - ntnx_vm_console_token_v2
     - ntnx_vm_pcie_device_v2
