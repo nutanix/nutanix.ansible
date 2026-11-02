@@ -549,9 +549,7 @@ def get_module_spec():
             mutually_exclusive=[
                 ("credential_reference", "vendor_management_credential")
             ],
-            required_one_of=[
-                ("credential_reference", "vendor_management_credential")
-            ],
+            required_one_of=[("credential_reference", "vendor_management_credential")],
             obj={
                 "credential_reference": lifecycle_sdk.CredentialReference,
                 "vendor_management_credential": lifecycle_sdk.VendorManagementCredential,
