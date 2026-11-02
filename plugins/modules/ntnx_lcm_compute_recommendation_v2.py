@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 from __future__ import absolute_import, division, print_function
 
@@ -11,18 +11,13 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_lcm_compute_recommendation_v2
 short_description: Compute LCM update recommendations for a set of entities
-version_added: 2.5.0
+version_added: "2.7.0"
 description:
-    - This module computes LCM (Life Cycle Manager) update recommendations for a
-      given set of entities in Nutanix Prism Central.
-    - This module invokes the LCM v4 recommendations action C(POST
-      /lifecycle/v4.2/operations/$actions/compute-recommendations) which
-      returns a task reference. Once the task completes, the recommendation
-      resource external ID is available from the task's C(completion_details)
-      and can be fetched via M(nutanix.ncp.ntnx_compute_recommendations_info_v2).
-    - The caller must have completed an LCM inventory before calling this
-      module so the recommendations engine has fresh entity data to work with.
-    - This module uses PC v4 APIs based SDKs.
+    - Compute LCM (Life Cycle Manager) update recommendations for a set of entities.
+    - Returns a task reference. When C(wait) is true, the recommendation resource
+      external ID is taken from the task C(completion_details).
+    - An LCM inventory should be completed before calling this module.
+    - This module uses PC v4 APIs based SDKs
 author:
     - Abhinav Bansal (@abhinavbansal29)
     - George Ghawali (@george-ghawali)
@@ -38,28 +33,20 @@ options:
         description:
             - State of the module.
             - If state is C(present), the module will compute LCM update recommendations.
-            - The C(absent) state is not supported for this action-style module.
         type: str
         choices:
             - present
         default: present
     cluster_ext_id:
         description:
-            - External identifier of the cluster on which the operation should
-              be performed. It is passed to the API as the C(X-Cluster-Id)
-              header.
-            - If nothing is passed, the recommendations are computed on the
-              Prism Central. If a Prism Element (PE) cluster external ID is
-              passed, the recommendations are computed on that PE cluster.
-            - Use M(nutanix.ncp.ntnx_clusters_info_v2) to look up the external
-              ID of the cluster.
+            - Cluster UUID for which recommendations are computed.
+            - When omitted, recommendations are computed on Prism Central.
+            - Passed to the API as the C(X-Cluster-Id) header.
         type: str
         required: false
     entity_types:
         description:
-            - List of LCM entity types to compute recommendations for. When
-              provided, LCM returns recommendations for all entities of these
-              types available on the target cluster / Prism Central.
+            - List of LCM entity types to compute recommendations for.
             - Mutually exclusive with I(entity_update_specs), I(target_entities)
               and I(entity_deploy_specs).
         type: list
@@ -69,8 +56,7 @@ options:
             - SOFTWARE
     entity_update_specs:
         description:
-            - Explicit list of update specifications to compute recommendations
-              for. Each item pins an LCM entity to a target version.
+            - Explicit list of update specifications for recommendations.
             - Mutually exclusive with I(entity_types), I(target_entities) and
               I(entity_deploy_specs).
         type: list
@@ -78,8 +64,7 @@ options:
         suboptions:
             entity_uuid:
                 description:
-                    - External identifier of the LCM entity to update. Use
-                      M(nutanix.ncp.ntnx_lcm_entities_info_v2) to look it up.
+                    - External identifier of the LCM entity to update.
                 type: str
                 required: true
             to_version:
@@ -89,9 +74,7 @@ options:
                 required: true
     target_entities:
         description:
-            - Explicit list of target entities for which to compute
-              recommendations. Each item describes an LCM entity plus the
-              desired target C(version).
+            - Explicit list of target entities for recommendations.
             - Mutually exclusive with I(entity_types), I(entity_update_specs)
               and I(entity_deploy_specs).
         type: list
@@ -101,20 +84,18 @@ options:
                 description:
                     - Target version for the entity.
                 type: str
+                required: true
             device_id:
                 description:
-                    - Device identifier for firmware entities that are pinned
-                      to a specific device.
+                    - Device identifier for firmware entities.
                 type: str
             entity_class:
                 description:
-                    - Entity class as reported by LCM inventory (for example
-                      C(PC CORE CLUSTER)).
+                    - Entity class as reported by LCM inventory.
                 type: str
             entity_model:
                 description:
-                    - Entity model as reported by LCM inventory (for example
-                      C(Calm Policy Engine)).
+                    - Entity model as reported by LCM inventory.
                 type: str
             entity_type:
                 description:
@@ -125,8 +106,7 @@ options:
                     - SOFTWARE
             entity_version:
                 description:
-                    - Current version of the entity as reported by LCM
-                      inventory.
+                    - Current version of the entity as reported by LCM inventory.
                 type: str
             hardware_family:
                 description:
@@ -134,8 +114,7 @@ options:
                 type: str
             ext_id:
                 description:
-                    - External identifier of the LCM entity as returned by
-                      M(nutanix.ncp.ntnx_lcm_entities_info_v2).
+                    - External identifier of the LCM entity.
                 type: str
             location_info:
                 description:
@@ -160,8 +139,7 @@ options:
                         type: str
     entity_deploy_specs:
         description:
-            - Explicit list of deploy specifications used to add new entities
-              to the cluster via LCM. Each item wraps an entity descriptor.
+            - Explicit list of deploy specifications for recommendations.
             - Mutually exclusive with I(entity_types), I(entity_update_specs)
               and I(target_entities).
         type: list
@@ -169,8 +147,7 @@ options:
         suboptions:
             entity_identifier:
                 description:
-                    - LCM entity identifier used to select the entity to
-                      deploy.
+                    - LCM entity identifier used to select the entity to deploy.
                 type: dict
                 required: true
                 suboptions:
@@ -211,18 +188,18 @@ extends_documentation_fragment:
 EXAMPLES = r"""
 - name: Compute LCM recommendations for all SOFTWARE entities on Prism Central
   nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
-    nutanix_host: <pc_ip>
-    nutanix_username: <user>
-    nutanix_password: <pass>
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
     entity_types:
       - SOFTWARE
   register: recommendations_task
 
 - name: Compute LCM recommendations for a specific entity target version
   nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
-    nutanix_host: <pc_ip>
-    nutanix_username: <user>
-    nutanix_password: <pass>
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
     cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
     entity_update_specs:
       - entity_uuid: "3c196eac-e1d5-4c8a-9b01-c133f6907ca2"
@@ -231,9 +208,9 @@ EXAMPLES = r"""
 
 - name: Compute LCM recommendations for a target entity descriptor
   nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
-    nutanix_host: <pc_ip>
-    nutanix_username: <user>
-    nutanix_password: <pass>
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
     target_entities:
       - entity_type: SOFTWARE
         entity_model: "Calm Policy Engine"
@@ -245,17 +222,13 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - Response returned by the compute-recommendations action.
-        - When I(wait) is C(true) (the default), this is the final Prism task
-          object once the compute-recommendations task has reached a terminal
-          state.
-        - When I(wait) is C(false), this is the initial task reference returned
-          by the API.
+        - Response for compute LCM recommendations.
+        - If C(wait) is true, it will contain the final task payload after completion.
+        - If C(wait) is false, it will contain the initial task details.
     type: dict
     returned: always
     sample:
         {
-            "cluster_ext_ids": null,
             "completed_time": "2026-07-20T09:11:23.912241+00:00",
             "completion_details": [
                 {
@@ -263,68 +236,38 @@ response:
                     "value": "8d3d0c2f-1c8b-4bf1-8a5b-4a2f96b6f97e"
                 }
             ],
-            "created_time": "2026-07-20T09:10:58.314367+00:00",
-            "entities_affected": null,
-            "error_messages": null,
             "ext_id": "ZXJnb24=:f26d910f-77fe-41a7-7700-fda504474720",
-            "is_background_task": false,
-            "is_cancelable": false,
-            "last_updated_time": "2026-07-20T09:11:23.912240+00:00",
-            "legacy_error_message": null,
-            "number_of_entities_affected": 0,
-            "number_of_subtasks": 0,
             "operation": "kLcmRootTask",
             "operation_description": "Compute Recommendations",
-            "owned_by": null,
-            "parent_task": null,
             "progress_percentage": 100,
-            "root_task": null,
-            "started_time": "2026-07-20T09:10:58.314367+00:00",
-            "status": "SUCCEEDED",
-            "sub_steps": null,
-            "sub_tasks": null,
-            "warnings": null
+            "status": "SUCCEEDED"
         }
 task_ext_id:
-    description: External identifier of the compute-recommendations task.
+    description: The external ID of the task.
     type: str
     returned: always
     sample: "ZXJnb24=:f26d910f-77fe-41a7-7700-fda504474720"
 ext_id:
     description:
-        - External identifier of the recommendation resource produced by the
-          task. It is extracted from the task's C(completion_details) after
-          successful completion and can be used with
-          M(nutanix.ncp.ntnx_compute_recommendations_info_v2) to fetch the
-          detailed recommendation payload.
+        - The external ID of the recommendation resource from task completion details.
     type: str
     returned: when the task completes and returns a recommendation resource
     sample: "8d3d0c2f-1c8b-4bf1-8a5b-4a2f96b6f97e"
 changed:
-    description: Whether the module made any changes on the cluster.
+    description: This indicates whether the task resulted in any changes
     type: bool
     returned: always
     sample: true
-skipped:
-    description: Whether the action was skipped (only set in check mode).
-    type: bool
-    returned: when applicable
-    sample: false
 failed:
-    description: Whether the module invocation failed.
+    description: This indicates whether the task failed
     type: bool
     returned: always
     sample: false
 msg:
-    description: Status or error message.
+    description: This indicates the message if any message occurred
     type: str
-    returned: contextual
+    returned: When there is an error or in check mode operation
     sample: "Api Exception raised while computing LCM recommendations"
-error:
-    description: Details about any error encountered.
-    type: str
-    returned: When an error occurs
-    sample: "Failed generating compute recommendations spec"
 """
 
 import traceback  # noqa: E402
@@ -361,8 +304,8 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 ENTITY_TYPE_CHOICES = ["FIRMWARE", "SOFTWARE"]
 LOCATION_TYPE_CHOICES = ["PC", "CLUSTER", "NODE"]
 
-# Only one of these input flavours may be supplied at a time — they map to
-# the OneOf `recommendationSpec` field on the SDK request body.
+# RecommendationSpec.recommendation_spec is a oneOf; Ansible exposes each
+# flavour as a mutually exclusive top-level option.
 RECOMMENDATION_SPEC_INPUTS = (
     "entity_types",
     "entity_update_specs",
@@ -385,7 +328,7 @@ def get_module_spec():
     )
 
     target_entity_spec = dict(
-        version=dict(type="str"),
+        version=dict(type="str", required=True),
         device_id=dict(type="str"),
         entity_class=dict(type="str"),
         entity_model=dict(type="str"),
@@ -509,23 +452,11 @@ def _build_entity_deploy_specs(items):
     return specs
 
 
-def _selected_recommendation_input(module):
+def _build_recommendation_spec_body(module):
+    """Assemble the SDK RecommendationSpec body (oneOf recommendation_spec)."""
+
+    # required_one_of + mutually_exclusive guarantee exactly one flavour.
     selected = [name for name in RECOMMENDATION_SPEC_INPUTS if module.params.get(name)]
-    return selected
-
-
-def _build_recommendation_spec_body(module, result):
-    """Assemble the SDK `RecommendationSpec` request body from module params."""
-
-    selected = _selected_recommendation_input(module)
-    if not selected:
-        result["error"] = (
-            "One of {0} must be supplied to compute LCM recommendations".format(
-                ", ".join(RECOMMENDATION_SPEC_INPUTS)
-            )
-        )
-        module.fail_json(msg="Missing recommendation spec input", **result)
-
     body = lifecycle_sdk.RecommendationSpec()
     input_name = selected[0]
     params = module.params
@@ -551,15 +482,14 @@ def _build_recommendation_spec_body(module, result):
 def compute_lcm_recommendations(module, api_instance, result):
     cluster_ext_id = module.params.get("cluster_ext_id")
 
-    spec = _build_recommendation_spec_body(module, result)
+    # Build request body once before check_mode (same object for live path).
+    # RecommendationSpec.recommendation_spec is a oneOf list; builders map each
+    # mutually exclusive Ansible flavour onto the matching SDK list type.
+    spec = _build_recommendation_spec_body(module)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
-        result["skipped"] = True
-        result["msg"] = (
-            "Compute LCM recommendations was skipped due to check_mode. "
-            "Returning the generated spec instead."
-        )
+        result["msg"] = "LCM compute recommendations will be performed."
         return
 
     try:
@@ -579,9 +509,6 @@ def compute_lcm_recommendations(module, api_instance, result):
     result["changed"] = True
 
     if task_ext_id and module.params.get("wait"):
-        # raise_error=False keeps the task_ext_id and other context we've
-        # already stashed on `result`; we surface any FAILED status ourselves
-        # so the caller sees the full task payload.
         task = wait_for_completion(module, task_ext_id, raise_error=False)
         task_dict = strip_internal_attributes(task.to_dict())
         result["response"] = task_dict
@@ -604,11 +531,7 @@ def compute_lcm_recommendations(module, api_instance, result):
             result["ext_id"] = recommendation_ext_id
         else:
             module.fail_json(
-                msg=(
-                    "Compute LCM recommendations task completed but the "
-                    "recommendation resource ext_id was not present in the "
-                    "task completion details"
-                ),
+                msg=("Failed to get entity ext_id from task for LCM recommendation"),
                 **result,
             )
 
@@ -634,8 +557,8 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "failed": False,
         "response": None,
-        "task_ext_id": None,
         "ext_id": None,
     }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -11,19 +11,11 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_compute_recommendations_info_v2
-short_description: Fetch LCM compute-recommendation info in Nutanix Prism Central
-version_added: 2.5.0
+short_description: Get LCM compute recommendation info in Nutanix Prism Central
+version_added: "2.7.0"
 description:
-    - This module allows you to fetch information about ComputeRecommendation in Nutanix Prism Central.
-    - If C(ext_id) is provided, fetch details of the specific ComputeRecommendation.
-    - The underlying LCM v4 API exposes only C(GET
-      /lifecycle/v4.2/resources/recommendations/{extId}), so this module
-      requires C(ext_id) and does not support listing / paginating / filtering
-      recommendations.
-    - The C(ext_id) of a recommendation resource is produced by
-      M(nutanix.ncp.ntnx_lcm_compute_recommendation_v2) and is exposed on that
-      module's C(ext_id) return field.
-    - This module uses PC v4 APIs based SDKs.
+    - Get details of an LCM compute recommendation by external ID.
+    - This module uses PC v4 APIs based SDKs
 author:
     - Abhinav Bansal (@abhinavbansal29)
     - George Ghawali (@george-ghawali)
@@ -38,9 +30,6 @@ options:
     ext_id:
         description:
             - External identifier of the LCM update recommendation resource.
-            - Returned by M(nutanix.ncp.ntnx_lcm_compute_recommendation_v2) as
-              the C(ext_id) field once the compute-recommendations task has
-              succeeded.
         type: str
         required: true
     read_timeout:
@@ -55,11 +44,11 @@ extends_documentation_fragment:
 """
 
 EXAMPLES = r"""
-- name: Fetch LCM compute-recommendation using external ID
+- name: Fetch LCM compute recommendation using external ID
   nutanix.ncp.ntnx_compute_recommendations_info_v2:
-    nutanix_host: <pc_ip>
-    nutanix_username: <user>
-    nutanix_password: <pass>
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
     ext_id: "8d3d0c2f-1c8b-4bf1-8a5b-4a2f96b6f97e"
   register: lcm_recommendation
 """
@@ -67,10 +56,7 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - The response from the Nutanix PC ComputeRecommendation info v4 API.
-        - A single ComputeRecommendation resource is returned; the API does
-          not support listing / filtering / limiting recommendations, so this
-          module always returns a single resource.
+        - The LCM compute recommendation details.
     type: dict
     returned: always
     sample:
@@ -85,55 +71,29 @@ response:
                 }
             ],
             "ext_id": "8d3d0c2f-1c8b-4bf1-8a5b-4a2f96b6f97e",
-            "links": null,
-            "modifiable_entities": [
-                {
-                    "message": null,
-                    "target_entity": {
-                        "entity_class": "PC CORE CLUSTER",
-                        "entity_model": "Calm Policy Engine",
-                        "entity_type": "SOFTWARE",
-                        "entity_version": "3.8.0",
-                        "ext_id": "3c196eac-e1d5-4c8a-9b01-c133f6907ca2",
-                        "hardware_family": null,
-                        "links": null,
-                        "location_info": {
-                            "location_name": null,
-                            "location_type": "PC",
-                            "uuid": "1e9a1996-50e2-485f-a67c-22355cb43055"
-                        },
-                        "tenant_id": null
-                    }
-                }
-            ],
-            "skipped_entities": [],
-            "tenant_id": null
+            "modifiable_entities": [],
+            "skipped_entities": []
         }
 ext_id:
-    description: External ID of the recommendation resource.
+    description: The external ID of the recommendation resource.
     type: str
-    returned: when external ID is provided
+    returned: always
     sample: "8d3d0c2f-1c8b-4bf1-8a5b-4a2f96b6f97e"
 changed:
-    description: Whether the module made any changes (always false for info modules).
+    description: This indicates whether the task resulted in any changes
     type: bool
     returned: always
     sample: false
 failed:
-    description: Whether the module invocation failed.
+    description: This indicates whether the task failed
     type: bool
     returned: always
     sample: false
 msg:
-    description: Status or error message.
+    description: This indicates the message if any message occurred
     type: str
-    returned: contextual
+    returned: When there is an error
     sample: "Api Exception raised while fetching LCM recommendation using external identifier"
-error:
-    description: Details about any error encountered.
-    type: str
-    returned: When an error occurs
-    sample: "Not Found"
 """
 
 import warnings  # noqa: E402

@@ -1,0 +1,95 @@
+---
+# Summary:
+# 1. Look up Prism Central and run LCM inventory
+# 2. Compute LCM recommendations for SOFTWARE entities
+# 3. Fetch the recommendation resource via the info module
+# 4. Compute recommendations with entity_update_specs / target_entities
+
+- name: LCM compute recommendation playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: List all clusters to get Prism Central external ID
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: >-
+          config/clusterFunction/any(t:t eq
+          Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')
+      register: clusters_result
+
+    - name: Set variables
+      ansible.builtin.set_fact:
+        prism_central_external_id: "{{ clusters_result.response[0].ext_id }}"
+
+    - name: Perform LCM inventory on Prism Central
+      nutanix.ncp.ntnx_lcm_inventory_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+        wait: false
+      register: lcm_inventory_result
+      ignore_errors: true
+
+    - name: List a single LCM entity
+      nutanix.ncp.ntnx_lcm_entities_info_v2:
+        limit: 1
+      register: lcm_entity_probe
+      ignore_errors: true
+
+    - name: Store sample LCM entity attributes when one is present
+      ansible.builtin.set_fact:
+        sample_entity_ext_id: "{{ lcm_entity_probe.response[0].ext_id }}"
+        sample_entity_version: "{{ lcm_entity_probe.response[0].entity_version }}"
+        sample_entity_model: "{{ lcm_entity_probe.response[0].entity_model }}"
+      when:
+        - lcm_entity_probe is defined
+        - lcm_entity_probe.response is defined
+        - lcm_entity_probe.response | length > 0
+
+    - name: Compute LCM recommendations for all SOFTWARE entities
+      nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+        entity_types:
+          - SOFTWARE
+      register: recommendation_by_entity_types
+      ignore_errors: true
+
+    - name: Fetch the recommendation resource
+      nutanix.ncp.ntnx_compute_recommendations_info_v2:
+        ext_id: "{{ recommendation_by_entity_types.ext_id }}"
+      register: recommendation_details
+      when:
+        - recommendation_by_entity_types.ext_id is defined
+        - recommendation_by_entity_types.ext_id != None
+      ignore_errors: true
+
+    - name: Compute LCM recommendations with entity_update_specs
+      nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+        entity_update_specs:
+          - entity_uuid: "{{ sample_entity_ext_id }}"
+            to_version: "{{ sample_entity_version }}"
+        wait: false
+      register: recommendation_by_update_specs
+      when: sample_entity_ext_id is defined
+      ignore_errors: true
+
+    - name: Compute LCM recommendations with target_entities
+      nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
+        cluster_ext_id: "{{ prism_central_external_id }}"
+        target_entities:
+          - entity_type: SOFTWARE
+            entity_model: "{{ sample_entity_model }}"
+            entity_version: "{{ sample_entity_version }}"
+            version: "{{ sample_entity_version }}"
+            ext_id: "{{ sample_entity_ext_id }}"
+            location_info:
+              location_type: PC
+              uuid: "{{ prism_central_external_id }}"
+        wait: false
+      register: recommendation_by_target_entities
+      when: sample_entity_ext_id is defined
+      ignore_errors: true

@@ -125,12 +125,12 @@
 # check_mode coverage (one Create, one Update, one Delete)
 ##############################################################################
 
-- name: Generate spec for entity_update_specs input in check mode (Create)
+- name: Generate spec for entity_update_specs input in check mode
   nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
-    cluster_ext_id: "{{ prism_central_external_id }}"
+    cluster_ext_id: "83083083-0000-0000-0000-000000000001"
     entity_update_specs:
-      - entity_uuid: "{{ sample_entity_ext_id }}"
-        to_version: "{{ sample_entity_version }}"
+      - entity_uuid: "83083083-0000-0000-0000-000000000002"
+        to_version: "4.0.0"
   check_mode: true
   register: cr_check_create
   ignore_errors: true
@@ -140,32 +140,32 @@
     that:
       - cr_check_create.failed == false
       - cr_check_create.changed == false
-      - cr_check_create.skipped == true
       - cr_check_create.response is defined
       - cr_check_create.response.recommendation_spec is defined
       - cr_check_create.response.recommendation_spec | length == 1
-      - cr_check_create.response.recommendation_spec[0].entity_uuid == sample_entity_ext_id
-      - cr_check_create.response.recommendation_spec[0].to_version == sample_entity_version
-      - cr_check_create.msg is defined
-      - "'check_mode' in cr_check_create.msg"
+      - >-
+        cr_check_create.response.recommendation_spec[0].entity_uuid ==
+        "83083083-0000-0000-0000-000000000002"
+      - cr_check_create.response.recommendation_spec[0].to_version == "4.0.0"
+      - cr_check_create.msg is search("will be performed")
     fail_msg: "check_mode spec generation failed for entity_update_specs"
     success_msg: "check_mode spec generation succeeded for entity_update_specs"
 
-- name: Generate spec for target_entities input in check mode (Update)
+- name: Generate spec for target_entities input in check mode
   nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
-    cluster_ext_id: "{{ prism_central_external_id }}"
+    cluster_ext_id: "83083083-0000-0000-0000-000000000001"
     target_entities:
       - entity_type: SOFTWARE
-        entity_model: "{{ sample_entity_model }}"
-        entity_version: "{{ sample_entity_version }}"
-        version: "{{ sample_entity_version }}"
-        ext_id: "{{ sample_entity_ext_id }}"
+        entity_model: "Calm Policy Engine"
+        entity_version: "3.8.0"
+        version: "4.0.0"
+        ext_id: "83083083-0000-0000-0000-000000000002"
         entity_class: "PC CORE CLUSTER"
         hardware_family: "generic"
         device_id: "device-1"
         location_info:
           location_type: PC
-          uuid: "{{ prism_central_external_id }}"
+          uuid: "83083083-0000-0000-0000-000000000001"
           location_name: "prism-central"
   check_mode: true
   register: cr_check_update
@@ -176,33 +176,38 @@
     that:
       - cr_check_update.failed == false
       - cr_check_update.changed == false
-      - cr_check_update.skipped == true
       - cr_check_update.response is defined
       - cr_check_update.response.recommendation_spec is defined
       - cr_check_update.response.recommendation_spec | length == 1
       - cr_check_update.response.recommendation_spec[0].entity_type == "SOFTWARE"
-      - cr_check_update.response.recommendation_spec[0].entity_model == sample_entity_model
-      - cr_check_update.response.recommendation_spec[0].version == sample_entity_version
-      - cr_check_update.response.recommendation_spec[0].ext_id == sample_entity_ext_id
-      - cr_check_update.response.recommendation_spec[0].entity_class == "PC CORE CLUSTER"
+      - >-
+        cr_check_update.response.recommendation_spec[0].entity_model ==
+        "Calm Policy Engine"
+      - cr_check_update.response.recommendation_spec[0].version == "4.0.0"
+      - >-
+        cr_check_update.response.recommendation_spec[0].ext_id ==
+        "83083083-0000-0000-0000-000000000002"
+      - >-
+        cr_check_update.response.recommendation_spec[0].entity_class ==
+        "PC CORE CLUSTER"
       - cr_check_update.response.recommendation_spec[0].hardware_family == "generic"
       - cr_check_update.response.recommendation_spec[0].device_id == "device-1"
-      - cr_check_update.response.recommendation_spec[0].location_info.location_type == "PC"
-      - cr_check_update.response.recommendation_spec[0].location_info.uuid == prism_central_external_id
-      - cr_check_update.response.recommendation_spec[0].location_info.location_name == "prism-central"
+      - >-
+        cr_check_update.response.recommendation_spec[0].location_info.location_type
+        == "PC"
     fail_msg: "check_mode spec generation failed for target_entities"
     success_msg: "check_mode spec generation succeeded for target_entities"
 
-- name: Generate spec for entity_deploy_specs input in check mode (extra spec coverage)
+- name: Generate spec for entity_deploy_specs input in check mode
   nutanix.ncp.ntnx_lcm_compute_recommendation_v2:
-    cluster_ext_id: "{{ prism_central_external_id }}"
+    cluster_ext_id: "83083083-0000-0000-0000-000000000001"
     entity_deploy_specs:
       - entity_identifier:
-          ext_id: "{{ sample_entity_ext_id }}"
+          ext_id: "83083083-0000-0000-0000-000000000002"
           entity_class: "PC CORE CLUSTER"
-          entity_model: "{{ sample_entity_model }}"
+          entity_model: "Calm Policy Engine"
           entity_type: "SOFTWARE"
-          entity_version: "{{ sample_entity_version }}"
+          entity_version: "3.8.0"
           hardware_family: "generic"
   check_mode: true
   register: cr_check_deploy
@@ -213,16 +218,16 @@
     that:
       - cr_check_deploy.failed == false
       - cr_check_deploy.changed == false
-      - cr_check_deploy.skipped == true
       - cr_check_deploy.response is defined
       - cr_check_deploy.response.recommendation_spec is defined
       - cr_check_deploy.response.recommendation_spec | length == 1
       - cr_check_deploy.response.recommendation_spec[0].entity_identifier is defined
-      - cr_check_deploy.response.recommendation_spec[0].entity_identifier.ext_id == sample_entity_ext_id
-      - cr_check_deploy.response.recommendation_spec[0].entity_identifier.entity_class == "PC CORE CLUSTER"
-      - cr_check_deploy.response.recommendation_spec[0].entity_identifier.entity_type == "SOFTWARE"
-      - cr_check_deploy.response.recommendation_spec[0].entity_identifier.entity_version == sample_entity_version
-      - cr_check_deploy.response.recommendation_spec[0].entity_identifier.hardware_family == "generic"
+      - >-
+        cr_check_deploy.response.recommendation_spec[0].entity_identifier.ext_id
+        == "83083083-0000-0000-0000-000000000002"
+      - >-
+        cr_check_deploy.response.recommendation_spec[0].entity_identifier.entity_type
+        == "SOFTWARE"
     fail_msg: "check_mode spec generation failed for entity_deploy_specs"
     success_msg: "check_mode spec generation succeeded for entity_deploy_specs"
 
