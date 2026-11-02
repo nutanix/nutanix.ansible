@@ -4,7 +4,8 @@
 # 1. Create Volume group
 # 2. Fetch above created VG
 # 3. Fetch all VGs using filters
-# 4. Delete Volume group
+# 4. List all volume groups with fetch_all
+# 5. Delete Volume group
 
 - name: Volume groups playbook
   hosts: localhost
@@ -51,6 +52,12 @@
     - name: Fetch all VGs using filters
       nutanix.ncp.ntnx_volume_groups_info_v2:
         filter: "startswith(name, '{{ name }}')"
+      register: result
+      ignore_errors: true
+
+    - name: List all volume groups with fetch_all
+      nutanix.ncp.ntnx_volume_groups_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 

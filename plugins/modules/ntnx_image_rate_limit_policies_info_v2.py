@@ -66,6 +66,14 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     filter: "name eq 'my_rate_limit_policy'"
+
+- name: List all image rate limit policies with fetch_all
+  nutanix.ncp.ntnx_image_rate_limit_policies_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -138,6 +146,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -174,7 +183,10 @@ def get_policies(module, api_instance, result):
         )
 
     try:
-        resp = api_instance.list_rate_limit_policies(**kwargs)
+        resp = list_entities(
+            api_instance.list_rate_limit_policies,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
