@@ -311,8 +311,7 @@ def export_upgrade_selection(module, api_instance, result):
     result["changed"] = False
     module.exit_json(
         msg=(
-            "LCM upgrade selection with ext_id: {0} is immutable. Nothing to "
-            "update."
+            "LCM upgrade selection with ext_id: {0} is immutable. Nothing to " "update."
         ).format(ext_id),
         **result,
     )
