@@ -29,11 +29,7 @@ options:
     description:
       - The sort order in which results are returned
     type: str
-    select:
-      description:
-        - The attribute name to select
-      type: str
-  fetch_all:
+  select:
     description:
       - The attribute name to select
     type: str
