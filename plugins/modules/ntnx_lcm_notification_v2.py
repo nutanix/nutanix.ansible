@@ -374,13 +374,12 @@ from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
+from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.lcm.api_client import (  # noqa: E402
     get_notifications_api_instance,
 )
-from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.lcm.helpers import get_lcm_notification  # noqa: E402
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
-    get_entity_ext_id_from_task,
     get_ext_id_from_task_completion_details,
     wait_for_completion,
 )
