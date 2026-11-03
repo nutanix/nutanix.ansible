@@ -14,12 +14,9 @@ module: ntnx_lcm_preload_artifact_v2
 short_description: Preload LCM artifacts on to a Nutanix cluster
 version_added: 2.7.0
 description:
-    - This module allows you to preload LCM (Life Cycle Manager) artifacts on to a Nutanix cluster
-      using Prism Central v4 APIs.
-    - Preloading downloads the target upgrade images to the cluster nodes ahead of the actual
-      upgrade so that the subsequent upgrade window is shorter.
-    - The operation is asynchronous - the module returns the task response and, when
-      C(wait) is true, waits for the task to reach a terminal state.
+    - Pre-stage upgrade images on the cluster before performing an upgrade.
+    - Preloading downloads the required images from the LCM repository (or catalog) to the cluster nodes so that they are immediately available
+      when the upgrade is executed, reducing upgrade downtime.
     - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -40,10 +37,8 @@ options:
         default: present
     entity_update_specs:
         description:
-            - List of entity update objects that identify which LCM entities to preload and to
-              which version.
-            - Each element pairs an LCM entity UUID with its target version. The entity UUIDs
-              are obtained by running an LCM inventory and listing the LCM entities.
+            - List of entity update specifications(entity UUID and target version pairs)
+              for which to compute recommendations.
         type: list
         elements: dict
         required: true
@@ -51,13 +46,11 @@ options:
             entity_uuid:
                 description:
                     - UUID of the LCM entity for which artifacts should be preloaded.
-                    - Discover this using M(nutanix.ncp.ntnx_lcm_entities_info_v2) after
-                      running an LCM inventory.
                 type: str
                 required: true
             to_version:
                 description:
-                    - Target version to which the entity's artifacts should be preloaded.
+                    - The target version that the entity will be upgraded to.
                     - Must be one of the available versions reported for the entity.
                 type: str
                 required: true
@@ -65,9 +58,6 @@ options:
         description:
             - External ID of the cluster on which the preload operation should be performed.
             - When not set, the operation is performed against Prism Central itself.
-            - Pass the Prism Element cluster external ID (mapped to the C(X-Cluster-Id) header)
-              to preload artifacts on a specific PE cluster.
-            - You can fetch the cluster external ID using M(nutanix.ncp.ntnx_clusters_info_v2).
         type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
@@ -110,8 +100,8 @@ RETURN = r"""
 response:
     description:
         - Response for preloading LCM artifacts.
-        - It will contain the task info; when C(wait) is true, it is the terminal task
-          response of the preload operation.
+        - If C(wait) is true, it will contain the final task response of the preload operation.
+        - If C(wait) is false, it will contain the initial task response of the preload operation.
     returned: always
     type: dict
     sample:
@@ -172,13 +162,12 @@ msg:
     sample: "Api Exception raised while preloading LCM artifacts"
 error:
     description:
-        - This field typically holds information about if the task have errors that occurred
+        - This field holds information about if the task have errors that occurred
           during the task execution.
     returned: When an error occurs
     type: str
-    sample: "Failed generating spec for preloading LCM artifacts"
 failed:
-    description: This field typically holds information about if the task have failed.
+    description: This field holds information about if the task have failed.
     returned: always
     type: bool
     sample: false
@@ -234,14 +223,7 @@ def get_module_spec():
 
 
 def preload_artifacts(module, api_instance, result):
-    """Trigger the LCM preload-artifacts action.
-
-    Builds a ``PreloadSpec`` from the module params, invokes
-    ``EntitiesApi.preload_artifacts``, captures the returned task, and (when
-    ``wait`` is true) polls the task until completion.
-    """
     cluster_ext_id = module.params.get("cluster_ext_id")
-
     sg = SpecGenerator(module)
     default_spec = lifecycle_sdk.PreloadSpec()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -290,8 +272,8 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "failed": False,
         "response": None,
-        "task_ext_id": None,
     }
 
     api_instance = get_entity_api_instance(module)
