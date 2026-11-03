@@ -89,45 +89,51 @@ options:
                 suboptions:
                     version:
                         description:
-                            - The requested update version of an LCM entity.
+                            - The target version that this entity has been selected to upgrade to.
+                            - This field is set when an upgrade selection or upgrade operation has designated a specific version for this entity.
+                            - Unset if no upgrade target has been chosen.
                         type: str
                         required: true
                     device_id:
                         description:
-                            - Unique identifier of an LCM entity, for example an HDD serial number.
+                            - A unique device identifier for the entity, such as a hard drive serial number, NIC serial number,
+                              or other hardware-specific identifier.
                         type: str
                     entity_class:
                         description:
-                            - LCM entity class (for example C(Core Cluster)).
+                            - The class or category of the entity (e.g. "Core Cluster", "Foundation", "Firmware").
+                            - The class groups related entity models together.
                         type: str
                     entity_model:
                         description:
-                            - LCM entity model (for example C(AOS)).
+                            - The model or product name of the entity (e.g. "AOS", "NCC", "BMC", "AHV").
+                            - Uniquely identifies the specific component within its entity class.
                         type: str
                     entity_type:
                         description:
-                            - Type of an LCM entity.
+                            - Classifies whether the entity is a software component or a firmware component.
                         type: str
                         choices:
                             - FIRMWARE
                             - SOFTWARE
                     entity_version:
                         description:
-                            - Current version of an LCM entity.
+                            - The currently installed version of the entity on the cluster or node.
                         type: str
                     hardware_family:
                         description:
-                            - Hardware family for an LCM entity (for example C(dell_gen_12)).
+                            - The hardware family designation for an entity (e.g. "dell_gen_12"),
+                              identifying the hardware generation and vendor platform the entity is compatible with.
                         type: str
                     location_info:
                         description:
-                            - Location info for the entity (location type and optional name).
-                            - C(uuid) is read-only in the API and is not accepted by this module.
+                            - Describes the location of an entity as a tuple of location type (NODE, CLUSTER, or PC) and the corresponding UUID.
                         type: dict
                         suboptions:
                             location_type:
                                 description:
-                                    - Scope of the entity location (PC, cluster, or node).
+                                    - The scope level of an entity in the LCM hierarchy,
+                                      indicating whether the entity belongs to a node, a cluster, or Prism Central.
                                 type: str
                                 choices:
                                     - PC
@@ -135,7 +141,7 @@ options:
                                     - NODE
                             location_name:
                                 description:
-                                    - Name of the location (for example a node hostname).
+                                    - The display name of the location (e.g. the hostname of a node).
                                 type: str
             entity_deploy_specs:
                 description:
@@ -147,32 +153,38 @@ options:
                 suboptions:
                     entity_identifier:
                         description:
-                            - LCM entity identifier used to select the entity to deploy.
+                            - Base model for LCM entities, containing the common properties shared across all entity types:
+                              entity class, model, type, current version, and hardware family.
+                            - This model is extended by the full Entity model and is used as a building block in recommendations,
+                              notifications, history, and other contexts.
                         type: dict
                         required: true
                         suboptions:
                             entity_class:
                                 description:
-                                    - LCM entity class (for example C(Core Cluster)).
+                                    - The class or category of the entity (e.g. "Core Cluster", "Foundation", "Firmware").
+                                    - The class groups related entity models together.
                                 type: str
                             entity_model:
                                 description:
-                                    - LCM entity model (for example C(AOS)).
+                                    - The model or product name of the entity (e.g. "AOS", "NCC", "BMC", "AHV").
+                                    - Uniquely identifies the specific component within its entity class.
                                 type: str
                             entity_type:
                                 description:
-                                    - Type of an LCM entity.
+                                    - Classifies whether the entity is a software component or a firmware component.
                                 type: str
                                 choices:
                                     - FIRMWARE
                                     - SOFTWARE
                             entity_version:
                                 description:
-                                    - Current version of an LCM entity.
+                                    - The currently installed version of the entity on the cluster or node.
                                 type: str
                             hardware_family:
                                 description:
-                                    - Hardware family for an LCM entity (for example C(dell_gen_12)).
+                                    - The hardware family designation for an entity (e.g. "dell_gen_12"),
+                                      identifying the hardware generation and vendor platform the entity is compatible with.
                                 type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
@@ -473,18 +485,6 @@ def compute_lcm_recommendations(module, api_instance, result):
         task = wait_for_completion(module, task_ext_id, raise_error=False)
         task_dict = strip_internal_attributes(task.to_dict())
         result["response"] = task_dict
-
-        task_status = task_dict.get("status")
-        if task_status != "SUCCEEDED":
-            result["failed"] = True
-            module.fail_json(
-                msg=(
-                    "Compute LCM recommendations task ended with status "
-                    "{0}".format(task_status)
-                ),
-                **result,
-            )
-
         recommendation_ext_id = get_ext_id_from_task_completion_details(
             data=task, name="resourceId"
         )

@@ -1,5 +1,5 @@
 ---
-# Test plan for ntnx_lcm_compute_recommendation_v2 + ntnx_compute_recommendations_info_v2
+# Test plan for ntnx_lcm_compute_recommendation_v2 + ntnx_lcm_compute_recommendations_info_v2
 #
 # The compute-recommendations action is asynchronous. It returns a task
 # reference; when the task succeeds the recommendation resource ext_id is
@@ -27,7 +27,7 @@
 #       - Compute using target_entities — descriptor case (skipped when no
 #         entities are inventoried on the cluster).
 #       - Info: fetch each produced recommendation ext_id via
-#         ntnx_compute_recommendations_info_v2.
+#         ntnx_lcm_compute_recommendations_info_v2.
 #   * Idempotency:
 #       - Re-run the entity_types compute — LCM re-computes and returns a new
 #         recommendation resource (the action itself is not idempotent by
@@ -275,7 +275,7 @@
     success_msg: "entity_types compute-recommendations action reached a terminal state"
 
 - name: Fetch the recommendation resource returned by the entity_types run
-  nutanix.ncp.ntnx_compute_recommendations_info_v2:
+  nutanix.ncp.ntnx_lcm_compute_recommendations_info_v2:
     ext_id: "{{ cr_by_types.ext_id }}"
   register: cr_info_by_types
   when:
@@ -447,7 +447,7 @@
     success_msg: "Module rejected an invalid entity_types value"
 
 - name: Fetch a non-existent recommendation by ext_id (negative)
-  nutanix.ncp.ntnx_compute_recommendations_info_v2:
+  nutanix.ncp.ntnx_lcm_compute_recommendations_info_v2:
     ext_id: "00000000-0000-0000-0000-000000000000"
   register: cr_info_missing
   ignore_errors: true
@@ -462,7 +462,7 @@
     success_msg: "Info module rejected a non-existent ext_id"
 
 - name: Info module without required ext_id (negative)
-  nutanix.ncp.ntnx_compute_recommendations_info_v2: {}
+  nutanix.ncp.ntnx_lcm_compute_recommendations_info_v2: {}
   register: cr_info_no_ext
   ignore_errors: true
 

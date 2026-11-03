@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_compute_recommendations_info_v2
+module: ntnx_lcm_compute_recommendations_info_v2
 short_description: Get LCM compute recommendation info in Nutanix Prism Central
 version_added: "2.7.0"
 description:
@@ -29,7 +29,7 @@ notes:
 options:
     ext_id:
         description:
-            - External identifier of the LCM update recommendation resource.
+            - External identifier of the computed upgrade recommendation
         type: str
         required: true
     read_timeout:
@@ -45,7 +45,7 @@ extends_documentation_fragment:
 
 EXAMPLES = r"""
 - name: Fetch LCM compute recommendation using external ID
-  nutanix.ncp.ntnx_compute_recommendations_info_v2:
+  nutanix.ncp.ntnx_lcm_compute_recommendations_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -75,7 +75,7 @@ response:
             "skipped_entities": []
         }
 ext_id:
-    description: The external ID of the recommendation resource.
+    description: The external ID of the computed upgrade recommendation
     type: str
     returned: always
     sample: "8d3d0c2f-1c8b-4bf1-8a5b-4a2f96b6f97e"
@@ -89,11 +89,6 @@ failed:
     type: bool
     returned: always
     sample: false
-msg:
-    description: This indicates the message if any message occurred
-    type: str
-    returned: When there is an error
-    sample: "Api Exception raised while fetching LCM recommendation using external identifier"
 """
 
 import warnings  # noqa: E402
