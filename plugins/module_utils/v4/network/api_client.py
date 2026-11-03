@@ -233,6 +233,18 @@ def get_vpc_virtual_switch_mappings_api_instance(module):
     return ntnx_networking_py_client.VpcVirtualSwitchMappingsApi(api_client=api_client)
 
 
+def get_vpn_connections_api_instance(module):
+    """
+    This method will return VpnConnectionsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): VPN Connections Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.VpnConnectionsApi(api_client=api_client)
+
+
 def get_layer2_stretches_api_instance(module):
     """
     This method will return Layer2StretchesApi instance.

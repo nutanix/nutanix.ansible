@@ -66,6 +66,7 @@ class Tasks:
         PROJECT = "multidomain:config:Project"
         RESOURCE_GROUP = "multidomain:config:nutanix-resource-group"
         CONTENT_REPOSITORY = "multidomain:content:content-repository"
+        VPN_CONNECTION = "networking:config:vpn-connection"
         NETWORK_CONTROLLER = "networking:config:controller"
         GATEWAY = "networking:config:gateway"
         GUEST_REBOOT_POLICY = "vmm:ahv:policies:guest-reboot-policy"
