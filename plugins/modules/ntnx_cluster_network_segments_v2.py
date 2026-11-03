@@ -472,7 +472,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error or in check mode operation
   type: str
-  sample: "ZXJnb24=:fc0f5074-4da9-5593-bfdc-a08c13df963d"
+  sample: "Api Exception raised while creating network segment"
 """
 
 import traceback  # noqa: E402
