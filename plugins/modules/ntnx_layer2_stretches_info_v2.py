@@ -99,6 +99,7 @@ response:
       "metadata": null,
       "mtu": null,
       "name": "l2_stretch_vpn_ansible",
+      "project_ext_id": "00000000-0000-0000-0000-000000000000",
       "remote_site_params": {
         "connection_reference": "4a0f6d3e-2222-4e00-9999-0000000000ff",
         "default_gateway_ip_address": null,

@@ -61,6 +61,11 @@ options:
       - Layer2 stretch configuration details between subnets on two sites.
     type: str
     required: false
+  project_ext_id:
+    description:
+      - UUID of the project that owns this entity.
+    type: str
+    required: false
   connection_type:
     description:
       - Type of the connection used for stretching the subnet. The default is VPN.
@@ -397,6 +402,7 @@ EXAMPLES = r"""
     state: present
     name: "l2_stretch_vpn_ansible"
     description: "Layer2 Stretch over VPN created by Ansible"
+    project_ext_id: "00000000-0000-0000-0000-000000000000"
     connection_type: "VPN"
     local_site_params:
       pc_cluster_reference: "5ab1b1a2-1111-4e00-9999-0000000000aa"
@@ -474,6 +480,7 @@ response:
       "metadata": null,
       "mtu": null,
       "name": "l2_stretch_vpn_ansible",
+      "project_ext_id": "00000000-0000-0000-0000-000000000000",
       "remote_site_params": {
         "connection_reference": "4a0f6d3e-2222-4e00-9999-0000000000ff",
         "default_gateway_ip_address": null,
@@ -644,6 +651,7 @@ def get_module_spec():
         ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
+        project_ext_id=dict(type="str"),
         connection_type=dict(
             type="str",
             choices=["VPN", "VXLAN"],
