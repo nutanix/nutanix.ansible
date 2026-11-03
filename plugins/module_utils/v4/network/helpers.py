@@ -1,4 +1,4 @@
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -189,6 +189,26 @@ def get_load_balancer_session(module, api_instance, ext_id):
             module=module,
             exception=e,
             msg="Api Exception raised while fetching load balancer session info using ext_id",
+        )
+
+
+def get_layer2_stretch(module, api_instance, ext_id):
+    """
+    This method will return Layer2 Stretch info using its ext_id.
+    Args:
+        module: Ansible module
+        api_instance: Layer2StretchesApi instance from ntnx_networking_py_client sdk
+        ext_id (str): Layer2 Stretch external ID
+    return:
+        info (object): Layer2 Stretch info
+    """
+    try:
+        return api_instance.get_layer2_stretch_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Layer2 Stretch info using ext_id",
         )
 
 
