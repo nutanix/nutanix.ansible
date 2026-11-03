@@ -85,5 +85,5 @@ class Tasks:
         VM_EXT_IDS = "vmExtIds"
         VG_EXT_IDS = "volumeGroupExtIds"
         PROTECTION_POLICY = "protectionPolicyExtId"
-        UPGRADE_SELECTION = "upgradeSelectionExtId"
         NOTIFICATION = "notificationExtId"
+        PRESIGNED_URL = "presigned_url"
