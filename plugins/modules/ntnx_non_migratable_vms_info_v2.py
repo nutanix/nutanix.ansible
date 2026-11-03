@@ -68,7 +68,26 @@ response:
     - Response for fetching non-migratable VMs result info.
   returned: always
   type: dict
-  sample: <Need to add sample>
+  sample:
+    {
+        "ext_id": "cc8edc49-3282-40d8-b17f-7880c7722a61",
+        "links": null,
+        "tenant_id": null,
+        "vms": [
+            {
+                "host_ip": {
+                    "ipv4": {
+                        "prefix_length": 32,
+                        "value": "180.178.15.134"
+                    },
+                    "ipv6": null
+                },
+                "non_migratable_vm_reason": "Test reason for non-migratable VM",
+                "vm_name": "Test VM Name",
+                "vm_uuid": "7d460c38-b100-4897-9140-ca7348abbd0b"
+            }
+        ]
+    }
 ext_id:
   description:
     - The external ID of the non-migratable VMs result.
