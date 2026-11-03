@@ -122,7 +122,7 @@ response:
                     "code": "LIF-10006",
                     "error_group": "OPERATION_IN_PROGRESS_ERROR",
                     "locale": "en_US",
-                    "message": "Failed to perform the operation preloadArtifacts on cluster cae459ec-08db-475e-a5e5-151e390c9484 due to an ongoing operation Inventory and root task ef3c47f4-3675-48df-57b9-4e633125de91.",
+                    "message": "message",
                     "severity": "ERROR"
                 }
             ],
