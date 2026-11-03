@@ -1,0 +1,22 @@
+---
+# Summary:
+# Generate a VM console token for an AHV VM.
+
+- name: VM console token playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Generate VM console token
+      nutanix.ncp.ntnx_vm_console_token_v2:
+        ext_id: "<vm_ext_id>"
+      register: result
+
+    - name: Print console token result
+      ansible.builtin.debug:
+        msg: "{{ result }}"

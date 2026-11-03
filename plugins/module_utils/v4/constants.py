@@ -1,4 +1,4 @@
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -40,6 +40,7 @@ class Tasks:
         RECOVERY_POINT = "dataprotection:config:recovery-point"
         VM_RECOVERY_POINT = "dataprotection:config:vm-recovery-point"
         STORAGE_CONTAINER = "clustermgmt:config:storage-containers"
+        DISK = "clustermgmt:config:disk"
         ROUTE = "networking:config:route"
         OBJECTS = "objects:config:object-store"
         OVA = "vmm:content:ova"
@@ -48,8 +49,12 @@ class Tasks:
         CLUSTER_PROFILE = "clustermgmt:config:cluster-profile"
         NETWORK_FUNCTION = "Networking:config:network-function"
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
+        LAYER2_STRETCH = "networking:config:layer2-stretch"
         LOAD_BALANCER_SESSION = "networking:config:load-balancer-session"
         ENTITY_GROUP = "microseg:config:entity-group"
+        UPGRADE_SELECTION = "lifecycle:config:upgrade-selection"
+        PCIE_DEVICE = "vmm:ahv:config:vm:pcie-device"
+        EXTERNAL_STORAGE = "clustermgmt:config:external-storages"
         LCM_BUNDLE = "lifecycle:resources:bundle"
         VM_STARTUP_POLICY = "vmm:ahv:policies:vm-startup-policy"
         CATEGORY_MAPPING = "microseg:config:category-mapping"
@@ -61,6 +66,16 @@ class Tasks:
         PROJECT = "multidomain:config:Project"
         RESOURCE_GROUP = "multidomain:config:nutanix-resource-group"
         CONTENT_REPOSITORY = "multidomain:content:content-repository"
+        VPN_CONNECTION = "networking:config:vpn-connection"
+        NETWORK_CONTROLLER = "networking:config:controller"
+        GATEWAY = "networking:config:gateway"
+        GUEST_REBOOT_POLICY = "vmm:ahv:policies:guest-reboot-policy"
+        VM_PROFILE = "vmm:ahv:config:vm-profile"
+        IP_POOL = "clustermgmt:config:cluster:ip_pool"
+        NETWORK_SEGMENT = "clustermgmt:config:cluster:network_segment"
+        NON_MIGRATABLE_VMS_RESULT = (
+            "clustermgmt:config:cluster:non-migratable-vms-result"
+        )
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
