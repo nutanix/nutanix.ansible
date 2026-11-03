@@ -5,6 +5,7 @@ from __future__ import absolute_import, division, print_function
 
 import json
 import os
+import tempfile
 
 try:
     # Python 3
@@ -50,6 +51,53 @@ def strip_internal_attributes(data, exclude_attributes=None):
             strip_internal_attributes(item, exclude_attributes)
 
     return data
+
+
+def _get_nested_value(obj, dotted_path):
+    """
+    Get a nested value from a dict using a dotted path.
+
+    Example:
+        _get_nested_value({"address": {"ipv4": {"value": "1.2.3.4"}}}, "address.ipv4.value")
+        -> "1.2.3.4"
+    """
+    if obj is None or dotted_path is None:
+        return None
+    current_val = obj
+    for part in str(dotted_path).split("."):
+        if not isinstance(current_val, dict) or part not in current_val:
+            return None
+        current_val = current_val[part]
+    return current_val
+
+
+def filter_entities_by_attribute_get_ext_id(
+    entities,
+    attribute_path,
+    expected_value,
+    ext_id_key="ext_id",
+):
+    """
+    Filter a list of entity dicts by a (possibly nested) attribute and return the matching ext_id.
+
+    Args:
+        entities (list[dict]|None): entities to search (e.g. config['users'] or config['traps'])
+        attribute_path (str): attribute name or dotted path (e.g. 'username' or 'address.ipv4.value')
+        expected_value: value to match with == (after extraction)
+        ext_id_key (str): field name that contains the external id (default: 'ext_id')
+
+    Returns:
+        str|None: the first matched entity's ext_id, or None if no match.
+    """
+    if not entities:
+        return None
+    for item in entities:
+        if not isinstance(item, dict):
+            continue
+        actual = _get_nested_value(item, attribute_path)
+        if actual == expected_value:
+            return item.get(ext_id_key)
+    return None
 
 
 def raise_api_exception(module, exception, msg=None):
@@ -112,33 +160,28 @@ def remove_empty_ip_config(obj):
     Returns:
         object: object with stripped empty ip_config
     """
-    internal_attributes = [
+    internal_attributes = (
         "_object_type",
         "_reserved",
         "_unknown_fields",
         "$dataItemDiscriminator",
-    ]
+    )
 
-    ip_config = obj.to_dict().get("ip_config", [])
-    empty_ipv4 = False
-    empty_ipv6 = False
-    for item in ip_config.copy():
-        if not item.get("ipv4") or all(
-            value is None
-            for key, value in item["ipv4"].items()
-            if key not in internal_attributes
-        ):
-            empty_ipv4 = True
-        if not item.get("ipv6") or all(
-            value is None
-            for key, value in item["ipv6"].items()
-            if key not in internal_attributes
-        ):
-            empty_ipv6 = True
+    def _empty(block):
+        return not block or all(
+            v is None for k, v in block.items() if k not in internal_attributes
+        )
 
-        if empty_ipv6 and empty_ipv4:
-            ip_config.remove(item)
-    setattr(obj, "ip_config", ip_config)
+    ip_config = getattr(obj, "ip_config", None)
+    if not ip_config:
+        return
+    kept = []
+    for item in ip_config:
+        data = item.to_dict() if hasattr(item, "to_dict") else item
+        if _empty(data.get("ipv4")) and _empty(data.get("ipv6")):
+            continue
+        kept.append(item)
+    setattr(obj, "ip_config", kept)
 
 
 def remove_fields_from_spec(obj, fields_to_remove, deep=False):
@@ -283,6 +326,170 @@ def _apply_proxy_from_env(config, module=None):
         )
 
 
+def get_task_ext_id_from_response(resp):
+    """Return the task ext_id from an async share/unshare API response.
+
+    Only a genuine ``TaskReference`` payload is treated as awaitable. Responses
+    that completed synchronously (e.g. IAM's ``DirectoryServiceShareResponse``)
+    or that carry an empty list/map return ``None`` so the caller skips waiting.
+
+    Args:
+        resp: The SDK response object returned by a share/unshare call.
+
+    Returns:
+        str | None: The task external ID, or None when there is no task.
+    """
+    data = getattr(resp, "data", None)
+    if data is None:
+        return None
+    if type(data).__name__ != "TaskReference":
+        return None
+    return getattr(data, "ext_id", None)
+
+
+def reconcile_sharing(
+    module,
+    api_instance,
+    ext_id,
+    read_fn,
+    share_fn,
+    unshare_fn,
+    shared_with_projects=None,
+    share_all_fn=None,
+    unshare_all_fn=None,
+    is_shared_with_all=None,
+    resource_label="resource",
+):
+    """Drive a resource's project sharing to the desired state.
+
+    Reads the current sharing state once, then walks the difference against the
+    desired state and performs each share/unshare one at a time. Every
+    ``share_fn``/``unshare_fn`` call is expected to block until its change is
+    applied (task-based APIs wait on their task via ``wait_for_completion``;
+    the synchronous IAM endpoints return only once applied), so a single pass
+    reaches the desired state. If nothing differs, no call is made and the
+    resource is already in the desired state (idempotent no-op).
+
+    Args:
+        module: Ansible module object.
+        api_instance: SDK API instance, passed through to the callables.
+        ext_id (str): External ID of the resource.
+        read_fn (callable): ``read_fn(module, ext_id)`` returning the current
+            SDK spec of the resource.
+        share_fn/unshare_fn (callable): Per-project share/unshare functions
+            (signature ``fn(module, api_instance, ext_id, project_ext_id)``).
+        shared_with_projects (list | None): Desired list of project ext_ids.
+            ``None`` leaves per-project sharing untouched. Ignored when the
+            resource ends up shared with all projects, whether because
+            ``is_shared_with_all`` was set truthy in this call or the resource
+            was already shared with every project, since per-project sharing is
+            then redundant.
+        share_all_fn/unshare_all_fn (callable | None): Optional all-projects
+            share/unshare functions (signature ``fn(module, api_instance, ext_id)``).
+        is_shared_with_all (bool | None): Desired shared-with-all-projects state.
+            ``None`` leaves it untouched.
+        resource_label (str): Human-readable resource name used in the warning
+            emitted when ``shared_with_projects`` is ignored because the resource
+            is already shared with all projects.
+
+    Returns:
+        bool: True if any share/unshare was performed.
+    """
+    current = read_fn(module, ext_id)
+    changed = False
+
+    current_shared_all = bool(
+        getattr(current, "is_shared_with_all_projects", None)
+        or getattr(current, "shared_with_all_projects", None)
+    )
+
+    if is_shared_with_all is not None and share_all_fn and unshare_all_fn:
+        if is_shared_with_all and not current_shared_all:
+            share_all_fn(module, api_instance, ext_id)
+            changed = True
+            current_shared_all = True
+        elif not is_shared_with_all:
+            unshare_all_fn(module, api_instance, ext_id)
+            changed = True
+            current_shared_all = False
+
+    if shared_with_projects is not None and current_shared_all:
+        module.warn(
+            "shared_with_projects was ignored because the {0} is shared with all "
+            "projects, which already grants access to every project. To manage "
+            "per-project sharing, first set is_shared_with_all_projects to false, "
+            "then specify shared_with_projects.".format(resource_label)
+        )
+
+    if shared_with_projects is not None and not current_shared_all:
+        current_projects = set(getattr(current, "shared_with_projects", None) or [])
+        desired_projects = set(shared_with_projects)
+
+        for project_ext_id in desired_projects - current_projects:
+            share_fn(module, api_instance, ext_id, project_ext_id)
+            changed = True
+
+        for project_ext_id in current_projects - desired_projects:
+            unshare_fn(module, api_instance, ext_id, project_ext_id)
+            changed = True
+
+    return changed
+
+
+def raise_unsupported_update_fields(module, current_spec, update_spec, fields):
+    """
+    Fail the module if the user attempts to update fields that the API does
+    not allow to be changed.
+
+    Compares the values of each field in ``fields`` between ``current_spec``
+    and ``update_spec``.  If any value differs, the module is failed with a
+    message listing the offending fields.
+
+    Dot-notation is supported for nested fields.  For example,
+    ``"a.b"`` will traverse into key/attribute ``a`` and then compare ``b``.
+
+    Both specs may be SDK model objects (with attributes) or plain dicts;
+    the look-up strategy adapts automatically at each nesting level.
+
+    Args:
+        module: AnsibleModule instance.
+        current_spec: The existing resource spec fetched from the API.
+        update_spec: The spec generated from the user-provided parameters.
+        fields (list[str]): Field names (dot-notation for nested) for which
+            update is not supported.
+    """
+    if not fields:
+        return
+
+    _sentinel = object()
+
+    def _get(obj, name):
+        if isinstance(obj, dict):
+            return obj.get(name, _sentinel)
+        return getattr(obj, name, _sentinel)
+
+    def _resolve(obj, path):
+        for part in path.split("."):
+            if obj is _sentinel or obj is None:
+                return _sentinel
+            obj = _get(obj, part)
+        return obj
+
+    changed = []
+    for field in fields:
+        current_val = _resolve(current_spec, field)
+        update_val = _resolve(update_spec, field)
+        if current_val != update_val and update_val is not None:
+            changed.append(field)
+
+    if changed:
+        module.fail_json(
+            msg="Update is not supported for the following field(s): {0}".format(
+                ", ".join(changed)
+            )
+        )
+
+
 def strip_read_only_fields(spec, fields=None):
     """
     Remove server-populated read-only fields from a v4 SDK spec object before
@@ -303,6 +510,221 @@ def strip_read_only_fields(spec, fields=None):
         return spec
 
     for field in fields:
-        if hasattr(spec, field):
+        if not hasattr(spec, field):
+            continue
+        try:
             delattr(spec, field)
+        except AttributeError:
+            # SDK models expose properties without a deleter; blanking the
+            # value is equivalent for serialization purposes since None
+            # attributes are dropped from the wire payload.
+            setattr(spec, field, None)
     return spec
+
+
+def normalize_oneof_marker_values(params, marker_keys):
+    """Normalize one-of marker variants from ``null`` to ``{}``.
+
+    Some one-of (discriminated union) variants map to SDK classes with no
+    user-facing fields; the variant is selected purely by *which* key is
+    present. Users may write either ``some_marker: {}`` or simply
+    ``some_marker:`` (null) in their playbook. The latter form would otherwise
+    be stripped by ``remove_param_with_none_value`` before the spec generator
+    could dispatch it, so we promote ``null`` to ``{}`` for the given marker
+    keys here.
+
+    The structure is mutated in place.
+
+    Args:
+        params (dict | list): module params (or a nested fragment) to normalize.
+        marker_keys (Iterable[str]): keys whose ``null`` value should become ``{}``.
+    """
+    if isinstance(params, dict):
+        for key, value in params.items():
+            if key in marker_keys and value is None:
+                params[key] = {}
+            elif isinstance(value, dict):
+                normalize_oneof_marker_values(value, marker_keys)
+            elif isinstance(value, list):
+                for item in value:
+                    normalize_oneof_marker_values(item, marker_keys)
+
+
+class ListEntitiesResponse(object):
+
+    def __init__(self, data, metadata):
+        self.data = data if data is not None else []
+        self.metadata = metadata
+
+    def to_dict(self):
+        data = []
+        for item in self.data:
+            if hasattr(item, "to_dict"):
+                data.append(item.to_dict())
+            else:
+                data.append(item)
+        total = getattr(self.metadata, "total_available_results", None)
+        return {
+            "data": data,
+            "metadata": {
+                "total_available_results": total,
+            },
+        }
+
+
+def list_entities(
+    list_fn, kwargs=None, fetch_all=False, default_page_size=100, **fixed_kwargs
+):
+    """Call a V4 list API once, or paginate when C(fetch_all) is true.
+
+    Args:
+        list_fn (callable): SDK list method (e.g. ``images.list_images``).
+        kwargs (dict | None): Query kwargs from ``SpecGenerator.get_info_spec``
+            (``_page``, ``_limit``, ``_filter``, ``_fetch_all``, ...).
+        fetch_all (bool): When true, page through the API until all entities
+            are collected. Prefer ``_fetch_all`` from C(kwargs) when present
+            (set by ``get_info_spec``); it is stripped before the SDK call.
+            ``_page`` and ``_limit`` are ignored when paginating; each request
+            uses ``default_page_size`` (API max page size, 100), matching
+            inventory ``fetch_all_vms`` behavior.
+        default_page_size (int): Page size used for each request when
+            C(fetch_all) is true (default 100).
+        **fixed_kwargs: Extra keyword args always passed to ``list_fn``
+            (e.g. parent ext ids for nested lists).
+
+    Returns:
+        The raw SDK response when C(fetch_all) is false, otherwise a
+        :class:`ListEntitiesResponse` aggregating all pages.
+    """
+    kwargs = dict(kwargs or {})
+    fetch_all = bool(kwargs.pop("_fetch_all", fetch_all))
+    call_kwargs = dict(fixed_kwargs)
+    call_kwargs.update(kwargs)
+
+    if not fetch_all:
+        return list_fn(**call_kwargs)
+
+    page_size = default_page_size
+    base_kwargs = {
+        key: value for key, value in kwargs.items() if key not in ("_page", "_limit")
+    }
+    entities = []
+    metadata = None
+    current_page = 0
+
+    while True:
+        page_kwargs = dict(fixed_kwargs)
+        page_kwargs.update(base_kwargs)
+        page_kwargs["_page"] = current_page
+        page_kwargs["_limit"] = page_size
+
+        resp = list_fn(**page_kwargs)
+        page_data = getattr(resp, "data", None) if resp is not None else None
+        if page_data:
+            entities.extend(page_data)
+
+        # Keep API metadata as-is (do not invent total_available_results).
+        metadata = getattr(resp, "metadata", None) if resp is not None else None
+        total_available = getattr(metadata, "total_available_results", None)
+
+        if not page_data:
+            break
+        if total_available is not None and len(entities) >= total_available:
+            break
+        if len(page_data) < page_size:
+            break
+        current_page += 1
+
+    return ListEntitiesResponse(entities, metadata)
+
+
+def snake_to_camel(snake_str, special_cases=None):
+    """
+    Convert snake_case string to camelCase.
+
+    Args:
+        snake_str: The snake_case string to convert
+        special_cases: Optional dict mapping snake_case keys to their camelCase equivalents
+                      for cases where standard conversion doesn't apply
+                      (e.g., {'dir_svc_ext_id': 'dirSvcExtID'} for uppercase acronyms)
+
+    Returns:
+        str: The camelCase version of the input string
+    """
+    if special_cases and snake_str in special_cases:
+        return special_cases[snake_str]
+
+    # Standard snake_case to camelCase conversion
+    components = snake_str.split("_")
+    return components[0] + "".join(x.title() for x in components[1:])
+
+
+def get_api_params_from_spec(
+    spec, module_spec, exclude_params=None, special_cases=None
+):
+    """
+    Get parameters from a spec object converted to camelCase for API calls.
+    Dynamically extracts all parameters from the provided module_spec.
+    Only includes parameters that are not None.
+
+    Args:
+        spec: SDK spec object with snake_case attributes
+        module_spec: Dictionary of module argument spec (from get_module_spec())
+        exclude_params: List of parameter names to exclude (e.g., ['ext_id'])
+        special_cases: Dict mapping snake_case keys to camelCase for special conversions
+
+    Returns:
+        dict: Dictionary with camelCase keys and their values
+    """
+    if exclude_params is None:
+        exclude_params = []
+
+    api_params = {}
+    for param in module_spec.keys():
+        if param in exclude_params:
+            continue
+        value = getattr(spec, param, None)
+        if value is not None:
+            camel_key = snake_to_camel(param, special_cases)
+            api_params[camel_key] = value
+    return api_params
+
+
+def save_bytes_to_file(
+    module,
+    data,
+    dest,
+    result,
+    fail_msg,
+    temp_prefix="download_",
+    temp_suffix="",
+):
+    """
+    Save in-memory bytes from a v4 SDK text response to dest or a tempfile.
+
+    Used for APIs that return text bodies (e.g. text/xml) as raw bytes in
+    resp.data rather than writing a file via download_directory.
+
+    Sets result["response"] = {"path": <final path>}.
+    """
+    if isinstance(data, (bytes, bytearray)):
+        content = bytes(data)
+    else:
+        content = None
+
+    if content is None:
+        module.fail_json(msg=fail_msg, **result)
+
+    if dest:
+        dest_dir = os.path.dirname(os.path.abspath(dest))
+        if dest_dir and not os.path.isdir(dest_dir):
+            os.makedirs(dest_dir)
+        with open(dest, "wb") as f:
+            f.write(content)
+        result["response"] = {"path": dest}
+        return
+
+    fd, temp_path = tempfile.mkstemp(suffix=temp_suffix, prefix=temp_prefix)
+    with os.fdopen(fd, "wb") as f:
+        f.write(content)
+    result["response"] = {"path": temp_path}

@@ -21,6 +21,7 @@ class BaseInfoModule(BaseModuleV4):
         limit=dict(type="int"),
         orderby=dict(type="str"),
         select=dict(type="str"),
+        fetch_all=dict(type="bool", required=False, default=False),
     )
 
     def __init__(self, skip_info_args=False, **kwargs):

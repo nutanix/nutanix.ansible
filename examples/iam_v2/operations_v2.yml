@@ -2,7 +2,9 @@
 # Summary:
 # This playbook will do:
 # 1. List all operations
-# 2. List permission using ext_id criteria
+# 2. List all operations with fetch_all
+# 3. List operations using ext id criteria
+# 4. List operations using filter criteria
 
 - name: Operations playbook
   hosts: localhost
@@ -21,6 +23,12 @@
 
     - name: List all operations
       nutanix.ncp.ntnx_operations_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all operations with fetch_all
+      nutanix.ncp.ntnx_operations_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 

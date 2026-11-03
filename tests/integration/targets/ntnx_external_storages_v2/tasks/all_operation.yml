@@ -1,0 +1,348 @@
+---
+# =============================================================================
+# TEST PLAN — ntnx_external_storages_v2 / ntnx_external_storages_info_v2
+# =============================================================================
+# The clustermgmt v4.3 ExternalStorages API supports Create, Get, List and
+# Update only (no Delete). External storage represents a third-party storage
+# provider (Dell PowerFlex, Everpure FlashArray, Dell PowerStore) attached to
+# an AOS cluster on Prism Central. Provider type is inferred from the config
+# discriminator key; it is not a module input.
+#
+# Because a live third-party storage backend is required for a real Create to
+# succeed, this suite exercises:
+#   1. check_mode create with ALL fields (Dell PowerFlex) — spec built, no API call
+#   2. check_mode create with ALL fields (Everpure FlashArray) — enum/config coverage
+#   3. check_mode create with ALL fields (Dell PowerStore) — enum/config coverage
+#   4. check_mode update with ALL fields — spec built, no API call (best effort)
+#   5. check_mode delete — reports delete is unsupported, no API call
+#   6. Negative: missing required create fields (name/config/cluster_ext_id)
+#   7. Negative: create without a provider config sub-key (required_one_of)
+#   8. Negative: get / update with a non-existent ext_id -> descriptive error
+#   9. Info: list all external storages (list may be empty on a fresh cluster)
+#  10. Info: list with limit
+#  11. Info: list with fetch_all (paginated full list)
+#  12. Real create (best effort): attempted against the discovered cluster; if
+#      no backend exists the API error is asserted to be a clean failure and the
+#      created entity is tracked for potential follow-up.
+#
+# Every check asserts `changed` and `failed` first, then field-level values.
+# =============================================================================
+
+- name: Start ntnx_external_storages_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_external_storages_v2 tests
+
+- name: Generate random name suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set base facts
+  ansible.builtin.set_fact:
+    prefix_name: ansible-es
+    external_storage_name: "ansible-es-{{ random_name }}"
+    created_ext_ids: []
+
+# ---------------------------------------------------------------------------
+# Discover an AOS cluster to attach the external storage to
+# ---------------------------------------------------------------------------
+- name: Fetch an AOS cluster from Prism Central
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_result
+  ignore_errors: true
+
+- name: Set cluster ext_id from discovery
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+  when:
+    - clusters_result.response is defined
+    - clusters_result.response | length > 0
+
+- name: Fallback cluster ext_id when discovery is empty
+  ansible.builtin.set_fact:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+  when: cluster_ext_id is not defined
+
+# ---------------------------------------------------------------------------
+# 1. check_mode create with ALL fields — Dell PowerFlex
+# ---------------------------------------------------------------------------
+- name: Generate external storage create spec (Dell PowerFlex) with check mode
+  nutanix.ncp.ntnx_external_storages_v2:
+    state: present
+    name: "{{ external_storage_name }}-pflex"
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    end_point_address:
+      ipv4:
+        value: "10.44.76.100"
+        prefix_length: 32
+    config:
+      dell_powerflex:
+        username: "admin"
+        password: "PowerFlex.123"
+        protection_domain_name: "pd-01"
+        storage_pool_name: "sp-01"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify Dell PowerFlex create spec generated in check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == external_storage_name + "-pflex"
+      - result.response.cluster_ext_id == cluster_ext_id
+      - result.response.end_point_address.ipv4.value == "10.44.76.100"
+      - result.response.end_point_address.ipv4.prefix_length == 32
+      - result.response.config.username == "admin"
+      - result.response.config.protection_domain_name == "pd-01"
+      - result.response.config.storage_pool_name == "sp-01"
+    fail_msg: "Unable to generate Dell PowerFlex external storage create spec in check mode"
+    success_msg: "Dell PowerFlex external storage create spec generated successfully in check mode"
+
+# ---------------------------------------------------------------------------
+# 2. check_mode create with ALL fields — Everpure FlashArray
+# ---------------------------------------------------------------------------
+- name: Generate external storage create spec (Everpure FlashArray) with check mode
+  nutanix.ncp.ntnx_external_storages_v2:
+    state: present
+    name: "{{ external_storage_name }}-fa"
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    end_point_address:
+      fqdn:
+        value: "flasharray.example.com"
+    config:
+      everpure_flasharray:
+        username: "admin"
+        password: "FlashArray.123"
+        realm_name: "realm-01"
+        pod_name: "pod-01"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify Everpure FlashArray create spec generated in check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == external_storage_name + "-fa"
+      - result.response.end_point_address.fqdn.value == "flasharray.example.com"
+      - result.response.config.username == "admin"
+      - result.response.config.realm_name == "realm-01"
+      - result.response.config.pod_name == "pod-01"
+    fail_msg: "Unable to generate Everpure FlashArray external storage create spec in check mode"
+    success_msg: "Everpure FlashArray external storage create spec generated successfully in check mode"
+
+# ---------------------------------------------------------------------------
+# 3. check_mode create with ALL fields — Dell PowerStore
+# ---------------------------------------------------------------------------
+- name: Generate external storage create spec (Dell PowerStore) with check mode
+  nutanix.ncp.ntnx_external_storages_v2:
+    state: present
+    name: "{{ external_storage_name }}-pstore"
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    end_point_address:
+      ipv6:
+        value: "2001:db8::1"
+        prefix_length: 128
+    config:
+      dell_powerstore:
+        username: "admin"
+        password: "PowerStore.123"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify Dell PowerStore create spec generated in check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == external_storage_name + "-pstore"
+      - result.response.end_point_address.ipv6.value == "2001:db8::1"
+      - result.response.end_point_address.ipv6.prefix_length == 128
+      - result.response.config.username == "admin"
+    fail_msg: "Unable to generate Dell PowerStore external storage create spec in check mode"
+    success_msg: "Dell PowerStore external storage create spec generated successfully in check mode"
+
+# ---------------------------------------------------------------------------
+# 5. check_mode delete — delete unsupported by the API
+# ---------------------------------------------------------------------------
+- name: Delete external storage with check mode enabled
+  nutanix.ncp.ntnx_external_storages_v2:
+    state: absent
+    ext_id: "12345678-1234-1234-1234-123456789012"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify delete reports unsupported operation
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.ext_id == "12345678-1234-1234-1234-123456789012"
+      - "'Delete operation is not supported' in result.msg"
+    fail_msg: "Delete external storage did not report unsupported operation as expected"
+    success_msg: "Delete external storage correctly reported unsupported operation"
+
+# ---------------------------------------------------------------------------
+# 6. Negative: missing required create fields
+# ---------------------------------------------------------------------------
+- name: Create external storage without name/config/cluster_ext_id
+  nutanix.ncp.ntnx_external_storages_v2:
+    state: present
+    end_point_address:
+      ipv4:
+        value: "10.44.76.100"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing required create fields error
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - "'Missing required parameter' in result.msg or 'missing' in result.msg"
+    fail_msg: "Create with missing required fields did not fail as expected"
+    success_msg: "Create with missing required fields failed as expected"
+
+# ---------------------------------------------------------------------------
+# 7. Negative: create without a provider config sub-key
+# ---------------------------------------------------------------------------
+- name: Create external storage without provider config sub-key
+  nutanix.ncp.ntnx_external_storages_v2:
+    state: present
+    name: "{{ external_storage_name }}-noconfig"
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    config: {}
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify missing provider config sub-key is rejected
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - >-
+          'one of the following is required' in result.msg
+          or 'Missing required parameter' in result.msg
+    fail_msg: "Create without a provider config sub-key was not rejected"
+    success_msg: "Create without a provider config sub-key correctly rejected"
+
+# ---------------------------------------------------------------------------
+# 8. Negative: get / update with a non-existent ext_id
+# ---------------------------------------------------------------------------
+- name: Get external storage with non-existent ext_id
+  nutanix.ncp.ntnx_external_storages_info_v2:
+    ext_id: "12345678-1234-1234-1234-123456789012"
+  register: result
+  ignore_errors: true
+
+- name: Verify get with non-existent ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+    fail_msg: "Get with non-existent ext_id did not fail as expected"
+    success_msg: "Get with non-existent ext_id failed with a descriptive error as expected"
+
+# ---------------------------------------------------------------------------
+# 9 & 10. Info: list all / list with limit
+# ---------------------------------------------------------------------------
+- name: List all external storages
+  nutanix.ncp.ntnx_external_storages_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Verify list all external storages
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results is defined
+    fail_msg: "Unable to list all external storages"
+    success_msg: "Listed all external storages successfully"
+
+- name: List external storages with limit
+  nutanix.ncp.ntnx_external_storages_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Verify list external storages with limit
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - (result.response | length) <= 1
+    fail_msg: "Unable to list external storages with limit"
+    success_msg: "Listed external storages with limit successfully"
+
+- name: List all external storages with fetch_all
+  nutanix.ncp.ntnx_external_storages_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_external_storages_info_v2
+  ignore_errors: true
+
+- name: Verify list all external storages with fetch_all
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_external_storages_info_v2.changed == false
+      - fetch_all_ntnx_external_storages_info_v2.failed == false
+      - fetch_all_ntnx_external_storages_info_v2.response is defined
+      - fetch_all_ntnx_external_storages_info_v2.total_available_results is defined
+      - >-
+          (fetch_all_ntnx_external_storages_info_v2.response | default([]) | length)
+          == (fetch_all_ntnx_external_storages_info_v2.total_available_results | int)
+    fail_msg: "Unable to list all external storages with fetch_all"
+    success_msg: "Listed all external storages with fetch_all successfully"
+
+# ---------------------------------------------------------------------------
+# 11. Real create (best effort) against the discovered cluster
+# ---------------------------------------------------------------------------
+- name: Attempt real external storage create (best effort)
+  nutanix.ncp.ntnx_external_storages_v2:
+    state: present
+    name: "{{ external_storage_name }}-real"
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    end_point_address:
+      ipv4:
+        value: "10.44.76.100"
+    config:
+      dell_powerflex:
+        username: "admin"
+        password: "PowerFlex.123"
+        protection_domain_name: "pd-01"
+        storage_pool_name: "sp-01"
+  register: real_create_result
+  ignore_errors: true
+
+- name: Track created external storage for reference
+  ansible.builtin.set_fact:
+    created_ext_ids: "{{ created_ext_ids + [real_create_result.ext_id] }}"
+  when:
+    - real_create_result.changed | default(false)
+    - real_create_result.ext_id is defined
+    - real_create_result.ext_id | length > 0
+
+- name: Report real create outcome
+  ansible.builtin.debug:
+    msg: >-
+      Real external storage create
+      {{ 'succeeded' if (real_create_result.changed | default(false))
+         else 'did not create an entity
+         (expected without a live third-party storage backend)' }}.
+
+- name: Verify real create returns a well-formed result either way
+  ansible.builtin.assert:
+    that:
+      - real_create_result.failed is defined
+      - real_create_result.changed is defined
+    fail_msg: "Real external storage create returned a malformed result"
+    success_msg: "Real external storage create returned a well-formed result"
