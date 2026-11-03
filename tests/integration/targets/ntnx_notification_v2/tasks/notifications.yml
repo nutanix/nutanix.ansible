@@ -1,5 +1,5 @@
 ---
-# Test plan for ntnx_notification_v2 (compute LCM upgrade notifications)
+# Test plan for ntnx_lcm_notification_v2 (compute LCM upgrade notifications)
 # and ntnx_lcm_notifications_info_v2 (fetch a notification by ext_id).
 #
 # Prerequisites:
@@ -20,7 +20,7 @@
 #   4. Negative tests for the compute module: missing notifications_spec,
 #      invalid state, and bogus entity_uuid.
 
-- name: Start testing ntnx_notification_v2 and ntnx_lcm_notifications_info_v2
+- name: Start testing ntnx_lcm_notification_v2 and ntnx_lcm_notifications_info_v2
   ansible.builtin.debug:
     msg: "Starting LCM Notifications v4 integration tests"
 
@@ -104,7 +104,7 @@
 # 1a. check_mode: compute-notifications with ALL attributes
 ################################################################################
 - name: Generate spec for compute-notifications using check mode (all attributes)
-  nutanix.ncp.ntnx_notification_v2:
+  nutanix.ncp.ntnx_lcm_notification_v2:
     state: present
     cluster_ext_id: "{{ prism_central_external_id }}"
     notifications_spec:
@@ -130,7 +130,7 @@
 # 1b. check_mode: compute-notifications without cluster_ext_id (PC target)
 ################################################################################
 - name: Generate spec for compute-notifications using check mode (PC target, no cluster_ext_id)
-  nutanix.ncp.ntnx_notification_v2:
+  nutanix.ncp.ntnx_lcm_notification_v2:
     notifications_spec:
       - entity_uuid: "{{ lcm_entity_external_id }}"
         to_version: "{{ lcm_entity_target_version }}"
@@ -152,7 +152,7 @@
 # 2. Real end-to-end compute-notifications (only when a real entity exists)
 ################################################################################
 - name: Compute LCM upgrade notifications for the target entity
-  nutanix.ncp.ntnx_notification_v2:
+  nutanix.ncp.ntnx_lcm_notification_v2:
     cluster_ext_id: "{{ prism_central_external_id }}"
     notifications_spec:
       - entity_uuid: "{{ lcm_entity_external_id }}"
@@ -228,7 +228,7 @@
 # 4. Negative / Error tests
 ################################################################################
 - name: Compute-notifications without required notifications_spec (should fail)
-  nutanix.ncp.ntnx_notification_v2:
+  nutanix.ncp.ntnx_lcm_notification_v2:
     cluster_ext_id: "{{ prism_central_external_id }}"
   register: missing_required_result
   ignore_errors: true
@@ -243,7 +243,7 @@
     success_msg: "Module correctly failed when notifications_spec was missing"
 
 - name: Compute-notifications with an invalid state (should fail spec validation)
-  nutanix.ncp.ntnx_notification_v2:
+  nutanix.ncp.ntnx_lcm_notification_v2:
     state: absent
     cluster_ext_id: "{{ prism_central_external_id }}"
     notifications_spec:
@@ -261,7 +261,7 @@
     success_msg: "Module correctly rejected invalid state"
 
 - name: Compute-notifications with a bogus entity uuid (API/task should error)
-  nutanix.ncp.ntnx_notification_v2:
+  nutanix.ncp.ntnx_lcm_notification_v2:
     cluster_ext_id: "{{ prism_central_external_id }}"
     notifications_spec:
       - entity_uuid: "00000000-0000-0000-0000-000000000000"

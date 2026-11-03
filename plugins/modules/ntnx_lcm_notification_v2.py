@@ -28,7 +28,7 @@ notes:
   - >-
     B(Compute LCM upgrade notifications) -
     Required Roles: Cluster Admin, Prism Admin, Super Admin
-  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle&version=v4.3"
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle"
 options:
   state:
     description:
@@ -41,9 +41,8 @@ options:
     default: present
   notifications_spec:
     description:
-      - List of entity update specifications (entity UUID and target version pairs)
-        describing the intended upgrade for which notifications are computed.
-      - Corresponds to the API C(notificationsSpec) request field.
+      - The computed upgrade notification result containing notification items grouped by entity and location.
+      - Each item includes the entity details, notification type, severity, and descriptive messages about the upgrade impact.
     type: list
     elements: dict
     required: true
@@ -60,26 +59,23 @@ options:
         required: true
   credentials:
     description:
-      - Credentials to be provided by the user for LCM operations that require
-        authentication with external systems such as vCenter or Intersight.
+      - Credentials to be provided by the user for LCM operations that require authentication with external systems
+        such as vCenter or Intersight.
     type: list
     elements: dict
     required: false
     suboptions:
       credential_detail:
         description:
-          - The credential details, provided as either a reference to a pre-created
-            credential in the credential store (CredentialReference) or raw vendor
-            management credentials (VendorManagementCredential).
-          - Exactly one of the mutually exclusive suboptions must be provided.
+          - The credential details, provided as either a reference to a pre-created credential in the credential store
+            C(CredentialReference) or raw vendor management credentials C(VendorManagementCredential).
         type: dict
         required: true
         suboptions:
           credential_reference:
             description:
-              - A reference to a pre-created credential in the Nutanix credential
-                store, identified by its UUID.
-              - Mutually exclusive with I(vendor_management_credential).
+              - A reference to a pre-created credential in the Nutanix credential store, identified by its UUID.
+              - Mutually exclusive with C(vendor_management_credential).
             type: dict
             suboptions:
               credential_ext_id:
@@ -96,10 +92,8 @@ options:
             suboptions:
               credential_spec:
                 description:
-                  - Credentials to be provided by the user for LCM operations that
-                    require authentication with external systems such as vCenter
-                    or Intersight.
-                  - Exactly one of the mutually exclusive suboptions must be provided.
+                  - Credentials to be provided by the user for LCM operations that require authentication
+                    with external systems such as vCenter or Intersight.
                 type: dict
                 required: true
                 suboptions:
@@ -112,7 +106,7 @@ options:
                       address:
                         description:
                           - Vcenter IP address or FQDN.
-                          - An unique address that identifies a device on the internet
+                          - A unique address that identifies a device on the internet
                             or a local network in IPv4/IPv6 format or a Fully Qualified
                             Domain Name.
                         type: dict
@@ -120,7 +114,7 @@ options:
                         suboptions:
                           ipv4:
                             description:
-                              - An unique address that identifies a device on the
+                              - a unique address that identifies a device on the
                                 internet or a local network in IPv4 format.
                             type: dict
                             suboptions:
@@ -136,7 +130,7 @@ options:
                                 type: int
                           ipv6:
                             description:
-                              - An unique address that identifies a device on the
+                              - a unique address that identifies a device on the
                                 internet or a local network in IPv6 format.
                             type: dict
                             suboptions:
@@ -345,9 +339,6 @@ task_ext_id:
 ext_id:
   description:
     - The external ID of the generated LCM upgrade notification resource.
-    - Populated once the task completes and the notification ext_id can be resolved
-      from the task; used by M(nutanix.ncp.ntnx_lcm_notifications_info_v2) to fetch
-      the same resource later.
   returned: when C(wait) is true and the task succeeds
   type: str
   sample: "b9c1a8a0-1e5f-4e07-9c9e-90a1c2d3e4f5"
@@ -368,7 +359,6 @@ error:
   description: This indicates the error message if any error occurred
   returned: When an error occurs
   type: str
-  sample: "Failed generating spec for computing LCM upgrade notifications"
 
 failed:
   description: This indicates whether the task failed
@@ -387,6 +377,7 @@ from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.lcm.api_client import (  # noqa: E402
     get_notifications_api_instance,
 )
+from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.lcm.helpers import get_lcm_notification  # noqa: E402
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
     get_entity_ext_id_from_task,
@@ -578,30 +569,13 @@ def get_module_spec():
     return module_args
 
 
-def _resolve_notification_ext_id(task):
-    """
-    Best-effort resolution of the notification resource ext_id from the compute
-    notifications task. The task's entities_affected typically carries the newly
-    created notification's ext_id; the completion_details may also carry it under
-    a name such as "notificationExtId"/"resourceId".
-    """
-    ext_id = get_entity_ext_id_from_task(task)
-    if ext_id:
-        return ext_id
-    for name in ("notificationExtId", "resourceId", "resource_id"):
-        ext_id = get_ext_id_from_task_completion_details(task, name=name)
-        if ext_id:
-            return ext_id
-    return None
-
-
 def compute_notifications(module, api_instance, result):
     cluster_ext_id = module.params.get("cluster_ext_id")
 
     validate_required_params(module, ["notifications_spec"])
 
     sg = SpecGenerator(module)
-    default_spec = lifecycle_sdk.NotificationsSpec(notifications_spec=[])
+    default_spec = lifecycle_sdk.NotificationsSpec()
     spec, err = sg.generate_spec(obj=default_spec)
 
     if err:
@@ -630,28 +604,17 @@ def compute_notifications(module, api_instance, result):
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
-    result["changed"] = True
-
     if task_ext_id and module.params.get("wait"):
         task = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task.to_dict())
-
-        notification_ext_id = _resolve_notification_ext_id(task)
-        if notification_ext_id:
-            result["ext_id"] = notification_ext_id
-            notification = get_lcm_notification(
-                module, api_instance, notification_ext_id
-            )
-            if notification is not None:
-                result["response"] = strip_internal_attributes(notification.to_dict())
-        else:
-            raise_api_exception(
-                module=module,
-                exception=Exception(
-                    "Failed to resolve LCM notification ext_id from the compute-notifications task"
-                ),
-                msg="Failed to resolve LCM notification ext_id from the compute-notifications task",
-            )
+        ext_id = get_ext_id_from_task_completion_details(
+            task, name=TASK_CONSTANTS.CompletetionDetailsName.NOTIFICATION
+        )
+        if ext_id:
+            resp = get_lcm_notification(module, api_instance, ext_id)
+            result["ext_id"] = ext_id
+            result["response"] = strip_internal_attributes(resp.to_dict())
+    result["changed"] = True
 
 
 def run_module():
@@ -668,9 +631,9 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "failed": False,
         "response": None,
         "ext_id": None,
-        "task_ext_id": None,
     }
 
     api_instance = get_notifications_api_instance(module)

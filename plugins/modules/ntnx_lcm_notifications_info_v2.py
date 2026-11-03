@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,15 +12,10 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_lcm_notifications_info_v2
 short_description: Fetch LCM upgrade notification details in Nutanix Prism Central
-version_added: 2.7.0
+version_added: "2.7.0"
 description:
   - This module allows you to fetch information about an LCM (Life Cycle Manager)
     upgrade notification resource in Nutanix Prism Central.
-  - The notification resource is created by M(nutanix.ncp.ntnx_notification_v2)
-    (the compute-notifications API). Its external ID must be supplied to this
-    module.
-  - The LCM notifications API does not expose a list endpoint; C(ext_id) is
-    required.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -34,8 +29,6 @@ options:
   ext_id:
     description:
       - External ID of the LCM upgrade notification resource.
-      - Typically obtained from the C(ext_id) returned by
-        M(nutanix.ncp.ntnx_notification_v2).
     type: str
     required: true
 extends_documentation_fragment:
@@ -108,12 +101,6 @@ changed:
   type: bool
   sample: false
 
-msg:
-  description: Status/error message emitted by the module.
-  returned: When there is an error
-  type: str
-  sample: "Api Exception raised while fetching LCM notification info using external identifier of the notification"
-
 error:
   description: Error details if the module failed.
   returned: When an error occurs
@@ -150,12 +137,9 @@ def get_module_spec():
 
 def get_notification_using_ext_id(module, api_instance, result):
     ext_id = module.params.get("ext_id")
-    resp = get_lcm_notification(module, api_instance, ext_id)
     result["ext_id"] = ext_id
-    if resp is None:
-        result["response"] = None
-    else:
-        result["response"] = strip_internal_attributes(resp.to_dict())
+    resp = get_lcm_notification(module, api_instance, ext_id)
+    result["response"] = strip_internal_attributes(resp.to_dict())
 
 
 def run_module():
