@@ -66,11 +66,8 @@ class Tasks:
         PROJECT = "multidomain:config:Project"
         RESOURCE_GROUP = "multidomain:config:nutanix-resource-group"
         CONTENT_REPOSITORY = "multidomain:content:content-repository"
-<<<<<<< HEAD
         NETWORK_CONTROLLER = "networking:config:controller"
-=======
         GATEWAY = "networking:config:gateway"
->>>>>>> release/janus-qa-testing
         GUEST_REBOOT_POLICY = "vmm:ahv:policies:guest-reboot-policy"
         VM_PROFILE = "vmm:ahv:config:vm-profile"
         IP_POOL = "clustermgmt:config:cluster:ip_pool"
