@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_notification_v2
+module: ntnx_lcm_notification_v2
 short_description: Compute LCM upgrade plan and notifications for a set of entities
 version_added: "2.7.0"
 description:
@@ -229,7 +229,7 @@ author:
 
 EXAMPLES = r"""
 - name: Compute LCM upgrade notifications for a PC entity
-  nutanix.ncp.ntnx_notification_v2:
+  nutanix.ncp.ntnx_lcm_notification_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -240,7 +240,7 @@ EXAMPLES = r"""
   register: notification_result
 
 - name: Compute LCM upgrade notifications for a PE cluster entity
-  nutanix.ncp.ntnx_notification_v2:
+  nutanix.ncp.ntnx_lcm_notification_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -254,7 +254,7 @@ EXAMPLES = r"""
   register: notification_result
 
 - name: Compute LCM upgrade notifications using a stored credential reference
-  nutanix.ncp.ntnx_notification_v2:
+  nutanix.ncp.ntnx_lcm_notification_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -269,7 +269,7 @@ EXAMPLES = r"""
   register: notification_result
 
 - name: Compute LCM upgrade notifications with inline vCenter credentials
-  nutanix.ncp.ntnx_notification_v2:
+  nutanix.ncp.ntnx_lcm_notification_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
