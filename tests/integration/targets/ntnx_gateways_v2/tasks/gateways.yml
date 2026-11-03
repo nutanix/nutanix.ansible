@@ -160,10 +160,8 @@
     fail_msg: "local_services + remote_services was NOT flagged as mutually exclusive"
 
 - name: Upgrade gateway without ext_id
-  nutanix.ncp.ntnx_gateway_v2:
+  nutanix.ncp.ntnx_gateway_upgrade_v2:
     state: present
-    name: "{{ gw_name }}_upg"
-    upgrade: true
   register: result
   ignore_errors: true
 
@@ -177,9 +175,9 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - result.msg == "ext_id is required when upgrade=true"
-    success_msg: "upgrade=true without ext_id correctly rejected"
-    fail_msg: "upgrade=true without ext_id was NOT rejected"
+      - "'missing required arguments: ext_id' in result.msg"
+    success_msg: "upgrade without ext_id correctly rejected"
+    fail_msg: "upgrade without ext_id was NOT rejected"
 
 ########################################################################################
 # Create Gateway Tests
@@ -995,10 +993,9 @@
 ########################################################################################
 
 - name: Upgrade gateway with check mode
-  nutanix.ncp.ntnx_gateway_v2:
+  nutanix.ncp.ntnx_gateway_upgrade_v2:
     state: present
     ext_id: "{{ gateway_all_ext_id }}"
-    upgrade: true
   check_mode: true
   register: result
   when: gateway_all_ext_id | default('') | length > 0
@@ -1025,10 +1022,9 @@
 # Upgrade currently fails with NETWORKING-10056:
 # "Authorization should happen in Atlas only if metadata updates happen in Atlas as well."
 - name: Upgrade gateway
-  nutanix.ncp.ntnx_gateway_v2:
+  nutanix.ncp.ntnx_gateway_upgrade_v2:
     state: present
     ext_id: "{{ gateway_all_ext_id }}"
-    upgrade: true
   register: result
   when: gateway_all_ext_id | default('') | length > 0
   ignore_errors: true
@@ -1078,10 +1074,9 @@
     fail_msg: "Delete gateway with check mode failed"
 
 - name: Upgrade non-existent gateway
-  nutanix.ncp.ntnx_gateway_v2:
+  nutanix.ncp.ntnx_gateway_upgrade_v2:
     state: present
     ext_id: "{{ wrong_ext_id }}"
-    upgrade: true
   register: result
   ignore_errors: true
 

@@ -11,12 +11,13 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_gateway_v2
-short_description: Create, Update, Delete, Upgrade network gateways in Nutanix Prism Central
+short_description: Create, Update, Delete network gateways in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module allows you to create, update, delete and upgrade network gateways in Nutanix Prism Central.
+  - This module allows you to create, update and delete network gateways in Nutanix Prism Central.
   - A Network Gateway is a VyOS-based VM that connects VPC networks to external or remote networks using VPN, VTEP, or BGP.
   - This module uses PC v4 APIs based SDKs.
+  - Use M(nutanix.ncp.ntnx_gateway_upgrade_v2) to upgrade a network gateway.
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
@@ -31,10 +32,6 @@ notes:
       Tenant Admin, VPC Admin
     - >-
       B(Delete a Network Gateway) -
-      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin, Super Admin,
-      Tenant Admin, VPC Admin
-    - >-
-      B(Upgrade a Network Gateway) -
       Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin, Super Admin,
       Tenant Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
@@ -55,12 +52,6 @@ options:
       - The external ID of the gateway.
     type: str
     required: false
-  upgrade:
-    description:
-      - When true and ext_id is provided, upgrades the gateway to the latest supported version.
-    type: bool
-    required: false
-    default: false
   name:
     description:
       - Name of the gateway.
@@ -1200,14 +1191,6 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
-- name: Upgrade an existing gateway to the latest supported version
-  nutanix.ncp.ntnx_gateway_v2:
-    state: present
-    ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
-    upgrade: true
-  register: result
-  ignore_errors: true
-
 - name: Delete a gateway
   nutanix.ncp.ntnx_gateway_v2:
     state: absent
@@ -1219,10 +1202,10 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - Response for creating, updating, upgrading or deleting a network gateway.
+    - Response for creating, updating or deleting a network gateway.
     - If the operation is create or update and C(wait) is true, it will return the gateway details.
     - If the operation is create or update and C(wait) is false, it will return the task details.
-    - If the operation is delete or upgrade, it will return the task details.
+    - If the operation is delete, it will return the task details.
   returned: always
   type: dict
   sample:
@@ -1826,7 +1809,6 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
-        upgrade=dict(type="bool", default=False),
         name=dict(type="str"),
         description=dict(type="str"),
         vpc_reference=dict(type="str"),
@@ -1975,32 +1957,6 @@ def update_gateway(module, api_instance, result):
     result["changed"] = True
 
 
-def upgrade_gateway(module, api_instance, result):
-    ext_id = module.params.get("ext_id")
-    result["ext_id"] = ext_id
-
-    if module.check_mode:
-        result["msg"] = "Gateway with ext_id:{0} will be upgraded.".format(ext_id)
-        return
-
-    resp = None
-    try:
-        resp = api_instance.upgrade_gateway_by_id(extId=ext_id)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while upgrading gateway",
-        )
-    task_ext_id = resp.data.ext_id
-    result["task_ext_id"] = task_ext_id
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
-    if task_ext_id and module.params.get("wait"):
-        task_resp = wait_for_completion(module, task_ext_id)
-        result["response"] = strip_internal_attributes(task_resp.to_dict())
-    result["changed"] = True
-
-
 def delete_gateway(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
@@ -2061,11 +2017,7 @@ def run_module():
     state = module.params.get("state")
 
     if state == "present":
-        if module.params.get("upgrade"):
-            if not module.params.get("ext_id"):
-                module.fail_json(msg="ext_id is required when upgrade=true", **result)
-            upgrade_gateway(module, api_instance, result)
-        elif module.params.get("ext_id"):
+        if module.params.get("ext_id"):
             update_gateway(module, api_instance, result)
         else:
             create_gateway(module, api_instance, result)

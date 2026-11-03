@@ -143,10 +143,9 @@
       ignore_errors: true
 
     - name: Upgrade gateway
-      nutanix.ncp.ntnx_gateway_v2:
+      nutanix.ncp.ntnx_gateway_upgrade_v2:
         state: present
         ext_id: "{{ gateway_ext_id }}"
-        upgrade: true
       register: result
       ignore_errors: true
 
