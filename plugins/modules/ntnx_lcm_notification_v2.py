@@ -28,7 +28,7 @@ notes:
   - >-
     B(Compute LCM upgrade notifications) -
     Required Roles: Cluster Admin, Prism Admin, Super Admin
-  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle"
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
   state:
     description:
