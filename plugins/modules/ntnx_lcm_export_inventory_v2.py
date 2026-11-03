@@ -66,51 +66,16 @@ RETURN = r"""
 response:
     description:
         - Task response returned by the LCM inventory action.
-        - Before C(wait_for_completion) this contains only the initial task
-          reference. After C(wait=True) completes, this contains the full task
-          representation (including status, subtasks, timings).
+        - If C(wait) is false, this will contain only the initial task reference.
+        - If C(wait) is true, this will contain the path to the exported file.
     type: dict
     returned: always
     sample:
-        {
-            "cluster_ext_ids": null,
-            "completed_time": "2026-07-20T14:11:12.512241+00:00",
-            "completion_details": null,
-            "created_time": "2026-07-20T14:08:58.314367+00:00",
-            "entities_affected": null,
-            "error_messages": null,
-            "ext_id": "ZXJnb24=:f26d910f-77fe-41a7-7700-fda504474720",
-            "is_background_task": false,
-            "is_cancelable": false,
-            "last_updated_time": "2026-07-20T14:11:12.512240+00:00",
-            "legacy_error_message": null,
-            "number_of_entities_affected": 0,
-            "number_of_subtasks": 2,
-            "operation": "kLcmRootTask",
-            "operation_description": "Inventory Root Task",
-            "owned_by": null,
-            "parent_task": null,
-            "progress_percentage": 100,
-            "root_task": null,
-            "started_time": "2026-07-20T14:08:58.314367+00:00",
-            "status": "SUCCEEDED",
-            "sub_steps": null,
-            "sub_tasks": [
-                {
-                    "ext_id": "ZXJnb24=:302b65d2-783c-41b0-609d-3a7454e0b491",
-                    "href": "https://10.44.76.28:9440/api/prism/v4.0/config/tasks/ZXJnb24=:302b65d2-783c-41b0-609d-3a7454e0b491",
-                    "rel": "subtask"
-                },
-                {
-                    "ext_id": "ZXJnb24=:30b19489-70ca-44c0-626c-a634e527ea61",
-                    "href": "https://10.44.76.28:9440/api/prism/v4.0/config/tasks/ZXJnb24=:30b19489-70ca-44c0-626c-a634e527ea61",
-                    "rel": "subtask"
-                }
-            ],
-            "warnings": null
-        }
+    {
+        "path": "<path_to_exported_file>"
+    }
 task_ext_id:
-    description: The external identifier of the LCM inventory task submitted to Prism.
+    description: The external identifier of the LCM export inventory task completion.
     type: str
     returned: always
     sample: "ZXJnb24=:f26d910f-77fe-41a7-7700-fda504474720"
@@ -119,43 +84,35 @@ changed:
     type: bool
     returned: always
     sample: true
-skipped:
-    description: True if the operation was skipped (only set when applicable).
-    type: bool
-    returned: when applicable
-    sample: false
 failed:
-    description: True when the module failed to perform the LCM inventory.
+    description: Whether the module failed.
     type: bool
     returned: always
     sample: false
 msg:
-    description: Descriptive status or error message emitted by the module.
+    description: This indicates the message if any message occurred
     returned: When an error occurs or an informational message is set
     type: str
     sample: "Api Exception raised while performing LCM inventory"
 error:
-    description:
-        - Error details returned by the LCM SDK when the API call fails.
-        - Contains the SDK exception reason string; empty on success.
+    description: Error details if any error occurred.
     type: str
     returned: When an error occurs
-    sample: "Failed generating LCM inventory Spec"
 """
 
 import traceback  # noqa: E402
 import warnings  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
-from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
+from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.lcm.api_client import get_inventory_api_instance  # noqa: E402
-from ..module_utils.v4.prism.tasks import (
+from ..module_utils.v4.prism.tasks import (  # noqa: E402
     get_ext_id_from_task_completion_details,
     wait_for_completion,
-)  # noqa: E402
+)
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
@@ -167,9 +124,7 @@ try:
     import ntnx_lifecycle_py_client as lifecycle_sdk  # noqa: E402
 except ImportError:
 
-    from ..module_utils.v4.sdk_mock import (  # noqa: E402
-        mock_sdk as lifecycle_sdk,
-    )
+    from ..module_utils.v4.sdk_mock import mock_sdk as lifecycle_sdk  # noqa: E402
 
     SDK_IMP_ERROR = traceback.format_exc()
 
