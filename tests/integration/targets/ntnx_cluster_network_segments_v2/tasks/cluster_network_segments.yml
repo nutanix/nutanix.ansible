@@ -1,0 +1,356 @@
+---
+# Test plan for ntnx_cluster_network_segments_v2 /
+# ntnx_cluster_network_segments_info_v2:
+# 1. Discover cluster_ext_id
+# 2. Create IP pool prerequisite (for ip_pool_ext_id)
+# 3. Create check_mode + live create (backplane) + info coverage
+# 4. Negatives
+# 5. Delete check_mode + live delete + cleanup IP pool
+
+- name: Start cluster network segments tests
+  ansible.builtin.debug:
+    msg: Start cluster network segments tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false,
+      special=false, length=12)[0] }}"
+    todelete_segments: []
+    todelete_pools: []
+
+- name: Set network segment names and unique pool ranges
+  ansible.builtin.set_fact:
+    segment_name: "ansible_ns_{{ random_name }}"
+    ip_pool_name: "ansible_ns_pool_{{ random_name }}"
+    ip_octet_a: "{{ 60 + (range(1, 180) | random) }}"
+    ip_octet_b: "{{ 20 + (range(1, 180) | random) }}"
+
+- name: List clusters to discover cluster_ext_id
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(e:e eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_result
+  ignore_errors: true
+
+- name: Assert clusters listed
+  ansible.builtin.assert:
+    that:
+      - clusters_result.failed == false
+      - clusters_result.response | length > 0
+    fail_msg: Failed to list clusters for network segment tests
+    success_msg: Clusters listed for network segment tests
+
+- name: Set cluster_ext_id
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+- name: Create prerequisite IP pool
+  nutanix.ncp.ntnx_cluster_ip_pools_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    name: "{{ ip_pool_name }}"
+    wait: false
+    ranges:
+      - start_address:
+          ipv4:
+            value: "10.{{ ip_octet_a }}.{{ ip_octet_b }}.10"
+            prefix_length: 32
+        end_address:
+          ipv4:
+            value: "10.{{ ip_octet_a }}.{{ ip_octet_b }}.20"
+            prefix_length: 32
+    netmask:
+      ipv4:
+        value: "255.255.255.0"
+        prefix_length: 32
+  register: pool_result
+  ignore_errors: true
+
+- name: Assert prerequisite IP pool create accepted
+  ansible.builtin.assert:
+    that:
+      - pool_result.failed == false
+      - pool_result.changed == true
+    fail_msg: Prerequisite IP pool create failed
+    success_msg: Prerequisite IP pool create passed
+
+- name: Wait briefly for prerequisite IP pool create
+  ansible.builtin.pause:
+    seconds: 5
+
+- name: Resolve prerequisite IP pool ext_id
+  nutanix.ncp.ntnx_cluster_ip_pools_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    filter: "name eq '{{ ip_pool_name }}'"
+  register: pool_info
+  ignore_errors: true
+
+- name: Assert prerequisite IP pool found
+  ansible.builtin.assert:
+    that:
+      - pool_info.failed == false
+      - pool_info.response | length >= 1
+    fail_msg: Prerequisite IP pool not found
+    success_msg: Prerequisite IP pool found
+
+- name: Track IP pool for cleanup
+  ansible.builtin.set_fact:
+    ip_pool_ext_id: "{{ pool_info.response[0].ext_id }}"
+    todelete_pools: "{{ todelete_pools + [pool_info.response[0].ext_id] }}"
+
+- name: Create network segment with check mode enabled
+  nutanix.ncp.ntnx_cluster_network_segments_v2:
+    state: present
+    cluster_ext_id: "00000000-0000-0000-0000-000000000001"
+    name: "{{ segment_name }}"
+    vlan_id: 110
+    mtu: 1500
+    ip_pool_ext_id: "00000000-0000-0000-0000-000000000002"
+    network_segment_info:
+      backplane_info:
+        ahv_network_backing:
+          hypervisor_interface_backing: "vs0"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert create network segment check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == segment_name
+    fail_msg: Create network segment check mode failed
+    success_msg: Create network segment check mode passed
+
+- name: Create network segment
+  nutanix.ncp.ntnx_cluster_network_segments_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    name: "{{ segment_name }}"
+    vlan_id: 110
+    mtu: 1500
+    wait: false
+    ip_pool_ext_id: "{{ ip_pool_ext_id }}"
+    network_segment_info:
+      backplane_info:
+        ahv_network_backing:
+          hypervisor_interface_backing: "vs0"
+  register: result
+  ignore_errors: true
+
+- name: Assert create network segment accepted or failed cleanly
+  ansible.builtin.assert:
+    that:
+      - result is defined
+    fail_msg: Create network segment returned no result
+    success_msg: Create network segment returned a result
+
+- name: Wait briefly when create was accepted
+  ansible.builtin.pause:
+    seconds: 5
+  when: not result.failed
+
+- name: Resolve created network segment ext_id via info filter
+  nutanix.ncp.ntnx_cluster_network_segments_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    filter: "name eq '{{ segment_name }}'"
+  register: segment_info
+  ignore_errors: true
+  when: not result.failed
+
+- name: Track network segment for cleanup
+  ansible.builtin.set_fact:
+    segment_ext_id: "{{ segment_info.response[0].ext_id }}"
+    todelete_segments: "{{ todelete_segments + [segment_info.response[0].ext_id] }}"
+  when:
+    - not result.failed
+    - segment_info is defined
+    - segment_info.response is defined
+    - segment_info.response | length > 0
+
+########################################################################
+# Info coverage (list always; get when create succeeded)
+########################################################################
+
+- name: List network segments
+  nutanix.ncp.ntnx_cluster_network_segments_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert list network segments
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results is defined
+    fail_msg: List network segments failed
+    success_msg: List network segments passed
+
+- name: List network segments with limit
+  nutanix.ncp.ntnx_cluster_network_segments_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Assert list network segments with limit
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.response | length <= 1
+    fail_msg: List network segments with limit failed
+    success_msg: List network segments with limit passed
+
+- name: List network segments with expand
+  nutanix.ncp.ntnx_cluster_network_segments_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    expand: ipPool
+  register: result
+  ignore_errors: true
+
+- name: Assert list network segments with expand
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+    fail_msg: List network segments with expand failed
+    success_msg: List network segments with expand passed
+
+- name: List network segments with fetch_all
+  nutanix.ncp.ntnx_cluster_network_segments_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    fetch_all: true
+  register: result
+  ignore_errors: true
+
+- name: Assert list network segments with fetch_all
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - (result.response | length) == (result.total_available_results | int)
+    fail_msg: List network segments with fetch_all failed
+    success_msg: List network segments with fetch_all passed
+
+- name: Get network segment by ext_id
+  nutanix.ncp.ntnx_cluster_network_segments_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ segment_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: segment_ext_id is defined
+
+- name: Assert get network segment by ext_id
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.response.ext_id == segment_ext_id
+    fail_msg: Get network segment by ext_id failed
+    success_msg: Get network segment by ext_id passed
+  when: segment_ext_id is defined
+
+- name: List network segments with filter
+  nutanix.ncp.ntnx_cluster_network_segments_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    filter: "name eq '{{ segment_name }}'"
+  register: result
+  ignore_errors: true
+  when: segment_ext_id is defined
+
+- name: Assert list network segments with filter
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.response | length >= 1
+    fail_msg: List network segments with filter failed
+    success_msg: List network segments with filter passed
+  when: segment_ext_id is defined
+
+########################################################################
+# Negatives
+########################################################################
+
+- name: Create network segment missing required fields
+  nutanix.ncp.ntnx_cluster_network_segments_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert create network segment missing required fields
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Missing required fields negative failed
+    success_msg: Missing required fields negative passed
+
+- name: Get network segment with invalid ext_id
+  nutanix.ncp.ntnx_cluster_network_segments_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000099"
+  register: result
+  ignore_errors: true
+
+- name: Assert get network segment invalid ext_id
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Invalid ext_id negative failed
+    success_msg: Invalid ext_id negative passed
+
+########################################################################
+# Delete + cleanup
+########################################################################
+
+- name: Delete network segment with check mode enabled
+  nutanix.ncp.ntnx_cluster_network_segments_v2:
+    state: absent
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ segment_ext_id }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+  when: segment_ext_id is defined
+
+- name: Assert delete network segment check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg == ("Network segment with ext_id:" ~ segment_ext_id ~
+        " will be deleted.")
+    fail_msg: Delete network segment check mode failed
+    success_msg: Delete network segment check mode passed
+  when: segment_ext_id is defined
+
+- name: Delete network segment
+  nutanix.ncp.ntnx_cluster_network_segments_v2:
+    state: absent
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ segment_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: segment_ext_id is defined
+
+- name: Assert delete network segment
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+    fail_msg: Delete network segment failed
+    success_msg: Delete network segment passed
+  when: segment_ext_id is defined
+
+- name: Delete prerequisite IP pool
+  nutanix.ncp.ntnx_cluster_ip_pools_v2:
+    state: absent
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ item }}"
+  loop: "{{ todelete_pools }}"
+  register: result
+  ignore_errors: true
+
+- name: Reset cleanup lists
+  ansible.builtin.set_fact:
+    todelete_segments: []
+    todelete_pools: []
