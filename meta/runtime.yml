@@ -278,6 +278,7 @@ action_groups:
     - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_vm_cross_cluster_migrate_v2
     - ntnx_layer2_stretch_v2
     - ntnx_layer2_stretches_info_v2
     - ntnx_lcm_upgrade_selection_v2
@@ -349,6 +350,8 @@ action_groups:
     - ntnx_content_repository_sync_v2
     - ntnx_content_repository_items_info_v2
     - ntnx_images_migrate_v2
+    - ntnx_vpn_connection_v2
+    - ntnx_vpn_connections_info_v2
     - ntnx_network_controller_v2
     - ntnx_network_controllers_info_v2
     - ntnx_gateway_v2
