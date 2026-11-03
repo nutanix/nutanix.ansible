@@ -690,3 +690,75 @@ def list_rsyslog_servers(module, api_instance, cluster_ext_id):
             exception=e,
             msg="Api Exception raised while fetching RSYSLOG servers info",
         )
+
+
+def get_ip_pool(module, api_instance, cluster_ext_id, ext_id):
+    """
+    This method will return IP Pool info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: NetworkSegmentsApi instance from sdk
+        cluster_ext_id (str): parent cluster external ID
+        ext_id (str): IP Pool external ID
+    return:
+        ip pool info (object): IP Pool info
+    """
+    try:
+        return api_instance.get_ip_pool_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching IP Pool info using ext_id",
+        )
+
+
+def get_network_segment(module, api_instance, cluster_ext_id, ext_id):
+    """
+    This method will return Network Segment info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: NetworkSegmentsApi instance from sdk
+        cluster_ext_id (str): parent cluster external ID
+        ext_id (str): Network Segment external ID
+    return:
+        network segment info (object): Network Segment info
+    """
+    try:
+        return api_instance.get_network_segment_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Network Segment info using ext_id",
+        )
+
+
+def get_non_migratable_vms_result(module, api_instance, cluster_ext_id, ext_id):
+    """
+    This method will return non-migratable VMs result using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): parent cluster external ID
+        ext_id (str): non-migratable VMs result external ID
+    return:
+        non-migratable VMs result (object)
+    """
+    try:
+        return api_instance.get_non_migratable_vms_result_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching non-migratable VMs result "
+                "using ext_id"
+            ),
+        )

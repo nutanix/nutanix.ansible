@@ -131,6 +131,71 @@ def get_upgrade_selection(module, api_instance, ext_id):
         )
 
 
+def get_lcm_summary(module, api_instance, ext_id):
+    """
+    This method will return the LCM summary for a specific cluster using its
+    external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LcmSummaries api instance
+        ext_id (str): External id of the LCM summary (cluster UUID)
+    Returns:
+        lcm_summary_info (object): LCM summary info
+    """
+    try:
+        return api_instance.get_lcm_summary_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM summary with ext_id: {0}".format(
+                ext_id
+            ),
+        )
+
+
+def get_lcm_history(module, api_instance, ext_id):
+    """
+    This method will return an LCM history entry using its external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LCM histories api instance
+        ext_id (str): External id of the LCM history entry
+    Returns:
+        lcm_history_info (dict): LCM history info
+    """
+    try:
+        return api_instance.get_lcm_history_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM history with ext_id: {0}".format(
+                ext_id
+            ),
+        )
+
+
+def get_lcm_recommendation(module, api_instance, ext_id):
+    """
+    This method will return LCM update recommendation info using its external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LCM Recommendations api instance
+        ext_id (str): External id of the recommendation resource
+    Returns:
+        recommendation_info (object): LCM recommendation info
+    """
+    try:
+        return api_instance.get_recommendation_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM recommendation using external identifier",
+        )
+
+
 def get_lcm_notification(module, api_instance, ext_id):
     """
     This method will fetch an LCM upgrade notification using its external identifier.
@@ -147,7 +212,7 @@ def get_lcm_notification(module, api_instance, ext_id):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while fetching LCM upgrade notification with ext_id: {0}".format(
+            msg="Api Exception raised while fetching LCM notification with ext_id: {0}".format(
                 ext_id
             ),
         )
