@@ -268,3 +268,16 @@ def get_snmp_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.ClustersApi(client)
+
+
+def get_network_segments_api_instance(module):
+    """
+    This method will return Network Segments api instance from sdk.
+    Used for Network Segment and IP Pool operations.
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        NetworkSegmentsApi: NetworkSegmentsApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.NetworkSegmentsApi(client)

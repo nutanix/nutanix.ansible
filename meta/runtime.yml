@@ -226,6 +226,9 @@ action_groups:
     - ntnx_lcm_upgrades_v2
     - ntnx_lcm_entities_info_v2
     - ntnx_lcm_status_info_v2
+    - ntnx_lcm_history_v2
+    - ntnx_lcm_histories_info_v2
+    - ntnx_lcm_summaries_info_v2
     - ntnx_users_api_key_v2
     - ntnx_users_api_key_info_v2
     - ntnx_users_revoke_api_key_v2
@@ -274,6 +277,14 @@ action_groups:
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
     - ntnx_vm_cross_cluster_migrate_v2
+    - ntnx_layer2_stretch_v2
+    - ntnx_layer2_stretches_info_v2
+    - ntnx_lcm_upgrade_selection_v2
+    - ntnx_lcm_upgrade_selection_info_v2
+    - ntnx_foundation_central_config_v2
+    - ntnx_foundation_central_config_info_v2
+    - ntnx_validate_node_uplinks_v2
+    - ntnx_image_download_v2
     - ntnx_vm_console_token_v2
     - ntnx_vm_pcie_device_v2
     - ntnx_vm_pcie_devices_info_v2
@@ -337,6 +348,13 @@ action_groups:
     - ntnx_content_repository_sync_v2
     - ntnx_content_repository_items_info_v2
     - ntnx_images_migrate_v2
+    - ntnx_vpn_connection_v2
+    - ntnx_vpn_connections_info_v2
+    - ntnx_network_controller_v2
+    - ntnx_network_controllers_info_v2
+    - ntnx_gateway_v2
+    - ntnx_gateway_upgrade_v2
+    - ntnx_gateways_info_v2
     - ntnx_rsyslog_server_v2
     - ntnx_rsyslog_servers_info_v2
     - ntnx_vm_to_host_migration_v2
@@ -375,6 +393,17 @@ action_groups:
     - ntnx_vm_startup_policy_sc_conflicts_info_v2
     - ntnx_vm_startup_policy_sc_conflict_dependee_vms_info_v2
     - ntnx_vm_startup_policy_sc_conflict_dependent_vms_info_v2
+    - ntnx_esxi_vms_info_v2
+    - ntnx_esxi_vms_assign_owner_v2
+    - ntnx_esxi_vms_categories_v2
+    - ntnx_esxi_vms_power_actions_v2
+    - ntnx_esxi_vm_revert_v2
+    - ntnx_esxi_vms_ngt_info_v2
+    - ntnx_esxi_vms_ngt_update_v2
+    - ntnx_esxi_vms_ngt_insert_iso_v2
+    - ntnx_esxi_vms_ngt_v2
+    - ntnx_esxi_vms_ngt_upgrade_v2
+    - ntnx_vm_transfer_files_to_guest_v2
     - ntnx_vm_custom_attribute_v2
     - ntnx_vm_disk_custom_attribute_v2
     - ntnx_guest_reboot_policy_v2
@@ -384,3 +413,10 @@ action_groups:
     - ntnx_vm_profile_deploy_v2
     - ntnx_vm_profile_share_v2
     - ntnx_publish_template_version_v2
+    - ntnx_cluster_ip_pools_v2
+    - ntnx_cluster_network_segments_v2
+    - ntnx_cvms_v2
+    - ntnx_compute_non_migratable_vms_v2
+    - ntnx_non_migratable_vms_info_v2
+    - ntnx_cluster_ip_pools_info_v2
+    - ntnx_cluster_network_segments_info_v2
