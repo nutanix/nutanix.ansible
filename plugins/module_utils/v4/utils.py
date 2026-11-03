@@ -5,6 +5,7 @@ from __future__ import absolute_import, division, print_function
 
 import json
 import os
+import tempfile
 
 try:
     # Python 3
@@ -509,8 +510,15 @@ def strip_read_only_fields(spec, fields=None):
         return spec
 
     for field in fields:
-        if hasattr(spec, field):
+        if not hasattr(spec, field):
+            continue
+        try:
             delattr(spec, field)
+        except AttributeError:
+            # SDK models expose properties without a deleter; blanking the
+            # value is equivalent for serialization purposes since None
+            # attributes are dropped from the wire payload.
+            setattr(spec, field, None)
     return spec
 
 
@@ -628,3 +636,95 @@ def list_entities(
         current_page += 1
 
     return ListEntitiesResponse(entities, metadata)
+
+
+def snake_to_camel(snake_str, special_cases=None):
+    """
+    Convert snake_case string to camelCase.
+
+    Args:
+        snake_str: The snake_case string to convert
+        special_cases: Optional dict mapping snake_case keys to their camelCase equivalents
+                      for cases where standard conversion doesn't apply
+                      (e.g., {'dir_svc_ext_id': 'dirSvcExtID'} for uppercase acronyms)
+
+    Returns:
+        str: The camelCase version of the input string
+    """
+    if special_cases and snake_str in special_cases:
+        return special_cases[snake_str]
+
+    # Standard snake_case to camelCase conversion
+    components = snake_str.split("_")
+    return components[0] + "".join(x.title() for x in components[1:])
+
+
+def get_api_params_from_spec(
+    spec, module_spec, exclude_params=None, special_cases=None
+):
+    """
+    Get parameters from a spec object converted to camelCase for API calls.
+    Dynamically extracts all parameters from the provided module_spec.
+    Only includes parameters that are not None.
+
+    Args:
+        spec: SDK spec object with snake_case attributes
+        module_spec: Dictionary of module argument spec (from get_module_spec())
+        exclude_params: List of parameter names to exclude (e.g., ['ext_id'])
+        special_cases: Dict mapping snake_case keys to camelCase for special conversions
+
+    Returns:
+        dict: Dictionary with camelCase keys and their values
+    """
+    if exclude_params is None:
+        exclude_params = []
+
+    api_params = {}
+    for param in module_spec.keys():
+        if param in exclude_params:
+            continue
+        value = getattr(spec, param, None)
+        if value is not None:
+            camel_key = snake_to_camel(param, special_cases)
+            api_params[camel_key] = value
+    return api_params
+
+
+def save_bytes_to_file(
+    module,
+    data,
+    dest,
+    result,
+    fail_msg,
+    temp_prefix="download_",
+    temp_suffix="",
+):
+    """
+    Save in-memory bytes from a v4 SDK text response to dest or a tempfile.
+
+    Used for APIs that return text bodies (e.g. text/xml) as raw bytes in
+    resp.data rather than writing a file via download_directory.
+
+    Sets result["response"] = {"path": <final path>}.
+    """
+    if isinstance(data, (bytes, bytearray)):
+        content = bytes(data)
+    else:
+        content = None
+
+    if content is None:
+        module.fail_json(msg=fail_msg, **result)
+
+    if dest:
+        dest_dir = os.path.dirname(os.path.abspath(dest))
+        if dest_dir and not os.path.isdir(dest_dir):
+            os.makedirs(dest_dir)
+        with open(dest, "wb") as f:
+            f.write(content)
+        result["response"] = {"path": dest}
+        return
+
+    fd, temp_path = tempfile.mkstemp(suffix=temp_suffix, prefix=temp_prefix)
+    with os.fdopen(fd, "wb") as f:
+        f.write(content)
+    result["response"] = {"path": temp_path}
