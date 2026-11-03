@@ -327,7 +327,7 @@ def export_upgrade_selection(module, api_instance, result):
         task_resp = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_resp.to_dict())
         downloaded_path = get_ext_id_from_task_completion_details(
-            task_resp, name=TASK_CONSTANTS.CompletetionDetailsName.UPGRADE_SELECTION
+            task_resp, name=TASK_CONSTANTS.CompletetionDetailsName.PRESIGNED_URL
         )
         if downloaded_path:
             result["path"] = downloaded_path

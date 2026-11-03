@@ -7,9 +7,9 @@
   gather_facts: false
   module_defaults:
     group/nutanix.ncp.ntnx:
-      nutanix_host: "{{ nutanix_host | default('10.44.76.28') }}"
-      nutanix_username: "{{ nutanix_username | default('admin') }}"
-      nutanix_password: "{{ nutanix_password | default('Nutanix.123') }}"
+      nutanix_host: "{{ nutanix_host }}"
+      nutanix_username: "{{ nutanix_username }}"
+      nutanix_password: "{{ nutanix_password }}"
       validate_certs: false
 
   tasks:

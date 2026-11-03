@@ -65,20 +65,24 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - Task response returned by the LCM inventory action.
-        - If C(wait) is false, this will contain only the initial task reference.
-        - If C(wait) is true, this will contain the path to the exported file.
+        - Task response returned by the LCM export inventory action.
+        - If C(wait) is false, this will contain the initial task reference.
+        - If C(wait) is true, this will contain the final task payload after completion.
     type: dict
     returned: always
-    sample:
-    {
-        "path": "<path_to_exported_file>"
-    }
 task_ext_id:
-    description: The external identifier of the LCM export inventory task completion.
+    description: The external identifier of the LCM export inventory task.
     type: str
     returned: always
     sample: "ZXJnb24=:f26d910f-77fe-41a7-7700-fda504474720"
+path:
+    description:
+        - Presigned download URL for the exported inventory file.
+        - Taken from the task C(completion_details) entry named C(presigned_url).
+        - Returned only when C(wait) is true and the task succeeds.
+    type: str
+    returned: when C(wait) is true and the task succeeds
+    sample: "https://<pc_ip>:9440/api/objects-lite-internal/v4.0/lcm-export/export_inventory_....csv?..."
 changed:
     description: Whether the module made any changes on the target system.
     type: bool
@@ -108,7 +112,7 @@ from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
-from ..module_utils.v4.lcm.api_client import get_inventory_api_instance  # noqa: E402
+from ..module_utils.v4.lcm.api_client import get_entity_api_instance  # noqa: E402
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
     get_ext_id_from_task_completion_details,
     wait_for_completion,
@@ -136,7 +140,7 @@ def get_module_spec():
 
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
-        file_format=dict(type="str", default="CSV", choices=["CSV"], required=True),
+        file_format=dict(type="str", default="CSV", choices=["CSV"]),
     )
 
     return module_args
@@ -173,7 +177,7 @@ def export_lcm_inventory(module, api_instance, result):
         task_resp = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_resp.to_dict())
         downloaded_path = get_ext_id_from_task_completion_details(
-            task_resp, name=TASK_CONSTANTS.CompletetionDetailsName.EXPORT_INVENTORY
+            task_resp, name=TASK_CONSTANTS.CompletetionDetailsName.PRESIGNED_URL
         )
         if downloaded_path:
             result["path"] = downloaded_path
@@ -181,9 +185,9 @@ def export_lcm_inventory(module, api_instance, result):
             raise_api_exception(
                 module=module,
                 exception=Exception(
-                    "Failed to get path from task for LCM Upgrade Selection"
+                    "Failed to get path from task for LCM export inventory"
                 ),
-                msg="Failed to get path from task for LCM Upgrade Selection",
+                msg="Failed to get path from task for LCM export inventory",
             )
 
     result["changed"] = True
@@ -208,7 +212,7 @@ def run_module():
         "response": None,
     }
 
-    api_instance = get_inventory_api_instance(module)
+    api_instance = get_entity_api_instance(module)
 
     export_lcm_inventory(module, api_instance, result)
     module.exit_json(**result)
