@@ -153,10 +153,12 @@ options:
                 suboptions:
                     entity_identifier:
                         description:
-                            - Base model for LCM entities, containing the common properties shared across all entity types:
-                              entity class, model, type, current version, and hardware family.
-                            - This model is extended by the full Entity model and is used as a building block in recommendations,
-                              notifications, history, and other contexts.
+                            - >-
+                              Base model for LCM entities, containing the common properties shared across all
+                              entity types - entity class, model, type, current version, and hardware family.
+                            - >-
+                              This model is extended by the full Entity model and is used as a building block
+                              in recommendations, notifications, history, and other contexts.
                         type: dict
                         required: true
                         suboptions:
