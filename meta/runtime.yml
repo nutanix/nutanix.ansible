@@ -227,6 +227,7 @@ action_groups:
     - ntnx_lcm_upgrades_v2
     - ntnx_lcm_entities_info_v2
     - ntnx_lcm_status_info_v2
+    - ntnx_lcm_preload_artifact_v2
     - ntnx_lcm_compute_recommendation_v2
     - ntnx_lcm_compute_recommendations_info_v2
     - ntnx_lcm_history_v2
