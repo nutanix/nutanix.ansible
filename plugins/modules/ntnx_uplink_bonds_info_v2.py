@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_uplink_bonds_info_v2
 short_description: Fetch uplink bonds info in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to fetch information about UplinkBond in Nutanix Prism Central.
   - If C(ext_id) is provided, fetch details of the specific UplinkBond.
@@ -22,13 +22,11 @@ notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(Get uplink bond by ext_id) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Super Admin, Virtual Machine Admin,
-      Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
+      B(View Uplink Bond) -
+      Required Roles: Network Infra Admin, Prism Admin, Prism Viewer, Super Admin, Tenant Admin
     - >-
-      B(Get list of Uplink Bonds) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Super Admin, Virtual Machine Admin,
-      Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
+      B(View Uplink Bond) (List) -
+      Required Roles: Network Infra Admin, Prism Admin, Prism Viewer, Super Admin, Tenant Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   ext_id:
@@ -68,6 +66,12 @@ EXAMPLES = r"""
 - name: List uplink bonds with limit
   nutanix.ncp.ntnx_uplink_bonds_info_v2:
     limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List all entities with fetch_all
+  nutanix.ncp.ntnx_uplink_bonds_info_v2:
+    fetch_all: true
   register: result
   ignore_errors: true
 """
@@ -149,7 +153,8 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.network.helpers import get_uplink_bond  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
-from ..module_utils.v4.utils import (  # noqa: E402
+from ..module_utils.v4.utils import (
+    list_entities,  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -183,7 +188,10 @@ def get_uplink_bonds(module, api_instance, result):
         module.fail_json(msg="Failed generating uplink bonds info spec", **result)
 
     try:
-        resp = api_instance.list_uplink_bonds(**kwargs)
+        resp = list_entities(
+            api_instance.list_uplink_bonds,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
