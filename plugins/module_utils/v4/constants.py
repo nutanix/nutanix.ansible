@@ -76,6 +76,7 @@ class Tasks:
         NON_MIGRATABLE_VMS_RESULT = (
             "clustermgmt:config:cluster:non-migratable-vms-result"
         )
+        NOTIFICATION = "lifecycle:resources:notification"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
@@ -84,3 +85,5 @@ class Tasks:
         VM_EXT_IDS = "vmExtIds"
         VG_EXT_IDS = "volumeGroupExtIds"
         PROTECTION_POLICY = "protectionPolicyExtId"
+        UPGRADE_SELECTION = "upgradeSelectionExtId"
+        NOTIFICATION = "notificationExtId"
