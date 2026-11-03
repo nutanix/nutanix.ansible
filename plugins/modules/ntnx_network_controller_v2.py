@@ -125,6 +125,7 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_proxy_v2
 author:
   - George Ghawali (@george-ghawali)
+  - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
@@ -458,7 +459,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "ext_id": None,
     }
