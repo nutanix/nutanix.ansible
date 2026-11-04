@@ -870,39 +870,39 @@
 
 ########################################################################
 
-- name: List all VMs
+- name: List all VMs (default page)
   nutanix.ncp.ntnx_vms_info_v2:
   register: result
   ignore_errors: true
 
-- name: Set total number of VMs
-  ansible.builtin.set_fact:
-    total_vms: "{{ result.total_available_results }}"
-    num_vms_per_page: 100
-
-- name: Get number of pages
-  ansible.builtin.set_fact:
-    num_pages: "{{ ((total_vms | int) // (num_vms_per_page | int)) + (((total_vms | int) % (num_vms_per_page | int)) > 0 | int) }}"
-
-# all_vms is a list of all available VMs details
-- name: Get all VMs
-  nutanix.ncp.ntnx_vms_info_v2:
-    limit: "{{ num_vms_per_page }}"
-    page: "{{ item }}"
-  register: all_vms
-  loop: "{{ range(0, (num_pages | int)) | list }}"
-  when: (total_vms | int) > 0
-  ignore_errors: true
-
-- name: Status for fetching all VMs
+- name: Status of default VM list page
   ansible.builtin.assert:
     that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+      - result.total_available_results > 0
+    fail_msg: "Unable to list VMs with default page "
+    success_msg: "VMs listed with default page successfully "
+
+- name: List all VMs with fetch_all
+  nutanix.ncp.ntnx_vms_info_v2:
+    fetch_all: true
+  register: all_vms
+  ignore_errors: true
+
+- name: Status for fetching all VMs with fetch_all
+  ansible.builtin.assert:
+    that:
+      - all_vms.response is defined
       - all_vms.changed == false
-      - all_vms.msg == "All items completed"
-      - all_vms.results | length == num_pages | int
-      - all_vms.results | map(attribute='response') | map('length') | sum == total_vms | int
-    fail_msg: "Unable to fetch all VMs "
-    success_msg: "All VMs fetched successfully "
+      - all_vms.failed == false
+      - all_vms.total_available_results is defined
+      - all_vms.total_available_results > 0
+      - (all_vms.response | length) == (all_vms.total_available_results | int)
+    fail_msg: "Unable to fetch all VMs with fetch_all "
+    success_msg: "All VMs fetched successfully with fetch_all "
 
 ########################################################################
 
