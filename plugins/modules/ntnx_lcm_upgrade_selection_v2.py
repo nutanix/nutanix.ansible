@@ -204,6 +204,7 @@ from ..module_utils.v4.lcm.api_client import (  # noqa: E402
 from ..module_utils.v4.lcm.helpers import get_upgrade_selection  # noqa: E402
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
     get_entity_ext_id_from_task,
+    get_ext_id_from_task_completion_details,
     wait_for_completion,
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
@@ -307,14 +308,6 @@ def export_upgrade_selection(module, api_instance, result):
 
     entity = get_upgrade_selection(module, api_instance, ext_id)
     result["response"] = strip_internal_attributes(entity.to_dict())
-    result["skipped"] = True
-    result["changed"] = False
-    module.exit_json(
-        msg=(
-            "LCM upgrade selection with ext_id: {0} is immutable. Nothing to " "update."
-        ).format(ext_id),
-        **result,
-    )
     resp = None
     try:
         resp = api_instance.export_upgrade_selection(extId=ext_id)
@@ -333,6 +326,20 @@ def export_upgrade_selection(module, api_instance, result):
     if task_ext_id and module.params.get("wait"):
         task_resp = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_resp.to_dict())
+        downloaded_path = get_ext_id_from_task_completion_details(
+            task_resp, name=TASK_CONSTANTS.CompletetionDetailsName.PRESIGNED_URL
+        )
+        if downloaded_path:
+            result["path"] = downloaded_path
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get path from task for LCM Upgrade Selection"
+                ),
+                msg="Failed to get path from task for LCM Upgrade Selection",
+            )
+
     result["changed"] = True
 
 

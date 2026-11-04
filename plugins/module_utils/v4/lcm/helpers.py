@@ -174,3 +174,45 @@ def get_lcm_history(module, api_instance, ext_id):
                 ext_id
             ),
         )
+
+
+def get_lcm_recommendation(module, api_instance, ext_id):
+    """
+    This method will return LCM update recommendation info using its external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LCM Recommendations api instance
+        ext_id (str): External id of the recommendation resource
+    Returns:
+        recommendation_info (object): LCM recommendation info
+    """
+    try:
+        return api_instance.get_recommendation_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM recommendation using external identifier",
+        )
+
+
+def get_lcm_notification(module, api_instance, ext_id):
+    """
+    This method will fetch an LCM upgrade notification using its external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LCM notifications api instance
+        ext_id (str): External id of the LCM upgrade notification resource
+    Returns:
+        notification (object): LCM notification info
+    """
+    try:
+        return api_instance.get_notification_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM notification with ext_id: {0}".format(
+                ext_id
+            ),
+        )

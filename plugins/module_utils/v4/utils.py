@@ -1,4 +1,4 @@
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -498,6 +498,11 @@ def strip_read_only_fields(spec, fields=None):
     ``fields``.
 
     The spec is mutated in place; it is also returned so callers can chain.
+
+    For SDK models that expose fields as ``property`` objects without a
+    deleter, ``delattr`` raises ``AttributeError``; in that case the field is
+    reset to ``None`` instead so the serialized payload no longer carries a
+    server-supplied value.
 
     Args:
         spec (object): SDK model object to mutate.

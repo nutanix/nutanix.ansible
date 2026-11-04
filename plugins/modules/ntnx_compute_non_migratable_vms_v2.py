@@ -250,7 +250,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error
   type: str
-  sample: "ZXJnb24=:d41ea163-dd07-4ad5-bd07-9950d7f33370"
+  sample: "Api Exception raised while computing non-migratable VMs"
 """
 
 import traceback  # noqa: E402

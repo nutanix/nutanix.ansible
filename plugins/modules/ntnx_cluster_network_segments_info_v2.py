@@ -121,7 +121,48 @@ response:
     - List of network segments if C(ext_id) is not provided.
   returned: always
   type: dict
-  sample: <Need to add sample>
+  sample:
+    [
+        {
+            "cvm_network_segment_interface_name": "ntnx0",
+            "ext_id": "227df340-85b1-4450-a4b5-4ac206122b5c",
+            "ip_pool_ext_id": "9c1e537d-013e-4c3b-9c1e-22ad7d8549e1",
+            "links": null,
+            "mtu": 1500,
+            "name": "Test Network Segment Name",
+            "network_segment_info": {
+                "ahv_network_backing": {
+                    "hypervisor_interface_backing": "vs0"
+                },
+                "esxi_network_backing": {
+                    "cvm_interface_backing": "Physical CVM Backplane Network",
+                    "hypervisor_interface_backing": "Physical Backplane Network"
+                }
+            },
+            "network_segmented_ip_info": [
+                {
+                    "cvm_interface_ip": {
+                        "ipv4": {
+                            "prefix_length": 32,
+                            "value": "180.178.15.134"
+                        },
+                        "ipv6": null
+                    },
+                    "hypervisor_interface_ip": {
+                        "ipv4": {
+                            "prefix_length": 32,
+                            "value": "180.178.15.135"
+                        },
+                        "ipv6": null
+                    },
+                    "node_uuid": "7164102a-6542-45be-84cc-9aef496e0c6a"
+                }
+            ],
+            "service_name": "BACKPLANE",
+            "tenant_id": null,
+            "vlan_id": 603
+        }
+    ]
 ext_id:
   description:
     - The external ID of the network segment.
