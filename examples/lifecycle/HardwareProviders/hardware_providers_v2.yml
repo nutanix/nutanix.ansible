@@ -1,5 +1,5 @@
 ---
-# Examples for managing Hardware Provider connections in Nutanix Foundation Central (FCVM).
+# Examples for Hardware Provider connections in Nutanix Foundation Central.
 #
 # NOTE: These modules talk to Foundation Central (FCVM), NOT Prism Central.
 # Set the connection parameters to the FCVM endpoint.
