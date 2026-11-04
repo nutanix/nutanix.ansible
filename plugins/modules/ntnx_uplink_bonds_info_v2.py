@@ -14,9 +14,9 @@ module: ntnx_uplink_bonds_info_v2
 short_description: Fetch uplink bonds info in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module allows you to fetch information about UplinkBond in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific UplinkBond.
-  - If C(ext_id) is not provided, list multiple UplinkBond optionally filtered / paginated.
+  - This module allows you to fetch uplink bonds info or a specific uplink bond in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch a particular uplink bond info using its external ID.
+  - If C(ext_id) is not provided, fetch multiple uplink bonds info with/without using filters, limit, etc.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -31,8 +31,8 @@ notes:
 options:
   ext_id:
     description:
-      - The external ID (UUID) of the uplink bond.
-      - If provided, fetch details of the specific uplink bond.
+      - The external ID of the uplink bond.
+      - If provided, a single uplink bond is returned.
     type: str
     required: false
 extends_documentation_fragment:
@@ -59,7 +59,7 @@ EXAMPLES = r"""
 
 - name: List uplink bonds with filter
   nutanix.ncp.ntnx_uplink_bonds_info_v2:
-    filter: "name eq 'br0-up'"
+    filter: "hostReference eq 'adf0c9e0-4051-4cd2-9f6f-ca9f962e941b'"
   register: result
   ignore_errors: true
 
@@ -69,7 +69,7 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
-- name: List all entities with fetch_all
+- name: List all uplink bonds with fetch_all
   nutanix.ncp.ntnx_uplink_bonds_info_v2:
     fetch_all: true
   register: result
@@ -79,9 +79,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC UplinkBond info v4 API.
-    - It can be a single UplinkBond if external ID is provided.
-    - List of multiple UplinkBond if external ID is not provided.
+    - The response from the Nutanix PC uplink bonds info v4 API.
+    - It can be a single uplink bond if external ID is provided.
+    - It is a list of multiple uplink bonds if external ID is not provided, with optional filter or limit.
   returned: always
   type: dict
   sample:
@@ -109,24 +109,24 @@ response:
     }
 
 changed:
-  description: This indicates whether the task resulted in any changes.
+  description: This indicates whether the task resulted in any changes. Always false for info modules.
   returned: always
   type: bool
   sample: false
 
 msg:
   description: This indicates the message if any message occurred.
-  returned: When there is an error.
+  returned: When there is an error
   type: str
   sample: "Api Exception raised while fetching uplink bonds info"
 
 error:
-  description: This field typically holds information about if the task have errors that occurred during the task execution.
+  description: This field typically holds information about any errors that occurred during the task execution.
   type: str
-  returned: when an error occurs
+  returned: When an error occurs
 
 failed:
-  description: This field typically holds information about if the task have failed.
+  description: This field indicates whether the task failed.
   returned: always
   type: bool
   sample: false
@@ -134,13 +134,13 @@ failed:
 ext_id:
   description: External ID of the uplink bond.
   type: str
-  returned: when external ID is provided
+  returned: When external ID is provided
   sample: "b46b8d21-79ad-4cd2-a770-181a97e9e689"
 
 total_available_results:
   description: The total number of available uplink bonds in PC.
   type: int
-  returned: when all uplink bonds are fetched
+  returned: When all uplink bonds are fetched
   sample: 1
 """
 
@@ -153,8 +153,8 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.network.helpers import get_uplink_bond  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
-from ..module_utils.v4.utils import (
-    list_entities,  # noqa: E402
+from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -182,7 +182,6 @@ def get_uplink_bond_using_ext_id(module, api_instance, result):
 def get_uplink_bonds(module, api_instance, result):
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
-
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating uplink bonds info spec", **result)
@@ -199,14 +198,12 @@ def get_uplink_bonds(module, api_instance, result):
             msg="Api Exception raised while fetching uplink bonds info",
         )
 
-    resp = strip_internal_attributes(resp.to_dict())
-    total_available_results = resp.get("metadata", {}).get("total_available_results")
+    total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    resp = resp.get("data")
-
-    if not resp:
-        resp = []
-    result["response"] = resp
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    else:
+        result["response"] = []
 
 
 def run_module():
