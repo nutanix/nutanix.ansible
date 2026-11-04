@@ -83,7 +83,7 @@
 - name: Set a real vNIC ext_id for downstream tests (if any exist)
   ansible.builtin.set_fact:
     real_vnic_ext_id: "{{ (list_vnics.response | default([]))[0].ext_id | default('') }}"
-  when: has_subnet and (list_vnics is defined) and (list_vnics.failed | default(true)) == false
+  when: has_subnet and list_vnics is succeeded
 
 - name: Compute has_vnic flag
   ansible.builtin.set_fact:
