@@ -22,13 +22,25 @@ description:
   - If C(ext_id) and C(fetch_nodes) are provided, it fetches the list of nodes registered with the claim token.
   - This module uses the Life Cycle Management (lifecycle) v4 APIs based SDK.
 notes:
-  - This module talks to B(Foundation Central (FCVM)), not Prism Central.
-    Point C(nutanix_host) and C(nutanix_port) at the Foundation Central VM endpoint.
-  - >-
-    This module requires the appropriate Foundation Central role/permissions to be assigned
-    to the user performing the operation.
-  - B(Get/List claim tokens, nodes and secret) - Requires an appropriate viewer/admin role on Foundation Central.
-  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(List claim tokens) -
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
+    - >-
+      B(Get claim token using ext_id) -
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
+    - >-
+      B(Get claim token secret using ext_id) -
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
+    - >-
+      B(List nodes registered with a claim token) -
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
+    - >-
+      B(Get a node registered with a claim token using node_ext_id) -
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
   ext_id:
     description:
@@ -126,6 +138,30 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
+- name: List nodes registered with a claim token with filter
+  nutanix.ncp.ntnx_claim_tokens_info_v2:
+    nutanix_host: "{{ foundation_central_host }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+    fetch_nodes: true
+    filter: "hostType eq Lifecycle.Config.HostType'AHV'"
+  register: result
+  ignore_errors: true
+
+- name: List nodes registered with a claim token with limit
+  nutanix.ncp.ntnx_claim_tokens_info_v2:
+    nutanix_host: "{{ foundation_central_host }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+    fetch_nodes: true
+    limit: 1
+  register: result
+  ignore_errors: true
+
 - name: Get a node registered with a claim token using node_ext_id
   nutanix.ncp.ntnx_claim_tokens_info_v2:
     nutanix_host: "{{ foundation_central_host }}"
@@ -141,8 +177,7 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix claim tokens info v4 API. This module targets
-      Foundation Central (FCVM), not Prism Central.
+    - The response from the Nutanix claim tokens info v4 API.
     - It can be a single claim token if external ID is provided.
     - List of multiple claim tokens if external ID is not provided (with optional filter or limit).
     - If C(fetch_secret) is set, it returns the claim token secret.
@@ -204,12 +239,18 @@ import warnings  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.lcm.api_client import get_claim_tokens_api_instance  # noqa: E402
-from ..module_utils.v4.lcm.helpers import get_claim_token  # noqa: E402
+from ..module_utils.v4.lcm.helpers import (  # noqa: E402
+    get_claim_token,
+    get_claim_token_secret,
+    get_node_by_claim_token,
+)
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    list_entities,
     strip_internal_attributes,
 )
+
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -234,35 +275,19 @@ def get_claim_token_using_ext_id(module, api_instance, result):
     result["response"] = strip_internal_attributes(resp.to_dict())
 
 
-def get_claim_token_secret(module, api_instance, result):
+def get_claim_token_secret_using_ext_id(module, api_instance, result):
     ext_id = module.params.get("ext_id")
-    try:
-        resp = api_instance.get_secret_by_claim_token_id(extId=ext_id)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching claim token secret",
-        )
+    resp = get_claim_token_secret(module, api_instance, ext_id)
     result["ext_id"] = ext_id
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    result["response"] = strip_internal_attributes(resp.to_dict())
 
 
-def get_node_by_claim_token(module, api_instance, result):
+def get_node_by_claim_token_using_ext_id(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     node_ext_id = module.params.get("node_ext_id")
-    try:
-        resp = api_instance.get_node_by_claim_token_id(
-            claimTokenExtId=ext_id, extId=node_ext_id
-        )
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching node by claim token",
-        )
+    resp = get_node_by_claim_token(module, api_instance, ext_id, node_ext_id)
     result["ext_id"] = node_ext_id
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    result["response"] = strip_internal_attributes(resp.to_dict())
 
 
 def list_nodes_by_claim_token(module, api_instance, result):
@@ -275,8 +300,10 @@ def list_nodes_by_claim_token(module, api_instance, result):
             msg="Failed generating nodes by claim token info spec", **result
         )
     try:
-        resp = api_instance.list_nodes_by_claim_token_id(
-            claimTokenExtId=ext_id, **kwargs
+        resp = list_entities(
+            api_instance.list_nodes_by_claim_token_id,
+            kwargs=kwargs,
+            claimTokenExtId=ext_id,
         )
     except Exception as e:
         raise_api_exception(
@@ -301,7 +328,10 @@ def get_claim_tokens(module, api_instance, result):
         module.fail_json(msg="Failed generating claim tokens info spec", **result)
 
     try:
-        resp = api_instance.list_claim_tokens(**kwargs)
+        resp = list_entities(
+            api_instance.list_claim_tokens,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -336,9 +366,9 @@ def run_module():
     api_instance = get_claim_tokens_api_instance(module)
     if module.params.get("ext_id"):
         if module.params.get("fetch_secret"):
-            get_claim_token_secret(module, api_instance, result)
+            get_claim_token_secret_using_ext_id(module, api_instance, result)
         elif module.params.get("node_ext_id"):
-            get_node_by_claim_token(module, api_instance, result)
+            get_node_by_claim_token_using_ext_id(module, api_instance, result)
         elif module.params.get("fetch_nodes"):
             list_nodes_by_claim_token(module, api_instance, result)
         else:

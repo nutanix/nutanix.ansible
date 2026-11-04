@@ -8,11 +8,14 @@
 # 2. Get the claim token using ext_id
 # 3. Get the claim token secret
 # 4. List nodes registered with the claim token
-# 5. List all claim tokens
-# 6. List claim tokens with filter
-# 7. List claim tokens with limit
-# 8. Update the claim token
-# 9. Delete the claim token
+# 5. List nodes registered with the claim token with filter
+# 6. List nodes registered with the claim token with limit
+# 7. Get a node registered with the claim token using node_ext_id
+# 8. List all claim tokens
+# 9. List claim tokens with filter
+# 10. List claim tokens with limit
+# 11. Update the claim token
+# 12. Delete the claim token
 
 - name: Foundation Central Claim Tokens playbook
   hosts: localhost
@@ -27,6 +30,7 @@
     - name: Setting Variables
       ansible.builtin.set_fact:
         claim_token_name: "claim_token_ansible"
+        node_ext_id: "3761064b-8d1a-4076-862e-63448b3f642d"
 
     - name: Create a claim token
       nutanix.ncp.ntnx_claim_token_v2:
@@ -58,6 +62,30 @@
       nutanix.ncp.ntnx_claim_tokens_info_v2:
         ext_id: "{{ claim_token_ext_id }}"
         fetch_nodes: true
+      register: result
+      ignore_errors: true
+
+    - name: List nodes registered with the claim token with filter
+      nutanix.ncp.ntnx_claim_tokens_info_v2:
+        ext_id: "{{ claim_token_ext_id }}"
+        fetch_nodes: true
+        filter: "hostType eq Lifecycle.Config.HostType'AHV'"
+      register: result
+      ignore_errors: true
+
+    - name: List nodes registered with the claim token with limit
+      nutanix.ncp.ntnx_claim_tokens_info_v2:
+        ext_id: "{{ claim_token_ext_id }}"
+        fetch_nodes: true
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: Get a node registered with the claim token using node_ext_id
+      nutanix.ncp.ntnx_claim_tokens_info_v2:
+        ext_id: "{{ claim_token_ext_id }}"
+        fetch_nodes: true
+        node_ext_id: "{{ node_ext_id }}"
       register: result
       ignore_errors: true
 
