@@ -274,6 +274,7 @@ action_groups:
     - ntnx_iam_entities_info_v2
     - ntnx_virtual_switch_v2
     - ntnx_virtual_switches_info_v2
+    - ntnx_uplink_bonds_info_v2
     - ntnx_vnic_migrate_v2
     - ntnx_clear_thick_provisioned_space_v2
     - ntnx_cluster_host_nics_info_v2

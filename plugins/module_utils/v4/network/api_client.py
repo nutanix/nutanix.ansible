@@ -197,6 +197,18 @@ def get_bridges_api_instance(module):
     return ntnx_networking_py_client.BridgesApi(api_client=api_client)
 
 
+def get_uplink_bonds_api_instance(module):
+    """
+    This method will return UplinkBondsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Uplink Bonds Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.UplinkBondsApi(api_client=api_client)
+
+
 def get_subnet_ip_reservation_api_instance(module):
     """
     This method will return SubnetIPReservationApi instance for reserving and
