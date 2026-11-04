@@ -321,7 +321,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error, module is idempotent or check mode
   type: str
-  sample: "ZXJnb24=:1de4c007-0111-5e63-b92c-e505dcf0f2aa"
+  sample: "Api Exception raised while creating IP pool"
 """
 
 import traceback  # noqa: E402
