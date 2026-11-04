@@ -267,6 +267,14 @@ def create_claim_tokens(module, result, api_instance):
             result["ext_id"] = ext_id
             claim_token = get_claim_token(module, api_instance, ext_id)
             result["response"] = strip_internal_attributes(claim_token.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for claim token"
+                ),
+                msg="Failed to get entity ext_id from task for claim token",
+            )
     result["changed"] = True
 
 
@@ -292,8 +300,8 @@ def _normalize_expiry_time(value):
 
 
 def check_claim_token_idempotency(current_spec, update_spec):
-    current = deepcopy(current_spec)
-    update = deepcopy(update_spec)
+    current = strip_internal_attributes(current_spec)
+    update = strip_internal_attributes(update_spec)
     current["expiry_time"] = _normalize_expiry_time(current.get("expiry_time"))
     update["expiry_time"] = _normalize_expiry_time(update.get("expiry_time"))
     return current == update
@@ -310,6 +318,7 @@ def update_claim_tokens(module, result, api_instance):
             msg="Unable to fetch etag for updating claim token", **result
         )
 
+    kwargs = {"if_match": etag}
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_obj))
     if err:
@@ -327,7 +336,7 @@ def update_claim_tokens(module, result, api_instance):
     resp = None
     try:
         resp = api_instance.update_claim_token_by_id(
-            extId=ext_id, body=update_spec, if_match=etag
+            extId=ext_id, body=update_spec, **kwargs
         )
     except Exception as e:
         raise_api_exception(
@@ -364,8 +373,9 @@ def delete_claim_tokens(module, result, api_instance):
             msg="Api Exception raised while deleting claim token",
         )
 
-    task_ext_id = getattr(resp.data, "ext_id", None) if resp and resp.data else None
+    task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
         task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
