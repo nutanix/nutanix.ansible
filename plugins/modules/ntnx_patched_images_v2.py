@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,27 +12,24 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_patched_images_v2
 short_description: Create and delete Life Cycle Management (LCM) patched images
-version_added: 2.7.0
+version_added: "2.7.0"
 description:
-  - This module allows you to create and delete patched hypervisor or host OS
-    images in Nutanix Life Cycle Management (LCM).
-  - A patched image is a customized hypervisor or host OS image that combines a
-    base image with patches for specific node deployments.
+  - This module allows you to create and delete patched hypervisor images.
+  - Patched images provide a streamlined way to deploy nodes with pre-applied software updates, security patches, and custom configurations.
   - If C(state) is C(present) and C(ext_id) is not provided, a patched image is created.
   - If C(state) is C(absent) and C(ext_id) is provided, the patched image is deleted.
   - This module uses v4 APIs based SDKs.
 notes:
-  - The patched images APIs are part of the Life Cycle Management (LCM) namespace
-    and are served by Foundation Central (FCVM), NOT by Prism Central (PC).
-    Set C(nutanix_host) to the Foundation Central (FCVM) endpoint.
-  - Creating a patched image requires an already claimed node (referenced through
-    C(claim_token_ext_id)) and an uploaded local host image referenced by
-    C(image_details.ext_id).
-  - The patched ISO must be reachable from the cluster through C(patched_iso_url)
-    and its C(patched_iso_sha256_checksum) must match the ISO content.
-  - This module requires the appropriate administrative role on Foundation Central
-    to be assigned to the user performing the operation.
-  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create patched image) -
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
+    - >-
+      B(Delete patched image) -
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
   state:
     description:
@@ -63,41 +60,23 @@ options:
     description:
       - Patched image name.
       - Required for the create operation.
-      - Minimum 1 character, maximum 64 characters.
-    type: str
-    required: false
-  version:
-    description:
-      - Version of the base hypervisor or host OS image used for patching.
     type: str
     required: false
   image_details:
     description:
-      - Details of the local host image used for patching.
+      - Details of the image used for patching
       - Required for the create operation.
     type: dict
     required: false
     suboptions:
       ext_id:
         description:
-          - External ID of the uploaded local host image.
+          - External ID of the uploaded host image.
         type: str
         required: true
   claim_token_ext_id:
     description:
       - External ID of the claim token used in the patched image.
-      - Required for the create operation.
-    type: str
-    required: false
-  patched_iso_url:
-    description:
-      - URL for downloading the patched image.
-      - Required for the create operation.
-    type: str
-    required: false
-  patched_iso_sha256_checksum:
-    description:
-      - SHA-256 checksum of the patched image.
       - Required for the create operation.
     type: str
     required: false
@@ -113,7 +92,7 @@ options:
         description:
           - External ID of the node.
         type: str
-        required: false
+        required: true
       host_configuration:
         description:
           - Configuration of the hypervisor or host OS used for patching.
@@ -224,7 +203,8 @@ options:
                             default: 128
                   bond_settings:
                     description:
-                      - Bond configuration of the management network.
+                      - Network bonding configuration.
+                      - Choose either Active-Backup bonding for simple failover or LACP bonding for dynamic link aggregation
                     type: dict
                     required: false
                     suboptions:
@@ -246,7 +226,7 @@ options:
                                 description:
                                   - NICs participating in the bond.
                                 type: dict
-                                required: false
+                                required: true
                                 suboptions:
                                   mac_address:
                                     description:
@@ -265,7 +245,7 @@ options:
                                 description:
                                   - LACP settings of the bond.
                                 type: dict
-                                required: false
+                                required: true
                                 suboptions:
                                   rate:
                                     description:
@@ -279,7 +259,7 @@ options:
                                 description:
                                   - NICs participating in the bond.
                                 type: dict
-                                required: false
+                                required: true
                                 suboptions:
                                   mac_address:
                                     description:
@@ -385,11 +365,6 @@ options:
                       - The fully qualified domain name value.
                     type: str
                     required: false
-  owner_ext_id:
-    description:
-      - External ID of the owner of the patched image.
-    type: str
-    required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -410,13 +385,9 @@ EXAMPLES = r"""
     state: present
     host_type: "AHV"
     name: "ahv_patched_image_ansible"
-    version: "10.0"
     claim_token_ext_id: "5f1b1b3a-1b3a-4b3a-8b3a-1b3a4b3a8b3a"
-    patched_iso_url: "https://example.com/isos/ahv-patched.iso"
-    patched_iso_sha256_checksum: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     image_details:
       ext_id: "b6c8f0a2-4d1e-4f0a-9c1a-2d3e4f5a6b7c"
-    owner_ext_id: "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d"
     node_configurations:
       - node_ext_id: "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f"
         host_configuration:
@@ -514,12 +485,6 @@ changed:
   returned: always
   type: bool
   sample: true
-
-skipped:
-  description: This indicates whether the operation was skipped.
-  returned: when applicable
-  type: bool
-  sample: false
 
 error:
   description: This indicates the error message if any error occurred.
@@ -762,22 +727,18 @@ def get_module_spec():
             obj=lifecycle_sdk.HostType,
         ),
         name=dict(type="str"),
-        version=dict(type="str"),
         image_details=dict(
             type="dict",
             options=image_details_spec,
             obj=lifecycle_sdk.LocalHostImageDetails,
         ),
         claim_token_ext_id=dict(type="str"),
-        patched_iso_url=dict(type="str"),
-        patched_iso_sha256_checksum=dict(type="str"),
         node_configurations=dict(
             type="list",
             elements="dict",
             options=node_configuration_spec,
             obj=lifecycle_sdk.NodeConfiguration,
         ),
-        owner_ext_id=dict(type="str"),
     )
 
     return module_args
@@ -791,8 +752,6 @@ def create_patched_images(module, result, api_instance):
             "name",
             "image_details",
             "claim_token_ext_id",
-            "patched_iso_url",
-            "patched_iso_sha256_checksum",
             "node_configurations",
         ],
     )
@@ -831,6 +790,15 @@ def create_patched_images(module, result, api_instance):
             result["ext_id"] = ext_id
             resp = get_patched_image(module, api_instance, ext_id)
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for patched image"
+                ),
+                msg="Failed to get entity ext_id from task for patched image",
+            )
+
     result["changed"] = True
 
 
@@ -854,10 +822,11 @@ def delete_patched_images(module, result, api_instance):
             ),
         )
 
-    task_ext_id = getattr(getattr(resp, "data", None), "ext_id", None)
+    task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
 
@@ -882,7 +851,6 @@ def run_module():
         "changed": False,
         "response": None,
         "failed": False,
-        "ext_id": None,
     }
     api_instance = get_patched_images_api_instance(module)
     state = module.params.get("state")

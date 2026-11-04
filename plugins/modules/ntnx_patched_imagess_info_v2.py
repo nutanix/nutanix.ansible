@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,21 +12,23 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_patched_imagess_info_v2
 short_description: Fetch Life Cycle Management (LCM) patched images info
-version_added: 2.7.0
+version_added: "2.7.0"
 description:
-  - This module allows you to fetch information about patched hypervisor or host
-    OS images in Nutanix Life Cycle Management (LCM).
+  - This module allows you to fetch information about patched images.
   - If C(ext_id) is provided, a single patched image is fetched using its external ID.
-  - If C(ext_id) is not provided, a list of patched images is fetched, optionally
-    filtered/limited.
+  - If C(ext_id) is not provided, a list of patched images is fetched, optionally filtered/limited.
   - This module uses v4 APIs based SDKs.
 notes:
-  - The patched images APIs are part of the Life Cycle Management (LCM) namespace
-    and are served by Foundation Central (FCVM), NOT by Prism Central (PC).
-    Set C(nutanix_host) to the Foundation Central (FCVM) endpoint.
-  - This module requires the appropriate administrative role on Foundation Central
-    to be assigned to the user performing the operation.
-  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Get patched image using ext_id) -
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
+    - >-
+      B(List all patched images) -
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
   ext_id:
     description:
@@ -89,10 +91,8 @@ RETURN = r"""
 response:
   description:
     - The response from the Nutanix patched images info v4 API.
-    - This host may be Foundation Central (FCVM), not Prism Central.
     - It can be a single patched image if the external ID is provided.
-    - It can be a list of multiple patched images if the external ID is not
-      provided, with an optional filter or limit.
+    - It can be a list of multiple patched images if the external ID is not provided.
   returned: always
   type: dict
   sample:
@@ -167,6 +167,7 @@ from ..module_utils.v4.lcm.api_client import (  # noqa: E402
 from ..module_utils.v4.lcm.helpers import get_patched_image  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -200,7 +201,10 @@ def get_patched_images(module, api_instance, result):
         module.fail_json(msg="Failed generating patched images info spec", **result)
 
     try:
-        resp = api_instance.list_patched_images(**kwargs)
+        resp = list_entities(
+            api_instance.list_patched_images,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

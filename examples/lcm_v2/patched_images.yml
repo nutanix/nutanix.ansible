@@ -1,35 +1,41 @@
 ---
-# Examples for managing Life Cycle Management (LCM) patched images.
-#
-# IMPORTANT: The patched images APIs are part of the LCM namespace and are served
-# by Foundation Central (FCVM), NOT by Prism Central (PC). Point nutanix_host at
-# the Foundation Central (FCVM) endpoint (for example 10.97.44.170).
-- name: Patched images examples
+# Summary:
+# This playbook will do:
+# 1. Create a patched image
+# 2. Get the patched image by ext_id
+# 3. List all patched images
+# 4. List patched images with filter by name
+# 5. List patched images with limit
+# 6. Delete the patched image
+
+- name: Patched images playbook
   hosts: localhost
   gather_facts: false
   module_defaults:
     group/nutanix.ncp.ntnx:
-      nutanix_host: "10.97.44.170"
-      nutanix_username: "admin"
-      nutanix_password: "<fcvm_password>"
+      nutanix_host: "{{ nutanix_host }}"
+      nutanix_username: "{{ nutanix_username }}"
+      nutanix_password: "{{ nutanix_password }}"
       validate_certs: false
   tasks:
+    - name: Set variables
+      set_fact:
+        patched_image_name: "ahv_patched_image_ansible"
+        patched_image_ext_id: "b6c8f0a2-4d1e-4f0a-9c1a-2d3e4f5a6b7c"
+        node_ext_id: "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f"
+        node_hostname: "ahv-host-01"
+
     - name: Create AHV patched image
       nutanix.ncp.ntnx_patched_images_v2:
         state: present
         host_type: "AHV"
-        name: "ahv_patched_image_ansible"
-        version: "10.0"
-        claim_token_ext_id: "5f1b1b3a-1b3a-4b3a-8b3a-1b3a4b3a8b3a"
-        patched_iso_url: "https://example.com/isos/ahv-patched.iso"
-        patched_iso_sha256_checksum: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        name: "{{ patched_image_name }}"
         image_details:
-          ext_id: "b6c8f0a2-4d1e-4f0a-9c1a-2d3e4f5a6b7c"
-        owner_ext_id: "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d"
+          ext_id: "{{ patched_image_ext_id }}"
         node_configurations:
-          - node_ext_id: "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f"
+          - node_ext_id: "{{ node_ext_id }}"
             host_configuration:
-              hostname: "ahv-host-01"
+              hostname: "{{ node_hostname }}"
               network_details:
                 management:
                   mtu_bytes: 1500
@@ -59,7 +65,7 @@
 
     - name: Get patched image by ext_id
       nutanix.ncp.ntnx_patched_imagess_info_v2:
-        ext_id: "{{ create_result.ext_id | default('b6c8f0a2-4d1e-4f0a-9c1a-2d3e4f5a6b7c') }}"
+        ext_id: "{{ patched_image_ext_id }}"
       register: get_result
       ignore_errors: true
 
@@ -70,7 +76,7 @@
 
     - name: List patched images with filter
       nutanix.ncp.ntnx_patched_imagess_info_v2:
-        filter: "name eq 'ahv_patched_image_ansible'"
+        filter: "name eq '{{ patched_image_name }}'"
       register: filter_result
       ignore_errors: true
 
@@ -83,6 +89,6 @@
     - name: Delete patched image
       nutanix.ncp.ntnx_patched_images_v2:
         state: absent
-        ext_id: "{{ create_result.ext_id | default('b6c8f0a2-4d1e-4f0a-9c1a-2d3e4f5a6b7c') }}"
+        ext_id: "{{ patched_image_ext_id }}"
       register: delete_result
       ignore_errors: true
