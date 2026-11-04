@@ -42,6 +42,7 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_proxy_v2
 author:
   - George Ghawali (@george-ghawali)
+  - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
@@ -86,16 +87,15 @@ response:
   returned: always
   type: list
   sample:
-    - client_context: "example-range-setup"
-      ext_id: null
-      ipv4_address: "10.30.30.60"
-      links: null
-      tenant_id: null
-    - client_context: "example-range-setup"
-      ext_id: null
-      ipv4_address: "10.30.30.61"
-      links: null
-      tenant_id: null
+    [
+      {
+        "client_context": "reserved_ip_context",
+        "ext_id": "887fddf0-b125-4da3-8110-b82bdbd21da2",
+        "ipv4_address": "10.0.0.1",
+        "links": null,
+        "tenant_id": null
+      }
+    ]
 
 subnet_ext_id:
   description: External ID of the managed subnet whose reserved IPs were listed.

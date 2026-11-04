@@ -15,12 +15,8 @@ short_description: Reserve and unreserve IP addresses on a managed subnet in Nut
 version_added: 2.7.0
 description:
   - This module reserves and unreserves IP addresses on a managed subnet in Nutanix Prism Central.
-  - When C(state) is C(present), it reserves IPs via the
-    U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.4#tag/Subnets/operation/reserveIpsBySubnetId)
-    API.
-  - When C(state) is C(absent), it unreserves IPs via the
-    U(https://developers.nutanix.com/api-reference?namespace=networking&version=v4.4#tag/Subnets/operation/unreserveIpsBySubnetId)
-    API.
+  - When C(state) is C(present), it reserves IPs
+  - When C(state) is C(absent), it unreserves IPs
   - Reserved IPs are excluded from automatic IPAM allocations for the target subnet.
   - This module uses PC v4 APIs based SDKs.
 notes:
@@ -181,6 +177,7 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_proxy_v2
 author:
   - George Ghawali (@george-ghawali)
+  - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
