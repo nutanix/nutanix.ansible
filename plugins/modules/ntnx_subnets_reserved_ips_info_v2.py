@@ -16,7 +16,7 @@ version_added: 2.7.0
 description:
   - This module lists every IP address that is currently reserved on a managed subnet in
     Nutanix Prism Central, together with the C(client_context) tag that owns each reservation.
-  - Use this before invoking C(ntnx_subnets_unreserve_ips_v2) to confirm which IPs will be released.
+  - Use this before invoking C(ntnx_subnets_reserved_ips_v2) with C(state=absent) to confirm which IPs will be released.
   - Results can be filtered / paginated using C(filter), C(page), C(limit), C(orderby), C(select),
     or C(fetch_all).
   - This module uses PC v4 APIs based SDKs.
