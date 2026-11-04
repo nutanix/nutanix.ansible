@@ -216,3 +216,66 @@ def get_lcm_notification(module, api_instance, ext_id):
                 ext_id
             ),
         )
+
+
+def get_claim_token(module, api_instance, ext_id):
+    """
+    This method will return a Foundation Central claim token using its ext_id.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): ClaimTokensApi instance
+        ext_id (str): External id of the claim token
+    Returns:
+        claim_token (object): Claim token info object
+    """
+    try:
+        return api_instance.get_claim_token_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching claim token info using ext_id",
+        )
+
+
+def get_claim_token_secret(module, api_instance, ext_id):
+    """
+    This method will return the secret for a Foundation Central claim token.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): ClaimTokensApi instance
+        ext_id (str): External id of the claim token
+    Returns:
+        claim_token_secret (object): Claim token secret info object
+    """
+    try:
+        return api_instance.get_secret_by_claim_token_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching claim token secret",
+        )
+
+
+def get_node_by_claim_token(module, api_instance, claim_token_ext_id, node_ext_id):
+    """
+    This method will return a node registered with a Foundation Central claim token.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): ClaimTokensApi instance
+        claim_token_ext_id (str): External id of the claim token
+        node_ext_id (str): External id of the node
+    Returns:
+        node (object): Node registered with the claim token
+    """
+    try:
+        return api_instance.get_node_by_claim_token_id(
+            claimTokenExtId=claim_token_ext_id, extId=node_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching node by claim token",
+        )
