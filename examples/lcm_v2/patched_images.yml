@@ -92,4 +92,3 @@
         ext_id: "{{ patched_image_ext_id }}"
       register: delete_result
       ignore_errors: true
-

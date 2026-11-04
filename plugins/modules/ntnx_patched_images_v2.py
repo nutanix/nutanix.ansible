@@ -604,7 +604,7 @@ def get_module_spec():
         nics=dict(
             type="dict",
             options=nics_spec,
-            required=False,
+            required=True,
             obj=lifecycle_sdk.Nics,
         ),
     )
@@ -613,13 +613,13 @@ def get_module_spec():
         lacp_settings=dict(
             type="dict",
             options=lacp_settings_spec,
-            required=False,
+            required=True,
             obj=lifecycle_sdk.LacpSettings,
         ),
         nics=dict(
             type="dict",
             options=nics_spec,
-            required=False,
+            required=True,
             obj=lifecycle_sdk.Nics,
         ),
     )
@@ -706,7 +706,7 @@ def get_module_spec():
     )
 
     node_configuration_spec = dict(
-        node_ext_id=dict(type="str", required=False),
+        node_ext_id=dict(type="str", required=True),
         host_configuration=dict(
             type="dict",
             options=host_configuration_spec,
