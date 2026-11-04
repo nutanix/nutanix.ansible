@@ -126,7 +126,7 @@
         value: "10.44.10.5"
         prefix_length: 32
     dynamic_route_priority: 300
-    password: "checkModeSecret"
+    password: "dummy_password"
     should_advertise_all_externally_routable_prefixes: false
     externally_routable_prefixes_to_advertise:
       - ipv4:
@@ -465,7 +465,7 @@
             value: "10.44.10.5"
             prefix_length: 32
         dynamic_route_priority: 300
-        password: "S3cretBgpPass"
+        password: "dummy_password"
         should_advertise_all_externally_routable_prefixes: false
         externally_routable_prefixes_to_advertise:
           - ipv4:
