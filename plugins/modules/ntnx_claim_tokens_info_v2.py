@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -10,9 +10,9 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_claim_tokenss_info_v2
+module: ntnx_claim_tokens_info_v2
 short_description: Fetch Foundation Central claim tokens info
-version_added: 2.7.0
+version_added: "2.7.0"
 description:
   - This module allows you to fetch Foundation Central claim tokens info.
   - If C(ext_id) is not provided, it fetches the list of claim tokens (with optional filter, limit, etc.).
@@ -66,7 +66,7 @@ author:
 
 EXAMPLES = r"""
 - name: List all claim tokens
-  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+  nutanix.ncp.ntnx_claim_tokens_info_v2:
     nutanix_host: "{{ foundation_central_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -75,7 +75,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List claim tokens with filter
-  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+  nutanix.ncp.ntnx_claim_tokens_info_v2:
     nutanix_host: "{{ foundation_central_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -85,7 +85,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List claim tokens with limit
-  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+  nutanix.ncp.ntnx_claim_tokens_info_v2:
     nutanix_host: "{{ foundation_central_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -95,7 +95,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Get claim token using ext_id
-  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+  nutanix.ncp.ntnx_claim_tokens_info_v2:
     nutanix_host: "{{ foundation_central_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -105,7 +105,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Get claim token secret using ext_id
-  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+  nutanix.ncp.ntnx_claim_tokens_info_v2:
     nutanix_host: "{{ foundation_central_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -116,7 +116,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List nodes registered with a claim token
-  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+  nutanix.ncp.ntnx_claim_tokens_info_v2:
     nutanix_host: "{{ foundation_central_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -127,7 +127,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Get a node registered with a claim token using node_ext_id
-  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+  nutanix.ncp.ntnx_claim_tokens_info_v2:
     nutanix_host: "{{ foundation_central_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

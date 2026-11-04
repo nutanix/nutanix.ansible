@@ -1,7 +1,7 @@
 ---
 ###############################################################################
-# Test plan for Foundation Central Claim Tokens (ntnx_claim_tokens_v2 and
-# ntnx_claim_tokenss_info_v2). Claim tokens are FCVM entities.
+# Test plan for Foundation Central Claim Tokens (ntnx_claim_token_v2 and
+# ntnx_claim_tokens_info_v2). Claim tokens are FCVM entities.
 #
 # Writable spec fields (from SDK ClaimToken request body):
 #   - name (str, required on create)
@@ -49,7 +49,7 @@
 ########################################################################################
 
 - name: Create claim token with all attributes in check mode
-  nutanix.ncp.ntnx_claim_tokens_v2:
+  nutanix.ncp.ntnx_claim_token_v2:
     state: present
     name: "check_mode_{{ ct_name }}"
     expiry_time: "2026-11-01T00:00:00Z"
@@ -76,7 +76,7 @@
 ########################################################################################
 
 - name: Create claim token with required fields only
-  nutanix.ncp.ntnx_claim_tokens_v2:
+  nutanix.ncp.ntnx_claim_token_v2:
     state: present
     name: "{{ ct_name }}"
     expiry_time: "2026-11-01T00:00:00Z"
@@ -105,7 +105,7 @@
 ########################################################################################
 
 - name: Create claim token with all attributes
-  nutanix.ncp.ntnx_claim_tokens_v2:
+  nutanix.ncp.ntnx_claim_token_v2:
     state: present
     name: "{{ ct_name_full }}"
     expiry_time: "2026-11-15T00:00:00Z"
@@ -133,7 +133,7 @@
 ########################################################################################
 
 - name: Get claim token using ext_id
-  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+  nutanix.ncp.ntnx_claim_tokens_info_v2:
     ext_id: "{{ ct_ext_id }}"
   register: result
   ignore_errors: true
@@ -154,7 +154,7 @@
 ########################################################################################
 
 - name: Get claim token secret
-  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+  nutanix.ncp.ntnx_claim_tokens_info_v2:
     ext_id: "{{ ct_ext_id }}"
     fetch_secret: true
   register: result
@@ -176,7 +176,7 @@
 ########################################################################################
 
 - name: List nodes registered with the claim token
-  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+  nutanix.ncp.ntnx_claim_tokens_info_v2:
     ext_id: "{{ ct_ext_id }}"
     fetch_nodes: true
   register: result
@@ -197,7 +197,7 @@
 ########################################################################################
 
 - name: List all claim tokens
-  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+  nutanix.ncp.ntnx_claim_tokens_info_v2:
   register: result
   ignore_errors: true
 
@@ -217,7 +217,7 @@
 ########################################################################################
 
 - name: List claim tokens with filter
-  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+  nutanix.ncp.ntnx_claim_tokens_info_v2:
     filter: "name eq '{{ ct_name_full }}'"
   register: result
   ignore_errors: true
@@ -237,7 +237,7 @@
 ########################################################################################
 
 - name: List claim tokens with limit
-  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+  nutanix.ncp.ntnx_claim_tokens_info_v2:
     limit: 1
   register: result
   ignore_errors: true
@@ -256,7 +256,7 @@
 ########################################################################################
 
 - name: Update claim token with all attributes in check mode
-  nutanix.ncp.ntnx_claim_tokens_v2:
+  nutanix.ncp.ntnx_claim_token_v2:
     state: present
     ext_id: "{{ ct_ext_id }}"
     name: "{{ ct_name_full }}_cm"
@@ -282,7 +282,7 @@
 ########################################################################################
 
 - name: Update claim token
-  nutanix.ncp.ntnx_claim_tokens_v2:
+  nutanix.ncp.ntnx_claim_token_v2:
     state: present
     ext_id: "{{ ct_ext_id }}"
     name: "{{ ct_name_full }}_updated"
@@ -307,7 +307,7 @@
 ########################################################################################
 
 - name: Update claim token again with same params (idempotency)
-  nutanix.ncp.ntnx_claim_tokens_v2:
+  nutanix.ncp.ntnx_claim_token_v2:
     state: present
     ext_id: "{{ ct_ext_id }}"
     name: "{{ ct_name_full }}_updated"
@@ -331,7 +331,7 @@
 ########################################################################################
 
 - name: Create claim token without required name (negative)
-  nutanix.ncp.ntnx_claim_tokens_v2:
+  nutanix.ncp.ntnx_claim_token_v2:
     state: present
     max_usage_count: 5
   register: result
@@ -346,7 +346,7 @@
     fail_msg: "Create without required name did not fail"
 
 - name: Create claim token without required expiry_time (negative)
-  nutanix.ncp.ntnx_claim_tokens_v2:
+  nutanix.ncp.ntnx_claim_token_v2:
     state: present
     name: "neg_{{ ct_name }}"
     max_usage_count: 5
@@ -362,7 +362,7 @@
     fail_msg: "Create without required expiry_time did not fail"
 
 - name: Create claim token without required max_usage_count (negative)
-  nutanix.ncp.ntnx_claim_tokens_v2:
+  nutanix.ncp.ntnx_claim_token_v2:
     state: present
     name: "neg_{{ ct_name }}"
     expiry_time: "2026-11-01T00:00:00Z"
@@ -378,7 +378,7 @@
     fail_msg: "Create without required max_usage_count did not fail"
 
 - name: Create claim token with expiry beyond 3 months (negative / domain rule)
-  nutanix.ncp.ntnx_claim_tokens_v2:
+  nutanix.ncp.ntnx_claim_token_v2:
     state: present
     name: "neg_expiry_{{ ct_name }}"
     expiry_time: "2027-06-01T00:00:00Z"
@@ -399,7 +399,7 @@
 ########################################################################################
 
 - name: Get claim token with invalid ext_id (negative)
-  nutanix.ncp.ntnx_claim_tokenss_info_v2:
+  nutanix.ncp.ntnx_claim_tokens_info_v2:
     ext_id: "00000000-0000-0000-0000-000000000000"
   register: result
   ignore_errors: true
@@ -417,7 +417,7 @@
 ########################################################################################
 
 - name: Delete claim token in check mode
-  nutanix.ncp.ntnx_claim_tokens_v2:
+  nutanix.ncp.ntnx_claim_token_v2:
     state: absent
     ext_id: "{{ ct_ext_id }}"
   register: result
@@ -439,7 +439,7 @@
 ########################################################################################
 
 - name: Delete claim token
-  nutanix.ncp.ntnx_claim_tokens_v2:
+  nutanix.ncp.ntnx_claim_token_v2:
     state: absent
     ext_id: "{{ ct_ext_id }}"
   register: deleted_ct
@@ -463,7 +463,7 @@
 ########################################################################################
 
 - name: Delete already-deleted claim token (negative)
-  nutanix.ncp.ntnx_claim_tokens_v2:
+  nutanix.ncp.ntnx_claim_token_v2:
     state: absent
     ext_id: "{{ ct_ext_id }}"
   register: result
@@ -482,7 +482,7 @@
 ########################################################################################
 
 - name: Cleanup remaining claim tokens
-  nutanix.ncp.ntnx_claim_tokens_v2:
+  nutanix.ncp.ntnx_claim_token_v2:
     state: absent
     ext_id: "{{ item }}"
   loop: "{{ todelete }}"

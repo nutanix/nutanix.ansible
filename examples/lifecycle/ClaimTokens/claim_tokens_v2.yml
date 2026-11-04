@@ -29,7 +29,7 @@
         claim_token_name: "claim_token_ansible"
 
     - name: Create a claim token
-      nutanix.ncp.ntnx_claim_tokens_v2:
+      nutanix.ncp.ntnx_claim_token_v2:
         state: present
         name: "{{ claim_token_name }}"
         expiry_time: "2026-11-01T00:00:00Z"
@@ -42,44 +42,44 @@
         claim_token_ext_id: "{{ result.response.ext_id }}"
 
     - name: Get claim token using ext_id
-      nutanix.ncp.ntnx_claim_tokenss_info_v2:
+      nutanix.ncp.ntnx_claim_tokens_info_v2:
         ext_id: "{{ claim_token_ext_id }}"
       register: result
       ignore_errors: true
 
     - name: Get claim token secret
-      nutanix.ncp.ntnx_claim_tokenss_info_v2:
+      nutanix.ncp.ntnx_claim_tokens_info_v2:
         ext_id: "{{ claim_token_ext_id }}"
         fetch_secret: true
       register: result
       ignore_errors: true
 
     - name: List nodes registered with the claim token
-      nutanix.ncp.ntnx_claim_tokenss_info_v2:
+      nutanix.ncp.ntnx_claim_tokens_info_v2:
         ext_id: "{{ claim_token_ext_id }}"
         fetch_nodes: true
       register: result
       ignore_errors: true
 
     - name: List all claim tokens
-      nutanix.ncp.ntnx_claim_tokenss_info_v2:
+      nutanix.ncp.ntnx_claim_tokens_info_v2:
       register: result
       ignore_errors: true
 
     - name: List claim tokens with filter
-      nutanix.ncp.ntnx_claim_tokenss_info_v2:
+      nutanix.ncp.ntnx_claim_tokens_info_v2:
         filter: "name eq '{{ claim_token_name }}'"
       register: result
       ignore_errors: true
 
     - name: List claim tokens with limit
-      nutanix.ncp.ntnx_claim_tokenss_info_v2:
+      nutanix.ncp.ntnx_claim_tokens_info_v2:
         limit: 1
       register: result
       ignore_errors: true
 
     - name: Update the claim token
-      nutanix.ncp.ntnx_claim_tokens_v2:
+      nutanix.ncp.ntnx_claim_token_v2:
         state: present
         ext_id: "{{ claim_token_ext_id }}"
         name: "{{ claim_token_name }}_updated"
@@ -89,7 +89,7 @@
       ignore_errors: true
 
     - name: Delete the claim token
-      nutanix.ncp.ntnx_claim_tokens_v2:
+      nutanix.ncp.ntnx_claim_token_v2:
         state: absent
         ext_id: "{{ claim_token_ext_id }}"
       register: result

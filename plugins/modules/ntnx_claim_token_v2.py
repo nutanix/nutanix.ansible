@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -10,26 +10,28 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_claim_tokens_v2
+module: ntnx_claim_token_v2
 short_description: Create, Update, Delete Foundation Central claim tokens
-version_added: 2.7.0
+version_added: "2.7.0"
 description:
   - This module allows you to create, update, and delete Foundation Central claim tokens.
   - A claim token is a secure token used for node authentication and registration with
     Foundation Central during onboarding.
   - This module uses the Life Cycle Management (lifecycle) v4 APIs based SDK.
 notes:
-  - This module talks to B(Foundation Central (FCVM)), not Prism Central.
-    Point C(nutanix_host) and C(nutanix_port) at the Foundation Central VM endpoint.
-  - >-
-    This module requires the appropriate Foundation Central role/permissions to be assigned
-    to the user performing the operation.
-  - B(Create a claim token) - Requires an admin role on Foundation Central.
-    C(name), C(expiry_time) and C(max_usage_count) are all required on create.
-  - The C(expiry_time) must be at most 3 months in the future.
-  - B(Update a claim token) - Requires an admin role on Foundation Central.
-  - B(Delete a claim token) - Requires an admin role on Foundation Central.
-  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create claim token) -
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
+    - >-
+      B(Update claim token) -
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
+    - >-
+      B(Delete claim token) -
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
   state:
     description:
@@ -56,15 +58,13 @@ options:
     required: false
   expiry_time:
     description:
-      - The expiry time of the claim token in ISO 8601 format (e.g. C(2026-11-01T00:00:00Z)).
-      - After this time the claim token can no longer be used to register nodes.
+      - Expiry time of the claim token
       - Required for create operation.
-      - The expiry time validity must be at most 3 months in the future, otherwise Foundation Central rejects the request.
     type: str
     required: false
   max_usage_count:
     description:
-      - The maximum number of times this claim token can be used to register nodes.
+      - Maximum number of times the claim token can be used for registering nodes
       - Required for create operation.
     type: int
     required: false
@@ -80,7 +80,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create claim token
-  nutanix.ncp.ntnx_claim_tokens_v2:
+  nutanix.ncp.ntnx_claim_token_v2:
     nutanix_host: "{{ foundation_central_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -93,7 +93,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Update claim token
-  nutanix.ncp.ntnx_claim_tokens_v2:
+  nutanix.ncp.ntnx_claim_token_v2:
     nutanix_host: "{{ foundation_central_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -107,7 +107,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Delete claim token
-  nutanix.ncp.ntnx_claim_tokens_v2:
+  nutanix.ncp.ntnx_claim_token_v2:
     nutanix_host: "{{ foundation_central_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -391,9 +391,7 @@ def run_module():
     result = {
         "changed": False,
         "response": None,
-        "task_ext_id": None,
         "failed": False,
-        "ext_id": None,
     }
     api_instance = get_claim_tokens_api_instance(module)
     state = module.params.get("state")
