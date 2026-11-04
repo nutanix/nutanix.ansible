@@ -1,0 +1,355 @@
+---
+# Test plan for ntnx_re_enforce_vm_host_affinity_policy_v2:
+#   1. Negative: missing required ext_id            -> module fails with required-arg error
+#   2. Negative: bogus ext_id (well-formed UUID)    -> API 404 raised through raise_api_exception
+#   3. Prerequisites: create two categories (host + VM) via ntnx_categories_v2
+#   4. Prerequisites: create a VM-Host Affinity Policy via the v4 REST API (uri module)
+#      because the collection does not yet ship a CRUD module for this entity.
+#   5. Check-mode re-enforce                        -> changed=False, response is current policy
+#   6. Live re-enforce                              -> changed=True, task SUCCEEDED
+#   7. Second live re-enforce (idempotency-of-action) -> re-enforce is idempotent from the
+#      caller's perspective; both calls should complete with changed=True and status SUCCEEDED
+#   8. Cleanup: delete the policy, delete the categories
+
+- name: Start ntnx_re_enforce_vm_host_affinity_policy_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_re_enforce_vm_host_affinity_policy_v2 tests
+
+- name: Compute PC base URL and auth header for direct v4 REST calls
+  ansible.builtin.set_fact:
+    pc_base_url: "https://{{ ip }}:{{ port | default(9440) }}"
+    pc_auth_header: "Basic {{ (username + ':' + password) | b64encode }}"
+
+- name: Generate random suffix for test resource names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set names for policy and categories
+  ansible.builtin.set_fact:
+    policy_name: "ansible_reenforce_vmhap_{{ random_name }}"
+    host_cat_key: "ansible_reenforce_host_{{ random_name }}"
+    host_cat_value: "host_ansible"
+    vm_cat_key: "ansible_reenforce_vm_{{ random_name }}"
+    vm_cat_value: "vm_ansible"
+
+########################################################################################
+# 1. Negative: missing required ext_id
+########################################################################################
+
+- name: Re-enforce without ext_id (should fail)
+  nutanix.ncp.ntnx_re_enforce_vm_host_affinity_policy_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Assert missing ext_id fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'missing required arguments: ext_id' in result.msg"
+    success_msg: "Re-enforce without ext_id failed as expected"
+    fail_msg: "Re-enforce without ext_id did NOT fail with the expected error"
+
+########################################################################################
+# 2. Negative: well-formed but non-existent ext_id
+########################################################################################
+
+- name: Re-enforce with a bogus ext_id (should fail with API 404)
+  nutanix.ncp.ntnx_re_enforce_vm_host_affinity_policy_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Assert bogus ext_id fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'Api Exception' in result.msg"
+    success_msg: "Re-enforce with bogus ext_id failed as expected"
+    fail_msg: "Re-enforce with bogus ext_id did NOT fail as expected"
+
+########################################################################################
+# 3. Prerequisites: create categories for host + VM
+########################################################################################
+
+- name: Create host category for affinity policy
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{ host_cat_key }}"
+    value: "{{ host_cat_value }}"
+    description: "host category for re-enforce integration test"
+  register: host_category_result
+  ignore_errors: true
+
+- name: Assert host category was created
+  ansible.builtin.assert:
+    that:
+      - host_category_result is defined
+      - host_category_result.failed == false
+      - host_category_result.changed == true
+      - host_category_result.response is defined
+      - host_category_result.response.ext_id is defined
+      - host_category_result.response.key == host_cat_key
+      - host_category_result.response.value == host_cat_value
+    success_msg: "Host category created successfully"
+    fail_msg: "Failed to create host category"
+
+- name: Set host category ext_id
+  ansible.builtin.set_fact:
+    host_category_ext_id: "{{ host_category_result.response.ext_id }}"
+
+- name: Create VM category for affinity policy
+  nutanix.ncp.ntnx_categories_v2:
+    key: "{{ vm_cat_key }}"
+    value: "{{ vm_cat_value }}"
+    description: "VM category for re-enforce integration test"
+  register: vm_category_result
+  ignore_errors: true
+
+- name: Assert VM category was created
+  ansible.builtin.assert:
+    that:
+      - vm_category_result is defined
+      - vm_category_result.failed == false
+      - vm_category_result.changed == true
+      - vm_category_result.response is defined
+      - vm_category_result.response.ext_id is defined
+      - vm_category_result.response.key == vm_cat_key
+      - vm_category_result.response.value == vm_cat_value
+    success_msg: "VM category created successfully"
+    fail_msg: "Failed to create VM category"
+
+- name: Set VM category ext_id
+  ansible.builtin.set_fact:
+    vm_category_ext_id: "{{ vm_category_result.response.ext_id }}"
+
+########################################################################################
+# 4. Prerequisites: create the VM-Host Affinity Policy via v4 REST API
+#    (no dedicated CRUD Ansible module ships with this collection yet).
+########################################################################################
+
+- name: Generate NTNX-Request-Id for policy create
+  ansible.builtin.set_fact:
+    policy_create_request_id: "{{ 99999999999999999999 | random | to_uuid }}"
+
+- name: Create VM-Host Affinity Policy via v4 REST API
+  ansible.builtin.uri:
+    url: "{{ pc_base_url }}/api/vmm/v4.2/ahv/policies/vm-host-affinity-policies"
+    method: POST
+    headers:
+      Authorization: "{{ pc_auth_header }}"
+      Content-Type: "application/json"
+      Accept: "application/json"
+      NTNX-Request-Id: "{{ policy_create_request_id }}"
+    body_format: json
+    body:
+      name: "{{ policy_name }}"
+      description: "Policy created by ntnx_re_enforce_vm_host_affinity_policy_v2 integration tests"
+      hostCategories:
+        - extId: "{{ host_category_ext_id }}"
+      vmCategories:
+        - extId: "{{ vm_category_ext_id }}"
+    validate_certs: "{{ validate_certs }}"
+    status_code: [200, 201, 202]
+    return_content: true
+  register: policy_create_result
+  ignore_errors: true
+
+- name: Show policy create response
+  ansible.builtin.debug:
+    var: policy_create_result.json
+
+- name: Extract policy task ext_id (returned by POST)
+  ansible.builtin.set_fact:
+    policy_create_task_ext_id: "{{ policy_create_result.json.data.extId }}"
+  when:
+    - policy_create_result.json is defined
+    - policy_create_result.json.data is defined
+    - policy_create_result.json.data.extId is defined
+
+- name: Poll the create task until it completes
+  ansible.builtin.uri:
+    url: "{{ pc_base_url }}/api/prism/v4.0/config/tasks/{{ policy_create_task_ext_id }}"
+    method: GET
+    headers:
+      Authorization: "{{ pc_auth_header }}"
+      Accept: "application/json"
+    validate_certs: "{{ validate_certs }}"
+    status_code: [200]
+    return_content: true
+  register: policy_create_task
+  until:
+    - policy_create_task.json is defined
+    - policy_create_task.json.data is defined
+    - policy_create_task.json.data.status in ["SUCCEEDED", "FAILED"]
+  retries: 30
+  delay: 4
+  when: policy_create_task_ext_id is defined
+
+- name: Assert policy create task succeeded
+  ansible.builtin.assert:
+    that:
+      - policy_create_task.json is defined
+      - policy_create_task.json.data.status == "SUCCEEDED"
+    success_msg: "VM-Host Affinity Policy create task succeeded"
+    fail_msg: "VM-Host Affinity Policy create task did not succeed"
+
+- name: Extract created policy ext_id from task entities
+  ansible.builtin.set_fact:
+    policy_ext_id: >-
+      {{
+        (policy_create_task.json.data.entitiesAffected
+        | selectattr('rel', 'search', 'vm-host-affinity-policy')
+        | list)[0].extId
+      }}
+
+- name: Confirm policy ext_id resolved
+  ansible.builtin.assert:
+    that:
+      - policy_ext_id is defined
+      - policy_ext_id | length > 0
+    success_msg: "Resolved created policy ext_id: {{ policy_ext_id }}"
+    fail_msg: "Could not resolve created policy ext_id from task"
+
+- name: Wait for the new policy to become readable via GET (eventual consistency)
+  ansible.builtin.uri:
+    url: "{{ pc_base_url }}/api/vmm/v4.2/ahv/policies/vm-host-affinity-policies/{{ policy_ext_id }}"
+    method: GET
+    headers:
+      Authorization: "{{ pc_auth_header }}"
+      Accept: "application/json"
+    validate_certs: "{{ validate_certs }}"
+    status_code: [200]
+    return_content: true
+  register: policy_get_after_create
+  until:
+    - policy_get_after_create.json is defined
+    - policy_get_after_create.json.data is defined
+    - policy_get_after_create.json.data.extId == policy_ext_id
+  retries: 30
+  delay: 2
+
+########################################################################################
+# 5. Check-mode re-enforce (returns current policy without calling re-enforce)
+########################################################################################
+
+- name: Re-enforce policy in check mode
+  nutanix.ncp.ntnx_re_enforce_vm_host_affinity_policy_v2:
+    ext_id: "{{ policy_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check-mode re-enforce did NOT change state
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == policy_ext_id
+      - result.response is defined
+      - result.response.name == policy_name
+      - "'will be re-enforced' in result.msg"
+    success_msg: "Check-mode re-enforce behaved correctly"
+    fail_msg: "Check-mode re-enforce did NOT behave as expected"
+
+########################################################################################
+# 6. Live re-enforce
+########################################################################################
+
+- name: Re-enforce policy (live)
+  nutanix.ncp.ntnx_re_enforce_vm_host_affinity_policy_v2:
+    ext_id: "{{ policy_ext_id }}"
+  register: reenforce_result
+  ignore_errors: true
+
+- name: Assert live re-enforce succeeded
+  ansible.builtin.assert:
+    that:
+      - reenforce_result is defined
+      - reenforce_result.changed == true
+      - reenforce_result.failed == false
+      - reenforce_result.ext_id == policy_ext_id
+      - reenforce_result.task_ext_id is defined
+      - reenforce_result.task_ext_id | length > 0
+      - reenforce_result.response is defined
+      - reenforce_result.response.status == "SUCCEEDED"
+    success_msg: "Live re-enforce succeeded"
+    fail_msg: "Live re-enforce did NOT succeed"
+
+########################################################################################
+# 7. Second re-enforce (action is safe to repeat)
+########################################################################################
+
+- name: Re-enforce policy a second time
+  nutanix.ncp.ntnx_re_enforce_vm_host_affinity_policy_v2:
+    ext_id: "{{ policy_ext_id }}"
+  register: reenforce_result_2
+  ignore_errors: true
+
+- name: Assert second re-enforce also completes cleanly
+  ansible.builtin.assert:
+    that:
+      - reenforce_result_2 is defined
+      - reenforce_result_2.failed == false
+      - reenforce_result_2.changed == true
+      - reenforce_result_2.ext_id == policy_ext_id
+      - reenforce_result_2.task_ext_id is defined
+      - reenforce_result_2.response.status == "SUCCEEDED"
+    success_msg: "Repeated re-enforce completed cleanly"
+    fail_msg: "Repeated re-enforce failed unexpectedly"
+
+########################################################################################
+# 8. Cleanup: delete policy + categories
+########################################################################################
+
+- name: Fetch the policy to obtain its ETag for delete
+  ansible.builtin.uri:
+    url: "{{ pc_base_url }}/api/vmm/v4.2/ahv/policies/vm-host-affinity-policies/{{ policy_ext_id }}"
+    method: GET
+    headers:
+      Authorization: "{{ pc_auth_header }}"
+      Accept: "application/json"
+    validate_certs: "{{ validate_certs }}"
+    status_code: [200]
+    return_content: true
+  register: policy_pre_delete
+  ignore_errors: true
+
+- name: Delete the VM-Host Affinity Policy via v4 REST API
+  ansible.builtin.uri:
+    url: "{{ pc_base_url }}/api/vmm/v4.2/ahv/policies/vm-host-affinity-policies/{{ policy_ext_id }}"
+    method: DELETE
+    headers:
+      Authorization: "{{ pc_auth_header }}"
+      Accept: "application/json"
+      NTNX-Request-Id: "{{ 99999999999999999999 | random | to_uuid }}"
+      If-Match: "{{ policy_pre_delete.etag | default(omit) }}"
+    validate_certs: "{{ validate_certs }}"
+    status_code: [200, 202, 204]
+  register: policy_delete_result
+  ignore_errors: true
+
+- name: Delete VM category
+  nutanix.ncp.ntnx_categories_v2:
+    ext_id: "{{ vm_category_ext_id }}"
+    state: absent
+  register: vm_cat_delete
+  ignore_errors: true
+
+- name: Delete host category
+  nutanix.ncp.ntnx_categories_v2:
+    ext_id: "{{ host_category_ext_id }}"
+    state: absent
+  register: host_cat_delete
+  ignore_errors: true
+
+- name: Report cleanup outcome (non-fatal — best-effort)
+  ansible.builtin.debug:
+    msg:
+      policy_delete_status: "{{ policy_delete_result.status | default('unknown') }}"
+      vm_category_deleted: "{{ vm_cat_delete.changed | default(false) }}"
+      host_category_deleted: "{{ host_cat_delete.changed | default(false) }}"
