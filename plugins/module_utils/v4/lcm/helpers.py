@@ -174,3 +174,130 @@ def get_lcm_history(module, api_instance, ext_id):
                 ext_id
             ),
         )
+
+
+def get_lcm_recommendation(module, api_instance, ext_id):
+    """
+    This method will return LCM update recommendation info using its external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LCM Recommendations api instance
+        ext_id (str): External id of the recommendation resource
+    Returns:
+        recommendation_info (object): LCM recommendation info
+    """
+    try:
+        return api_instance.get_recommendation_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM recommendation using external identifier",
+        )
+
+
+def get_lcm_notification(module, api_instance, ext_id):
+    """
+    This method will fetch an LCM upgrade notification using its external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LCM notifications api instance
+        ext_id (str): External id of the LCM upgrade notification resource
+    Returns:
+        notification (object): LCM notification info
+    """
+    try:
+        return api_instance.get_notification_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM notification with ext_id: {0}".format(
+                ext_id
+            ),
+        )
+
+
+def get_claim_token(module, api_instance, ext_id):
+    """
+    This method will return a Foundation Central claim token using its ext_id.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): ClaimTokensApi instance
+        ext_id (str): External id of the claim token
+    Returns:
+        claim_token (object): Claim token info object
+    """
+    try:
+        return api_instance.get_claim_token_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching claim token info using ext_id",
+        )
+
+
+def get_claim_token_secret(module, api_instance, ext_id):
+    """
+    This method will return the secret for a Foundation Central claim token.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): ClaimTokensApi instance
+        ext_id (str): External id of the claim token
+    Returns:
+        claim_token_secret (object): Claim token secret info object
+    """
+    try:
+        return api_instance.get_secret_by_claim_token_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching claim token secret",
+        )
+
+
+def get_node_by_claim_token(module, api_instance, claim_token_ext_id, node_ext_id):
+    """
+    This method will return a node registered with a Foundation Central claim token.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): ClaimTokensApi instance
+        claim_token_ext_id (str): External id of the claim token
+        node_ext_id (str): External id of the node
+    Returns:
+        node (object): Node registered with the claim token
+    """
+    try:
+        return api_instance.get_node_by_claim_token_id(
+            claimTokenExtId=claim_token_ext_id, extId=node_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching node by claim token",
+        )
+
+
+def get_patched_image(module, api_instance, ext_id):
+    """
+    This method will return a patched image info using its external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Patched images api instance
+        ext_id (str): External id of the patched image
+    Returns:
+        patched_image (object): Patched image info object (with etag headers)
+    """
+    try:
+        return api_instance.get_patched_image_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching patched image with ext_id: {0}".format(
+                ext_id
+            ),
+        )
