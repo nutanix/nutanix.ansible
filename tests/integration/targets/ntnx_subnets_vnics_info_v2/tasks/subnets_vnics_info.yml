@@ -1,11 +1,11 @@
 ---
-# Test plan for ntnx_vnics_by_subnet_ids_info_v2
+# Test plan for ntnx_subnets_vnics_info_v2
 # =================================================
 # This target exercises the info module that wraps the Nutanix v4 networking
 # `list_vnics_by_subnet_id` (GET /networking/v4.3/config/subnets/{subnetExtId}/vnics)
 # SDK method. Because that is the ONLY SDK method the entity exposes, this
 # target focuses exclusively on the info/list behavior — there is no
-# Create/Update/Delete API to exercise for `VnicsBySubnetId`.
+# Create/Update/Delete API to exercise for `SubnetsVnics`.
 #
 # Coverage:
 #   1.  Prerequisite: create a VLAN subnet using ntnx_subnets_v2.
@@ -39,9 +39,9 @@
 #   - cluster.uuid
 #   - virtual_switch.uuid
 
-- name: Start ntnx_vnics_by_subnet_ids_info_v2 tests
+- name: Start ntnx_subnets_vnics_info_v2 tests
   ansible.builtin.debug:
-    msg: "Start ntnx_vnics_by_subnet_ids_info_v2 tests"
+    msg: "Start ntnx_subnets_vnics_info_v2 tests"
 
 - name: Generate random name suffix
   ansible.builtin.set_fact:
@@ -211,7 +211,7 @@
 # Test 1: list all vNICs on the subnet (non-empty list).
 ########################################################################
 - name: List all vNICs on the prerequisite subnet
-  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_vnics_info_v2:
     subnet_ext_id: "{{ subnet_ext_id }}"
   register: list_all_result
   ignore_errors: true
@@ -244,7 +244,7 @@
 # Test 2: list vNICs on the subnet with a limit.
 ########################################################################
 - name: List vNICs on the prerequisite subnet with limit=1
-  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_vnics_info_v2:
     subnet_ext_id: "{{ subnet_ext_id }}"
     limit: 1
   register: list_limit_result
@@ -266,7 +266,7 @@
 # Test 3: list vNICs on the subnet with page + limit.
 ########################################################################
 - name: List vNICs on the prerequisite subnet with page=0 and limit=1
-  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_vnics_info_v2:
     subnet_ext_id: "{{ subnet_ext_id }}"
     page: 0
     limit: 1
@@ -289,7 +289,7 @@
 # endpoint for the `macAddress` field per live-cluster verification).
 ########################################################################
 - name: List vNICs on the prerequisite subnet sorted by MAC descending
-  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_vnics_info_v2:
     subnet_ext_id: "{{ subnet_ext_id }}"
     orderby: "macAddress desc"
   register: list_orderby_result
@@ -310,7 +310,7 @@
 # Test 4b: list vNICs with an OData `select` projection.
 ########################################################################
 - name: List vNICs on the prerequisite subnet selecting only ext_id and MAC
-  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_vnics_info_v2:
     subnet_ext_id: "{{ subnet_ext_id }}"
     select: "extId,macAddress"
   register: list_select_result
@@ -335,7 +335,7 @@
 # list or failed cleanly with the documented "bad request" API error.
 ########################################################################
 - name: List vNICs on the prerequisite subnet with an OData filter
-  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_vnics_info_v2:
     subnet_ext_id: "{{ subnet_ext_id }}"
     filter: "macAddress eq '00:00:00:00:00:00'"
   register: list_filter_result
@@ -359,7 +359,7 @@
 # Test 5: fetch a specific vNIC by ext_id (client-side filter).
 ########################################################################
 - name: Fetch the created vNIC by its external ID
-  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_vnics_info_v2:
     subnet_ext_id: "{{ subnet_ext_id }}"
     ext_id: "{{ vnic_ext_id }}"
   register: get_by_ext_id_result
@@ -381,7 +381,7 @@
 # Test 6: list vNICs on the empty subnet — should return an empty list.
 ########################################################################
 - name: List vNICs on the empty prerequisite subnet
-  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_vnics_info_v2:
     subnet_ext_id: "{{ empty_subnet_ext_id }}"
   register: list_empty_result
   ignore_errors: true
@@ -402,7 +402,7 @@
 # Test 7: negative — omit the required subnet_ext_id parameter.
 ########################################################################
 - name: Call the info module without the required subnet_ext_id (negative)
-  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2: {}  # noqa: args[module]
+  nutanix.ncp.ntnx_subnets_vnics_info_v2: {}  # noqa: args[module]
   register: missing_subnet_result
   ignore_errors: true
 
@@ -419,7 +419,7 @@
 # Test 8: negative — bogus subnet_ext_id should fail with API error.
 ########################################################################
 - name: Call the info module with a non-existent subnet_ext_id (negative)
-  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_vnics_info_v2:
     subnet_ext_id: "00000000-0000-0000-0000-000000000000"
   register: bad_subnet_result
   ignore_errors: true
@@ -437,7 +437,7 @@
 # Test 9: negative — non-existent vNIC ext_id on a real subnet.
 ########################################################################
 - name: Fetch a vNIC that does not exist on the prerequisite subnet (negative)
-  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_vnics_info_v2:
     subnet_ext_id: "{{ subnet_ext_id }}"
     ext_id: "00000000-0000-0000-0000-000000000000"
   register: missing_vnic_result
@@ -456,7 +456,7 @@
 # Test 10: negative — mutually exclusive ext_id + filter should fail.
 ########################################################################
 - name: Call the info module with ext_id AND filter together (negative)
-  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_vnics_info_v2:
     subnet_ext_id: "{{ subnet_ext_id }}"
     ext_id: "{{ vnic_ext_id }}"
     filter: "macAddress eq '00:00:00:00:00:00'"

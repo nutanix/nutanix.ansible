@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_vnics_by_subnet_ids_info_v2
+module: ntnx_subnets_vnics_info_v2
 short_description: Fetch virtual NICs attached to a subnet in Nutanix Prism Central
 version_added: 2.7.0
 description:
@@ -58,41 +58,41 @@ author:
 
 EXAMPLES = r"""
 - name: List all virtual NICs attached to a subnet
-  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_vnics_info_v2:
     subnet_ext_id: "9cc4abba-f27d-40db-90ba-c1592dccaedf"
   register: result
   ignore_errors: true
 
 - name: List virtual NICs on a subnet with a limit
-  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_vnics_info_v2:
     subnet_ext_id: "9cc4abba-f27d-40db-90ba-c1592dccaedf"
     limit: 1
   register: result
   ignore_errors: true
 
 - name: List virtual NICs on a subnet using an OData filter (by VM reference)
-  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_vnics_info_v2:
     subnet_ext_id: "9cc4abba-f27d-40db-90ba-c1592dccaedf"
     filter: "vmReference eq '9939114c-7551-48fd-b064-adbdc2879065'"
   register: result
   ignore_errors: true
 
 - name: List virtual NICs on a subnet ordered by MAC address
-  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_vnics_info_v2:
     subnet_ext_id: "9cc4abba-f27d-40db-90ba-c1592dccaedf"
     orderby: "macAddress"
   register: result
   ignore_errors: true
 
 - name: Fetch a specific virtual NIC on a subnet by its external ID
-  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_vnics_info_v2:
     subnet_ext_id: "9cc4abba-f27d-40db-90ba-c1592dccaedf"
     ext_id: "1e2f3a4b-5c6d-7e8f-9a0b-c1d2e3f4a5b6"
   register: result
   ignore_errors: true
 
 - name: List all virtual NICs on a subnet with fetch_all
-  nutanix.ncp.ntnx_vnics_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_vnics_info_v2:
     subnet_ext_id: "9cc4abba-f27d-40db-90ba-c1592dccaedf"
     fetch_all: true
   register: result

@@ -10,5 +10,5 @@
       nutanix_debug: "{{ nutanix_debug | default(omit) }}"
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
   block:
-    - name: Import vnics_by_subnet_id_info.yml
-      ansible.builtin.import_tasks: "vnics_by_subnet_id_info.yml"
+    - name: Import subnets_vnics_info.yml
+      ansible.builtin.import_tasks: "subnets_vnics_info.yml"
