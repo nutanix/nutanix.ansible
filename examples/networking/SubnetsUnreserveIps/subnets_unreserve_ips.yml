@@ -3,7 +3,7 @@
 # This playbook exercises the Nutanix Prism Central "Unreserve IPs on a subnet"
 # v4 action. It:
 #   1. Lists the IPs that are currently reserved on the target subnet
-#      via the info module (ntnx_unreserve_ips_by_subnet_ids_info_v2).
+#      via the info module (ntnx_subnets_reserved_ips_info_v2).
 #   2. Unreserves a specific list of IPs via unreserve_type=IP_ADDRESS_LIST.
 #   3. Unreserves a range of IPs via unreserve_type=IP_ADDRESS_RANGE.
 #   4. Unreserves every IP tagged with a client_context via unreserve_type=CONTEXT.
@@ -17,7 +17,7 @@
 # Every task uses the module_defaults block for connection parameters — do NOT
 # repeat nutanix_host/username/password/validate_certs on individual tasks.
 
-- name: Unreserve IPs by Subnet ID playbook
+- name: Unreserve subnet IPs playbook
   hosts: localhost
   gather_facts: false
   module_defaults:
@@ -32,7 +32,7 @@
         subnet_ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
 
     - name: List reserved IPs before unreserving (all attributes)
-      nutanix.ncp.ntnx_unreserve_ips_by_subnet_ids_info_v2:
+      nutanix.ncp.ntnx_subnets_reserved_ips_info_v2:
         subnet_ext_id: "{{ subnet_ext_id }}"
         limit: 100
         filter: "clientContext ne null"
@@ -47,7 +47,7 @@
     # engine matches the cookie to authorise the release.
     ###################################################################
     - name: Unreserve a specific list of IPs from the subnet
-      nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+      nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
         state: present
         ext_id: "{{ subnet_ext_id }}"
         unreserve_type: IP_ADDRESS_LIST
@@ -68,7 +68,7 @@
     # original reservation was tagged.
     ###################################################################
     - name: Unreserve a range of IPs from the subnet
-      nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+      nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
         state: present
         ext_id: "{{ subnet_ext_id }}"
         unreserve_type: IP_ADDRESS_RANGE
@@ -85,7 +85,7 @@
     # Unreserve every IP owned by a client_context (CONTEXT)
     ###################################################################
     - name: Unreserve every IP owned by a client_context
-      nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+      nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
         state: present
         ext_id: "{{ subnet_ext_id }}"
         unreserve_type: CONTEXT
@@ -97,7 +97,7 @@
     # Re-list to confirm the subnet is clean.
     ###################################################################
     - name: List reserved IPs after unreserve actions
-      nutanix.ncp.ntnx_unreserve_ips_by_subnet_ids_info_v2:
+      nutanix.ncp.ntnx_subnets_reserved_ips_info_v2:
         subnet_ext_id: "{{ subnet_ext_id }}"
       register: reserved_after
       ignore_errors: true

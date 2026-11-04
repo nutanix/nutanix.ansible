@@ -10,5 +10,5 @@
       nutanix_debug: "{{ nutanix_debug | default(omit) }}"
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
   block:
-    - name: Import unreserve_ips_by_subnet_id.yml
-      ansible.builtin.import_tasks: unreserve_ips_by_subnet_id.yml
+    - name: Import subnets_unreserve_ips.yml
+      ansible.builtin.import_tasks: subnets_unreserve_ips.yml

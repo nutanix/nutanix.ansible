@@ -1,6 +1,6 @@
 ---
 # =============================================================================
-# Test plan for ntnx_unreserve_ips_by_subnet_id_v2 + ntnx_unreserve_ips_by_subnet_ids_info_v2
+# Test plan for ntnx_subnets_unreserve_ips_v2 + ntnx_subnets_reserved_ips_info_v2
 # =============================================================================
 # The v4 "Unreserve IPs on a subnet" action targets a managed subnet and
 # releases IPs that have been reserved either explicitly, as a range, or via
@@ -24,9 +24,9 @@
 #   8. Cleanup: delete the created subnet.
 # =============================================================================
 
-- name: Start ntnx_unreserve_ips_by_subnet_id_v2 tests
+- name: Start ntnx_subnets_unreserve_ips_v2 tests
   ansible.builtin.debug:
-    msg: Start ntnx_unreserve_ips_by_subnet_id_v2 tests
+    msg: Start ntnx_subnets_unreserve_ips_v2 tests
 
 - name: Generate random suffix for this run
   ansible.builtin.set_fact:
@@ -106,7 +106,7 @@
 # 2. Info module: empty list case
 ########################################################################
 - name: List reserved IPs on freshly-created subnet (should be empty)
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_reserved_ips_info_v2:
     subnet_ext_id: "{{ subnet_ext_id }}"
   register: reserved_empty
   ignore_errors: true
@@ -203,7 +203,7 @@
 # 4. Info module: populated list, filter, limit
 ########################################################################
 - name: List reserved IPs on subnet (all)
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_reserved_ips_info_v2:
     subnet_ext_id: "{{ subnet_ext_id }}"
   register: reserved_all
   ignore_errors: true
@@ -221,7 +221,7 @@
     fail_msg: "Reserved list did not contain all expected IPs"
 
 - name: List reserved IPs on subnet with limit=1
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_reserved_ips_info_v2:
     subnet_ext_id: "{{ subnet_ext_id }}"
     limit: 1
   register: reserved_limit
@@ -238,7 +238,7 @@
     fail_msg: "limit=1 did not return exactly one entry"
 
 - name: List reserved IPs on subnet filtered by clientContext
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_reserved_ips_info_v2:
     subnet_ext_id: "{{ subnet_ext_id }}"
     filter: "clientContext eq '{{ context_tag_list }}'"
   register: reserved_filtered
@@ -257,7 +257,7 @@
     fail_msg: "filter did not return the expected entries"
 
 - name: Info module with an invalid subnet ext_id
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_reserved_ips_info_v2:
     subnet_ext_id: "{{ invalid_subnet_ext_id }}"
   register: reserved_bad
   ignore_errors: true
@@ -274,7 +274,7 @@
 # 5. check_mode tests — ONE per unreserve_type, ALL attributes populated
 ########################################################################
 - name: Check_mode — IP_ADDRESS_LIST with all attributes
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+  nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
     state: present
     ext_id: "{{ subnet_ext_id }}"
     unreserve_type: IP_ADDRESS_LIST
@@ -306,7 +306,7 @@
     fail_msg: "check_mode IP_ADDRESS_LIST spec is wrong"
 
 - name: Check_mode — IP_ADDRESS_RANGE with all attributes
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+  nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
     state: present
     ext_id: "{{ subnet_ext_id }}"
     unreserve_type: IP_ADDRESS_RANGE
@@ -334,7 +334,7 @@
     fail_msg: "check_mode IP_ADDRESS_RANGE spec is wrong"
 
 - name: Check_mode — CONTEXT with all attributes
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+  nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
     state: present
     ext_id: "{{ subnet_ext_id }}"
     unreserve_type: CONTEXT
@@ -360,7 +360,7 @@
 # 6. Real unreserve tests — one per unreserve_type
 ########################################################################
 - name: Unreserve IPs by IP_ADDRESS_LIST (real call)
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+  nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
     state: present
     ext_id: "{{ subnet_ext_id }}"
     unreserve_type: IP_ADDRESS_LIST
@@ -387,7 +387,7 @@
     fail_msg: "IP_ADDRESS_LIST unreserve failed"
 
 - name: Unreserve IPs by IP_ADDRESS_RANGE (real call)
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+  nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
     state: present
     ext_id: "{{ subnet_ext_id }}"
     unreserve_type: IP_ADDRESS_RANGE
@@ -413,7 +413,7 @@
     fail_msg: "IP_ADDRESS_RANGE unreserve failed"
 
 - name: Unreserve IPs by CONTEXT (real call)
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+  nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
     state: present
     ext_id: "{{ subnet_ext_id }}"
     unreserve_type: CONTEXT
@@ -435,7 +435,7 @@
     fail_msg: "CONTEXT unreserve failed"
 
 - name: Confirm subnet has no reserved IPs left
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_reserved_ips_info_v2:
     subnet_ext_id: "{{ subnet_ext_id }}"
   register: reserved_final
   ignore_errors: true
@@ -454,7 +454,7 @@
 # 7. Idempotency — replaying IP_ADDRESS_LIST unreserve when none is reserved
 ########################################################################
 - name: Replay IP_ADDRESS_LIST unreserve when nothing is reserved
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+  nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
     state: present
     ext_id: "{{ subnet_ext_id }}"
     unreserve_type: IP_ADDRESS_LIST
@@ -482,7 +482,7 @@
 # 8. Negative tests
 ########################################################################
 - name: Negative — missing ext_id
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+  nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
     state: present
     unreserve_type: CONTEXT
     client_context: "does-not-matter"
@@ -500,7 +500,7 @@
     fail_msg: "Missing ext_id did not fail"
 
 - name: Negative — missing unreserve_type
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+  nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
     state: present
     ext_id: "{{ subnet_ext_id }}"
     client_context: "does-not-matter"
@@ -518,7 +518,7 @@
     fail_msg: "Missing unreserve_type did not fail"
 
 - name: Negative — IP_ADDRESS_LIST without ip_addresses
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+  nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
     state: present
     ext_id: "{{ subnet_ext_id }}"
     unreserve_type: IP_ADDRESS_LIST
@@ -536,7 +536,7 @@
     fail_msg: "IP_ADDRESS_LIST without ip_addresses did not fail"
 
 - name: Negative — IP_ADDRESS_RANGE without count
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+  nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
     state: present
     ext_id: "{{ subnet_ext_id }}"
     unreserve_type: IP_ADDRESS_RANGE
@@ -557,7 +557,7 @@
     fail_msg: "IP_ADDRESS_RANGE without count did not fail"
 
 - name: Negative — CONTEXT without client_context
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+  nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
     state: present
     ext_id: "{{ subnet_ext_id }}"
     unreserve_type: CONTEXT
@@ -575,7 +575,7 @@
     fail_msg: "CONTEXT without client_context did not fail"
 
 - name: Negative — invalid enum value for unreserve_type
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+  nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
     state: present
     ext_id: "{{ subnet_ext_id }}"
     unreserve_type: "BOGUS_TYPE"
@@ -594,7 +594,7 @@
     fail_msg: "Invalid enum value was accepted"
 
 - name: Negative — unreserve on non-existent subnet
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+  nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
     state: present
     ext_id: "{{ invalid_subnet_ext_id }}"
     unreserve_type: CONTEXT
@@ -612,7 +612,7 @@
     fail_msg: "Unreserve on non-existent subnet did not fail"
 
 - name: Negative — state=absent is not supported for this action module
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+  nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
     state: absent
     ext_id: "{{ subnet_ext_id }}"
     unreserve_type: CONTEXT
@@ -631,7 +631,7 @@
     fail_msg: "state=absent did not fail with the expected message"
 
 - name: Negative — info module without subnet_ext_id
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_ids_info_v2: {}
+  nutanix.ncp.ntnx_subnets_reserved_ips_info_v2: {}
   register: info_missing
   ignore_errors: true
 

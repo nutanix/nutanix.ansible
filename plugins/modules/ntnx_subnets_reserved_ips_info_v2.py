@@ -10,13 +10,13 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_unreserve_ips_by_subnet_ids_info_v2
+module: ntnx_subnets_reserved_ips_info_v2
 short_description: List the currently reserved IPs on a managed subnet
 version_added: 2.7.0
 description:
   - This module lists every IP address that is currently reserved on a managed subnet in
     Nutanix Prism Central, together with the C(client_context) tag that owns each reservation.
-  - Use this before invoking C(ntnx_unreserve_ips_by_subnet_id_v2) to confirm which IPs will be released.
+  - Use this before invoking C(ntnx_subnets_unreserve_ips_v2) to confirm which IPs will be released.
   - Results can be filtered / paginated using C(filter), C(page), C(limit), C(orderby), C(select),
     or C(fetch_all).
   - This module uses PC v4 APIs based SDKs.
@@ -46,13 +46,13 @@ author:
 
 EXAMPLES = r"""
 - name: List all reserved IPs on a managed subnet
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_reserved_ips_info_v2:
     subnet_ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
   register: result
   ignore_errors: true
 
 - name: List reserved IPs owned by a specific client_context
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_reserved_ips_info_v2:
     subnet_ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
     filter: "clientContext eq 'ansible-context-tag'"
     limit: 25
@@ -60,14 +60,14 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Order reserved IPs by ipv4Address ascending
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_reserved_ips_info_v2:
     subnet_ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
     orderby: "ipv4Address"
   register: result
   ignore_errors: true
 
 - name: List all reserved IPs with fetch_all
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_ids_info_v2:
+  nutanix.ncp.ntnx_subnets_reserved_ips_info_v2:
     subnet_ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
     fetch_all: true
   register: result

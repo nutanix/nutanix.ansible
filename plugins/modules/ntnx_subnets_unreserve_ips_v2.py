@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_unreserve_ips_by_subnet_id_v2
+module: ntnx_subnets_unreserve_ips_v2
 short_description: Unreserve IP addresses on a managed subnet in Nutanix Prism Central
 version_added: 2.7.0
 description:
@@ -167,7 +167,7 @@ author:
 
 EXAMPLES = r"""
 - name: Unreserve a specific list of IPs from a subnet
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+  nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
     ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
     unreserve_type: IP_ADDRESS_LIST
     ip_addresses:
@@ -179,7 +179,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Unreserve a range of IPs from a subnet
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+  nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
     ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
     unreserve_type: IP_ADDRESS_RANGE
     start_ip_address:
@@ -190,7 +190,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Unreserve every IP tagged with a client context
-  nutanix.ncp.ntnx_unreserve_ips_by_subnet_id_v2:
+  nutanix.ncp.ntnx_subnets_unreserve_ips_v2:
     ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
     unreserve_type: CONTEXT
     client_context: "ansible-context-tag"
