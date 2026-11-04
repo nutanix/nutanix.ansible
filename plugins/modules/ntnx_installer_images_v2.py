@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -19,18 +19,7 @@ description:
   - If C(state) is C(present) and C(ext_id) is not provided, the image is created.
   - If C(state) is C(present) and C(ext_id) is provided, the image is updated.
   - If C(state) is C(absent) and C(ext_id) is provided, the image is deleted.
-  - This module uses v4 API based SDKs.
-notes:
-  - This module talks to B(Foundation Central (FCVM)), B(not) Prism Central.
-    The C(nutanix_host), C(nutanix_username), C(nutanix_password) and
-    C(nutanix_port) parameters MUST point to the FCVM/Foundation endpoint.
-  - The installer images APIs are served under C(/api/lifecycle/v4.3/config/images)
-    and are not available on Prism Central.
-  - >-
-    B(Create/Update/Delete an installer image) -
-    Requires an administrator role on Foundation Central.
-  - For AHV images a checksum (MD5 or SHA-256) is applicable.
-  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
+  - This module uses PC v4 APIs based SDKs.
 options:
   state:
     description:
