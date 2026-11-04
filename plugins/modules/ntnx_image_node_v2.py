@@ -15,7 +15,7 @@ short_description: Image a node
 version_added: "2.7.0"
 description:
   - Installs AOS or hypervisor or host OS on the node.
-  - This module uses PC v4 APIs based SDKs
+  - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
