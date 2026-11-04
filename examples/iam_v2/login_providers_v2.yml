@@ -1,0 +1,44 @@
+---
+# Summary:
+# This playbook will do:
+# 1. List all login providers
+# 2. Filter login providers by name
+# 3. Paginate login providers with limit
+# 4. Fetch all login providers with fetch_all
+
+- name: LoginProvider info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        local_provider_name: "local"
+
+    - name: List all login providers
+      nutanix.ncp.ntnx_login_providers_info_v2:
+      register: all_providers
+      ignore_errors: true
+
+    - name: Filter login providers by name
+      nutanix.ncp.ntnx_login_providers_info_v2:
+        filter: "name eq '{{ local_provider_name }}'"
+      register: local_providers
+      ignore_errors: true
+
+    - name: List login providers with pagination (limit=1)
+      nutanix.ncp.ntnx_login_providers_info_v2:
+        limit: 1
+      register: limited_providers
+      ignore_errors: true
+
+    - name: Fetch all login providers using fetch_all
+      nutanix.ncp.ntnx_login_providers_info_v2:
+        fetch_all: true
+      register: fetch_all_providers
+      ignore_errors: true
