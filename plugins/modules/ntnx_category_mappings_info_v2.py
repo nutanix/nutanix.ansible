@@ -81,6 +81,14 @@ EXAMPLES = r"""
     ext_id: "b215708c-252f-400c-bc90-2f36242d3d3c"
   register: result
   ignore_errors: true
+
+- name: List all category mappings with fetch_all
+  nutanix.ncp.ntnx_category_mappings_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -152,6 +160,7 @@ from ..module_utils.v4.flow.api_client import (  # noqa: E402
 from ..module_utils.v4.flow.helpers import get_category_mapping  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -188,7 +197,10 @@ def get_category_mappings(module, api_instance, result):
         )
 
     try:
-        resp = api_instance.list_category_mappings(**kwargs)
+        resp = list_entities(
+            api_instance.list_category_mappings,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
