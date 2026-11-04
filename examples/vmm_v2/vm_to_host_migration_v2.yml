@@ -1,0 +1,62 @@
+---
+# Summary:
+# Migrate an AHV VM to a destination host in the same cluster.
+# Live migration needs the VM powered on and another host with
+# enough capacity. Single-host clusters may reject the request.
+
+- name: VM to host migration playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        cluster_uuid: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+
+    - name: List hosts in the cluster
+      nutanix.ncp.ntnx_hosts_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+      register: hosts_result
+
+    - name: Create a small VM to migrate
+      nutanix.ncp.ntnx_vms_v2:
+        name: "ansible-example-vm-to-host"
+        description: "Example VM for VM to host migration"
+        cluster:
+          ext_id: "{{ cluster_uuid }}"
+        memory_size_bytes: 1073741824
+        num_sockets: 1
+        num_cores_per_socket: 1
+      register: vm_result
+
+    - name: Power on the VM
+      nutanix.ncp.ntnx_vms_power_actions_v2:
+        ext_id: "{{ vm_result.ext_id }}"
+        state: power_on
+
+    - name: Migrate the VM to a host on the cluster
+      nutanix.ncp.ntnx_vm_to_host_migration_v2:
+        ext_id: "{{ vm_result.ext_id }}"
+        host:
+          ext_id: "{{ hosts_result.response[0].ext_id }}"
+      register: migration_result
+      ignore_errors: true
+
+    - name: Power off VM
+      nutanix.ncp.ntnx_vms_power_actions_v2:
+        ext_id: "{{ vm_result.ext_id }}"
+        state: power_off
+      register: power_off_result
+      ignore_errors: true
+
+    - name: Delete VM
+      nutanix.ncp.ntnx_vms_v2:
+        state: absent
+        ext_id: "{{ vm_result.ext_id }}"
+      register: delete_result
+      ignore_errors: true

@@ -128,6 +128,45 @@ def get_identity_provider(module, api_instance, ext_id):
         )
 
 
+def get_saml_sp_metadata(module, api_instance):
+    """
+    Get SAML SP metadata.
+    Args:
+        module: Ansible module
+        api_instance: SAMLIdentityProvidersApi instance from ntnx_iam_py_client sdk
+    Returns:
+        GetSamlSpMetadataApiResponse instance
+    """
+    try:
+        return api_instance.get_saml_sp_metadata()
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching SAML SP metadata",
+        )
+
+
+def get_saml_idp_sp_metadata(module, api_instance, ext_id):
+    """
+    Download SAML IdP SP metadata by identity provider ext_id.
+    Args:
+        module: Ansible module
+        api_instance: SAMLIdentityProvidersApi instance from ntnx_iam_py_client sdk
+        ext_id: External id of identity provider
+    Returns:
+        GetSamlIdpSpMetadataApiResponse instance
+    """
+    try:
+        return api_instance.get_saml_idp_sp_metadata_by_id(extId=ext_id)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while downloading SAML IdP SP metadata",
+        )
+
+
 def get_directory_service(module, api_instance, ext_id):
     """
     This method will return directory service info using ext_id.
@@ -145,6 +184,26 @@ def get_directory_service(module, api_instance, ext_id):
             module=module,
             exception=e,
             msg="Api Exception raised while fetching directory service info",
+        )
+
+
+def get_role_membership(module, api_instance, ext_id):
+    """
+    This method will return role membership info using ext_id.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Role membership api instance
+        ext_id (str): External id of role membership
+    Returns:
+        role_membership_info (object): Role membership info
+    """
+    try:
+        return api_instance.get_role_membership_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching role membership info using ext_id",
         )
 
 
@@ -186,4 +245,65 @@ def get_entity(module, api_instance, ext_id):
             module=module,
             exception=e,
             msg="Api Exception raised while fetching entity info using ext_id",
+        )
+
+
+def get_certificate_auth_provider(module, api_instance, ext_id):
+    """
+    This method will return certificate authentication provider info using ext_id.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): CertAuthProvidersApi instance from ntnx_iam_py_client sdk
+        ext_id (str): External id of certificate authentication provider
+    Returns:
+        cert_auth_provider_info (obj): Certificate authentication provider info object
+    """
+    try:
+        return api_instance.get_cert_auth_provider_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching certificate authentication provider info",
+        )
+
+
+def get_registered_client(module, api_instance, ext_id):
+    """
+    This method will return registered client info using ext_id.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): ClientsApi instance from ntnx_iam_py_client
+        ext_id (str): External id of the registered client
+    Returns:
+        registered_client_info (object): Registered client info object as
+            returned by the SDK (data attribute of the GetClientApiResponse).
+    """
+    try:
+        return api_instance.get_registered_client_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching registered client info using ext_id",
+        )
+
+
+def get_welcome_banner(module, api_instance):
+    """
+    This method will return the welcome banner configuration.
+    Args:
+        module (object): Ansible module object.
+        api_instance (object): Welcome banner api instance from
+            ``ntnx_iam_py_client``.
+    Returns:
+        welcome_banner (object): Welcome banner configuration object.
+    """
+    try:
+        return api_instance.get_welcome_banner().data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching welcome banner",
         )
