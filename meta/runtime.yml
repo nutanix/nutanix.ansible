@@ -433,3 +433,8 @@ action_groups:
     - ntnx_non_migratable_vms_info_v2
     - ntnx_cluster_ip_pools_info_v2
     - ntnx_cluster_network_segments_info_v2
+    - ntnx_node_v2
+    - ntnx_nodes_info_v2
+    - ntnx_configure_node_v2
+    - ntnx_image_node_v2
+    - ntnx_refresh_node_v2

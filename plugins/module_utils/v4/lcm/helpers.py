@@ -301,3 +301,25 @@ def get_patched_image(module, api_instance, ext_id):
                 ext_id
             ),
         )
+
+
+def get_node(module, api_instance, ext_id):
+    """
+    This method will return node info using external identifier of the node.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Nodes api instance
+        ext_id (str): External id of the node
+    Returns:
+        node_info (object): Node info object
+    """
+    try:
+        return api_instance.get_node_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching node info using external ID: {0}".format(
+                ext_id
+            ),
+        )
