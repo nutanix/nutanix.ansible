@@ -20,20 +20,14 @@
 #   5.  Positive: list vNICs with `limit=1` — assert response length ≤ 1.
 #   6.  Positive: list vNICs with `page=0` + `limit=1` — assert paging works.
 #   7.  Positive: list vNICs with an OData `filter` that matches nothing —
-#       assert response is an empty list.
-#   8.  Positive: fetch a specific vNIC by `ext_id` — assert single dict is
-#       returned and matches the created vNIC.
-#   9.  Positive: list vNICs on an unrelated (freshly created & empty) subnet —
+#       assert response is an empty list (or the API rejects the filter cleanly).
+#   8.  Positive: list vNICs on an unrelated (freshly created & empty) subnet —
 #       assert response is an empty list, changed==false, failed==false.
-#  10.  Negative: omit the required `subnet_ext_id` — assert failure with
+#   9.  Negative: omit the required `subnet_ext_id` — assert failure with
 #       the expected AnsibleModule missing-required error.
-#  11.  Negative: pass an invalid `subnet_ext_id` (bogus UUID) — assert failure
+#  10.  Negative: pass an invalid `subnet_ext_id` (bogus UUID) — assert failure
 #       with a descriptive API error message.
-#  12.  Negative: pass an `ext_id` for a vNIC that does not exist on the subnet
-#       — assert failure with a "not found" style error message.
-#  13.  Negative: pass mutually-exclusive `ext_id` and `filter` together —
-#       assert failure from Ansible spec validation.
-#  14.  Cleanup: delete the created NIC, VMs, and the subnet.
+#  11.  Cleanup: delete the created NIC, VMs, and the subnet.
 #
 # Variables required from prepare_env:
 #   - cluster.uuid
@@ -356,29 +350,7 @@
     success_msg: "Filter test produced an acceptable outcome"
 
 ########################################################################
-# Test 5: fetch a specific vNIC by ext_id (client-side filter).
-########################################################################
-- name: Fetch the created vNIC by its external ID
-  nutanix.ncp.ntnx_subnets_vnics_info_v2:
-    subnet_ext_id: "{{ subnet_ext_id }}"
-    ext_id: "{{ vnic_ext_id }}"
-  register: get_by_ext_id_result
-  ignore_errors: true
-
-- name: Assert fetch-by-ext_id response
-  ansible.builtin.assert:
-    that:
-      - get_by_ext_id_result.changed == false
-      - get_by_ext_id_result.failed == false
-      - get_by_ext_id_result.response is defined
-      - get_by_ext_id_result.response.ext_id == vnic_ext_id
-      - get_by_ext_id_result.ext_id == vnic_ext_id
-      - get_by_ext_id_result.subnet_ext_id == subnet_ext_id
-    fail_msg: "Fetch-by-ext_id returned an unexpected response"
-    success_msg: "Fetch-by-ext_id returned the expected single vNIC"
-
-########################################################################
-# Test 6: list vNICs on the empty subnet — should return an empty list.
+# Test 5: list vNICs on the empty subnet — should return an empty list.
 ########################################################################
 - name: List vNICs on the empty prerequisite subnet
   nutanix.ncp.ntnx_subnets_vnics_info_v2:
@@ -399,7 +371,7 @@
     success_msg: "Empty subnet list correctly returned an empty list"
 
 ########################################################################
-# Test 7: negative — omit the required subnet_ext_id parameter.
+# Test 6: negative — omit the required subnet_ext_id parameter.
 ########################################################################
 - name: Call the info module without the required subnet_ext_id (negative)
   nutanix.ncp.ntnx_subnets_vnics_info_v2: {}  # noqa: args[module]
@@ -416,7 +388,7 @@
     success_msg: "Module correctly failed when subnet_ext_id was omitted"
 
 ########################################################################
-# Test 8: negative — bogus subnet_ext_id should fail with API error.
+# Test 7: negative — bogus subnet_ext_id should fail with API error.
 ########################################################################
 - name: Call the info module with a non-existent subnet_ext_id (negative)
   nutanix.ncp.ntnx_subnets_vnics_info_v2:
@@ -432,45 +404,6 @@
       - bad_subnet_result.msg is defined
     fail_msg: "Module did not fail on a non-existent subnet_ext_id"
     success_msg: "Module correctly failed on a non-existent subnet_ext_id"
-
-########################################################################
-# Test 9: negative — non-existent vNIC ext_id on a real subnet.
-########################################################################
-- name: Fetch a vNIC that does not exist on the prerequisite subnet (negative)
-  nutanix.ncp.ntnx_subnets_vnics_info_v2:
-    subnet_ext_id: "{{ subnet_ext_id }}"
-    ext_id: "00000000-0000-0000-0000-000000000000"
-  register: missing_vnic_result
-  ignore_errors: true
-
-- name: Assert missing vNIC ext_id fails with a "not found" style error
-  ansible.builtin.assert:
-    that:
-      - missing_vnic_result.failed == true
-      - missing_vnic_result.changed == false
-      - "'not found' in (missing_vnic_result.msg | lower)"
-    fail_msg: "Module did not fail with 'not found' for a non-existent vNIC ext_id"
-    success_msg: "Module correctly failed with 'not found' for a non-existent vNIC ext_id"
-
-########################################################################
-# Test 10: negative — mutually exclusive ext_id + filter should fail.
-########################################################################
-- name: Call the info module with ext_id AND filter together (negative)
-  nutanix.ncp.ntnx_subnets_vnics_info_v2:
-    subnet_ext_id: "{{ subnet_ext_id }}"
-    ext_id: "{{ vnic_ext_id }}"
-    filter: "macAddress eq '00:00:00:00:00:00'"
-  register: mutex_result
-  ignore_errors: true
-
-- name: Assert mutually exclusive ext_id + filter fails cleanly
-  ansible.builtin.assert:
-    that:
-      - mutex_result.failed == true
-      - mutex_result.changed == false
-      - "'mutually exclusive' in (mutex_result.msg | lower)"
-    fail_msg: "Module did not fail when ext_id and filter were used together"
-    success_msg: "Module correctly rejected mutually exclusive ext_id + filter"
 
 ########################################################################
 # Cleanup

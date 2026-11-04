@@ -16,11 +16,10 @@ version_added: 2.7.0
 description:
   - This module allows you to fetch information about virtual NICs attached to a subnet
     in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific virtual NIC. The Nutanix v4
-    networking API does not expose a Get-vNIC-by-ID endpoint under this resource, so the
-    module lists vNICs for the subnet and matches C(ext_id) client-side.
-  - If C(ext_id) is not provided, list virtual NICs on the subnet optionally filtered /
-    paginated using C(filter), C(limit), C(page), C(orderby) and C(select).
+  - List virtual NICs on the subnet optionally filtered / paginated using C(filter),
+    C(limit), C(page), C(orderby) and C(select).
+  - The Nutanix v4 networking API exposes only a list endpoint for this resource
+    (no Get-vNIC-by-ID).
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -35,17 +34,8 @@ options:
   subnet_ext_id:
     description:
       - The external ID (UUID) of the parent subnet whose virtual NICs will be listed.
-      - Required for both get-by-ext_id and list operations.
     type: str
     required: true
-  ext_id:
-    description:
-      - External ID of a specific virtual NIC on the subnet.
-      - When provided, the module filters the returned list to only the matching virtual NIC.
-      - The Nutanix v4 networking API does not expose a Get-vNIC-by-ID endpoint under this
-        resource, so the filtering happens client-side after the list call.
-    type: str
-    required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
@@ -84,13 +74,6 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
-- name: Fetch a specific virtual NIC on a subnet by its external ID
-  nutanix.ncp.ntnx_subnets_vnics_info_v2:
-    subnet_ext_id: "9cc4abba-f27d-40db-90ba-c1592dccaedf"
-    ext_id: "1e2f3a4b-5c6d-7e8f-9a0b-c1d2e3f4a5b6"
-  register: result
-  ignore_errors: true
-
 - name: List all virtual NICs on a subnet with fetch_all
   nutanix.ncp.ntnx_subnets_vnics_info_v2:
     subnet_ext_id: "9cc4abba-f27d-40db-90ba-c1592dccaedf"
@@ -102,24 +85,26 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC list-virtual-NICs-by-subnet v4 API.
-    - It can be a single virtual NIC if C(ext_id) is provided (client-side match).
-    - List of multiple virtual NICs on the subnet if C(ext_id) is not provided with
-      optional filter, limit, orderby, or select.
+    - List of virtual NICs on the subnet from the Nutanix PC
+      list-virtual-NICs-by-subnet v4 API.
+    - Optionally filtered, limited, ordered, or projected using C(filter),
+      C(limit), C(page), C(orderby), or C(select).
   returned: always
-  type: dict
+  type: list
   sample:
-    {
-        "assigned_ipv4_addresses": null,
-        "assigned_secondary_ipv4_addresses": null,
-        "ext_id": "868f0ac7-5f6a-4f49-7003-788a8091841f",
-        "learned_ipv4_addresses": null,
-        "links": null,
-        "mac_address": "50:6b:8d:90:dc:fd",
-        "metadata": null,
-        "tenant_id": null,
-        "vm_reference": "4d5a5911-43f3-4788-8455-a28c81633900"
-    }
+    [
+      {
+          "assigned_ipv4_addresses": null,
+          "assigned_secondary_ipv4_addresses": null,
+          "ext_id": "868f0ac7-5f6a-4f49-7003-788a8091841f",
+          "learned_ipv4_addresses": null,
+          "links": null,
+          "mac_address": "50:6b:8d:90:dc:fd",
+          "metadata": null,
+          "tenant_id": null,
+          "vm_reference": "4d5a5911-43f3-4788-8455-a28c81633900"
+      }
+    ]
 
 changed:
   description: This indicates whether the task resulted in any changes. Always false for info modules.
@@ -144,12 +129,6 @@ failed:
   type: bool
   sample: false
 
-ext_id:
-  description: External ID of the virtual NIC when a specific vNIC is requested.
-  type: str
-  returned: when ext_id is provided
-  sample: "1a77788d-998a-4701-6fa2-9c4e839b8c44"
-
 subnet_ext_id:
   description: External ID (UUID) of the parent subnet whose virtual NICs were listed.
   type: str
@@ -159,7 +138,7 @@ subnet_ext_id:
 total_available_results:
   description: The total number of available virtual NICs on the given subnet in PC.
   type: int
-  returned: when the list operation is executed
+  returned: always
   sample: 4
 """
 
@@ -183,62 +162,9 @@ def get_module_spec():
 
     module_args = dict(
         subnet_ext_id=dict(type="str", required=True),
-        ext_id=dict(type="str"),
     )
 
     return module_args
-
-
-def get_vnic_by_ext_id(module, subnets_api, result):
-    """Return the vNIC matching C(ext_id) from the subnet's vNIC list.
-
-    There is no Get-by-ID API for this resource; match client-side after listing
-    (with fetch_all so the match is not limited to the first page).
-    """
-    subnet_ext_id = module.params.get("subnet_ext_id")
-    vnic_ext_id = module.params.get("ext_id")
-    result["subnet_ext_id"] = subnet_ext_id
-    result["ext_id"] = vnic_ext_id
-
-    sg = SpecGenerator(module)
-    kwargs, err = sg.get_info_spec(attr=module.params)
-    if err:
-        result["error"] = err
-        module.fail_json(msg="Failed generating virtual NICs info spec", **result)
-
-    # Force pagination so client-side match is not limited to the first page.
-    kwargs["_fetch_all"] = True
-
-    try:
-        resp = list_entities(
-            subnets_api.list_vnics_by_subnet_id,
-            kwargs=kwargs,
-            subnetExtId=subnet_ext_id,
-        )
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching virtual NIC info using ext_id",
-        )
-
-    data = strip_internal_attributes(resp.to_dict()).get("data") or []
-    match = None
-    for item in data:
-        if item.get("ext_id") == vnic_ext_id:
-            match = item
-            break
-
-    if not match:
-        result["response"] = None
-        module.fail_json(
-            msg="Virtual NIC with ext_id '{0}' was not found on subnet '{1}'".format(
-                vnic_ext_id, subnet_ext_id
-            ),
-            **result,
-        )
-
-    result["response"] = match
 
 
 def get_vnics(module, subnets_api, result):
@@ -276,17 +202,11 @@ def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
-        mutually_exclusive=[
-            ("ext_id", "filter"),
-        ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None, "failed": False}
+    result = {"changed": False, "response": None, "failed": False}
     subnets_api = get_subnet_api_instance(module)
-    if module.params.get("ext_id"):
-        get_vnic_by_ext_id(module, subnets_api, result)
-    else:
-        get_vnics(module, subnets_api, result)
+    get_vnics(module, subnets_api, result)
     module.exit_json(**result)
 
 

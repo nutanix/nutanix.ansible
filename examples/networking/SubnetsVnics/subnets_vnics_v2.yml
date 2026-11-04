@@ -5,8 +5,8 @@
 #
 # The Nutanix v4 networking API exposes only a read-only listing endpoint for this
 # entity (GET /networking/v4.3/config/subnets/{subnetExtId}/vnics) — there is NO
-# Create / Update / Delete API for SubnetsVnics. Consequently only the info
-# module (`ntnx_subnets_vnics_info_v2`) is provided in this playbook.
+# Create / Update / Delete or Get-by-ID API for SubnetsVnics. Consequently only the
+# info (list) module (`ntnx_subnets_vnics_info_v2`) is provided in this playbook.
 #
 # The playbook covers:
 #   1. List ALL virtual NICs attached to a subnet (basic list).
@@ -14,8 +14,6 @@
 #   3. List virtual NICs on a subnet with an OData `orderby` (server-side sort).
 #   4. List virtual NICs on a subnet with an OData `select` (server-side projection).
 #   5. List virtual NICs on a subnet with `page` + `limit` (paginated list).
-#   6. Fetch a specific virtual NIC on a subnet by its external ID
-#      (client-side filter — see the module documentation for details).
 #
 # Prerequisites (must exist on Prism Central before running):
 #   - An accessible Nutanix Prism Central endpoint.
@@ -28,13 +26,12 @@
     # Override these on the command line, e.g.:
     #   ansible-playbook subnets_vnics_v2.yml \
     #     -e ip=10.44.76.28 -e username=admin -e password=Nutanix.123 \
-    #     -e subnet_uuid=<subnet_ext_id> -e vnic_uuid=<vnic_ext_id>
+    #     -e subnet_uuid=<subnet_ext_id>
     ip: "<pc_ip>"
     username: "<user>"
     password: "<pass>"
     validate_certs: false
     subnet_uuid: "<subnet_ext_id>"
-    vnic_uuid: "<vnic_ext_id>"
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: "{{ ip }}"
@@ -75,11 +72,4 @@
         page: 0
         limit: 2
       register: vnics_paged_result
-      ignore_errors: true
-
-    - name: Fetch a specific virtual NIC on a subnet by its external ID
-      nutanix.ncp.ntnx_subnets_vnics_info_v2:
-        subnet_ext_id: "{{ subnet_uuid }}"
-        ext_id: "{{ vnic_uuid }}"
-      register: vnic_by_ext_id_result
       ignore_errors: true
