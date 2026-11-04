@@ -283,11 +283,6 @@ action_groups:
     - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
-    - ntnx_nodes_v2
-    - ntnx_nodess_info_v2
-    - ntnx_configure_node_v2
-    - ntnx_image_node_v2
-    - ntnx_refresh_node_v2
     - ntnx_subnets_vnics_info_v2
     - ntnx_bgp_session_v2
     - ntnx_bgp_sessions_info_v2
@@ -435,3 +430,8 @@ action_groups:
     - ntnx_non_migratable_vms_info_v2
     - ntnx_cluster_ip_pools_info_v2
     - ntnx_cluster_network_segments_info_v2
+    - ntnx_nodes_v2
+    - ntnx_nodess_info_v2
+    - ntnx_configure_node_v2
+    - ntnx_image_node_v2
+    - ntnx_refresh_node_v2

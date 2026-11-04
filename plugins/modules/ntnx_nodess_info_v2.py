@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,24 +12,27 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_nodess_info_v2
 short_description: Fetch nodes info managed by Foundation Central
-version_added: 2.7.0
+version_added: "2.7.0"
 description:
-  - This module allows you to fetch nodes info or a specific node managed by Foundation Central.
-  - If C(ext_id) is provided, fetch a particular node info using its external ID.
-  - If C(ext_id) is not provided, fetch multiple nodes info with/without using filters, limit, etc.
-  - This module uses the Life Cycle Management v4 APIs based SDKs.
+  - Fetch nodes info or a specific node managed by Foundation Central.
+  - If C(ext_id) is provided, fetch a particular node using its external ID.
+  - If C(ext_id) is not provided, fetch multiple nodes with optional filters, limit, etc.
+  - This module uses PC v4 APIs based SDKs.
 notes:
-  - This module talks to B(Foundation Central) (FCVM/Foundation), NOT to Prism Central.
-    Set C(nutanix_host) to the Foundation Central endpoint.
   - >-
-    B(Get a Node by ext_id) - Requires the appropriate Foundation Central role on the FCVM.
+    This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    The required roles depend on the operation being performed.
   - >-
-    B(List Nodes) - Requires the appropriate Foundation Central role on the FCVM.
+    B(Get a Node) -
+    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
+  - >-
+    B(List Nodes) -
+    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
   ext_id:
     description:
-      - The external ID of the node.
+      - External ID of the node.
       - If provided, a single node is returned.
     type: str
     required: false
@@ -50,7 +53,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    ext_id: "d1a1a1a1-1111-2222-3333-444455556666"
+    ext_id: "7eee1613-ac19-4a32-8d6a-c8ed93c5cf06"
   register: result
   ignore_errors: true
 
@@ -82,46 +85,33 @@ EXAMPLES = r"""
     limit: 1
   register: result
   ignore_errors: true
+
+- name: List all nodes using fetch_all
+  nutanix.ncp.ntnx_nodess_info_v2:
+    nutanix_host: "{{ foundation_central_ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix nodes info v4 API (host is FCVM/Foundation, not PC).
+    - The response from the Nutanix nodes info v4 API.
     - It can be a single node if the external ID is provided.
     - List of multiple nodes if the external ID is not provided, with optional filter or limit.
   returned: always
   type: dict
   sample:
     {
-      "aos_version": "7.0",
-      "block_serial_number": "20SM6M420001",
-      "cpu_info": {
-        "capacity_g_hz": 2.5,
-        "logical_core_count": 40,
-        "manufacturer": "Intel",
-        "model": "Xeon Gold 6248",
-        "socket_count": 2
-      },
-      "custom_attributes": ["rack=1"],
-      "cvm_connectivity_status": "CONNECTED",
-      "ext_id": "d1a1a1a1-1111-2222-3333-444455556666",
-      "host_connectivity_status": "CONNECTED",
-      "host_type": "AHV",
-      "host_version": "10.0",
-      "hostname": "node-ansible",
-      "identifiers": [{"type": "SERIAL_NUMBER", "value": "ZM204S000001"}],
-      "links": null,
+      "ext_id": "7eee1613-ac19-4a32-8d6a-c8ed93c5cf06",
       "manufacturer": "Nutanix",
-      "memory_gb": 512,
-      "model": "NX-3060-G7",
-      "network_details": null,
-      "owner_ext_id": null,
-      "provider_connection_ext_id": null,
-      "provider_data": null,
-      "provider_ext_id": null,
-      "state": "ONBOARDED",
-      "tenant_id": null
+      "identifiers": [{"type": "SERIAL_NUMBER", "value": "ZM204S000001"}],
+      "custom_attributes": ["rack=1"],
+      "provider_connection_ext_id": null
     }
 
 changed:
@@ -151,10 +141,10 @@ ext_id:
   description: External ID of the node.
   returned: when a single node is fetched (ext_id provided)
   type: str
-  sample: "d1a1a1a1-1111-2222-3333-444455556666"
+  sample: "7eee1613-ac19-4a32-8d6a-c8ed93c5cf06"
 
 total_available_results:
-  description: The total number of available nodes in Foundation Central.
+  description: The total number of available nodes.
   returned: when all nodes are fetched
   type: int
   sample: 5
@@ -168,6 +158,7 @@ from ..module_utils.v4.lcm.api_client import get_nodes_api_instance  # noqa: E40
 from ..module_utils.v4.lcm.helpers import get_node  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -187,7 +178,7 @@ def get_node_by_ext_id(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     resp = get_node(module, api_instance, ext_id)
     result["ext_id"] = ext_id
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    result["response"] = strip_internal_attributes(resp.to_dict())
 
 
 def get_nodes(module, api_instance, result):
@@ -198,7 +189,10 @@ def get_nodes(module, api_instance, result):
         module.fail_json(msg="Failed generating nodes info spec", **result)
 
     try:
-        resp = api_instance.list_nodes(**kwargs)
+        resp = list_entities(
+            api_instance.list_nodes,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

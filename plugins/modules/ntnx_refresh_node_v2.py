@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -11,31 +11,32 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_refresh_node_v2
-short_description: Refresh a node managed by Foundation Central
-version_added: 2.7.0
+short_description: Refreshes a node's information by fetching the latest data from the hardware provider
+version_added: "2.7.0"
 description:
-  - This module triggers a refresh of a node managed by Foundation Central.
-  - Refreshing a node re-syncs its hardware, network and lifecycle state from the hardware provider.
-  - This is an action module and does not implement Create/Update/Delete state machines.
-  - This module uses the Life Cycle Management v4 APIs based SDKs.
+  - Refreshes a node's information by fetching the latest data from the hardware provider.
+  - This module uses PC v4 APIs based SDKs.
 notes:
-  - This module talks to B(Foundation Central) (FCVM/Foundation), NOT to Prism Central.
-    Set C(nutanix_host) to the Foundation Central endpoint.
   - >-
-    B(Refresh a Node) - Requires the appropriate Foundation Central administrator role on the FCVM.
+    This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    The required roles depend on the operation being performed.
+  - >-
+    B(Refresh Node) -
+    Required Roles: Cluster Admin, Prism Admin, Super Admin
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
   state:
     description:
       - State of the module.
       - If C(state) is C(present), the module will refresh the node.
+      - If C(state) is C(absent), the module will fail.
     type: str
     choices:
       - present
     default: present
   ext_id:
     description:
-      - The external ID of the node to refresh.
+      - External ID of the node.
     type: str
     required: true
 extends_documentation_fragment:
@@ -55,7 +56,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    ext_id: "d1a1a1a1-1111-2222-3333-444455556666"
+    ext_id: "7eee1613-ac19-4a32-8d6a-c8ed93c5cf06"
   register: result
   ignore_errors: true
 """
@@ -69,14 +70,8 @@ response:
   type: dict
   sample:
     {
-      "completed_time": "2026-09-09T06:26:51.524581+00:00",
-      "created_time": "2026-09-09T06:26:47.167906+00:00",
-      "entities_affected": [
-        {"ext_id": "d1a1a1a1-1111-2222-3333-444455556666", "rel": "lifecycle:config:node"}
-      ],
       "ext_id": "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1",
       "operation": "RefreshNode",
-      "operation_description": "Refresh node",
       "status": "SUCCEEDED"
     }
 
@@ -96,19 +91,13 @@ ext_id:
   description: The external ID of the node.
   returned: when applicable
   type: str
-  sample: "d1a1a1a1-1111-2222-3333-444455556666"
-
-skipped:
-  description: This indicates whether the action was skipped (e.g. in check mode).
-  returned: when applicable
-  type: bool
-  sample: false
+  sample: "7eee1613-ac19-4a32-8d6a-c8ed93c5cf06"
 
 msg:
   description: This indicates the status or error message.
   returned: contextual
   type: str
-  sample: "Node with ext_id:d1a1a1a1-1111-2222-3333-444455556666 will be refreshed."
+  sample: "Node with ext_id:7eee1613-ac19-4a32-8d6a-c8ed93c5cf06 will be refreshed."
 
 error:
   description: This field holds the error message if any error occurred.
@@ -181,10 +170,9 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
-        "task_ext_id": None,
+        "failed": False,
     }
     api_instance = get_nodes_api_instance(module)
     run_action(module, result, api_instance)
