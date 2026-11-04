@@ -1,0 +1,232 @@
+---
+# Summary:
+# Cluster IP pools, network segments, CVM update, compute non-migratable VMs,
+# and related info modules (clustermgmt v4).
+#   1. Create / update / delete IP pool (+ info get/list)
+#   2. Create / delete network segment (+ info get/list/expand)
+#   3. Update CVM name
+#   4. Compute non-migratable VMs (+ get result by id)
+#
+# Note: CreateIpPool / CreateNetworkSegment tasks currently report only the
+# parent cluster in entities_affected, so create uses wait=false and ext_id is
+# resolved via the companion info modules.
+
+- name: Clusters clustermgmt V2 modules playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') }}"
+      nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default(9440, true) }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ cluster_ext_id | default('<cluster_ext_id>') }}"
+        cvm_ext_id: "{{ cvm_ext_id | default('<cvm_ext_id>') }}"
+        host_ext_id: "{{ host_ext_id | default('<host_ext_id>') }}"
+        hypervisor_interface_backing: >-
+          {{ hypervisor_interface_backing | default('<hypervisor_interface_backing>') }}
+
+    ########################################################################
+    # IP pools
+    ########################################################################
+
+    - name: Create cluster IP pool
+      nutanix.ncp.ntnx_cluster_ip_pools_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        name: ansible-ip-pool
+        wait: false
+        ranges:
+          - start_address:
+              ipv4:
+                value: "10.77.88.10"
+                prefix_length: 32
+            end_address:
+              ipv4:
+                value: "10.77.88.20"
+                prefix_length: 32
+        netmask:
+          ipv4:
+            value: "255.255.255.0"
+            prefix_length: 32
+      register: ip_pool_created
+
+    - name: Wait for IP pool create task
+      ansible.builtin.pause:
+        seconds: 5
+
+    - name: Resolve created IP pool ext_id
+      nutanix.ncp.ntnx_cluster_ip_pools_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        filter: "name eq 'ansible-ip-pool'"
+      register: ip_pool_lookup
+
+    - name: Set IP pool ext_id
+      ansible.builtin.set_fact:
+        ip_pool_ext_id: "{{ ip_pool_lookup.response[0].ext_id }}"
+
+    - name: Update cluster IP pool
+      nutanix.ncp.ntnx_cluster_ip_pools_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ ip_pool_ext_id }}"
+        name: ansible-ip-pool-updated
+        ranges:
+          - start_address:
+              ipv4:
+                value: "10.77.88.30"
+                prefix_length: 32
+            end_address:
+              ipv4:
+                value: "10.77.88.40"
+                prefix_length: 32
+        netmask:
+          ipv4:
+            value: "255.255.255.0"
+            prefix_length: 32
+      register: ip_pool_updated
+
+    - name: Get IP pool by ext_id
+      nutanix.ncp.ntnx_cluster_ip_pools_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ ip_pool_ext_id }}"
+      register: ip_pool_info
+
+    - name: List IP pools for cluster
+      nutanix.ncp.ntnx_cluster_ip_pools_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: ip_pools_list
+
+    - name: List IP pools with filter
+      nutanix.ncp.ntnx_cluster_ip_pools_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        filter: "name eq 'ansible-ip-pool-updated'"
+      register: ip_pools_filtered
+
+    - name: List IP pools with fetch_all
+      nutanix.ncp.ntnx_cluster_ip_pools_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        fetch_all: true
+      register: ip_pools_fetch_all
+
+    ########################################################################
+    # Network segments
+    ########################################################################
+
+    - name: Create cluster network segment
+      nutanix.ncp.ntnx_cluster_network_segments_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        name: ansible-volumes-segment
+        vlan_id: 200
+        mtu: 1500
+        wait: false
+        ip_pool_ext_id: "{{ ip_pool_ext_id }}"
+        network_segment_info:
+          service_info:
+            ahv_network_backing:
+              hypervisor_interface_backing: "{{ hypervisor_interface_backing }}"
+            gateway:
+              ipv4:
+                value: "10.77.88.1"
+                prefix_length: 32
+            service:
+              volumes_service:
+                client_subnets:
+                  - ipv4:
+                      value: "10.77.89.0"
+                      prefix_length: 24
+                virtual_ip_address:
+                  ipv4:
+                    value: "10.77.88.50"
+                    prefix_length: 32
+                storage_protocol:
+                  - ISCSI
+      register: network_segment_created
+      ignore_errors: true
+
+    - name: Resolve created network segment ext_id
+      nutanix.ncp.ntnx_cluster_network_segments_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        filter: "name eq 'ansible-volumes-segment'"
+      register: network_segment_lookup
+      ignore_errors: true
+
+    - name: Get network segment by ext_id
+      nutanix.ncp.ntnx_cluster_network_segments_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ network_segment_lookup.response[0].ext_id }}"
+      register: network_segment_info
+      when:
+        - network_segment_lookup.response is defined
+        - network_segment_lookup.response | length > 0
+
+    - name: List network segments for cluster
+      nutanix.ncp.ntnx_cluster_network_segments_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: network_segments_list
+
+    - name: List network segments with expand
+      nutanix.ncp.ntnx_cluster_network_segments_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        expand: ipPool
+      register: network_segments_expand
+
+    - name: List network segments with fetch_all
+      nutanix.ncp.ntnx_cluster_network_segments_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        fetch_all: true
+      register: network_segments_fetch_all
+
+    - name: Delete cluster network segment
+      nutanix.ncp.ntnx_cluster_network_segments_v2:
+        state: absent
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ network_segment_lookup.response[0].ext_id }}"
+      register: network_segment_deleted
+      when:
+        - network_segment_lookup.response is defined
+        - network_segment_lookup.response | length > 0
+
+    - name: Delete cluster IP pool
+      nutanix.ncp.ntnx_cluster_ip_pools_v2:
+        state: absent
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ ip_pool_ext_id }}"
+      register: ip_pool_deleted
+
+    ########################################################################
+    # CVM update
+    ########################################################################
+
+    - name: Update CVM name
+      nutanix.ncp.ntnx_cvms_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ cvm_ext_id }}"
+        name: NTNX-ansible-example-CVM
+      register: cvm_updated
+      ignore_errors: true
+
+    ########################################################################
+    # Compute non-migratable VMs
+    ########################################################################
+
+    - name: Compute non-migratable VMs
+      nutanix.ncp.ntnx_compute_non_migratable_vms_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        hosts:
+          - "{{ host_ext_id }}"
+      register: compute_nmv
+      ignore_errors: true
+
+    - name: Get non-migratable VMs result by ID
+      nutanix.ncp.ntnx_non_migratable_vms_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ compute_nmv.ext_id }}"
+      register: nmv_info
+      when: compute_nmv.ext_id is defined
