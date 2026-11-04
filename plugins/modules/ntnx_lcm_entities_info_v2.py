@@ -50,6 +50,14 @@ EXAMPLES = r"""
     nutanix_password: <pass>
     ext_id: "3c196eac-e1d5-1b8a-9b01-c133f6907ca2"
   register: lcm_entity
+
+- name: List all LCM entities with fetch_all
+  nutanix.ncp.ntnx_lcm_entities_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -134,6 +142,7 @@ from ..module_utils.v4.lcm.api_client import get_entity_api_instance  # noqa: E4
 from ..module_utils.v4.lcm.helpers import get_lcm_entity  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -167,7 +176,10 @@ def get_entities(module, api_instance, result):
         module.fail_json(msg="Failed to generate info spec for entities", **result)
 
     try:
-        resp = api_instance.list_entities(**kwargs)
+        resp = list_entities(
+            api_instance.list_entities,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

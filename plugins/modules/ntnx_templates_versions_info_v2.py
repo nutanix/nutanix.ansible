@@ -57,6 +57,14 @@ EXAMPLES = r"""
     validate_certs: false
     ext_id: "{{ version_ext_id }}"
     template_ext_id: "{{ template_ext_id }}"
+
+- name: List all template versions with fetch_all
+  nutanix.ncp.ntnx_templates_versions_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -198,6 +206,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -246,7 +255,10 @@ def get_template_versions(module, result):
         module.fail_json(msg="Failed generating template versions info Spec", **result)
 
     try:
-        resp = templates.list_template_versions(template_ext_id, **kwargs)
+        resp = list_entities(
+            lambda **kw: templates.list_template_versions(template_ext_id, **kw),
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
