@@ -280,6 +280,8 @@ action_groups:
     - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_bgp_session_v2
+    - ntnx_bgp_sessions_info_v2
     - ntnx_vm_cross_cluster_migrate_v2
     - ntnx_layer2_stretch_v2
     - ntnx_layer2_stretches_info_v2
