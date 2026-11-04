@@ -52,6 +52,7 @@ class Tasks:
         LAYER2_STRETCH = "networking:config:layer2-stretch"
         LOAD_BALANCER_SESSION = "networking:config:load-balancer-session"
         ENTITY_GROUP = "microseg:config:entity-group"
+        PATCHED_IMAGE = "lifecycle:config:patched-image"
         BGP_SESSION = "networking:config:bgp-session"
         UPGRADE_SELECTION = "lifecycle:config:upgrade-selection"
         PCIE_DEVICE = "vmm:ahv:config:vm:pcie-device"

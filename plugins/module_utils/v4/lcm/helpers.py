@@ -279,3 +279,25 @@ def get_node_by_claim_token(module, api_instance, claim_token_ext_id, node_ext_i
             exception=e,
             msg="Api Exception raised while fetching node by claim token",
         )
+
+
+def get_patched_image(module, api_instance, ext_id):
+    """
+    This method will return a patched image info using its external identifier.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Patched images api instance
+        ext_id (str): External id of the patched image
+    Returns:
+        patched_image (object): Patched image info object (with etag headers)
+    """
+    try:
+        return api_instance.get_patched_image_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching patched image with ext_id: {0}".format(
+                ext_id
+            ),
+        )
