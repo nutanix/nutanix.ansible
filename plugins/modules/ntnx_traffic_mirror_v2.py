@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_traffic_mirror_v2
 short_description: Create, Update, Delete traffic mirror sessions in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to create, update, and delete traffic mirror (port mirror / SPAN) sessions in Nutanix Prism Central.
   - A traffic mirror session duplicates network traffic from a set of source ports (physical host NICs or VM virtual NICs)
@@ -23,14 +23,14 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
       The required roles depend on the operation being performed.
     - >-
-      B(Create a Traffic Mirror session) -
-      Required Roles: Network Infra Admin, Prism Admin, Super Admin
+      B(Create Traffic Mirror) -
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Super Admin
     - >-
-      B(Update a Traffic Mirror session) -
-      Required Roles: Network Infra Admin, Prism Admin, Super Admin
+      B(Update Traffic Mirror) -
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Super Admin
     - >-
-      B(Delete a Traffic Mirror session) -
-      Required Roles: Network Infra Admin, Prism Admin, Super Admin
+      B(Delete Traffic Mirror) -
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
@@ -48,6 +48,12 @@ options:
     description:
       - The external ID of the traffic mirror session.
       - Required for update and delete operations.
+    type: str
+    required: false
+  project_ext_id:
+    description:
+      - UUID of the project that owns this entity.
+      - Update of this field is not supported.
     type: str
     required: false
   name:
@@ -91,7 +97,7 @@ options:
           - C(HOST_NIC) mirrors a physical host NIC (a host uplink or bond).
           - C(VIRTUAL_NIC) mirrors a VM virtual NIC.
         type: str
-        required: false
+        required: true
         choices:
           - HOST_NIC
           - VIRTUAL_NIC
@@ -99,13 +105,7 @@ options:
         description:
           - UUID of the NIC (host NIC or VM vNIC) to mirror traffic from.
         type: str
-        required: false
-      is_up:
-        description:
-          - Read-only. Indicates whether the port is up.
-          - Set by the platform; ignored on create/update requests.
-        type: bool
-        required: false
+        required: true
   destination_list:
     description:
       - List of destination ports of the session.
@@ -130,13 +130,7 @@ options:
         description:
           - UUID of the destination NIC.
         type: str
-        required: false
-      is_up:
-        description:
-          - Read-only. Indicates whether the port is up.
-          - Set by the platform; ignored on create/update requests.
-        type: bool
-        required: false
+        required: true
   is_enabled:
     description:
       - Indicates whether the port mirroring session is enabled or not.
@@ -147,6 +141,7 @@ options:
     description:
       - List of cluster UUIDs that are configured for this session.
       - Currently, only 1 cluster is allowed to participate in a session.
+      - Required for create operation.
     type: list
     elements: str
     required: false
@@ -163,6 +158,38 @@ options:
       - Required when the destination VM lives on a different host than the source.
     type: str
     required: false
+  metadata:
+    description:
+      - Metadata associated with this resource.
+    type: dict
+    required: false
+    suboptions:
+      owner_reference_id:
+        description:
+          - A globally unique identifier that represents the owner of this resource.
+        type: str
+        required: false
+      owner_user_name:
+        description:
+          - The userName of the owner of this resource.
+        type: str
+        required: false
+      project_reference_id:
+        description:
+          - A globally unique identifier that represents the project this resource belongs to.
+        type: str
+        required: false
+      project_name:
+        description:
+          - The name of the project this resource belongs to.
+        type: str
+        required: false
+      category_ids:
+        description:
+          - A list of globally unique identifiers that represent all the categories the resource is associated with.
+        type: list
+        elements: str
+        required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -192,6 +219,7 @@ EXAMPLES = r"""
     host_reference_list:
       - "8300384a-56ee-4750-aeb8-3d1c42908bee"
   register: result
+  ignore_errors: true
 
 - name: Update a traffic mirror session
   nutanix.ncp.ntnx_traffic_mirror_v2:
@@ -212,12 +240,14 @@ EXAMPLES = r"""
     host_reference_list:
       - "8300384a-56ee-4750-aeb8-3d1c42908bee"
   register: result
+  ignore_errors: true
 
 - name: Delete a traffic mirror session
   nutanix.ncp.ntnx_traffic_mirror_v2:
     state: absent
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
   register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -303,8 +333,8 @@ failed:
   sample: false
 
 msg:
-  description: This indicates the message if any message occurred.
-  returned: When there is an error, module is idempotent, or check mode (in delete operation)
+  description: This indicates the message describing the outcome of the operation.
+  returned: When there is an error, module is idempotent or check mode (in delete operation)
   type: str
   sample: "Api Exception raised while creating traffic mirror"
 """
@@ -330,7 +360,9 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
+    strip_read_only_fields,
     validate_required_params,
 )
 
@@ -345,6 +377,15 @@ except ImportError:
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
+# Read-only fields returned by the API that must never be sent back on update
+READ_ONLY_FIELDS = (
+    "state",
+    "state_message",
+    "links",
+    "tenant_id",
+)
+PORT_READ_ONLY_FIELDS = ("is_up",)
+
 
 def get_module_spec():
 
@@ -357,12 +398,11 @@ def get_module_spec():
         ),
         nic_type=dict(
             type="str",
-            required=False,
+            required=True,
             choices=["HOST_NIC", "VIRTUAL_NIC"],
             obj=networking_sdk.TrafficMirrorPortNicType,
         ),
-        nic_uuid=dict(type="str", required=False),
-        is_up=dict(type="bool", required=False),
+        nic_uuid=dict(type="str", required=True),
     )
 
     destination_port_spec = dict(
@@ -372,12 +412,20 @@ def get_module_spec():
             choices=["HOST_NIC", "VIRTUAL_NIC"],
             obj=networking_sdk.TrafficMirrorPortNicType,
         ),
-        nic_uuid=dict(type="str", required=False),
-        is_up=dict(type="bool", required=False),
+        nic_uuid=dict(type="str", required=True),
+    )
+
+    metadata_spec = dict(
+        owner_reference_id=dict(type="str"),
+        owner_user_name=dict(type="str"),
+        project_reference_id=dict(type="str"),
+        project_name=dict(type="str"),
+        category_ids=dict(type="list", elements="str"),
     )
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         source_list=dict(
@@ -396,6 +444,11 @@ def get_module_spec():
         cluster_reference_list=dict(type="list", elements="str"),
         host_reference_list=dict(type="list", elements="str"),
         virtual_switch_reference=dict(type="str"),
+        metadata=dict(
+            type="dict",
+            options=metadata_spec,
+            obj=networking_sdk.Metadata,
+        ),
     )
     return module_args
 
@@ -411,7 +464,9 @@ def _params_without_state(module):
 
 
 def create_traffic_mirror(module, result, api_instance):
-    validate_required_params(module, ["name", "source_list", "destination_list"])
+    validate_required_params(
+        module, ["name", "source_list", "destination_list", "cluster_reference_list"]
+    )
     sg = SpecGenerator(module)
     default_spec = networking_sdk.TrafficMirror()
     spec, err = sg.generate_spec(obj=default_spec, attr=_params_without_state(module))
@@ -457,37 +512,33 @@ def create_traffic_mirror(module, result, api_instance):
 
 
 def check_for_idempotency(old_spec_dict, update_spec_dict):
-    """Compare user-facing fields on old vs update spec to detect no-op updates."""
-    old = strip_internal_attributes(deepcopy(old_spec_dict))
-    new = strip_internal_attributes(deepcopy(update_spec_dict))
-    for field in ("state", "state_message", "links", "tenant_id", "metadata"):
-        old.pop(field, None)
-        new.pop(field, None)
-    for port in list(old.get("source_list") or []) + list(
-        old.get("destination_list") or []
+    old_spec_dict = strip_internal_attributes(deepcopy(old_spec_dict))
+    update_spec_dict = strip_internal_attributes(deepcopy(update_spec_dict))
+    for field in READ_ONLY_FIELDS:
+        old_spec_dict.pop(field, None)
+        update_spec_dict.pop(field, None)
+    for port in list(old_spec_dict.get("source_list") or []) + list(
+        old_spec_dict.get("destination_list") or []
     ):
         if isinstance(port, dict):
-            port.pop("is_up", None)
-    for port in list(new.get("source_list") or []) + list(
-        new.get("destination_list") or []
+            for field in PORT_READ_ONLY_FIELDS:
+                port.pop(field, None)
+    for port in list(update_spec_dict.get("source_list") or []) + list(
+        update_spec_dict.get("destination_list") or []
     ):
         if isinstance(port, dict):
-            port.pop("is_up", None)
-    return old == new
+            for field in PORT_READ_ONLY_FIELDS:
+                port.pop(field, None)
+    return old_spec_dict == update_spec_dict
 
 
-def _remove_read_only_attributes(spec):
+def _strip_traffic_mirror_read_only(spec):
     """Clear server-populated read-only fields before update."""
-    spec.state = None
-    spec.state_message = None
-    spec.links = None
-    spec.tenant_id = None
-    if spec.source_list:
-        for port in spec.source_list:
-            port.is_up = None
-    if spec.destination_list:
-        for port in spec.destination_list:
-            port.is_up = None
+    strip_read_only_fields(spec, fields=READ_ONLY_FIELDS)
+    for port_list_attr in ("source_list", "destination_list"):
+        ports = getattr(spec, port_list_attr, None) or []
+        for port in ports:
+            strip_read_only_fields(port, fields=PORT_READ_ONLY_FIELDS)
 
 
 def update_traffic_mirror(module, result, api_instance):
@@ -508,15 +559,17 @@ def update_traffic_mirror(module, result, api_instance):
         result["error"] = err
         module.fail_json(msg="Failed generating update traffic mirror spec", **result)
 
+    raise_unsupported_update_fields(module, old_spec, update_spec, ["project_ext_id"])
+
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
     if check_for_idempotency(old_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
-        module.exit_json(msg="Nothing to change.")
+        module.exit_json(msg="Nothing to change.", **result)
 
-    _remove_read_only_attributes(update_spec)
+    _strip_traffic_mirror_read_only(update_spec)
 
     resp = None
     try:
@@ -549,9 +602,12 @@ def delete_traffic_mirror(module, result, api_instance):
 
     current = get_traffic_mirror(module, api_instance, ext_id)
     etag = get_etag(data=current)
-    kwargs = {}
-    if etag:
-        kwargs["if_match"] = etag
+    if not etag:
+        return module.fail_json(
+            "Unable to fetch etag for deleting traffic mirror", **result
+        )
+
+    kwargs = {"if_match": etag}
 
     resp = None
     try:
@@ -564,8 +620,9 @@ def delete_traffic_mirror(module, result, api_instance):
         )
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
 

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,27 +12,30 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_traffic_mirrors_info_v2
 short_description: Fetch traffic mirror sessions info in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
-  - This module allows you to fetch information about TrafficMirror in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific TrafficMirror.
-  - If C(ext_id) is not provided, list multiple TrafficMirror optionally filtered / paginated.
+  - This module allows you to fetch information about traffic mirror sessions in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch details of the specific traffic mirror session.
+  - If C(ext_id) is not provided, list multiple traffic mirror sessions optionally filtered / paginated.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
     - >-
-      B(Get traffic mirror by ext_id) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Super Admin
+      B(View Traffic Mirror) -
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Prism Viewer, Super Admin
     - >-
-      B(List traffic mirror sessions) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Super Admin
+      B(View Traffic Mirror) (List) -
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   ext_id:
     description:
       - The external ID of the traffic mirror session.
+      - If provided, a single traffic mirror session is returned.
     type: str
+    required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
@@ -48,28 +51,38 @@ EXAMPLES = r"""
   nutanix.ncp.ntnx_traffic_mirrors_info_v2:
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
   register: result
+  ignore_errors: true
 
 - name: List all traffic mirror sessions
   nutanix.ncp.ntnx_traffic_mirrors_info_v2:
   register: result
+  ignore_errors: true
 
 - name: List traffic mirror sessions with filter
   nutanix.ncp.ntnx_traffic_mirrors_info_v2:
     filter: "name eq 'tm_ansible_local'"
   register: result
+  ignore_errors: true
 
 - name: List traffic mirror sessions with limit
   nutanix.ncp.ntnx_traffic_mirrors_info_v2:
     limit: 1
   register: result
+  ignore_errors: true
+
+- name: List all traffic mirror sessions with fetch_all
+  nutanix.ncp.ntnx_traffic_mirrors_info_v2:
+    fetch_all: true
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC TrafficMirror info v4 API.
-    - It can be a single TrafficMirror if external ID is provided.
-    - List of multiple TrafficMirror if external ID is not provided with optional filter or limit.
+    - The response from the Nutanix PC traffic mirror info v4 API.
+    - It can be a single traffic mirror session if external ID is provided.
+    - List of multiple traffic mirror sessions if external ID is not provided with optional filter or limit.
   returned: always
   type: dict
   sample:
@@ -108,7 +121,7 @@ response:
     }
 
 changed:
-  description: This indicates whether the task resulted in any changes.
+  description: This indicates whether the task resulted in any changes. Always false for info modules.
   returned: always
   type: bool
   sample: false
@@ -117,15 +130,15 @@ msg:
   description: This indicates the message if any message occurred.
   returned: When there is an error
   type: str
-  sample: "Api Exception raised while fetching traffic mirror info"
+  sample: "Api Exception raised while fetching traffic mirrors info"
 
 error:
-  description: This field typically holds information about if the task have errors that occurred during the task execution.
+  description: This field typically holds information about any errors that occurred during the task execution.
   type: str
-  returned: when an error occurs
+  returned: When an error occurs
 
 failed:
-  description: This field typically holds information about if the task have failed.
+  description: This field indicates whether the task failed.
   returned: always
   type: bool
   sample: false
@@ -133,13 +146,13 @@ failed:
 ext_id:
   description: External ID of the traffic mirror session.
   type: str
-  returned: when external ID is provided
+  returned: When external ID is provided
   sample: "7bea69e9-684c-4736-7805-d658ee17c1b6"
 
 total_available_results:
   description: The total number of available traffic mirror sessions in PC.
   type: int
-  returned: when all traffic mirror sessions are fetched
+  returned: When all traffic mirror sessions are fetched
   sample: 5
 """
 
@@ -153,10 +166,12 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 from ..module_utils.v4.network.helpers import get_traffic_mirror  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
 
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
@@ -180,13 +195,15 @@ def get_traffic_mirrors(module, api_instance, result):
 
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
-
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating traffic mirrors info spec", **result)
 
     try:
-        resp = api_instance.list_traffic_mirrors(**kwargs)
+        resp = list_entities(
+            api_instance.list_traffic_mirrors,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -196,10 +213,10 @@ def get_traffic_mirrors(module, api_instance, result):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
-    if not resp:
-        resp = []
-    result["response"] = resp
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    else:
+        result["response"] = []
 
 
 def run_module():
