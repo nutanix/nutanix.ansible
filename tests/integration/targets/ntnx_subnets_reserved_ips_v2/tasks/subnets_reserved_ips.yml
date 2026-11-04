@@ -639,4 +639,3 @@
       - cleanup.results | selectattr('failed', 'equalto', true) | list | length == 0
     success_msg: "Cleanup succeeded"
     fail_msg: "Cleanup did not remove every subnet"
-  ignore_errors: true
