@@ -65,7 +65,8 @@ RETURN = r"""
 response:
   description:
     - Response for refreshing a node.
-    - Task details when C(wait) is true.
+    - If C(wait) is true, the response will contain the final task details.
+    - If C(wait) is false, the response will contain the initial task details.
   returned: always
   type: dict
   sample:
@@ -89,13 +90,13 @@ task_ext_id:
 
 ext_id:
   description: The external ID of the node.
-  returned: when applicable
+  returned: always
   type: str
   sample: "7eee1613-ac19-4a32-8d6a-c8ed93c5cf06"
 
 msg:
   description: This indicates the status or error message.
-  returned: contextual
+  returned: when applicable
   type: str
   sample: "Node with ext_id:7eee1613-ac19-4a32-8d6a-c8ed93c5cf06 will be refreshed."
 
@@ -134,7 +135,7 @@ def get_module_spec():
     return module_args
 
 
-def run_action(module, result, api_instance):
+def refresh_node(module, result, api_instance):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -171,11 +172,10 @@ def run_module():
     result = {
         "changed": False,
         "response": None,
-        "ext_id": None,
         "failed": False,
     }
     api_instance = get_nodes_api_instance(module)
-    run_action(module, result, api_instance)
+    refresh_node(module, result, api_instance)
     module.exit_json(**result)
 
 

@@ -31,7 +31,7 @@
         group_id: "<group_id>"
 
     - name: Onboard a node
-      nutanix.ncp.ntnx_nodes_v2:
+      nutanix.ncp.ntnx_node_v2:
         state: present
         manufacturer: "Nutanix"
         identifiers:
@@ -47,7 +47,7 @@
         node_ext_id: "{{ result.ext_id | default(result.response.ext_id) }}"
 
     - name: Update a node
-      nutanix.ncp.ntnx_nodes_v2:
+      nutanix.ncp.ntnx_node_v2:
         state: present
         ext_id: "{{ node_ext_id }}"
         manufacturer: "Nutanix"
@@ -60,30 +60,30 @@
       ignore_errors: true
 
     - name: Get node using ext_id
-      nutanix.ncp.ntnx_nodess_info_v2:
+      nutanix.ncp.ntnx_nodes_info_v2:
         ext_id: "{{ node_ext_id }}"
       register: result
       ignore_errors: true
 
     - name: List all nodes
-      nutanix.ncp.ntnx_nodess_info_v2:
+      nutanix.ncp.ntnx_nodes_info_v2:
       register: result
       ignore_errors: true
 
     - name: List nodes with filter
-      nutanix.ncp.ntnx_nodess_info_v2:
+      nutanix.ncp.ntnx_nodes_info_v2:
         filter: "manufacturer eq 'Nutanix'"
       register: result
       ignore_errors: true
 
     - name: List nodes with limit
-      nutanix.ncp.ntnx_nodess_info_v2:
+      nutanix.ncp.ntnx_nodes_info_v2:
         limit: 1
       register: result
       ignore_errors: true
 
     - name: List all nodes using fetch_all
-      nutanix.ncp.ntnx_nodess_info_v2:
+      nutanix.ncp.ntnx_nodes_info_v2:
         fetch_all: true
       register: result
       ignore_errors: true
@@ -130,7 +130,7 @@
       ignore_errors: true
 
     - name: Delete a node
-      nutanix.ncp.ntnx_nodes_v2:
+      nutanix.ncp.ntnx_node_v2:
         state: absent
         ext_id: "{{ node_ext_id }}"
       register: result

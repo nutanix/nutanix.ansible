@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_nodess_info_v2
+module: ntnx_nodes_info_v2
 short_description: Fetch nodes info managed by Foundation Central
 version_added: "2.7.0"
 description:
@@ -48,7 +48,7 @@ author:
 
 EXAMPLES = r"""
 - name: Get node using ext_id
-  nutanix.ncp.ntnx_nodess_info_v2:
+  nutanix.ncp.ntnx_nodes_info_v2:
     nutanix_host: "{{ foundation_central_ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -58,7 +58,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List all nodes
-  nutanix.ncp.ntnx_nodess_info_v2:
+  nutanix.ncp.ntnx_nodes_info_v2:
     nutanix_host: "{{ foundation_central_ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -67,7 +67,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List nodes with filter
-  nutanix.ncp.ntnx_nodess_info_v2:
+  nutanix.ncp.ntnx_nodes_info_v2:
     nutanix_host: "{{ foundation_central_ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -77,7 +77,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List nodes with limit
-  nutanix.ncp.ntnx_nodess_info_v2:
+  nutanix.ncp.ntnx_nodes_info_v2:
     nutanix_host: "{{ foundation_central_ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -87,7 +87,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List all nodes using fetch_all
-  nutanix.ncp.ntnx_nodess_info_v2:
+  nutanix.ncp.ntnx_nodes_info_v2:
     nutanix_host: "{{ foundation_central_ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

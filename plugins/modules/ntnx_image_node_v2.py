@@ -2019,7 +2019,6 @@ def run_module():
     result = {
         "changed": False,
         "response": None,
-        "ext_id": None,
         "failed": False,
     }
     api_instance = get_nodes_api_instance(module)

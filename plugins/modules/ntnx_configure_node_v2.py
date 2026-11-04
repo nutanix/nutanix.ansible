@@ -72,8 +72,8 @@ options:
                 type: str
                 required: false
                 choices:
-                  - CL91
-                  - CL74
+                  - "CL91"
+                  - "CL74"
                   - "OFF"
               server_identity_pool_ext_id:
                 description:
@@ -1077,7 +1077,8 @@ RETURN = r"""
 response:
   description:
     - Response for configuring a node.
-    - Task details when C(wait) is true.
+    - If C(wait) is true, the response will contain the final task details.
+    - If C(wait) is false, the response will contain the initial task details.
   returned: always
   type: dict
   sample:
@@ -1105,15 +1106,9 @@ task_ext_id:
   type: str
   sample: "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1"
 
-ext_id:
-  description: The external ID of the related entity if returned.
-  returned: when applicable
-  type: str
-  sample: "d1a1a1a1-1111-2222-3333-444455556666"
-
 msg:
   description: This indicates the status or error message.
-  returned: contextual
+  returned: when applicable
   type: str
   sample: "Node configuration will be triggered."
 
@@ -1464,7 +1459,7 @@ def get_module_spec():
     return module_args
 
 
-def run_action(module, result, api_instance):
+def configure_node(module, result, api_instance):
     validate_required_params(module, ["configuration"])
 
     sg = SpecGenerator(module)
@@ -1513,11 +1508,10 @@ def run_module():
     result = {
         "changed": False,
         "response": None,
-        "ext_id": None,
         "failed": False,
     }
     api_instance = get_nodes_api_instance(module)
-    run_action(module, result, api_instance)
+    configure_node(module, result, api_instance)
     module.exit_json(**result)
 
 

@@ -3,8 +3,8 @@
 # Test plan for lifecycle Nodes v4 modules (Foundation Central / FCVM):
 #
 #   Modules under test:
-#     - ntnx_nodes_v2         (CRUD: onboard / update / delete a node)
-#     - ntnx_nodess_info_v2   (info: get-by-ext_id / list)
+#     - ntnx_node_v2         (CRUD: onboard / update / delete a node)
+#     - ntnx_nodes_info_v2   (info: get-by-ext_id / list)
 #     - ntnx_configure_node_v2 (action: ConfigureNode)
 #     - ntnx_image_node_v2     (action: ImageNode)
 #     - ntnx_refresh_node_v2   (action: RefreshNode)
@@ -52,7 +52,7 @@
 ########################################################################################
 
 - name: Check mode - Onboard node with all attributes
-  nutanix.ncp.ntnx_nodes_v2:
+  nutanix.ncp.ntnx_node_v2:
     state: present
     manufacturer: "Nutanix"
     model: "NX-3060-G7"
@@ -112,7 +112,7 @@
 ########################################################################################
 
 - name: Negative - onboard with invalid host_type enum
-  nutanix.ncp.ntnx_nodes_v2:
+  nutanix.ncp.ntnx_node_v2:
     state: present
     host_type: "INVALID_HYPERVISOR"
     hostname: "{{ node_hostname }}"
@@ -134,7 +134,7 @@
 ########################################################################################
 
 - name: Negative - onboard with invalid identifier type enum
-  nutanix.ncp.ntnx_nodes_v2:
+  nutanix.ncp.ntnx_node_v2:
     state: present
     hostname: "{{ node_hostname }}"
     identifiers:
@@ -158,7 +158,7 @@
 ########################################################################################
 
 - name: Negative - delete node without ext_id
-  nutanix.ncp.ntnx_nodes_v2:
+  nutanix.ncp.ntnx_node_v2:
     state: absent
   register: result
   ignore_errors: true
@@ -177,7 +177,7 @@
 ########################################################################################
 
 - name: Check mode - Update node with all attributes
-  nutanix.ncp.ntnx_nodes_v2:
+  nutanix.ncp.ntnx_node_v2:
     state: present
     ext_id: "{{ bogus_ext_id }}"
     manufacturer: "Nutanix"
@@ -206,7 +206,7 @@
 ########################################################################################
 
 - name: Check mode - Delete node
-  nutanix.ncp.ntnx_nodes_v2:
+  nutanix.ncp.ntnx_node_v2:
     state: absent
     ext_id: "{{ bogus_ext_id }}"
   check_mode: true
@@ -363,7 +363,7 @@
 ########################################################################################
 
 - name: Negative - get node info with bogus ext_id
-  nutanix.ncp.ntnx_nodess_info_v2:
+  nutanix.ncp.ntnx_nodes_info_v2:
     ext_id: "{{ bogus_ext_id }}"
   register: result
   ignore_errors: true
@@ -392,7 +392,7 @@
     # it fails with a descriptive Foundation Central error) and only runs the
     # downstream lifecycle when a real node was onboarded.
     - name: Live - Onboard a node
-      nutanix.ncp.ntnx_nodes_v2:
+      nutanix.ncp.ntnx_node_v2:
         state: present
         manufacturer: "Nutanix"
         model: "NX-3060-G7"
@@ -425,7 +425,7 @@
 
     - name: Live - Get node by ext_id
       when: live_onboarded | bool
-      nutanix.ncp.ntnx_nodess_info_v2:
+      nutanix.ncp.ntnx_nodes_info_v2:
         ext_id: "{{ live_node_ext_id }}"
       register: get_result
       ignore_errors: true
@@ -443,7 +443,7 @@
     # List-all runs regardless of onboarding: it exercises the info module's live
     # list path against Foundation Central.
     - name: Live - List all nodes
-      nutanix.ncp.ntnx_nodess_info_v2: {}
+      nutanix.ncp.ntnx_nodes_info_v2: {}
       register: list_result
       ignore_errors: true
 
@@ -458,7 +458,7 @@
 
     - name: Live - Update node
       when: live_onboarded | bool
-      nutanix.ncp.ntnx_nodes_v2:
+      nutanix.ncp.ntnx_node_v2:
         state: present
         ext_id: "{{ live_node_ext_id }}"
         manufacturer: "Nutanix"
@@ -483,7 +483,7 @@
 
     - name: Live - Update node again (idempotency)
       when: live_onboarded | bool
-      nutanix.ncp.ntnx_nodes_v2:
+      nutanix.ncp.ntnx_node_v2:
         state: present
         ext_id: "{{ live_node_ext_id }}"
         manufacturer: "Nutanix"
@@ -525,7 +525,7 @@
 
     - name: Live - Delete node
       when: live_onboarded | bool
-      nutanix.ncp.ntnx_nodes_v2:
+      nutanix.ncp.ntnx_node_v2:
         state: absent
         ext_id: "{{ live_node_ext_id }}"
       register: delete_result

@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_nodes_v2
+module: ntnx_node_v2
 short_description: Create, Update, Delete Foundation Central nodes
 version_added: "2.7.0"
 description:
@@ -97,7 +97,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create a node
-  nutanix.ncp.ntnx_nodes_v2:
+  nutanix.ncp.ntnx_node_v2:
     nutanix_host: "{{ foundation_central_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -114,7 +114,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Update a node
-  nutanix.ncp.ntnx_nodes_v2:
+  nutanix.ncp.ntnx_node_v2:
     nutanix_host: "{{ foundation_central_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -131,7 +131,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Delete a node
-  nutanix.ncp.ntnx_nodes_v2:
+  nutanix.ncp.ntnx_node_v2:
     nutanix_host: "{{ foundation_central_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -437,7 +437,6 @@ def run_module():
     result = {
         "changed": False,
         "response": None,
-        "ext_id": None,
         "failed": False,
     }
     api_instance = get_nodes_api_instance(module)
