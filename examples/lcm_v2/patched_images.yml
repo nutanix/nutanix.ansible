@@ -18,8 +18,8 @@
       nutanix_password: "{{ nutanix_password }}"
       validate_certs: false
   tasks:
-    - name: Set variables
-      set_fact:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
         patched_image_name: "ahv_patched_image_ansible"
         patched_image_ext_id: "b6c8f0a2-4d1e-4f0a-9c1a-2d3e4f5a6b7c"
         node_ext_id: "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f"
