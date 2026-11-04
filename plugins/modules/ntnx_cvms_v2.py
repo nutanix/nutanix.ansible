@@ -167,7 +167,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error, module is idempotent or check mode
   type: str
-  sample: "ZXJnb24=:cabde2bd-a456-5d34-be27-3bdff7a4bfcd"
+  sample: "Nothing to change."
 """
 
 import warnings  # noqa: E402

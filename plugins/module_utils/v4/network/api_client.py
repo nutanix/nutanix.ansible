@@ -210,6 +210,42 @@ def get_subnet_ip_reservation_api_instance(module):
     return ntnx_networking_py_client.SubnetIPReservationApi(api_client=api_client)
 
 
+def get_subnet_migrations_api_instance(module):
+    """
+    This method will return SubnetMigrationsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): SubnetMigrations Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.SubnetMigrationsApi(api_client=api_client)
+
+
+def get_bgp_sessions_api_instance(module):
+    """
+    This method will return BgpSessionsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): BGP Sessions Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.BgpSessionsApi(api_client=api_client)
+
+
+def get_network_controllers_api_instance(module):
+    """
+    This method will return NetworkControllersApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Network Controllers Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.NetworkControllersApi(api_client=api_client)
+
+
 def get_load_balancer_sessions_api_instance(module):
     """
     This method will return LoadBalancerSessionsApi instance.
@@ -232,3 +268,39 @@ def get_vpc_virtual_switch_mappings_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_networking_py_client.VpcVirtualSwitchMappingsApi(api_client=api_client)
+
+
+def get_vpn_connections_api_instance(module):
+    """
+    This method will return VpnConnectionsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): VPN Connections Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.VpnConnectionsApi(api_client=api_client)
+
+
+def get_layer2_stretches_api_instance(module):
+    """
+    This method will return Layer2StretchesApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Layer2 Stretches Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.Layer2StretchesApi(api_client=api_client)
+
+
+def get_gateways_api_instance(module):
+    """
+    This method will return GatewaysApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Gateways Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.GatewaysApi(api_client=api_client)

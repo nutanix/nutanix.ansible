@@ -161,6 +161,50 @@ def get_entity_api_instance(module):
     return ntnx_lifecycle_py_client.EntitiesApi(api_client=api_client)
 
 
+def get_patched_images_api_instance(module):
+    """
+    This method will return LCM patched images API instance.
+
+    The patched images APIs are part of the Life Cycle Management (LCM)
+    namespace and are served by Foundation Central (FCVM), not Prism Central.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 LCM patched images api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.PatchedImagesApi(api_client=api_client)
+
+
+def get_claim_tokens_api_instance(module):
+    """
+    This method will return Foundation Central claim tokens API instance.
+
+    Claim tokens are Foundation Central (FCVM) entities. When talking to a
+    Foundation Central VM, point ``nutanix_host``/``nutanix_port`` at the FCVM
+    endpoint rather than Prism Central.
+
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 claim tokens api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.ClaimTokensApi(api_client=api_client)
+
+
+def get_recommendations_api_instance(module):
+    """
+    This method will return LCM recommendations API instance
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 LCM recommendations api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.RecommendationsApi(api_client=api_client)
+
+
 def get_lcm_histories_api_instance(module):
     """
     This method will return LCM histories API instance
@@ -221,3 +265,15 @@ def get_upgrade_selections_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_lifecycle_py_client.UpgradeSelectionsApi(api_client=api_client)
+
+
+def get_notifications_api_instance(module):
+    """
+    This method will return LCM notifications API instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 LCM notifications api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.NotificationsApi(api_client=api_client)
