@@ -222,10 +222,14 @@ action_groups:
     - ntnx_lcm_config_info_v2
     - ntnx_lcm_config_v2
     - ntnx_lcm_inventory_v2
+    - ntnx_lcm_export_inventory_v2
     - ntnx_lcm_prechecks_v2
     - ntnx_lcm_upgrades_v2
     - ntnx_lcm_entities_info_v2
     - ntnx_lcm_status_info_v2
+    - ntnx_lcm_preload_artifact_v2
+    - ntnx_lcm_compute_recommendation_v2
+    - ntnx_lcm_compute_recommendations_info_v2
     - ntnx_lcm_history_v2
     - ntnx_lcm_histories_info_v2
     - ntnx_lcm_summaries_info_v2
@@ -278,6 +282,9 @@ action_groups:
     - ntnx_entity_groups_info_v2
     - ntnx_bgp_session_v2
     - ntnx_bgp_sessions_info_v2
+    - ntnx_vm_cross_cluster_migrate_v2
+    - ntnx_layer2_stretch_v2
+    - ntnx_layer2_stretches_info_v2
     - ntnx_lcm_upgrade_selection_v2
     - ntnx_lcm_upgrade_selection_info_v2
     - ntnx_foundation_central_config_v2
@@ -347,6 +354,13 @@ action_groups:
     - ntnx_content_repository_sync_v2
     - ntnx_content_repository_items_info_v2
     - ntnx_images_migrate_v2
+    - ntnx_vpn_connection_v2
+    - ntnx_vpn_connections_info_v2
+    - ntnx_network_controller_v2
+    - ntnx_network_controllers_info_v2
+    - ntnx_gateway_v2
+    - ntnx_gateway_upgrade_v2
+    - ntnx_gateways_info_v2
     - ntnx_rsyslog_server_v2
     - ntnx_rsyslog_servers_info_v2
     - ntnx_vm_to_host_migration_v2

@@ -165,7 +165,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error
   type: str
-  sample: "f8832e28-0bb5-4a5e-af73-ed65711b7522"
+  sample: "Failed generating IP pools info Spec"
 total_available_results:
   description: The total number of available IP pools in PC.
   returned: when all IP pools are fetched

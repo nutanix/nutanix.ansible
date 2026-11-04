@@ -49,6 +49,7 @@ class Tasks:
         CLUSTER_PROFILE = "clustermgmt:config:cluster-profile"
         NETWORK_FUNCTION = "Networking:config:network-function"
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
+        LAYER2_STRETCH = "networking:config:layer2-stretch"
         LOAD_BALANCER_SESSION = "networking:config:load-balancer-session"
         ENTITY_GROUP = "microseg:config:entity-group"
         BGP_SESSION = "networking:config:bgp-session"
@@ -66,6 +67,9 @@ class Tasks:
         PROJECT = "multidomain:config:Project"
         RESOURCE_GROUP = "multidomain:config:nutanix-resource-group"
         CONTENT_REPOSITORY = "multidomain:content:content-repository"
+        VPN_CONNECTION = "networking:config:vpn-connection"
+        NETWORK_CONTROLLER = "networking:config:controller"
+        GATEWAY = "networking:config:gateway"
         GUEST_REBOOT_POLICY = "vmm:ahv:policies:guest-reboot-policy"
         VM_PROFILE = "vmm:ahv:config:vm-profile"
         IP_POOL = "clustermgmt:config:cluster:ip_pool"
@@ -73,6 +77,7 @@ class Tasks:
         NON_MIGRATABLE_VMS_RESULT = (
             "clustermgmt:config:cluster:non-migratable-vms-result"
         )
+        NOTIFICATION = "lifecycle:resources:notification"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
@@ -81,3 +86,5 @@ class Tasks:
         VM_EXT_IDS = "vmExtIds"
         VG_EXT_IDS = "volumeGroupExtIds"
         PROTECTION_POLICY = "protectionPolicyExtId"
+        NOTIFICATION = "notificationExtId"
+        PRESIGNED_URL = "presigned_url"
