@@ -1,0 +1,59 @@
+---
+# Summary:
+#   Invoke the Nutanix Prism Central v4 cluster management action
+#   `check-hypervisor-requirements` for a target cluster to determine
+#   whether a hypervisor bundle needs to be uploaded before a set of
+#   incoming nodes can be imaged and added to the cluster.
+#
+#   Steps performed by this playbook:
+#     1. List clusters registered with Prism Central and select the first
+#        AOS (Prism Element) cluster to use as `cluster_ext_id`.
+#     2. Call `ntnx_check_hypervisor_requirement_v2` with a representative
+#        node payload and display whether a hypervisor upload is required.
+#
+#   Notes:
+#     * The API is READ-ONLY (it never mutates the cluster) so `changed`
+#       stays `false`.
+#     * The API is NOT supported for the XEN hypervisor.
+
+- name: Check hypervisor requirements playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: List AOS (Prism Element) clusters registered with Prism Central
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: pe_clusters
+
+    - name: Set target cluster external ID
+      ansible.builtin.set_fact:
+        target_cluster_ext_id: "{{ pe_clusters.response[0].ext_id }}"
+
+    - name: Check hypervisor requirements for an AHV node
+      nutanix.ncp.ntnx_check_hypervisor_requirement_v2:
+        cluster_ext_id: "{{ target_cluster_ext_id }}"
+        node_list:
+          - node_uuid: "54b7581b-2e35-413e-8608-0531b065a5d8"
+            hypervisor_version: "10.0-793"
+            nos_version: "7.0"
+            model: "NX-3060-G5"
+            block_id: "18SM8B010159"
+            is_light_compute: false
+            hypervisor_type: "AHV"
+            is_robo_mixed_hypervisor: false
+            is_minimum_compute_node: false
+            luks_status: "NON_LUKS"
+      register: check_result
+
+    - name: Report hypervisor upload requirement
+      ansible.builtin.debug:
+        msg:
+          - "Task ext_id: {{ check_result.task_ext_id }}"
+          - "Cluster ext_id: {{ check_result.ext_id }}"
+          - "Response: {{ check_result.response }}"

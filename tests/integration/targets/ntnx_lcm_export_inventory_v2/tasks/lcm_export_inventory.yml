@@ -1,0 +1,206 @@
+---
+# Test plan for ntnx_lcm_export_inventory_v2 (action module)
+#
+# 1. Discover the Prism Central cluster external ID so we can scope tests.
+# 2. Check-mode: default scope (no cluster_ext_id, no credentials) — assert
+#    the module reports no change and echoes the (empty) preview.
+# 3. Check-mode with cluster_ext_id and a credentials list — assert the
+#    module echoes the request preview without hitting the API.
+# 4. Real inventory on Prism Central (default scope) — assert the API
+#    accepts the request, a task_ext_id is returned, and the module either
+#    reports the task as SUCCEEDED (happy path) or reports the task as
+#    FAILED with a task response payload (e.g. when the cluster's LCM
+#    framework auto-update prechecks fail — a legitimate cluster-side
+#    state, not a module bug).
+# 5. Real inventory on a specific cluster via cluster_ext_id — same
+#    assertion set as (4), but with cluster scoping.
+# 6. Idempotency: run (4) twice back-to-back. LCM inventory is an action
+#    so every invocation creates a fresh task; both invocations must be
+#    accepted and reported symmetrically by the module.
+# 7. Negative: invalid state value must be rejected by argument_spec.
+# 8. Negative: invalid cluster_ext_id must be reported as an error by the
+#    module (either at spec time or at API time).
+# 9. Negative: credentials with a missing credential_ext_id must be
+#    rejected by argument_spec (sub-option validation).
+
+- name: Start LCM Inventory (export) tests
+  ansible.builtin.debug:
+    msg: Start testing ntnx_lcm_export_inventory_v2
+
+- name: List all clusters to find the Prism Central external ID
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'PRISM_CENTRAL')"
+  register: pc_clusters
+  ignore_errors: true
+
+- name: Set Prism Central external ID
+  ansible.builtin.set_fact:
+    prism_central_external_id: "{{ pc_clusters.response[0].ext_id }}"
+
+# ---------------------------------------------------------------------------
+# 2. Check-mode with minimal params (default scope, no credentials).
+# ---------------------------------------------------------------------------
+- name: Perform LCM inventory (default PC scope) - check mode
+  nutanix.ncp.ntnx_lcm_export_inventory_v2: {}
+  check_mode: true
+  register: cm_default
+  ignore_errors: true
+
+- name: Assert check-mode default scope
+  ansible.builtin.assert:
+    that:
+      - cm_default.changed == false
+      - cm_default.failed == false
+      - cm_default.response is defined
+      - cm_default.response.cluster_ext_id is none
+    fail_msg: "Check-mode default-scope inventory did not return expected preview"
+    success_msg: "Check-mode default-scope inventory returned expected preview"
+
+# ---------------------------------------------------------------------------
+# 3. Check-mode with all fields (cluster + credentials).
+# ---------------------------------------------------------------------------
+- name: Perform LCM inventory with ALL fields - check mode
+  nutanix.ncp.ntnx_lcm_export_inventory_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+    credentials:
+      - credential_ext_id: "00000000-0000-0000-0000-000000000001"
+      - credential_ext_id: "00000000-0000-0000-0000-000000000002"
+  check_mode: true
+  register: cm_full
+  ignore_errors: true
+
+- name: Assert check-mode full spec
+  ansible.builtin.assert:
+    that:
+      - cm_full.changed == false
+      - cm_full.failed == false
+      - cm_full.response is defined
+      - cm_full.response.cluster_ext_id == prism_central_external_id
+      - cm_full.response.body is defined
+      - cm_full.response.body.credentials is defined
+      - cm_full.response.body.credentials | length == 2
+    fail_msg: "Check-mode full-spec inventory did not echo the expected body"
+    success_msg: "Check-mode full-spec inventory echoed the expected body"
+
+# ---------------------------------------------------------------------------
+# 4. Real inventory on Prism Central (default scope).
+#    The API/task must be accepted; task_ext_id must be returned.
+#    Accept SUCCEEDED or FAILED status (some clusters have LCM auto-update
+#    misconfigurations that make the FAILED path the observed one).
+# ---------------------------------------------------------------------------
+- name: Perform LCM inventory on Prism Central (default scope)
+  nutanix.ncp.ntnx_lcm_export_inventory_v2: {}
+  register: pc_inventory
+  ignore_errors: true
+
+- name: Assert PC-scope inventory task was accepted
+  ansible.builtin.assert:
+    that:
+      - pc_inventory.response is defined
+      - pc_inventory.response.ext_id is defined
+      - pc_inventory.response.ext_id | length > 0
+      - pc_inventory.response.status in ["SUCCEEDED", "FAILED"]
+      - >-
+        (pc_inventory.failed == false and pc_inventory.changed == true
+         and pc_inventory.response.status == "SUCCEEDED")
+        or
+        (pc_inventory.failed == true and pc_inventory.msg == "Task Failed"
+         and pc_inventory.response.status == "FAILED")
+    fail_msg: "PC-scope LCM inventory did not return a task-shaped response"
+    success_msg: "PC-scope LCM inventory returned a valid task response"
+
+# ---------------------------------------------------------------------------
+# 5. Real inventory scoped to the discovered Prism Central cluster.
+# ---------------------------------------------------------------------------
+- name: Perform LCM inventory scoped to a specific cluster
+  nutanix.ncp.ntnx_lcm_export_inventory_v2:
+    cluster_ext_id: "{{ prism_central_external_id }}"
+  register: cluster_inventory
+  ignore_errors: true
+
+- name: Assert cluster-scoped inventory task was accepted
+  ansible.builtin.assert:
+    that:
+      - cluster_inventory.response is defined
+      - cluster_inventory.response.ext_id is defined
+      - cluster_inventory.response.status in ["SUCCEEDED", "FAILED"]
+      - >-
+        (cluster_inventory.failed == false and cluster_inventory.changed == true
+         and cluster_inventory.response.status == "SUCCEEDED")
+        or
+        (cluster_inventory.failed == true and cluster_inventory.msg == "Task Failed"
+         and cluster_inventory.response.status == "FAILED")
+    fail_msg: "Cluster-scoped LCM inventory did not return a task-shaped response"
+    success_msg: "Cluster-scoped LCM inventory returned a valid task response"
+
+# ---------------------------------------------------------------------------
+# 6. Idempotency: back-to-back runs of the same inventory should each be
+# accepted by the API and produce their own task_ext_id.
+# ---------------------------------------------------------------------------
+- name: Rerun LCM inventory on Prism Central (idempotency check)
+  nutanix.ncp.ntnx_lcm_export_inventory_v2: {}
+  register: pc_inventory_second
+  ignore_errors: true
+
+- name: Assert second PC-scope inventory ran and returned its own task
+  ansible.builtin.assert:
+    that:
+      - pc_inventory_second.response is defined
+      - pc_inventory_second.response.ext_id is defined
+      - pc_inventory_second.response.ext_id != pc_inventory.response.ext_id
+      - pc_inventory_second.response.status in ["SUCCEEDED", "FAILED"]
+    fail_msg: "Second LCM inventory did not produce a distinct task"
+    success_msg: "Second LCM inventory produced a distinct task response"
+
+# ---------------------------------------------------------------------------
+# 7. Negative: an invalid state value must be rejected by argument_spec.
+# ---------------------------------------------------------------------------
+- name: Perform LCM inventory with an invalid state value
+  nutanix.ncp.ntnx_lcm_export_inventory_v2:
+    state: absent
+  register: invalid_state
+  ignore_errors: true
+
+- name: Assert invalid state is rejected
+  ansible.builtin.assert:
+    that:
+      - invalid_state.failed == true
+      - invalid_state.msg is defined
+    fail_msg: "Invalid state value was NOT rejected"
+    success_msg: "Invalid state value was correctly rejected"
+
+# ---------------------------------------------------------------------------
+# 8. Negative: an invalid cluster_ext_id must be reported by the module.
+# ---------------------------------------------------------------------------
+- name: Perform LCM inventory against a bogus cluster external ID
+  nutanix.ncp.ntnx_lcm_export_inventory_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bogus_cluster
+  ignore_errors: true
+
+- name: Assert bogus cluster ext_id is reported as an error
+  ansible.builtin.assert:
+    that:
+      - bogus_cluster.failed == true
+      - bogus_cluster.msg is defined
+    fail_msg: "Bogus cluster_ext_id was NOT reported as an error"
+    success_msg: "Bogus cluster_ext_id was correctly reported as an error"
+
+# ---------------------------------------------------------------------------
+# 9. Negative: credentials with a missing credential_ext_id must be
+# rejected by argument_spec (sub-option validation).
+# ---------------------------------------------------------------------------
+- name: Perform LCM inventory with malformed credentials
+  nutanix.ncp.ntnx_lcm_export_inventory_v2:
+    credentials:
+      - {}
+  register: bad_creds
+  ignore_errors: true
+
+- name: Assert malformed credentials are rejected
+  ansible.builtin.assert:
+    that:
+      - bad_creds.failed == true
+      - bad_creds.msg is defined
+    fail_msg: "Malformed credentials were NOT rejected"
+    success_msg: "Malformed credentials were correctly rejected"

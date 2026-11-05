@@ -75,6 +75,14 @@ EXAMPLES = r"""
     nutanix_password: <pass>
     limit: 1
   register: result
+
+- name: List all cluster profiles with fetch_all
+  nutanix.ncp.ntnx_clusters_profiles_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -256,6 +264,7 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.helpers import get_cluster_profile  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -289,7 +298,10 @@ def get_cluster_profiles(module, cluster_profiles, result):
         )
     resp = None
     try:
-        resp = cluster_profiles.list_cluster_profiles(**kwargs)
+        resp = list_entities(
+            cluster_profiles.list_cluster_profiles,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
