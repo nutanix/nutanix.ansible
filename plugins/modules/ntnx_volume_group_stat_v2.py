@@ -226,6 +226,7 @@ import warnings  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -279,22 +280,25 @@ def get_volume_group_stats(module, result, api_instance):
         kwargs["_statType"] = stat_type
     if select:
         kwargs["_select"] = select
+    kwargs["_startTime"] = start_time
+    kwargs["_endTime"] = end_time
+    kwargs["extId"] = ext_id
     resp = None
     try:
-        resp = list_entities(api_instance.get_volume_group_stats, ext_id=ext_id, start_time=start_time, end_time=end_time, **kwargs)
+        resp = list_entities(api_instance.get_volume_group_stats, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
             msg="Api Exception raised while fetching volume group stats",
         )
-    if getattr(resp, "data", None):
-        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
-    else:
-        module.fail_json(
-            msg="Failed fetching volume group stats for ext_id: {0}".format(ext_id),
-            **result,
-        )
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
+
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        resp = []
+    result["response"] = resp
 
 
 def run_module():

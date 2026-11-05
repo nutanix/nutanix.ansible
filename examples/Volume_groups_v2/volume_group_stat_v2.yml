@@ -1,10 +1,8 @@
 ---
 # Summary:
-# This playbook demonstrates fetching time-series statistics for a Nutanix
-# Volume Group in Nutanix Prism Central using the v4 stats API. It picks an
-# existing Volume Group on the cluster (rather than a freshly created one,
-# because the stats pipeline does not report data for empty VGs), queries
-# its stats twice (minimal + with all attributes), and prints the response.
+# This playbook will do:
+# 1. Fetch Volume Group stats with minimum params
+# 2. Fetch Volume Group stats with all attributes
 
 - name: Volume Group Stats playbook
   hosts: localhost
