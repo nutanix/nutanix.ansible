@@ -225,9 +225,6 @@ failed:
   sample: false
 """
 
-import traceback  # noqa: E402
-import warnings  # noqa: E402
-
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
@@ -235,7 +232,6 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-
 from ..module_utils.v4.volumes.api_client import get_vg_api_instance  # noqa: E402
 
 
