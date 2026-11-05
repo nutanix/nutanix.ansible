@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_vpn_appliances_info_v2
 short_description: VPN appliances info module
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to fetch information about supported third-party VPN appliances
     for a Nutanix VPN connection in Prism Central.
@@ -25,12 +25,12 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(List third-party VPN appliances for a VPN connection) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer,
-      Project Admin, Super Admin, VPC Admin
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin
+      Super Admin, Tenant Admin, VPC Admin
     - >-
       B(Get third-party VPN appliance configuration) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer,
-      Project Admin, Super Admin, VPC Admin
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin
+      Super Admin, Tenant Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   vpn_connection_ext_id:
@@ -86,6 +86,17 @@ EXAMPLES = r"""
     vpn_connection_ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
     limit: 1
     orderby: "name asc"
+  register: result
+  ignore_errors: true
+
+- name: List all VPN appliances with fetch_all
+  nutanix.ncp.ntnx_vpn_appliances_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    vpn_connection_ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+    fetch_all: true
   register: result
   ignore_errors: true
 
@@ -169,6 +180,7 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 from ..module_utils.v4.network.helpers import get_vpn_appliance_config  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -207,8 +219,10 @@ def list_vpn_appliances(module, api_instance, result):
         result["error"] = err
         module.fail_json(msg="Failed generating VPN appliances info spec", **result)
     try:
-        resp = api_instance.list_vpn_appliances_by_vpn_connection_id(
-            vpnConnectionExtId=vpn_connection_ext_id, **kwargs
+        resp = list_entities(
+            api_instance.list_vpn_appliances_by_vpn_connection_id,
+            kwargs=kwargs,
+            vpnConnectionExtId=vpn_connection_ext_id,
         )
     except Exception as e:
         raise_api_exception(
@@ -234,6 +248,7 @@ def run_module():
             ("ext_id", "page"),
             ("ext_id", "orderby"),
             ("ext_id", "select"),
+            ("ext_id", "fetch_all"),
         ],
     )
     remove_param_with_none_value(module.params)
