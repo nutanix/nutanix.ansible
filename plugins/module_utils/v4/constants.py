@@ -53,6 +53,7 @@ class Tasks:
         LAYER2_STRETCH = "networking:config:layer2-stretch"
         LOAD_BALANCER_SESSION = "networking:config:load-balancer-session"
         ENTITY_GROUP = "microseg:config:entity-group"
+        INSTALLER_IMAGE = "lifecycle:config:installer_image"
         HARDWARE_PROVIDER_CONNECTION = "lifecycle:config:hardware-provider-connections"
         NIC_PROFILE = "networking:config:nic_profile"
         PATCHED_IMAGE = "lifecycle:config:patched-image"

@@ -484,3 +484,23 @@ def get_server_identity_pool(
             msg="Api Exception raised while fetching server identity pool info "
             "using external identifier of the pool",
         )
+
+
+def get_installer_image(module, api_instance, ext_id):
+    """
+    This method will return an LCM installer image using its external ID.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Installer images api instance
+        ext_id (str): External id of the installer image
+    Returns:
+        installer_image (object): Installer image info
+    """
+    try:
+        return api_instance.get_image_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching installer image info using external identifier",
+        )
