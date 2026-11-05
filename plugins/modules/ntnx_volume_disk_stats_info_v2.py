@@ -26,7 +26,8 @@ notes:
       performing the operation.
     - >-
       B(Get statistics for a Volume Disk) -
-      Required Roles: Backup Admin, Prism Admin, Prism Viewer, Project Admin, Project Manager, Self-Service Admin (Deprecated), Storage Admin, Storage Viewer, Super Admin, Tenant Admin, Tenant Consumer
+      Required Roles: Backup Admin, Prism Admin, Prism Viewer, Project Admin, Project Manager, Self-Service Admin (Deprecated),
+      Storage Admin, Storage Viewer, Super Admin, Tenant Admin, Tenant Consumer
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:
   volume_group_ext_id:

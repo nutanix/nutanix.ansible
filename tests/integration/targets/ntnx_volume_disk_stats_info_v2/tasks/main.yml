@@ -22,6 +22,7 @@
         - vg_uuid is defined
         - disk_uuid is defined
       ignore_errors: true
+      register: delete_vd_result
 
     - name: Attempt to delete any leftover Volume Group
       nutanix.ncp.ntnx_volume_groups_v2:
