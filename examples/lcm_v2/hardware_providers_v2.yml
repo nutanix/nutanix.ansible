@@ -121,7 +121,7 @@
       ignore_errors: true
 
     - name: Refresh a connection to discover nodes
-      nutanix.ncp.ntnx_refresh_connection_v2:
+      nutanix.ncp.ntnx_hardware_provider_refresh_connection_v2:
         hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
         ext_id: "{{ connection_ext_id }}"
         configuration:

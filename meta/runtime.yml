@@ -287,7 +287,7 @@ action_groups:
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
   - ntnx_hardware_provider_connection_v2
-  - ntnx_refresh_connection_v2
+  - ntnx_hardware_provider_refresh_connection_v2
     - ntnx_hardware_providers_info_v2
     - ntnx_vpc_ns_stats_info_v2
     - ntnx_traffic_mirror_v2

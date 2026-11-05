@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_refresh_connection_v2
+module: ntnx_hardware_provider_refresh_connection_v2
 short_description: Refresh a hardware provider connection in Nutanix Foundation Central
 version_added: 2.7.0
 description:
@@ -95,7 +95,7 @@ author:
 
 EXAMPLES = r"""
 - name: Refresh a connection to discover nodes
-  nutanix.ncp.ntnx_refresh_connection_v2:
+  nutanix.ncp.ntnx_hardware_provider_refresh_connection_v2:
     nutanix_host: "{{ foundation_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -111,7 +111,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Refresh a connection to refresh resource pools
-  nutanix.ncp.ntnx_refresh_connection_v2:
+  nutanix.ncp.ntnx_hardware_provider_refresh_connection_v2:
     nutanix_host: "{{ foundation_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"

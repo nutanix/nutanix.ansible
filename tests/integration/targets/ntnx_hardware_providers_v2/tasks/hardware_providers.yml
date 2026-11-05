@@ -4,7 +4,7 @@
 # ============================================================================
 # Modules under test:
 #   - ntnx_hardware_provider_connection_v2                         (CRUD: create, update, delete)
-#   - ntnx_refresh_connection_v2                         (action: refresh)
+#   - ntnx_hardware_provider_refresh_connection_v2                         (action: refresh)
 #   - ntnx_hardware_providers_info_v2                   (info: get/list)
 #
 # Scenarios covered:
@@ -484,7 +484,7 @@
         # 17. check_mode refresh
         # ---------------------------------------------------------------
         - name: Refresh connection in check_mode
-          ntnx_refresh_connection_v2:
+          ntnx_hardware_provider_refresh_connection_v2:
             hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
             ext_id: "{{ connection_ext_id }}"
           register: result
@@ -504,7 +504,7 @@
         # 15. Refresh connection (refresh_resources configuration)
         # ---------------------------------------------------------------
         - name: Refresh connection (refresh_resources)
-          ntnx_refresh_connection_v2:
+          ntnx_hardware_provider_refresh_connection_v2:
             hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
             ext_id: "{{ connection_ext_id }}"
             configuration:
@@ -527,7 +527,7 @@
         # 16. Refresh connection with discover_nodes configuration
         # ---------------------------------------------------------------
         - name: Refresh connection (discover_nodes)
-          ntnx_refresh_connection_v2:
+          ntnx_hardware_provider_refresh_connection_v2:
             hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
             ext_id: "{{ connection_ext_id }}"
             configuration:
