@@ -1,0 +1,23 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Fetch registered client using external ID
+
+- name: RegisteredClient info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        registered_client_ext_id: "6f8e020d-c59a-5052-afd7-5e547f8a3282"
+
+    - name: Fetch registered client using external ID
+      nutanix.ncp.ntnx_registered_clients_info_v2:
+        ext_id: "{{ registered_client_ext_id }}"
+      register: result
