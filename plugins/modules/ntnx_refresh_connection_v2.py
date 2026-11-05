@@ -17,13 +17,13 @@ description:
   - This module refreshes a connection to a hardware provider endpoint.
   - Refreshing a connection re-discovers nodes and/or refreshes the resource pools.
   - This is an action module that triggers a task-based operation.
-  - This module uses Foundation Central (FCVM) v4 APIs based SDKs.
+  - This module uses PC v4 APIs based SDKs
 notes:
   - This module talks to B(Foundation Central / FCVM), B(not) Prism Central.
     Set C(nutanix_host) to the Foundation Central (FCVM) endpoint.
   - >-
     B(Refresh a connection) -
-    Required Roles - Admin role on Foundation Central.
+    Required Roles: Cluster Admin, Prism Admin, Super Admin
   - The referenced hardware provider and connection must exist before refreshing.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
@@ -39,8 +39,7 @@ options:
     required: true
   configuration:
     description:
-      - Configuration describing what to refresh.
-      - The Foundation Central API requires a configuration to be provided.
+      - Configuration for refreshing nodes or resources from a hardware provider connection
       - Exactly one of the configuration types may be provided.
     type: dict
     required: false
@@ -53,7 +52,7 @@ options:
         suboptions:
           group_ids:
             description:
-              - List of group identifiers to discover nodes for.
+              - List of group IDs to refresh resources for. Mandatory param if it's cisco connection
             type: list
             elements: str
             required: false
@@ -65,23 +64,23 @@ options:
         suboptions:
           group_ids:
             description:
-              - List of group identifiers to refresh resources for.
+              - List of group IDs to refresh resources for. Mandatory param if it's cisco connection
             type: list
             elements: str
             required: false
           should_refresh_mac_pools:
             description:
-              - Whether to refresh MAC address pools.
+              - Whether to refresh MAC pools from the hardware provider.
             type: bool
             required: false
           should_refresh_ip_pools:
             description:
-              - Whether to refresh IP address pools.
+              - Whether to refresh IP pools from the hardware provider.
             type: bool
             required: false
           should_refresh_server_identity_pools:
             description:
-              - Whether to refresh server identity pools.
+              - Whether to refresh server identity pools from the hardware provider.
             type: bool
             required: false
 extends_documentation_fragment:

@@ -3,9 +3,9 @@
 # TEST PLAN — Hardware Provider connections (Foundation Central / FCVM)
 # ============================================================================
 # Modules under test:
-#   - ntnx_hardware_providers_v2                         (CRUD: create, update, delete)
+#   - ntnx_hardware_provider_connection_v2                         (CRUD: create, update, delete)
 #   - ntnx_refresh_connection_v2                         (action: refresh)
-#   - ntnx_hardware_providerss_info_v2                   (info: get/list)
+#   - ntnx_hardware_providers_info_v2                   (info: get/list)
 #
 # Scenarios covered:
 #   1.  List hardware providers (list-all datasource).
@@ -51,7 +51,7 @@
 # 1. List hardware providers
 # ---------------------------------------------------------------------------
 - name: List all hardware providers
-  ntnx_hardware_providerss_info_v2:
+  ntnx_hardware_providers_info_v2:
   register: result
   ignore_errors: true
 
@@ -68,7 +68,7 @@
 # 2. Negative: get hardware provider with invalid ext_id
 # ---------------------------------------------------------------------------
 - name: Get hardware provider with invalid ext_id
-  ntnx_hardware_providerss_info_v2:
+  ntnx_hardware_providers_info_v2:
     ext_id: "00000000-0000-0000-0000-000000000000"
   register: result
   ignore_errors: true
@@ -85,7 +85,7 @@
 # 3. Discover a real hardware provider ext_id
 # ---------------------------------------------------------------------------
 - name: Fetch hardware providers to discover an ext_id
-  ntnx_hardware_providerss_info_v2:
+  ntnx_hardware_providers_info_v2:
   register: hp_list
   ignore_errors: true
 
@@ -124,7 +124,7 @@
     # 4. Negative: create missing required 'name'
     # -----------------------------------------------------------------------
     - name: Create connection without name (negative)
-      ntnx_hardware_providers_v2:
+      ntnx_hardware_provider_connection_v2:
         state: present
         hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
         access_details:
@@ -150,7 +150,7 @@
     # 5. Negative: create missing required 'access_details'
     # -----------------------------------------------------------------------
     - name: Create connection without access_details (negative)
-      ntnx_hardware_providers_v2:
+      ntnx_hardware_provider_connection_v2:
         state: present
         hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
         name: "{{ connection_name }}"
@@ -169,7 +169,7 @@
     # 6. Negative: invalid deployment_type enum
     # -----------------------------------------------------------------------
     - name: Create connection with invalid deployment_type (negative)
-      ntnx_hardware_providers_v2:
+      ntnx_hardware_provider_connection_v2:
         state: present
         hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
         name: "{{ connection_name }}"
@@ -197,7 +197,7 @@
     # 19. Negative: mutually exclusive endpoint types
     # -----------------------------------------------------------------------
     - name: Create connection with mutually exclusive endpoints (negative)
-      ntnx_hardware_providers_v2:
+      ntnx_hardware_provider_connection_v2:
         state: present
         hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
         name: "{{ connection_name }}"
@@ -228,7 +228,7 @@
     # 7. check_mode create with ALL attributes
     # -----------------------------------------------------------------------
     - name: Create connection in check_mode (all attributes)
-      ntnx_hardware_providers_v2:
+      ntnx_hardware_provider_connection_v2:
         state: present
         hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
         name: "{{ connection_name }}"
@@ -264,7 +264,7 @@
     # 8. Create connection with required fields only (minimal)
     # -----------------------------------------------------------------------
     - name: Create connection with required fields only
-      ntnx_hardware_providers_v2:
+      ntnx_hardware_provider_connection_v2:
         state: present
         hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
         name: "{{ connection_name_min }}"
@@ -298,7 +298,7 @@
     # 9. Create connection with ALL fields (full)
     # -----------------------------------------------------------------------
     - name: Create connection with all fields
-      ntnx_hardware_providers_v2:
+      ntnx_hardware_provider_connection_v2:
         state: present
         hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
         name: "{{ connection_name }}"
@@ -345,7 +345,7 @@
         # 10. Info: get connection by ext_id
         # ---------------------------------------------------------------
         - name: Get connection by ext_id
-          ntnx_hardware_providerss_info_v2:
+          ntnx_hardware_providers_info_v2:
             hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
             ext_id: "{{ connection_ext_id }}"
           register: result
@@ -365,7 +365,7 @@
         # 11. Info: list connections
         # ---------------------------------------------------------------
         - name: List connections for the hardware provider
-          ntnx_hardware_providerss_info_v2:
+          ntnx_hardware_providers_info_v2:
             hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
           register: result
           ignore_errors: true
@@ -384,7 +384,7 @@
         # 12. check_mode update
         # ---------------------------------------------------------------
         - name: Update connection in check_mode
-          ntnx_hardware_providers_v2:
+          ntnx_hardware_provider_connection_v2:
             state: present
             hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
             ext_id: "{{ connection_ext_id }}"
@@ -419,7 +419,7 @@
         # 13. Update connection (state transition)
         # ---------------------------------------------------------------
         - name: Update connection
-          ntnx_hardware_providers_v2:
+          ntnx_hardware_provider_connection_v2:
             state: present
             hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
             ext_id: "{{ connection_ext_id }}"
@@ -452,7 +452,7 @@
         # 14. Idempotency: same update again
         # ---------------------------------------------------------------
         - name: Update connection again (idempotency)
-          ntnx_hardware_providers_v2:
+          ntnx_hardware_provider_connection_v2:
             state: present
             hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
             ext_id: "{{ connection_ext_id }}"
@@ -551,7 +551,7 @@
         # 18. Info: list nodes / ip / mac / server-identity pools
         # ---------------------------------------------------------------
         - name: List connection resources (nodes and pools)
-          ntnx_hardware_providerss_info_v2:
+          ntnx_hardware_providers_info_v2:
             resource_type: "{{ item }}"
             hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
             connection_ext_id: "{{ connection_ext_id }}"
@@ -578,7 +578,7 @@
 # 20. check_mode delete + 21. teardown
 # ---------------------------------------------------------------------------
 - name: Delete connection in check_mode
-  ntnx_hardware_providers_v2:
+  ntnx_hardware_provider_connection_v2:
     state: absent
     hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
     ext_id: "{{ todelete[0] }}"
@@ -598,7 +598,7 @@
   when: todelete | length > 0
 
 - name: Delete created connections
-  ntnx_hardware_providers_v2:
+  ntnx_hardware_provider_connection_v2:
     state: absent
     hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
     ext_id: "{{ item }}"

@@ -10,27 +10,28 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_hardware_providers_v2
+module: ntnx_hardware_provider_connection_v2
 short_description: Create, update or delete a hardware provider connection in Nutanix Foundation Central
 version_added: 2.7.0
 description:
   - This module allows you to create, update, and delete a connection to a hardware provider endpoint.
-  - A connection enables node discovery and management through a hardware provider.
-  - This module uses Foundation Central (FCVM) v4 APIs based SDKs.
+  - This module uses PC v4 APIs based SDKs
 notes:
-  - This module talks to B(Foundation Central / FCVM), B(not) Prism Central.
-    Set C(nutanix_host) to the Foundation Central (FCVM) endpoint.
-  - >-
-    B(Create a connection) -
-    Required Roles - Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
-  - >-
-    B(Update a connection) -
-    Required Roles - Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
-  - >-
-    B(Delete a connection) -
-    Required Roles - Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
-  - The referenced hardware provider must exist before managing its connections.
-  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
+    - This module talks to B(Foundation Central / FCVM), B(not) Prism Central.
+      Set C(nutanix_host) to the Foundation Central (FCVM) endpoint.
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create hardware provider connection) -
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
+    - >-
+      B(Update hardware provider connection) -
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
+    - >-
+      B(Delete hardware provider connection) -
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
   state:
     description:
@@ -59,13 +60,12 @@ options:
   name:
     description:
       - Name of the connection.
-      - Maximum 40 characters.
-      - Required for create and update operations.
+      - Required for create operation.
     type: str
     required: false
   deployment_type:
     description:
-      - Deployment type of the connection.
+      - Type of deployment for the hardware provider connection.
     type: str
     choices:
       - ONPREM
@@ -75,13 +75,12 @@ options:
   region:
     description:
       - Region for the connection.
-      - Maximum 32 characters.
     type: str
     required: false
   access_details:
     description:
       - Access details including endpoint and authentication information.
-      - Required when updating a connection.
+      - Required for create operation.
     type: list
     elements: dict
     required: false
@@ -277,7 +276,7 @@ options:
                 description:
                   - The API key secret.
                 type: str
-                required: false
+                required: true
           basic_auth:
             description:
               - Username and password based authentication.
@@ -293,7 +292,7 @@ options:
                 description:
                   - The password for authentication.
                 type: str
-                required: false
+                required: true
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -306,7 +305,7 @@ author:
 
 EXAMPLES = r"""
 - name: Create a hardware provider connection
-  nutanix.ncp.ntnx_hardware_providers_v2:
+  nutanix.ncp.ntnx_hardware_provider_connection_v2:
     nutanix_host: "{{ foundation_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -328,7 +327,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Update a hardware provider connection
-  nutanix.ncp.ntnx_hardware_providers_v2:
+  nutanix.ncp.ntnx_hardware_provider_connection_v2:
     nutanix_host: "{{ foundation_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -351,7 +350,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Delete a hardware provider connection
-  nutanix.ncp.ntnx_hardware_providers_v2:
+  nutanix.ncp.ntnx_hardware_provider_connection_v2:
     nutanix_host: "{{ foundation_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -710,8 +709,6 @@ def create_hardware_providers(module, api_instance, result):
                 ),
                 msg="Failed to get entity ext_id from task for connection",
             )
-    elif task_ext_id:
-        result["msg"] = "Connection creation initiated, set wait=true to track."
     result["changed"] = True
 
 
@@ -746,7 +743,6 @@ def update_hardware_providers(module, api_instance, result):
     hardware_provider_ext_id = module.params.get("hardware_provider_ext_id")
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-    validate_required_params(module, ["name", "access_details"])
 
     old_spec = get_connection(module, api_instance, hardware_provider_ext_id, ext_id)
     etag = get_etag(data=old_spec)
@@ -802,18 +798,10 @@ def delete_hardware_providers(module, api_instance, result):
         result["msg"] = "Connection with ext_id:{0} will be deleted.".format(ext_id)
         return
 
-    old_spec = get_connection(module, api_instance, hardware_provider_ext_id, ext_id)
-    etag = get_etag(data=old_spec)
-    if not etag:
-        return module.fail_json(
-            msg="Unable to fetch etag for deleting connection", **result
-        )
-    kwargs = {"if_match": etag}
-
     resp = None
     try:
         resp = api_instance.delete_connection_by_id(
-            hardwareProviderExtId=hardware_provider_ext_id, extId=ext_id, **kwargs
+            hardwareProviderExtId=hardware_provider_ext_id, extId=ext_id
         )
     except Exception as e:
         raise_api_exception(
@@ -835,6 +823,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
+            ("state", "present", ("ext_id", "name"), True),
             ("state", "absent", ("ext_id",)),
         ],
     )
@@ -849,7 +838,6 @@ def run_module():
         "changed": False,
         "response": None,
         "failed": False,
-        "ext_id": None,
     }
     api_instance = get_hardware_providers_api_instance(module)
     state = module.params.get("state")

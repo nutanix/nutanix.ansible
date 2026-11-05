@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_hardware_providerss_info_v2
+module: ntnx_hardware_providers_info_v2
 short_description: Fetch hardware providers and connection resources info in Nutanix Foundation Central
 version_added: 2.7.0
 description:
@@ -18,13 +18,13 @@ description:
     and resource pools (IP, MAC, server identity) info in Nutanix Foundation Central.
   - The specific datasource is selected based on which identifiers are provided and the
     C(resource_type) parameter.
-  - This module uses Foundation Central (FCVM) v4 APIs based SDKs.
+  - This module uses PC v4 APIs based SDKs
 notes:
   - This module talks to B(Foundation Central / FCVM), B(not) Prism Central.
     Set C(nutanix_host) to the Foundation Central (FCVM) endpoint.
   - >-
     B(Get / List hardware providers and their resources) -
-    Required Roles - Viewer or Admin role on Foundation Central.
+    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
   resource_type:
@@ -78,7 +78,7 @@ author:
 
 EXAMPLES = r"""
 - name: List all hardware providers
-  nutanix.ncp.ntnx_hardware_providerss_info_v2:
+  nutanix.ncp.ntnx_hardware_providers_info_v2:
     nutanix_host: "{{ foundation_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -86,8 +86,38 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
+- name: List all hardware providers using fetch_all
+  nutanix.ncp.ntnx_hardware_providers_info_v2:
+    nutanix_host: "{{ foundation_host }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
+  register: result
+  ignore_errors: true
+
+- name: List hardware providers with limit
+  nutanix.ncp.ntnx_hardware_providers_info_v2:
+    nutanix_host: "{{ foundation_host }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List hardware providers with filter
+  nutanix.ncp.ntnx_hardware_providers_info_v2:
+    nutanix_host: "{{ foundation_host }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter: "name eq 'CiscoIntersight'"
+  register: result
+  ignore_errors: true
+
 - name: Get a hardware provider by ext_id
-  nutanix.ncp.ntnx_hardware_providerss_info_v2:
+  nutanix.ncp.ntnx_hardware_providers_info_v2:
     nutanix_host: "{{ foundation_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -97,7 +127,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List connections for a hardware provider
-  nutanix.ncp.ntnx_hardware_providerss_info_v2:
+  nutanix.ncp.ntnx_hardware_providers_info_v2:
     nutanix_host: "{{ foundation_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -107,7 +137,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Get a connection by ext_id
-  nutanix.ncp.ntnx_hardware_providerss_info_v2:
+  nutanix.ncp.ntnx_hardware_providers_info_v2:
     nutanix_host: "{{ foundation_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -118,7 +148,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List discovered nodes for a connection
-  nutanix.ncp.ntnx_hardware_providerss_info_v2:
+  nutanix.ncp.ntnx_hardware_providers_info_v2:
     nutanix_host: "{{ foundation_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -129,8 +159,21 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
+- name: Get a discovered node by ext_id
+  nutanix.ncp.ntnx_hardware_providers_info_v2:
+    nutanix_host: "{{ foundation_host }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    resource_type: node
+    hardware_provider_ext_id: "5e5a9d0b-8f3d-4c14-9f6f-6b3a3c9c6a01"
+    connection_ext_id: "8300384a-56ee-4750-aeb8-3d1c42908bee"
+    ext_id: "3f4a6d0b-1c2d-4e5f-8a9b-0c1d2e3f4a5b"
+  register: result
+  ignore_errors: true
+
 - name: List IP address pools for a connection
-  nutanix.ncp.ntnx_hardware_providerss_info_v2:
+  nutanix.ncp.ntnx_hardware_providers_info_v2:
     nutanix_host: "{{ foundation_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -141,13 +184,63 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
-- name: Get a MAC address pool by ext_id
-  nutanix.ncp.ntnx_hardware_providerss_info_v2:
+- name: Get an IP address pool by ext_id
+  nutanix.ncp.ntnx_hardware_providers_info_v2:
+    nutanix_host: "{{ foundation_host }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    resource_type: ip_pool
+    hardware_provider_ext_id: "5e5a9d0b-8f3d-4c14-9f6f-6b3a3c9c6a01"
+    connection_ext_id: "8300384a-56ee-4750-aeb8-3d1c42908bee"
+    ext_id: "3f4a6d0b-1c2d-4e5f-8a9b-0c1d2e3f4a5b"
+  register: result
+  ignore_errors: true
+
+- name: List MAC address pools for a connection
+  nutanix.ncp.ntnx_hardware_providers_info_v2:
     nutanix_host: "{{ foundation_host }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
     resource_type: mac_pool
+    hardware_provider_ext_id: "5e5a9d0b-8f3d-4c14-9f6f-6b3a3c9c6a01"
+    connection_ext_id: "8300384a-56ee-4750-aeb8-3d1c42908bee"
+  register: result
+  ignore_errors: true
+
+- name: Get a MAC address pool by ext_id
+  nutanix.ncp.ntnx_hardware_providers_info_v2:
+    nutanix_host: "{{ foundation_host }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    resource_type: mac_pool
+    hardware_provider_ext_id: "5e5a9d0b-8f3d-4c14-9f6f-6b3a3c9c6a01"
+    connection_ext_id: "8300384a-56ee-4750-aeb8-3d1c42908bee"
+    ext_id: "3f4a6d0b-1c2d-4e5f-8a9b-0c1d2e3f4a5b"
+  register: result
+  ignore_errors: true
+
+- name: List server identity pools for a connection
+  nutanix.ncp.ntnx_hardware_providers_info_v2:
+    nutanix_host: "{{ foundation_host }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    resource_type: server_identity_pool
+    hardware_provider_ext_id: "5e5a9d0b-8f3d-4c14-9f6f-6b3a3c9c6a01"
+    connection_ext_id: "8300384a-56ee-4750-aeb8-3d1c42908bee"
+  register: result
+  ignore_errors: true
+
+- name: Get a server identity pool by ext_id
+  nutanix.ncp.ntnx_hardware_providers_info_v2:
+    nutanix_host: "{{ foundation_host }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    resource_type: server_identity_pool
     hardware_provider_ext_id: "5e5a9d0b-8f3d-4c14-9f6f-6b3a3c9c6a01"
     connection_ext_id: "8300384a-56ee-4750-aeb8-3d1c42908bee"
     ext_id: "3f4a6d0b-1c2d-4e5f-8a9b-0c1d2e3f4a5b"
@@ -230,6 +323,7 @@ from ..module_utils.v4.lcm.helpers import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -287,7 +381,10 @@ def get_hardware_provider_using_ext_id(module, api_instance, result):
 def list_hardware_providers(module, api_instance, result):
     kwargs = _get_kwargs(module, result)
     try:
-        resp = api_instance.list_hardware_providers(**kwargs)
+        resp = list_entities(
+          list_fn=api_instance.list_hardware_providers,
+          kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -309,8 +406,10 @@ def list_connections(module, api_instance, result):
     hardware_provider_ext_id = module.params.get("hardware_provider_ext_id")
     kwargs = _get_kwargs(module, result)
     try:
-        resp = api_instance.list_connections_by_hardware_provider_id(
-            hardwareProviderExtId=hardware_provider_ext_id, **kwargs
+        resp = list_entities(
+            list_fn=api_instance.list_connections_by_hardware_provider_id,
+            kwargs=kwargs,
+            hardwareProviderExtId=hardware_provider_ext_id,
         )
     except Exception as e:
         raise_api_exception(
@@ -337,10 +436,11 @@ def list_nodes(module, api_instance, result):
     connection_ext_id = module.params.get("connection_ext_id")
     kwargs = _get_kwargs(module, result)
     try:
-        resp = api_instance.list_nodes_by_connection_id(
+        resp = list_entities(
+            api_instance.list_nodes_by_connection_id,
+            kwargs=kwargs,
             hardwareProviderExtId=hardware_provider_ext_id,
             connectionExtId=connection_ext_id,
-            **kwargs,
         )
     except Exception as e:
         raise_api_exception(
@@ -367,10 +467,11 @@ def list_ip_pools(module, api_instance, result):
     connection_ext_id = module.params.get("connection_ext_id")
     kwargs = _get_kwargs(module, result)
     try:
-        resp = api_instance.list_ip_pools_by_connection_id(
+        resp = list_entities(
+            list_fn=api_instance.list_ip_pools_by_connection_id,
+            kwargs=kwargs,
             hardwareProviderExtId=hardware_provider_ext_id,
             connectionExtId=connection_ext_id,
-            **kwargs,
         )
     except Exception as e:
         raise_api_exception(
@@ -397,10 +498,11 @@ def list_mac_pools(module, api_instance, result):
     connection_ext_id = module.params.get("connection_ext_id")
     kwargs = _get_kwargs(module, result)
     try:
-        resp = api_instance.list_mac_pools_by_connection_id(
+        resp = list_entities(
+            list_fn=api_instance.list_mac_pools_by_connection_id,
+            kwargs=kwargs,
             hardwareProviderExtId=hardware_provider_ext_id,
             connectionExtId=connection_ext_id,
-            **kwargs,
         )
     except Exception as e:
         raise_api_exception(
@@ -427,10 +529,11 @@ def list_server_identity_pools(module, api_instance, result):
     connection_ext_id = module.params.get("connection_ext_id")
     kwargs = _get_kwargs(module, result)
     try:
-        resp = api_instance.list_server_identity_pools_by_connection_id(
+        resp = list_entities(
+            list_fn=api_instance.list_server_identity_pools_by_connection_id,
+            kwargs=kwargs,
             hardwareProviderExtId=hardware_provider_ext_id,
             connectionExtId=connection_ext_id,
-            **kwargs,
         )
     except Exception as e:
         raise_api_exception(
