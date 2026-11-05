@@ -190,6 +190,8 @@ def get_nic_profile(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching NIC profile info using ext_id",
         )
+
+
 def get_traffic_mirror(module, api_instance, ext_id):
     """
     This method will return traffic mirror session info using its ext_id
