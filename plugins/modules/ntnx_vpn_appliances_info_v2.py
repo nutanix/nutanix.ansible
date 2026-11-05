@@ -10,14 +10,15 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_vpn_appliances_by_vpn_connection_ids_info_v2
-short_description: Fetch info about supported third-party VPN appliances for a Nutanix VPN connection
+module: ntnx_vpn_appliances_info_v2
+short_description: VPN appliances info module
 version_added: 2.5.0
 description:
-  - This module allows you to fetch information about VpnAppliancesByVpnConnectionId in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific VpnAppliancesByVpnConnectionId. In that case
-    the raw vendor configuration payload for that appliance is returned as a string in C(response).
-  - If C(ext_id) is not provided, list multiple VpnAppliancesByVpnConnectionId optionally filtered / paginated.
+  - This module allows you to fetch information about supported third-party VPN appliances
+    for a Nutanix VPN connection in Prism Central.
+  - If C(ext_id) is provided, fetch the vendor configuration payload for that appliance
+    (returned as a plain-text string in C(response)).
+  - If C(ext_id) is not provided, list multiple VPN appliances optionally filtered / paginated.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -56,7 +57,7 @@ author:
 
 EXAMPLES = r"""
 - name: List all supported third-party VPN appliances for a VPN connection
-  nutanix.ncp.ntnx_vpn_appliances_by_vpn_connection_ids_info_v2:
+  nutanix.ncp.ntnx_vpn_appliances_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -66,7 +67,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List VPN appliances with a filter
-  nutanix.ncp.ntnx_vpn_appliances_by_vpn_connection_ids_info_v2:
+  nutanix.ncp.ntnx_vpn_appliances_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -77,7 +78,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List VPN appliances with limit and ordering
-  nutanix.ncp.ntnx_vpn_appliances_by_vpn_connection_ids_info_v2:
+  nutanix.ncp.ntnx_vpn_appliances_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -89,7 +90,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Fetch a specific third-party VPN appliance configuration
-  nutanix.ncp.ntnx_vpn_appliances_by_vpn_connection_ids_info_v2:
+  nutanix.ncp.ntnx_vpn_appliances_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -103,11 +104,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC VpnAppliancesByVpnConnectionId info v4 API.
-    - It can be a single VpnAppliancesByVpnConnectionId if external ID is provided (in that case the
-      vendor configuration payload is returned as a plain-text string).
-    - List of multiple VpnAppliancesByVpnConnectionId if external ID is not provided with optional
-      filter or limit.
+    - The response from the Nutanix PC VPN appliances info v4 API.
+    - It can be a single vendor configuration payload (plain-text string) if external ID is provided.
+    - List of multiple VPN appliances if external ID is not provided with optional filter or limit.
   returned: always
   type: dict
   sample:
