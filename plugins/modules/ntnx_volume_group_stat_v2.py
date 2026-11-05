@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -27,10 +27,8 @@ notes:
     user performing the operation.
   - >-
     B(Get statistics for a Volume Group) -
-    Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Disaster
-    Recovery Viewer, Kubernetes Data Services System, Prism Admin, Prism Viewer,
-    Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service
-    Admin (deprecated).
+    Required Roles: Backup Admin, Prism Admin, Prism Viewer, Project Admin, Project Manager, Self-Service Admin (Deprecated),
+    Storage Admin, Storage Viewer, Super Admin, Tenant Admin, Tenant Consumer
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:
   ext_id:
@@ -43,7 +41,7 @@ options:
     description:
       - The start time of the period for which stats should be reported.
       - The value should be in extended ISO-8601 format.
-      - sample input time is 2026-04-19T06:00:00.000Z
+      - For example, start time of 2022-04-23T01:23:45.678+09:00 would consider all stats starting at 1:23:45.678 on the 23rd of April 2022.
     type: str
     required: true
   end_time:
@@ -51,22 +49,18 @@ options:
       - The end time of the period for which stats should be reported.
       - The value should be in extended ISO-8601 format.
       - Must be greater than or equal to C(start_time).
-      - sample input time is 2026-04-19T07:00:00.000Z
+      - For example, end time of 2022-04-23T01:23:45.678+09:00 would consider all stats ending at 1:23:45.678 on the 23rd of April 2022.
     type: str
     required: true
   sampling_interval:
     description:
-      - The sampling interval in seconds at which statistical data should be
-        collected.
-      - For example, if you want performance statistics every 30 seconds, then
-        provide the value as 30.
-      - The API enforces a per-request minimum that scales with the width of
-        the query window.
+      - The sampling interval in seconds at which statistical data should be collected.
+      - For example, if you want performance statistics every 30 seconds, then provide the value as 30.
     type: int
     required: false
   stat_type:
     description:
-      - The down-sampling operator to use when aggregating stats.
+      - The operator to use while performing down-sampling on stats data. Allowed values are SUM, MIN, MAX, AVG, COUNT and LAST.
     type: str
     required: false
     choices:
@@ -78,10 +72,11 @@ options:
       - LAST
   select:
     description:
-      - A URL query parameter that allows clients to request a specific set of
-        properties for each entity or complex type.
-      - Follows OData V4.01 conventions. Using C(*) returns all properties on
-        the matching resource.
+      - A URL query parameter that allows clients to request a specific set of properties for each entity or complex type.
+      - Expression specified with the $select must conform to the OData V4.01 URL conventions.
+      - If a $select expression consists of a single select item that is an asterisk (i.e., *),
+        then all properties on the matching resource will be returned.
+      - If both $select and $apply query parameters are present, $select will be applied on entities within the groups.
     type: str
     required: false
 extends_documentation_fragment:
@@ -277,16 +272,16 @@ def get_volume_group_stats(module, result, api_instance):
     sampling_interval = module.params.get("sampling_interval")
     stat_type = module.params.get("stat_type")
     select = module.params.get("select")
+    kwargs = {}
+    if sampling_interval:
+        kwargs["_samplingInterval"] = sampling_interval
+    if stat_type:
+        kwargs["_statType"] = stat_type
+    if select:
+        kwargs["_select"] = select
     resp = None
     try:
-        resp = api_instance.get_volume_group_stats(
-            extId=ext_id,
-            _startTime=start_time,
-            _endTime=end_time,
-            _samplingInterval=sampling_interval,
-            _statType=stat_type,
-            _select=select,
-        )
+        resp = list_entities(api_instance.get_volume_group_stats, ext_id=ext_id, start_time=start_time, end_time=end_time, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -312,9 +307,8 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
-        "ext_id": None,
     }
     api_instance = get_vg_api_instance(module)
     get_volume_group_stats(module, result, api_instance)
