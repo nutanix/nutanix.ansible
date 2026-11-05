@@ -54,6 +54,7 @@ class Tasks:
         LOAD_BALANCER_SESSION = "networking:config:load-balancer-session"
         ENTITY_GROUP = "microseg:config:entity-group"
         HARDWARE_PROVIDER_CONNECTION = "lifecycle:config:hardware-provider-connections"
+        NIC_PROFILE = "networking:config:nic_profile"
         PATCHED_IMAGE = "lifecycle:config:patched-image"
         BGP_SESSION = "networking:config:bgp-session"
         UPGRADE_SELECTION = "lifecycle:config:upgrade-selection"
