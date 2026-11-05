@@ -39,6 +39,11 @@ options:
         description:
             - A globally unique identifier of an instance that is suitable for external consumption.
         type: str
+    project_ext_id:
+        description:
+            - External ID (UUID) of the project that owns this template.
+            - Update of this field is not supported.
+        type: str
     template_name:
         description:
             - The user defined name of a Template.
@@ -271,6 +276,77 @@ options:
                                                                         - The number of queues for the NIC.
                                                                     type: int
                                                                     required: false
+                                                        sriov_nic:
+                                                            description:
+                                                                - Defines an SR-IOV NIC.
+                                                            type: dict
+                                                            required: false
+                                                            suboptions:
+                                                                sriov_profile_reference:
+                                                                    description:
+                                                                        - Reference to the SR-IOV NIC profile.
+                                                                    type: dict
+                                                                    required: true
+                                                                    suboptions:
+                                                                        ext_id:
+                                                                            description:
+                                                                                - Globally unique identifier of a NIC profile. It should be of type UUID.
+                                                                            type: str
+                                                                            required: true
+                                                                mac_address:
+                                                                    description:
+                                                                        - MAC address of the NIC.
+                                                                    type: str
+                                                                    required: false
+                                                                is_connected:
+                                                                    description:
+                                                                        - Indicates whether the NIC is connected or not.
+                                                                    type: bool
+                                                                    required: false
+                                                        dp_offload_nic:
+                                                            description:
+                                                                - Defines a DP Offload NIC.
+                                                            type: dict
+                                                            required: false
+                                                            suboptions:
+                                                                dp_offload_profile_reference:
+                                                                    description:
+                                                                        - Reference to the DP Offload NIC profile.
+                                                                    type: dict
+                                                                    required: true
+                                                                    suboptions:
+                                                                        ext_id:
+                                                                            description:
+                                                                                - Globally unique identifier of a NIC profile. It should be of type UUID.
+                                                                            type: str
+                                                                            required: true
+                                                                mac_address:
+                                                                    description:
+                                                                        - MAC address of the NIC.
+                                                                    type: str
+                                                                    required: false
+                                                                is_connected:
+                                                                    description:
+                                                                        - Indicates whether the NIC is connected or not.
+                                                                    type: bool
+                                                                    required: false
+                                                        pcie_passthrough_nic:
+                                                            description:
+                                                                - Defines a PCIe Passthrough NIC.
+                                                            type: dict
+                                                            required: false
+                                                            suboptions:
+                                                                pcie_passthrough_profile_reference:
+                                                                    description:
+                                                                        - Reference to the PCIe Passthrough NIC profile.
+                                                                    type: dict
+                                                                    required: false
+                                                                    suboptions:
+                                                                        ext_id:
+                                                                            description:
+                                                                                - Globally unique identifier of a NIC profile. It should be of type UUID.
+                                                                            type: str
+                                                                            required: true
                                                 network_info:
                                                     description:
                                                         - The network configuration for the NIC.
@@ -494,6 +570,101 @@ options:
                                                                                         - Can be skipped, default it will be 32.
                                                                                     type: int
                                                                                     required: false
+                                                        sriov_nic_network_info:
+                                                            description:
+                                                                - Networking information object for an SR-IOV NIC.
+                                                            type: dict
+                                                            required: false
+                                                            suboptions:
+                                                                vlan_id:
+                                                                    description:
+                                                                        - VLAN ID for the SR-IOV NIC.
+                                                                    type: int
+                                                                    required: false
+                                                        dp_offload_nic_network_info:
+                                                            description:
+                                                                - Networking information object for a DP Offload NIC.
+                                                            type: dict
+                                                            required: false
+                                                            suboptions:
+                                                                subnet:
+                                                                    description:
+                                                                        - Reference to a subnet.
+                                                                    type: dict
+                                                                    required: false
+                                                                    suboptions:
+                                                                        ext_id:
+                                                                            description:
+                                                                                - External identifier of the subnet.
+                                                                            type: str
+                                                                            required: true
+                                                                vlan_mode:
+                                                                    description:
+                                                                        - VLAN mode for the NIC.
+                                                                    type: str
+                                                                    required: false
+                                                                    choices:
+                                                                        - ACCESS
+                                                                        - TRUNK
+                                                                trunked_vlans:
+                                                                    description:
+                                                                        - List of networks to trunk if VLAN mode is marked as TRUNKED.
+                                                                        - If empty and VLAN mode is set to TRUNKED, all the VLANs are trunked.
+                                                                    type: list
+                                                                    elements: int
+                                                                    required: false
+                                                                should_allow_unknown_macs:
+                                                                    description:
+                                                                        - Indicates whether an unknown unicast traffic is forwarded to this NIC
+                                                                          or not.
+                                                                        - This is applicable only for the NICs on the overlay subnets.
+                                                                    type: bool
+                                                                    required: false
+                                                                ipv4_config:
+                                                                    description:
+                                                                        - The IP address configurations.
+                                                                    type: dict
+                                                                    required: false
+                                                                    suboptions:
+                                                                        should_assign_ip:
+                                                                            description:
+                                                                                - If set to true, an IP address must be assigned to the VM NIC.
+                                                                                - If false, then no IP assignment is required for this VM NIC.
+                                                                            type: bool
+                                                                            required: false
+                                                                        ip_address:
+                                                                            description:
+                                                                                - The IP address configurations.
+                                                                            type: dict
+                                                                            required: false
+                                                                            suboptions:
+                                                                                value:
+                                                                                    description:
+                                                                                        - The IPv4 address value.
+                                                                                    type: str
+                                                                                    required: true
+                                                                                prefix_length:
+                                                                                    description:
+                                                                                        - Prefix length of the IPv4 address.
+                                                                                    type: int
+                                                                                    required: false
+                                                                        secondary_ip_address_list:
+                                                                            description:
+                                                                                - Secondary IP address configurations.
+                                                                            type: list
+                                                                            elements: dict
+                                                                            required: false
+                                                                            suboptions:
+                                                                                value:
+                                                                                    description:
+                                                                                        - The IPv4 address value.
+                                                                                    type: str
+                                                                                    required: true
+                                                                                prefix_length:
+                                                                                    description:
+                                                                                        - Prefix length of the IPv4 address.
+                                                                                    type: int
+                                                                                    required: false
                                         guest_customization:
                                             description:
                                                 - Stage a Sysprep or cloud-init configuration file to be used by the guest for the next boot.
@@ -671,12 +842,18 @@ options:
                                 type: str
                                 required: True
                     project:
-                        description: Reference to a project.
+                        description:
+                            - Reference to a project.
+                            - This field is deprecated and will be removed in a future release.
+                            - Use project_ext_id instead.
                         type: dict
                         suboptions:
                             ext_id:
                                 description: The globally unique identifier of a project. It should be of type UUID.
                                 type: str
+                    project_ext_id:
+                        description: The globally unique identifier of a project. It should be of type UUID.
+                        type: str
                     host:
                         description: Reference to a host.
                         type: dict
@@ -1293,6 +1470,77 @@ options:
                                                     - The number of queues for the NIC.
                                                 type: int
                                                 required: false
+                                    sriov_nic:
+                                        description:
+                                            - Defines an SR-IOV NIC.
+                                        type: dict
+                                        required: false
+                                        suboptions:
+                                            sriov_profile_reference:
+                                                description:
+                                                    - Reference to the SR-IOV NIC profile.
+                                                type: dict
+                                                required: true
+                                                suboptions:
+                                                    ext_id:
+                                                        description:
+                                                            - Globally unique identifier of a NIC profile. It should be of type UUID.
+                                                        type: str
+                                                        required: true
+                                            mac_address:
+                                                description:
+                                                    - MAC address of the NIC.
+                                                type: str
+                                                required: false
+                                            is_connected:
+                                                description:
+                                                    - Indicates whether the NIC is connected or not.
+                                                type: bool
+                                                required: false
+                                    dp_offload_nic:
+                                        description:
+                                            - Defines a DP Offload NIC.
+                                        type: dict
+                                        required: false
+                                        suboptions:
+                                            dp_offload_profile_reference:
+                                                description:
+                                                    - Reference to the DP Offload NIC profile.
+                                                type: dict
+                                                required: true
+                                                suboptions:
+                                                    ext_id:
+                                                        description:
+                                                            - Globally unique identifier of a NIC profile. It should be of type UUID.
+                                                        type: str
+                                                        required: true
+                                            mac_address:
+                                                description:
+                                                    - MAC address of the NIC.
+                                                type: str
+                                                required: false
+                                            is_connected:
+                                                description:
+                                                    - Indicates whether the NIC is connected or not.
+                                                type: bool
+                                                required: false
+                                    pcie_passthrough_nic:
+                                        description:
+                                            - Defines a PCIe Passthrough NIC.
+                                        type: dict
+                                        required: false
+                                        suboptions:
+                                            pcie_passthrough_profile_reference:
+                                                description:
+                                                    - Reference to the PCIe Passthrough NIC profile.
+                                                type: dict
+                                                required: false
+                                                suboptions:
+                                                    ext_id:
+                                                        description:
+                                                            - Globally unique identifier of a NIC profile. It should be of type UUID.
+                                                        type: str
+                                                        required: true
                             network_info:
                                 description:
                                     - The network configuration for the NIC.
@@ -1516,6 +1764,101 @@ options:
                                                                     - Can be skipped, default it will be 32.
                                                                 type: int
                                                                 required: false
+                                    sriov_nic_network_info:
+                                        description:
+                                            - Networking information object for an SR-IOV NIC.
+                                        type: dict
+                                        required: false
+                                        suboptions:
+                                            vlan_id:
+                                                description:
+                                                    - VLAN ID for the SR-IOV NIC.
+                                                type: int
+                                                required: false
+                                    dp_offload_nic_network_info:
+                                        description:
+                                            - Networking information object for a DP Offload NIC.
+                                        type: dict
+                                        required: false
+                                        suboptions:
+                                            subnet:
+                                                description:
+                                                    - Reference to a subnet.
+                                                type: dict
+                                                required: false
+                                                suboptions:
+                                                    ext_id:
+                                                        description:
+                                                            - External identifier of the subnet.
+                                                        type: str
+                                                        required: true
+                                            vlan_mode:
+                                                description:
+                                                    - VLAN mode for the NIC.
+                                                type: str
+                                                required: false
+                                                choices:
+                                                    - ACCESS
+                                                    - TRUNK
+                                            trunked_vlans:
+                                                description:
+                                                    - List of networks to trunk if VLAN mode is marked as TRUNKED.
+                                                    - If empty and VLAN mode is set to TRUNKED, all the VLANs are trunked.
+                                                type: list
+                                                elements: int
+                                                required: false
+                                            should_allow_unknown_macs:
+                                                description:
+                                                    - Indicates whether an unknown unicast traffic is forwarded to this NIC
+                                                      or not.
+                                                    - This is applicable only for the NICs on the overlay subnets.
+                                                type: bool
+                                                required: false
+                                            ipv4_config:
+                                                description:
+                                                    - The IP address configurations.
+                                                type: dict
+                                                required: false
+                                                suboptions:
+                                                    should_assign_ip:
+                                                        description:
+                                                            - If set to true, an IP address must be assigned to the VM NIC.
+                                                            - If false, then no IP assignment is required for this VM NIC.
+                                                        type: bool
+                                                        required: false
+                                                    ip_address:
+                                                        description:
+                                                            - The IP address configurations.
+                                                        type: dict
+                                                        required: false
+                                                        suboptions:
+                                                            value:
+                                                                description:
+                                                                    - The IPv4 address value.
+                                                                type: str
+                                                                required: true
+                                                            prefix_length:
+                                                                description:
+                                                                    - Prefix length of the IPv4 address.
+                                                                type: int
+                                                                required: false
+                                                    secondary_ip_address_list:
+                                                        description:
+                                                            - Secondary IP address configurations.
+                                                        type: list
+                                                        elements: dict
+                                                        required: false
+                                                        suboptions:
+                                                            value:
+                                                                description:
+                                                                    - The IPv4 address value.
+                                                                type: str
+                                                                required: true
+                                                            prefix_length:
+                                                                description:
+                                                                    - Prefix length of the IPv4 address.
+                                                                type: int
+                                                                required: false
                     gpus:
                         description: GPUs attached to the VM.
                         type: list
@@ -1604,6 +1947,7 @@ EXAMPLES = r"""
     validate_certs: false
     template_name: "{{ template_name }}"
     template_description: "ansible test"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     template_version_spec:
       version_source:
         template_vm_reference:
@@ -1849,6 +2193,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 from ..module_utils.v4.vmm.api_client import (  # noqa: E402
@@ -1944,6 +2289,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         template_name=dict(type="str"),
         template_description=dict(type="str"),
         template_version_spec=dict(
@@ -1995,6 +2341,14 @@ def create_template(module, result):
             resp = get_template(module, templates, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Template"
+                ),
+                msg="Failed to get entity ext_id from task for Template",
+            )
 
     result["changed"] = True
 
@@ -2007,6 +2361,10 @@ def update_template(module, result):
     current_spec = get_template(module, templates, ext_id)
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     if not update_spec.created_by.user_type:
         update_spec.created_by.user_type = "LOCAL"

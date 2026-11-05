@@ -81,6 +81,14 @@ EXAMPLES = r"""
   nutanix.ncp.ntnx_object_stores_info_v2:
     ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
   register: result
+
+- name: List all object stores with fetch_all
+  nutanix.ncp.ntnx_object_stores_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -182,6 +190,7 @@ from ..module_utils.v4.objects.api_client import get_objects_api_instance  # noq
 from ..module_utils.v4.objects.helpers import get_object_store  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -212,7 +221,10 @@ def get_object_stores(module, object_stores_api, result):
         result["error"] = err
         module.fail_json(msg="Failed generating object stores info Spec", **result)
     try:
-        resp = object_stores_api.list_objectstores(**kwargs)
+        resp = list_entities(
+            object_stores_api.list_objectstores,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
