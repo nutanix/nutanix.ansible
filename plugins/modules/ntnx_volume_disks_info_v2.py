@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -26,12 +26,12 @@ notes:
       B(Get the details of a Volume Disk) -
       Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Disaster Recovery Viewer,
       Kubernetes Data Services System, Prism Admin, Prism Viewer, Project Manager, Storage Admin,
-      Storage Viewer, Super Admin, Self-Service Admin (deprecated)
+      Storage Viewer, Super Admin, Tenant Admin, Tenant Consumer, Self-Service Admin (deprecated)
     - >-
       B(List all the Volume Disks attached to the Volume Group) -
       Required Roles: CSI System, Disaster Recovery Admin, Disaster Recovery Viewer,
       Kubernetes Data Services System, Prism Admin, Prism Viewer, Project Manager, Storage Admin,
-      Storage Viewer, Super Admin, Self-Service Admin (deprecated)
+      Storage Viewer, Super Admin, Tenant Admin, Tenant Consumer, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:
     ext_id:
@@ -45,6 +45,10 @@ options:
             - The external ID of the Volume Group that owns the Volume Disks.
         type: str
         required: true
+    expand:
+        description:
+            - flag to expand related resources for the Volume Disk
+        type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
@@ -84,7 +88,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     volume_group_ext_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b34"
-    filter: "index eq 1"
+    filter: "storageContainerId eq '4c374d2a-e33f-4972-ae08-29594703f0d5'"
   register: result
   ignore_errors: true
 
@@ -176,10 +180,12 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
 from ..module_utils.v4.volumes.api_client import get_vg_api_instance  # noqa: E402
+from ..module_utils.v4.volumes.helpers import get_volume_disk  # noqa: E402
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -189,6 +195,7 @@ def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str", required=False),
         volume_group_ext_id=dict(type="str", required=True),
+        expand=dict(type="str", required=False),
     )
     return module_args
 
@@ -196,18 +203,10 @@ def get_module_spec():
 def get_volume_disk_using_ext_id(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     volume_group_ext_id = module.params.get("volume_group_ext_id")
-    try:
-        resp = api_instance.get_volume_disk_by_id(
-            extId=ext_id, volumeGroupExtId=volume_group_ext_id
-        )
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching Volume Disk info",
-        )
+    expand = module.params.get("expand")
     result["ext_id"] = ext_id
     result["volume_group_ext_id"] = volume_group_ext_id
+    resp = get_volume_disk(module, api_instance, ext_id, volume_group_ext_id, expand)
     result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
 
 
@@ -215,14 +214,15 @@ def get_volume_disks(module, api_instance, result):
     volume_group_ext_id = module.params.get("volume_group_ext_id")
 
     sg = SpecGenerator(module)
-    kwargs, err = sg.get_info_spec(attr=module.params)
+    kwargs, err = sg.get_info_spec(attr=module.params, extra_params=["expand"])
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating Volume Disks info spec", **result)
 
     try:
-        resp = api_instance.list_volume_disks_by_volume_group_id(
-            volumeGroupExtId=volume_group_ext_id, **kwargs
+        resp = list_entities(
+            api_instance.list_volume_disks_by_volume_group_id,
+            kwargs=kwargs,
         )
     except Exception as e:
         raise_api_exception(

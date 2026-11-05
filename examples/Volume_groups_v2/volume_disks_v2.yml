@@ -1,60 +1,27 @@
 ---
 # Summary:
-# This playbook demonstrates the full lifecycle of a Nutanix Volume Disk (v4 API):
-# 1. Create a Volume Group to host the disks
-# 2. Create a Volume Disk (with all attributes)
-# 3. Update the Volume Disk (with all mutable attributes)
-# 4. Fetch a specific Volume Disk by ext_id
-# 5. List all Volume Disks in the Volume Group
-# 6. List Volume Disks with limit
-# 7. Delete the Volume Disk
-# 8. Delete the Volume Group
+# This playbook will do:
+# 1. Create disks
+# 2. Create disk from previously created vdisk
+# 3. List all volume group disks
+# 4. List all volume group disks with fetch_all
+# 5. Delete disk
 
-- name: Volume Disks playbook
+- name: Volume groups disks playbook
   hosts: localhost
   gather_facts: false
   module_defaults:
     group/nutanix.ncp.ntnx:
-      nutanix_host: "{{ pc_ip | default('10.44.76.28') }}"
-      nutanix_username: "{{ pc_username | default('admin') }}"
-      nutanix_password: "{{ pc_password | default('Nutanix.123') }}"
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
       validate_certs: false
   tasks:
     - name: Setting Variables
       ansible.builtin.set_fact:
-        cluster_uuid: "{{ cluster_uuid | default('') }}"
-        storage_container_uuid: "{{ storage_container_uuid | default('') }}"
+        cluster_uuid: "27453666-4270-494d-993a-06541b6a2402"
+        storage_container_uuid: "4c374d2a-e33f-4972-ae08-29594703f0d5"
         vg_name: "ansible-vg-for-volume-disks"
-
-    - name: Discover a cluster if cluster_uuid was not provided
-      nutanix.ncp.ntnx_clusters_info_v2:
-        filter: "config/clusterFunction/any(f:f eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
-      register: clusters_info
-      when: cluster_uuid | length == 0
-      ignore_errors: true
-
-    - name: Set cluster_uuid from discovery
-      ansible.builtin.set_fact:
-        cluster_uuid: "{{ clusters_info.response[0].ext_id }}"
-      when:
-        - cluster_uuid | length == 0
-        - clusters_info.response is defined
-        - clusters_info.response | length > 0
-
-    - name: Discover a storage container if not provided
-      nutanix.ncp.ntnx_storage_containers_info_v2:
-        filter: "clusterExtId eq '{{ cluster_uuid }}'"
-      register: sc_info
-      when: storage_container_uuid | length == 0
-      ignore_errors: true
-
-    - name: Set storage_container_uuid from discovery
-      ansible.builtin.set_fact:
-        storage_container_uuid: "{{ sc_info.response[0].container_ext_id }}"
-      when:
-        - storage_container_uuid | length == 0
-        - sc_info.response is defined
-        - sc_info.response | length > 0
 
     - name: Create Volume Group to host the Volume Disks
       nutanix.ncp.ntnx_volume_groups_v2:
@@ -127,6 +94,13 @@
         volume_group_ext_id: "{{ vg_ext_id }}"
         limit: 1
       register: disks_limit_result
+      ignore_errors: true
+
+    - name: List all Volume Disks with filter
+      nutanix.ncp.ntnx_volume_disks_info_v2:
+        volume_group_ext_id: "{{ vg_ext_id }}"
+        filter: "storageContainerId eq '{{ storage_container_uuid }}'"
+      register: disks_filter_result
       ignore_errors: true
 
     - name: Delete the Volume Disk

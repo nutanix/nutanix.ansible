@@ -23,16 +23,16 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Creates a new Volume Disk) -
-      Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin,
-      Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
+      Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Admin,
+      Project Manager, Self-Service Admin (Deprecated), Storage Admin, Super Admin, Tenant Admin, Tenant Consumer
     - >-
       B(Update a Volume Disk) -
-      Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin,
-      Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
+      Required Roles: Backup Admin, Prism Admin, Project Admin, Project Manager, Self-Service Admin (Deprecated),
+      Storage Admin, Super Admin, Tenant Admin, Tenant Consumer
     - >-
       B(Delete a Volume Disk) -
-      Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin,
-      Project Manager, Storage Admin, Super Admin, Self-Service Admin (deprecated)
+      Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Admin,
+      Project Manager, Self-Service AdminDeprecated, Storage Admin, Super Admin, Tenant Admin, Tenant Consumer
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:
     state:
@@ -85,7 +85,6 @@ options:
             - Reference to an entity that acts as the source for creation of the disk.
             - Used to clone from an existing V(VOLUME_DISK), V(VM_DISK) or restore from a V(DISK_RECOVERY_POINT),
               or to create a fresh disk on a V(STORAGE_CONTAINER).
-            - This field is optional. If not provided, the disk is created on the default backing storage.
         type: dict
         required: false
         suboptions:
@@ -105,10 +104,34 @@ options:
                 type: str
                 required: false
                 choices:
+                    - VOLUME_GROUP
+                    - ROUTING_POLICY
+                    - DIRECT_CONNECT_VIF
+                    - AVAILABILITY_ZONE
                     - STORAGE_CONTAINER
-                    - VM_DISK
+                    - VPC
+                    - VPN_CONNECTION
                     - VOLUME_DISK
+                    - VPN_GATEWAY
+                    - IMAGE
+                    - CATEGORY
+                    - RECOVERY_PLAN
+                    - CLUSTER
                     - DISK_RECOVERY_POINT
+                    - CONSISTENCY_GROUP
+                    - VIRTUAL_NIC
+                    - TASK
+                    - VIRTUAL_SWITCH
+                    - VIRTUAL_NETWORK
+                    - NODE
+                    - FLOATING_IP
+                    - SUBNET
+                    - VM_DISK
+                    - VTEP_GATEWAY
+                    - VM
+                    - RECOVERY_PLAN_JOB
+                    - DIRECT_CONNECT
+                    - SUBNET_EXTENSION
             uris:
                 description:
                     - The URIs for the referenced entity.
@@ -117,9 +140,8 @@ options:
                 required: false
     disk_storage_features:
         description:
-            - Storage optimization features which must be enabled on the Volume Disk.
-            - This is an optional field.
-            - If omitted, the disk will honor the Volume Group specific storage features setting.
+            - Storage optimization features which must be enabled on the Volume Disks. This is an optional field.
+            - If omitted, the disks will honor the Volume Group specific storage features setting.
         type: dict
         required: false
         suboptions:
@@ -132,7 +154,7 @@ options:
                 suboptions:
                     is_enabled:
                         description:
-                            - Indicates whether flash mode is enabled or not on the disk.
+                            - This field will indicate whether flash mode is enabled or not.
                         type: bool
                         required: true
 extends_documentation_fragment:
@@ -297,6 +319,7 @@ from ..module_utils.v4.volumes.api_client import (  # noqa: E402
     get_etag,
     get_vg_api_instance,
 )
+from ..module_utils.v4.volumes.helpers import get_volume_disk  # noqa: E402
 
 from ..module_utils.v4.volumes.spec.volume_group import (  # noqa: E402  # isort: skip
     VGSpecs as vg_specs,
@@ -373,22 +396,10 @@ def get_module_spec():
     return module_args
 
 
-def get_volume_disk(module, api_instance, ext_id, volume_group_ext_id):
-    """Fetch a Volume Disk by ext_id inside a Volume Group."""
-    try:
-        return api_instance.get_volume_disk_by_id(
-            extId=ext_id, volumeGroupExtId=volume_group_ext_id
-        ).data
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching Volume Disk info using ext_id",
-        )
-
-
 def create_volume_disk(module, api_instance, result):
-    validate_required_params(module, ["volume_group_ext_id"])
+    validate_required_params(
+        module, ["volume_group_ext_id", "disk_data_source_reference"]
+    )
     volume_group_ext_id = module.params.get("volume_group_ext_id")
     result["volume_group_ext_id"] = volume_group_ext_id
 
@@ -519,13 +530,10 @@ def delete_volume_disk(module, api_instance, result):
         result["msg"] = "Volume Disk with ext_id:{0} will be deleted.".format(ext_id)
         return
 
-    disk = get_volume_disk(module, api_instance, ext_id, volume_group_ext_id)
-    etag = get_etag(disk)
-    kwargs = {"if_match": etag} if etag else {}
     resp = None
     try:
         resp = api_instance.delete_volume_disk_by_id(
-            extId=ext_id, volumeGroupExtId=volume_group_ext_id, **kwargs
+            extId=ext_id, volumeGroupExtId=volume_group_ext_id
         )
     except Exception as e:
         raise_api_exception(
@@ -561,10 +569,6 @@ def run_module():
         "changed": False,
         "response": None,
         "failed": False,
-        "ext_id": None,
-        "task_ext_id": None,
-        "volume_group_ext_id": None,
-        "skipped": False,
     }
 
     api_instance = get_vg_api_instance(module)
