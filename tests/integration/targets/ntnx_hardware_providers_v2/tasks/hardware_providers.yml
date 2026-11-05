@@ -3,8 +3,7 @@
 # TEST PLAN — Hardware Provider connections (Foundation Central / FCVM)
 # ============================================================================
 # Modules under test:
-#   - ntnx_create_connection_by_hardware_provider_id_v2 (action: create)
-#   - ntnx_hardware_providers_v2                         (CRUD: update, delete)
+#   - ntnx_hardware_providers_v2                         (CRUD: create, update, delete)
 #   - ntnx_refresh_connection_v2                         (action: refresh)
 #   - ntnx_hardware_providerss_info_v2                   (info: get/list)
 #
@@ -27,7 +26,7 @@
 #   16. Refresh connection with discover_nodes configuration.
 #   17. check_mode refresh -> no API call.
 #   18. Info: list discovered nodes / ip / mac / server-identity pools.
-#   19. Negative: mutually exclusive endpoint types on create -> module error.
+#   19.  Negative: mutually exclusive endpoint types on create -> module error.
 #   20. check_mode delete -> no API call.
 #   21. Delete connection(s) created during the run (teardown).
 #
@@ -125,7 +124,8 @@
     # 4. Negative: create missing required 'name'
     # -----------------------------------------------------------------------
     - name: Create connection without name (negative)
-      ntnx_create_connection_by_hardware_provider_id_v2:
+      ntnx_hardware_providers_v2:
+        state: present
         hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
         access_details:
           - endpoint:
@@ -150,7 +150,8 @@
     # 5. Negative: create missing required 'access_details'
     # -----------------------------------------------------------------------
     - name: Create connection without access_details (negative)
-      ntnx_create_connection_by_hardware_provider_id_v2:
+      ntnx_hardware_providers_v2:
+        state: present
         hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
         name: "{{ connection_name }}"
       register: result
@@ -168,7 +169,8 @@
     # 6. Negative: invalid deployment_type enum
     # -----------------------------------------------------------------------
     - name: Create connection with invalid deployment_type (negative)
-      ntnx_create_connection_by_hardware_provider_id_v2:
+      ntnx_hardware_providers_v2:
+        state: present
         hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
         name: "{{ connection_name }}"
         deployment_type: "INVALID_TYPE"
@@ -195,7 +197,8 @@
     # 19. Negative: mutually exclusive endpoint types
     # -----------------------------------------------------------------------
     - name: Create connection with mutually exclusive endpoints (negative)
-      ntnx_create_connection_by_hardware_provider_id_v2:
+      ntnx_hardware_providers_v2:
+        state: present
         hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
         name: "{{ connection_name }}"
         access_details:
@@ -225,7 +228,8 @@
     # 7. check_mode create with ALL attributes
     # -----------------------------------------------------------------------
     - name: Create connection in check_mode (all attributes)
-      ntnx_create_connection_by_hardware_provider_id_v2:
+      ntnx_hardware_providers_v2:
+        state: present
         hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
         name: "{{ connection_name }}"
         deployment_type: "STANDALONE"
@@ -260,7 +264,8 @@
     # 8. Create connection with required fields only (minimal)
     # -----------------------------------------------------------------------
     - name: Create connection with required fields only
-      ntnx_create_connection_by_hardware_provider_id_v2:
+      ntnx_hardware_providers_v2:
+        state: present
         hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
         name: "{{ connection_name_min }}"
         access_details:
@@ -293,7 +298,8 @@
     # 9. Create connection with ALL fields (full)
     # -----------------------------------------------------------------------
     - name: Create connection with all fields
-      ntnx_create_connection_by_hardware_provider_id_v2:
+      ntnx_hardware_providers_v2:
+        state: present
         hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
         name: "{{ connection_name }}"
         deployment_type: "STANDALONE"

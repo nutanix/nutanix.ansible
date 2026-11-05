@@ -11,31 +11,32 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_hardware_providers_v2
-short_description: Update or delete a hardware provider connection in Nutanix Foundation Central
+short_description: Create, update or delete a hardware provider connection in Nutanix Foundation Central
 version_added: 2.7.0
 description:
-  - This module allows you to update and delete a connection to a hardware provider endpoint.
+  - This module allows you to create, update, and delete a connection to a hardware provider endpoint.
   - A connection enables node discovery and management through a hardware provider.
-  - Use M(nutanix.ncp.ntnx_create_connection_by_hardware_provider_id_v2) to create a connection.
   - This module uses Foundation Central (FCVM) v4 APIs based SDKs.
 notes:
   - This module talks to B(Foundation Central / FCVM), B(not) Prism Central.
     Set C(nutanix_host) to the Foundation Central (FCVM) endpoint.
   - >-
+    B(Create a connection) -
+    Required Roles - Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
+  - >-
     B(Update a connection) -
-    Required Roles - Admin role on Foundation Central.
+    Required Roles - Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
   - >-
     B(Delete a connection) -
-    Required Roles - Admin role on Foundation Central.
+    Required Roles - Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
   - The referenced hardware provider must exist before managing its connections.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
   state:
     description:
-      - If C(state) is C(present) and C(ext_id) is provided then the operation will be update connection.
-      - If C(state) is C(absent) and C(ext_id) is provided then the operation will be delete connection.
-      - Creation of a connection is not supported by this module.
-        Use M(nutanix.ncp.ntnx_create_connection_by_hardware_provider_id_v2) instead.
+      - If C(state) is set to C(present) and C(ext_id) is not provided, the operation will create a connection.
+      - If C(state) is set to C(present) and C(ext_id) is provided, the operation will update a connection.
+      - If C(state) is set to C(absent) and C(ext_id) is provided, the operation will delete a connection.
     type: str
     required: false
     choices:
@@ -52,13 +53,14 @@ options:
     description:
       - The external ID of the connection.
       - Required for update and delete operations.
+      - Not required for create operation.
     type: str
     required: false
   name:
     description:
       - Name of the connection.
       - Maximum 40 characters.
-      - Required when updating a connection.
+      - Required for create and update operations.
     type: str
     required: false
   deployment_type:
@@ -303,6 +305,28 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Create a hardware provider connection
+  nutanix.ncp.ntnx_hardware_providers_v2:
+    nutanix_host: "{{ foundation_host }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: present
+    hardware_provider_ext_id: "5e5a9d0b-8f3d-4c14-9f6f-6b3a3c9c6a01"
+    name: "connection_ansible"
+    deployment_type: "ONPREM"
+    region: "us-west"
+    access_details:
+      - endpoint:
+          url_endpoint:
+            url: "https://intersight.example.com"
+        auth:
+          basic_auth:
+            username: "admin"
+            password: "secret"
+  register: result
+  ignore_errors: true
+
 - name: Update a hardware provider connection
   nutanix.ncp.ntnx_hardware_providers_v2:
     nutanix_host: "{{ foundation_host }}"
@@ -342,9 +366,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - Response for updating or deleting a hardware provider connection.
-    - If the operation is update and C(wait) is true, it will return the connection details.
-    - If the operation is update and C(wait) is false, it will return the task details.
+    - Response for creating, updating, or deleting a hardware provider connection.
+    - If the operation is create/update and C(wait) is true, it will return the connection details.
+    - If the operation is create/update and C(wait) is false, it will return the task details.
     - If the operation is delete, it will return the task details.
   returned: always
   type: dict
@@ -431,12 +455,16 @@ from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
+from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.lcm.api_client import (  # noqa: E402
     get_etag,
     get_hardware_providers_api_instance,
 )
 from ..module_utils.v4.lcm.helpers import get_connection  # noqa: E402
-from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
+from ..module_utils.v4.prism.tasks import (  # noqa: E402
+    get_entity_ext_id_from_task,
+    wait_for_completion,
+)
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
@@ -608,6 +636,7 @@ def get_module_spec():
         ),
     )
     module_args = dict(
+        state=dict(type="str", choices=["present", "absent"], default="present"),
         hardware_provider_ext_id=dict(type="str", required=True),
         ext_id=dict(type="str"),
         name=dict(type="str"),
@@ -627,14 +656,63 @@ def get_module_spec():
     return module_args
 
 
-def create_hardware_providers(module, result):
-    """Creating a connection is not supported by this module."""
-    module.fail_json(
-        msg="Creating a connection is not supported by this module. "
-        "Use the ntnx_create_connection_by_hardware_provider_id_v2 module to "
-        "create a connection.",
-        **result,
-    )
+def create_hardware_providers(module, api_instance, result):
+    """Create a connection to a hardware provider endpoint."""
+    hardware_provider_ext_id = module.params.get("hardware_provider_ext_id")
+    validate_required_params(module, ["name", "access_details"])
+
+    sg = SpecGenerator(module)
+    default_spec = lifecycle_sdk.Connection()
+    spec, err = sg.generate_spec(obj=default_spec)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating create connection spec", **result)
+
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(spec.to_dict())
+        result["msg"] = "Connection with name:{0} will be created.".format(
+            module.params.get("name")
+        )
+        return
+
+    resp = None
+    try:
+        resp = api_instance.create_connection_by_hardware_provider_id(
+            hardwareProviderExtId=hardware_provider_ext_id, body=spec
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while creating connection",
+        )
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if task_ext_id and module.params.get("wait"):
+        task_status = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(task_status.to_dict())
+        connection_ext_id = get_entity_ext_id_from_task(
+            task_status,
+            rel=TASK_CONSTANTS.RelEntityType.HARDWARE_PROVIDER_CONNECTION,
+        )
+        if connection_ext_id:
+            result["ext_id"] = connection_ext_id
+            resp = get_connection(
+                module, api_instance, hardware_provider_ext_id, connection_ext_id
+            )
+            result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for connection"
+                ),
+                msg="Failed to get entity ext_id from task for connection",
+            )
+    elif task_ext_id:
+        result["msg"] = "Connection creation initiated, set wait=true to track."
+    result["changed"] = True
 
 
 def _strip_write_only_secrets(spec_dict):
@@ -758,7 +836,6 @@ def run_module():
         supports_check_mode=True,
         required_if=[
             ("state", "absent", ("ext_id",)),
-            ("state", "present", ("ext_id",)),
         ],
     )
     if SDK_IMP_ERROR:
@@ -780,7 +857,7 @@ def run_module():
         if module.params.get("ext_id"):
             update_hardware_providers(module, api_instance, result)
         else:
-            create_hardware_providers(module, result)
+            create_hardware_providers(module, api_instance, result)
     else:
         delete_hardware_providers(module, api_instance, result)
     module.exit_json(**result)

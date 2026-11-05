@@ -33,7 +33,8 @@
     # endpoint with basic auth. MANAGED providers (e.g. Cisco Intersight) use a
     # URL endpoint with API key auth (url_endpoint + api_key_auth).
     - name: Create a connection to a hardware provider
-      nutanix.ncp.ntnx_create_connection_by_hardware_provider_id_v2:
+      nutanix.ncp.ntnx_hardware_providers_v2:
+        state: present
         hardware_provider_ext_id: "{{ hardware_provider_ext_id }}"
         name: "{{ connection_name }}"
         deployment_type: "STANDALONE"
