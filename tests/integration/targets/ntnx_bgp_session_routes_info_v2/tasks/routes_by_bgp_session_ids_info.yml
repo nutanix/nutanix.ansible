@@ -1,5 +1,5 @@
 ---
-# Test plan for ntnx_routes_by_bgp_session_ids_info_v2
+# Test plan for ntnx_bgp_session_routes_info_v2
 #
 # Coverage:
 #   1. Argument-spec: bgp_session_ext_id is required.
@@ -17,9 +17,9 @@
 #   9. Negative: fetch a non-existent BGP route.
 #  10. Negative: list against a non-existent BGP session.
 
-- name: Start ntnx_routes_by_bgp_session_ids_info_v2 tests
+- name: Start ntnx_bgp_session_routes_info_v2 tests
   ansible.builtin.debug:
-    msg: Start ntnx_routes_by_bgp_session_ids_info_v2 tests
+    msg: Start ntnx_bgp_session_routes_info_v2 tests
 
 - name: Generate random suffix for scoping test facts
   ansible.builtin.set_fact:
@@ -35,7 +35,7 @@
 ########################################################################################
 
 - name: Call info module without bgp_session_ext_id  # noqa: args[module]
-  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2: {}
+  nutanix.ncp.ntnx_bgp_session_routes_info_v2: {}
   register: missing_parent
   ignore_errors: true
 
@@ -53,7 +53,7 @@
 ########################################################################################
 
 - name: Call info module with ext_id + filter (mutually exclusive)
-  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+  nutanix.ncp.ntnx_bgp_session_routes_info_v2:
     bgp_session_ext_id: "{{ fake_bgp_session_ext_id }}"
     ext_id: "{{ fake_route_ext_id }}"
     filter: "name eq 'foo'"
@@ -110,7 +110,7 @@
 ########################################################################################
 
 - name: List BGP routes for the discovered BGP session
-  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+  nutanix.ncp.ntnx_bgp_session_routes_info_v2:
     bgp_session_ext_id: "{{ real_bgp_session_ext_id }}"
   register: real_list
   ignore_errors: true
@@ -165,7 +165,7 @@
 ########################################################################################
 
 - name: List BGP routes for the discovered BGP session with limit=1
-  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+  nutanix.ncp.ntnx_bgp_session_routes_info_v2:
     bgp_session_ext_id: "{{ real_bgp_session_ext_id }}"
     limit: 1
   register: real_list_limit
@@ -191,7 +191,7 @@
 ########################################################################################
 
 - name: List BGP routes for the discovered BGP session with orderby=name asc
-  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+  nutanix.ncp.ntnx_bgp_session_routes_info_v2:
     bgp_session_ext_id: "{{ real_bgp_session_ext_id }}"
     orderby: "name asc"
   register: real_list_orderby
@@ -217,7 +217,7 @@
 ########################################################################################
 
 - name: List BGP routes for the discovered BGP session filtered to ADVERTISED
-  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+  nutanix.ncp.ntnx_bgp_session_routes_info_v2:
     bgp_session_ext_id: "{{ real_bgp_session_ext_id }}"
     filter: "bgpRouteType eq Nutanix.Networking.Config.BgpRouteType'ADVERTISED'"
   register: real_list_advertised
@@ -245,7 +245,7 @@
 ########################################################################################
 
 - name: Fetch the discovered BGP route by ext_id
-  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+  nutanix.ncp.ntnx_bgp_session_routes_info_v2:
     bgp_session_ext_id: "{{ real_bgp_session_ext_id }}"
     ext_id: "{{ real_bgp_route_ext_id }}"
   register: real_get
@@ -278,7 +278,7 @@
 ########################################################################################
 
 - name: Fetch a non-existent BGP route by ext_id
-  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+  nutanix.ncp.ntnx_bgp_session_routes_info_v2:
     bgp_session_ext_id: "{{ real_bgp_session_ext_id | default(fake_bgp_session_ext_id) }}"
     ext_id: "{{ fake_route_ext_id }}"
   register: bad_get
@@ -298,7 +298,7 @@
 ########################################################################################
 
 - name: List BGP routes for a non-existent BGP session
-  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+  nutanix.ncp.ntnx_bgp_session_routes_info_v2:
     bgp_session_ext_id: "{{ fake_bgp_session_ext_id }}"
   register: bad_list
   ignore_errors: true
@@ -312,6 +312,6 @@
     fail_msg: "List against non-existent BGP session did not report failed=true"
     success_msg: "List against non-existent BGP session reported failed=true"
 
-- name: End ntnx_routes_by_bgp_session_ids_info_v2 tests
+- name: End ntnx_bgp_session_routes_info_v2 tests
   ansible.builtin.debug:
-    msg: End ntnx_routes_by_bgp_session_ids_info_v2 tests
+    msg: End ntnx_bgp_session_routes_info_v2 tests

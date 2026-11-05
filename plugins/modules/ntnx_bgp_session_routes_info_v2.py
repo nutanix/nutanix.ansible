@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_routes_by_bgp_session_ids_info_v2
+module: ntnx_bgp_session_routes_info_v2
 short_description: Fetch BGP routes info for a BGP session in Nutanix Prism Central
 version_added: 2.7.0
 description:
@@ -78,27 +78,27 @@ author:
 
 EXAMPLES = r"""
 - name: List all BGP routes for a given BGP session
-  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+  nutanix.ncp.ntnx_bgp_session_routes_info_v2:
     bgp_session_ext_id: "8a3cf052-1234-4222-8d60-143a33c77e9f"
   register: result
   ignore_errors: true
 
 - name: Fetch a specific BGP route for a BGP session by external ID
-  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+  nutanix.ncp.ntnx_bgp_session_routes_info_v2:
     bgp_session_ext_id: "8a3cf052-1234-4222-8d60-143a33c77e9f"
     ext_id: "ed3cf052-a96a-4222-8d60-143a33c77e9f"
   register: result
   ignore_errors: true
 
 - name: List BGP routes for a BGP session with a filter (only received routes)
-  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+  nutanix.ncp.ntnx_bgp_session_routes_info_v2:
     bgp_session_ext_id: "8a3cf052-1234-4222-8d60-143a33c77e9f"
     filter: "bgpRouteType eq Nutanix.Networking.Config.BgpRouteType'RECEIVED'"
   register: result
   ignore_errors: true
 
 - name: List BGP routes for a BGP session with pagination (page 0, limit 10)
-  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+  nutanix.ncp.ntnx_bgp_session_routes_info_v2:
     bgp_session_ext_id: "8a3cf052-1234-4222-8d60-143a33c77e9f"
     page: 0
     limit: 10
@@ -106,14 +106,14 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List BGP routes for a BGP session sorted by name
-  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+  nutanix.ncp.ntnx_bgp_session_routes_info_v2:
     bgp_session_ext_id: "8a3cf052-1234-4222-8d60-143a33c77e9f"
     orderby: "name asc"
   register: result
   ignore_errors: true
 
 - name: List all BGP routes for a BGP session with fetch_all
-  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+  nutanix.ncp.ntnx_bgp_session_routes_info_v2:
     bgp_session_ext_id: "8a3cf052-1234-4222-8d60-143a33c77e9f"
     fetch_all: true
   register: result

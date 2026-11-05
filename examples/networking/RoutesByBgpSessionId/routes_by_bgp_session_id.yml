@@ -40,7 +40,7 @@
         bgp_session_ext_id: "8a3cf052-1234-4222-8d60-143a33c77e9f"
 
     - name: List all BGP routes for the BGP session
-      nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+      nutanix.ncp.ntnx_bgp_session_routes_info_v2:
         bgp_session_ext_id: "{{ bgp_session_ext_id }}"
       register: bgp_routes_list
       ignore_errors: true
@@ -57,7 +57,7 @@
         - bgp_routes_list.response | length > 0
 
     - name: Fetch a specific BGP route by ext_id (info module)
-      nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+      nutanix.ncp.ntnx_bgp_session_routes_info_v2:
         bgp_session_ext_id: "{{ bgp_session_ext_id }}"
         ext_id: "{{ bgp_route_ext_id }}"
       register: bgp_route_get
@@ -65,7 +65,7 @@
       when: bgp_route_ext_id is defined
 
     - name: List BGP routes for the BGP session with pagination
-      nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+      nutanix.ncp.ntnx_bgp_session_routes_info_v2:
         bgp_session_ext_id: "{{ bgp_session_ext_id }}"
         page: 0
         limit: 10
@@ -73,14 +73,14 @@
       ignore_errors: true
 
     - name: List BGP routes for the BGP session sorted by name ascending
-      nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+      nutanix.ncp.ntnx_bgp_session_routes_info_v2:
         bgp_session_ext_id: "{{ bgp_session_ext_id }}"
         orderby: "name asc"
       register: bgp_routes_ordered
       ignore_errors: true
 
     - name: List BGP routes for the BGP session filtered to ADVERTISED routes only
-      nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+      nutanix.ncp.ntnx_bgp_session_routes_info_v2:
         bgp_session_ext_id: "{{ bgp_session_ext_id }}"
         filter: "bgpRouteType eq Nutanix.Networking.Config.BgpRouteType'ADVERTISED'"
       register: bgp_routes_advertised
