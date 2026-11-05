@@ -248,7 +248,7 @@
       check_mode: true
       ignore_errors: true
 
-    - name: check_mode create - assertions
+    - name: Check_mode create - assertions
       ansible.builtin.assert:
         that:
           - result.changed == false
@@ -405,7 +405,7 @@
           check_mode: true
           ignore_errors: true
 
-        - name: check_mode update - assertions
+        - name: Check_mode update - assertions
           ansible.builtin.assert:
             that:
               - result.changed == false
@@ -491,7 +491,7 @@
           check_mode: true
           ignore_errors: true
 
-        - name: check_mode refresh - assertions
+        - name: Check_mode refresh - assertions
           ansible.builtin.assert:
             that:
               - result.changed == false
@@ -587,7 +587,7 @@
   ignore_errors: true
   when: todelete | length > 0
 
-- name: check_mode delete - assertions
+- name: Check_mode delete - assertions
   ansible.builtin.assert:
     that:
       - result.changed == false
