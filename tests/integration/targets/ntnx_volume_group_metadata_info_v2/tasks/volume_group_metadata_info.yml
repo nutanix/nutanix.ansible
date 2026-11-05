@@ -1,0 +1,258 @@
+---
+# Test plan for ntnx_volume_group_metadata_info_v2
+#
+# SDK reality — VolumeGroupMetadata only has ONE API in the Volumes SDK:
+# `get_volume_group_metadata_by_id(volumeGroupExtId)` — a deprecated GET
+# addressing a singleton subresource of a Volume Group. There is no
+# Create / Update / Delete / List for the metadata resource itself. Its two
+# fields are:
+#   - owner_reference (read-only, populated from the auth principal on VG create)
+#   - category_ids   (mutated indirectly via associate/disassociate category APIs)
+#
+# Scenarios covered below (QA mindset — real end-to-end + negatives + domain):
+#   1. Prerequisite setup: create a fresh Volume Group on the target cluster.
+#   2. Fetch metadata for a bare VG (no categories yet) and assert:
+#        - failed == false, changed == false (info modules never mutate),
+#        - response is a dict,
+#        - owner_reference is populated (read-only, non-null),
+#        - category_ids is [] (or missing) on a bare VG.
+#   3. Attach a real category to the VG using `ntnx_volume_groups_categories_v2`,
+#      then re-fetch metadata and assert the category_ids list contains that
+#      category ext_id (domain-level round-trip covering the only mutating path).
+#   4. Detach the category and re-fetch metadata; assert category_ids no longer
+#      contains that ext_id (proves the metadata endpoint reflects live state).
+#   5. Negative: fetch metadata with a bogus volume_group_ext_id → module must
+#      fail with a descriptive `msg` and preserve `changed == false`.
+#   6. Negative: omit the required `volume_group_ext_id` → module must fail
+#      with the standard argspec "missing required arguments" message.
+#   7. Cleanup: delete the VG and (best-effort) the helper category.
+
+- name: Start VolumeGroupMetadata info tests
+  ansible.builtin.debug:
+    msg: Start VolumeGroupMetadata info tests
+
+- name: Generate random suffix for isolation across parallel runs
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+
+- name: Set names for prerequisite resources
+  ansible.builtin.set_fact:
+    vg_name: "vgmeta_{{ random_suffix }}"
+    category_key: "vgmeta_key_{{ random_suffix }}"
+    category_value: "vgmeta_value_{{ random_suffix }}"
+
+########################################################################################
+# Prerequisite: create a Volume Group on the target cluster
+########################################################################################
+
+- name: Create Volume Group for metadata tests
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: present
+    name: "{{ vg_name }}"
+    description: "VG for VolumeGroupMetadata info integration tests"
+    cluster_reference: "{{ cluster.uuid }}"
+    sharing_status: "SHARED"
+    should_load_balance_vm_attachments: false
+  register: created_vg
+  ignore_errors: true
+
+- name: Assert Volume Group created
+  ansible.builtin.assert:
+    that:
+      - created_vg is defined
+      - created_vg.changed == true
+      - created_vg.failed == false
+      - created_vg.ext_id is defined
+      - created_vg.response is defined
+      - created_vg.response.name == vg_name
+    success_msg: "Prerequisite Volume Group created successfully"
+    fail_msg: "Failed to create prerequisite Volume Group for metadata tests"
+
+- name: Capture VG ext_id
+  ansible.builtin.set_fact:
+    vg_ext_id: "{{ created_vg.ext_id }}"
+
+########################################################################################
+# Scenario 2: fetch metadata for a bare VG (no categories attached yet)
+########################################################################################
+
+- name: Fetch VolumeGroupMetadata for the bare VG
+  nutanix.ncp.ntnx_volume_group_metadata_info_v2:
+    volume_group_ext_id: "{{ vg_ext_id }}"
+  register: metadata_bare
+  ignore_errors: true
+
+- name: Assert bare metadata read is well-formed
+  ansible.builtin.assert:
+    that:
+      - metadata_bare is defined
+      - not metadata_bare.changed
+      - not metadata_bare.failed
+      - metadata_bare.response is defined
+      - metadata_bare.response is mapping
+      - metadata_bare.volume_group_ext_id == vg_ext_id
+      # owner_reference_id is populated by the API from the auth context
+      # (the field name is owner_reference_id on the deprecated v4.2 endpoint)
+      - metadata_bare.response.owner_reference_id is defined
+      # a freshly-created VG should have no category ids yet — the API
+      # returns either an empty list or null in this case
+      - (metadata_bare.response.category_ids or []) | length == 0
+    success_msg: "Fetched metadata for bare VG successfully"
+    fail_msg: "Metadata read for bare VG did not match expectations"
+
+########################################################################################
+# Scenario 3: attach a category, re-fetch metadata, assert round-trip
+########################################################################################
+
+- name: Create category key for metadata round-trip test
+  nutanix.ncp.ntnx_categories_v2:
+    state: present
+    key: "{{ category_key }}"
+    value: "{{ category_value }}"
+    description: "Category for VolumeGroupMetadata info tests"
+  register: created_category
+  ignore_errors: true
+
+- name: Capture category creation outcome
+  ansible.builtin.set_fact:
+    category_ready: "{{ created_category is defined and created_category.failed == false and created_category.ext_id is defined }}"
+    category_ext_id: "{{ (created_category.ext_id if (created_category is defined and created_category.ext_id is defined) else '') }}"
+
+- name: Associate category with the Volume Group
+  nutanix.ncp.ntnx_volume_groups_categories_v2:
+    state: present
+    ext_id: "{{ vg_ext_id }}"
+    categories:
+      - ext_id: "{{ category_ext_id }}"
+        entity_type: "CATEGORY"
+  register: associate_result
+  when: category_ready
+  ignore_errors: true
+
+- name: Fetch VolumeGroupMetadata after category attach
+  nutanix.ncp.ntnx_volume_group_metadata_info_v2:
+    volume_group_ext_id: "{{ vg_ext_id }}"
+  register: metadata_after_attach
+  when: category_ready
+  ignore_errors: true
+
+- name: Assert category_ids contains the attached category
+  ansible.builtin.assert:
+    that:
+      - metadata_after_attach is defined
+      - not metadata_after_attach.failed
+      - not metadata_after_attach.changed
+      - metadata_after_attach.response is defined
+      - (metadata_after_attach.response.category_ids or []) | length >= 1
+      - category_ext_id in (metadata_after_attach.response.category_ids or [])
+    success_msg: "Metadata reflects attached category as expected"
+    fail_msg: "Metadata did not reflect the attached category ext_id"
+  when:
+    - category_ready
+    - associate_result is defined
+    - not associate_result.failed
+
+########################################################################################
+# Scenario 4: detach the category and re-fetch metadata
+########################################################################################
+
+- name: Disassociate category from the Volume Group
+  nutanix.ncp.ntnx_volume_groups_categories_v2:
+    state: absent
+    ext_id: "{{ vg_ext_id }}"
+    categories:
+      - ext_id: "{{ category_ext_id }}"
+        entity_type: "CATEGORY"
+  register: disassociate_result
+  when: category_ready
+  ignore_errors: true
+
+- name: Fetch VolumeGroupMetadata after category detach
+  nutanix.ncp.ntnx_volume_group_metadata_info_v2:
+    volume_group_ext_id: "{{ vg_ext_id }}"
+  register: metadata_after_detach
+  when: category_ready
+  ignore_errors: true
+
+- name: Assert category_ids no longer contains the detached category
+  ansible.builtin.assert:
+    that:
+      - metadata_after_detach is defined
+      - not metadata_after_detach.failed
+      - not metadata_after_detach.changed
+      - metadata_after_detach.response is defined
+      - category_ext_id not in (metadata_after_detach.response.category_ids or [])
+    success_msg: "Metadata reflects category detach as expected"
+    fail_msg: "Metadata still contains the detached category ext_id"
+  when:
+    - category_ready
+    - disassociate_result is defined
+    - not disassociate_result.failed
+
+########################################################################################
+# Scenario 5: negative — bogus volume_group_ext_id must fail cleanly
+########################################################################################
+
+- name: Fetch metadata with a bogus volume_group_ext_id (should fail)
+  nutanix.ncp.ntnx_volume_group_metadata_info_v2:
+    volume_group_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: metadata_bad_id
+  ignore_errors: true
+
+- name: Assert bogus id was rejected by the API
+  ansible.builtin.assert:
+    that:
+      - metadata_bad_id is defined
+      - metadata_bad_id.changed == false
+      - metadata_bad_id.failed == true
+      - metadata_bad_id.msg is defined
+      - "'Api Exception raised while fetching Volume Group metadata' in metadata_bad_id.msg"
+    success_msg: "Bogus volume_group_ext_id failed as expected"
+    fail_msg: "Bogus volume_group_ext_id did not fail as expected"
+
+########################################################################################
+# Scenario 6: negative — missing volume_group_ext_id must fail via argspec
+########################################################################################
+
+- name: Fetch metadata with missing volume_group_ext_id (should fail)
+  nutanix.ncp.ntnx_volume_group_metadata_info_v2: {}  # noqa: args[module]
+  register: metadata_missing_id
+  ignore_errors: true
+
+- name: Assert missing volume_group_ext_id was rejected by argspec
+  ansible.builtin.assert:
+    that:
+      - metadata_missing_id is defined
+      - metadata_missing_id.changed == false
+      - metadata_missing_id.failed == true
+      - metadata_missing_id.msg is defined
+      - "'volume_group_ext_id' in metadata_missing_id.msg"
+    success_msg: "Missing volume_group_ext_id failed argspec validation as expected"
+    fail_msg: "Missing volume_group_ext_id did not fail argspec validation"
+
+########################################################################################
+# Cleanup: delete the VG (and best-effort the category)
+########################################################################################
+
+- name: Delete the Volume Group used for metadata tests
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ vg_ext_id }}"
+  register: delete_vg_result
+  ignore_errors: true
+
+- name: Assert VG deletion succeeded
+  ansible.builtin.assert:
+    that:
+      - delete_vg_result is defined
+      - delete_vg_result.failed == false
+    success_msg: "Prerequisite Volume Group deleted"
+    fail_msg: "Failed to delete prerequisite Volume Group"
+
+- name: Delete the helper category (best effort)
+  nutanix.ncp.ntnx_categories_v2:
+    state: absent
+    ext_id: "{{ category_ext_id }}"
+  register: delete_category_result
+  when: category_ready
+  ignore_errors: true
