@@ -288,6 +288,12 @@ action_groups:
     - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_nic_profiles_v2
+    - ntnx_nic_profiles_association_v2
+    - ntnx_nic_profiles_info_v2
+    - ntnx_vpc_ns_stats_info_v2
+    - ntnx_traffic_mirror_v2
+    - ntnx_traffic_mirrors_info_v2
     - ntnx_subnets_vnics_info_v2
     - ntnx_bgp_session_v2
     - ntnx_bgp_sessions_info_v2
@@ -365,6 +371,7 @@ action_groups:
     - ntnx_images_migrate_v2
     - ntnx_vpn_connection_v2
     - ntnx_vpn_connections_info_v2
+    - ntnx_vpn_appliances_info_v2
     - ntnx_network_controller_v2
     - ntnx_network_controllers_info_v2
     - ntnx_gateway_v2
