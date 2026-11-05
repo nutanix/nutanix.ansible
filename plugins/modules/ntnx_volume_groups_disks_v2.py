@@ -297,7 +297,8 @@ from ..module_utils.v4.volumes.api_client import (  # noqa: E402
     get_etag,
     get_vg_api_instance,
 )
-from ..module_utils.v4.volumes.spec.volume_group import (  # noqa: E402
+
+from ..module_utils.v4.volumes.spec.volume_group import (  # noqa: E402  # isort: skip
     VGSpecs as vg_specs,
 )
 
@@ -425,16 +426,16 @@ def create_volume_disk(module, api_instance, result):
         )
         if ext_id:
             result["ext_id"] = ext_id
-            disk = get_volume_disk(module, api_instance, ext_id, volume_group_ext_id)
-            result["response"] = strip_internal_attributes(disk.to_dict())
+            result["response"] = strip_internal_attributes(resp.to_dict())
         else:
             raise_api_exception(
                 module=module,
                 exception=Exception(
-                    "Failed to get entity ext_id from task for Volume Disk"
+                    "Failed to get entity ext_id from task for Volume Group Disk"
                 ),
-                msg="Failed to get entity ext_id from task for Volume Disk",
+                msg="Failed to get entity ext_id from task for Volume Group Disk",
             )
+
     result["changed"] = True
 
 

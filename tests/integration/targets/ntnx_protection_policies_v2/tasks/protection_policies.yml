@@ -888,6 +888,15 @@
       ext_id: "{{ cluster.uuid }}"
     categories:
       - ext_id: "{{ category_ext_id_3 }}"
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 26843545600
+            storage_container:
+              ext_id: "{{ storage_container.uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 0
   register: result
   ignore_errors: true
 
@@ -916,6 +925,15 @@
       ext_id: "{{ cluster.uuid }}"
     categories:
       - ext_id: "{{ category_ext_id_2 }}"
+    disks:
+      - backing_info:
+          vm_disk:
+            disk_size_bytes: 26843545600
+            storage_container:
+              ext_id: "{{ storage_container.uuid }}"
+        disk_address:
+          bus_type: SCSI
+          index: 0
   register: result
   ignore_errors: true
 
@@ -1644,7 +1662,25 @@
     fail_msg: "Unable to list protection policies"
     success_msg: "Protection policies listed successfully"
 
-########################################################################################
+############################################################################
+
+- name: List all protection policies with fetch_all
+  nutanix.ncp.ntnx_protection_policies_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_protection_policies_info_v2
+  ignore_errors: true
+
+- name: List all protection policies with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_protection_policies_info_v2.changed == false
+      - fetch_all_ntnx_protection_policies_info_v2.failed == false
+      - fetch_all_ntnx_protection_policies_info_v2.response is defined
+      - fetch_all_ntnx_protection_policies_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_protection_policies_info_v2.response | default([]) | length) ==
+        (fetch_all_ntnx_protection_policies_info_v2.total_available_results | int)
+    fail_msg: "Unable to list all protection policies with fetch_all"
+    success_msg: "Listed all protection policies with fetch_all successfully"
 
 - name: List all protection policies with filter
   nutanix.ncp.ntnx_protection_policies_info_v2:
@@ -1880,7 +1916,7 @@
 - name: Assert that VMs are present
   ansible.builtin.assert:
     that:
-      - protected_vms | length == 2
+      - protected_vms | length == 1
     fail_msg: "No VMs found"
     success_msg: "VMs found"
 

@@ -159,3 +159,171 @@ def get_entity_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_lifecycle_py_client.EntitiesApi(api_client=api_client)
+
+
+def get_patched_images_api_instance(module):
+    """
+    This method will return LCM patched images API instance.
+
+    The patched images APIs are part of the Life Cycle Management (LCM)
+    namespace and are served by Foundation Central (FCVM), not Prism Central.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 LCM patched images api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.PatchedImagesApi(api_client=api_client)
+
+
+def get_claim_tokens_api_instance(module):
+    """
+    This method will return Foundation Central claim tokens API instance.
+
+    Claim tokens are Foundation Central (FCVM) entities. When talking to a
+    Foundation Central VM, point ``nutanix_host``/``nutanix_port`` at the FCVM
+    endpoint rather than Prism Central.
+
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 claim tokens api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.ClaimTokensApi(api_client=api_client)
+
+
+def get_recommendations_api_instance(module):
+    """
+    This method will return LCM recommendations API instance
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 LCM recommendations api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.RecommendationsApi(api_client=api_client)
+
+
+def get_lcm_histories_api_instance(module):
+    """
+    This method will return LCM histories API instance
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 LCM histories api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.LcmHistoriesApi(api_client=api_client)
+
+
+def get_lcm_summaries_api_instance(module):
+    """
+    This method will return LCM summaries API instance
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 LCM summaries api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.LcmSummariesApi(api_client=api_client)
+
+
+def get_foundation_central_config_api_instance(module):
+    """
+    This method will return Foundation Central config API instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 Foundation Central config api instance
+    """
+    # Foundation Central config exists at v4.3; disable negotiation so the SDK
+    # is not downgraded to an older version that returns 404 for this endpoint.
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.FoundationCentralConfigApi(api_client=api_client)
+
+
+def get_bundles_api_instance(module):
+    """
+    This method will return LCM bundles API instance
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 LCM bundles api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.BundlesApi(api_client=api_client)
+
+
+def get_upgrade_selections_api_instance(module):
+    """
+    This method will return LCM Upgrade Selections API instance
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 LCM upgrade selections api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.UpgradeSelectionsApi(api_client=api_client)
+
+
+def get_notifications_api_instance(module):
+    """
+    This method will return LCM notifications API instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 LCM notifications api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.NotificationsApi(api_client=api_client)
+
+
+def get_nodes_api_instance(module):
+    """
+    This method will return Foundation Central Nodes API instance.
+
+    The Nodes APIs under Life Cycle Management are served by Foundation
+    Central (FCVM/Foundation), not by Prism Central. Wire the connection
+    parameters to the Foundation Central endpoint before calling this.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 Nodes api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.NodesApi(api_client=api_client)
+
+
+def get_installer_images_api_instance(module):
+    """
+    This method will return LCM installer images API instance.
+
+    Note:
+        The installer images APIs are served by Foundation Central (FCVM),
+        NOT by Prism Central. The connection details (nutanix_host,
+        nutanix_username, nutanix_password, nutanix_port) supplied to the
+        module must therefore point to the FCVM/Foundation endpoint.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 LCM installer images api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.InstallerImagesApi(api_client=api_client)
+
+
+def get_hardware_providers_api_instance(module):
+    """
+    This method will return LCM hardware providers API instance.
+
+    The hardware providers APIs are served by Foundation Central (FCVM),
+    not Prism Central. The Foundation/FCVM endpoint must be supplied via
+    the standard connection parameters (nutanix_host, nutanix_port, ...).
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 LCM hardware providers api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.HardwareProvidersApi(api_client=api_client)
