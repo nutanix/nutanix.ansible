@@ -67,9 +67,10 @@ options:
       - ESX
   source:
     description:
-      - Source of the image: LOCAL (image managed and hosted by Foundation Central),
-        REMOTE_URL (image hosted outside of Foundation Central,
-        and nodes will download the image from the given URL at the time of imaging)
+      - Source of the image.
+      - C(LOCAL) means the image is managed and hosted by Foundation Central.
+      - C(REMOTE_URL) means the image is hosted outside Foundation Central, and
+        nodes download it from the given URL at imaging time.
       - Required for create operation.
     type: str
     required: false

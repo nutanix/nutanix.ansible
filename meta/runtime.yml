@@ -447,3 +447,6 @@ action_groups:
     - ntnx_configure_node_v2
     - ntnx_image_node_v2
     - ntnx_refresh_node_v2
+    - ntnx_hardware_provider_connection_v2
+    - ntnx_hardware_provider_refresh_connection_v2
+    - ntnx_hardware_providers_info_v2
