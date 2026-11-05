@@ -1,6 +1,6 @@
 ---
 # ---------------------------------------------------------------------------
-# Test plan for `nutanix.ncp.ntnx_vpn_connection_stat_v2`
+# Test plan for `nutanix.ncp.ntnx_vpn_connection_stat_info_v2`
 # ---------------------------------------------------------------------------
 # The SDK exposes a single stats retrieval endpoint
 # (`GET /api/networking/v4.3/stats/vpn-connections/{extId}`).  This test
@@ -96,7 +96,7 @@
 ##############################################################################
 
 - name: Fetch VPN connection stats using check_mode with only required fields
-  nutanix.ncp.ntnx_vpn_connection_stat_v2:
+  nutanix.ncp.ntnx_vpn_connection_stat_info_v2:
     ext_id: "cccccccc-cccc-cccc-cccc-cccccccccccc"
     start_time: "{{ stats_start_time }}"
     end_time: "{{ stats_end_time }}"
@@ -117,7 +117,7 @@
     fail_msg: "check_mode minimal path did not behave as expected"
 
 - name: Fetch VPN connection stats using check_mode with ALL attributes populated
-  nutanix.ncp.ntnx_vpn_connection_stat_v2:
+  nutanix.ncp.ntnx_vpn_connection_stat_info_v2:
     ext_id: "cccccccc-cccc-cccc-cccc-cccccccccccc"
     start_time: "{{ stats_start_time }}"
     end_time: "{{ stats_end_time }}"
@@ -150,7 +150,7 @@
   when: has_live_vpn_connection | bool
   block:
     - name: Fetch VPN connection stats with only required parameters
-      nutanix.ncp.ntnx_vpn_connection_stat_v2:
+      nutanix.ncp.ntnx_vpn_connection_stat_info_v2:
         ext_id: "{{ live_vpn_connection_ext_id }}"
         start_time: "{{ stats_start_time }}"
         end_time: "{{ stats_end_time }}"
@@ -169,7 +169,7 @@
         fail_msg: "Live minimal fetch failed"
 
     - name: Fetch VPN connection stats with ALL parameters populated
-      nutanix.ncp.ntnx_vpn_connection_stat_v2:
+      nutanix.ncp.ntnx_vpn_connection_stat_info_v2:
         ext_id: "{{ live_vpn_connection_ext_id }}"
         start_time: "{{ stats_start_time }}"
         end_time: "{{ stats_end_time }}"
@@ -193,7 +193,7 @@
         fail_msg: "Live full fetch failed"
 
     - name: Fetch VPN connection stats with every supported statType operator
-      nutanix.ncp.ntnx_vpn_connection_stat_v2:
+      nutanix.ncp.ntnx_vpn_connection_stat_info_v2:
         ext_id: "{{ live_vpn_connection_ext_id }}"
         start_time: "{{ stats_start_time }}"
         end_time: "{{ stats_end_time }}"
@@ -222,7 +222,7 @@
         label: "{{ item.item }}"
 
     - name: Idempotency — repeat the minimal fetch and expect changed=false
-      nutanix.ncp.ntnx_vpn_connection_stat_v2:
+      nutanix.ncp.ntnx_vpn_connection_stat_info_v2:
         ext_id: "{{ live_vpn_connection_ext_id }}"
         start_time: "{{ stats_start_time }}"
         end_time: "{{ stats_end_time }}"
@@ -244,7 +244,7 @@
 ##############################################################################
 
 - name: Fetch stats with a well-formed but non-existent ext_id
-  nutanix.ncp.ntnx_vpn_connection_stat_v2:
+  nutanix.ncp.ntnx_vpn_connection_stat_info_v2:
     ext_id: "00000000-0000-0000-0000-000000000000"
     start_time: "{{ stats_start_time }}"
     end_time: "{{ stats_end_time }}"
@@ -261,7 +261,7 @@
     fail_msg: "Non-existent ext_id did not fail as expected"
 
 - name: Attempt to fetch stats without ext_id (spec should reject)
-  nutanix.ncp.ntnx_vpn_connection_stat_v2:
+  nutanix.ncp.ntnx_vpn_connection_stat_info_v2:
     start_time: "{{ stats_start_time }}"
     end_time: "{{ stats_end_time }}"
   register: missing_ext_id
@@ -277,7 +277,7 @@
     fail_msg: "Missing ext_id was not rejected"
 
 - name: Attempt to fetch stats without start_time (spec should reject)
-  nutanix.ncp.ntnx_vpn_connection_stat_v2:
+  nutanix.ncp.ntnx_vpn_connection_stat_info_v2:
     ext_id: "cccccccc-cccc-cccc-cccc-cccccccccccc"
     end_time: "{{ stats_end_time }}"
   register: missing_start_time
@@ -293,7 +293,7 @@
     fail_msg: "Missing start_time was not rejected"
 
 - name: Attempt to fetch stats without end_time (spec should reject)
-  nutanix.ncp.ntnx_vpn_connection_stat_v2:
+  nutanix.ncp.ntnx_vpn_connection_stat_info_v2:
     ext_id: "cccccccc-cccc-cccc-cccc-cccccccccccc"
     start_time: "{{ stats_start_time }}"
   register: missing_end_time
@@ -309,7 +309,7 @@
     fail_msg: "Missing end_time was not rejected"
 
 - name: Attempt to fetch stats with an invalid stat_type enum value
-  nutanix.ncp.ntnx_vpn_connection_stat_v2:
+  nutanix.ncp.ntnx_vpn_connection_stat_info_v2:
     ext_id: "cccccccc-cccc-cccc-cccc-cccccccccccc"
     start_time: "{{ stats_start_time }}"
     end_time: "{{ stats_end_time }}"
@@ -327,7 +327,7 @@
     fail_msg: "Invalid stat_type enum was not rejected"
 
 - name: Attempt to fetch stats with a malformed start_time
-  nutanix.ncp.ntnx_vpn_connection_stat_v2:
+  nutanix.ncp.ntnx_vpn_connection_stat_info_v2:
     ext_id: "cccccccc-cccc-cccc-cccc-cccccccccccc"
     start_time: "not-a-valid-timestamp"
     end_time: "{{ stats_end_time }}"

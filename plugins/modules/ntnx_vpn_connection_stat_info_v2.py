@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -10,9 +10,9 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_vpn_connection_stat_v2
+module: ntnx_vpn_connection_stat_info_v2
 short_description: Retrieve VPN connection statistics from Nutanix Prism Central
-version_added: 2.6.0
+version_added: 2.7.0
 description:
   - This module allows you to fetch time-series statistics (throughput Rx/Tx in Kbps)
     for a specific VPN connection managed by Nutanix Flow Virtual Networking.
@@ -106,7 +106,7 @@ author:
 
 EXAMPLES = r"""
 - name: Fetch VPN connection stats over a time window
-  nutanix.ncp.ntnx_vpn_connection_stat_v2:
+  nutanix.ncp.ntnx_vpn_connection_stat_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>
@@ -116,7 +116,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Fetch VPN connection stats with all supported parameters
-  nutanix.ncp.ntnx_vpn_connection_stat_v2:
+  nutanix.ncp.ntnx_vpn_connection_stat_info_v2:
     nutanix_host: <pc_ip>
     nutanix_username: <user>
     nutanix_password: <pass>

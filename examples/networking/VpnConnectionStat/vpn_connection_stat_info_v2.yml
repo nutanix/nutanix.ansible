@@ -33,7 +33,7 @@
       changed_when: false
 
     - name: Fetch VPN connection stats with minimal parameters
-      nutanix.ncp.ntnx_vpn_connection_stat_v2:
+      nutanix.ncp.ntnx_vpn_connection_stat_info_v2:
         ext_id: "{{ vpn_connection_ext_id }}"
         start_time: "{{ start_time.stdout }}"
         end_time: "{{ end_time.stdout }}"
@@ -41,7 +41,7 @@
       ignore_errors: true
 
     - name: Fetch VPN connection stats with all supported parameters
-      nutanix.ncp.ntnx_vpn_connection_stat_v2:
+      nutanix.ncp.ntnx_vpn_connection_stat_info_v2:
         ext_id: "{{ vpn_connection_ext_id }}"
         start_time: "{{ start_time.stdout }}"
         end_time: "{{ end_time.stdout }}"
@@ -54,7 +54,7 @@
       ignore_errors: true
 
     - name: Fetch downsampled VPN connection stats using SUM aggregation
-      nutanix.ncp.ntnx_vpn_connection_stat_v2:
+      nutanix.ncp.ntnx_vpn_connection_stat_info_v2:
         ext_id: "{{ vpn_connection_ext_id }}"
         start_time: "{{ start_time.stdout }}"
         end_time: "{{ end_time.stdout }}"
