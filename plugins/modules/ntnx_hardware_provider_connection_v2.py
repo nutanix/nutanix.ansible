@@ -275,8 +275,10 @@ options:
               api_key_secret:
                 description:
                   - The API key secret.
+                  - Write-only; required when creating a connection with API key auth.
+                  - Omit on updates when the secret should remain unchanged.
                 type: str
-                required: true
+                required: false
           basic_auth:
             description:
               - Username and password based authentication.
@@ -291,8 +293,10 @@ options:
               password:
                 description:
                   - The password for authentication.
+                  - Write-only; required when creating a connection with basic auth.
+                  - Omit on updates when the password should remain unchanged.
                 type: str
-                required: true
+                required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
