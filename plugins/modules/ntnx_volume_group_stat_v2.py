@@ -227,6 +227,7 @@ failed:
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
+from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     list_entities,
     raise_api_exception,
@@ -261,24 +262,19 @@ def get_module_spec():
 def get_volume_group_stats(module, result, api_instance):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-    start_time = module.params.get("start_time")
-    end_time = module.params.get("end_time")
-    sampling_interval = module.params.get("sampling_interval")
-    stat_type = module.params.get("stat_type")
-    select = module.params.get("select")
-    kwargs = {}
-    if sampling_interval:
-        kwargs["_samplingInterval"] = sampling_interval
-    if stat_type:
-        kwargs["_statType"] = stat_type
-    if select:
-        kwargs["_select"] = select
-    kwargs["_startTime"] = start_time
-    kwargs["_endTime"] = end_time
-    kwargs["extId"] = ext_id
+    sg = SpecGenerator(module)
+    kwargs, err = sg.get_stats_spec(attr=module.params)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating volume group stats spec", **result)
+
+    if module.params.get("select") is not None:
+        kwargs["_select"] = module.params.get("select")
     resp = None
     try:
-        resp = list_entities(api_instance.get_volume_group_stats, **kwargs)
+        resp = list_entities(
+            api_instance.get_volume_group_stats, extId=ext_id, **kwargs
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
