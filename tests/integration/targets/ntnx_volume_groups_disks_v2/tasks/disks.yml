@@ -381,7 +381,6 @@
 
 - name: Fetch disks from VG using certain limit
   nutanix.ncp.ntnx_volume_groups_disks_info_v2:
-    limit: 1
     volume_group_ext_id: "{{ vg1_uuid }}"
     limit: 1
   register: result

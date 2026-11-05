@@ -32,7 +32,7 @@ notes:
     - >-
       B(Delete a Volume Disk) -
       Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Admin,
-      Project Manager, Self-Service AdminDeprecated, Storage Admin, Super Admin, Tenant Admin, Tenant Consumer
+      Project Manager, Self-Service Admin (Deprecated), Storage Admin, Super Admin, Tenant Admin, Tenant Consumer
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:
     state:
@@ -59,96 +59,94 @@ options:
         required: false
     volume_group_ext_id:
         description:
-            - The external ID of the Volume Group that owns the disk.
+            - The external identifier of a Volume Group.
         type: str
         required: true
     index:
         description:
-            - Index of the disk in a Volume Group.
-            - This field is optional and immutable.
+            - Index of the disk in a Volume Group. This field is optional and immutable.
         type: int
         required: false
     disk_size_bytes:
         description:
-            - Size of the disk in bytes.
-            - This field is mandatory during Volume Disk creation if a new disk is being created on the storage container.
+            - Size of the disk in bytes. This field is mandatory during Volume Group creation
+              if a new disk is created on the storage container.
         type: int
         required: false
     description:
         description:
-            - Volume Disk description.
-            - This is an optional field.
+            - Volume Disk description. This is an optional field.
         type: str
         required: false
     disk_data_source_reference:
         description:
-            - Reference to an entity that acts as the source for creation of the disk.
-            - Used to clone from an existing V(VOLUME_DISK), V(VM_DISK) or restore from a V(DISK_RECOVERY_POINT),
-              or to create a fresh disk on a V(STORAGE_CONTAINER).
+            - Represents another entity that has been referenced by this entity.
+            - Required for create operation.
         type: dict
         required: false
         suboptions:
             ext_id:
                 description:
-                    - The external identifier of the referenced entity.
+                    - A globally unique identifier of an instance that is suitable for external consumption.
                 type: str
                 required: false
             name:
                 description:
-                    - The name of the referenced entity.
+                    - Name of the entity represented by this reference.
                 type: str
                 required: false
             entity_type:
                 description:
-                    - The entity type of the referenced entity.
+                    - Type of entity represented by this reference, e.g., VPC.
                 type: str
                 required: false
                 choices:
-                    - VOLUME_GROUP
-                    - ROUTING_POLICY
-                    - DIRECT_CONNECT_VIF
-                    - AVAILABILITY_ZONE
+                    - CLUSTER
+                    - VM
                     - STORAGE_CONTAINER
-                    - VPC
-                    - VPN_CONNECTION
-                    - VOLUME_DISK
-                    - VPN_GATEWAY
+                    - VOLUME_GROUP
+                    - TASK
                     - IMAGE
                     - CATEGORY
-                    - RECOVERY_PLAN
-                    - CLUSTER
-                    - DISK_RECOVERY_POINT
-                    - CONSISTENCY_GROUP
-                    - VIRTUAL_NIC
-                    - TASK
-                    - VIRTUAL_SWITCH
-                    - VIRTUAL_NETWORK
                     - NODE
-                    - FLOATING_IP
+                    - VPC
                     - SUBNET
-                    - VM_DISK
-                    - VTEP_GATEWAY
-                    - VM
-                    - RECOVERY_PLAN_JOB
+                    - ROUTING_POLICY
+                    - FLOATING_IP
+                    - VPN_GATEWAY
+                    - VPN_CONNECTION
                     - DIRECT_CONNECT
+                    - DIRECT_CONNECT_VIF
+                    - VIRTUAL_NIC
+                    - VIRTUAL_SWITCH
+                    - VM_DISK
+                    - VOLUME_DISK
+                    - DISK_RECOVERY_POINT
+                    - VTEP_GATEWAY
+                    - RECOVERY_PLAN
+                    - RECOVERY_PLAN_JOB
+                    - AVAILABILITY_ZONE
+                    - VIRTUAL_NETWORK
+                    - CONSISTENCY_GROUP
                     - SUBNET_EXTENSION
             uris:
                 description:
-                    - The URIs for the referenced entity.
+                    - URI of entity represented by this reference.
                 type: list
                 elements: str
                 required: false
     disk_storage_features:
         description:
-            - Storage optimization features which must be enabled on the Volume Disks. This is an optional field.
-            - If omitted, the disks will honor the Volume Group specific storage features setting.
+            - Storage optimization features which must be enabled on the Volume Disks.
+              This is an optional field. If omitted, the disks will honor the Volume Group
+              specific storage features setting.
         type: dict
         required: false
         suboptions:
             flash_mode:
                 description:
-                    - Once configured, this field will avoid down-migration of data from the hot tier
-                      unless overrides are specified for the virtual disks.
+                    - Once configured, this field will avoid down migration of data from the hot tier
+                      unless the overrides field is specified for the virtual disks.
                 type: dict
                 required: true
                 suboptions:
@@ -365,11 +363,36 @@ def get_module_spec():
             type="str",
             required=False,
             choices=[
+                "CLUSTER",
+                "VM",
                 "STORAGE_CONTAINER",
+                "VOLUME_GROUP",
+                "TASK",
+                "IMAGE",
+                "CATEGORY",
+                "NODE",
+                "VPC",
+                "SUBNET",
+                "ROUTING_POLICY",
+                "FLOATING_IP",
+                "VPN_GATEWAY",
+                "VPN_CONNECTION",
+                "DIRECT_CONNECT",
+                "DIRECT_CONNECT_VIF",
+                "VIRTUAL_NIC",
+                "VIRTUAL_SWITCH",
                 "VM_DISK",
                 "VOLUME_DISK",
                 "DISK_RECOVERY_POINT",
+                "VTEP_GATEWAY",
+                "RECOVERY_PLAN",
+                "RECOVERY_PLAN_JOB",
+                "AVAILABILITY_ZONE",
+                "VIRTUAL_NETWORK",
+                "CONSISTENCY_GROUP",
+                "SUBNET_EXTENSION",
             ],
+            obj=volumes_sdk.EntityType,
         ),
         uris=dict(type="list", elements="str", required=False),
     )
