@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+    <settings pass="windowsPE">
+        <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="en-US">
+            <UserData>
+                <ProductKey>
+                    <Key>XXXXX-XXXXX-XXXXX-XXXXX-XXXXX</Key>  <!-- Enter your product key here -->
+                    <WillShowUI>Never</WillShowUI>
+                </ProductKey>
+                <FullName>Admin</FullName>
+                <Organization>MyCompany</Organization>
+            </UserData>
+        </component>
+    </settings>
+
+    <settings pass="specialize">
+        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="en-US">
+            <TimeZone>UTC</TimeZone>
+            <ComputerName>PC-%RAND%</ComputerName> <!-- Randomize computer name -->
+        </component>
+    </settings>
+
+    <settings pass="oobeSystem">
+        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="en-US">
+            <OOBE>
+                <HideEULAPage>true</HideEULAPage>  <!-- Skip EULA -->
+                <NetworkLocation>Work</NetworkLocation>  <!-- Set network location -->
+                <ProtectYourPC>1</ProtectYourPC>  <!-- Automatically enable Windows Update -->
+            </OOBE>
+            <UserAccounts>
+                <AdministratorPassword>
+                    <Value>Password123</Value> <!-- Set Administrator password -->
+                    <PlainText>true</PlainText>
+                </AdministratorPassword>
+            </UserAccounts>
+        </component>
+    </settings>
+</unattend>
+

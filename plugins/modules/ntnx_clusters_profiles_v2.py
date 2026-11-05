@@ -1106,6 +1106,14 @@ def create_cluster_profile(module, cluster_profiles, result):
             result["ext_id"] = ext_id
             cluster_profile = get_cluster_profile(module, cluster_profiles, ext_id)
             result["response"] = strip_internal_attributes(cluster_profile.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Cluster Profile"
+                ),
+                msg="Failed to get entity ext_id from task for Cluster Profile",
+            )
     result["changed"] = True
 
 

@@ -1,0 +1,137 @@
+---
+# Summary:
+# Lifecycle Nodes v4 modules (Foundation Central Nodes APIs).
+#
+# 1. Onboard (create) a node
+# 2. Update a node
+# 3. Get a node using ext_id
+# 4. List all nodes
+# 5. List nodes with filter
+# 6. List nodes with limit
+# 7. List nodes with fetch_all
+# 8. Configure a node
+# 9. Image a node
+# 10. Refresh a node
+# 11. Delete a node
+
+- name: Lifecycle Nodes playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <foundation_central_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        node_serial: "<node_serial>"
+        patched_image_ext_id: "<patched_image_ext_id>"
+        group_id: "<group_id>"
+
+    - name: Onboard a node
+      nutanix.ncp.ntnx_node_v2:
+        state: present
+        manufacturer: "Nutanix"
+        identifiers:
+          - type: "SERIAL_NUMBER"
+            value: "{{ node_serial }}"
+        custom_attributes:
+          - "rack=1"
+      register: result
+      ignore_errors: true
+
+    - name: Set node ext_id
+      ansible.builtin.set_fact:
+        node_ext_id: "{{ result.ext_id | default(result.response.ext_id) }}"
+
+    - name: Update a node
+      nutanix.ncp.ntnx_node_v2:
+        state: present
+        ext_id: "{{ node_ext_id }}"
+        manufacturer: "Nutanix"
+        identifiers:
+          - type: "SERIAL_NUMBER"
+            value: "{{ node_serial }}"
+        custom_attributes:
+          - "rack=2"
+      register: result
+      ignore_errors: true
+
+    - name: Get node using ext_id
+      nutanix.ncp.ntnx_nodes_info_v2:
+        ext_id: "{{ node_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all nodes
+      nutanix.ncp.ntnx_nodes_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List nodes with filter
+      nutanix.ncp.ntnx_nodes_info_v2:
+        filter: "manufacturer eq 'Nutanix'"
+      register: result
+      ignore_errors: true
+
+    - name: List nodes with limit
+      nutanix.ncp.ntnx_nodes_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: List all nodes using fetch_all
+      nutanix.ncp.ntnx_nodes_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
+
+    - name: Configure a server node
+      nutanix.ncp.ntnx_configure_node_v2:
+        configuration:
+          configure_server_details:
+            node_ext_id: "{{ node_ext_id }}"
+            group_id: "{{ group_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Apply pre-cluster configuration
+      nutanix.ncp.ntnx_configure_node_v2:
+        configuration:
+          pre_cluster_config_details:
+            nodes:
+              - ext_id: "{{ node_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Unconfigure a server node
+      nutanix.ncp.ntnx_configure_node_v2:
+        configuration:
+          un_configure_server_details:
+            node_ext_id: "{{ node_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Image a node using a patched host image
+      nutanix.ncp.ntnx_image_node_v2:
+        ext_id: "{{ node_ext_id }}"
+        configuration:
+          host_installation_details:
+            patched_image_ext_id: "{{ patched_image_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Refresh a node
+      nutanix.ncp.ntnx_refresh_node_v2:
+        ext_id: "{{ node_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete a node
+      nutanix.ncp.ntnx_node_v2:
+        state: absent
+        ext_id: "{{ node_ext_id }}"
+      register: result
+      ignore_errors: true
