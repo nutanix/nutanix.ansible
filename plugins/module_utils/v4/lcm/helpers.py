@@ -325,7 +325,6 @@ def get_node(module, api_instance, ext_id):
         )
 
 
-
 def get_hardware_provider(module, api_instance, ext_id):
     """
     This method will return a hardware provider using its external identifier.

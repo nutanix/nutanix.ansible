@@ -382,8 +382,8 @@ def list_hardware_providers(module, api_instance, result):
     kwargs = _get_kwargs(module, result)
     try:
         resp = list_entities(
-          list_fn=api_instance.list_hardware_providers,
-          kwargs=kwargs,
+            list_fn=api_instance.list_hardware_providers,
+            kwargs=kwargs,
         )
     except Exception as e:
         raise_api_exception(
