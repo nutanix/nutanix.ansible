@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_nic_profiles_v2
 short_description: Create, Update, Delete NIC profiles in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to create, update, and delete NIC profiles in Nutanix Prism Central.
   - Use ntnx_nic_profiles_association_v2 module to associate or disassociate host NICs.
@@ -33,6 +33,12 @@ options:
     description:
       - External ID of the NIC profile.
       - Required for update and delete operations.
+    type: str
+    required: false
+  project_ext_id:
+    description:
+      - External ID of the project.
+      - Required for create operation.
     type: str
     required: false
   name:
@@ -260,6 +266,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str", required=False),
+        project_ext_id=dict(type="str", required=False),
         name=dict(type="str", required=False),
         description=dict(type="str", required=False),
         capability_config=dict(
@@ -417,7 +424,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "ext_id": None,
         "task_ext_id": None,
@@ -425,14 +432,13 @@ def run_module():
     state = module.params.get("state")
     nic_profiles = get_nic_profiles_api_instance(module)
 
-    if state == "absent":
-        delete_nic_profile(module, nic_profiles, result)
-        module.exit_json(**result)
-
-    if module.params.get("ext_id"):
-        update_nic_profile(module, nic_profiles, result)
+    if state == "present":
+        if module.params.get("ext_id"):
+            update_nic_profile(module, nic_profiles, result)
+        else:
+            create_nic_profile(module, nic_profiles, result)
     else:
-        create_nic_profile(module, nic_profiles, result)
+        delete_nic_profile(module, nic_profiles, result)
     module.exit_json(**result)
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_nic_profiles_info_v2
 short_description: Fetch NIC profiles info in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to fetch NIC profile info or a specific NIC profile in Nutanix Prism Central.
   - If ext_id is provided, fetch a particular NIC profile info using external ID.
@@ -53,6 +53,12 @@ EXAMPLES = r"""
 - name: List NIC profiles with limit
   nutanix.ncp.ntnx_nic_profiles_info_v2:
     limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List all NIC profiles with fetch_all
+  nutanix.ncp.ntnx_nic_profiles_info_v2:
+    fetch_all: true
   register: result
   ignore_errors: true
 """
@@ -126,6 +132,7 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 from ..module_utils.v4.network.helpers import get_nic_profile  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -158,7 +165,10 @@ def get_nic_profiles(module, nic_profiles, result):
         module.fail_json(msg="Failed generating NIC profiles info Spec", **result)
 
     try:
-        resp = nic_profiles.list_nic_profiles(**kwargs)
+        resp = list_entities(
+            nic_profiles.list_nic_profiles,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -189,7 +199,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "response": None, "error": None}
+    result = {"changed": False, "response": None, "failed": False}
     nic_profiles = get_nic_profiles_api_instance(module)
     if module.params.get("ext_id"):
         get_nic_profile_using_ext_id(module, nic_profiles, result)

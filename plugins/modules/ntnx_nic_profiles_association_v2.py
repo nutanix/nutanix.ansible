@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_nic_profiles_association_v2
 short_description: Associate or disassociate host NICs with a NIC profile
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module associates or disassociates a host NIC with a NIC profile in Nutanix Prism Central.
   - This module uses PC v4 APIs based SDKs
@@ -224,7 +224,7 @@ def run_module():
     result = {
         "changed": False,
         "response": None,
-        "error": None,
+        "failed": False,
         "ext_id": None,
         "task_ext_id": None,
     }

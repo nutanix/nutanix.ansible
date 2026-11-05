@@ -432,6 +432,28 @@
     success_msg: "NIC profiles with limit are listed successfully"
     fail_msg: "Failed to list NIC profiles with limit"
 
+- name: List all NIC profiles with fetch_all
+  nutanix.ncp.ntnx_nic_profiles_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_nic_profiles_info_v2
+  ignore_errors: true
+
+- name: Debug result
+  ansible.builtin.debug:
+    var: fetch_all_ntnx_nic_profiles_info_v2
+
+- name: List all NIC profiles with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_nic_profiles_info_v2 is defined
+      - fetch_all_ntnx_nic_profiles_info_v2.changed == false
+      - fetch_all_ntnx_nic_profiles_info_v2.failed == false
+      - fetch_all_ntnx_nic_profiles_info_v2.response is defined
+      - fetch_all_ntnx_nic_profiles_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_nic_profiles_info_v2.response | default([]) | length) == (fetch_all_ntnx_nic_profiles_info_v2.total_available_results | int)
+    success_msg: "Listed all NIC profiles with fetch_all successfully"
+    fail_msg: "Unable to list all NIC profiles with fetch_all"
+
 ########################################################################################
 # Delete NIC profiles
 ########################################################################################
