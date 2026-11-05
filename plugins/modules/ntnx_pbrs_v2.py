@@ -22,15 +22,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a Routing Policy) -
-      Operation Name: Create Routing Policy -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - >-
       B(Delete the Routing Policy corresponding to the extId) -
-      Operation Name: Delete Routing Policy -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - >-
       B(Update the Routing Policy corresponding to the extId) -
-      Operation Name: Update Routing Policy -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
@@ -54,6 +51,11 @@ options:
     description:
       - external ID of the routing policy.
       - Required for updating or deleting the routing policy.
+    type: str
+  project_ext_id:
+    description:
+      - External ID (UUID) of the project that owns this routing policy.
+      - Update of this field is not supported.
     type: str
   metadata:
     description: Metadata associated with this resource.
@@ -414,6 +416,7 @@ EXAMPLES = r"""
     state: present
     priority: 207
     name: "test_name"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     policies:
       -
         policy_action:
@@ -669,6 +672,7 @@ from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -812,6 +816,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         priority=dict(type="int"),
@@ -900,6 +905,14 @@ def create_pbr(module, result):
             resp = get_routing_policy(module, pbrs, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Routing Policy"
+                ),
+                msg="Failed to get entity ext_id from task for Routing Policy",
+            )
 
     result["changed"] = True
 
@@ -925,6 +938,10 @@ def update_pbr(module, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating pbrs update spec", **result)
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     # check for idempotency
     if check_pbrs_idempotency(current_spec.to_dict(), update_spec.to_dict()):

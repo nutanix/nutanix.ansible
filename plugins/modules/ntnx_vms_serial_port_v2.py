@@ -21,17 +21,14 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a serial port for a VM) -
-      Operation Name: Create Virtual Machine Serial Port -
       Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User,
       Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Remove a serial port from a VM) -
-      Operation Name: Delete Virtual Machine Serial Port -
       Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User,
       Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Update the configuration for the provided serial port) -
-      Operation Name: Update Virtual Machine Serial Port -
       Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User,
       Virtual Machine Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
@@ -244,6 +241,14 @@ def create_serial_port(module, result):
             resp = get_serial_port(module, vmm, ext_id, vm_ext_id=vm_ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for VM Serial Port"
+                ),
+                msg="Failed to get entity ext_id from task for VM Serial Port",
+            )
 
     result["changed"] = True
 
@@ -271,14 +276,14 @@ def update_serial_port(module, result):
         result["error"] = err
         module.fail_json(msg="Failed generating vm serial port update spec", **result)
 
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(update_spec.to_dict())
+        return
+
     # check for idempotency
     if check_idempotency(current_spec, update_spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
-
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(update_spec.to_dict())
-        return
 
     resp = None
     try:

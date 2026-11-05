@@ -21,7 +21,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get SSL certificate details for a specified cluster) -
-      Operation Name: View Cluster SSL Certificate -
       Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:

@@ -22,13 +22,11 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Get configuration details for the provided network device) -
-      Operation Name: View Virtual Machine NIC -
       Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, Flow Admin, Flow Policy Author, Flow Viewer, NCM Connector,
       Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager, Storage Admin, Super Admin, User, Virtual Machine Admin,
       Virtual Machine Operator, Virtual Machine Viewer, VPC Admin, Self-Service Admin (deprecated)
     - >-
       B(List network devices attached to a VM) -
-      Operation Name: View Virtual Machine NIC -
       Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, Flow Admin, Flow Policy Author, Flow Viewer, NCM Connector,
       Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager, Storage Admin, Super Admin, User, Virtual Machine Admin,
       Virtual Machine Operator, Virtual Machine Viewer, VPC Admin, Self-Service Admin (deprecated)
@@ -70,6 +68,14 @@ EXAMPLES = r"""
     validate_certs: false
     vm_ext_id: 530567f3-abda-4913-b5d0-0ab6758ec16e
     ext_id: 530567f3-abda-4913-b5d0-0ab6758ec1653
+
+- name: List all VM NICs with fetch_all
+  nutanix.ncp.ntnx_vms_nics_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -137,6 +143,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -186,7 +193,11 @@ def get_nics(module, result):
         module.fail_json(msg="Failed generating vm nics info Spec", **result)
 
     try:
-        resp = vms.list_nics_by_vm_id(vmExtId=vm_ext_id, **kwargs)
+        resp = list_entities(
+            vms.list_nics_by_vm_id,
+            kwargs=kwargs,
+            vmExtId=vm_ext_id,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

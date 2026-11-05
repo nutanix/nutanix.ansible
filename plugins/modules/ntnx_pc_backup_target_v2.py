@@ -20,15 +20,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create backup target) -
-      Operation Name: Create Domain Manager Backup Target -
       Required Roles: Domain Manager Admin, Prism Admin, Super Admin
     - >-
       B(Delete backup target) -
-      Operation Name: Delete Domain Manager Backup Target -
       Required Roles: Domain Manager Admin, Prism Admin, Super Admin
     - >-
       B(Update backup target) -
-      Operation Name: Update Domain Manager Backup Target -
       Required Roles: Domain Manager Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
@@ -396,10 +393,6 @@ def update_backup_target(module, domain_manager_backups_api, result):
         if check_idempotency(current_spec, update_spec):
             result["skipped"] = True
             module.exit_json(msg="Nothing to change.", **result)
-
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(update_spec.to_dict())
-        return
 
     resp = None
     try:

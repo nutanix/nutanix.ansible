@@ -24,12 +24,10 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Attach an iSCSI client to the given Volume Group) -
-      Operation Name: Attach Volume Group To External ISCSI Client -
       Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin,
       Self-Service Admin (deprecated)
     - >-
       B(Detach an iSCSi client from the given Volume Group) -
-      Operation Name: Detach Volume Group From External ISCSI Client -
       Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin,
       Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
@@ -379,6 +377,14 @@ def attach_iscsi_client(module, result):
         )
         if ext_id:
             result["ext_id"] = ext_id
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for the Volume Group ISCSI client"
+                ),
+                msg="Failed to get entity ext_id from task for the Volume Group ISCSI client",
+            )
     result["changed"] = True
 
 

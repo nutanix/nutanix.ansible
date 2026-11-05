@@ -24,15 +24,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create an Entity Group) -
-      Operation Name: Create Entity Group -
       Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
     - >-
       B(Delete an Entity Group) -
-      Operation Name: Delete Entity Group -
       Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
     - >-
       B(Update an Entity Group by external identifier) -
-      Operation Name: Update Entity Group -
       Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:
@@ -482,6 +479,14 @@ def create_entity_group(module, entity_group, result):
             resp = get_entity_group(module, entity_group, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Entity Group"
+                ),
+                msg="Failed to get entity ext_id from task for Entity Group",
+            )
 
     result["changed"] = True
 

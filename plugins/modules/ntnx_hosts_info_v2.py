@@ -24,12 +24,10 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Get the list of all host entities) -
-      Operation Name: View Host -
       Required Roles: Cluster Admin, Cluster Viewer, NCM Connector, Network Infra Admin, Prism Admin, Prism Viewer, Storage Admin, Super Admin,
       Virtual Machine Admin, Virtual Machine Operator, VPC Admin
     - >-
       B(Get the list of hosts associated with a cluster) -
-      Operation Name: View Cluster Host -
       Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, LocalAccountManager Admin, LocalAccountManager Viewer, NCM Connector, Network Infra Admin,
       Prism Admin, Prism Viewer, Project Manager, Super Admin, VPC Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
@@ -84,6 +82,14 @@ EXAMPLES = r"""
     nutanix_password: <pass>
     filter: hostName eq 'host1'
   register: result
+
+- name: List all hosts with fetch_all
+  nutanix.ncp.ntnx_hosts_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -186,6 +192,7 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.helpers import get_host  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -223,10 +230,15 @@ def get_hosts(module, result):
     try:
         cluster_ext_id = module.params.get("cluster_ext_id")
         if not cluster_ext_id:
-            resp = clusters.list_hosts(**kwargs)
+            resp = list_entities(
+                clusters.list_hosts,
+                kwargs=kwargs,
+            )
         else:
-            resp = clusters.list_hosts_by_cluster_id(
-                clusterExtId=cluster_ext_id, **kwargs
+            resp = list_entities(
+                clusters.list_hosts_by_cluster_id,
+                kwargs=kwargs,
+                clusterExtId=cluster_ext_id,
             )
     except Exception as e:
         raise_api_exception(

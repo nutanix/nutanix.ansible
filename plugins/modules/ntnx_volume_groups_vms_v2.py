@@ -24,11 +24,9 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Attach an AHV VM to the given Volume Group) -
-      Operation Name: Attach Volume Group To AHV VM -
       Required Roles: Backup Admin, Prism Admin, Project Manager, Storage Admin, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Detach an AHV VM from the given Volume Group) -
-      Operation Name: Detach Volume Group From AHV VM -
       Required Roles: Backup Admin, Prism Admin, Project Manager, Storage Admin, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:

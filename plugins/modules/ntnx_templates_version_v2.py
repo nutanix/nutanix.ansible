@@ -20,11 +20,9 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Delete a template version) -
-      Operation Name: Delete VM Templates Versions -
       Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
     - >-
       B(Publish a template version) -
-      Operation Name: Publish VM Templates Versions -
       Required Roles: Prism Admin, Super Admin, Virtual Machine Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:

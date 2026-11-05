@@ -22,11 +22,9 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Get the floating IP for this extId) -
-      Operation Name: View Floating Ip -
       Required Roles: Account Owner, Administrator, Prism Admin, Prism Viewer, Super Admin, User, VPC Admin
     - >-
       B(Get a list of floating IPs) -
-      Operation Name: View Floating Ip -
       Required Roles: Account Owner, Administrator, Prism Admin, Prism Viewer, Super Admin, User, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
@@ -62,6 +60,14 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
+
+- name: List all floating IPs with fetch_all
+  nutanix.ncp.ntnx_floating_ips_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 RETURN = r"""
 response:
@@ -136,6 +142,7 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -165,7 +172,10 @@ def get_floating_ips(module, result):
         module.fail_json(msg="Failed generating floating_ips info Spec", **result)
 
     try:
-        resp = floating_ips.list_floating_ips(**kwargs)
+        resp = list_entities(
+            floating_ips.list_floating_ips,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

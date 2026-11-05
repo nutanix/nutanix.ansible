@@ -23,13 +23,11 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get CD-ROM by ext_id) -
-      Operation Name: View Virtual Machine CD ROM -
       Required Roles: Account Owner, Administrator, Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin,
       Project Manager, Storage Admin, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin,
       Self-Service Admin (deprecated)
     - >-
       B(List CD-ROMs attached to a VM) -
-      Operation Name: View Virtual Machine CD ROM -
       Required Roles: Account Owner, Administrator, Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin,
       Project Manager, Storage Admin, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin,
       Self-Service Admin (deprecated)
@@ -69,6 +67,14 @@ EXAMPLES = r"""
     validate_certs: false
     vm_ext_id: 530567f3-abda-4913-b5d0-0ab6758ec16e
     ext_id: 530567f3-abda-4913-b5d0-0ab6758ec1653
+
+- name: List all VM CD-ROMs with fetch_all
+  nutanix.ncp.ntnx_vms_cd_rom_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 
@@ -137,6 +143,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -176,7 +183,11 @@ def get_cd_roms(module, vms, result):
         module.fail_json(msg="Failed generating vm cd roms info Spec", **result)
 
     try:
-        resp = vms.list_cd_roms_by_vm_id(vmExtId=vm_ext_id, **kwargs)
+        resp = list_entities(
+            vms.list_cd_roms_by_vm_id,
+            kwargs=kwargs,
+            vmExtId=vm_ext_id,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

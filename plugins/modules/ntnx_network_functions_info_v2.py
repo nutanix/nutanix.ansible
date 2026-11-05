@@ -22,12 +22,10 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get the network function for this extId) -
-      Operation Name: View Network Function -
       Required Roles: Account Owner, Administrator, Flow Admin, Flow Policy Author, Flow Viewer, Network Infra Admin, Prism Admin, Prism Viewer, Super Admin,
       User
     - >-
       B(Get the list of existing network functions.) -
-      Operation Name: View Network Function -
       Required Roles: Account Owner, Administrator, Flow Admin, Flow Policy Author, Flow Viewer, Network Infra Admin, Prism Admin, Prism Viewer, Super Admin,
       User
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
@@ -81,6 +79,14 @@ EXAMPLES = r"""
     validate_certs: false
     ext_id: "a3265671-de53-41be-af9b-f06241b95356"
   register: result
+
+- name: List all network functions with fetch_all
+  nutanix.ncp.ntnx_network_functions_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -165,6 +171,7 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 from ..module_utils.v4.network.helpers import get_network_function  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -198,7 +205,10 @@ def get_network_functions(module, network_functions, result):
         module.fail_json(msg="Failed generating network functions info Spec", **result)
 
     try:
-        resp = network_functions.list_network_functions(**kwargs)
+        resp = list_entities(
+            network_functions.list_network_functions,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

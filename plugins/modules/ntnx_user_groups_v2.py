@@ -22,11 +22,9 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create user group) -
-      Operation Name: Create User Group -
       Required Roles: Nutanix Central Admin, Prism Admin, Project Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Delete user group) -
-      Operation Name: Delete User Group -
       Required Roles: Nutanix Central Admin, Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
@@ -213,6 +211,12 @@ def create_user_group(module, user_groups, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating create user groups spec", **result)
+
+    if (
+        module.params.get("group_type") == "SAML"
+        and getattr(spec, "distinguished_name", None) is None
+    ):
+        spec.distinguished_name = ""
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())

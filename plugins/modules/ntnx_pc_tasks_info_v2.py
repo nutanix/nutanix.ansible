@@ -19,12 +19,10 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get task details by ext_id) -
-      Operation Name: View Task -
       Required Roles: Account Owner, Administrator, Backup Admin, CSI System, Intelligent Ops Admin, Kubernetes Data Services System, Monitoring Admin,
       NCM Admin, NCM Connector, NCM Viewer, Prism Admin, Prism Viewer, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(List tasks) -
-      Operation Name: View Task -
       Required Roles: Account Owner, Administrator, Backup Admin, CSI System, Intelligent Ops Admin, Kubernetes Data Services System, Monitoring Admin,
       NCM Admin, NCM Connector, NCM Viewer, Prism Admin, Prism Viewer, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
@@ -64,6 +62,14 @@ EXAMPLES = r"""
     limit: 1
   register: result
   ignore_errors: true
+
+- name: List all PC tasks with fetch_all
+  nutanix.ncp.ntnx_pc_tasks_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -165,6 +171,7 @@ from ..module_utils.v4.prism.helpers import get_pc_task  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import get_tasks_api_instance  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -195,7 +202,10 @@ def get_tasks_details(module, tasks_api, result):
         result["error"] = err
         module.fail_json(msg="Failed generating list tasks info Spec", **result)
     try:
-        resp = tasks_api.list_tasks(**kwargs)
+        resp = list_entities(
+            tasks_api.list_tasks,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

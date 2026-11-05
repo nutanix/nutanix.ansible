@@ -24,12 +24,10 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Get a Volume Group) -
-      Operation Name: View Volume Group Details -
       Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Disaster Recovery Viewer, Kubernetes Data Services System, Prism Admin, Prism Viewer,
       Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(List all the Volume Groups) -
-      Operation Name: View Volume Group Details -
       Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Disaster Recovery Viewer, Kubernetes Data Services System, Prism Admin, Prism Viewer,
       Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
@@ -69,6 +67,14 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     ext_id: 530567f3-abda-4913-b5d0-0ab6758ec1653
+
+- name: List all volume groups with fetch_all
+  nutanix.ncp.ntnx_volume_groups_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -140,6 +146,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -181,7 +188,10 @@ def get_vgs(module, result):
         module.fail_json(msg="Failed generating volume groups info Spec", **result)
 
     try:
-        resp = vgs.list_volume_groups(**kwargs)
+        resp = list_entities(
+            vgs.list_volume_groups,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

@@ -20,13 +20,11 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get GPU by ext_id) -
-      Operation Name: View Virtual Machine GPU -
       Required Roles: Account Owner, Administrator, Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin,
       Project Manager, Storage Admin, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin,
       Self-Service Admin (deprecated)
     - >-
       B(List GPUs attached to a VM) -
-      Operation Name: View Virtual Machine GPU -
       Required Roles: Account Owner, Administrator, Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin,
       Project Manager, Storage Admin, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin,
       Self-Service Admin (deprecated)
@@ -82,6 +80,14 @@ EXAMPLES = r"""
     filter: "mode eq 'PASSTHROUGH_COMPUTE'"
     vm_ext_id: "9a1aa5ca-20ff-4703-672a-f41ad0a401b9"
   register: result
+
+- name: List all GPUs with fetch_all
+  nutanix.ncp.ntnx_gpus_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -134,6 +140,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -165,7 +172,11 @@ def get_gpus(module, gpus, result):
         module.fail_json(msg="Failed generating GPUs list Spec", **result)
 
     try:
-        resp = gpus.list_gpus_by_vm_id(vmExtId=module.params.get("vm_ext_id"), **kwargs)
+        resp = list_entities(
+            gpus.list_gpus_by_vm_id,
+            kwargs=kwargs,
+            vmExtId=module.params.get("vm_ext_id"),
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

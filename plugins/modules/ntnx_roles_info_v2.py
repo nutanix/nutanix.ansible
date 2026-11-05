@@ -21,12 +21,10 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get role by ext_id) -
-      Operation Name: View Role -
       Required Roles: Account Owner, Administrator, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin,
       User, Self-Service Admin (deprecated)
     - >-
       B(List role(s)) -
-      Operation Name: View Role -
       Required Roles: Account Owner, Administrator, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin,
       User, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
@@ -73,6 +71,14 @@ EXAMPLES = r"""
     validate_certs: false
     filter: "displayName eq 'Display_Name_Test'"
   register: result
+
+- name: List all roles with fetch_all
+  nutanix.ncp.ntnx_roles_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -153,6 +159,7 @@ from ..module_utils.v4.iam.api_client import get_role_api_instance  # noqa: E402
 from ..module_utils.v4.iam.helpers import get_role  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -182,7 +189,10 @@ def get_roles(module, roles, result):
         module.fail_json(msg="Failed generating roles info Spec", **result)
 
     try:
-        resp = roles.list_roles(**kwargs)
+        resp = list_entities(
+            roles.list_roles,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

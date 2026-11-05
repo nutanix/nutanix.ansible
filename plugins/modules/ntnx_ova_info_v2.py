@@ -22,11 +22,9 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get OVA by ext_id) -
-      Operation Name: View Ova -
       Required Roles: Prism Admin, Prism Viewer, Super Admin, Virtual Machine Admin, Virtual Machine Operator
     - >-
       B(List OVAs) -
-      Operation Name: View Ova -
       Required Roles: Prism Admin, Prism Viewer, Super Admin, Virtual Machine Admin, Virtual Machine Operator
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
@@ -63,6 +61,14 @@ EXAMPLES = r"""
   nutanix.ncp.ntnx_ova_info_v2:
     ext_id: "12345678-1234-1234-1234-123456789012"
   register: result
+
+- name: List all OVAs with fetch_all
+  nutanix.ncp.ntnx_ova_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -145,6 +151,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -180,7 +187,10 @@ def get_ovas(module, ova, result):
         module.fail_json(msg="Failed generating ovas info Spec", **result)
 
     try:
-        resp = ova.list_ovas(**kwargs)
+        resp = list_entities(
+            ova.list_ovas,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

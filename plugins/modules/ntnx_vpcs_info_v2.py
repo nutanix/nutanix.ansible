@@ -22,13 +22,11 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get VPC by ext_id) -
-      Operation Name: View VPC -
       Required Roles: Account Owner, Administrator, Consumer, Developer, Files Admin, Files Viewer, Flow Admin, Flow Policy Author, Flow Viewer, NCM Connector,
       Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer,
       VPC Admin
     - >-
       B(Get the list of existing VPCs) -
-      Operation Name: View VPC -
       Required Roles: Account Owner, Administrator, Consumer, Developer, Files Admin, Files Viewer, Flow Admin, Flow Policy Author, Flow Viewer, NCM Connector,
       Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer,
       VPC Admin
@@ -73,6 +71,14 @@ EXAMPLES = r"""
     validate_certs: false
     ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
   register: result
+
+- name: List all VPCs with fetch_all
+  nutanix.ncp.ntnx_vpcs_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 RETURN = r"""
 response:
@@ -182,6 +188,7 @@ from ..module_utils.v4.network.api_client import get_vpc_api_instance  # noqa: E
 from ..module_utils.v4.network.helpers import get_vpc  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -210,7 +217,10 @@ def get_vpcs(module, result):
         module.fail_json(msg="Failed generating vpcs info Spec", **result)
 
     try:
-        resp = vpcs.list_vpcs(**kwargs)
+        resp = list_entities(
+            vpcs.list_vpcs,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

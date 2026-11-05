@@ -21,7 +21,6 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Discover unconfigured nodes) -
-      Operation Name: Discover Cluster Unconfigured Nodes -
       Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:

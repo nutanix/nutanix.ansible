@@ -21,7 +21,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Deploy a Prism Central) -
-      Operation Name: Create Domain Manager -
       Required Roles: Cluster Admin, Domain Manager Admin, Internal Super Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
@@ -323,7 +322,7 @@ options:
                         description: Range of IPs used for Prism Central network setup.
                         type: list
                         elements: dict
-                        required: true
+                        required: false
                         suboptions:
                             begin:
                                 description: An unique address that identifies a device on the internet or a local network in IPv4 or IPv6 format.

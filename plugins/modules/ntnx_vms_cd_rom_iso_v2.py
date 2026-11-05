@@ -22,12 +22,10 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Ejects an ISO from the provided CD-ROM device) -
-      Operation Name: Eject Virtual Machine CD ROM -
       Required Roles: Account Owner, Administrator, Consumer, Developer, NCM Connector, Operator, Prism Admin, Project Admin, Project Manager, Super Admin,
       User, Virtual Machine Admin, Virtual Machine Operator, Self-Service Admin (deprecated)
     - >-
       B(Inserts an ISO in the provided CD-ROM device) -
-      Operation Name: Insert Virtual Machine CD ROM -
       Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User,
       Virtual Machine Admin, Virtual Machine Operator, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"

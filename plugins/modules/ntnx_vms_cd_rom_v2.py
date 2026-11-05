@@ -22,12 +22,10 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a CD-ROM device for a VM) -
-      Operation Name: Create Virtual Machine CD ROM -
       Required Roles: Account Owner, Administrator, Consumer, Developer, NCM Connector, Operator, Prism Admin, Project Admin, Project Manager, Super Admin,
       User, Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Remove a CD-ROM device from a VM) -
-      Operation Name: Delete Virtual Machine CD ROM -
       Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin, Project Manager, Super Admin, User,
       Virtual Machine Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
@@ -369,6 +367,14 @@ def create_cd_rom(module, result):
             resp = get_cd_rom(module, vms, ext_id, vm_ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for VM CD ROM"
+                ),
+                msg="Failed to get entity ext_id from task for VM CD ROM",
+            )
 
     result["changed"] = True
 

@@ -24,15 +24,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a floating IP) -
-      Operation Name: Create Floating Ip -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - >-
       B(Delete the floating IP corresponding to the extId) -
-      Operation Name: Delete Floating Ip -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - >-
       B(Update the floating IP for this extId) -
-      Operation Name: Update Floating Ip -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
@@ -48,6 +45,11 @@ options:
     description:
       - Subnet external ID
       - Required only for updating or deleting the subnet.
+    type: str
+  project_ext_id:
+    description:
+      - External ID (UUID) of the project that owns this floating IP.
+      - Update of this field is not supported.
     type: str
   association:
     description: Spec to associating Floating IP with either VM NIC or Private IP
@@ -172,6 +174,7 @@ EXAMPLES = r"""
     state: present
     vpc_reference: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
     name: "test"
+    project_ext_id: "12345678-1234-1234-1234-123456789012"
     association:
       private_ip_association:
         private_ip:
@@ -283,6 +286,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -351,6 +355,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         association=dict(
@@ -407,6 +412,14 @@ def create_floating_ip(module, result):
             resp = get_floating_ip(module, floating_ips, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Floating IP"
+                ),
+                msg="Failed to get entity ext_id from task for Floating IP",
+            )
     result["changed"] = True
 
 
@@ -428,6 +441,10 @@ def update_floating_ip(module, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating floating_ips update spec", **result)
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     # handle update of association type
     if getattr(current_spec, "association", None):

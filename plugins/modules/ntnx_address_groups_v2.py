@@ -22,15 +22,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create an Address Group) -
-      Operation Name: Create Address Group -
       Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
     - >-
       B(Delete an Address Group) -
-      Operation Name: Delete Address Group -
       Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
     - >-
       B(Update an Address Group) -
-      Operation Name: Update Address Group -
       Required Roles: Flow Admin, Prism Admin, Project Manager, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=microseg)"
 options:
@@ -46,6 +43,12 @@ options:
     description:
         - Address group External ID.
         - Required for updating or deleting address group.
+    type: str
+
+  project_ext_id:
+    description:
+        - External ID (UUID) of the project that owns this address group.
+        - Update of this field is not supported.
     type: str
 
   name:
@@ -106,6 +109,7 @@ EXAMPLES = r"""
     state: present
     name: "{{ag1}}"
     description: test-ansible-group-1-desc
+    project_ext_id: "79298789-1234-1111-2222-6788222f17b8"
     ipv4_addresses:
       - value: "10.1.1.0"
         prefix_length: 24
@@ -203,6 +207,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
 )
 
@@ -232,6 +237,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         ipv4_addresses=dict(
@@ -286,6 +292,14 @@ def create_address_group(module, result):
             resp = get_address_group(module, address_groups, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Address Group"
+                ),
+                msg="Failed to get entity ext_id from task for Address Group",
+            )
 
     result["changed"] = True
 
@@ -311,6 +325,10 @@ def update_address_group(module, result):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating address_groups update spec", **result)
+
+    raise_unsupported_update_fields(
+        module, current_spec, update_spec, ["project_ext_id"]
+    )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())

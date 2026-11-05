@@ -21,14 +21,12 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get VM by ext_id) -
-      Operation Name: View Existing Virtual Machine -
       Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, Disaster Recovery Admin, Disaster Recovery Viewer,
       Flow Admin, Flow Policy Author, Flow Viewer, NCM Connector, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin,
       Project Manager, Storage Admin, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin,
       Self-Service Admin (deprecated)
     - >-
       B(List VMs) -
-      Operation Name: View Existing Virtual Machine -
       Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, Flow Admin, Flow Policy Author,
       Flow Viewer, NCM Connector, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager,
       Storage Admin, Super Admin, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin,
@@ -64,6 +62,14 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     ext_id: 530567f3-abda-4913-b5d0-0ab6758ec1653
+
+- name: List all VMs with fetch_all
+  nutanix.ncp.ntnx_vms_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 RETURN = r"""
 response:
@@ -165,6 +171,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -206,7 +213,10 @@ def get_vms(module, result):
         module.fail_json(msg="Failed generating vms info Spec", **result)
 
     try:
-        resp = vmm.list_vms(**kwargs)
+        resp = list_entities(
+            vmm.list_vms,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

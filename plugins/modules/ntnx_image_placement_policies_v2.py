@@ -130,23 +130,18 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create an image placement policy) -
-      Operation Name: Create Image Placement Policy -
       Required Roles: Consumer, Developer, Prism Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Delete an image placement policy) -
-      Operation Name: Delete Image Placement Policy -
       Required Roles: Prism Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - >-
       B(Resume an image placement policy) -
-      Operation Name: Resume Image Placement Policy -
       Required Roles: Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Suspend an image placement policy) -
-      Operation Name: Suspend Image Placement Policy -
       Required Roles: Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(Update an image placement policy) -
-      Operation Name: Update Image Placement Policy -
       Required Roles: Prism Admin, Project Manager, Super Admin, Virtual Machine Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 """
@@ -363,8 +358,8 @@ def create_policy(module, result):
         ext_id = get_entity_ext_id_from_task(
             task, rel=Tasks.RelEntityType.IMAGE_PLACEMENT_POLICY
         )
-        policy = get_policy(module, policies, ext_id)
         if ext_id:
+            policy = get_policy(module, policies, ext_id)
             result["ext_id"] = ext_id
 
             # update policy enforcement state if needed
@@ -376,6 +371,14 @@ def create_policy(module, result):
 
             policy = get_policy(module, policies, ext_id)
             result["response"] = strip_internal_attributes(policy.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Image Placement Policy"
+                ),
+                msg="Failed to get entity ext_id from task for Image Placement Policy",
+            )
 
     result["changed"] = True
 

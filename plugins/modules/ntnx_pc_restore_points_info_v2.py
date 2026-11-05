@@ -19,11 +19,9 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get restore point by ext_id) -
-      Operation Name: View Restorable Domain Manager Restore Point -
       Required Roles: Domain Manager Admin, Domain Manager Viewer, Prism Admin, Prism Viewer, Super Admin
     - >-
       B(List restore points) -
-      Operation Name: View Restorable Domain Manager Restore Point -
       Required Roles: Domain Manager Admin, Domain Manager Viewer, Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
@@ -113,6 +111,14 @@ EXAMPLES = r"""
       restorable_domain_manager_ext_id: "cfddac63-ffdb-4d9c-9a8c-54abf89ce234"
       limit: 1
   register: result
+
+- name: List all PC restore points with fetch_all
+  nutanix.ncp.ntnx_pc_restore_points_info_v2:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+      fetch_all: true
 """
 
 RETURN = r"""
@@ -182,6 +188,7 @@ from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -219,10 +226,11 @@ def get_restore_points(module, domain_manager_backups_api, result):
         result["error"] = err
         module.fail_json(msg="Failed generating restore points info Spec", **result)
     try:
-        resp = domain_manager_backups_api.list_restore_points(
+        resp = list_entities(
+            domain_manager_backups_api.list_restore_points,
+            kwargs=kwargs,
             restoreSourceExtId=restore_source_ext_id,
             restorableDomainManagerExtId=restorable_domain_manager_ext_id,
-            **kwargs  # fmt: skip
         )
     except Exception as e:
         raise_api_exception(

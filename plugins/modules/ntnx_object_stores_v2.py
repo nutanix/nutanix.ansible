@@ -21,15 +21,12 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create an Object store) -
-      Operation Name: Create Object Store -
       Required Roles: Objects Admin, Prism Admin, Super Admin
     - >-
       B(Delete an Object store) -
-      Operation Name: Delete Object Store -
       Required Roles: Objects Admin, Objects Editor, Prism Admin, Super Admin
     - >-
       B(Update an Object store) -
-      Operation Name: Update Object Store -
       Required Roles: Objects Admin, Objects Editor, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=objects)"
 options:
@@ -400,7 +397,8 @@ from ..module_utils.v4.objects.api_client import (  # noqa: E402
     get_objects_api_instance,
 )
 from ..module_utils.v4.objects.helpers import get_object_store  # noqa: E402
-from ..module_utils.v4.objects.spec.objects import (  # noqa: E402
+
+from ..module_utils.v4.objects.spec.objects import (  # noqa: E402  # isort: skip
     ObjectsSpecs as objects_specs,
 )
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
@@ -475,6 +473,14 @@ def create_object_store(module, object_stores_api, result):
             resp = get_object_store(module, object_stores_api, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Object Store"
+                ),
+                msg="Failed to get entity ext_id from task for Object Store",
+            )
 
     result["changed"] = True
 

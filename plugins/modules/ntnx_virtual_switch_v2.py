@@ -16,7 +16,6 @@ version_added: 2.5.0
 description:
   - This module allows you to create, update, and delete virtual switches in Nutanix Prism Central.
   - It also supports creating a virtual switch from an existing bridge using the migrate operation.
-  - Metadata is not supported in this module.
   - This module uses PC v4 APIs based SDKs
 notes:
     - >-
@@ -24,27 +23,23 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a Virtual Switch) -
-      Operation Name: Add Virtual Switch -
       Required Roles: Prism Admin, Super Admin
     - >-
       B(Delete a Virtual Switch) -
-      Operation Name: Delete Virtual Switch -
       Required Roles: Prism Admin, Super Admin
     - >-
       B(Create a Virtual Switch from an existing bridge) -
-      Operation Name: Migrate Bridge -
       Required Roles: Network Infra Admin, Prism Admin, Super Admin
     - >-
       B(Update a Virtual Switch) -
-      Operation Name: Update Virtual Switch -
       Required Roles: Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
     description:
-      - If C(state) is set to C(present) and ext_id is not provided then the operation will be create virtual switch.
-      - If C(state) is set to C(present) and ext_id is provided then the operation will be update virtual switch.
-      - If C(state) is set to C(absent) and ext_id is provided then the operation will be delete virtual switch.
+      - If C(state) is set to C(present) and C(ext_id) is not provided then the operation will be create virtual switch.
+      - If C(state) is set to C(present) and C(ext_id) is provided then the operation will be update virtual switch.
+      - If C(state) is set to C(absent) and C(ext_id) is provided then the operation will be delete virtual switch.
     type: str
     required: false
     choices:
@@ -53,7 +48,14 @@ options:
     default: present
   ext_id:
     description:
-      - The external ID of the virtual switch. Required for update and delete operations.
+      - The external ID of the virtual switch.
+      - Required for update and delete operations.
+    type: str
+    required: false
+  project_ext_id:
+    description:
+      - External ID (UUID) of the project that owns this virtual switch.
+      - Update of this field is not supported.
     type: str
     required: false
   name:
@@ -234,6 +236,38 @@ options:
         type: int
         required: false
         default: 300
+  metadata:
+    description:
+      - Metadata associated with this resource.
+    type: dict
+    required: false
+    suboptions:
+      owner_reference_id:
+        description:
+          - A globally unique identifier that represents the owner of this resource.
+        type: str
+        required: false
+      owner_user_name:
+        description:
+          - The userName of the owner of this resource.
+        type: str
+        required: false
+      project_reference_id:
+        description:
+          - A globally unique identifier that represents the project this resource belongs to.
+        type: str
+        required: false
+      project_name:
+        description:
+          - The name of the project this resource belongs to.
+        type: str
+        required: false
+      category_ids:
+        description:
+          - A list of globally unique identifiers that represent all the categories the resource is associated with.
+        type: list
+        elements: str
+        required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -241,10 +275,11 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_proxy_v2
 author:
   - George Ghawali (@george-ghawali)
+  - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
-- name: Create virtual switch
+- name: Create virtual switch owned by a project
   nutanix.ncp.ntnx_virtual_switch_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -253,6 +288,7 @@ EXAMPLES = r"""
     state: present
     name: "virtual_switch_ansible"
     description: "Virtual switch created by Ansible"
+    project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
     bond_mode: "NONE"
     mtu: 1500
     is_default: false
@@ -368,14 +404,14 @@ response:
 
 task_ext_id:
   description:
-    - The external id of the task.
+    - The external ID of the task.
   returned: always
   type: str
   sample: "ZXJnb24=:90458bc7-a12b-4616-ac66-562fdb00c209"
 
 ext_id:
   description:
-    - The external id of the virtual switch.
+    - The external ID of the virtual switch.
   returned: always
   type: str
   sample: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
@@ -407,6 +443,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error, module is idempotent or check mode (in delete operation)
   type: str
+  sample: "Api Exception raised while creating virtual switch"
 """
 
 import traceback  # noqa: E402
@@ -431,6 +468,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
     validate_required_params,
 )
@@ -510,8 +548,17 @@ def get_module_spec():
         snooping_timeout=dict(type="int", required=False, default=300),
     )
 
+    metadata_spec = dict(
+        owner_reference_id=dict(type="str", required=False),
+        owner_user_name=dict(type="str", required=False),
+        project_reference_id=dict(type="str", required=False),
+        project_name=dict(type="str", required=False),
+        category_ids=dict(type="list", elements="str", required=False),
+    )
+
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         existing_bridge_name=dict(type="str"),
@@ -534,6 +581,11 @@ def get_module_spec():
             type="dict",
             options=igmp_spec,
             obj=networking_sdk.IgmpSpec,
+        ),
+        metadata=dict(
+            type="dict",
+            options=metadata_spec,
+            obj=networking_sdk.Metadata,
         ),
     )
     return module_args
@@ -577,6 +629,14 @@ def create_virtual_switch_from_existing_bridge(module, bridges_api, result):
             virtual_switches_api = get_virtual_switches_api_instance(module)
             resp = get_virtual_switch(module, virtual_switches_api, ext_id)
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Virtual Switch"
+                ),
+                msg="Failed to get entity ext_id from task for Virtual Switch",
+            )
     result["changed"] = True
 
 
@@ -615,6 +675,14 @@ def create_virtual_switch(module, virtual_switches, result):
             result["ext_id"] = ext_id
             resp = get_virtual_switch(module, virtual_switches, ext_id)
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Virtual Switch"
+                ),
+                msg="Failed to get entity ext_id from task for Virtual Switch",
+            )
     result["changed"] = True
 
 
@@ -639,6 +707,11 @@ def check_for_idempotency(old_spec_dict, update_spec_dict):
     update_spec_dict.pop("is_quick_mode")
     old_spec_dict.pop("owner_type")
     update_spec_dict.pop("owner_type")
+    for spec_dict in (old_spec_dict, update_spec_dict):
+        metadata = spec_dict.get("metadata") or {}
+        category_ids = metadata.get("category_ids")
+        if category_ids:
+            metadata["category_ids"] = sorted(category_ids)
     return old_spec_dict == update_spec_dict
 
 
@@ -678,18 +751,18 @@ def update_virtual_switch(module, virtual_switches, result):
         result["error"] = err
         module.fail_json(msg="Failed generating update virtual switch spec", **result)
 
+    raise_unsupported_update_fields(module, old_spec, update_spec, ["project_ext_id"])
+
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
     if check_for_idempotency(old_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
-        module.exit_json(msg="Nothing to change.")
+        module.exit_json(msg="Nothing to change.", **result)
 
     _remove_read_only_attributes(update_spec)
-
     resp = None
-
     try:
         resp = virtual_switches.update_virtual_switch_by_id(
             extId=ext_id, body=update_spec, **kwargs
@@ -761,6 +834,7 @@ def run_module():
             "name",
             "description",
             "cluster_reference",
+            "metadata",
         }
         module_specific_params = set(get_module_spec().keys())
         extra_params = (
@@ -768,12 +842,13 @@ def run_module():
         ) - allowed_with_bridge
         if extra_params:
             module.fail_json(
-                msg="When 'existing_bridge_name' is provided, only 'name', 'description' and 'cluster_reference' are allowed. "
-                "Invalid parameters: {0}".format(", ".join(sorted(extra_params)))
+                msg="When 'existing_bridge_name' is provided, only 'name', "
+                "'description', 'cluster_reference' and 'metadata' are "
+                "allowed. Invalid parameters: "
+                "{0}".format(", ".join(sorted(extra_params)))
             )
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "failed": False,
         "ext_id": None,

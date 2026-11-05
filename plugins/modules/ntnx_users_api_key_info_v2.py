@@ -21,11 +21,9 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get user api key by ext_id) -
-      Operation Name: View User Key -
       Required Roles: Nutanix Central Admin, Prism Admin, Prism Viewer, Super Admin
     - >-
       B(List keys for the user) -
-      Operation Name: View User Key -
       Required Roles: Nutanix Central Admin, Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
@@ -76,6 +74,14 @@ EXAMPLES = r"""
     user_ext_id: "f7e6d5c4-b3a2-4i9h-8g7f-6e5d4c3b2a1k"
     ext_id: "9i8h7g6f-5e4d-3c2b-1a0j-k2l3m4n5o6p"
   register: result
+
+- name: List all user API keys with fetch_all
+  nutanix.ncp.ntnx_users_api_key_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -162,6 +168,7 @@ from ..module_utils.v4.iam.api_client import get_user_api_instance  # noqa: E402
 from ..module_utils.v4.iam.helpers import get_requested_key  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -197,7 +204,11 @@ def get_user_api_keys(module, users, result):
     user_ext_id = module.params.get("user_ext_id")
     result["user_ext_id"] = user_ext_id
     try:
-        resp = users.list_user_keys(userExtId=user_ext_id, **kwargs)
+        resp = list_entities(
+            users.list_user_keys,
+            kwargs=kwargs,
+            userExtId=user_ext_id,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

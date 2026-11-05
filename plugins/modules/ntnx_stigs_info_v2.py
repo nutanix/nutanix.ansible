@@ -26,7 +26,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get the STIG controls details) -
-      Operation Name: View Stig -
       Required Roles: Prism Admin, Prism Viewer, Security Dashboard Admin, Security Dashboard Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=security)"
 extends_documentation_fragment:
@@ -61,6 +60,14 @@ EXAMPLES = r"""
     nutanix_password: <pass>
     limit: 1
   register: result_limit
+
+- name: List all STIGs with fetch_all
+  nutanix.ncp.ntnx_stigs_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -143,6 +150,7 @@ from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.security.api_client import get_stigs_api_instance  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -170,7 +178,10 @@ def run_module():
         )
     resp = None
     try:
-        resp = stig_api_instance.list_stigs(**kwargs)
+        resp = list_entities(
+            stig_api_instance.list_stigs,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

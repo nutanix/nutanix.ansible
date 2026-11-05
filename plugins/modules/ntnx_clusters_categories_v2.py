@@ -22,11 +22,9 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Associate categories to the cluster) -
-      Operation Name: Associate Cluster Categories -
       Required Roles: Cluster Admin, Prism Admin, Super Admin
     - >-
       B(Disassociate categories from the cluster) -
-      Operation Name: Disassociate Cluster Categories -
       Required Roles: Cluster Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:

@@ -22,7 +22,6 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Update NGT configuration for a VM) -
-      Operation Name: Update Virtual Machine NGT -
       Required Roles: Account Owner, Administrator, Backup Admin, Consumer, Developer, NCM Connector, Operator, Prism Admin, Project Admin, Project Manager,
       Super Admin, User, Virtual Machine Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
@@ -187,13 +186,13 @@ def update_ngt_config(module, result):
     if module.params.get("is_enabled") is not None:
         spec.is_enabled = module.params.get("is_enabled")
 
-    if check_idempotency(current_spec, spec):
-        result["skipped"] = True
-        module.exit_json(msg="Nothing to change.", **result)
-
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
+
+    if check_idempotency(current_spec, spec):
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.", **result)
 
     try:
         resp = vmm.update_guest_tools_by_id(extId=ext_id, body=spec)

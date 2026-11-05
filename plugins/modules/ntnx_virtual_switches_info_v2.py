@@ -23,19 +23,17 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get virtual switch by ext_id) -
-      Operation Name: View Virtual Switch -
       Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Super Admin, Virtual Machine Admin,
       Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
     - >-
       B(Get list of Virtual Switches) -
-      Operation Name: View Virtual Switch -
       Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Super Admin, Virtual Machine Admin,
       Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   ext_id:
     description:
-      - The external identifier of the virtual switch.
+      - The external ID of the virtual switch.
     type: str
   cluster_ext_id:
     description:
@@ -49,6 +47,7 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_proxy_v2
 author:
   - George Ghawali (@george-ghawali)
+  - Abhinav Bansal (@abhinavbansal29)
 """
 EXAMPLES = r"""
 - name: Get virtual switch using ext_id
@@ -73,6 +72,14 @@ EXAMPLES = r"""
     limit: 1
   register: result
   ignore_errors: true
+
+- name: List all virtual switches with fetch_all
+  nutanix.ncp.ntnx_virtual_switches_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 RETURN = r"""
 response:
@@ -141,7 +148,6 @@ error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
   type: str
   returned: when an error occurs
-  sample: null
 
 failed:
   description: This field typically holds information about if the task have failed
@@ -172,6 +178,7 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 from ..module_utils.v4.network.helpers import get_virtual_switch  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -210,7 +217,10 @@ def get_virtual_switches(module, virtual_switches, result):
         kwargs["X_Cluster_Id"] = module.params.get("cluster_ext_id")
 
     try:
-        resp = virtual_switches.list_virtual_switches(**kwargs)
+        resp = list_entities(
+            virtual_switches.list_virtual_switches,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -237,7 +247,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "response": None, "error": None}
+    result = {"changed": False, "response": None, "failed": False}
     virtual_switches = get_virtual_switches_api_instance(module)
     if module.params.get("ext_id"):
         get_virtual_switch_using_ext_id(module, virtual_switches, result)

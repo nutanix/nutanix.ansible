@@ -23,14 +23,12 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get cluster by ext_id) -
-      Operation Name: View Cluster -
       Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, Consumer, Developer, Files Admin, Flow Admin, Flow Policy Author, Flow Viewer,
       Kubernetes Admin, LocalAccountManager Admin, LocalAccountManager Viewer, NCM Connector, Network Infra Admin, Objects Admin, Prism Admin,
       Prism Viewer, Project Admin, Project Manager, Security Dashboard Admin, Security Dashboard Viewer, Storage Admin, Storage Viewer, Super Admin,
       Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin, Self-Service Admin (deprecated)
     - >-
       B(Get the list of clusters) -
-      Operation Name: View Cluster -
       Required Roles: Cluster Admin, Cluster Viewer, Consumer, Developer, Files Admin, Flow Admin, Flow Policy Author, Flow Viewer, Kubernetes Admin,
       LocalAccountManager Admin, LocalAccountManager Viewer, NCM Connector, Network Infra Admin, Objects Admin, Prism Admin, Prism Viewer, Project Admin,
       Project Manager, Security Dashboard Admin, Security Dashboard Viewer, Storage Admin, Storage Viewer, Super Admin, Virtual Machine Admin,
@@ -75,6 +73,14 @@ EXAMPLES = r"""
     nutanix_password: <pass>
     filter: "name eq 'cluster1'"
   register: result
+
+- name: List all clusters with fetch_all
+  nutanix.ncp.ntnx_clusters_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -252,6 +258,7 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.helpers import get_cluster  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -285,7 +292,10 @@ def get_clusters(module, result):
         module.fail_json("Failed creating query parameters for fetching clusters info")
     resp = None
     try:
-        resp = clusters.list_clusters(**kwargs)
+        resp = list_entities(
+            clusters.list_clusters,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

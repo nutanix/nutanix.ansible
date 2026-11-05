@@ -22,11 +22,9 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Get route table by ext_id) -
-      Operation Name: View VPC Route Table -
       Required Roles: Account Owner, Administrator, Prism Admin, Prism Viewer, Super Admin, User, VPC Admin
     - >-
       B(List route tables) -
-      Operation Name: View VPC Route Table -
       Required Roles: Account Owner, Administrator, Prism Admin, Prism Viewer, Super Admin, User, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
@@ -70,6 +68,14 @@ EXAMPLES = r"""
     validate_certs: false
     filter: vpcReference eq '251d4a4f-244f-4c84-70a9-8c8f68f9dff0'
   register: route_tables_filter
+
+- name: List all route tables with fetch_all
+  nutanix.ncp.ntnx_route_tables_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 RETURN = r"""
 response:
@@ -132,6 +138,7 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -173,7 +180,10 @@ def get_route_tables(module, route_table_api_instance, result):
         module.fail_json(msg="Failed generating route table info Spec", **result)
 
     try:
-        resp = route_table_api_instance.list_route_tables(**kwargs)
+        resp = list_entities(
+            route_table_api_instance.list_route_tables,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

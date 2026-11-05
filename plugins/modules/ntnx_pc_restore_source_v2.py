@@ -22,11 +22,9 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create restore source) -
-      Operation Name: Create Restore Source -
       Required Roles: Prism Admin, Super Admin
     - >-
       B(Delete restore source) -
-      Operation Name: Delete Restore Source -
       Required Roles: Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:

@@ -23,12 +23,10 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get entity by ext_id) -
-      Operation Name: View Entity -
       Required Roles: Account Owner, Administrator, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Manager, Super Admin,
       User, Self-Service Admin (deprecated)
     - >-
       B(List entities) -
-      Operation Name: View Entity -
       Required Roles: Account Owner, Administrator, Nutanix Central Admin, Prism Admin, Prism Viewer, Project Manager, Super Admin,
       User, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
@@ -86,6 +84,14 @@ EXAMPLES = r"""
     ext_id: "dc774897-3bfa-437b-53bb-c97e192029c4"
   register: result
   ignore_errors: true
+
+- name: List all IAM entities with fetch_all
+  nutanix.ncp.ntnx_iam_entities_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 RETURN = r"""
 response:
@@ -183,6 +189,7 @@ from ..module_utils.v4.iam.api_client import get_entity_api_instance  # noqa: E4
 from ..module_utils.v4.iam.helpers import get_entity  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -213,7 +220,10 @@ def get_entities(module, entities, result):
         module.fail_json(msg="Failed generating entities info Spec", **result)
 
     try:
-        resp = entities.list_entities(**kwargs)
+        resp = list_entities(
+            entities.list_entities,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

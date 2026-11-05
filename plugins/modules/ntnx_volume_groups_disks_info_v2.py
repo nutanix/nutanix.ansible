@@ -24,12 +24,10 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Get the details of a Volume Disk) -
-      Operation Name: View Volume Group Disks -
       Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Disaster Recovery Viewer, Kubernetes Data Services System, Prism Admin, Prism Viewer,
       Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
     - >-
       B(List all the Volume Disks attached to the Volume Group) -
-      Operation Name: View Volume Group Disks -
       Required Roles: CSI System, Disaster Recovery Admin, Disaster Recovery Viewer, Kubernetes Data Services System, Prism Admin, Prism Viewer,
       Project Manager, Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
@@ -78,6 +76,14 @@ EXAMPLES = r"""
     validate_certs: false
     ext_id: 530567f3-abda-4913-b5d0-0ab6758ec1654
     volume_group_ext_id: 530567f3-abda-4913-b5d0-0ab6758ec1653
+
+- name: List all volume group disks with fetch_all
+  nutanix.ncp.ntnx_volume_groups_disks_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -136,6 +142,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -183,8 +190,10 @@ def get_vg_disks(module, result):
         module.fail_json(msg="Failed generating volume group disks info Spec", **result)
 
     try:
-        resp = vgs.list_volume_disks_by_volume_group_id(
-            volumeGroupExtId=volume_group_ext_id, **kwargs
+        resp = list_entities(
+            vgs.list_volume_disks_by_volume_group_id,
+            kwargs=kwargs,
+            volumeGroupExtId=volume_group_ext_id,
         )
     except Exception as e:
         raise_api_exception(

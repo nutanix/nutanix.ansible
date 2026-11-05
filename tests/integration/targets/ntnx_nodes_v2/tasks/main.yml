@@ -1,0 +1,18 @@
+---
+# NOTE: The lifecycle Nodes v4 APIs are served by Foundation Central (FCVM/Foundation),
+# NOT by Prism Central. The module_defaults below are wired to the FCVM endpoint if
+# provided (fc_ip); otherwise they fall back to the standard connection variables so
+# that check_mode and negative (spec-validation) tests can still run.
+- name: Set module defaults
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ fc_ip | default(ip) }}"
+      nutanix_username: "{{ fc_username | default(username) | default(omit) }}"
+      nutanix_password: "{{ fc_password | default(password) | default(omit) }}"
+      nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
+      validate_certs: "{{ validate_certs }}"
+      nutanix_debug: "{{ nutanix_debug | default(omit) }}"
+      nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
+  block:
+    - name: Import nodes.yml
+      ansible.builtin.import_tasks: nodes.yml
