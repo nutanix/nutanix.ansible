@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -14,24 +14,21 @@ module: ntnx_routes_by_bgp_session_ids_info_v2
 short_description: Fetch BGP routes info for a BGP session in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module allows you to fetch information about RoutesByBgpSessionId in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific RoutesByBgpSessionId.
-  - If C(ext_id) is not provided, list multiple RoutesByBgpSessionId optionally filtered / paginated.
+  - This module allows you to fetch information about BGP routes for a BGP session in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch details of the specific BGP route for the given BGP session.
+  - If C(ext_id) is not provided, list multiple BGP routes for the specified BGP session optionally filtered / paginated.
   - This module uses PC v4 APIs based SDKs.
+  - Set C(fetch_all=true) to automatically paginate through all available BGP routes
+    (C(page) and C(limit) are ignored when C(fetch_all) is true).
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
-      The required roles depend on the operation being performed.
     - >-
       B(Get the specified route of the specified BGP session) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer,
-      Project Admin, Super Admin, Virtual Machine Admin, Virtual Machine Operator,
-      Virtual Machine Viewer, VPC Admin
+      Required Roles: Prism Admin, Prism Viewer, Project Admin, Super Admin, VPC Admin
     - >-
       B(Lists routes of the specified BGP session) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer,
-      Project Admin, Super Admin, Virtual Machine Admin, Virtual Machine Operator,
-      Virtual Machine Viewer, VPC Admin
+      Required Roles: Prism Admin, Prism Viewer, Project Admin, Super Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   ext_id:
@@ -40,11 +37,35 @@ options:
       - When provided together with C(bgp_session_ext_id), the module fetches only that route.
     type: str
     required: false
-  bgp_session_ext_id:
-    description:
-      - The external ID of the parent BGP session whose routes should be fetched or listed.
-    type: str
-    required: true
+    bgp_session_ext_id:
+        description:
+          - The external ID of the parent BGP session whose routes should be fetched or listed.
+        type: str
+        required: true
+    page:
+        description:
+          - A URL query parameter that specifies the page number of the result set.
+          - It must be a positive integer between 0 and the maximum number of pages that are available for that resource.
+          - Any number out of this range might lead to no results.
+        type: int
+        required: false
+    limit:
+        description:
+          - A URL query parameter that specifies the total number of records returned in the result set.
+          - Must be a positive integer between 1 and 100.
+          - Any number out of this range will lead to a validation error.
+          - If the limit is not provided, a default value of 50 records will be returned in the result set.
+        type: int
+        required: false
+    fetch_all:
+        description:
+          - When C(true), paginate through the list API until all available entities are returned.
+            C(page) and C(limit) are ignored; each request uses the maximum page size (100).
+          - When C(false), return a single page (API default limit).
+          - Does not apply when fetching a single entity by C(ext_id).
+        type: bool
+        required: false
+        default: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
@@ -88,6 +109,13 @@ EXAMPLES = r"""
   nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
     bgp_session_ext_id: "8a3cf052-1234-4222-8d60-143a33c77e9f"
     orderby: "name asc"
+  register: result
+  ignore_errors: true
+
+- name: List all BGP routes for a BGP session with fetch_all
+  nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
+    bgp_session_ext_id: "8a3cf052-1234-4222-8d60-143a33c77e9f"
+    fetch_all: true
   register: result
   ignore_errors: true
 """
@@ -178,6 +206,7 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 from ..module_utils.v4.network.helpers import get_bgp_route  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -204,7 +233,7 @@ def get_bgp_route_by_ext_id(module, api_instance, result):
 
 
 def list_bgp_routes(module, api_instance, result):
-    """List BGP routes for a given BGP session (supports filter/limit/page/orderby)."""
+    """List BGP routes for a given BGP session (supports filter/limit/page/orderby/fetch_all)."""
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
     bgp_session_ext_id = module.params.get("bgp_session_ext_id")
@@ -214,8 +243,10 @@ def list_bgp_routes(module, api_instance, result):
         module.fail_json(msg="Failed generating BGP routes info Spec", **result)
 
     try:
-        resp = api_instance.list_routes_by_bgp_session_id(
-            bgpSessionExtId=bgp_session_ext_id, **kwargs
+        resp = list_entities(
+            api_instance.list_routes_by_bgp_session_id,
+            kwargs=kwargs,
+            bgpSessionExtId=bgp_session_ext_id,
         )
     except Exception as e:
         raise_api_exception(
@@ -241,7 +272,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None}
+    result = {"changed": False, "failed": False, "response": None}
     api_instance = get_bgp_routes_api_instance(module)
     if module.params.get("ext_id"):
         get_bgp_route_by_ext_id(module, api_instance, result)
