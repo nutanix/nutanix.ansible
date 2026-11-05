@@ -64,15 +64,6 @@
       ignore_errors: true
       when: bgp_route_ext_id is defined
 
-    - name: Fetch a specific BGP route by ext_id (CRUD-shaped module)
-      nutanix.ncp.ntnx_routes_by_bgp_session_id_v2:
-        state: present
-        bgp_session_ext_id: "{{ bgp_session_ext_id }}"
-        ext_id: "{{ bgp_route_ext_id }}"
-      register: bgp_route_get_crud
-      ignore_errors: true
-      when: bgp_route_ext_id is defined
-
     - name: List BGP routes for the BGP session with pagination
       nutanix.ncp.ntnx_routes_by_bgp_session_ids_info_v2:
         bgp_session_ext_id: "{{ bgp_session_ext_id }}"
