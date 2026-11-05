@@ -27,7 +27,7 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get Traffic mirror session statistics) -
-      Required Roles: Prism Admin, Prism Viewer, Super Admin, Network Infra Admin
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   ext_id:
@@ -92,27 +92,21 @@ author:
 EXAMPLES = r"""
 - name: Fetch traffic mirror session stats info by ext_id
   nutanix.ncp.ntnx_traffic_mirror_stats_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     ext_id: "cae2b71d-e46d-4d10-8c8b-1c9c6f2f7501"
     start_time: "2026-07-21T05:00:00.000Z"
     end_time: "2026-07-21T05:05:00.000Z"
   register: result
+  ignore_errors: true
 
 - name: Fetch traffic mirror session stats info with sampling interval and stat type
   nutanix.ncp.ntnx_traffic_mirror_stats_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     ext_id: "cae2b71d-e46d-4d10-8c8b-1c9c6f2f7501"
     start_time: "2026-07-21T05:00:00.000Z"
     end_time: "2026-07-21T05:05:00.000Z"
     sampling_interval: 30
     stat_type: "AVG"
   register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -255,7 +249,6 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "ext_id": None,
         "failed": False,
