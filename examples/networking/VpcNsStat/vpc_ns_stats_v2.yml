@@ -43,5 +43,8 @@
         end_time: "{{ stats_end_time }}"
         sampling_interval: 30
         stat_type: "AVG"
+        page: 0
+        limit: 50
+        select: "northSouthIngressBytesPerSec,northSouthEgressBytesPerSec"
       register: result
       ignore_errors: true

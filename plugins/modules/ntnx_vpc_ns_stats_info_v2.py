@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -25,8 +25,8 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get VPC North-South statistics) -
-      Required Roles: Prism Admin, Prism Viewer, Project Admin, Super Admin,
-      VPC Admin, VPC Viewer
+      Required Roles: Account Owner, Administrator, Prism Admin, Prism Viewer, Project Admin
+      Super Admin, Tenant Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   vpc_ext_id:
@@ -72,6 +72,35 @@ options:
       - AVG
       - COUNT
       - LAST
+  page:
+    description:
+      - A URL query parameter that specifies the page number of the result set.
+      - It must be a positive integer between 0 and the maximum number of pages
+        that are available for that resource.
+      - Any number out of this range might lead to no results.
+    type: int
+    required: false
+  limit:
+    description:
+      - A URL query parameter that specifies the total number of records returned
+        in the result set.
+      - Must be a positive integer between 1 and 100.
+      - Any number out of this range will lead to a validation error.
+      - If the limit is not provided, a default value of 50 records will be
+        returned in the result set.
+    type: int
+    required: false
+  select:
+    description:
+      - A URL query parameter that allows clients to request a specific set of
+        properties for each entity or complex type.
+      - Expression specified with the C($select) must conform to the OData V4.01
+        URL conventions.
+      - If a C($select) expression consists of a single select item that is an
+        asterisk (i.e., C(*)), then all properties on the matching resource will
+        be returned.
+    type: str
+    required: false
   read_timeout:
     description: Read timeout in milliseconds for API calls.
     type: int
@@ -104,6 +133,9 @@ EXAMPLES = r"""
     end_time: "2025-07-31T12:41:56.955Z"
     sampling_interval: 30
     stat_type: "AVG"
+    page: 0
+    limit: 50
+    select: "northSouthIngressBytesPerSec,northSouthEgressBytesPerSec"
   register: result
   ignore_errors: true
 """
@@ -170,6 +202,7 @@ from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.network.api_client import (  # noqa: E402
     get_vpc_ns_stats_api_instance,
 )
+from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
@@ -197,6 +230,9 @@ def get_module_spec():
                 "LAST",
             ],
         ),
+        page=dict(type="int"),
+        limit=dict(type="int"),
+        select=dict(type="str"),
     )
 
     return module_args
@@ -206,19 +242,29 @@ def get_vpc_ns_stats(module, api_instance, result):
     vpc_ext_id = module.params.get("vpc_ext_id")
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-    start_time = module.params.get("start_time")
-    end_time = module.params.get("end_time")
-    sampling_interval = module.params.get("sampling_interval")
-    stat_type = module.params.get("stat_type")
+
+    sg = SpecGenerator(module)
+    kwargs, err = sg.get_stats_spec(attr=module.params)
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed generating VPC North-South stats info spec", **result
+        )
+
+    info_kwargs, err = sg.get_info_spec(attr=module.params)
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed generating VPC North-South stats info spec", **result
+        )
+    kwargs.update(info_kwargs)
+
     resp = None
     try:
         resp = api_instance.get_vpc_ns_stats(
             vpcExtId=vpc_ext_id,
             extId=ext_id,
-            _startTime=start_time,
-            _endTime=end_time,
-            _samplingInterval=sampling_interval,
-            _statType=stat_type,
+            **kwargs,
         )
     except Exception as e:
         raise_api_exception(
@@ -242,7 +288,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "falied": False,
         "response": None,
         "ext_id": None,
     }
