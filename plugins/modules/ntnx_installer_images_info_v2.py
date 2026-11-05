@@ -11,13 +11,24 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_installer_images_info_v2
-short_description: Fetch LCM installer images info from Nutanix Foundation Central (FCVM)
+short_description: Fetch LCM installer images info from Nutanix Foundation Central
 version_added: 2.7.0
 description:
   - This module allows you to fetch information about LCM installer images.
   - If C(ext_id) is provided, fetch a particular installer image using its external ID.
   - If C(ext_id) is not provided, fetch multiple installer images with/without using filters, limit, etc.
   - This module uses PC v4 APIs based SDKs.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Get installer image info) -
+      Required Roles: Super Admin
+    - >-
+      B(List installer images info) -
+      Required Roles: Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
   ext_id:
     description:
@@ -79,8 +90,7 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix installer images info v4 API. The host is
-      B(FCVM/Foundation) (not Prism Central).
+    - The response from the Nutanix installer images info v4 API.
     - It can be a single installer image if external ID is provided.
     - List of multiple installer images if external ID is not provided with optional filter or limit.
   returned: always
@@ -154,6 +164,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
+from ..module_utils.v4.utils import list_entities  # noqa: E402
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -183,7 +194,7 @@ def get_installer_images(module, api_instance, result):
         module.fail_json(msg="Failed generating installer images info spec", **result)
 
     try:
-        resp = api_instance.list_images(**kwargs)
+        resp = list_entities(api_instance.list_images, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,

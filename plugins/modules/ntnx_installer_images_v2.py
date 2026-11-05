@@ -16,10 +16,21 @@ version_added: 2.7.0
 description:
   - This module allows you to create, update, and delete Life Cycle Management (LCM) installer images.
   - An installer image is an LCM image (AHV, AOS or ESX) used to image or upgrade nodes.
-  - If C(state) is C(present) and C(ext_id) is not provided, the image is created.
-  - If C(state) is C(present) and C(ext_id) is provided, the image is updated.
-  - If C(state) is C(absent) and C(ext_id) is provided, the image is deleted.
   - This module uses PC v4 APIs based SDKs.
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create installer image) -
+      Required Roles: Super Admin
+    - >-
+      B(Update installer image) -
+      Required Roles: Super Admin
+    - >-
+      B(Delete installer image) -
+      Required Roles: Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 options:
   state:
     description:
@@ -56,8 +67,9 @@ options:
       - ESX
   source:
     description:
-      - Source of the installer image.
-      - C(LOCAL) means the file is uploaded locally, C(REMOTE_URL) means it is fetched from a URL.
+      - Source of the image: LOCAL (image managed and hosted by Foundation Central),
+        REMOTE_URL (image hosted outside of Foundation Central,
+        and nodes will download the image from the given URL at the time of imaging)
       - Required for create operation.
     type: str
     required: false
@@ -68,16 +80,6 @@ options:
     description:
       - URL from which the installer image file will be downloaded.
       - Applicable when C(source) is C(REMOTE_URL).
-    type: str
-    required: false
-  metadata_download_url:
-    description:
-      - URL from which the installer image metadata file will be downloaded.
-    type: str
-    required: false
-  certificate_chain:
-    description:
-      - Certificate chain used to validate the image download over HTTPS.
     type: str
     required: false
   checksum:
@@ -121,9 +123,6 @@ author:
 """
 
 EXAMPLES = r"""
-# Note: On create only name, type and source are accepted by Foundation Central.
-# The image URL (and checksum/metadata for AHV) is applied through the update
-# operation for images whose source is REMOTE_URL.
 - name: Create installer image
   nutanix.ncp.ntnx_installer_images_v2:
     nutanix_host: "{{ foundation_host }}"
@@ -149,8 +148,6 @@ EXAMPLES = r"""
     type: "AHV"
     source: "REMOTE_URL"
     url: "https://download.example.com/ahv/host-bundle-el8.nutanix.20230302.el8.x86_64.tar.gz"
-    metadata_download_url: "https://download.example.com/ahv/metadata.json"
-    certificate_chain: "-----BEGIN CERTIFICATE-----\nMIIB...==\n-----END CERTIFICATE-----"
     checksum:
       sha256:
         hex_digest: "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
@@ -180,7 +177,6 @@ response:
   type: dict
   sample:
     {
-      "certificate_chain": null,
       "checksum": {
           "hex_digest": "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
       },
@@ -188,7 +184,6 @@ response:
       "ext_id": "d1f27805-4ce3-9212-2ca4-e4b4d258fe9c",
       "file_status": "URL_AVAILABLE",
       "links": null,
-      "metadata_download_url": "https://download.example.com/ahv/metadata.json",
       "metadata_status": "NOT_AVAILABLE",
       "name": "ahv_image_ansible",
       "source": "REMOTE_URL",
@@ -264,6 +259,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    strip_read_only_fields,
     validate_required_params,
 )
 
@@ -317,8 +313,6 @@ def get_module_spec():
             obj=lifecycle_sdk.ImageSource,
         ),
         url=dict(type="str"),
-        metadata_download_url=dict(type="str"),
-        certificate_chain=dict(type="str"),
         checksum=dict(
             type="dict",
             options=checksum_spec,
@@ -330,6 +324,15 @@ def get_module_spec():
         ),
     )
     return module_args
+
+
+READ_ONLY_FIELDS = [
+    "file_status",
+    "metadata_status",
+    "version",
+    "created_time",
+    "links",
+]
 
 
 def create_installer_image(module, result, api_instance):
@@ -367,22 +370,22 @@ def create_installer_image(module, result, api_instance):
             result["ext_id"] = ext_id
             image = get_installer_image(module, api_instance, ext_id)
             result["response"] = strip_internal_attributes(image.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Installer Image"
+                ),
+                msg="Failed to get entity ext_id from task for Installer Image",
+            )
+
     result["changed"] = True
-
-
-def _remove_read_only_attributes(spec):
-    """Reset server-populated read-only attributes before an update call."""
-    spec.file_status = None
-    spec.metadata_status = None
-    spec.version = None
-    spec.created_time = None
 
 
 def check_for_idempotency(old_spec_dict, update_spec_dict):
     old_spec_dict = strip_internal_attributes(deepcopy(old_spec_dict))
     update_spec_dict = strip_internal_attributes(deepcopy(update_spec_dict))
-    read_only = ["file_status", "metadata_status", "version", "created_time", "links"]
-    for key in read_only:
+    for key in READ_ONLY_FIELDS:
         old_spec_dict.pop(key, None)
         update_spec_dict.pop(key, None)
     return old_spec_dict == update_spec_dict
@@ -413,7 +416,7 @@ def update_installer_image(module, result, api_instance):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
 
-    _remove_read_only_attributes(update_spec)
+    strip_read_only_fields(update_spec, fields=READ_ONLY_FIELDS)
 
     resp = None
     try:
@@ -443,14 +446,9 @@ def delete_installer_image(module, result, api_instance):
             ext_id
         )
         return
-
-    old_spec = get_installer_image(module, api_instance, ext_id)
-    etag = get_etag(data=old_spec)
-    kwargs = {"if_match": etag} if etag else {}
-
     resp = None
     try:
-        resp = api_instance.delete_image_by_id(extId=ext_id, **kwargs)
+        resp = api_instance.delete_image_by_id(extId=ext_id)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -485,7 +483,6 @@ def run_module():
         "changed": False,
         "response": None,
         "failed": False,
-        "ext_id": None,
     }
     api_instance = get_installer_images_api_instance(module)
     state = module.params.get("state")
