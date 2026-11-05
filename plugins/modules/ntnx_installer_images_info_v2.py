@@ -160,11 +160,11 @@ from ..module_utils.v4.lcm.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.lcm.helpers import get_installer_image  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
+from ..module_utils.v4.utils import list_entities  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-from ..module_utils.v4.utils import list_entities  # noqa: E402
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
