@@ -1,0 +1,87 @@
+---
+# Summary:
+# Fetch VM stats via ntnx_vm_stats_info_v2, and disk/NIC stats via
+# ntnx_vm_disk_stats_info_v2 and ntnx_vm_nic_stats_info_v2.
+
+- name: VM stats playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        start_time: "2026-07-21T00:00:00.000Z"
+        end_time: "2026-07-21T01:00:00.000Z"
+        vm_ext_id: "<vm_ext_id>"
+        disk_ext_id: "<vm_disk_ext_id>"
+        nic_ext_id: "<vm_nic_ext_id>"
+
+    - name: List all VM stats within the time window
+      nutanix.ncp.ntnx_vm_stats_info_v2:
+        start_time: "{{ start_time }}"
+        end_time: "{{ end_time }}"
+      register: all_stats
+      ignore_errors: true
+
+    - name: List all VM stats with fetch_all
+      nutanix.ncp.ntnx_vm_stats_info_v2:
+        start_time: "{{ start_time }}"
+        end_time: "{{ end_time }}"
+        fetch_all: true
+      register: all_stats_fetch_all
+      ignore_errors: true
+
+    - name: List VM stats with sampling and limit
+      nutanix.ncp.ntnx_vm_stats_info_v2:
+        start_time: "{{ start_time }}"
+        end_time: "{{ end_time }}"
+        sampling_interval: 60
+        stat_type: AVG
+        limit: 5
+      register: paged_stats
+      ignore_errors: true
+
+    - name: List VM stats filtered by hypervisor CPU usage
+      nutanix.ncp.ntnx_vm_stats_info_v2:
+        start_time: "{{ start_time }}"
+        end_time: "{{ end_time }}"
+        filter: "stats/any(a:a/hypervisorCpuUsagePpm gt 0)"
+      register: filtered_stats
+      ignore_errors: true
+
+    - name: Get stats for a single VM by external ID
+      nutanix.ncp.ntnx_vm_stats_info_v2:
+        ext_id: "{{ vm_ext_id }}"
+        start_time: "{{ start_time }}"
+        end_time: "{{ end_time }}"
+        sampling_interval: 30
+        stat_type: AVG
+      register: single_vm_stats
+      ignore_errors: true
+
+    - name: Get stats for a VM disk
+      nutanix.ncp.ntnx_vm_disk_stats_info_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        ext_id: "{{ disk_ext_id }}"
+        start_time: "{{ start_time }}"
+        end_time: "{{ end_time }}"
+        sampling_interval: 30
+        stat_type: AVG
+      register: disk_stats
+      ignore_errors: true
+
+    - name: Get stats for a VM NIC
+      nutanix.ncp.ntnx_vm_nic_stats_info_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        ext_id: "{{ nic_ext_id }}"
+        start_time: "{{ start_time }}"
+        end_time: "{{ end_time }}"
+        sampling_interval: 30
+        stat_type: SUM
+      register: nic_stats
+      ignore_errors: true

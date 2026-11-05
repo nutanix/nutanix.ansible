@@ -1,0 +1,250 @@
+---
+# =============================================================================
+# TEST PLAN — ntnx_volume_group_stat_v2 (Nutanix PC v4 Volume Group Stats API)
+# =============================================================================
+# The module wraps GET /api/volumes/v4.2/stats/volume-groups/{extId}. It is a
+# read-only stats endpoint; there are no CRUD operations. The test plan below
+# uses the SDK schema, the module argument spec (get_module_spec), and the
+# domain knowledge captured in the PR body to exercise every meaningful code
+# path.
+#
+# IMPORTANT — the stats pipeline (a downstream service that ingests VG activity
+# from the storage stack) does NOT report stats for freshly created / empty
+# Volume Groups; a query for such a VG returns VOL-40301 "unknown entity".
+# Realistic testing therefore fetches stats against an EXISTING VG that has
+# actual IO history. The test picks one from ntnx_volume_groups_info_v2 at
+# runtime and probes candidates until one returns stats successfully.
+#
+# The API also enforces a per-request minimum for sampling_interval that
+# scales with the width of the query window (rough rule: window_seconds/100).
+# For the 2-hour window used here the observed minimum is ~72 seconds; we use
+# 120 to stay above the floor with margin.
+#
+# Scenarios
+#   [P1] Minimal params (ext_id + start_time + end_time) — happy path.
+#   [P2] Full params (add sampling_interval + stat_type + select).
+#   [P3] Each valid stat_type value (SUM/AVG/MIN/MAX/COUNT/LAST) is accepted.
+#   [P4] `select` narrows the returned fields.
+#   [N1] Invalid ext_id → API returns an error, module fails cleanly.
+#   [N2] Missing required field (start_time) → argument spec validation error.
+#   [N3] Invalid stat_type choice → argument spec validation error.
+# =============================================================================
+
+- name: Start Volume Group Stats tests
+  ansible.builtin.debug:
+    msg: "Start Volume Group Stats tests"
+
+- name: Get start time (2 hours ago) in extended ISO-8601 format
+  ansible.builtin.command: date -u -d "-7200 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: start_time
+  changed_when: false
+
+- name: Get end time (now) in extended ISO-8601 format
+  ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: end_time
+  changed_when: false
+
+# ---------------------------------------------------------------------------
+# Precondition: pick a real Volume Group that the stats pipeline knows about.
+# ---------------------------------------------------------------------------
+- name: Discover existing Volume Groups to query stats against
+  nutanix.ncp.ntnx_volume_groups_info_v2:
+    limit: 25
+  register: existing_vgs
+
+- name: Verify at least one Volume Group is available on the cluster
+  ansible.builtin.assert:
+    that:
+      - existing_vgs.changed == false
+      - existing_vgs.failed == false
+      - existing_vgs.response is defined
+      - existing_vgs.response | length > 0
+    fail_msg: "No Volume Groups found on the cluster; stats tests need at least one existing VG."
+    success_msg: "Found existing Volume Groups to run stats tests against."
+
+- name: Probe each existing VG until one exposes stats
+  nutanix.ncp.ntnx_volume_group_stat_v2:
+    ext_id: "{{ item.ext_id }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: probe_stats
+  ignore_errors: true
+  loop: "{{ existing_vgs.response }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+- name: Compute the list of VGs that returned stats
+  ansible.builtin.set_fact:
+    stats_ready_vgs: "{{ probe_stats.results | selectattr('failed', 'equalto', false) | map(attribute='item') | list }}"
+
+- name: Verify at least one VG exposes stats
+  ansible.builtin.assert:
+    that:
+      - stats_ready_vgs | length > 0
+    fail_msg: "None of the discovered Volume Groups exposed stats in the query window."
+    success_msg: "Found {{ stats_ready_vgs | length }} VG(s) with stats available."
+
+- name: Set VG UUID to the first stats-ready VG
+  ansible.builtin.set_fact:
+    vg_uuid: "{{ stats_ready_vgs[0].ext_id }}"
+
+# ---------------------------------------------------------------------------
+# [P1] Minimal params: only ext_id + start_time + end_time.
+# ---------------------------------------------------------------------------
+- name: Fetch Volume Group stats with minimum params
+  nutanix.ncp.ntnx_volume_group_stat_v2:
+    ext_id: "{{ vg_uuid }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify Volume Group stats with minimum params
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.error is none
+      - result.response is defined
+      - result.ext_id == vg_uuid
+      - result.response.volume_group_ext_id == vg_uuid
+    fail_msg: "Unable to fetch Volume Group stats with minimum params"
+    success_msg: "Volume Group stats fetched successfully with minimum params"
+
+# ---------------------------------------------------------------------------
+# [P2] Full params: sampling_interval + stat_type + select.
+# ---------------------------------------------------------------------------
+- name: Fetch Volume Group stats with all attributes
+  nutanix.ncp.ntnx_volume_group_stat_v2:
+    ext_id: "{{ vg_uuid }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+    sampling_interval: 120
+    stat_type: AVG
+    select: "*"
+  register: result
+  ignore_errors: true
+
+- name: Verify Volume Group stats with all attributes
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.error is none
+      - result.response is defined
+      - result.ext_id == vg_uuid
+      - result.response.volume_group_ext_id == vg_uuid
+    fail_msg: "Unable to fetch Volume Group stats with all attributes"
+    success_msg: "Volume Group stats fetched successfully with all attributes"
+
+# ---------------------------------------------------------------------------
+# [P3] Every valid stat_type is accepted by the module and the API.
+# ---------------------------------------------------------------------------
+- name: Fetch Volume Group stats for each valid stat_type
+  nutanix.ncp.ntnx_volume_group_stat_v2:
+    ext_id: "{{ vg_uuid }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+    sampling_interval: 120
+    stat_type: "{{ item }}"
+  register: stat_type_results
+  ignore_errors: true
+  loop:
+    - SUM
+    - AVG
+    - MIN
+    - MAX
+    - COUNT
+    - LAST
+
+- name: Verify each stat_type call succeeded
+  ansible.builtin.assert:
+    that:
+      - item.changed == false
+      - item.failed == false
+      - item.response is defined
+      - item.ext_id == vg_uuid
+    fail_msg: "Volume Group stats fetch failed for stat_type={{ item.item }}"
+    success_msg: "Volume Group stats succeeded for stat_type={{ item.item }}"
+  loop: "{{ stat_type_results.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+# ---------------------------------------------------------------------------
+# [P4] `select` narrows the returned properties (still returns a dict).
+# ---------------------------------------------------------------------------
+- name: Fetch Volume Group stats with $select restricting fields
+  nutanix.ncp.ntnx_volume_group_stat_v2:
+    ext_id: "{{ vg_uuid }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+    select: "controllerNumIOPS"
+  register: result
+  ignore_errors: true
+
+- name: Verify Volume Group stats select-restricted response
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.response is defined
+      - result.ext_id == vg_uuid
+    fail_msg: "Volume Group stats failed with select filter"
+    success_msg: "Volume Group stats succeeded with select filter"
+
+# ---------------------------------------------------------------------------
+# [N1] Invalid ext_id → API returns an error, module reports failure.
+# ---------------------------------------------------------------------------
+- name: Fetch Volume Group stats using an invalid ext_id (negative)
+  nutanix.ncp.ntnx_volume_group_stat_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify Volume Group stats fails cleanly for an invalid ext_id
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Volume Group stats did not fail for invalid ext_id"
+    success_msg: "Volume Group stats correctly failed for invalid ext_id"
+
+# ---------------------------------------------------------------------------
+# [N2] Missing required field (start_time) → argument spec validation error.
+# ---------------------------------------------------------------------------
+- name: Fetch Volume Group stats without required start_time (negative)  # noqa: args[module]
+  nutanix.ncp.ntnx_volume_group_stat_v2:
+    ext_id: "{{ vg_uuid }}"
+    end_time: "{{ end_time.stdout }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify Volume Group stats fails when start_time missing
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Volume Group stats did not enforce required start_time"
+    success_msg: "Volume Group stats enforced required start_time"
+
+# ---------------------------------------------------------------------------
+# [N3] Invalid stat_type choice → argument spec validation error.
+# ---------------------------------------------------------------------------
+- name: Fetch Volume Group stats using an invalid stat_type (negative)  # noqa: args[module]
+  nutanix.ncp.ntnx_volume_group_stat_v2:
+    ext_id: "{{ vg_uuid }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+    stat_type: BOGUS
+  register: result
+  ignore_errors: true
+
+- name: Verify Volume Group stats fails for an invalid stat_type
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Volume Group stats did not reject invalid stat_type"
+    success_msg: "Volume Group stats correctly rejected invalid stat_type"
