@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -26,9 +26,7 @@ notes:
       performing the operation.
     - >-
       B(Get statistics for a Volume Disk) -
-      Required Roles: CSI System, Disaster Recovery Admin, Disaster Recovery Viewer,
-      Kubernetes Data Services System, Prism Admin, Prism Viewer, Project Manager,
-      Storage Admin, Storage Viewer, Super Admin, Self-Service Admin (deprecated)
+      Required Roles: Backup Admin, Prism Admin, Prism Viewer, Project Admin, Project Manager, Self-Service Admin (Deprecated), Storage Admin, Storage Viewer, Super Admin, Tenant Admin, Tenant Consumer
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:
   volume_group_ext_id:
@@ -45,14 +43,14 @@ options:
     description:
       - The start time of the period for which stats should be reported.
       - The value should be in extended ISO-8601 format.
-      - Sample input time is C(2025-07-31T12:41:56.955Z).
+      - For example, start time of 2022-04-23T01:23:45.678+09:00 would consider all stats starting at 1:23:45.678 on the 23rd of April 2022.
     type: str
     required: true
   end_time:
     description:
       - The end time of the period for which stats should be reported.
       - The value should be in extended ISO-8601 format.
-      - Sample input time is C(2025-07-31T13:41:56.955Z).
+      - For example, end time of 2022-04-23T01:23:45.678+09:00 would consider all stats ending at 1:23:45.678 on the 23rd of April 2022.
     type: str
     required: true
   sampling_interval:
@@ -65,7 +63,7 @@ options:
     required: false
   stat_type:
     description:
-      - The down-sampling operator to apply on the raw statistical data.
+      - The operator to use while performing down-sampling on stats data. Allowed values are SUM, MIN, MAX, AVG, COUNT and LAST.
     type: str
     required: false
     choices:
@@ -77,9 +75,10 @@ options:
       - LAST
   select:
     description:
-      - An OData V4.01 conformant C($select) query parameter that lets the client
-        request a specific subset of properties per entity.
-      - Use C(*) to return all properties (equivalent to omitting the parameter).
+      - An OData V4.01 conformant $select query parameter that lets the client request a specific subset of properties per entity.
+      - Expression specified with the $select must conform to the OData V4.01 URL conventions.
+      - If a $select expression consists of a single select item that is an asterisk (i.e., *), then all properties on the matching resource will be returned.
+      - If both $select and $apply query parameters are present, $select will be applied on entities within the groups.
     type: str
     required: false
   read_timeout:
@@ -198,6 +197,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -240,7 +240,8 @@ def get_volume_disk_stats(module, api_instance, result):
 
     resp = None
     try:
-        resp = api_instance.get_volume_disk_stats(
+        resp = list_entities(
+            api_instance.get_volume_disk_stats,
             volumeGroupExtId=volume_group_ext_id,
             extId=ext_id,
             **kwargs,
@@ -252,10 +253,13 @@ def get_volume_disk_stats(module, api_instance, result):
             msg="Api Exception raised while fetching volume disk stats",
         )
 
-    if getattr(resp, "data", None) is not None:
-        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
-    else:
-        module.fail_json(msg="Failed fetching volume disk stats", **result)
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
+
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        resp = []
+    result["response"] = resp
 
 
 def run_module():
@@ -267,11 +271,8 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
         "failed": False,
-        "ext_id": None,
-        "volume_group_ext_id": None,
     }
     api_instance = get_vg_api_instance(module)
     get_volume_disk_stats(module, api_instance, result)
