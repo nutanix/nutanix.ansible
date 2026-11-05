@@ -362,7 +362,6 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     raise_unsupported_update_fields,
     strip_internal_attributes,
-    strip_read_only_fields,
     validate_required_params,
 )
 
@@ -376,15 +375,6 @@ except ImportError:
     SDK_IMP_ERROR = traceback.format_exc()
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
-
-# Read-only fields returned by the API that must never be sent back on update
-READ_ONLY_FIELDS = (
-    "state",
-    "state_message",
-    "links",
-    "tenant_id",
-)
-PORT_READ_ONLY_FIELDS = ("is_up",)
 
 
 def get_module_spec():
@@ -514,31 +504,7 @@ def create_traffic_mirror(module, result, api_instance):
 def check_for_idempotency(old_spec_dict, update_spec_dict):
     old_spec_dict = strip_internal_attributes(deepcopy(old_spec_dict))
     update_spec_dict = strip_internal_attributes(deepcopy(update_spec_dict))
-    for field in READ_ONLY_FIELDS:
-        old_spec_dict.pop(field, None)
-        update_spec_dict.pop(field, None)
-    for port in list(old_spec_dict.get("source_list") or []) + list(
-        old_spec_dict.get("destination_list") or []
-    ):
-        if isinstance(port, dict):
-            for field in PORT_READ_ONLY_FIELDS:
-                port.pop(field, None)
-    for port in list(update_spec_dict.get("source_list") or []) + list(
-        update_spec_dict.get("destination_list") or []
-    ):
-        if isinstance(port, dict):
-            for field in PORT_READ_ONLY_FIELDS:
-                port.pop(field, None)
     return old_spec_dict == update_spec_dict
-
-
-def _strip_traffic_mirror_read_only(spec):
-    """Clear server-populated read-only fields before update."""
-    strip_read_only_fields(spec, fields=READ_ONLY_FIELDS)
-    for port_list_attr in ("source_list", "destination_list"):
-        ports = getattr(spec, port_list_attr, None) or []
-        for port in ports:
-            strip_read_only_fields(port, fields=PORT_READ_ONLY_FIELDS)
 
 
 def update_traffic_mirror(module, result, api_instance):
@@ -568,8 +534,6 @@ def update_traffic_mirror(module, result, api_instance):
     if check_for_idempotency(old_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
-
-    _strip_traffic_mirror_read_only(update_spec)
 
     resp = None
     try:
