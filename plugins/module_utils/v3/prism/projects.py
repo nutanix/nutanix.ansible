@@ -21,6 +21,9 @@ class Project(Prism):
             "name": self._build_spec_name,
             "desc": self._build_spec_desc,
             "clusters": self._build_spec_cluster_reference_list,
+            "directory_reference_list": self._build_spec_directory_reference_list,
+            "enable_directory_and_identity_provider_shortlist": self._build_spec_enable_directory_and_identity_provider_shortlist,
+            "identity_providers_reference_list": self._build_spec_identity_providers_reference_list,
             "default_subnet": self._build_spec_default_subnet,
             "subnets": self._build_spec_subnets,
             "users": self._build_spec_user_reference_list,
@@ -54,6 +57,22 @@ class Project(Prism):
         for uuid in cluster_ref_list:
             cluster_reference_specs.append(Cluster.build_cluster_reference_spec(uuid))
         payload["spec"]["resources"]["cluster_reference_list"] = cluster_reference_specs
+        return payload, None
+
+    def _build_spec_directory_reference_list(self, payload, directory_ref_list):
+        payload["spec"]["resources"]["directory_reference_list"] = directory_ref_list
+        return payload, None
+
+    def _build_spec_enable_directory_and_identity_provider_shortlist(
+        self, payload, shortlist_enabled
+    ):
+        payload["spec"]["resources"][
+            "enable_directory_and_identity_provider_shortlist"
+        ] = shortlist_enabled
+        return payload, None
+
+    def _build_spec_identity_providers_reference_list(self, payload, idp_ref_list):
+        payload["spec"]["resources"]["identity_providers_reference_list"] = idp_ref_list
         return payload, None
 
     def _build_spec_default_subnet(self, payload, subnet_ref):
