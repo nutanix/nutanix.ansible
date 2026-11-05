@@ -236,15 +236,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_internal_attributes,
 )
 
-SDK_IMP_ERROR = None
-try:
-    from ..module_utils.v4.volumes.api_client import get_vg_api_instance  # noqa: E402
-except ImportError:
-    from ..module_utils.v4.sdk_mock import mock_sdk as volumes_sdk  # noqa: E402, F401
-
-    SDK_IMP_ERROR = traceback.format_exc()
-
-warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
+from ..module_utils.v4.volumes.api_client import get_vg_api_instance  # noqa: E402
 
 
 def get_module_spec():
