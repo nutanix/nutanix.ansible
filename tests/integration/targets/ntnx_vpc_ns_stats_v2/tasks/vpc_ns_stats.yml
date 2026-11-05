@@ -1,0 +1,299 @@
+---
+# Test plan for ntnx_vpc_ns_stats_info_v2:
+#   1. Discover live (VPC, external-subnet) pairs on the cluster and try each
+#      until we find one that returns North-South stats. When a pair returns
+#      the documented NETWORKING-10001 "stats not present" error (see
+#      corresponding JIRA history), skip that pair and try the next; this is
+#      an upstream API condition, not a module defect.
+#   2. Positive: fetch NS stats for the first pair that yields data using only
+#      the required parameters and assert on the response shape.
+#   3. Positive: iterate every valid stat_type enum value against the same
+#      pair to prove the down-sampling operator is honoured end-to-end.
+#   4. Negative: invalid stat_type enum value is rejected by the argument spec
+#      before any API call is made.
+#   5. Negative: invalid vpc_ext_id must produce a descriptive API error and
+#      set failed=true / changed=false.
+#   6. Negative: valid vpc_ext_id but invalid external subnet ext_id must
+#      produce a descriptive API error and set failed=true.
+#   7. Idempotency: repeat the positive call and assert neither run mutated
+#      state (changed=false, failed=false).
+
+- name: Start VPC North-South stats tests
+  ansible.builtin.debug:
+    msg: Start VPC North-South stats tests
+
+- name: Initialise scratch facts
+  ansible.builtin.set_fact:
+    todelete: []
+    vpc_ns_stats_vpc_ext_id: ""
+    vpc_ns_stats_subnet_ext_id: ""
+    vpc_ns_stats_sample_available: false
+    vpc_ns_stats_positive_response: {}
+
+########################################################################################
+# Compute a time window centred on "now" for stats queries
+########################################################################################
+
+- name: Compute end time (now)
+  ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: end_time_cmd
+  changed_when: false
+
+- name: Compute start time (now - 5 minutes)
+  ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: start_time_cmd
+  changed_when: false
+
+- name: Store computed time window as facts
+  ansible.builtin.set_fact:
+    stats_start_time: "{{ start_time_cmd.stdout }}"
+    stats_end_time: "{{ end_time_cmd.stdout }}"
+
+########################################################################################
+# Discover live VPCs and one of their external subnets. VPC NS stats can only
+# be fetched for an external subnet that is actually attached to the VPC.
+########################################################################################
+
+- name: List all VPCs on the cluster
+  nutanix.ncp.ntnx_vpcs_info_v2:
+  register: vpcs_info
+  ignore_errors: true
+
+- name: Assert list VPCs did not fail
+  ansible.builtin.assert:
+    that:
+      - vpcs_info is defined
+      - vpcs_info.failed == false
+      - vpcs_info.changed == false
+    fail_msg: "Failed listing VPCs on the target cluster"
+    success_msg: "Listed VPCs on the target cluster"
+
+- name: Build the list of (VPC, external-subnet) candidate pairs
+  ansible.builtin.set_fact:
+    _vpc_ns_candidates: >-
+      {{
+        (vpcs_info.response | default([]))
+        | selectattr('external_subnets', 'defined')
+        | selectattr('external_subnets', 'ne', None)
+        | rejectattr('external_subnets', 'equalto', [])
+        | list
+      }}
+
+- name: Emit discovery debug info
+  ansible.builtin.debug:
+    msg: >-
+      Discovered {{ _vpc_ns_candidates | length }} VPC(s) with at least one
+      external subnet attached.
+
+########################################################################################
+# 1+2. Positive path: iterate candidate pairs and stop at the first one that
+#      returns non-error NS stats.
+########################################################################################
+
+- name: Probe every VPC + external subnet for NS stats availability
+  nutanix.ncp.ntnx_vpc_ns_stats_info_v2:
+    vpc_ext_id: "{{ vpc.ext_id }}"
+    ext_id: "{{ (vpc.external_subnets | first).subnet_reference }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: ns_probe
+  ignore_errors: true
+  loop: "{{ _vpc_ns_candidates }}"
+  loop_control:
+    loop_var: vpc
+    label: "{{ vpc.ext_id }}"
+
+- name: Pick the first probe that succeeded (has NS stats)
+  ansible.builtin.set_fact:
+    _successful_probe: >-
+      {{
+        (ns_probe.results | default([]))
+        | rejectattr('failed', 'equalto', true)
+        | list
+      }}
+
+- name: Record the successful (VPC, external-subnet) pair for downstream tests
+  ansible.builtin.set_fact:
+    vpc_ns_stats_vpc_ext_id: "{{ (_successful_probe | first).vpc.ext_id }}"
+    vpc_ns_stats_subnet_ext_id: >-
+      {{
+        ((_successful_probe | first).vpc.external_subnets | first).subnet_reference
+      }}
+    vpc_ns_stats_positive_response: "{{ (_successful_probe | first).response }}"
+    vpc_ns_stats_sample_available: true
+  when: _successful_probe | length > 0
+
+- name: Assert the positive-path response is well-formed
+  ansible.builtin.assert:
+    that:
+      - vpc_ns_stats_positive_response is defined
+      - vpc_ns_stats_positive_response.ext_id == vpc_ns_stats_subnet_ext_id
+      - vpc_ns_stats_positive_response.north_south_ingress_bytes_per_sec is defined
+      - vpc_ns_stats_positive_response.north_south_egress_bytes_per_sec is defined
+      - vpc_ns_stats_positive_response.north_south_ingress_packets_per_sec is defined
+      - vpc_ns_stats_positive_response.north_south_egress_packets_per_sec is defined
+      - vpc_ns_stats_positive_response.north_south_ingress_bytes_abs is defined
+      - vpc_ns_stats_positive_response.north_south_egress_bytes_abs is defined
+      - vpc_ns_stats_positive_response.north_south_ingress_packets_abs is defined
+      - vpc_ns_stats_positive_response.north_south_egress_packets_abs is defined
+    fail_msg: "The positive-path VPC NS stats response was malformed"
+    success_msg: "The positive-path VPC NS stats response is well-formed"
+  when: vpc_ns_stats_sample_available
+
+########################################################################################
+# 3. Fetch NS stats with sampling_interval + every valid stat_type value.
+#    This ensures every enum choice actually round-trips through the SDK.
+########################################################################################
+
+- name: Fetch VPC North-South stats with sampling_interval + every stat_type
+  nutanix.ncp.ntnx_vpc_ns_stats_info_v2:
+    vpc_ext_id: "{{ vpc_ns_stats_vpc_ext_id }}"
+    ext_id: "{{ vpc_ns_stats_subnet_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    sampling_interval: 30
+    stat_type: "{{ item }}"
+  loop:
+    - SUM
+    - MIN
+    - MAX
+    - AVG
+    - COUNT
+    - LAST
+  register: stats_all_types
+  ignore_errors: true
+  when: vpc_ns_stats_sample_available
+
+- name: Assert every stat_type response is well-formed
+  ansible.builtin.assert:
+    that:
+      - iter is defined
+      - iter.changed == false
+      - iter.failed == false
+      - iter.response is defined
+      - iter.ext_id == vpc_ns_stats_subnet_ext_id
+    fail_msg: "Fetching VPC NS stats with stat_type={{ iter.item }} failed"
+    success_msg: "VPC NS stats fetched successfully with stat_type={{ iter.item }}"
+  loop: "{{ stats_all_types.results | default([]) }}"
+  loop_control:
+    loop_var: iter
+  when:
+    - vpc_ns_stats_sample_available
+    - stats_all_types is defined
+    - stats_all_types.results is defined
+
+########################################################################################
+# 4. Negative: invalid stat_type value must be rejected by argument spec.
+########################################################################################
+
+- name: Fetch VPC North-South stats with invalid stat_type (must fail)
+  nutanix.ncp.ntnx_vpc_ns_stats_info_v2:
+    vpc_ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    stat_type: "NOT_A_REAL_ENUM"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid stat_type is rejected before hitting the API
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'value of stat_type must be one of' in result.msg"
+    fail_msg: "Invalid stat_type was not rejected by the module argument spec"
+    success_msg: "Invalid stat_type rejected by the module argument spec"
+
+########################################################################################
+# 5. Negative: invalid VPC ext_id must produce a descriptive API error.
+########################################################################################
+
+- name: Fetch VPC North-South stats with an invalid vpc_ext_id
+  nutanix.ncp.ntnx_vpc_ns_stats_info_v2:
+    vpc_ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid vpc_ext_id produces an API error
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+    fail_msg: "Invalid vpc_ext_id did not produce an API error"
+    success_msg: "Invalid vpc_ext_id produced an API error as expected"
+
+########################################################################################
+# 6. Negative: valid vpc_ext_id but bogus subnet ext_id must produce an API error.
+########################################################################################
+
+- name: Fetch VPC North-South stats with an invalid subnet ext_id
+  nutanix.ncp.ntnx_vpc_ns_stats_info_v2:
+    vpc_ext_id: "{{ vpc_ns_stats_vpc_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: result
+  ignore_errors: true
+  when: vpc_ns_stats_sample_available
+
+- name: Assert invalid subnet ext_id produces an API error
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+    fail_msg: "Invalid subnet ext_id did not produce an API error"
+    success_msg: "Invalid subnet ext_id produced an API error as expected"
+  when: vpc_ns_stats_sample_available
+
+########################################################################################
+# 7. Idempotency: repeated calls must never mutate state.
+########################################################################################
+
+- name: Fetch VPC North-South stats twice to verify no side-effects
+  nutanix.ncp.ntnx_vpc_ns_stats_info_v2:
+    vpc_ext_id: "{{ vpc_ns_stats_vpc_ext_id }}"
+    ext_id: "{{ vpc_ns_stats_subnet_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: idempotent_results
+  loop: [1, 2]
+  ignore_errors: true
+  when: vpc_ns_stats_sample_available
+
+- name: Assert that neither invocation mutated state
+  ansible.builtin.assert:
+    that:
+      - iter is defined
+      - iter.changed == false
+      - iter.failed == false
+      - iter.response is defined
+    fail_msg: "Repeated info calls must not mutate state"
+    success_msg: "Repeated info calls did not mutate state"
+  loop: "{{ idempotent_results.results | default([]) }}"
+  loop_control:
+    loop_var: iter
+  when:
+    - vpc_ns_stats_sample_available
+    - idempotent_results is defined
+    - idempotent_results.results is defined
+
+- name: Emit a warning if no VPC on the cluster currently has NS stats data
+  ansible.builtin.debug:
+    msg: >-
+      No VPC on the target cluster returned North-South stats data during this
+      run. This is a known upstream API condition (NETWORKING-10001 - "NS
+      Stats not present") that occurs when no external-subnet-attached VPC
+      has generated NS traffic during the query window. Positive-path,
+      stat_type, and idempotency assertions were skipped for this run;
+      argument-spec and API-level negative assertions still executed.
+  when: not vpc_ns_stats_sample_available

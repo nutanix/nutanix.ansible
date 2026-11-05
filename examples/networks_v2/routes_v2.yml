@@ -1,10 +1,12 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a static route
-# 2. Update the static route
-# 3. Fetch the static route details using ext_id
-# 4. Delete the static route
+# 1. Create static route
+# 2. Update route
+# 3. Fetch route by external ID
+# 4. List all routes
+# 5. List all routes with fetch_all
+# 6. Delete static route
 
 - name: Routes playbook
   hosts: localhost
@@ -25,6 +27,7 @@
         external_subnet_uuid: "78965412-1234-5555-9865-6788222f17b8"
         user_uuid: "7c62834e-43f0-4c20-a5d4-cbf36b9a142b"
         project_uuid: "d7419d65-100e-4c99-a666-ec1431516bbe"
+        project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
         ip1: "10.0.0.1"
         ip2: "10.0.0.2"
 
@@ -33,6 +36,7 @@
         state: present
         name: "{{ route_name }}"
         description: "Route for testing"
+        project_ext_id: "{{ project_ext_id }}"
         vpc_reference: "{{ vpc_uuid }}"
         route_table_ext_id: "{{ route_table_external_id }}"
         route_type: STATIC
@@ -71,6 +75,19 @@
       nutanix.ncp.ntnx_routes_info_v2:
         ext_id: "{{ route_uuid }}"
         route_table_ext_id: "{{ route_table_external_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all routes
+      nutanix.ncp.ntnx_routes_info_v2:
+        route_table_ext_id: "{{ route_table_external_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all routes with fetch_all
+      nutanix.ncp.ntnx_routes_info_v2:
+        route_table_ext_id: "{{ route_table_external_id }}"
+        fetch_all: true
       register: result
       ignore_errors: true
 

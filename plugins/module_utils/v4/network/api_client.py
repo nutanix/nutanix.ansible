@@ -1,4 +1,4 @@
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -207,3 +207,185 @@ def get_vpn_connection_stats_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_networking_py_client.VpnConnectionStatsApi(api_client=api_client)
+
+
+def get_nic_profiles_api_instance(module):
+    """
+    This method will return NicProfilesApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): nic profiles api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.NicProfilesApi(api_client=api_client)
+
+
+def get_vpc_ns_stats_api_instance(module):
+    """
+    This method will return VpcNsStatsApi instance for VPC North-South
+    statistics operations.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): VPC NS Stats Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.VpcNsStatsApi(api_client=api_client)
+
+
+def get_bgp_routes_api_instance(module):
+    """
+    This method will return BgpRoutesApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): BGP Routes Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.BgpRoutesApi(api_client=api_client)
+
+
+def get_traffic_mirrors_api_instance(module):
+    """
+    This method will return TrafficMirrorsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Traffic Mirrors Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.TrafficMirrorsApi(api_client=api_client)
+
+
+def get_traffic_mirror_stats_api_instance(module):
+    """
+    This method will return TrafficMirrorStatsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Traffic Mirror Stats Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.TrafficMirrorStatsApi(api_client=api_client)
+
+
+def get_uplink_bonds_api_instance(module):
+    """
+    This method will return UplinkBondsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Uplink Bonds Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.UplinkBondsApi(api_client=api_client)
+
+
+def get_subnet_ip_reservation_api_instance(module):
+    """
+    This method will return SubnetIPReservationApi instance for reserving and
+    unreserving IP addresses on managed subnets.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Subnet IP Reservation Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.SubnetIPReservationApi(api_client=api_client)
+
+
+def get_subnet_migrations_api_instance(module):
+    """
+    This method will return SubnetMigrationsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): SubnetMigrations Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.SubnetMigrationsApi(api_client=api_client)
+
+
+def get_bgp_sessions_api_instance(module):
+    """
+    This method will return BgpSessionsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): BGP Sessions Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.BgpSessionsApi(api_client=api_client)
+
+
+def get_network_controllers_api_instance(module):
+    """
+    This method will return NetworkControllersApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Network Controllers Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.NetworkControllersApi(api_client=api_client)
+
+
+def get_load_balancer_sessions_api_instance(module):
+    """
+    This method will return LoadBalancerSessionsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Load Balancer Sessions Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.LoadBalancerSessionsApi(api_client=api_client)
+
+
+def get_vpc_virtual_switch_mappings_api_instance(module):
+    """
+    This method will return VpcVirtualSwitchMappingsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): VpcVirtualSwitchMappingsApi instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.VpcVirtualSwitchMappingsApi(api_client=api_client)
+
+
+def get_vpn_connections_api_instance(module):
+    """
+    This method will return VpnConnectionsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): VPN Connections Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.VpnConnectionsApi(api_client=api_client)
+
+
+def get_layer2_stretches_api_instance(module):
+    """
+    This method will return Layer2StretchesApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Layer2 Stretches Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.Layer2StretchesApi(api_client=api_client)
+
+
+def get_gateways_api_instance(module):
+    """
+    This method will return GatewaysApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Gateways Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.GatewaysApi(api_client=api_client)

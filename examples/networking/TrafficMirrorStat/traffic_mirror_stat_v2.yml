@@ -1,0 +1,50 @@
+---
+# Summary:
+# This playbook demonstrates how to work with traffic mirror session statistics
+# using the Nutanix Ansible collection v4 modules:
+#
+# 1. Fetch stats for a session over a time window (minimal spec).
+# 2. Fetch stats with a specific sampling interval and down-sampling operator.
+# 3. Fetch stats and only project selected properties via $select.
+# 4. Fetch stats info via a second call for comparison.
+
+- name: Traffic Mirror Stat playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: Compute stats time window (last 5 minutes)
+      ansible.builtin.set_fact:
+        stats_end_time: "{{ lookup('pipe', 'date -u +\"%Y-%m-%dT%H:%M:%S.%3NZ\"') }}"
+        stats_start_time: "{{ lookup('pipe', 'date -u -d \"-300 seconds\" +\"%Y-%m-%dT%H:%M:%S.%3NZ\"') }}"
+
+    - name: Fetch traffic mirror session stats (minimal spec)
+      nutanix.ncp.ntnx_traffic_mirror_stats_info_v2:
+        ext_id: "{{ traffic_mirror_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+      register: minimal_stats
+
+    - name: Fetch traffic mirror session stats with all attributes
+      nutanix.ncp.ntnx_traffic_mirror_stats_info_v2:
+        ext_id: "{{ traffic_mirror_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+        sampling_interval: 30
+        stat_type: LAST
+        select: "*"
+      register: full_stats
+
+    - name: Fetch traffic mirror session stats info (repeated call for comparison)
+      nutanix.ncp.ntnx_traffic_mirror_stats_info_v2:
+        ext_id: "{{ traffic_mirror_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+        sampling_interval: 30
+        stat_type: LAST
+      register: stats_info
