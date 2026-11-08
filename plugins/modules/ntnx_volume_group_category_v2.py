@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,13 +12,9 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_volume_group_category_v2
 short_description: Associate or disassociate categories with a Volume Group in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to associate or disassociate categories with a Volume Group in Nutanix Prism Central.
-  - When C(state) is C(present), the categories passed in C(categories) are associated with the Volume Group.
-  - When C(state) is C(absent), the categories passed in C(categories) are disassociated from the Volume Group.
-  - Both the associate and disassociate operations are idempotent, i.e. only the categories that need to be
-    added/removed to reach the requested state are sent to the API.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -26,12 +22,14 @@ notes:
     The required roles depend on the operation being performed.
   - >-
     B(Associate category to a Volume Group) -
-    Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin,
-    Super Admin, Self-Service Admin (deprecated)
+    Required Roles: CSI System, Kubernetes Data Services System, Prism Admin,
+    Project Admin, Project Manager, Self-Service Admin (deprecated),
+    Storage Admin, Super Admin, Tenant Admin, Tenant Consumer
   - >-
     B(Disassociate category from a Volume Group) -
-    Required Roles: CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin,
-    Super Admin, Self-Service Admin (deprecated)
+    Required Roles: CSI System, Kubernetes Data Services System, Prism Admin,
+    Project Admin, Project Manager, Self-Service Admin (deprecated),
+    Storage Admin, Super Admin, Tenant Admin, Tenant Consumer
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:
   state:
@@ -77,7 +75,6 @@ options:
       entity_type:
         description:
           - The entity type of the category reference.
-          - For a category reference this should typically be C(CATEGORY).
         type: str
         required: false
         choices:
@@ -106,6 +103,7 @@ options:
           - VM_DISK
           - VTEP_GATEWAY
           - VM
+          - RECOVERY_PLAN_JOB
           - DIRECT_CONNECT
           - SUBNET_EXTENSION
 extends_documentation_fragment:
@@ -128,17 +126,6 @@ EXAMPLES = r"""
         entity_type: "CATEGORY"
   register: result
 
-- name: Update category associations for a Volume Group (associate additional categories)
-  nutanix.ncp.ntnx_volume_group_category_v2:
-    state: present
-    ext_id: "68e4c68e-1acf-4c05-7792-e062119acb68"
-    categories:
-      - ext_id: "566b844b-d245-4894-a8b5-eeef1ec4b638"
-        entity_type: "CATEGORY"
-      - ext_id: "7c5b1c92-6f4a-4a24-8ce5-4b6c4e3c1def"
-        entity_type: "CATEGORY"
-  register: result
-
 - name: Disassociate categories from Volume Group
   nutanix.ncp.ntnx_volume_group_category_v2:
     state: absent
@@ -153,8 +140,8 @@ RETURN = r"""
 response:
   description:
     - Response for associating or disassociating categories with a Volume Group.
-    - When C(wait) is C(true), it holds the completed task details.
-    - When C(wait) is C(false), it holds the accepted task details.
+    - If C(wait) is true, it will return the task details after completion (including status).
+    - If C(wait) is false, it will return the task submission details.
   returned: always
   type: dict
   sample:
@@ -213,20 +200,11 @@ changed:
   type: bool
   sample: true
 
-skipped:
-  description:
-    - This indicates whether the operation was skipped because the requested state is already satisfied.
-    - True when idempotency detected all categories are already associated (on C(state=present))
-      or already disassociated (on C(state=absent)).
-  returned: when applicable
-  type: bool
-  sample: true
-
 msg:
   description: This indicates the message if any message occurred.
-  returned: When there is an error, module is idempotent or check mode is enabled.
+  returned: When there is an error or in check mode operation.
   type: str
-  sample: "Api Exception raised while associating categories with Volume Group"
+  sample: "Api Exception raised while associating categories with Volume Group {0}"
 
 error:
   description: This field typically holds information about the error that occurred during the task execution.
@@ -305,6 +283,7 @@ def get_module_spec():
                 "VM",
                 "DIRECT_CONNECT",
                 "SUBNET_EXTENSION",
+                "RECOVERY_PLAN_JOB",
             ],
         ),
     )
@@ -322,71 +301,36 @@ def get_module_spec():
     return module_args
 
 
-def _get_associated_category_ext_ids(module, api_instance, volume_group_ext_id):
-    """Return the set of category ext_ids currently associated with the Volume Group.
+def associate_CategoryAssociationsByVolumeGroupId(module, result, api_instance):
+    ext_id = module.params.get("ext_id")
+    result["volume_group_ext_id"] = ext_id
 
-    Uses the deprecated but still-functional list-category-associations endpoint. Pages
-    through until either no more pages are returned or the API returns fewer results
-    than the page size (max 100 per page).
-    """
-    associated = set()
-    page = 0
-    page_size = 100
-    while True:
-        try:
-            resp = api_instance.list_category_associations_by_volume_group_id(
-                volumeGroupExtId=volume_group_ext_id,
-                _page=page,
-                _limit=page_size,
-            )
-        except Exception as e:
-            raise_api_exception(
-                module=module,
-                exception=e,
-                msg="Api Exception raised while listing existing category associations for Volume Group",
-            )
-        data = getattr(resp, "data", None) or []
-        for item in data:
-            item_ext_id = getattr(item, "ext_id", None)
-            if item_ext_id:
-                associated.add(item_ext_id)
-        if len(data) < page_size:
-            break
-        page += 1
-    return associated
-
-
-def _build_category_references_spec(module, result):
     sg = SpecGenerator(module)
     default_spec = volumes_sdk.CategoryEntityReferences()
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating Volume Group category associations spec", **result
+            msg="Failed generating category associations by volume group id spec", **result
         )
-    return spec
 
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(spec.to_dict())
+        return
 
-def _filter_categories_for_operation(spec, keep_ext_ids):
-    """Return a new CategoryEntityReferences spec containing only categories whose ext_id
-    appears in keep_ext_ids. Categories that reference by name/uris only (no ext_id) are
-    always retained since we cannot infer their identity."""
-    if spec.categories is None:
-        return spec
-    filtered = []
-    for category in spec.categories:
-        cat_ext_id = getattr(category, "ext_id", None)
-        if cat_ext_id is None:
-            filtered.append(category)
-            continue
-        if cat_ext_id in keep_ext_ids:
-            filtered.append(category)
-    spec.categories = filtered
-    return spec
+    resp = None
+    try:
+        resp = api_instance.associate_category(body=spec, extId=ext_id)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while associating categories with "
+                "Volume Group {0}"
+            ).format(ext_id),
+        )
 
-
-def _wait_and_finalize_task(module, resp, result):
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
@@ -396,135 +340,43 @@ def _wait_and_finalize_task(module, resp, result):
     result["changed"] = True
 
 
-def _perform_associate(module, api_instance, ext_id, spec, result):
+def disassociate_CategoryAssociationsByVolumeGroupId(module, result, api_instance):
+    ext_id = module.params.get("ext_id")
+    result["volume_group_ext_id"] = ext_id
+
+    sg = SpecGenerator(module)
+    default_spec = volumes_sdk.CategoryEntityReferences()
+    spec, err = sg.generate_spec(obj=default_spec)
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed generating category associations by volume group id spec", **result
+        )
+
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(spec.to_dict())
+        return
+
+    resp = None
     try:
-        resp = api_instance.associate_category(extId=ext_id, body=spec)
+        resp = api_instance.disassociate_category(body=spec, extId=ext_id)
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while associating categories with Volume Group",
+            msg=(
+                "Api Exception raised while disassociating categories from "
+                "Volume Group {0}"
+            ).format(ext_id),
         )
-    _wait_and_finalize_task(module, resp, result)
 
-
-def _perform_disassociate(module, api_instance, ext_id, spec, result):
-    try:
-        resp = api_instance.disassociate_category(extId=ext_id, body=spec)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while disassociating categories from Volume Group",
-        )
-    _wait_and_finalize_task(module, resp, result)
-
-
-def create_CategoryAssociationsByVolumeGroupId(module, result, api_instance):
-    """Associate categories with a Volume Group when no update state is known yet.
-
-    In practice this branch is unreachable because C(ext_id) is required at the argument
-    spec level. It is kept to conform to the mandated state-based dispatch pattern and
-    provides a defensive error path.
-    """
-    validate_required_params(module, ["ext_id", "categories"])
-    ext_id = module.params.get("ext_id")
-    result["ext_id"] = ext_id
-
-    spec = _build_category_references_spec(module, result)
-
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(spec.to_dict())
-        return
-
-    # Ensure the Volume Group exists before attempting the associate action.
-    get_volume_group(module, api_instance, ext_id)
-
-    _perform_associate(module, api_instance, ext_id, spec, result)
-
-
-def update_CategoryAssociationsByVolumeGroupId(module, result, api_instance):
-    """Idempotently associate the requested categories with the Volume Group.
-
-    Categories that are already associated are stripped from the request. If nothing
-    remains to associate, the module exits early with C(changed=false) and
-    C(skipped=true).
-    """
-    validate_required_params(module, ["ext_id", "categories"])
-    ext_id = module.params.get("ext_id")
-    result["ext_id"] = ext_id
-
-    spec = _build_category_references_spec(module, result)
-
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(spec.to_dict())
-        return
-
-    # Ensure the Volume Group exists before attempting the associate action.
-    get_volume_group(module, api_instance, ext_id)
-
-    requested_ext_ids = {
-        cat.ext_id for cat in (spec.categories or []) if getattr(cat, "ext_id", None)
-    }
-    if requested_ext_ids:
-        associated = _get_associated_category_ext_ids(module, api_instance, ext_id)
-        to_associate = requested_ext_ids - associated
-        if not to_associate:
-            result["skipped"] = True
-            result["changed"] = False
-            module.exit_json(
-                msg=(
-                    "CategoryAssociationsByVolumeGroupId with ext_id '{0}' already has "
-                    "the requested categories associated. Skipping association."
-                ).format(ext_id),
-                **result,
-            )
-        # Only send categories that still need to be associated.
-        spec = _filter_categories_for_operation(spec, to_associate)
-
-    _perform_associate(module, api_instance, ext_id, spec, result)
-
-
-def delete_CategoryAssociationsByVolumeGroupId(module, result, api_instance):
-    """Disassociate the requested categories from the Volume Group idempotently."""
-    validate_required_params(module, ["ext_id", "categories"])
-    ext_id = module.params.get("ext_id")
-    result["ext_id"] = ext_id
-
-    spec = _build_category_references_spec(module, result)
-
-    if module.check_mode:
-        result["msg"] = (
-            "Categories will be disassociated from Volume Group with ext_id:{0}.".format(
-                ext_id
-            )
-        )
-        result["response"] = strip_internal_attributes(spec.to_dict())
-        return
-
-    # Ensure the Volume Group exists before attempting the disassociate action.
-    get_volume_group(module, api_instance, ext_id)
-
-    requested_ext_ids = {
-        cat.ext_id for cat in (spec.categories or []) if getattr(cat, "ext_id", None)
-    }
-    if requested_ext_ids:
-        associated = _get_associated_category_ext_ids(module, api_instance, ext_id)
-        to_disassociate = requested_ext_ids & associated
-        if not to_disassociate:
-            result["skipped"] = True
-            result["changed"] = False
-            module.exit_json(
-                msg=(
-                    "None of the requested categories are currently associated with "
-                    "Volume Group ext_id '{0}'. Skipping disassociation."
-                ).format(ext_id),
-                **result,
-            )
-        # Only send categories that are actually associated and need to be removed.
-        spec = _filter_categories_for_operation(spec, to_disassociate)
-
-    _perform_disassociate(module, api_instance, ext_id, spec, result)
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if task_ext_id and module.params.get("wait"):
+        task_status = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(task_status.to_dict())
+    result["changed"] = True
 
 
 def run_module():
@@ -541,19 +393,14 @@ def run_module():
     result = {
         "changed": False,
         "response": None,
-        "ext_id": None,
-        "task_ext_id": None,
         "failed": False,
     }
     api_instance = get_vg_api_instance(module)
     state = module.params.get("state")
     if state == "present":
-        if module.params.get("ext_id"):
-            update_CategoryAssociationsByVolumeGroupId(module, result, api_instance)
-        else:
-            create_CategoryAssociationsByVolumeGroupId(module, result, api_instance)
+        associate_CategoryAssociationsByVolumeGroupId(module, result, api_instance)
     else:
-        delete_CategoryAssociationsByVolumeGroupId(module, result, api_instance)
+        disassociate_CategoryAssociationsByVolumeGroupId(module, result, api_instance)
     module.exit_json(**result)
 
 
