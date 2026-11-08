@@ -1,6 +1,6 @@
 ---
 # Summary:
-# This playbook exercises the ntnx_vm_attachments_by_volume_group_id_v2 module and
+# This playbook exercises the ntnx_volume_group_vm_attachment_v2 module and
 # the companion ntnx_volume_group_vm_attachment_info_v2 module. It:
 # 1. Prepares a fresh Volume Group and an AHV VM to attach.
 # 2. Attaches the VM to the Volume Group at a specific SCSI index.
@@ -67,7 +67,7 @@
         vm_ext_id: "{{ vm_result.ext_id }}"
 
     - name: Attach VM to Volume Group at SCSI index 1
-      nutanix.ncp.ntnx_vm_attachments_by_volume_group_id_v2:
+      nutanix.ncp.ntnx_volume_group_vm_attachment_v2:
         state: present
         volume_group_ext_id: "{{ volume_group_ext_id }}"
         ext_id: "{{ vm_ext_id }}"
@@ -92,7 +92,7 @@
       register: list_limit_result
 
     - name: Detach VM from Volume Group
-      nutanix.ncp.ntnx_vm_attachments_by_volume_group_id_v2:
+      nutanix.ncp.ntnx_volume_group_vm_attachment_v2:
         state: absent
         volume_group_ext_id: "{{ volume_group_ext_id }}"
         ext_id: "{{ vm_ext_id }}"

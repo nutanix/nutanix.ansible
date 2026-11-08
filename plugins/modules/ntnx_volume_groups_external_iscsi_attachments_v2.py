@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_volume_groups_external_iscsi_attachments
+module: ntnx_volume_groups_external_iscsi_attachments_v2
 short_description: Manage external iSCSI attachments (iSCSI clients) of a Volume Group in Nutanix Prism Central
 version_added: 2.7.0
 description:
@@ -148,7 +148,7 @@ author:
 
 EXAMPLES = r"""
 - name: Attach a new iSCSI client to a Volume Group
-  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments_v2:
     state: present
     volume_group_ext_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
     iscsi_initiator_name: "iqn.1991-05.com.microsoft:ansible-client"
@@ -159,7 +159,7 @@ EXAMPLES = r"""
   register: attach_by_iqn
 
 - name: Attach a new iSCSI client to a Volume Group using an IPv4 initiator network id
-  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments_v2:
     state: present
     volume_group_ext_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
     iscsi_initiator_network_id:
@@ -170,7 +170,7 @@ EXAMPLES = r"""
   register: attach_by_ipv4
 
 - name: Detach an iSCSI client from a Volume Group
-  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments_v2:
     state: absent
     volume_group_ext_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
     ext_id: "aea43b5c-ae4d-4b60-934b-f8f581275dec"

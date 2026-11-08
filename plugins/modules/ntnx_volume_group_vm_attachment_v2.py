@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_vm_attachments_by_volume_group_id_v2
+module: ntnx_volume_group_vm_attachment_v2
 short_description: Attach or detach an AHV VM as a VmAttachment on a Nutanix Volume Group.
 version_added: 2.7.0
 description:
@@ -78,7 +78,7 @@ author:
 
 EXAMPLES = r"""
 - name: Attach VM to Volume Group at a specific SCSI index
-  nutanix.ncp.ntnx_vm_attachments_by_volume_group_id_v2:
+  nutanix.ncp.ntnx_volume_group_vm_attachment_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -90,7 +90,7 @@ EXAMPLES = r"""
   register: result
 
 - name: Detach VM from Volume Group
-  nutanix.ncp.ntnx_vm_attachments_by_volume_group_id_v2:
+  nutanix.ncp.ntnx_volume_group_vm_attachment_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
