@@ -26,3 +26,26 @@ def get_volume_group(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching Volume group info using ext_id",
         )
+
+
+def get_volume_disk(module, api_instance, ext_id, volume_group_ext_id):
+    """
+    Get volume disk by ext_id inside a volume group
+    Args:
+        module: Ansible module
+        api_instance: VolumeGroupApi instance from ntnx_volumes_py_client sdk
+        ext_id: ext_id of volume disk
+        volume_group_ext_id: ext_id of parent volume group
+    Returns:
+        disk (obj): VolumeDisk info object
+    """
+    try:
+        return api_instance.get_volume_disk_by_id(
+            extId=ext_id, volumeGroupExtId=volume_group_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Volume Disk info using ext_id",
+        )
