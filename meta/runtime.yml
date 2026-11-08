@@ -291,6 +291,7 @@ action_groups:
     - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_volume_groups_external_iscsi_attachments
     - ntnx_vpn_connection_stat_info_v2
     - ntnx_nic_profiles_v2
     - ntnx_nic_profiles_association_v2
