@@ -207,9 +207,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_internal_attributes,
     validate_required_params,
 )
-from ..module_utils.v4.volumes.api_client import (  # noqa: E402
-    get_vg_api_instance,
-)
+from ..module_utils.v4.volumes.api_client import get_vg_api_instance  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
