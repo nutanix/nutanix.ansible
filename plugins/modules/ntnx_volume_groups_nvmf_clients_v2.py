@@ -22,13 +22,13 @@ notes:
     The required roles depend on the operation being performed.
   - >-
     B(Attach an NVMe-TCP client to the given Volume Group) -
-    Required Roles: Prism Admin, Self-Service Admin (Deprecated), Super Admin, Storage Admin,
-    Project Manager, Project Admin
+    Required Roles: Prism Admin, Project Admin, Project Manager,
+    Self-Service Admin (Deprecated), Storage Admin, Super Admin
   - >-
     B(Detach a NVMe-TCP client from the given Volume Group) -
-    Required Roles: Prism Admin, Self-Service Admin (Deprecated), Super Admin, Storage Admin,
-    Project Manager, Project Admin
-  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes&version=v4.3#tag/VolumeGroups/operation/attachNvmfClient)"
+    Required Roles: Prism Admin, Project Admin, Project Manager,
+    Self-Service Admin (Deprecated), Storage Admin, Super Admin
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:
   state:
     description:
@@ -49,18 +49,11 @@ options:
       - The external identifier of a Volume Group.
     type: str
     required: true
-  ext_id:
-    description:
-      - The external identifier of the NVMe-TCP client.
-      - Required for detach operations.
-    type: str
-    required: false
   nvmf_initiator_name:
     description:
       - NVMe-TCP client qualified name.
-      - Required for attach operations.
     type: str
-    required: false
+    required: true
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -80,7 +73,7 @@ EXAMPLES = r"""
     validate_certs: false
     state: present
     volume_group_ext_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
-    nvmf_initiator_name: "nqn.2014-08.org.nvmexpress:uuid:ansible-nvmf-test"
+    nvmf_initiator_name: "nqn.2025-12.org.nvmexpress:uuid:59d5de78-a964-5746-8c6e-677c4c7a79df"
   register: result
   ignore_errors: true
 
@@ -92,7 +85,7 @@ EXAMPLES = r"""
     validate_certs: false
     state: absent
     volume_group_ext_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
-    ext_id: "aea43b5c-ae4d-4b60-934b-f8f581275dec"
+    nvmf_initiator_name: "nqn.2025-12.org.nvmexpress:uuid:59d5de78-a964-5746-8c6e-677c4c7a79df"
   register: result
   ignore_errors: true
 """
@@ -223,14 +216,12 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         volume_group_ext_id=dict(type="str", required=True),
-        ext_id=dict(type="str", required=False),
         nvmf_initiator_name=dict(type="str", required=False),
     )
     return module_args
 
 
-def attach_nvmf_client(module, result):
-    vgs = get_vg_api_instance(module)
+def attach_nvmf_client(module, result, api_instance):
     volume_group_ext_id = module.params.get("volume_group_ext_id")
     result["volume_group_ext_id"] = volume_group_ext_id
 
@@ -248,12 +239,11 @@ def attach_nvmf_client(module, result):
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
-    vg = get_volume_group(module, vgs, volume_group_ext_id)
-    etag = get_etag(vg)
-    kwargs = {"if_match": etag}
     resp = None
     try:
-        resp = vgs.attach_nvmf_client(body=spec, extId=volume_group_ext_id, **kwargs)
+        resp = api_instance.attach_nvmf_client(
+            body=spec, extId=volume_group_ext_id
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -283,12 +273,10 @@ def attach_nvmf_client(module, result):
     result["changed"] = True
 
 
-def detach_nvmf_client(module, result):
-    vgs = get_vg_api_instance(module)
+def detach_nvmf_client(module, result, api_instance):
     volume_group_ext_id = module.params.get("volume_group_ext_id")
-    ext_id = module.params.get("ext_id")
+    nvmf_initiator_name = module.params.get("nvmf_initiator_name")
     result["volume_group_ext_id"] = volume_group_ext_id
-    result["ext_id"] = ext_id
 
     sg = SpecGenerator(module)
     default_spec = volumes_sdk.NvmfClient()
@@ -301,18 +289,19 @@ def detach_nvmf_client(module, result):
         )
 
     if module.check_mode:
-        result["msg"] = "NVMe-TCP client with ext_id:{0} will be detached.".format(
-            ext_id
+        result["msg"] = (
+            "NVMe-TCP client with initiator name:{0} will be detached.".format(
+                nvmf_initiator_name
+            )
         )
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
-    vg = get_volume_group(module, vgs, volume_group_ext_id)
-    etag = get_etag(vg)
-    kwargs = {"if_match": etag}
     resp = None
     try:
-        resp = vgs.detach_nvmf_client(body=spec, extId=volume_group_ext_id, **kwargs)
+        resp = api_instance.detach_nvmf_client(
+            body=spec, extId=volume_group_ext_id
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -333,10 +322,6 @@ def run_module():
     module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        required_if=[
-            ("state", "present", ("nvmf_initiator_name",)),
-            ("state", "absent", ("ext_id",)),
-        ],
     )
     if SDK_IMP_ERROR:
         module.fail_json(
@@ -346,15 +331,15 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "failed": False,
         "response": None,
-        "ext_id": None,
-        "task_ext_id": None,
     }
     state = module.params.get("state")
+    api_instance = get_vg_api_instance(module)
     if state == "present":
-        attach_nvmf_client(module, result)
+        attach_nvmf_client(module, result, api_instance)
     else:
-        detach_nvmf_client(module, result)
+        detach_nvmf_client(module, result, api_instance)
 
     module.exit_json(**result)
 

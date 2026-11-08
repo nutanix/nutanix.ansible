@@ -24,13 +24,13 @@ notes:
     The required roles depend on the operation being performed.
   - >-
     B(Get a NVMe-TCP client details) -
-    Required Roles: Prism Admin, Prism Viewer, Self-Service Admin (Deprecated), Super Admin,
-    Storage Admin, Storage Viewer, Project Manager, Project Admin
+    Required Roles: Prism Admin, Prism Viewer, Project Admin, Project Manager, Self-Service Admin (Deprecated),
+    Storage Admin, Storage Viewer, Super Admin
   - >-
     B(List all the NVMe-TCP clients) -
-    Required Roles: Prism Admin, Prism Viewer, Self-Service Admin (Deprecated), Super Admin,
-    Storage Admin, Storage Viewer, Project Manager, Project Admin
-  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes&version=v4.3#tag/NvmfClients/operation/getNvmfClientById)"
+    Required Roles: Prism Admin, Prism Viewer, Project Admin, Project Manager, Self-Service Admin (Deprecated),
+    Storage Admin, Storage Viewer, Super Admin
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:
   ext_id:
     description:
@@ -78,7 +78,7 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
-- name: List NVMe-TCP clients with pagination and ordering
+- name: List NVMe-TCP clients with pagination
   nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -86,7 +86,6 @@ EXAMPLES = r"""
     validate_certs: false
     page: 0
     limit: 10
-    orderby: "extId asc"
   register: result
   ignore_errors: true
 
@@ -152,7 +151,7 @@ msg:
   description: Status/error message emitted by the module.
   returned: when there is an error
   type: str
-  sample: "Api Exception raised while fetching given NVMe-TCP client"
+  sample: "Api Exception raised while fetching all available NVMe-TCP clients"
 
 error:
   description: Error details if the task failed.
@@ -231,7 +230,7 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "response": None}
+    result = {"changed": False, "failed": False, "response": None}
     api_instance = get_nvmf_client_api_instance(module)
     if module.params.get("ext_id"):
         get_nvmf_client_using_ext_id(module, api_instance, result)

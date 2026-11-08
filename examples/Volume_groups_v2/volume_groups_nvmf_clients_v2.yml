@@ -19,20 +19,21 @@
   tasks:
     - name: Set variables
       ansible.builtin.set_fact:
-        vg1_uuid: "<volume_group_ext_id>"
-        nvmf_initiator_name: "nqn.2014-08.org.nvmexpress:uuid:ansible-nvmf-test"
-        nvmf_client_uuid: "<nvmf_client_ext_id>"
+        vg1_ext_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
+        nvmf_initiator_name: "nqn.2025-12.org.nvmexpress:uuid:59d5de78-a964-5746-8c6e-677c4c7a79df"
+        nvmf_client_ext_id: "aea43b5c-ae4d-4b60-934b-f8f581275dec"
+        cluster_reference: "00061663-9fa0-28ca-185b-ac1f6b6f97e2"
 
     - name: Attach NVMe-TCP client to VG using initiator name
       nutanix.ncp.ntnx_volume_groups_nvmf_clients_v2:
-        volume_group_ext_id: "{{ vg1_uuid }}"
+        volume_group_ext_id: "{{ vg1_ext_id }}"
         nvmf_initiator_name: "{{ nvmf_initiator_name }}"
       register: attach_result
       ignore_errors: true
 
     - name: Fetch specific NVMe-TCP client
       nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
-        ext_id: "{{ attach_result.ext_id | default(nvmf_client_uuid) }}"
+        ext_id: "{{ nvmf_client_ext_id }}"
       register: result
       ignore_errors: true
 
@@ -43,15 +44,14 @@
 
     - name: List NVMe-TCP clients filtered by clusterReference
       nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
-        filter: "clusterReference eq '00061663-9fa0-28ca-185b-ac1f6b6f97e2'"
+        filter: "clusterReference eq '{{ cluster_reference }}'"
       register: result
       ignore_errors: true
 
-    - name: List NVMe-TCP clients with pagination and ordering
+    - name: List NVMe-TCP clients with pagination
       nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
         page: 0
         limit: 10
-        orderby: "extId asc"
       register: result
       ignore_errors: true
 
@@ -63,8 +63,8 @@
 
     - name: Detach NVMe-TCP client from VG
       nutanix.ncp.ntnx_volume_groups_nvmf_clients_v2:
-        volume_group_ext_id: "{{ vg1_uuid }}"
-        ext_id: "{{ attach_result.ext_id | default(nvmf_client_uuid) }}"
+        volume_group_ext_id: "{{ vg1_ext_id }}"
+        nvmf_initiator_name: "{{ nvmf_initiator_name }}"
         state: absent
       register: result
       ignore_errors: true

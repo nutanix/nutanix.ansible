@@ -158,6 +158,7 @@ action_groups:
     - ntnx_volume_groups_vms_v2
     - ntnx_volume_groups_iscsi_clients_v2
     - ntnx_volume_groups_iscsi_clients_info_v2
+    - ntnx_volume_groups_nvmf_clients_v2
     - ntnx_volume_group_nvmf_clients_info_v2
     - ntnx_volume_group_vm_attachment_v2
     - ntnx_roles_v2
@@ -457,4 +458,3 @@ action_groups:
     - ntnx_hardware_provider_connection_v2
     - ntnx_hardware_provider_refresh_connection_v2
     - ntnx_hardware_providers_info_v2
-    - ntnx_volume_groups_nvmf_clients_v2
