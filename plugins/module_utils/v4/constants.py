@@ -83,6 +83,7 @@ class Tasks:
             "clustermgmt:config:cluster:non-migratable-vms-result"
         )
         NOTIFICATION = "lifecycle:resources:notification"
+        NVMF_CLIENT = "volumes:config:nvmf-client"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
