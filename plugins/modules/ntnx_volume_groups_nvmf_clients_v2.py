@@ -241,9 +241,7 @@ def attach_nvmf_client(module, result, api_instance):
 
     resp = None
     try:
-        resp = api_instance.attach_nvmf_client(
-            body=spec, extId=volume_group_ext_id
-        )
+        resp = api_instance.attach_nvmf_client(body=spec, extId=volume_group_ext_id)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -299,9 +297,7 @@ def detach_nvmf_client(module, result, api_instance):
 
     resp = None
     try:
-        resp = api_instance.detach_nvmf_client(
-            body=spec, extId=volume_group_ext_id
-        )
+        resp = api_instance.detach_nvmf_client(body=spec, extId=volume_group_ext_id)
     except Exception as e:
         raise_api_exception(
             module=module,
