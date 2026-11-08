@@ -26,7 +26,7 @@
       ignore_errors: true
 
     - name: Attach the iSCSI client to the Volume Group
-      nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
+      nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments_v2:
         state: present
         volume_group_ext_id: "{{ volume_group_ext_id }}"
         iscsi_initiator_name: "{{ iscsi_initiator_name }}"
@@ -44,7 +44,7 @@
       ignore_errors: true
 
     - name: Detach the iSCSI client from the Volume Group
-      nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
+      nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments_v2:
         state: absent
         volume_group_ext_id: "{{ volume_group_ext_id }}"
         ext_id: "{{ iscsi_client_ext_id }}"
