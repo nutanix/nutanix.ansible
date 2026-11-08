@@ -3,8 +3,9 @@
 # This playbook will do:
 # 1. Attach NVMe-TCP client to VG using initiator name
 # 2. Fetch specific NVMe-TCP client
-# 3. List NVMe-TCP clients with filter / pagination / fetch_all
-# 4. Detach NVMe-TCP client from VG
+# 3. List all NVMe-TCP clients
+# 4. List NVMe-TCP clients with filter / pagination / fetch_all
+# 5. Detach NVMe-TCP client from VG
 
 - name: Volume groups NVMe-TCP (NVMf) clients playbook
   hosts: localhost
@@ -32,6 +33,11 @@
     - name: Fetch specific NVMe-TCP client
       nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
         ext_id: "{{ attach_result.ext_id | default(nvmf_client_uuid) }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all NVMe-TCP clients across Volume Groups
+      nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
       register: result
       ignore_errors: true
 
