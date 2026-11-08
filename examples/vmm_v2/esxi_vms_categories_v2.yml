@@ -1,0 +1,42 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Associate categories to an ESXi VM
+# 2. Disassociate categories from an ESXi VM
+# Requires a Prism Central with an ESXi cluster registered via vCenter.
+
+- name: ESXi VM categories playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_ext_id: "<esxi_vm_ext_id>"
+        category_ext_id: "<category_ext_id>"
+        category_ext_id1: "<category_ext_id_2>"
+
+    - name: Associate categories to ESXi VM
+      nutanix.ncp.ntnx_esxi_vms_categories_v2:
+        state: present
+        vm_ext_id: "{{ vm_ext_id }}"
+        categories:
+          - ext_id: "{{ category_ext_id }}"
+          - ext_id: "{{ category_ext_id1 }}"
+      register: result
+      ignore_errors: true
+
+    - name: Disassociate categories from ESXi VM
+      nutanix.ncp.ntnx_esxi_vms_categories_v2:
+        state: absent
+        vm_ext_id: "{{ vm_ext_id }}"
+        categories:
+          - ext_id: "{{ category_ext_id }}"
+          - ext_id: "{{ category_ext_id1 }}"
+      register: result
+      ignore_errors: true

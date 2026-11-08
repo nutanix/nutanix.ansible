@@ -1,0 +1,42 @@
+---
+# Summary:
+# This playbook demonstrates how to use the ntnx_cluster_rackable_units_info_v2
+# module to fetch rackable unit (block/chassis) details of a Nutanix cluster.
+# Operations:
+#   1. List all clusters and pick a Prism Element cluster ext_id
+#   2. List all rackable units for that cluster
+#   3. Fetch a single rackable unit by external ID
+
+- name: Rackable Units By Cluster Id playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('ansible.builtin.env', 'NUTANIX_HOST') | default('<pc_ip>') }}"
+      nutanix_username: "{{ lookup('ansible.builtin.env', 'NUTANIX_USERNAME') | default('<user>') }}"
+      nutanix_password: "{{ lookup('ansible.builtin.env', 'NUTANIX_PASSWORD') | default('<pass>') }}"
+      validate_certs: false
+  tasks:
+    - name: List clusters and pick a Prism Element (PE) cluster
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: pe_clusters
+
+    - name: Set cluster_ext_id fact
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ pe_clusters.response[0].ext_id }}"
+
+    - name: List all rackable units for the cluster
+      nutanix.ncp.ntnx_cluster_rackable_units_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: rackable_units_list
+
+    - name: Set first rackable unit ext_id fact
+      ansible.builtin.set_fact:
+        rackable_unit_ext_id: "{{ rackable_units_list.response[0].ext_id }}"
+
+    - name: Fetch a single rackable unit by external ID
+      nutanix.ncp.ntnx_cluster_rackable_units_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ rackable_unit_ext_id }}"
+      register: rackable_unit_detail
