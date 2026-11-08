@@ -311,7 +311,8 @@ def associate_CategoryAssociationsByVolumeGroupId(module, result, api_instance):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating category associations by volume group id spec", **result
+            msg="Failed generating category associations by volume group id spec",
+            **result,
         )
 
     if module.check_mode:
@@ -350,7 +351,8 @@ def disassociate_CategoryAssociationsByVolumeGroupId(module, result, api_instanc
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating category associations by volume group id spec", **result
+            msg="Failed generating category associations by volume group id spec",
+            **result,
         )
 
     if module.check_mode:
