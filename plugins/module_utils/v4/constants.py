@@ -1,4 +1,4 @@
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -21,6 +21,7 @@ class Tasks:
         VM = "vmm:ahv:config:vm"
         IMAGES = "vmm:content:image"
         IMAGE_PLACEMENT_POLICY = "vmm:images:config:placement-policy"
+        IMAGE_RATE_LIMIT_POLICY = "vmm:images:config:rate-limit-policy"
         TEMPLATES = "vmm:content:template"
         VOLUME_GROUP = "volumes:config:volume-group"
         VOLUME_GROUP_DISK = "volumes:config:volume-group:disk"
@@ -39,6 +40,7 @@ class Tasks:
         RECOVERY_POINT = "dataprotection:config:recovery-point"
         VM_RECOVERY_POINT = "dataprotection:config:vm-recovery-point"
         STORAGE_CONTAINER = "clustermgmt:config:storage-containers"
+        DISK = "clustermgmt:config:disk"
         ROUTE = "networking:config:route"
         OBJECTS = "objects:config:object-store"
         OVA = "vmm:content:ova"
@@ -47,7 +49,40 @@ class Tasks:
         CLUSTER_PROFILE = "clustermgmt:config:cluster-profile"
         NETWORK_FUNCTION = "Networking:config:network-function"
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
+        TRAFFIC_MIRROR = "networking:config:traffic-mirror"
+        LAYER2_STRETCH = "networking:config:layer2-stretch"
+        LOAD_BALANCER_SESSION = "networking:config:load-balancer-session"
         ENTITY_GROUP = "microseg:config:entity-group"
+        INSTALLER_IMAGE = "lifecycle:config:installer_image"
+        HARDWARE_PROVIDER_CONNECTION = "lifecycle:config:hardware-provider-connections"
+        NIC_PROFILE = "networking:config:nic_profile"
+        PATCHED_IMAGE = "lifecycle:config:patched-image"
+        BGP_SESSION = "networking:config:bgp-session"
+        UPGRADE_SELECTION = "lifecycle:config:upgrade-selection"
+        PCIE_DEVICE = "vmm:ahv:config:vm:pcie-device"
+        EXTERNAL_STORAGE = "clustermgmt:config:external-storages"
+        LCM_BUNDLE = "lifecycle:resources:bundle"
+        VM_STARTUP_POLICY = "vmm:ahv:policies:vm-startup-policy"
+        CATEGORY_MAPPING = "microseg:config:category-mapping"
+        DIRECTORY_SERVER_CONFIG = "microseg:config:directory-server-config"
+        TEMPLATE_PLACEMENT_POLICY = "vmm:config:template-placement-policy"
+        VM_GUEST_CUSTOMIZATION_PROFILE = "vmm:ahv:config:vm-guest-customization-profile"
+        VM_HOST_AFFINITY_POLICY = "vmm:ahv:policies:vm-host-affinity-policy"
+        VM_ANTI_AFFINITY_POLICY = "vmm:ahv:policies:vm-anti-affinity-policy"
+        PROJECT = "multidomain:config:Project"
+        RESOURCE_GROUP = "multidomain:config:nutanix-resource-group"
+        CONTENT_REPOSITORY = "multidomain:content:content-repository"
+        VPN_CONNECTION = "networking:config:vpn-connection"
+        NETWORK_CONTROLLER = "networking:config:controller"
+        GATEWAY = "networking:config:gateway"
+        GUEST_REBOOT_POLICY = "vmm:ahv:policies:guest-reboot-policy"
+        VM_PROFILE = "vmm:ahv:config:vm-profile"
+        IP_POOL = "clustermgmt:config:cluster:ip_pool"
+        NETWORK_SEGMENT = "clustermgmt:config:cluster:network_segment"
+        NON_MIGRATABLE_VMS_RESULT = (
+            "clustermgmt:config:cluster:non-migratable-vms-result"
+        )
+        NOTIFICATION = "lifecycle:resources:notification"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
@@ -56,3 +91,5 @@ class Tasks:
         VM_EXT_IDS = "vmExtIds"
         VG_EXT_IDS = "volumeGroupExtIds"
         PROTECTION_POLICY = "protectionPolicyExtId"
+        NOTIFICATION = "notificationExtId"
+        PRESIGNED_URL = "presigned_url"
