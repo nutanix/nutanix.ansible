@@ -195,11 +195,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-from ..module_utils.v4.volumes.api_client import (  # noqa: E402
-    get_etag,
-    get_vg_api_instance,
-)
-from ..module_utils.v4.volumes.helpers import get_volume_group  # noqa: E402
+from ..module_utils.v4.volumes.api_client import get_vg_api_instance  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
