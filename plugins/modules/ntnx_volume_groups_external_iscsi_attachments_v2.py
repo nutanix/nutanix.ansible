@@ -16,9 +16,6 @@ version_added: 2.7.0
 description:
   - This module allows you to attach and detach external iSCSI clients to/from a Volume Group in Nutanix Prism Central.
   - An external iSCSI attachment represents an iSCSI client (initiator) that is associated with a Volume Group as an external attachment.
-  - If C(state) is C(present) and C(ext_id) is not provided, the module attaches a new iSCSI client to the Volume Group.
-  - If C(state) is C(present) and C(ext_id) is provided, the module attaches an already existing iSCSI client (by external ID) to the Volume Group.
-  - If C(state) is C(absent) and C(ext_id) is provided, the module detaches the iSCSI client from the Volume Group.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -250,12 +247,6 @@ changed:
   type: bool
   sample: true
 
-skipped:
-  description: This indicates whether the task was skipped due to idempotency
-  returned: When applicable
-  type: bool
-  sample: false
-
 error:
   description: This indicates the error message if any error occurred
   returned: When an error occurs
@@ -269,7 +260,7 @@ failed:
 
 msg:
   description: This indicates the message if any message occurred
-  returned: When there is an error, module is idempotent or check mode
+  returned: When there is an error or in  check mode operation
   type: str
   sample: "Failed generating attach external iSCSI attachment spec"
 """

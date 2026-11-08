@@ -14,15 +14,7 @@ module: ntnx_volume_group_vm_attachment_v2
 short_description: Attach or detach an AHV VM as a VmAttachment on a Nutanix Volume Group.
 version_added: 2.7.0
 description:
-  - This module manages VmAttachmentsByVolumeGroupId on a Nutanix Volume Group in Prism Central.
-  - A VmAttachment binds an AHV VM directly to a Volume Group so the VG is hot-plugged
-    onto the VM SCSI bus (hypervisor-attached storage), bypassing the guest iSCSI path.
-  - If C(state) is C(present) then an AHV VM is attached to the given Volume Group using
-    the C(AttachVm) API on C(VolumeGroupsApi).
-  - If C(state) is C(absent) then the referenced VM is detached from the Volume Group using
-    the C(DetachVm) API on C(VolumeGroupsApi).
-  - The list-side (C(ListVmAttachmentsByVolumeGroupId)) is exposed by the companion info
-    module C(ntnx_volume_group_vm_attachment_info_v2).
+  - This module allows you to attach and detach an AHV VM as a VmAttachment to/from a Volume Group in Nutanix Prism Central.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -30,12 +22,14 @@ notes:
     The required roles depend on the operation being performed.
   - >-
     B(Attach an AHV VM to the given Volume Group) -
-    Required Roles: Backup Admin, Prism Admin, Project Manager, Storage Admin, Super Admin,
-    Virtual Machine Admin, Self-Service Admin (deprecated)
+    Required Roles: Backup Admin, Prism Admin, Project Admin, Project Manager,
+    Self-Service Admin (deprecated), Storage Admin, Super Admin, Tenant Admin,
+    Tenant Consumer, Virtual Machine Admin
   - >-
     B(Detach an AHV VM from the given Volume Group) -
-    Required Roles: Backup Admin, Prism Admin, Project Manager, Storage Admin, Super Admin,
-    Virtual Machine Admin, Self-Service Admin (deprecated)
+    Required Roles: Backup Admin, Prism Admin, Project Admin, Project Manager,
+    Self-Service Admin (deprecated), Storage Admin, Super Admin, Tenant Admin,
+    Tenant Consumer, Virtual Machine Admin
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:
   state:
@@ -61,9 +55,8 @@ options:
     required: true
   index:
     description:
-      - The index on the SCSI bus at which the Volume Group should be attached to the VM.
-      - This is optional. When omitted, the hypervisor picks the next available index.
-      - Ignored when C(state) is C(absent).
+      - The index on the SCSI bus to attach the VM to the Volume Group.
+      - This is an optional field.
     type: int
     required: false
 extends_documentation_fragment:
@@ -105,9 +98,8 @@ RETURN = r"""
 response:
   description:
     - Response of the attach/detach operation.
-    - When C(wait) is C(true) the module returns the final task details.
-    - When C(wait) is C(false) the module returns the queued task response.
-    - In C(check_mode) the module returns the VmAttachment spec that would be sent.
+    - If C(wait) is true, it will return the task details after completion (including status).
+    - If C(wait) is false, it will return the task submission details.
   returned: always
   type: dict
   sample:
@@ -183,12 +175,6 @@ changed:
   type: bool
   sample: true
 
-skipped:
-  description: This indicates whether the task was skipped.
-  returned: when applicable
-  type: bool
-  sample: false
-
 failed:
   description: This indicates whether the task failed.
   returned: always
@@ -202,7 +188,7 @@ error:
 
 msg:
   description: This indicates the message if any message occurred.
-  returned: When there is an error, module is idempotent, or check mode
+  returned: When there is an error or in  check mode operation
   type: str
   sample: "Api Exception raised while attaching VM to volume group"
 """
@@ -222,10 +208,8 @@ from ..module_utils.v4.utils import (  # noqa: E402
     validate_required_params,
 )
 from ..module_utils.v4.volumes.api_client import (  # noqa: E402
-    get_etag,
     get_vg_api_instance,
 )
-from ..module_utils.v4.volumes.helpers import get_volume_group  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
@@ -249,22 +233,37 @@ def get_module_spec():
     return module_args
 
 
-def _build_vm_attachment_spec(module, result, operation):
-    """Build a ``VmAttachment`` request body for the attach/detach action."""
+def attach_VmAttachmentsByVolumeGroupId(module, result, api_instance):
+    """Attach the requested AHV VM to the Volume Group (state=present)."""
+    validate_required_params(module, ["volume_group_ext_id", "ext_id"])
+
+    volume_group_ext_id = module.params.get("volume_group_ext_id")
+    ext_id = module.params.get("ext_id")
+    result["volume_group_ext_id"] = volume_group_ext_id
+    result["ext_id"] = ext_id
+
     sg = SpecGenerator(module)
     default_spec = volumes_sdk.VmAttachment()
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating {0} VM to volume group spec".format(operation),
+            msg="Failed generating attach VM to volume group spec",
             **result,
         )
-    return spec
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(spec.to_dict())
+        return
 
+    try:
+        resp = api_instance.attach_vm(body=spec, extId=volume_group_ext_id)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while attaching VM to volume group",
+        )
 
-def _finalize_task_response(module, result, resp):
-    """Populate result with task info; wait for completion when requested."""
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
@@ -274,61 +273,36 @@ def _finalize_task_response(module, result, resp):
     result["changed"] = True
 
 
-def create_VmAttachmentsByVolumeGroupId(module, result, api_instance):
-    """Attach the requested AHV VM to the Volume Group (state=present)."""
-    validate_required_params(module, ["volume_group_ext_id", "ext_id"])
-
-    volume_group_ext_id = module.params.get("volume_group_ext_id")
-    result["volume_group_ext_id"] = volume_group_ext_id
-    result["ext_id"] = module.params.get("ext_id")
-
-    spec = _build_vm_attachment_spec(module, result, operation="attach")
-
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(spec.to_dict())
-        return
-
-    vg = get_volume_group(module, api_instance, volume_group_ext_id)
-    etag = get_etag(vg)
-    kwargs = {"if_match": etag}
-
-    try:
-        resp = api_instance.attach_vm(body=spec, extId=volume_group_ext_id, **kwargs)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while attaching VM to volume group",
-        )
-
-    _finalize_task_response(module, result, resp)
-
-
-def delete_VmAttachmentsByVolumeGroupId(module, result, api_instance):
+def detach_VmAttachmentsByVolumeGroupId(module, result, api_instance):
     """Detach the requested AHV VM from the Volume Group (state=absent)."""
     validate_required_params(module, ["volume_group_ext_id", "ext_id"])
 
     volume_group_ext_id = module.params.get("volume_group_ext_id")
+    ext_id = module.params.get("ext_id")
     result["volume_group_ext_id"] = volume_group_ext_id
-    result["ext_id"] = module.params.get("ext_id")
+    result["ext_id"] = ext_id
 
-    spec = _build_vm_attachment_spec(module, result, operation="detach")
+    sg = SpecGenerator(module)
+    default_spec = volumes_sdk.VmAttachment()
+    spec, err = sg.generate_spec(obj=default_spec)
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed generating detach VM from volume group spec",
+            **result,
+        )
 
     if module.check_mode:
         result["msg"] = (
             "VM with ext_id: {0} will be detached from Volume Group with ext_id: {1}.".format(
-                module.params.get("ext_id"), volume_group_ext_id
+                ext_id, volume_group_ext_id
             )
         )
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
-    vg = get_volume_group(module, api_instance, volume_group_ext_id)
-    etag = get_etag(vg)
-    kwargs = {"if_match": etag}
-
     try:
-        resp = api_instance.detach_vm(body=spec, extId=volume_group_ext_id, **kwargs)
+        resp = api_instance.detach_vm(body=spec, extId=volume_group_ext_id)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -336,17 +310,19 @@ def delete_VmAttachmentsByVolumeGroupId(module, result, api_instance):
             msg="Api Exception raised while detaching VM from volume group",
         )
 
-    _finalize_task_response(module, result, resp)
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if task_ext_id and module.params.get("wait"):
+        task_status = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(task_status.to_dict())
+    result["changed"] = True
 
 
 def run_module():
     module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        required_if=[
-            ("state", "present", ("volume_group_ext_id", "ext_id")),
-            ("state", "absent", ("volume_group_ext_id", "ext_id")),
-        ],
     )
     if SDK_IMP_ERROR:
         module.fail_json(
@@ -359,16 +335,13 @@ def run_module():
         "changed": False,
         "response": None,
         "failed": False,
-        "ext_id": None,
-        "volume_group_ext_id": None,
-        "task_ext_id": None,
     }
     api_instance = get_vg_api_instance(module)
     state = module.params.get("state")
     if state == "present":
-        create_VmAttachmentsByVolumeGroupId(module, result, api_instance)
+        attach_VmAttachmentsByVolumeGroupId(module, result, api_instance)
     else:
-        delete_VmAttachmentsByVolumeGroupId(module, result, api_instance)
+        detach_VmAttachmentsByVolumeGroupId(module, result, api_instance)
 
     module.exit_json(**result)
 
