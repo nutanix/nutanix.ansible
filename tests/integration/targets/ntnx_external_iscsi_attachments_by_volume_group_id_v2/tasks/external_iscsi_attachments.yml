@@ -1,5 +1,5 @@
 ---
-# Test plan for ntnx_external_iscsi_attachments_by_volume_group_id_v2 and
+# Test plan for ntnx_volume_groups_external_iscsi_attachments and
 # ntnx_volume_group_external_iscsi_attachmentsinfo_v2. Scenarios covered:
 #
 #   Prerequisites & setup
@@ -91,7 +91,7 @@
 ############################################ Negative — spec validation ############################################
 
 - name: Negative — CRUD module without required volume_group_ext_id
-  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
     state: present
     iscsi_initiator_name: "{{ iqn_min }}"
   register: neg_missing_vg
@@ -121,7 +121,7 @@
     success_msg: "Info module correctly rejected missing volume_group_ext_id"
 
 - name: Negative — state=absent without ext_id
-  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
     state: absent
     volume_group_ext_id: "{{ vg1_uuid }}"
   register: neg_absent_no_ext_id
@@ -137,7 +137,7 @@
     success_msg: "CRUD module correctly rejected state=absent without ext_id"
 
 - name: Negative — mutually exclusive iscsi_initiator_name + iscsi_initiator_network_id
-  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
     state: present
     volume_group_ext_id: "{{ vg1_uuid }}"
     iscsi_initiator_name: "{{ iqn_min }}"
@@ -157,7 +157,7 @@
     success_msg: "Module correctly rejected mutually exclusive initiator parameters"
 
 - name: Negative — invalid enabled_authentications value
-  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
     state: present
     volume_group_ext_id: "{{ vg1_uuid }}"
     iscsi_initiator_name: "{{ iqn_min }}"
@@ -175,7 +175,7 @@
     success_msg: "Module correctly rejected an invalid enabled_authentications value"
 
 - name: Negative — invalid attachment_site value
-  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
     state: present
     volume_group_ext_id: "{{ vg1_uuid }}"
     iscsi_initiator_name: "{{ iqn_min }}"
@@ -227,7 +227,7 @@
 ############################################ Check-mode ############################################
 
 - name: Check mode — Create with ALL attributes (IQN)
-  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
     volume_group_ext_id: "{{ vg1_uuid }}"
     iscsi_initiator_name: "{{ iqn_full }}"
     num_virtual_targets: 32
@@ -254,7 +254,7 @@
     success_msg: "check_mode Create generated the expected spec"
 
 - name: Check mode — Update (attach-existing by ext_id) with a placeholder ext_id
-  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
     state: present
     volume_group_ext_id: "{{ vg1_uuid }}"
     ext_id: "{{ bogus_client_ext_id }}"
@@ -276,7 +276,7 @@
     success_msg: "check_mode Update generated the expected spec"
 
 - name: Check mode — Delete
-  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
     state: absent
     volume_group_ext_id: "{{ vg1_uuid }}"
     ext_id: "{{ bogus_client_ext_id }}"
@@ -300,7 +300,7 @@
 ############################################ Real Create — minimal (IQN only) ############################################
 
 - name: Attach external iSCSI client with MINIMUM required fields (IQN only)
-  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
     state: present
     volume_group_ext_id: "{{ vg1_uuid }}"
     iscsi_initiator_name: "{{ iqn_min }}"
@@ -332,7 +332,7 @@
   # Because the minimal-attach above already fixed the VG-level target params, we
   # attach subsequent clients with the same num_virtual_targets and rely on the
   # VG-level CHAP secret rather than re-declaring client-side CHAP.
-  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
     state: present
     volume_group_ext_id: "{{ vg1_uuid }}"
     iscsi_initiator_name: "{{ iqn_full }}"
@@ -360,7 +360,7 @@
 ############################################ Real Create — IPv4 initiator ############################################
 
 - name: Attach external iSCSI client using an IPv4 initiator network id
-  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
     state: present
     volume_group_ext_id: "{{ vg1_uuid }}"
     num_virtual_targets: 32
@@ -392,7 +392,7 @@
   # Some cluster storage backends reject FQDN initiators with the error
   # "FQDN is not supported." — we tolerate that with ignore_errors and gate the
   # subsequent verifications on whether the attach actually succeeded.
-  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
     state: present
     volume_group_ext_id: "{{ vg1_uuid }}"
     num_virtual_targets: 32
@@ -507,7 +507,7 @@
 ############################################ Idempotency — re-attach by ext_id ############################################
 
 - name: Re-attach existing external iSCSI client by ext_id (idempotent path)
-  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
     state: present
     volume_group_ext_id: "{{ vg1_uuid }}"
     ext_id: "{{ ext_id_min }}"
@@ -530,7 +530,7 @@
 ############################################ Delete — real ############################################
 
 - name: Detach each newly created external iSCSI attachment
-  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
     state: absent
     volume_group_ext_id: "{{ vg1_uuid }}"
     ext_id: "{{ item }}"

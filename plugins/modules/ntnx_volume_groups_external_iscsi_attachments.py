@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_external_iscsi_attachments_by_volume_group_id_v2
+module: ntnx_volume_groups_external_iscsi_attachments
 short_description: Manage external iSCSI attachments (iSCSI clients) of a Volume Group in Nutanix Prism Central
 version_added: 2.7.0
 description:
@@ -26,11 +26,11 @@ notes:
     The required roles depend on the operation being performed.
   - >-
     B(Attach an iSCSI client to the given Volume Group) -
-    Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin,
+    Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Admin, Project Manager, Storage Admin, Super Admin,
     Self-Service Admin (deprecated)
   - >-
     B(Detach an iSCSI client from the given Volume Group) -
-    Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Manager, Storage Admin, Super Admin,
+    Required Roles: Backup Admin, CSI System, Kubernetes Data Services System, Prism Admin, Project Admin, Project Manager, Storage Admin, Super Admin,
     Self-Service Admin (deprecated)
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=volumes)"
 options:
@@ -50,7 +50,6 @@ options:
     description:
       - The external ID of the iSCSI client (external iSCSI attachment).
       - Required for detach (delete) operation.
-      - When provided with C(state=present) the attach is performed by referencing an existing iSCSI client by its external ID.
     type: str
     required: false
   volume_group_ext_id:
@@ -67,8 +66,9 @@ options:
     required: false
   iscsi_initiator_network_id:
     description:
-      - IPv4 / IPv6 address or FQDN identifying the iSCSI initiator on the network.
-      - Mutually exclusive with C(iscsi_initiator_name).
+      - iSCSI initiator network identifier.
+      - During the attach operation, exactly one of C(iscsi_initiator_name) and C(iscsi_initiator_network_id) must be specified.
+      - This field is immutable once the attachment is created.
     type: dict
     required: false
     suboptions:
@@ -130,18 +130,12 @@ options:
   attachment_site:
     description:
       - The site where the Volume Group attach operation should be processed.
-      - This field may only be set if Metro DR (Volume Group synchronous replication) has been configured for this Volume Group.
+      - This field may only be set if Metro DR has been configured for this Volume Group.
     type: str
     required: false
     choices:
       - SECONDARY
       - PRIMARY
-  cluster_reference:
-    description:
-      - The external identifier of the cluster on which the iSCSI client is registered.
-      - Used together with C(ext_id) when attaching an already existing iSCSI client to the Volume Group.
-    type: str
-    required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -153,8 +147,8 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Attach a new iSCSI client to a Volume Group using IQN
-  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+- name: Attach a new iSCSI client to a Volume Group
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
     state: present
     volume_group_ext_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
     iscsi_initiator_name: "iqn.1991-05.com.microsoft:ansible-client"
@@ -165,7 +159,7 @@ EXAMPLES = r"""
   register: attach_by_iqn
 
 - name: Attach a new iSCSI client to a Volume Group using an IPv4 initiator network id
-  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
     state: present
     volume_group_ext_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
     iscsi_initiator_network_id:
@@ -175,15 +169,8 @@ EXAMPLES = r"""
     enabled_authentications: NONE
   register: attach_by_ipv4
 
-- name: Attach an existing iSCSI client (by ext_id) to a Volume Group
-  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
-    state: present
-    volume_group_ext_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
-    ext_id: "aea43b5c-ae4d-4b60-934b-f8f581275dec"
-  register: attach_by_ext_id
-
 - name: Detach an iSCSI client from a Volume Group
-  nutanix.ncp.ntnx_external_iscsi_attachments_by_volume_group_id_v2:
+  nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments:
     state: absent
     volume_group_ext_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
     ext_id: "aea43b5c-ae4d-4b60-934b-f8f581275dec"
@@ -194,9 +181,8 @@ RETURN = r"""
 response:
   description:
     - Response for attaching or detaching an external iSCSI client to/from a Volume Group.
-    - If the operation is attach and C(wait) is true, it will return the task details after completion (including status).
-    - If the operation is attach and C(wait) is false, it will return the task submission details.
-    - If the operation is detach, it will return the task details.
+    - If C(wait) is true, it will return the task details after completion (including status).
+    - If C(wait) is false, it will return the task submission details.
   returned: always
   type: dict
   sample:
@@ -253,7 +239,7 @@ ext_id:
 
 volume_group_ext_id:
   description:
-    - The external ID of the Volume Group the operation acted on.
+    - The external ID of the Volume Group.
   returned: always
   type: str
   sample: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
@@ -285,7 +271,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error, module is idempotent or check mode
   type: str
-  sample: "Api Exception raised while attaching iSCSI client to Volume Group"
+  sample: "Failed generating attach external iSCSI attachment spec"
 """
 
 import traceback  # noqa: E402
@@ -306,12 +292,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_internal_attributes,
 )
 from ..module_utils.v4.volumes.api_client import (  # noqa: E402
-    get_etag,
     get_vg_api_instance,
-)
-from ..module_utils.v4.volumes.helpers import (  # noqa: E402
-    get_external_iscsi_attachment_by_ext_id,
-    get_volume_group,
 )
 
 SDK_IMP_ERROR = None
@@ -357,25 +338,11 @@ def get_module_spec():
             choices=["SECONDARY", "PRIMARY"],
             required=False,
         ),
-        cluster_reference=dict(type="str", required=False),
     )
     return module_args
 
 
-def _external_attachment_exists(module, api_instance, volume_group_ext_id, ext_id):
-    """Check whether an external iSCSI attachment with the given ext_id already exists on the VG.
-
-    Returns True if the attachment is present, False otherwise.
-    """
-    return (
-        get_external_iscsi_attachment_by_ext_id(
-            module, api_instance, volume_group_ext_id, ext_id
-        )
-        is not None
-    )
-
-
-def create_ExternalIscsiAttachmentsByVolumeGroupId(module, result, api_instance):
+def attach_ExternalIscsiAttachmentsByVolumeGroupId(module, result, api_instance):
     volume_group_ext_id = module.params.get("volume_group_ext_id")
     result["volume_group_ext_id"] = volume_group_ext_id
 
@@ -392,15 +359,9 @@ def create_ExternalIscsiAttachmentsByVolumeGroupId(module, result, api_instance)
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
-    vg = get_volume_group(module, api_instance, volume_group_ext_id)
-    etag = get_etag(vg)
-    kwargs = {"if_match": etag} if etag else {}
-
     resp = None
     try:
-        resp = api_instance.attach_iscsi_client(
-            body=spec, extId=volume_group_ext_id, **kwargs
-        )
+        resp = api_instance.attach_iscsi_client(body=spec, extId=volume_group_ext_id)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -436,79 +397,7 @@ def create_ExternalIscsiAttachmentsByVolumeGroupId(module, result, api_instance)
     result["changed"] = True
 
 
-def update_ExternalIscsiAttachmentsByVolumeGroupId(module, result, api_instance):
-    """Attach an already existing iSCSI client (by ext_id) to the Volume Group.
-
-    The Nutanix Volumes v4 API does not expose a dedicated update operation for
-    external iSCSI attachments. When C(state=present) is combined with an
-    C(ext_id), we treat it as an attach-existing-by-id request. If the client is
-    already attached to the Volume Group we short-circuit with an idempotent
-    skip. Otherwise, we call the attach API with the minimal reference body.
-    """
-
-    volume_group_ext_id = module.params.get("volume_group_ext_id")
-    ext_id = module.params.get("ext_id")
-    result["ext_id"] = ext_id
-    result["volume_group_ext_id"] = volume_group_ext_id
-
-    if _external_attachment_exists(module, api_instance, volume_group_ext_id, ext_id):
-        result["skipped"] = True
-        result["changed"] = False
-        result["msg"] = (
-            "External iSCSI attachment with ext_id '{0}' is already attached "
-            "to Volume Group '{1}'. Skipping attach.".format(
-                ext_id, volume_group_ext_id
-            )
-        )
-        module.exit_json(**result)
-
-    sg = SpecGenerator(module)
-    default_spec = volumes_sdk.IscsiClient()
-    spec, err = sg.generate_spec(obj=default_spec)
-    if err:
-        result["error"] = err
-        module.fail_json(
-            msg="Failed generating attach external iSCSI attachment spec", **result
-        )
-
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(spec.to_dict())
-        return
-
-    vg = get_volume_group(module, api_instance, volume_group_ext_id)
-    etag = get_etag(vg)
-    kwargs = {"if_match": etag} if etag else {}
-
-    resp = None
-    try:
-        resp = api_instance.attach_iscsi_client(
-            body=spec, extId=volume_group_ext_id, **kwargs
-        )
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg=(
-                "Api Exception raised while attaching existing iSCSI client "
-                "'{0}' to Volume Group '{1}'"
-            ).format(ext_id, volume_group_ext_id),
-        )
-
-    task_ext_id = resp.data.ext_id
-    result["task_ext_id"] = task_ext_id
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
-    if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id)
-        result["response"] = strip_internal_attributes(task_status.to_dict())
-        task_ext_id_entity = get_entity_ext_id_from_task(
-            task_status, rel=TASK_CONSTANTS.RelEntityType.ISCSI_CLIENT
-        )
-        if task_ext_id_entity:
-            result["ext_id"] = task_ext_id_entity
-    result["changed"] = True
-
-
-def delete_ExternalIscsiAttachmentsByVolumeGroupId(module, result, api_instance):
+def detach_ExternalIscsiAttachmentsByVolumeGroupId(module, result, api_instance):
     volume_group_ext_id = module.params.get("volume_group_ext_id")
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
@@ -531,15 +420,9 @@ def delete_ExternalIscsiAttachmentsByVolumeGroupId(module, result, api_instance)
         )
         return
 
-    vg = get_volume_group(module, api_instance, volume_group_ext_id)
-    etag = get_etag(vg)
-    kwargs = {"if_match": etag} if etag else {}
-
     resp = None
     try:
-        resp = api_instance.detach_iscsi_client(
-            body=spec, extId=volume_group_ext_id, **kwargs
-        )
+        resp = api_instance.detach_iscsi_client(body=spec, extId=volume_group_ext_id)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -579,22 +462,15 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
         "response": None,
-        "ext_id": None,
-        "task_ext_id": None,
-        "volume_group_ext_id": None,
         "failed": False,
     }
     api_instance = get_vg_api_instance(module)
     state = module.params.get("state")
     if state == "present":
-        if module.params.get("ext_id"):
-            update_ExternalIscsiAttachmentsByVolumeGroupId(module, result, api_instance)
-        else:
-            create_ExternalIscsiAttachmentsByVolumeGroupId(module, result, api_instance)
+        attach_ExternalIscsiAttachmentsByVolumeGroupId(module, result, api_instance)
     else:
-        delete_ExternalIscsiAttachmentsByVolumeGroupId(module, result, api_instance)
+        detach_ExternalIscsiAttachmentsByVolumeGroupId(module, result, api_instance)
     module.exit_json(**result)
 
 
