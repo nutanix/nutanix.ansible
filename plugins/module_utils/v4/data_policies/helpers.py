@@ -141,3 +141,23 @@ def get_recovery_setting(module, api_instance, recovery_plan_ext_id, ext_id):
             exception=e,
             msg="Api Exception raised while fetching recovery setting info using ext_id",
         )
+
+
+def get_recovery_plan(module, api_instance, ext_id):
+    """
+    This method will return recovery plan info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: RecoveryPlansApi instance from ntnx_datapolicies_py_client sdk
+        ext_id (str): Recovery plan external ID
+    Returns:
+        recovery_plan_info (object): recovery plan info
+    """
+    try:
+        return api_instance.get_recovery_plan_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching recovery plan info using ext_id",
+        )
