@@ -1,0 +1,195 @@
+---
+- name: Start ntnx_iam_welcome_banner_v2 and ntnx_iam_welcome_banner_info_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_iam_welcome_banner_v2 and ntnx_iam_welcome_banner_info_v2 tests
+
+- name: Generate random suffix for ansible test content
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set banner content variables
+  ansible.builtin.set_fact:
+    banner_content_1: "Ansible test welcome banner - {{ random_name }}"
+    banner_content_2: "Ansible test welcome banner content-only update - {{ random_name }}"
+
+########################################################################
+# 1. Get welcome banner (baseline)
+########################################################################
+- name: Get welcome banner
+  nutanix.ncp.ntnx_iam_welcome_banner_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Status of get welcome banner
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.content is defined
+      - result.response.is_enabled is defined
+    fail_msg: Unable to get welcome banner
+    success_msg: Welcome banner fetched successfully
+
+- name: Store original welcome banner for restore
+  ansible.builtin.set_fact:
+    original_banner_content: "{{ result.response.content }}"
+    original_banner_is_enabled: "{{ result.response.is_enabled }}"
+
+########################################################################
+# 2. Update with is_enabled=true and new content (ansible test)
+########################################################################
+- name: Update welcome banner with is_enabled true and new content
+  nutanix.ncp.ntnx_iam_welcome_banner_v2:
+    state: present
+    content: "{{ banner_content_1 }}"
+    is_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Status of update welcome banner with content and is_enabled true
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.content == banner_content_1
+      - result.response.is_enabled == true
+    fail_msg: Unable to update welcome banner with content and is_enabled true
+    success_msg: Welcome banner updated with content and is_enabled true successfully
+
+########################################################################
+# 3. Get welcome banner and assert
+########################################################################
+- name: Get welcome banner after content and is_enabled update
+  nutanix.ncp.ntnx_iam_welcome_banner_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Status of get welcome banner after content and is_enabled update
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.content == banner_content_1
+      - result.response.is_enabled == true
+    fail_msg: Welcome banner get after update did not match expected values
+    success_msg: Welcome banner get after update matched expected values
+
+########################################################################
+# 4. Update with content only and assert
+########################################################################
+- name: Update welcome banner with content only
+  nutanix.ncp.ntnx_iam_welcome_banner_v2:
+    state: present
+    content: "{{ banner_content_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of update welcome banner with content only
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.content == banner_content_2
+    fail_msg: Unable to update welcome banner with content only
+    success_msg: Welcome banner updated with content only successfully
+
+########################################################################
+# 5. Get and assert
+########################################################################
+- name: Get welcome banner after content-only update
+  nutanix.ncp.ntnx_iam_welcome_banner_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Status of get welcome banner after content-only update
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.content == banner_content_2
+    fail_msg: Welcome banner get after content-only update did not match expected values
+    success_msg: Welcome banner get after content-only update matched expected values
+
+########################################################################
+# 6. Update with is_enabled only (false) and assert
+########################################################################
+- name: Update welcome banner with is_enabled false only
+  nutanix.ncp.ntnx_iam_welcome_banner_v2:
+    state: present
+    is_enabled: false
+  register: result
+  ignore_errors: true
+
+- name: Status of update welcome banner with is_enabled false only
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.response.is_enabled == false
+    fail_msg: Unable to update welcome banner with is_enabled false only
+    success_msg: Welcome banner updated with is_enabled false only successfully
+
+########################################################################
+# Get and assert after is_enabled false only update
+########################################################################
+- name: Get welcome banner after is_enabled false only update
+  nutanix.ncp.ntnx_iam_welcome_banner_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Status of get welcome banner after is_enabled false only update
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.is_enabled == false
+      - result.response.content == banner_content_2
+    fail_msg: Welcome banner get after is_enabled false only update did not match expected values
+    success_msg: Welcome banner get after is_enabled false only update matched expected values
+
+########################################################################
+# Restore original welcome banner
+########################################################################
+- name: Restore original welcome banner
+  nutanix.ncp.ntnx_iam_welcome_banner_v2:
+    state: present
+    content: "{{ original_banner_content }}"
+    is_enabled: "{{ original_banner_is_enabled }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of restore original welcome banner
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.response is defined
+      - result.response.content == original_banner_content
+      - result.response.is_enabled == (original_banner_is_enabled | bool)
+    fail_msg: Unable to restore original welcome banner
+    success_msg: Original welcome banner restored successfully
+
+########################################################################
+# Get and assert after restore
+########################################################################
+- name: Get welcome banner after restore
+  nutanix.ncp.ntnx_iam_welcome_banner_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Status of get welcome banner after restore
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.content == original_banner_content
+      - result.response.is_enabled == (original_banner_is_enabled | bool)
+    fail_msg: Welcome banner get after restore did not match original values
+    success_msg: Welcome banner get after restore matched original values
