@@ -604,7 +604,7 @@ options:
                   - Enable in-guest script execution for the VM.
                   - By default, the in-guest script execution is disabled.
                 type: bool
-                required: false
+                required: true
               timeout_secs:
                 description:
                   - Maximum time in seconds to wait for the in-guest script execution to complete.
@@ -868,13 +868,8 @@ def get_module_spec():
         ext_id=dict(type="str", required=True),
     )
 
-    # Docs: required under recovery_setting.vm, optional under vm_category
-    vm_in_guest_script_spec = dict(
+    in_guest_script_spec = dict(
         is_enabled=dict(type="bool", required=True),
-        timeout_secs=dict(type="int", required=False),
-    )
-    vm_category_in_guest_script_spec = dict(
-        is_enabled=dict(type="bool", required=False),
         timeout_secs=dict(type="int", required=False),
     )
 
@@ -988,7 +983,7 @@ def get_module_spec():
         power_state=dict(type="str", required=False, choices=["ON", "OFF"]),
         in_guest_script_execution_config=dict(
             type="dict",
-            options=vm_in_guest_script_spec,
+            options=in_guest_script_spec,
             required=False,
             obj=data_policies_sdk.InGuestScriptExecutionConfig,
         ),
@@ -1020,7 +1015,7 @@ def get_module_spec():
         power_state=dict(type="str", required=False, choices=["ON", "OFF"]),
         in_guest_script_execution_config=dict(
             type="dict",
-            options=vm_category_in_guest_script_spec,
+            options=in_guest_script_spec,
             required=False,
             obj=data_policies_sdk.InGuestScriptExecutionConfig,
         ),
