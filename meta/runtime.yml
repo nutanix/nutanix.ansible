@@ -296,6 +296,8 @@ action_groups:
     - ntnx_entity_groups_info_v2
     - ntnx_data_services_ip_mapping_v2
     - ntnx_data_services_ip_mappings_info_v2
+    - ntnx_network_mapping_v2
+    - ntnx_network_mappings_info_v2
     - ntnx_recovery_stage_v2
     - ntnx_recovery_stages_info_v2
     - ntnx_volume_groups_external_iscsi_attachments_v2
