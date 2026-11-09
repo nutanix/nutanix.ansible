@@ -1,37 +1,35 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+from typing import Any
 
 __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
 module: ntnx_recovery_plan_v2
-short_description: Create, Update, Delete recovery plans in Nutanix Prism Central
+short_description: Create, update, and delete recovery plans in Nutanix Prism Central
 version_added: 2.7.0
 description:
   - This module allows you to create, update, and delete a recovery plan in Nutanix Prism Central.
-  - A recovery plan orchestrates disaster recovery of protected VMs and volume groups
-    on primary Nutanix clusters to secondary Nutanix clusters registered to the same
-    or different Domain manager.
-  - This module uses PC v4 APIs based SDKs (namespace C(datapolicies)).
+  - This module uses PC v4 APIs based SDKs
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
       The required roles depend on the operation being performed.
     - >-
       B(Create a Recovery Plan) -
-      Required Roles: Disaster Recovery Admin, Prism Admin, Super Admin
+      Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - >-
       B(Update a Recovery Plan) -
-      Required Roles: Disaster Recovery Admin, Prism Admin, Super Admin
+      Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - >-
       B(Delete a Recovery Plan) -
-      Required Roles: Disaster Recovery Admin, Prism Admin, Super Admin
+      Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies)"
 options:
   state:
@@ -53,7 +51,7 @@ options:
     required: false
   name:
     description:
-      - User-visible recovery plan name.
+      - Name of the recovery plan.
       - Required for create operation.
     type: str
     required: false
@@ -71,18 +69,13 @@ options:
     suboptions:
       domain_manager_ext_id:
         description:
-          - External identifier of the primary Domain manager (Prism Central).
+          - External identifier of the primary Domain manager.
         type: str
         required: true
       clusters:
         description:
-          - Prism Element cluster external identifiers whose associated VMs and volume
-            groups are protected.
-          - Only the primary location can have multiple clusters configured, while the
-            other locations can specify only one cluster.
-          - Clusters must be specified for replication within the same Prism Central and
-            cannot be specified for an MST type location.
-          - All clusters are considered if the list is empty.
+          - List of Prism Element cluster external references.
+          - Required in the scenario when both primary and secondary Prism Elements are managed by the same Domain manager.
         type: list
         elements: dict
         required: false
@@ -94,19 +87,19 @@ options:
             required: true
   recovery_location:
     description:
-      - Recovery (secondary) disaster recovery location for the recovery plan.
+      - Recovery location where VMs and Volume Groups are to be recovered.
     type: dict
     required: false
     suboptions:
       domain_manager_ext_id:
         description:
-          - External identifier of the recovery Domain manager (Prism Central).
+          - External identifier of the recovery Domain manager.
         type: str
         required: true
       clusters:
         description:
-          - Prism Element cluster external identifier for the recovery location.
-          - Only one cluster can be specified for the recovery location.
+          - List of Prism Element cluster external references.
+          - Required in the scenario when both primary and secondary Prism Elements are managed by the same Domain manager.
         type: list
         elements: dict
         required: false
@@ -119,7 +112,6 @@ options:
   witness:
     description:
       - Witness location and failover configuration.
-      - Used for cross-cluster / cross-AZ failover arbitration.
     type: dict
     required: false
     suboptions:
@@ -130,16 +122,10 @@ options:
         required: true
       timeout_secs:
         description:
-          - Timeout, in seconds, before the witness declares the primary site as
-            unreachable and permits an automated failover to proceed.
+          - Maximum time in seconds that the witness must wait before initiating an unplanned failover
+            or pausing synchronous replication in the event of a primary or secondary location failure.
         type: int
-        required: false
-  owner_ext_id:
-    description:
-      - External identifier of the user who owns the recovery plan.
-      - Populated by the system on create; may be updated by an administrator.
-    type: str
-    required: false
+        required: true
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -309,9 +295,9 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
-    strip_read_only_fields,
     validate_required_params,
 )
+from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
@@ -324,13 +310,6 @@ except ImportError:
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
-
-# Read-only fields returned by the API but not accepted on update.
-_READ_ONLY_FIELDS = ("num_stages", "num_network_mappings")
-
-# Rel type reported by ergon for RecoveryPlan entities. Kept module-local
-# because the constants file does not (yet) expose data-policies rels.
-_RECOVERY_PLAN_REL = "datapolicies:config:recovery-plan"
 
 
 def get_module_spec():
@@ -373,13 +352,12 @@ def get_module_spec():
             options=witness_spec,
             obj=data_policies_sdk.WitnessConfiguration,
         ),
-        owner_ext_id=dict(type="str"),
     )
     return module_args
 
 
 def create_RecoveryPlan(module, result, api_instance):
-    validate_required_params(module, ["name", "primary_location"])
+    validate_required_params(module, ["name", "primary_location", "recovery_location"])
 
     sg = SpecGenerator(module)
     default_spec = data_policies_sdk.RecoveryPlan()
@@ -407,7 +385,9 @@ def create_RecoveryPlan(module, result, api_instance):
     if task_ext_id and module.params.get("wait"):
         resp = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
-        ext_id = get_entity_ext_id_from_task(resp, rel=_RECOVERY_PLAN_REL)
+        ext_id = get_entity_ext_id_from_task(
+            resp, rel=TASK_CONSTANTS.RelEntityType.RECOVERY_PLAN
+        )
         if ext_id:
             result["ext_id"] = ext_id
             resp = get_recovery_plan(module, api_instance, ext_id)
@@ -426,10 +406,6 @@ def create_RecoveryPlan(module, result, api_instance):
 def check_for_idempotency(old_spec_dict, update_spec_dict):
     old_spec_dict = strip_internal_attributes(old_spec_dict)
     update_spec_dict = strip_internal_attributes(update_spec_dict)
-    # Read-only counters populated by the API — irrelevant for idempotency.
-    for field in _READ_ONLY_FIELDS:
-        old_spec_dict.pop(field, None)
-        update_spec_dict.pop(field, None)
     return old_spec_dict == update_spec_dict
 
 
@@ -456,8 +432,6 @@ def update_RecoveryPlan(module, result, api_instance):
     if check_for_idempotency(old_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.")
-
-    strip_read_only_fields(update_spec, fields=_READ_ONLY_FIELDS)
 
     kwargs = {"if_match": etag}
     resp = None
@@ -489,7 +463,6 @@ def delete_RecoveryPlan(module, result, api_instance):
         result["msg"] = "Recovery plan with ext_id:{0} will be deleted.".format(ext_id)
         return
 
-    # Fetch current etag; some deployments enforce optimistic concurrency on DELETE.
     current = get_recovery_plan(module, api_instance, ext_id)
     etag = get_etag(data=current)
     kwargs = {}
@@ -533,7 +506,6 @@ def run_module():
         "changed": False,
         "response": None,
         "failed": False,
-        "ext_id": None,
     }
     api_instance = get_recovery_plans_api_instance(module)
     state = module.params.get("state")

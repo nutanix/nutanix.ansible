@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -14,19 +14,21 @@ module: ntnx_recovery_plans_info_v2
 short_description: Fetch recovery plans info in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module allows you to fetch information about RecoveryPlan in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific RecoveryPlan.
-  - If C(ext_id) is not provided, list multiple RecoveryPlan optionally filtered / paginated.
-  - This module uses PC v4 APIs based SDKs (namespace C(datapolicies)).
+  - This module allows you to fetch information about a recovery plan in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch details of the specific recovery plan.
+  - If C(ext_id) is not provided, list multiple recovery plans optionally filtered / paginated.
+  - This module uses PC v4 APIs based SDKs
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get recovery plan by ext_id) -
-      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin, Prism Viewer, Super Admin
+      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin,
+      Prism Viewer, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - >-
       B(List recovery plans) -
-      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin, Prism Viewer, Super Admin
+      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin,
+      Prism Viewer, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies)"
 options:
   ext_id:
@@ -84,9 +86,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC RecoveryPlan info v4 API.
-    - It can be a single RecoveryPlan if external ID is provided.
-    - List of multiple RecoveryPlan if external ID is not provided with optional filter or limit.
+    - The response from the Nutanix PC recovery plan info v4 API.
+    - It can be a single recovery plan if external ID is provided.
+    - List of multiple recovery plans if external ID is not provided with optional filter or limit.
   returned: always
   type: dict
   sample:
@@ -167,11 +169,12 @@ from ..module_utils.v4.data_policies.api_client import (  # noqa: E402
     get_recovery_plans_api_instance,
 )
 from ..module_utils.v4.data_policies.helpers import get_recovery_plan  # noqa: E402
-from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
+from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -203,7 +206,10 @@ def get_recovery_plans(module, api_instance, result):
         module.fail_json(msg="Failed generating recovery plans info spec", **result)
 
     try:
-        resp = api_instance.list_recovery_plans(**kwargs)
+        resp = list_entities(
+            api_instance.list_recovery_plans,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
