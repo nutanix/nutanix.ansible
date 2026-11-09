@@ -1,0 +1,3 @@
+---
+- name: Import bgp_sessions.yml
+  ansible.builtin.import_tasks: bgp_sessions.yml
