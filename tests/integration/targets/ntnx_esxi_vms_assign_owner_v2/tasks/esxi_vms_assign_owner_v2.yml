@@ -1,0 +1,133 @@
+---
+# Integration tests for ntnx_esxi_vms_assign_owner_v2.
+# Check-mode and negative tests use inline dummy ext_ids.
+
+- name: Start testing ntnx_esxi_vms_assign_owner_v2 module
+  ansible.builtin.debug:
+    msg: Start testing ntnx_esxi_vms_assign_owner_v2 module
+
+- name: Assign owner without ext_id
+  nutanix.ncp.ntnx_esxi_vms_assign_owner_v2:
+    owner:
+      entity_type: USER
+      ext_id: "00000000-0000-0000-0000-000000000002"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'ext_id' in (result.msg | string)"
+    fail_msg: Missing ext_id was not rejected
+    success_msg: Missing ext_id correctly rejected
+
+- name: Assign owner without owner
+  nutanix.ncp.ntnx_esxi_vms_assign_owner_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing owner fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'owner' in (result.msg | string)"
+    fail_msg: Missing owner was not rejected
+    success_msg: Missing owner correctly rejected
+
+- name: Assign owner without owner ext_id
+  nutanix.ncp.ntnx_esxi_vms_assign_owner_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    owner: {}
+  register: result
+  ignore_errors: true
+
+- name: Assert missing owner ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'ext_id' in (result.msg | string)"
+    fail_msg: Missing owner ext_id was not rejected
+    success_msg: Missing owner ext_id correctly rejected
+
+- name: Assign owner to ESXi VM - check mode is enabled
+  nutanix.ncp.ntnx_esxi_vms_assign_owner_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    owner:
+      entity_type: USER
+      ext_id: "00000000-0000-0000-0000-000000000002"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert check mode generates owner spec
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.owner.ext_id == "00000000-0000-0000-0000-000000000002"
+      - result.response.owner.entity_type == "USER"
+      - result.ext_id == "00000000-0000-0000-0000-000000000001"
+      - result.msg is search("will have owner assigned")
+    fail_msg: Unable to generate owner spec in check mode
+    success_msg: Owner spec generated in check mode
+
+- name: Assign owner to non-existent ESXi VM
+  nutanix.ncp.ntnx_esxi_vms_assign_owner_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    owner:
+      entity_type: USER
+      ext_id: "00000000-0000-0000-0000-000000000002"
+  register: result
+  ignore_errors: true
+
+- name: Assert assigning owner to non-existent ESXi VM fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+    fail_msg: Assigning owner to non-existent ESXi VM did not fail
+    success_msg: Assigning owner to non-existent ESXi VM failed as expected
+
+- name: List ESXi VMs to find a real VM
+  nutanix.ncp.ntnx_esxi_vms_info_v2:
+    limit: 1
+  register: vms
+  ignore_errors: true
+
+- name: Set ESXi VM ext_id
+  ansible.builtin.set_fact:
+    esxi_vm_ext_id: "{{ vms.response[0].ext_id }}"
+  when:
+    - not vms.failed
+    - vms.response | length > 0
+
+- name: Assign owner to real ESXi VM - check mode is enabled
+  nutanix.ncp.ntnx_esxi_vms_assign_owner_v2:
+    ext_id: "{{ esxi_vm_ext_id }}"
+    owner:
+      entity_type: USER
+      ext_id: "00000000-0000-0000-0000-000000000002"
+  register: result
+  ignore_errors: true
+  check_mode: true
+  when: esxi_vm_ext_id is defined
+
+- name: Assert check mode generates owner spec for real ESXi VM
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response.owner.ext_id == "00000000-0000-0000-0000-000000000002"
+      - result.ext_id == esxi_vm_ext_id
+    fail_msg: Unable to generate owner spec in check mode for real ESXi VM
+    success_msg: Owner spec generated in check mode for real ESXi VM
+  when: esxi_vm_ext_id is defined
