@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -11,17 +11,11 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_entity_sync_policy_v2
-short_description: Synchronize an entity sync policy in Nutanix Prism Central
-version_added: 2.5.0
+short_description: Sync entity identified by its identifier to a remote domain manager
+version_added: 2.7.0
 description:
-  - This module triggers a manual synchronization for an existing entity sync policy in Nutanix Prism Central.
-  - Entity Sync Policies replicate infrastructure entities (e.g. Security Policies, Storage Policies,
-    Categories, Subnets, Protection Policies, Recovery Plans) from a local domain manager to a remote
-    domain manager to keep multisite / DR configurations consistent.
-  - Only an action operation (sync-entity) is exposed by the API; there is no create / update /
-    delete API for this entity because sync policies are managed implicitly by the system when the
-    underlying entity is protected. Use the info module M(nutanix.ncp.ntnx_entity_sync_policies_info_v2)
-    to discover an existing sync policy and its C(ext_id), then use this module to trigger a re-sync.
+  - This module Syncs the entity identified by its external identifier to a remote domain manager.
+  - It overrides the entity on the remote domain manager in the event of a conflict.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -35,7 +29,8 @@ options:
     description:
       - State of the module.
       - Only C(present) is supported because the API only exposes a sync action.
-      - When C(state=present), the module will trigger a synchronization of the entity to the remote domain manager.
+      - If C(state=present), the module will trigger a synchronization of the entity to the remote domain manager.
+      - If C(state=absent), the module will fail.
     type: str
     choices:
       - present
@@ -54,6 +49,7 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_proxy_v2
 author:
   - Abhinav Bansal (@abhinavbansal29)
+  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -130,12 +126,6 @@ changed:
   type: bool
   sample: true
 
-skipped:
-  description: This indicates whether the task was skipped.
-  returned: when applicable
-  type: bool
-  sample: false
-
 error:
   description: This indicates the error message if any error occurred.
   returned: When an error occurs
@@ -148,42 +138,24 @@ failed:
   sample: false
 
 msg:
-  description: Human readable status / error message.
-  returned: When there is an error or in check mode
-  type: str
-  sample: "Api Exception raised while syncing entity sync policy with ext_id: 2e40ff57-20aa-4d2b-b179-298db969c20d"
+    description: This indicates the message if any message occurred
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while syncing entity sync policy with ext_id: 2e40ff57-20aa-4d2b-b179-298db969c20d"
 """
 
-import traceback  # noqa: E402
 import warnings  # noqa: E402
-
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
-from ..module_utils.v4.data_policies.api_client import (  # noqa: E402
+from ..module_utils.v4.data_policies.api_client import (
     get_entity_sync_policies_api_instance,
-    get_etag,
-)
-from ..module_utils.v4.data_policies.helpers import get_entity_sync_policy  # noqa: E402
+)  # noqa: E402
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
 )
-
-SDK_IMP_ERROR = None
-try:
-    # pylint: disable=unused-import
-    import ntnx_datapolicies_py_client as data_policies_sdk  # noqa: E402, F401
-except ImportError:
-
-    # pylint: disable=unused-import
-    from ..module_utils.v4.sdk_mock import (  # noqa: E402, F401
-        mock_sdk as data_policies_sdk,
-    )
-
-    SDK_IMP_ERROR = traceback.format_exc()
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
@@ -208,16 +180,9 @@ def sync_entity_sync_policy(module, api_instance, result):
         )
         return
 
-    current_spec = get_entity_sync_policy(module, api_instance, ext_id)
-
-    kwargs = {}
-    etag = get_etag(data=current_spec)
-    if etag:
-        kwargs["if_match"] = etag
-
     resp = None
     try:
-        resp = api_instance.sync_entity_sync_policy_by_id(extId=ext_id, **kwargs)
+        resp = api_instance.sync_entity_sync_policy_by_id(extId=ext_id)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -241,19 +206,12 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )
-    if SDK_IMP_ERROR:
-        module.fail_json(
-            msg=missing_required_lib("ntnx_datapolicies_py_client"),
-            exception=SDK_IMP_ERROR,
-        )
 
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
-        "ext_id": None,
-        "task_ext_id": None,
     }
     api_instance = get_entity_sync_policies_api_instance(module)
     sync_entity_sync_policy(module, api_instance, result)

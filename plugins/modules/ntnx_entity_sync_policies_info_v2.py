@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,24 +12,20 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_entity_sync_policies_info_v2
 short_description: Fetch entity sync policies info in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
-  - This module allows you to fetch information about EntitySyncPolicy in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific EntitySyncPolicy.
-  - If C(ext_id) is not provided, list multiple EntitySyncPolicy optionally filtered / paginated /
-    ordered / projected.
-  - This module uses PC v4 APIs based SDKs.
+  - This module allows you to fetch information about Entity Sync Policies in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch details of the specific Entity Sync Policy.
+  - If C(ext_id) is not provided, list multiple Entity Sync Policies optionally filtered / paginated.
 notes:
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
     B(Get an Entity Sync Policy by ext_id) -
-    Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Flow Admin, Flow Viewer,
-    Prism Admin, Prism Viewer, Project Manager, Super Admin
+    Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Flow Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin
   - >-
     B(List Entity Sync Policies) -
-    Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Flow Admin, Flow Viewer,
-    Prism Admin, Prism Viewer, Project Manager, Super Admin
+    Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Flow Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies)"
 options:
   ext_id:
@@ -45,6 +41,7 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_proxy_v2
 author:
   - Abhinav Bansal (@abhinavbansal29)
+  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -91,9 +88,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC EntitySyncPolicy info v4 API.
-    - It can be a single EntitySyncPolicy if external ID is provided.
-    - List of multiple EntitySyncPolicy if external ID is not provided with optional filter or limit.
+    - The response from the Nutanix PC Entity Sync Policy info v4 API.
+    - It can be a single Entity Sync Policy if external ID is provided.
+    - List of multiple Entity Sync Policies if external ID is not provided with optional filter or limit.
   returned: always
   type: dict
   sample:
@@ -124,7 +121,7 @@ ext_id:
   sample: "2e40ff57-20aa-4d2b-b179-298db969c20d"
 
 msg:
-  description: Human readable message when an error occurs.
+  description: This indicates the message if any message occurred
   returned: When there is an error
   type: str
   sample: "Api Exception raised while fetching entity sync policies info"
@@ -158,6 +155,7 @@ from ..module_utils.v4.data_policies.helpers import get_entity_sync_policy  # no
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    list_entities,
     strip_internal_attributes,
 )
 
@@ -189,7 +187,10 @@ def get_entity_sync_policies(module, api_instance, result):
         )
 
     try:
-        resp = api_instance.list_entity_sync_policies(**kwargs)
+        resp = list_entities(
+            api_instance.list_entity_sync_policies,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
