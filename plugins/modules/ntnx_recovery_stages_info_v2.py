@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -24,10 +24,10 @@ notes:
     user performing the operation.
   - >-
     B(Get Recovery stage by ext_id) -
-    Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, NCM Connector, Prism Admin, Prism Viewer, Project Manager, Super Admin
+    Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin, Prism Viewer, Project Manager, Self-Service Admin (Deprecated), Super Admin
   - >-
     B(List Recovery stages) -
-    Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, NCM Connector, Prism Admin, Prism Viewer, Project Manager, Super Admin
+    Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin, Prism Viewer, Project Manager, Self-Service Admin (Deprecated), Super Admin
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies)"
 options:
   recovery_plan_ext_id:
@@ -169,6 +169,7 @@ from ..module_utils.v4.data_policies.api_client import (  # noqa: E402
 from ..module_utils.v4.data_policies.helpers import get_recovery_stage  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -205,8 +206,10 @@ def get_recovery_stages(module, api_instance, result):
         module.fail_json(msg="Failed generating recovery stages info spec", **result)
 
     try:
-        resp = api_instance.list_recovery_stages(
-            recoveryPlanExtId=recovery_plan_ext_id, **kwargs
+        resp = list_entities(
+            api_instance.list_recovery_stages,
+            recoveryPlanExtId=recovery_plan_ext_id,
+            **kwargs,
         )
     except Exception as e:
         raise_api_exception(

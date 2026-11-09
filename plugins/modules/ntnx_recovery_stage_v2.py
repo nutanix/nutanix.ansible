@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -15,8 +15,6 @@ short_description: Create, Update, Delete a Recovery stage in a Nutanix Recovery
 version_added: 2.7.0
 description:
   - This module allows you to create, update and delete a Recovery stage inside a Recovery Plan in Nutanix Prism Central.
-  - A Recovery stage defines a group of VMs or Volume Groups to be recovered together during a disaster recovery event.
-  - Recovery stages control the boot / power-on ordering of entities during a failover.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -25,13 +23,13 @@ notes:
     being performed.
   - >-
     B(Create a Recovery stage) -
-    Required Roles: Account Owner, Administrator, Disaster Recovery Admin, NCM Connector, Prism Admin, Project Manager, Super Admin
+    Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin
   - >-
     B(Update a Recovery stage) -
-    Required Roles: Account Owner, Administrator, Disaster Recovery Admin, NCM Connector, Prism Admin, Project Manager, Super Admin
+    Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin
   - >-
     B(Delete a Recovery stage) -
-    Required Roles: Account Owner, Administrator, Disaster Recovery Admin, NCM Connector, Prism Admin, Project Manager, Super Admin
+    Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies)"
 options:
   state:
@@ -69,21 +67,15 @@ options:
   entities:
     description:
       - List of external references of entities of type I(entity_type) to be recovered in the Recovery stage.
-      - Mutually exclusive with C(category_ext_ids) at the API level for VM stages.
     type: list
     elements: dict
     required: false
     suboptions:
       ext_id:
         description:
-          - External identifier of the referenced entity (VM or Volume Group).
+          - External identifier of the entity.
         type: str
         required: true
-      name:
-        description:
-          - Name of the referenced entity.
-        type: str
-        required: false
   category_ext_ids:
     description:
       - List of external identifiers of categories for which entities of I(entity_type)
@@ -93,9 +85,11 @@ options:
     required: false
   priority:
     description:
-      - Recovery priority of the Stage. Determines the shutdown and power-on order of the VMs.
+      - Recovery priority of the Stage.
+      - This determines the shutdown and power-on order of the VMs.
+      - Recovery plan will power on VMs with priority 1 and then VMs with priority 2 and so on.
+      - Similarly during a Planned failover (migration) VMs with priority order 5 will be shutdown before VMs with priority order 4 and so on.
       - Only priority value of 1 is acceptable for I(entity_type=VOLUME_GROUP).
-      - Minimum value is 1.
     type: int
     required: false
   post_actions:
@@ -107,7 +101,8 @@ options:
     suboptions:
       config:
         description:
-          - Configuration of the stage action.
+          - The settings required to control the stage action.
+          - For example, stage action of type DELAY requires the number of seconds to delay after a stage completes.
         type: dict
         required: true
         suboptions:
@@ -120,8 +115,8 @@ options:
             suboptions:
               delay_secs:
                 description:
-                  - Number of seconds by which the Recovery plan is delayed after this stage completes.
-                  - Minimum value is 1.
+                  - The number of seconds for which the Recovery plan needs to be delayed after the stage recovery is completed.
+                  - The minimum value is 1.
                 type: int
                 required: true
 extends_documentation_fragment:
@@ -146,7 +141,6 @@ EXAMPLES = r"""
     entity_type: "VM"
     entities:
       - ext_id: "9e9c7f6a-4b28-4d5f-a1d9-1f1b3a92aa11"
-        name: "webserver-vm"
     priority: 1
     post_actions:
       - config:
@@ -318,7 +312,6 @@ def get_module_spec():
 
     entity_reference_spec = dict(
         ext_id=dict(type="str", required=True),
-        name=dict(type="str", required=False),
     )
 
     delay_action_spec = dict(
@@ -382,7 +375,6 @@ def get_module_spec():
 
 def create_RecoveryStage(module, result, api_instance):
     validate_required_params(module, ["entity_type"])
-
     recovery_plan_ext_id = module.params.get("recovery_plan_ext_id")
     sg = SpecGenerator(module)
     default_spec = data_policies_sdk.RecoveryStage()
@@ -501,8 +493,6 @@ def delete_RecoveryStage(module, result, api_instance):
         result["msg"] = "Recovery stage with ext_id:{0} will be deleted.".format(ext_id)
         return
 
-    # Fetch the existing entity to obtain the etag, which the DELETE API requires
-    # via the if_match header (missing etag returns HTTP 428).
     old_spec = get_recovery_stage(module, api_instance, recovery_plan_ext_id, ext_id)
     etag = get_etag(data=old_spec)
     if not etag:
@@ -520,8 +510,9 @@ def delete_RecoveryStage(module, result, api_instance):
             exception=e,
             msg="Api Exception raised while deleting recovery stage",
         )
-    task_ext_id = resp.data.ext_id if resp and resp.data else None
+    task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
         task_status = wait_for_completion(module, task_ext_id, raise_error=True)
         result["response"] = strip_internal_attributes(task_status.to_dict())
@@ -533,6 +524,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
+            ("state", "present", ("entity_type", "ext_id"), True),
             ("state", "absent", ("ext_id",)),
         ],
     )
@@ -547,7 +539,6 @@ def run_module():
         "changed": False,
         "response": None,
         "failed": False,
-        "ext_id": None,
     }
     api_instance = get_recovery_plans_api_instance(module)
     state = module.params.get("state")
