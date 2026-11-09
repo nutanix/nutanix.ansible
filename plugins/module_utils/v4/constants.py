@@ -94,7 +94,6 @@ class Tasks:
         VM_EXT_IDS = "vmExtIds"
         VG_EXT_IDS = "volumeGroupExtIds"
         PROTECTION_POLICY = "protectionPolicyExtId"
-        RECOVERY_PLAN = "recoveryPlanExtId"
         NETWORK_MAPPING = "networkMappingExtId"
         NOTIFICATION = "notificationExtId"
         PRESIGNED_URL = "presigned_url"
