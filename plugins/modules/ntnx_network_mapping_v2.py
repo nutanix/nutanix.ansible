@@ -726,7 +726,7 @@ def get_module_spec():
         ),
         end_ip=dict(
             type="dict",
-            required=False,
+            required=True,
             options=ipv4_address_spec,
             obj=data_policies_sdk.IPv4Address,
         ),
@@ -757,7 +757,6 @@ def get_module_spec():
 
     entity_reference_spec = dict(
         ext_id=dict(type="str", required=True),
-        name=dict(type="str", required=False),
     )
 
     network_config_spec = dict(
