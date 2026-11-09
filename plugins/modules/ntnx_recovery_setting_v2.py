@@ -57,7 +57,7 @@ options:
     required: true
   recovery_setting:
     description:
-      - Recovery setting to be applied to a VM, VM category, or Volume Group.
+      - Recovery setting to be applied to the VM(s) or Volume Group(s).
       - Exactly one of C(vm), C(vm_category), or C(volume_group) must be provided.
       - Required for create operation.
     type: dict
@@ -65,24 +65,26 @@ options:
     suboptions:
       vm:
         description:
-          - Recovery configuration for a specific VM.
+          - Recovery configuration for VMs.
         type: dict
         required: false
         suboptions:
           vm:
             description:
-              - External reference of the VM to which this recovery setting applies.
+              - External identifier of the VM for which Recovery Setting is specified.
             type: dict
             required: true
             suboptions:
               ext_id:
                 description:
-                  - External identifier of the VM.
+                  - External identifier of the entity.
                 type: str
                 required: true
           power_state:
             description:
-              - Desired power state of the VM after recovery.
+              - Power state of the VM.
+              - C(volume_group_attachments), C(ip_mappings), C(in_guest_script_execution_config)
+                and C(floating_ip_associations) are not applicable when C(power_state) is C(OFF).
             type: str
             required: false
             choices:
@@ -90,7 +92,7 @@ options:
               - "OFF"
           in_guest_script_execution_config:
             description:
-              - In-guest script execution configuration for the VM.
+              - In-guest script configuration.
             type: dict
             required: false
             suboptions:
@@ -107,25 +109,28 @@ options:
                 required: false
           volume_group_attachments:
             description:
-              - Volume Groups that should be attached to the recovered VM.
+              - List of Volume Groups to be attached to the Virtual Machine (VM).
+              - C(attachment_type) supported are C(EXTERNAL).
+              - C(protocol) supported are C(ISCSI) and C(NONE).
+              - C(client_features) must be specified for mutual CHAP based iSCSI authentications.
             type: list
             elements: dict
             required: false
             suboptions:
               volume_group:
                 description:
-                  - External reference of the Volume Group to attach.
+                  - External identifier of the Volume Group to be attached.
                 type: dict
                 required: true
                 suboptions:
                   ext_id:
                     description:
-                      - External identifier of the Volume Group.
+                      - External identifier of the entity.
                     type: str
                     required: true
               attachment_type:
                 description:
-                  - Attachment type of the Volume Group.
+                  - Volume Group attachment type is external or direct VM attach.
                 type: str
                 required: true
                 choices:
@@ -134,7 +139,9 @@ options:
                   - NONE
               protocol:
                 description:
-                  - Protocol used to attach the Volume Group.
+                  - For external attachments, this field indicates whether volume attachment
+                    protocol should be C(ISCSI) or C(NVMF).
+                  - This field is only applicable when C(attachment_type) is C(EXTERNAL).
                 type: str
                 required: false
                 choices:
@@ -143,19 +150,22 @@ options:
                   - NOT_ASSIGNED
               client_features:
                 description:
-                  - Client side features for the Volume Group attachment.
+                  - Attachment protocol specific settings.
+                  - This field is only applicable when C(attachment_type) is C(EXTERNAL).
+                  - Client secret must be specified for mutual C(CHAP) authentications.
                 type: dict
                 required: false
                 suboptions:
                   iscsi_features:
                     description:
-                      - iSCSI specific settings for the client of the recovered Volume Group.
+                      - iSCSI specific setting to be configured on the recovered Volume Group.
+                      - Target secret is mandatory if authentication type is C(CHAP).
                     type: dict
                     required: false
                     suboptions:
                       enabled_authentication:
                         description:
-                          - iSCSI authentication type.
+                          - Type of authentications enabled for the Volume Groups.
                         type: str
                         required: true
                         choices:
@@ -163,13 +173,13 @@ options:
                           - NONE
                       secret:
                         description:
-                          - iSCSI target CHAP secret.
+                          - CHAP secret to be configured for authentication.
                         type: str
                         required: false
           ip_mappings:
             description:
-              - List of static IP address mappings for the VM. In IP mappings,
-                the prefixLength for an exact IP address should always be 32.
+              - List of static IP address mappings for the VM.
+              - In IP mappings, the prefixLength for an exact IP address should always be 32.
               - IPv6 IP mapping and floating IP mapping is not supported.
             type: list
             elements: dict
@@ -177,13 +187,13 @@ options:
             suboptions:
               network_mapping_ext_id:
                 description:
-                  - External identifier of the Network Mapping this IP mapping belongs to.
+                  - External identifier of the network mapping for which this IP mapping is applicable.
                 type: str
                 required: true
               primary_ip:
                 description:
                   - IP address of the VM on the primary location.
-                  - The IP address to be assigned to the recovered VM on the primary location when a planned
+                  - Also the IP address to be assigned to the recovered VM on the primary location when a planned
                     or unplanned failover from recovery to primary location is performed.
                 type: dict
                 required: true
@@ -227,7 +237,7 @@ options:
                   - IP address to be assigned to the recovered VM on the recovery location when a planned or
                     unplanned failover from primary to recovery location is performed.
                 type: dict
-                required: false
+                required: true
                 suboptions:
                   ipv4:
                     description:
@@ -358,20 +368,22 @@ options:
             suboptions:
               nic_ext_id:
                 description:
-                  - External identifier of the virtual NIC corresponding to which the floating IP address is to be assigned.
+                  - External identifier of the virtual NIC corresponding to which
+                    floating IP address is to be assigned.
                 type: str
                 required: true
               primary_floating_ip:
                 description:
-                  - Floating IP configuration on the primary site.
+                  - Floating IP address of the VM on the primary location.
                 type: dict
                 required: false
                 suboptions:
                   should_allocate_dynamically:
                     description:
                       - Indicates whether to dynamically allocate a new floating IP address.
-                      - If specified as true, the floating IP will be allocated from available floating IP addresses in the specified locations.
-                      - Otherwise, the floating IP address specified in ipAddress field will be assigned to the VM.
+                      - If specified as true, the floating IP will be allocated from available floating IP
+                        addresses in the specified locations.
+                      - Otherwise, the floating IP address specified in C(ip_address) field will be assigned to the VM.
                     type: bool
                     required: true
                   ip_address:
@@ -425,7 +437,7 @@ options:
                     description:
                       - Indicates whether to dynamically allocate a new floating IP address.
                       - If specified as true, the floating IP will be allocated from available floating IP addresses in the specified locations.
-                      - Otherwise, the floating IP address specified in ipAddress field will be assigned to the VM.
+                      - Otherwise, the floating IP address specified in C(ip_address) field will be assigned to the VM.
                     type: bool
                     required: true
                   ip_address:
@@ -478,7 +490,7 @@ options:
                     description:
                       - Indicates whether to dynamically allocate a new floating IP address.
                       - If specified as true, the floating IP will be allocated from available floating IP addresses in the specified locations.
-                      - Otherwise, the floating IP address specified in ipAddress field will be assigned to the VM.
+                      - Otherwise, the floating IP address specified in C(ip_address) field will be assigned to the VM.
                     type: bool
                     required: true
                   ip_address:
@@ -531,7 +543,7 @@ options:
                     description:
                       - Indicates whether to dynamically allocate a new floating IP address.
                       - If specified as true, the floating IP will be allocated from available floating IP addresses in the specified locations.
-                      - Otherwise, the floating IP address specified in ipAddress field will be assigned to the VM.
+                      - Otherwise, the floating IP address specified in C(ip_address) field will be assigned to the VM.
                     type: bool
                     required: true
                   ip_address:
@@ -576,7 +588,7 @@ options:
                             default: 128
       vm_category:
         description:
-          - Recovery configuration applied to all VMs in a given category.
+          - Recovery setting applicable to all VMs in the category.
         type: dict
         required: false
         suboptions:
@@ -587,7 +599,7 @@ options:
             required: true
           power_state:
             description:
-              - Desired power state of the VMs after recovery.
+              - VM Power state.
             type: str
             required: false
             choices:
@@ -595,7 +607,7 @@ options:
               - "OFF"
           in_guest_script_execution_config:
             description:
-              - In-guest script execution configuration for the VMs.
+              - In-guest script execution configuration.
             type: dict
             required: false
             suboptions:
@@ -612,19 +624,19 @@ options:
                 required: false
       volume_group:
         description:
-          - Recovery configuration for a specific Volume Group.
+          - Recovery configuration for Volume Groups.
         type: dict
         required: false
         suboptions:
           volume_group:
             description:
-              - External reference of the Volume Group.
+              - External identifier of the Volume Group for which Recovery Setting is specified.
             type: dict
             required: true
             suboptions:
               ext_id:
                 description:
-                  - External identifier of the Volume Group.
+                  - External identifier of the entity.
                 type: str
                 required: true
           iscsi_target_features:
@@ -636,7 +648,7 @@ options:
             suboptions:
               enabled_authentication:
                 description:
-                  - iSCSI authentication type.
+                  - Type of authentications enabled for the Volume Groups.
                 type: str
                 required: true
                 choices:
@@ -644,7 +656,7 @@ options:
                   - NONE
               secret:
                 description:
-                  - iSCSI target CHAP secret.
+                  - CHAP secret to be configured for authentication.
                 type: str
                 required: false
 extends_documentation_fragment:
@@ -928,7 +940,7 @@ def get_module_spec():
         recovery_ip=dict(
             type="dict",
             options=_build_ip_address_spec(),
-            required=False,
+            required=True,
             obj=data_policies_sdk.IPAddress,
         ),
         primary_test_ip=dict(
