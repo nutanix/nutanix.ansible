@@ -169,8 +169,8 @@ from ..module_utils.v4.data_policies.api_client import (  # noqa: E402
     get_recovery_plans_api_instance,
 )
 from ..module_utils.v4.data_policies.helpers import get_network_mapping  # noqa: E402
-from ..module_utils.v4.utils import list_entities  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
+from ..module_utils.v4.utils import list_entities  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,

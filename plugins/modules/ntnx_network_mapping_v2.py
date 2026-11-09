@@ -688,7 +688,6 @@ from ..module_utils.v4.data_policies.api_client import (  # noqa: E402
 from ..module_utils.v4.data_policies.helpers import get_network_mapping  # noqa: E402
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
     get_entity_ext_id_from_task,
-    get_ext_id_from_task_completion_details,
     wait_for_completion,
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
