@@ -56,6 +56,7 @@ class Tasks:
         DATA_SERVICES_IP_MAPPING = (
             "datapolicies:config:recovery-plan:data-services-ip-mapping"
         )
+        RECOVERY_STAGE = "datapolicies:config:recovery-stage"
         INSTALLER_IMAGE = "lifecycle:config:installer_image"
         HARDWARE_PROVIDER_CONNECTION = "lifecycle:config:hardware-provider-connections"
         NIC_PROFILE = "networking:config:nic_profile"
