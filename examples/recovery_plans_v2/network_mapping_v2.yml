@@ -24,6 +24,8 @@
         recovery_plan_ext_id: "e7ae4b0d-726d-410d-87c2-af46f8bea264"
         primary_network_ext_id: "9e9c7f6a-4b28-4d5f-a1d9-1f1b3a92aa11"
         recovery_network_ext_id: "a92aa11-4b28-4d5f-a1d9-1f1b3a92aa11"
+        primary_test_network: "d61b160b-8717-488e-8945-38d27050d0a2"
+        recovery_test_network: "d61b160b-8717-488e-8945-38d27050d0a2"
 
     - name: Create a Network mapping
       nutanix.ncp.ntnx_network_mapping_v2:
@@ -51,9 +53,9 @@
         recovery_network:
           ext_id: "{{ recovery_network_ext_id }}"
         primary_test_network:
-          ext_id: "{{ primary_network_ext_id }}"
+          ext_id: "{{ primary_test_network }}"
         recovery_test_network:
-          ext_id: "{{ recovery_network_ext_id }}"
+          ext_id: "{{ recovery_test_network }}"
       register: update_result
       ignore_errors: true
       when: network_mapping_ext_id | length > 0
