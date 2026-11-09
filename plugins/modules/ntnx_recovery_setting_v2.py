@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,13 +12,10 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_recovery_setting_v2
 short_description: Create, Update, Delete custom recovery settings on a Nutanix Recovery Plan
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to create, update, and delete custom recovery settings
     on a Nutanix Recovery Plan in Prism Central.
-  - A recovery setting overrides the default recovery behavior for a specific VM,
-    a specific Volume Group, or all VMs in a given category during a failover
-    orchestrated by the parent Recovery Plan.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -26,13 +23,13 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a Recovery Setting) -
-      Required Roles: Disaster Recovery Admin, NCM Connector, Prism Admin, Super Admin
+      Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - >-
       B(Update a Recovery Setting) -
-      Required Roles: Disaster Recovery Admin, NCM Connector, Prism Admin, Super Admin
+      Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - >-
       B(Delete a Recovery Setting) -
-      Required Roles: Disaster Recovery Admin, NCM Connector, Prism Admin, Super Admin
+      Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies)"
 options:
   state:
@@ -99,12 +96,13 @@ options:
             suboptions:
               is_enabled:
                 description:
-                  - Whether to run in-guest scripts as part of the recovery process.
+                  - Enable in-guest script execution for the VM.
+                  - By default, the in-guest script execution is disabled.
                 type: bool
-                required: false
+                required: true
               timeout_secs:
                 description:
-                  - Maximum time in seconds to wait for the in-guest script to complete.
+                  - Maximum time in seconds to wait for the in-guest script execution to complete.
                 type: int
                 required: false
           volume_group_attachments:
@@ -129,10 +127,11 @@ options:
                 description:
                   - Attachment type of the Volume Group.
                 type: str
-                required: false
+                required: true
                 choices:
                   - DIRECT
                   - EXTERNAL
+                  - NONE
               protocol:
                 description:
                   - Protocol used to attach the Volume Group.
@@ -141,6 +140,7 @@ options:
                 choices:
                   - ISCSI
                   - NVMF
+                  - NOT_ASSIGNED
               client_features:
                 description:
                   - Client side features for the Volume Group attachment.
@@ -164,13 +164,13 @@ options:
                       secret:
                         description:
                           - iSCSI target CHAP secret.
-                          - Required when C(enabled_authentication=CHAP).
-                          - Sensitive value; not logged.
                         type: str
                         required: false
           ip_mappings:
             description:
-              - IP mapping between primary and recovery networks for the VM's NICs.
+              - List of static IP address mappings for the VM. In IP mappings,
+                the prefixLength for an exact IP address should always be 32.
+              - IPv6 IP mapping and floating IP mapping is not supported.
             type: list
             elements: dict
             required: false
@@ -182,9 +182,11 @@ options:
                 required: true
               primary_ip:
                 description:
-                  - IP address on the primary site.
+                  - IP address of the VM on the primary location.
+                  - The IP address to be assigned to the recovered VM on the primary location when a planned
+                    or unplanned failover from recovery to primary location is performed.
                 type: dict
-                required: false
+                required: true
                 suboptions:
                   ipv4:
                     description:
@@ -222,7 +224,8 @@ options:
                         default: 128
               recovery_ip:
                 description:
-                  - IP address to assign after a real failover on the recovery site.
+                  - IP address to be assigned to the recovered VM on the recovery location when a planned or
+                    unplanned failover from primary to recovery location is performed.
                 type: dict
                 required: false
                 suboptions:
@@ -262,7 +265,8 @@ options:
                         default: 128
               primary_test_ip:
                 description:
-                  - IP address used when the VM is running as a test on the primary site.
+                  - IP address to be assigned to the recovered VM on the primary location
+                    when a test failover from recovery to primary location is performed.
                 type: dict
                 required: false
                 suboptions:
@@ -302,7 +306,8 @@ options:
                         default: 128
               recovery_test_ip:
                 description:
-                  - IP address used when the VM is running as a test on the recovery site.
+                  - IP address to be assigned to the recovered VM on the recovery location when a
+                    test failover from primary to recovery location is performed.
                 type: dict
                 required: false
                 suboptions:
@@ -342,7 +347,11 @@ options:
                         default: 128
           floating_ip_associations:
             description:
-              - Floating IP address associations for the VM's NICs.
+              - List of floating IP address associations.
+              - primaryFloatingIp and recoveryFloatingIp are the configurations for assigning floating IP to a VM
+                after a failover or failback action on recovery plan.
+              - primaryTestFloatingIp and recoveryTestFloatingIp are the configurations for assigning floating IP to a VM
+                after a failover or failback action on test network on recovery plan.
             type: list
             elements: dict
             required: false
@@ -360,12 +369,14 @@ options:
                 suboptions:
                   should_allocate_dynamically:
                     description:
-                      - Whether to dynamically allocate a floating IP.
+                      - Indicates whether to dynamically allocate a new floating IP address.
+                      - If specified as true, the floating IP will be allocated from available floating IP addresses in the specified locations.
+                      - Otherwise, the floating IP address specified in ipAddress field will be assigned to the VM.
                     type: bool
-                    required: false
+                    required: true
                   ip_address:
                     description:
-                      - Static floating IP address.
+                      - Floating IP address to be assigned.
                     type: dict
                     required: false
                     suboptions:
@@ -405,18 +416,21 @@ options:
                             default: 128
               recovery_floating_ip:
                 description:
-                  - Floating IP configuration on the recovery site during real failover.
+                  - Floating IP address to be assigned to the recovered VM on the recovery location when a planned
+                    or unplanned failover is performed.
                 type: dict
                 required: false
                 suboptions:
                   should_allocate_dynamically:
                     description:
-                      - Whether to dynamically allocate a floating IP.
+                      - Indicates whether to dynamically allocate a new floating IP address.
+                      - If specified as true, the floating IP will be allocated from available floating IP addresses in the specified locations.
+                      - Otherwise, the floating IP address specified in ipAddress field will be assigned to the VM.
                     type: bool
-                    required: false
+                    required: true
                   ip_address:
                     description:
-                      - Static floating IP address.
+                      - Floating IP address to be assigned.
                     type: dict
                     required: false
                     suboptions:
@@ -456,18 +470,20 @@ options:
                             default: 128
               primary_test_floating_ip:
                 description:
-                  - Floating IP configuration used during test failover on the primary site.
+                  - Floating IP address to be assigned to the recovered VM on the primary location when a test failback is performed.
                 type: dict
                 required: false
                 suboptions:
                   should_allocate_dynamically:
                     description:
-                      - Whether to dynamically allocate a floating IP.
+                      - Indicates whether to dynamically allocate a new floating IP address.
+                      - If specified as true, the floating IP will be allocated from available floating IP addresses in the specified locations.
+                      - Otherwise, the floating IP address specified in ipAddress field will be assigned to the VM.
                     type: bool
-                    required: false
+                    required: true
                   ip_address:
                     description:
-                      - Static floating IP address.
+                      - Floating IP address to be assigned.
                     type: dict
                     required: false
                     suboptions:
@@ -507,18 +523,20 @@ options:
                             default: 128
               recovery_test_floating_ip:
                 description:
-                  - Floating IP configuration used during test failover on the recovery site.
+                  - Floating IP address to be assigned to the recovered VM on the recovery location when a test failover is performed.
                 type: dict
                 required: false
                 suboptions:
                   should_allocate_dynamically:
                     description:
-                      - Whether to dynamically allocate a floating IP.
+                      - Indicates whether to dynamically allocate a new floating IP address.
+                      - If specified as true, the floating IP will be allocated from available floating IP addresses in the specified locations.
+                      - Otherwise, the floating IP address specified in ipAddress field will be assigned to the VM.
                     type: bool
-                    required: false
+                    required: true
                   ip_address:
                     description:
-                      - Static floating IP address.
+                      - Floating IP address to be assigned.
                     type: dict
                     required: false
                     suboptions:
@@ -583,12 +601,13 @@ options:
             suboptions:
               is_enabled:
                 description:
-                  - Whether to run in-guest scripts as part of the recovery process.
+                  - Enable in-guest script execution for the VM.
+                  - By default, the in-guest script execution is disabled.
                 type: bool
                 required: false
               timeout_secs:
                 description:
-                  - Maximum time in seconds to wait for the in-guest script to complete.
+                  - Maximum time in seconds to wait for the in-guest script execution to complete.
                 type: int
                 required: false
       volume_group:
@@ -610,9 +629,10 @@ options:
                 required: true
           iscsi_target_features:
             description:
-              - iSCSI specific settings for the recovered Volume Group target.
+              - Target iSCSI specific setting for the Volume Group.
+              - Only applicable for Volume Groups with external attachments.
             type: dict
-            required: false
+            required: true
             suboptions:
               enabled_authentication:
                 description:
@@ -625,8 +645,6 @@ options:
               secret:
                 description:
                   - iSCSI target CHAP secret.
-                  - Required when C(enabled_authentication=CHAP).
-                  - Sensitive value; not logged.
                 type: str
                 required: false
 extends_documentation_fragment:
@@ -636,6 +654,7 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_proxy_v2
 author:
   - Abhinav Bansal (@abhinavbansal29)
+  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -1182,7 +1201,7 @@ def delete_recovery_setting(module, result, api_instance):
 
     old_spec = get_recovery_setting(module, api_instance, recovery_plan_ext_id, ext_id)
     etag = get_etag(data=old_spec)
-    kwargs = {"if_match": etag} if etag else {}
+    kwargs = {"if_match": etag}
 
     resp = None
     try:
@@ -1208,6 +1227,7 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
+            ("state", "present", ("recovery_setting", "ext_id"), True),
             ("state", "absent", ("ext_id",)),
         ],
     )
@@ -1222,7 +1242,6 @@ def run_module():
         "changed": False,
         "response": None,
         "failed": False,
-        "ext_id": None,
     }
     api_instance = get_recovery_plans_api_instance(module)
     state = module.params.get("state")

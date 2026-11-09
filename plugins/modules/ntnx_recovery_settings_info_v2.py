@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -11,22 +11,23 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_recovery_settings_info_v2
-short_description: Fetch custom recovery settings info from a Nutanix Recovery Plan
-version_added: 2.5.0
+short_description: Fetch recovery settings info from a Nutanix Recovery Plan
+version_added: 2.7.0
 description:
-  - This module allows you to fetch information about RecoverySetting in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific RecoverySetting.
-  - If C(ext_id) is not provided, list multiple RecoverySetting optionally filtered / paginated.
-  - This module uses PC v4 APIs based SDKs.
+  - This module allows you to fetch information about recovery settings in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch details of the specific recovery setting.
+  - If C(ext_id) is not provided, list multiple recovery settings optionally filtered / paginated.
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get a recovery setting by ext_id) -
-      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, NCM Connector, Prism Admin, Prism Viewer, Project Manager, Super Admin
+      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin,
+      Prism Viewer, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - >-
       B(List recovery settings) -
-      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, NCM Connector, Prism Admin, Prism Viewer, Project Manager, Super Admin
+      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin,
+      Prism Viewer, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies)"
 options:
   ext_id:
@@ -47,6 +48,7 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_proxy_v2
 author:
   - Abhinav Bansal (@abhinavbansal29)
+  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -94,9 +96,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC RecoverySetting info v4 API.
-    - It can be a single RecoverySetting if external ID is provided.
-    - It is a list of multiple RecoverySetting if external ID is not provided, optionally filtered / paginated.
+    - The response from the Nutanix PC recovery settings info v2 API.
+    - It can be a single recovery setting if external ID is provided.
+    - It is a list of multiple recovery settings if external ID is not provided, optionally filtered / paginated.
   returned: always
   type: dict
   sample:
@@ -167,6 +169,7 @@ from ..module_utils.v4.data_policies.api_client import (  # noqa: E402
 from ..module_utils.v4.data_policies.helpers import get_recovery_setting  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -203,8 +206,10 @@ def list_recovery_settings(module, api_instance, result):
         module.fail_json(msg="Failed generating recovery settings info spec", **result)
 
     try:
-        resp = api_instance.list_recovery_settings(
-            recoveryPlanExtId=recovery_plan_ext_id, **kwargs
+        resp = list_entities(
+            api_instance.list_recovery_settings,
+            recoveryPlanExtId=recovery_plan_ext_id,
+            **kwargs,
         )
     except Exception as e:
         raise_api_exception(
