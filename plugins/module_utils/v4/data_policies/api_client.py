@@ -120,3 +120,15 @@ def get_entity_sync_policies_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_datapolicies_py_client.EntitySyncPoliciesApi(client)
+
+
+def get_recovery_plans_api_instance(module):
+    """
+    This method will return recovery plans api instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): recovery plans api instance
+    """
+    client = get_api_client(module)
+    return ntnx_datapolicies_py_client.RecoveryPlansApi(client)

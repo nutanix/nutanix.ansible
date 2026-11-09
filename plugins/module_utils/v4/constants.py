@@ -45,6 +45,9 @@ class Tasks:
         OBJECTS = "objects:config:object-store"
         OVA = "vmm:content:ova"
         STORAGE_POLICY = "datapolicies:config:storage-policy"
+        RECOVERY_SETTING = "datapolicies:config:recovery-setting"
+        RECOVERY_PLAN = "datapolicies:config:recovery-plan"
+        NETWORK_MAPPING = "datapolicies:config:network-mapping"
         KMS = "security:encryption:key-management-server"
         CLUSTER_PROFILE = "clustermgmt:config:cluster-profile"
         NETWORK_FUNCTION = "Networking:config:network-function"
@@ -53,6 +56,10 @@ class Tasks:
         LAYER2_STRETCH = "networking:config:layer2-stretch"
         LOAD_BALANCER_SESSION = "networking:config:load-balancer-session"
         ENTITY_GROUP = "microseg:config:entity-group"
+        DATA_SERVICES_IP_MAPPING = (
+            "datapolicies:config:recovery-plan:data-services-ip-mapping"
+        )
+        RECOVERY_STAGE = "datapolicies:config:recovery-stage"
         INSTALLER_IMAGE = "lifecycle:config:installer_image"
         HARDWARE_PROVIDER_CONNECTION = "lifecycle:config:hardware-provider-connections"
         NIC_PROFILE = "networking:config:nic_profile"
@@ -92,5 +99,6 @@ class Tasks:
         VM_EXT_IDS = "vmExtIds"
         VG_EXT_IDS = "volumeGroupExtIds"
         PROTECTION_POLICY = "protectionPolicyExtId"
+        NETWORK_MAPPING = "networkMappingExtId"
         NOTIFICATION = "notificationExtId"
         PRESIGNED_URL = "presigned_url"
