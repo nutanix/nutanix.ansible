@@ -26,11 +26,12 @@ notes:
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=objects)"
 options:
     object_store_ext_id:
-        description: object store external ID
+        description: Object store External ID
         type: str
         required: true
     ext_id:
-        description: external ID of certificate to fetch
+        description:
+            - External ID of certificate to fetch
         type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
@@ -53,6 +54,15 @@ EXAMPLES = r"""
     object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
     ext_id: "f3197423-f486-4037-6037-95442e58484e"
   register: result
+  ignore_errors: true
+
+- name: List all object store certificates with fetch_all
+  nutanix.ncp.ntnx_object_stores_certificate_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -129,6 +139,7 @@ from ..module_utils.v4.objects.api_client import get_objects_api_instance  # noq
 from ..module_utils.v4.objects.helpers import get_object_store_certificate  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -166,8 +177,10 @@ def get_object_store_certificates(module, object_stores_api, result):
             msg="Failed generating object store certificates info Spec", **result
         )
     try:
-        resp = object_stores_api.list_certificates_by_objectstore_id(
-            objectStoreExtId=object_store_ext_id, **kwargs
+        resp = list_entities(
+            object_stores_api.list_certificates_by_objectstore_id,
+            kwargs=kwargs,
+            objectStoreExtId=object_store_ext_id,
         )
     except Exception as e:
         raise_api_exception(

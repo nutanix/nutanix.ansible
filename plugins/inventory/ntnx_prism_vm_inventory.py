@@ -12,6 +12,12 @@ DOCUMENTATION = r"""
     short_description: Get a list of Nutanix VMs for ansible dynamic inventory.
     description:
         - Get a list of Nutanix VMs for ansible dynamic inventory.
+        - >
+          C(ansible_host) is set to the first IP address reported for the VM's NICs.
+        - >
+          Hosts with more than one IP address also get a C(vm_ip_addresses) variable listing all of
+          them, so a usable address can be selected with C(compose). It is not set when the VM has
+          a single address or none, since C(ansible_host) already covers that case.
     version_added: "1.0.0"
     notes:
         - User needs to have API View access for resources for this inventory module to work.
@@ -170,6 +176,26 @@ keyed_groups:
     key: ansible_host
 custom_ansible_host:
   expr: "{vm_name}.nutanix1.{cluster}.nutanix2.{cluster_uuid}.nutanix3.{vm_uuid}.nutanix4.com"
+
+Example 3: using compose with vm_ip_addresses to pick a specific IP of a multi homed VM
+vm_ip_addresses is only set when the VM reports more than one IP address, so
+default() falls back to the single address already in ansible_host, and
+select('string') drops it when the VM has no IP at all
+inventory file starts from here
+plugin: nutanix.ncp.ntnx_prism_vm_inventory
+validate_certs: false
+data: { offset: 0, length: 20 }
+compose:
+  # only the address in the 169.254.0.0/16 (APIPA) range
+  # VMs without such an address are left without the variable rather than with an
+  # empty one, which relies on the default strict: false
+  vm_apipa_ip: >-
+    vm_ip_addresses | default([ansible_host], true) | select('string')
+    | select('match', '169\.254\.') | first
+  # connect over the first address that is not an APIPA one
+  ansible_host: >-
+    (vm_ip_addresses | default([ansible_host], true) | select('string')
+     | reject('match', '169\.254\.') | first) | default(ansible_host, true)
 """
 
 import json  # noqa: E402
@@ -256,15 +282,17 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         vm_uuid = metadata.get("uuid")
         vm_ip = None
 
+        vm_ip_addresses = []
         vm_resources = (status.get("resources") or {}).copy()
         for nics in vm_resources.get("nic_list", []):
             if nics.get("nic_type") == "NORMAL_NIC":
                 for endpoint in nics.get("ip_endpoint_list", []):
                     if endpoint.get("type") in ["ASSIGNED", "LEARNED"]:
-                        vm_ip = endpoint.get("ip")
-                        break
-                if vm_ip:
-                    break
+                        ip = endpoint.get("ip")
+                        if ip and ip not in vm_ip_addresses:
+                            vm_ip_addresses.append(ip)
+                        if not vm_ip:
+                            vm_ip = ip
 
         if getattr(self, "custom_ansible_host", None) and self.custom_ansible_host.get(
             "expr"
@@ -314,6 +342,12 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             "cluster_uuid": cluster_uuid,
             "description": vm_description,
         }
+
+        # Only expose the full list when there is more than one address, as
+        # ansible_host already carries the single address case.
+        if len(vm_ip_addresses) > 1:
+            host_vars["vm_ip_addresses"] = vm_ip_addresses
+
         host_vars.update(vm_resources)
 
         # Incorporate ntnx_categories if available.
