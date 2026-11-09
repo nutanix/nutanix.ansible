@@ -118,3 +118,26 @@ def get_data_services_ip_mapping(module, api_instance, recovery_plan_ext_id, ext
             exception=e,
             msg="Api Exception raised while fetching data services IP mapping info using ext_id",
         )
+
+
+def get_recovery_setting(module, api_instance, recovery_plan_ext_id, ext_id):
+    """
+    This method will return recovery setting info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: RecoveryPlansApi instance from ntnx_datapolicies_py_client sdk
+        recovery_plan_ext_id (str): External identifier of the recovery plan
+        ext_id (str): Recovery setting external ID
+    Returns:
+        recovery_setting_info (object): recovery setting info
+    """
+    try:
+        return api_instance.get_recovery_setting_by_id(
+            recoveryPlanExtId=recovery_plan_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching recovery setting info using ext_id",
+        )
