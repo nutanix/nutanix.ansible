@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,21 +12,23 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_network_mappings_info_v2
 short_description: Fetch Recovery Plan Network Mappings info in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to fetch information about NetworkMapping in Nutanix Prism Central.
   - If C(ext_id) is provided, fetch details of the specific NetworkMapping.
   - If C(ext_id) is not provided, list multiple NetworkMapping optionally filtered / paginated.
-  - This module uses PC v4 APIs based SDKs (ntnx_datapolicies_py_client).
+  - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get Network Mapping by ext_id) -
-      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin
+      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, NCM Connector,
+      Prism Admin, Prism Viewer, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - >-
       B(List Network Mappings) -
-      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin
+      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, NCM Connector,
+      Prism Admin, Prism Viewer, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies)"
 options:
   ext_id:
@@ -49,6 +51,7 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_proxy_v2
 author:
   - Abhinav Bansal (@abhinavbansal29)
+  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -71,6 +74,16 @@ EXAMPLES = r"""
     recovery_plan_ext_id: "b0e1a7b2-8c31-4a41-9f2c-3f2f0f76de11"
   register: nm_list
 
+- name: List network mappings with filter
+  nutanix.ncp.ntnx_network_mappings_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    recovery_plan_ext_id: "b0e1a7b2-8c31-4a41-9f2c-3f2f0f76de11"
+    filter: "extId eq '84196575-327d-4ba5-9c78-9dff781217f4'"
+  register: nm_filtered
+
 - name: List network mappings with limit
   nutanix.ncp.ntnx_network_mappings_info_v2:
     nutanix_host: "{{ ip }}"
@@ -87,8 +100,7 @@ response:
   description:
     - The response from the Nutanix PC NetworkMapping info v4 API.
     - It can be a single NetworkMapping if external ID is provided.
-    - List of multiple NetworkMapping if external ID is not provided, with
-      optional pagination, filter, order-by and select query parameters.
+    - List of multiple NetworkMapping if external ID is not provided, with optional filter.
   returned: always
   type: dict
   sample:
@@ -157,6 +169,7 @@ from ..module_utils.v4.data_policies.api_client import (  # noqa: E402
     get_recovery_plans_api_instance,
 )
 from ..module_utils.v4.data_policies.helpers import get_network_mapping  # noqa: E402
+from ..module_utils.v4.utils import list_entities  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
@@ -195,8 +208,10 @@ def list_network_mappings(module, api_instance, result):
         module.fail_json(msg="Failed generating network mappings info spec", **result)
 
     try:
-        resp = api_instance.list_network_mappings(
-            recoveryPlanExtId=recovery_plan_ext_id, **kwargs
+        resp = list_entities(
+            api_instance.list_network_mappings,
+            recoveryPlanExtId=recovery_plan_ext_id,
+            **kwargs,
         )
     except Exception as e:
         raise_api_exception(

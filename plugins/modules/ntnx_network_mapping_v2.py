@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -11,27 +11,24 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_network_mapping_v2
-short_description: Create, Update, Delete Recovery Plan Network Mappings in Nutanix Prism Central
-version_added: 2.5.0
+short_description: Create, Update, Delete Network Mappings in Nutanix Recovery Plan
+version_added: 2.7.0
 description:
-  - This module allows you to create, update, and delete Network Mappings that belong to a Recovery Plan in Nutanix Prism Central.
-  - A Network Mapping maps a primary/source subnet to a recovery/target subnet
-    (and optionally the corresponding test networks) so that virtual NICs can be
-    recreated on the correct network during a failover or failback.
-  - This module uses PC v4 APIs based SDKs (ntnx_datapolicies_py_client).
+  - This module allows you to create, update, and delete Network Mappings that belong to a Recovery Plan in Nutanix.
+  - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
       The required roles depend on the operation being performed.
     - >-
       B(Create a Network Mapping) -
-      Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Super Admin
+      Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - >-
       B(Update a Network Mapping) -
-      Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Super Admin
+      Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - >-
       B(Delete a Network Mapping) -
-      Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Super Admin
+      Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies)"
 options:
   state:
@@ -60,7 +57,7 @@ options:
     required: true
   primary_network:
     description:
-      - Network configuration for the source (primary) location of the mapping.
+      - Production network on the primary location.
       - Required for create operation.
     type: dict
     required: false
@@ -89,15 +86,120 @@ options:
               - External identifier of the VPC entity.
             type: str
             required: true
-          name:
-            description:
-              - Name of the VPC entity.
-            type: str
-            required: false
       ip_config:
         description:
           - IP configuration of the subnet.
-          - Only required when C(is_ip_mapping_enabled) is true and static IP mapping is desired.
+        type: dict
+        required: false
+        suboptions:
+          ipv4:
+            description:
+              - IPv4 configuration of the subnet.
+            type: dict
+            required: true
+            suboptions:
+              default_gateway_ip:
+                description:
+                  - Subnet gateway IP address.
+                type: str
+                required: false
+              prefix_length:
+                description:
+                  - Subnet prefix length (0-32).
+                type: int
+                required: false
+              network_ip_address:
+                description:
+                  - Network IP address.
+                type: str
+                required: false
+              domain_name_servers:
+                description:
+                  - DNS servers IP addresses.
+                type: list
+                elements: str
+                required: false
+              domain_search_suffixes:
+                description:
+                  - Domain Name Servers suffixes.
+                type: list
+                elements: str
+                required: false
+              ip_pool:
+                description:
+                  - Range of IPs for which the network mapping is applicable.
+                  - This is required when the networks in the mapping have unequal IP range or
+                    the same network is involved in one or more network mappings.
+                type: dict
+                required: false
+                suboptions:
+                  start_ip:
+                    description:
+                      - Starting IPv4 address of the pool.
+                    type: dict
+                    required: true
+                    suboptions:
+                      value:
+                        description:
+                          - The IPv4 address value.
+                        type: str
+                        required: true
+                      prefix_length:
+                        description:
+                          - Prefix length of the network.
+                        type: int
+                        required: false
+                        default: 32
+                  end_ip:
+                    description:
+                      - Ending IPv4 address of the pool.
+                    type: dict
+                    required: true
+                    suboptions:
+                      value:
+                        description:
+                          - The IPv4 address value.
+                        type: str
+                        required: true
+                      prefix_length:
+                        description:
+                          - Prefix length of the network.
+                        type: int
+                        required: false
+                        default: 32
+  recovery_network:
+    description:
+      - Production network on the recovery location.
+    type: dict
+    required: false
+    suboptions:
+      subnet_ext_id:
+        description:
+          - External identifier of the subnet.
+          - Only one of C(subnet_ext_id) or C(subnet_name) may be specified at a time.
+        type: str
+        required: false
+      subnet_name:
+        description:
+          - Name of the subnet or port group.
+          - Only one of C(subnet_ext_id) or C(subnet_name) may be specified at a time.
+        type: str
+        required: false
+      vpc:
+        description:
+          - Reference of the VPC that owns the subnet.
+          - Required when the subnet is an overlay network.
+        type: dict
+        required: false
+        suboptions:
+          ext_id:
+            description:
+              - External identifier of the VPC entity.
+            type: str
+            required: true
+      ip_config:
+        description:
+          - IP configuration of the subnet.
         type: dict
         required: false
         suboptions:
@@ -136,7 +238,9 @@ options:
                 required: false
               ip_pool:
                 description:
-                  - Start/end IP address range for the subnet.
+                  - Range of IPs for which the network mapping is applicable.
+                  - This is required when the networks in the mapping have unequal IP range or
+                    the same network is involved in one or more network mappings.
                 type: dict
                 required: false
                 suboptions:
@@ -161,120 +265,7 @@ options:
                     description:
                       - Ending IPv4 address of the pool.
                     type: dict
-                    required: false
-                    suboptions:
-                      value:
-                        description:
-                          - The IPv4 address value.
-                        type: str
-                        required: true
-                      prefix_length:
-                        description:
-                          - Prefix length of the network.
-                        type: int
-                        required: false
-                        default: 32
-  recovery_network:
-    description:
-      - Network configuration for the recovery/target location used during
-        planned or unplanned failover.
-    type: dict
-    required: false
-    suboptions:
-      subnet_ext_id:
-        description:
-          - External identifier of the subnet.
-          - Only one of C(subnet_ext_id) or C(subnet_name) may be specified at a time.
-        type: str
-        required: false
-      subnet_name:
-        description:
-          - Name of the subnet or port group.
-        type: str
-        required: false
-      vpc:
-        description:
-          - Reference of the VPC that owns the subnet.
-        type: dict
-        required: false
-        suboptions:
-          ext_id:
-            description:
-              - External identifier of the VPC entity.
-            type: str
-            required: true
-          name:
-            description:
-              - Name of the VPC entity.
-            type: str
-            required: false
-      ip_config:
-        description:
-          - IP configuration of the subnet at the recovery location.
-        type: dict
-        required: false
-        suboptions:
-          ipv4:
-            description:
-              - IPv4 configuration of the recovery subnet.
-            type: dict
-            required: true
-            suboptions:
-              default_gateway_ip:
-                description:
-                  - Subnet gateway IP address.
-                type: str
-                required: false
-              prefix_length:
-                description:
-                  - Subnet prefix length (0-32).
-                type: int
-                required: false
-              network_ip_address:
-                description:
-                  - Network IP address.
-                type: str
-                required: false
-              domain_name_servers:
-                description:
-                  - DNS servers IP addresses.
-                type: list
-                elements: str
-                required: false
-              domain_search_suffixes:
-                description:
-                  - DNS search suffixes.
-                type: list
-                elements: str
-                required: false
-              ip_pool:
-                description:
-                  - Start/end IP address range for the subnet.
-                type: dict
-                required: false
-                suboptions:
-                  start_ip:
-                    description:
-                      - Starting IPv4 address of the pool.
-                    type: dict
                     required: true
-                    suboptions:
-                      value:
-                        description:
-                          - The IPv4 address value.
-                        type: str
-                        required: true
-                      prefix_length:
-                        description:
-                          - Prefix length of the network.
-                        type: int
-                        required: false
-                        default: 32
-                  end_ip:
-                    description:
-                      - Ending IPv4 address of the pool.
-                    type: dict
-                    required: false
                     suboptions:
                       value:
                         description:
@@ -289,25 +280,26 @@ options:
                         default: 32
   primary_test_network:
     description:
-      - Network configuration at the source location that is used when a
-        test failover is triggered. This must be an isolated network to
-        avoid IP collisions with running production VMs.
+      - Test network on the primary location.
     type: dict
     required: false
     suboptions:
       subnet_ext_id:
         description:
           - External identifier of the subnet.
+          - Only one of C(subnet_ext_id) or C(subnet_name) may be specified at a time.
         type: str
         required: false
       subnet_name:
         description:
           - Name of the subnet or port group.
+          - Only one of C(subnet_ext_id) or C(subnet_name) may be specified at a time.
         type: str
         required: false
       vpc:
         description:
           - Reference of the VPC that owns the subnet.
+          - Required when the subnet is an overlay network.
         type: dict
         required: false
         suboptions:
@@ -316,20 +308,15 @@ options:
               - External identifier of the VPC entity.
             type: str
             required: true
-          name:
-            description:
-              - Name of the VPC entity.
-            type: str
-            required: false
       ip_config:
         description:
-          - IP configuration of the test subnet.
+          - IP configuration of the subnet.
         type: dict
         required: false
         suboptions:
           ipv4:
             description:
-              - IPv4 configuration of the test subnet.
+              - IPv4 configuration of the subnet.
             type: dict
             required: true
             suboptions:
@@ -362,7 +349,9 @@ options:
                 required: false
               ip_pool:
                 description:
-                  - Start/end IP address range for the subnet.
+                  - Range of IPs for which the network mapping is applicable.
+                  - This is required when the networks in the mapping have unequal IP range or
+                    the same network is involved in one or more network mappings.
                 type: dict
                 required: false
                 suboptions:
@@ -387,7 +376,7 @@ options:
                     description:
                       - Ending IPv4 address of the pool.
                     type: dict
-                    required: false
+                    required: true
                     suboptions:
                       value:
                         description:
@@ -402,25 +391,26 @@ options:
                         default: 32
   recovery_test_network:
     description:
-      - Network configuration at the recovery location used when a test
-        failover is triggered. This must be an isolated network to avoid
-        IP collisions with production VMs.
+      - Test network on the recovery location.
     type: dict
     required: false
     suboptions:
       subnet_ext_id:
         description:
           - External identifier of the subnet.
+          - Only one of C(subnet_ext_id) or C(subnet_name) may be specified at a time.
         type: str
         required: false
       subnet_name:
         description:
           - Name of the subnet or port group.
+          - Only one of C(subnet_ext_id) or C(subnet_name) may be specified at a time.
         type: str
         required: false
       vpc:
         description:
           - Reference of the VPC that owns the subnet.
+          - Required when the subnet is an overlay network.
         type: dict
         required: false
         suboptions:
@@ -429,20 +419,15 @@ options:
               - External identifier of the VPC entity.
             type: str
             required: true
-          name:
-            description:
-              - Name of the VPC entity.
-            type: str
-            required: false
       ip_config:
         description:
-          - IP configuration of the recovery test subnet.
+          - IP configuration of the subnet.
         type: dict
         required: false
         suboptions:
           ipv4:
             description:
-              - IPv4 configuration of the recovery test subnet.
+              - IPv4 configuration of the subnet.
             type: dict
             required: true
             suboptions:
@@ -475,7 +460,9 @@ options:
                 required: false
               ip_pool:
                 description:
-                  - Start/end IP address range for the subnet.
+                  - Range of IPs for which the network mapping is applicable.
+                  - This is required when the networks in the mapping have unequal IP range or
+                    the same network is involved in one or more network mappings.
                 type: dict
                 required: false
                 suboptions:
@@ -500,7 +487,7 @@ options:
                     description:
                       - Ending IPv4 address of the pool.
                     type: dict
-                    required: false
+                    required: true
                     suboptions:
                       value:
                         description:
@@ -515,11 +502,8 @@ options:
                         default: 32
   is_ip_mapping_enabled:
     description:
-      - When true, static IPs of recovered VMs are mapped according to the
-        target network and configured inside the guest VMs. Requires
-        Nutanix Guest Tools (NGT) to be installed on the protected VMs.
-      - When false, VMs may recover with any IP allocated by the DHCP
-        server on the target network.
+      - Indicates whether the static IPs of recovered VMs should be mapped according to the target network and configured inside the guest VMs.
+      - When specified as false, VMs may recover with any IP address allocated by the DHCP server corresponding to the target network.
     type: bool
     required: false
 extends_documentation_fragment:
@@ -529,6 +513,7 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_proxy_v2
 author:
   - Abhinav Bansal (@abhinavbansal29)
+  - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -825,21 +810,8 @@ def get_module_spec():
     return module_args
 
 
-def _resolve_network_mapping_ext_id(task_data):
-    """Resolve the network mapping ext_id from a completed task, first via
-    completion details (preferred), then via entities affected."""
-    ext_id = get_ext_id_from_task_completion_details(
-        task_data, name=TASK_CONSTANTS.CompletetionDetailsName.NETWORK_MAPPING
-    )
-    if ext_id:
-        return ext_id
-    return get_entity_ext_id_from_task(
-        task_data, rel=TASK_CONSTANTS.RelEntityType.NETWORK_MAPPING
-    )
-
-
 def create_network_mapping(module, result, api_instance):
-    validate_required_params(module, ["primary_network"])
+    validate_required_params(module, ["primary_network", "recovery_network"])
     recovery_plan_ext_id = module.params.get("recovery_plan_ext_id")
 
     sg = SpecGenerator(module)
@@ -868,23 +840,26 @@ def create_network_mapping(module, result, api_instance):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        task_resp = wait_for_completion(module, task_ext_id)
-        result["response"] = strip_internal_attributes(task_resp.to_dict())
-        ext_id = _resolve_network_mapping_ext_id(task_resp)
+        resp = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(resp.to_dict())
+        ext_id = get_entity_ext_id_from_task(
+            resp, rel=TASK_CONSTANTS.RelEntityType.NETWORK_MAPPING
+        )
         if ext_id:
-            result["ext_id"] = ext_id
-            nm_resp = get_network_mapping(
+            resp = get_network_mapping(
                 module, api_instance, recovery_plan_ext_id, ext_id
             )
-            result["response"] = strip_internal_attributes(nm_resp.to_dict())
+            result["ext_id"] = ext_id
+            result["response"] = strip_internal_attributes(resp.to_dict())
         else:
             raise_api_exception(
                 module=module,
                 exception=Exception(
-                    "Failed to get entity ext_id from task for Network Mapping"
+                    "Failed to get entity ext_id from task for Network Function"
                 ),
-                msg="Failed to get entity ext_id from task for Network Mapping",
+                msg="Failed to get entity ext_id from task for Network Function",
             )
+
     result["changed"] = True
 
 
@@ -898,8 +873,6 @@ def update_network_mapping(module, result, api_instance):
     recovery_plan_ext_id = module.params.get("recovery_plan_ext_id")
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-    validate_required_params(module, ["primary_network"])
-
     current = get_network_mapping(module, api_instance, recovery_plan_ext_id, ext_id)
     etag = get_etag(data=current)
     if not etag:
@@ -944,10 +917,10 @@ def update_network_mapping(module, result, api_instance):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
-        nm_resp = get_network_mapping(
+        response = get_network_mapping(
             module, api_instance, recovery_plan_ext_id, ext_id
         )
-        result["response"] = strip_internal_attributes(nm_resp.to_dict())
+        result["response"] = strip_internal_attributes(response.to_dict())
     result["changed"] = True
 
 
@@ -987,6 +960,8 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
         required_if=[
+            ("state", "present", ("primary_network", "ext_id"), True),
+            ("state", "present", ("recovery_network", "ext_id"), True),
             ("state", "absent", ("ext_id",)),
         ],
     )
@@ -1001,8 +976,6 @@ def run_module():
         "changed": False,
         "response": None,
         "failed": False,
-        "ext_id": None,
-        "task_ext_id": None,
     }
     api_instance = get_recovery_plans_api_instance(module)
     state = module.params.get("state")
