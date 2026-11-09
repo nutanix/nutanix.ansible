@@ -48,6 +48,55 @@ def get_storage_policy(module, api_instance, ext_id):
         )
 
 
+def get_recovery_stage(module, api_instance, recovery_plan_ext_id, ext_id):
+    """
+    This method will return recovery stage info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: RecoveryPlansApi instance from ntnx_datapolicies_py_client sdk
+        recovery_plan_ext_id (str): External identifier of the parent recovery plan
+        ext_id (str): Recovery stage external ID
+    Returns:
+        recovery_stage_info (object): recovery stage info
+    """
+    try:
+        return api_instance.get_recovery_stage_by_id(
+            recoveryPlanExtId=recovery_plan_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching recovery stage info using ext_id",
+        )
+
+
+def get_network_mapping(module, api_instance, recovery_plan_ext_id, ext_id):
+    """
+    This method will return a network mapping resource for a given recovery plan.
+    Args:
+        module: Ansible module
+        api_instance: RecoveryPlansApi instance from ntnx_datapolicies_py_client sdk
+        recovery_plan_ext_id (str): External ID of the parent recovery plan
+        ext_id (str): Network mapping external ID
+    Returns:
+        network_mapping_info (object): network mapping info
+    """
+    try:
+        return api_instance.get_network_mapping_by_id(
+            recoveryPlanExtId=recovery_plan_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching network mapping with ext_id "
+                "'{0}' for recovery plan '{1}'".format(ext_id, recovery_plan_ext_id)
+            ),
+        )
+
+
 def get_recovery_setting(module, api_instance, recovery_plan_ext_id, ext_id):
     """
     This method will return recovery setting info using external ID.
