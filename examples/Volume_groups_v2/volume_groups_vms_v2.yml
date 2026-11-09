@@ -1,8 +1,8 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Attach VM to Volume Group
-# 2. Detach VM from Volume Group
+# 1. Attach VM1 to VG
+# 2. Detach VM1 from VG
 
 - name: Volume groups vms playbook
   hosts: localhost

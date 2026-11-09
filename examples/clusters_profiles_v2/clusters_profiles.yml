@@ -2,14 +2,16 @@
 # Summary:
 # This playbook will do:
 # 1. Create cluster profile
-# 2. Update cluster profile
-# 3. List all cluster profiles
-# 4. List all cluster profiles with filter
-# 5. List all cluster profiles with limit
-# 6. Apply cluster profile to cluster with dry run
-# 7. Apply cluster profile to cluster
-# 8. Disassociate cluster profile from Cluster
-# 9. Delete cluster profile
+# 2. Update cluster profile with all attributes
+# 3. Fetch cluster profile using external ID
+# 4. List all cluster profiles
+# 5. List all cluster profiles with fetch_all
+# 6. List all cluster profiles with filter
+# 7. List all cluster profiles with limit
+# 8. Apply cluster profile to cluster with dry run
+# 9. Apply cluster profile to cluster
+# 10. Disassociate cluster profile from Cluster
+# 11. Delete cluster profile
 
 # Variables:
 # cluster_ext_id: Cluster external ID
@@ -350,6 +352,12 @@
     - name: List all cluster profiles
       nutanix.ncp.ntnx_clusters_profiles_info_v2:
       register: result
+
+    - name: List all cluster profiles with fetch_all
+      nutanix.ncp.ntnx_clusters_profiles_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
 
     - name: List all cluster profiles with filter
       nutanix.ncp.ntnx_clusters_profiles_info_v2:
