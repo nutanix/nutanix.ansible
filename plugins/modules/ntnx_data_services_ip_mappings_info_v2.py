@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -23,10 +23,12 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get Data Services IP Mapping by ext_id) -
-      Required Roles: Account Owner, Administrator, Disaster Recovery Admin, Prism Admin, Prism Viewer, Super Admin
+      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin, Prism Viewer,
+      Project Manager, Self-Service Admin (Deprecated), Super Admin
     - >-
       B(List Data Services IP Mappings) -
-      Required Roles: Account Owner, Administrator, Disaster Recovery Admin, Prism Admin, Prism Viewer, Super Admin
+      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin, Prism Viewer,
+      Project Manager, Self-Service Admin (Deprecated), Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies)"
 options:
   ext_id:
@@ -93,9 +95,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC DataServicesIpMapping info v4 API.
-    - It can be a single DataServicesIpMapping if external ID is provided.
-    - List of multiple DataServicesIpMapping if external ID is not provided with optional filter or limit.
+    - The response from the Nutanix PC Data Services IP Mapping info v4 API.
+    - It can be a single Data Services IP Mapping if external ID is provided.
+    - List of multiple Data Services IP Mappings if external ID is not provided with optional filter or limit.
   returned: always
   type: dict
   sample:
@@ -151,7 +153,7 @@ msg:
   description: This indicates the message if any message occurred.
   returned: When there is an error
   type: str
-  sample: "Api Exception raised while fetching Data Services IP Mapping info"
+  sample: "Api Exception raised while fetching Data Services IP Mappings info"
 
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution.
@@ -189,6 +191,7 @@ from ..module_utils.v4.data_policies.helpers import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -228,8 +231,10 @@ def get_data_services_ip_mappings(module, api_instance, result):
         )
 
     try:
-        resp = api_instance.list_data_services_ip_mappings(
-            recoveryPlanExtId=recovery_plan_ext_id, **kwargs
+        resp = list_entities(
+            api_instance.list_data_services_ip_mappings,
+            recoveryPlanExtId=recovery_plan_ext_id,
+            **kwargs,
         )
     except Exception as e:
         raise_api_exception(

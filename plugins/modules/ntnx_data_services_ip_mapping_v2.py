@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -15,9 +15,6 @@ short_description: Create, Update, Delete Data Services IP Mapping of a Recovery
 version_added: 2.7.0
 description:
   - This module allows you to create, update, and delete a Data Services IP Mapping under a Recovery Plan in Nutanix Prism Central.
-  - Data Services IP Mapping defines the mapping between the data services IP of primary and recovery Prism Elements
-    used to establish the iSCSI connection between recovered VMs and recovered Volume Groups when network segmentation
-    is enabled.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -25,13 +22,13 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a Data Services IP Mapping) -
-      Required Roles: Account Owner, Administrator, Disaster Recovery Admin, Prism Admin, Super Admin
+      Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - >-
       B(Update a Data Services IP Mapping) -
-      Required Roles: Account Owner, Administrator, Disaster Recovery Admin, Prism Admin, Super Admin
+      Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - >-
       B(Delete a Data Services IP Mapping) -
-      Required Roles: Account Owner, Administrator, Disaster Recovery Admin, Prism Admin, Super Admin
+      Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=datapolicies)"
 options:
   state:
@@ -82,8 +79,8 @@ options:
         required: true
   primary_data_services_ip:
     description:
-      - Data Services IP address of the primary Prism Element cluster.
-      - Provide exactly one of I(ipv4) or I(ipv6) inside this mapping.
+      - Production data services IP address on the primary Prism Element.
+      - IPv6 is not supported for data services IPs.
     type: dict
     required: false
     suboptions:
@@ -123,8 +120,8 @@ options:
             default: 128
   recovery_data_services_ip:
     description:
-      - Data Services IP address of the recovery Prism Element cluster used during planned or unplanned failover.
-      - Provide exactly one of I(ipv4) or I(ipv6) inside this mapping.
+      - Production data services IP address on the recovery Prism Element.
+      - IPv6 is not supported for data services IPs.
     type: dict
     required: false
     suboptions:
@@ -164,8 +161,8 @@ options:
             default: 128
   primary_test_data_services_ip:
     description:
-      - Data Services IP address of the primary Prism Element cluster used during test failback.
-      - Provide exactly one of I(ipv4) or I(ipv6) inside this mapping.
+      - Test data services IP address on the primary Prism Element.
+      - IPv6 is not supported for data services IPs.
     type: dict
     required: false
     suboptions:
@@ -205,8 +202,8 @@ options:
             default: 128
   recovery_test_data_services_ip:
     description:
-      - Data Services IP address of the recovery Prism Element cluster used during test failover.
-      - Provide exactly one of I(ipv4) or I(ipv6) inside this mapping.
+      - Test data services IP address on the recovery Prism Element.
+      - IPv6 is not supported for data services IPs.
     type: dict
     required: false
     suboptions:
@@ -442,7 +439,6 @@ from ..module_utils.v4.data_policies.helpers import (  # noqa: E402
 )
 from ..module_utils.v4.prism.tasks import (  # noqa: E402
     get_entity_ext_id_from_task,
-    get_ext_id_from_task_completion_details,
     wait_for_completion,
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
@@ -543,7 +539,15 @@ def get_module_spec():
 
 
 def create_DataServicesIpMapping(module, result, api_instance):
-    validate_required_params(module, ["primary_cluster"])
+    validate_required_params(
+        module,
+        [
+            "primary_cluster",
+            "recovery_cluster",
+            "primary_data_services_ip",
+            "recovery_data_services_ip",
+        ],
+    )
     recovery_plan_ext_id = module.params.get("recovery_plan_ext_id")
 
     sg = SpecGenerator(module)
@@ -574,15 +578,17 @@ def create_DataServicesIpMapping(module, result, api_instance):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        resp = wait_for_completion(module, task_ext_id)
-        result["response"] = strip_internal_attributes(resp.to_dict())
-        ext_id = _extract_data_services_ip_mapping_ext_id(resp, recovery_plan_ext_id)
+        task_data = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(task_data.to_dict())
+        ext_id = get_entity_ext_id_from_task(
+            task_data, rel=TASK_CONSTANTS.RelEntityType.DATA_SERVICES_IP_MAPPING
+        )
         if ext_id:
             result["ext_id"] = ext_id
-            resp = get_data_services_ip_mapping(
+            fetched = get_data_services_ip_mapping(
                 module, api_instance, recovery_plan_ext_id, ext_id
             )
-            result["response"] = strip_internal_attributes(resp.to_dict())
+            result["response"] = strip_internal_attributes(fetched.to_dict())
         else:
             raise_api_exception(
                 module=module,
@@ -592,35 +598,6 @@ def create_DataServicesIpMapping(module, result, api_instance):
                 msg="Failed to get entity ext_id from task for Data Services IP Mapping",
             )
     result["changed"] = True
-
-
-def _extract_data_services_ip_mapping_ext_id(task, recovery_plan_ext_id):
-    """
-    Resolve the Data Services IP Mapping ext_id from a completed task.
-
-    Order of resolution:
-    1. entities_affected entry whose ``rel`` matches DATA_SERVICES_IP_MAPPING.
-    2. completion_details entry named ``dataServicesIpMappingExtId``.
-    3. First entities_affected entry whose ext_id differs from the parent
-       recovery plan ext_id (fallback for evolving task rel strings).
-    """
-    ext_id = get_entity_ext_id_from_task(
-        task, rel=TASK_CONSTANTS.RelEntityType.DATA_SERVICES_IP_MAPPING
-    )
-    if ext_id:
-        return ext_id
-
-    ext_id = get_ext_id_from_task_completion_details(
-        task, name="dataServicesIpMappingExtId"
-    )
-    if ext_id:
-        return ext_id
-
-    for entity in getattr(task, "entities_affected", []) or []:
-        entity_ext_id = getattr(entity, "ext_id", None)
-        if entity_ext_id and entity_ext_id != recovery_plan_ext_id:
-            return entity_ext_id
-    return None
 
 
 def check_for_idempotency(old_spec, update_spec):
@@ -735,9 +712,8 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "failed": False,
         "response": None,
-        "ext_id": None,
-        "task_ext_id": None,
     }
     api_instance = get_recovery_plans_api_instance(module)
     state = module.params.get("state")
