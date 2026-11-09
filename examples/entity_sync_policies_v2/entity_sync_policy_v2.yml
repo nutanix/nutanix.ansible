@@ -1,6 +1,11 @@
 ---
 # Summary:
 # This playbook will do:
+# 1. Trigger sync for an entity sync policy
+# 2. Get an entity sync policy using ext_id
+# 3. List all entity sync policies
+# 4. List all entity sync policies using filter
+# 5. List all entity sync policies using limit
 
 - name: Entity Sync Policy playbook
   hosts: localhost
