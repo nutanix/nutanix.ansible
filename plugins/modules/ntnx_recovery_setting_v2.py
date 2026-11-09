@@ -852,7 +852,7 @@ def _build_ip_address_spec():
 
 def _build_floating_ip_spec():
     return dict(
-        should_allocate_dynamically=dict(type="bool", required=False),
+        should_allocate_dynamically=dict(type="bool", required=True),
         ip_address=dict(
             type="dict",
             options=_build_ip_address_spec(),
@@ -868,7 +868,12 @@ def get_module_spec():
         ext_id=dict(type="str", required=True),
     )
 
-    in_guest_script_spec = dict(
+    # Docs: required under recovery_setting.vm, optional under vm_category
+    vm_in_guest_script_spec = dict(
+        is_enabled=dict(type="bool", required=True),
+        timeout_secs=dict(type="int", required=False),
+    )
+    vm_category_in_guest_script_spec = dict(
         is_enabled=dict(type="bool", required=False),
         timeout_secs=dict(type="int", required=False),
     )
@@ -901,13 +906,13 @@ def get_module_spec():
         ),
         attachment_type=dict(
             type="str",
-            required=False,
-            choices=["DIRECT", "EXTERNAL"],
+            required=True,
+            choices=["DIRECT", "EXTERNAL", "NONE"],
         ),
         protocol=dict(
             type="str",
             required=False,
-            choices=["ISCSI", "NVMF"],
+            choices=["ISCSI", "NVMF", "NOT_ASSIGNED"],
         ),
         client_features=dict(
             type="dict",
@@ -922,7 +927,7 @@ def get_module_spec():
         primary_ip=dict(
             type="dict",
             options=_build_ip_address_spec(),
-            required=False,
+            required=True,
             obj=data_policies_sdk.IPAddress,
         ),
         recovery_ip=dict(
@@ -983,7 +988,7 @@ def get_module_spec():
         power_state=dict(type="str", required=False, choices=["ON", "OFF"]),
         in_guest_script_execution_config=dict(
             type="dict",
-            options=in_guest_script_spec,
+            options=vm_in_guest_script_spec,
             required=False,
             obj=data_policies_sdk.InGuestScriptExecutionConfig,
         ),
@@ -1015,7 +1020,7 @@ def get_module_spec():
         power_state=dict(type="str", required=False, choices=["ON", "OFF"]),
         in_guest_script_execution_config=dict(
             type="dict",
-            options=in_guest_script_spec,
+            options=vm_category_in_guest_script_spec,
             required=False,
             obj=data_policies_sdk.InGuestScriptExecutionConfig,
         ),
@@ -1031,7 +1036,7 @@ def get_module_spec():
         iscsi_target_features=dict(
             type="dict",
             options=iscsi_features_spec,
-            required=False,
+            required=True,
             obj=data_policies_sdk.IscsiFeatures,
         ),
     )
