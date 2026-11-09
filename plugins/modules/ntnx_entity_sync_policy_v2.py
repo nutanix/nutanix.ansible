@@ -148,9 +148,9 @@ import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
-from ..module_utils.v4.data_policies.api_client import (
+from ..module_utils.v4.data_policies.api_client import (  # noqa: E402
     get_entity_sync_policies_api_instance,
-)  # noqa: E402
+)
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
