@@ -296,6 +296,8 @@ action_groups:
     - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_recovery_setting_v2
+    - ntnx_recovery_settings_info_v2
     - ntnx_data_services_ip_mapping_v2
     - ntnx_data_services_ip_mappings_info_v2
     - ntnx_network_mapping_v2

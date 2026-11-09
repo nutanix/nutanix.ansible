@@ -45,6 +45,8 @@ class Tasks:
         OBJECTS = "objects:config:object-store"
         OVA = "vmm:content:ova"
         STORAGE_POLICY = "datapolicies:config:storage-policy"
+        RECOVERY_SETTING = "datapolicies:config:recovery-setting"
+        RECOVERY_PLAN = "datapolicies:config:recovery-plan"
         NETWORK_MAPPING = "datapolicies:config:network-mapping"
         KMS = "security:encryption:key-management-server"
         CLUSTER_PROFILE = "clustermgmt:config:cluster-profile"
