@@ -473,7 +473,6 @@ from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
     strip_read_only_fields,
-    strip_users_empty_attributes,
 )
 
 SDK_IMP_ERROR = None
