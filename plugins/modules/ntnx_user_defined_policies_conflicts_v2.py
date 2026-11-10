@@ -327,10 +327,10 @@ def get_module_spec():
         type=dict(type="str", required=True, choices=["CATEGORY", "CLUSTER"]),
     )
     double_value_spec = dict(
-        double_value=dict(type="float"),
+        double_value=dict(type="float", required=True),
     )
     int_value_spec = dict(
-        int_value=dict(type="int"),
+        int_value=dict(type="int", required=True),
     )
     threshold_value_spec = dict(
         double_value=dict(type="dict", options=double_value_spec),
@@ -372,7 +372,7 @@ def get_module_spec():
     )
     module_args = dict(
         state=dict(type="str", choices=["present"], default="present"),
-        title=dict(type="str"),
+        title=dict(type="str", required=True),
         description=dict(type="str"),
         is_enabled=dict(type="bool"),
         is_auto_resolved=dict(type="bool"),
@@ -399,6 +399,7 @@ def get_module_spec():
             elements="dict",
             options=trigger_condition_spec,
             obj=sdk.TriggerCondition,
+            required=True,
         ),
         impact_types=dict(
             type="list",
@@ -426,7 +427,7 @@ def get_module_spec():
             ),
             obj=sdk.RelatedPolicy,
         ),
-        entity_type=dict(type="str"),
+        entity_type=dict(type="str", required=True),
     )
     return module_args
 

@@ -419,10 +419,10 @@ def get_module_spec():
         type=dict(type="str", required=True, choices=["CATEGORY", "CLUSTER"]),
     )
     double_value_spec = dict(
-        double_value=dict(type="float"),
+        double_value=dict(type="float", required=True),
     )
     int_value_spec = dict(
-        int_value=dict(type="int"),
+        int_value=dict(type="int", required=True),
     )
     threshold_value_spec = dict(
         double_value=dict(type="dict", options=double_value_spec),
