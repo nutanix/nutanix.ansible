@@ -100,24 +100,35 @@ response:
   sample:
     {
       "created_by": "admin",
-      "description": "Sample UDA for docs",
-      "entity_type": "vm",
-      "ext_id": "8101e53a-ccfa-4c36-81e7-c818a0f6873f",
+      "description": "Trigger warning alert when cluster CPU usage exceeds 80%",
+      "entity_type": "cluster",
+      "ext_id": "ff30d9de-0648-427b-bf2c-646ee8ec23cb",
+      "filters": [
+          {"ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "type": "CLUSTER"}
+      ],
+      "impact_types": ["PERFORMANCE"],
       "is_auto_resolved": true,
       "is_enabled": true,
-      "title": "ansible-sample-92174",
+      "is_expected_to_error_on_conflict": null,
+      "last_updated_time": "2026-07-20T15:36:58.758223+00:00",
+      "links": null,
+      "policies_to_override": null,
+      "policyId": "Ac89aa5ad-9b13-41a5-956f-3c622c904499",
+      "related_policies": null,
+      "tenant_id": null,
+      "title": "vm_high_cpu_uda_policy_ansible_updated",
       "trigger_conditions": [
-        {
-          "condition": {
-            "metric_name": "hypervisor_cpu_usage_ppm",
-            "operator": "GREATER_THAN",
-            "threshold_value": {"int_value": 80}
-          },
-          "condition_type": "STATIC_THRESHOLD",
-          "severity_level": "CRITICAL"
-        }
+          {
+              "condition": {
+                  "metric_name": "hypervisor_cpu_usage_ppm",
+                  "operator": "GREATER_THAN",
+                  "threshold_value": {"int_value": 800000}
+              },
+              "condition_type": "STATIC_THRESHOLD",
+              "severity_level": "WARNING"
+          }
       ],
-      "trigger_wait_period": 600
+      "trigger_wait_period": 900
     }
 
 changed:

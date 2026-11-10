@@ -34,16 +34,16 @@ options:
   state:
     description:
         - State of the User-Defined Alert policy.
-        - If C(state) is C(present) and C(ext_id) is not provided, create a policy.
-        - If C(state) is C(present) and C(ext_id) is provided, update the policy.
-        - If C(state) is C(absent), delete the policy with the given external ID.
+        - If C(state) is C(present) and C(ext_id) is not provided, create a new User-Defined Alert policy.
+        - If C(state) is C(present) and C(ext_id) is provided, update the User-Defined Alert policy.
+        - If C(state) is C(absent), delete the User-Defined Alert policy with the given external ID.
     type: str
     choices:
         - present
         - absent
   ext_id:
     description:
-        - Entity UUID.
+        - External ID of the User-Defined Alert policy.
         - Required for updating or deleting a User-Defined Alert policy.
     type: str
   title:
@@ -164,6 +164,7 @@ options:
                     description:
                       - Denotes a value of type double.
                     type: float
+                    required: true
               int_value:
                 description:
                   - Denotes a value of type integer.
@@ -173,6 +174,7 @@ options:
                     description:
                       - Denotes a value of type integer.
                     type: int
+                    required: true
   impact_types:
     description:
         - Impact types for the associated resulting alert.
@@ -268,7 +270,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     state: present
-    ext_id: "{{ result.ext_id }}"
+    ext_id: "8101e53a-ccfa-4c36-81e7-c818a0f6873f"
     title: "VM CPU Usage Updated"
     description: "Updated CPU resources utilization by a VM"
     entity_type: "vm"
@@ -291,7 +293,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     state: absent
-    ext_id: "{{ result.ext_id }}"
+    ext_id: "8101e53a-ccfa-4c36-81e7-c818a0f6873f"
   register: result
 """
 
@@ -299,31 +301,42 @@ RETURN = r"""
 response:
   description:
     - Response for User-Defined Alert policy operations.
-    - Policy details for create and update.
-    - Empty when delete succeeds with no response body.
+    - If C(wait) is true, the response will be User-Defined Alert policy details.
+    - If C(wait) is false, the response will be task details.
   returned: always
   type: dict
   sample:
     {
       "created_by": "admin",
-      "description": "Sample UDA for docs",
-      "entity_type": "vm",
-      "ext_id": "8101e53a-ccfa-4c36-81e7-c818a0f6873f",
+      "description": "Trigger warning alert when cluster CPU usage exceeds 80%",
+      "entity_type": "cluster",
+      "ext_id": "ff30d9de-0648-427b-bf2c-646ee8ec23cb",
+      "filters": [
+          {"ext_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2", "type": "CLUSTER"}
+      ],
+      "impact_types": ["PERFORMANCE"],
       "is_auto_resolved": true,
       "is_enabled": true,
-      "title": "ansible-sample-92174",
+      "is_expected_to_error_on_conflict": null,
+      "last_updated_time": "2026-07-20T15:36:58.758223+00:00",
+      "links": null,
+      "policies_to_override": null,
+      "policyId": "Ac89aa5ad-9b13-41a5-956f-3c622c904499",
+      "related_policies": null,
+      "tenant_id": null,
+      "title": "vm_high_cpu_uda_policy_ansible_updated",
       "trigger_conditions": [
-        {
-          "condition": {
-            "metric_name": "hypervisor_cpu_usage_ppm",
-            "operator": "GREATER_THAN",
-            "threshold_value": {"int_value": 80}
-          },
-          "condition_type": "STATIC_THRESHOLD",
-          "severity_level": "CRITICAL"
-        }
+          {
+              "condition": {
+                  "metric_name": "hypervisor_cpu_usage_ppm",
+                  "operator": "GREATER_THAN",
+                  "threshold_value": {"int_value": 800000}
+              },
+              "condition_type": "STATIC_THRESHOLD",
+              "severity_level": "WARNING"
+          }
       ],
-      "trigger_wait_period": 600
+      "trigger_wait_period": 900
     }
 ext_id:
   description:
@@ -354,7 +367,7 @@ msg:
   description: This indicates the message if any message occurred
   returned: When there is an error, module is idempotent or check mode
   type: str
-  sample: "Nothing to change."
+  sample: "Api Exception raised while creating User-Defined Alert policy"
 """
 
 import traceback  # noqa: E402
@@ -510,23 +523,6 @@ def get_module_spec():
     return module_args
 
 
-def _prepare_filters_for_generator(module):
-    """Expand filters oneOf wrapper into the SDK list field for SpecGenerator."""
-    filters = module.params.get("filters")
-    if not filters:
-        return
-    if filters.get("entity_filter") is not None:
-        flavour = "entity_filter"
-    elif filters.get("group_filter") is not None:
-        flavour = "group_filter"
-    else:
-        module.params.pop("filters", None)
-        return
-    flavour_schema = module.argument_spec_with_extra_keys["filters"]["options"][flavour]
-    module.params["filters"] = filters[flavour]
-    module.argument_spec_with_extra_keys["filters"] = flavour_schema
-
-
 def check_uda_policy_idempotency(old_spec, update_spec):
     old_spec = strip_internal_attributes(deepcopy(old_spec))
     update_spec = strip_internal_attributes(deepcopy(update_spec))
@@ -538,7 +534,6 @@ def check_uda_policy_idempotency(old_spec, update_spec):
 
 def create_uda_policy(module, api_instance, result):
     validate_required_params(module, ["title", "trigger_conditions", "entity_type"])
-    _prepare_filters_for_generator(module)
 
     sg = SpecGenerator(module)
     default_spec = sdk.UserDefinedPolicy()
@@ -572,7 +567,6 @@ def update_uda_policy(module, api_instance, result):
     result["ext_id"] = ext_id
     current_spec = get_uda_policy(module, api_instance, ext_id)
 
-    _prepare_filters_for_generator(module)
     sg = SpecGenerator(module)
     update_spec, err = sg.generate_spec(obj=deepcopy(current_spec))
     if err:
@@ -665,7 +659,6 @@ def run_module():
         "changed": False,
         "response": None,
         "failed": False,
-        "ext_id": None,
     }
     api_instance = get_user_defined_policies_api_instance(module)
     state = module.params.get("state")

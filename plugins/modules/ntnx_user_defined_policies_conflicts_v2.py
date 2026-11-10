@@ -14,8 +14,7 @@ module: ntnx_user_defined_policies_conflicts_v2
 short_description: Find conflicting User-Defined Alert policies
 version_added: "2.7.0"
 description:
-    - Find existing policies with conflicting criteria for a User-Defined Alert
-      policy.
+    - Find existing policies with conflicting criteria for a User-Defined Alert Policy.
     - This module uses PC v4 APIs based SDKs
 notes:
     - >-
@@ -39,6 +38,7 @@ options:
     description:
         - Title of the policy.
     type: str
+    required: true
   description:
     description:
         - Description of the policy.
@@ -96,6 +96,7 @@ options:
           conditions, all of them will be considered during the operation.
     type: list
     elements: dict
+    required: true
     suboptions:
       condition_type:
         description:
@@ -153,6 +154,7 @@ options:
                     description:
                       - Denotes a value of type double.
                     type: float
+                    required: true
               int_value:
                 description:
                   - Denotes a value of type integer.
@@ -162,6 +164,7 @@ options:
                     description:
                       - Denotes a value of type integer.
                     type: int
+                    required: true
   impact_types:
     description:
         - Impact types for the associated resulting alert.
@@ -214,6 +217,7 @@ options:
         - Entity type associated with the User-Defined Alert policy. Allowed
           values are VM, node and cluster.
     type: str
+    required: true
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -251,8 +255,7 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - List of conflicting User-Defined Alert policies.
-    - Request body when running in check mode.
+    - Response for fetching conflicting User-Defined Alert policies.
   returned: always
   type: list
   sample:
@@ -280,6 +283,11 @@ msg:
   returned: When there is an error or in check mode operation
   type: str
   sample: "Conflicting User-Defined Alert policies will be fetched."
+total_available_results:
+  description: The total number of available User-Defined Alert policies in PC.
+  type: int
+  returned: when all User-Defined Alert policies are fetched
+  sample: 5
 """
 
 import traceback  # noqa: E402
@@ -423,26 +431,8 @@ def get_module_spec():
     return module_args
 
 
-def _prepare_filters_for_generator(module):
-    """Expand filters oneOf wrapper into the SDK list field for SpecGenerator."""
-    filters = module.params.get("filters")
-    if not filters:
-        return
-    if filters.get("entity_filter") is not None:
-        flavour = "entity_filter"
-    elif filters.get("group_filter") is not None:
-        flavour = "group_filter"
-    else:
-        module.params.pop("filters", None)
-        return
-    flavour_schema = module.argument_spec_with_extra_keys["filters"]["options"][flavour]
-    module.params["filters"] = filters[flavour]
-    module.argument_spec_with_extra_keys["filters"] = flavour_schema
-
-
 def find_conflicting_uda_policies(module, api_instance, result):
     validate_required_params(module, ["title", "trigger_conditions", "entity_type"])
-    _prepare_filters_for_generator(module)
 
     sg = SpecGenerator(module)
     default_spec = sdk.UserDefinedPolicy()
@@ -471,15 +461,14 @@ def find_conflicting_uda_policies(module, api_instance, result):
             ),
         )
 
-    data = resp.data
-    if not data:
-        data = []
-    if not isinstance(data, list):
-        data = [data]
-    result["response"] = [
-        strip_internal_attributes(item.to_dict()) if hasattr(item, "to_dict") else item
-        for item in data
-    ]
+    resp = strip_internal_attributes(resp.to_dict())
+    total_available_results = resp.get("metadata").get("total_available_results")
+    result["total_available_results"] = total_available_results
+    resp = resp.get("data")
+
+    if not resp:
+        resp = []
+    result["response"] = resp
 
 
 def run_module():
