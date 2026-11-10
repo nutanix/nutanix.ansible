@@ -99,12 +99,34 @@ response:
   type: dict
   sample:
     {
+      "affected_entities": null,
       "audit_type": "IAMAdministrationEventAudit",
-      "creation_time": "2026-11-10T08:45:10.905533+00:00",
-      "ext_id": "235dfdc9-0524-43ea-5343-e5242624a911",
-      "message": "Token for user admin from 10.100.0.24 has been created",
+      "cluster_reference": {
+          "ext_id": "cae459ec-08db-475e-a5e5-151e390c9484",
+          "name": "PC_10.44.76.29",
+          "type": null
+      },
+      "creation_time": "2026-07-20T14:40:12.123456+00:00",
+      "ext_id": "15d110e1-5ca5-4603-4412-8d87fd1bad03",
+      "links": null,
+      "message": "Token for user admin from 10.100.0.23 has been created",
+      "operation_end_time": null,
+      "operation_start_time": null,
       "operation_type": "CREATE",
-      "title": "Token for user admin from 10.100.0.24 has been created"
+      "parameters": null,
+      "service_name": null,
+      "source_entity": {
+          "ext_id": "00000000-0000-0000-0000-000000000000",
+          "name": "admin",
+          "type": "Token"
+      },
+      "status": "SUCCEEDED",
+      "tenant_id": null,
+      "user_reference": {
+          "ext_id": null,
+          "ip_address": "10.100.0.23",
+          "name": "admin"
+      }
     }
 
 changed:

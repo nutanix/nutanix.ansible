@@ -57,18 +57,68 @@ response:
   type: dict
   sample:
     {
-      "alert_email_digest_send_time": "00:00",
-      "alert_email_digest_send_timezone": "UTC",
-      "default_nutanix_email": "nos-alerts@nutanix.com",
-      "email_contact_list": null,
-      "email_template": {
-        "body_suffix": null,
-        "subject_prefix": null
-      },
-      "has_default_nutanix_email": false,
-      "is_email_digest_enabled": true,
-      "is_empty_alert_email_digest_skipped": true,
-      "is_enabled": true
+        "alert_email_digest_send_time": "09:00",
+        "alert_email_digest_send_timezone": "UTC",
+        "default_nutanix_email": "nos-alerts@nutanix.com",
+        "email_config_rules": [
+            {
+                "cluster_uuids": null,
+                "has_global_email_contact_list": true,
+                "impact_types": [
+                    "AVAILABILITY",
+                    "CAPACITY"
+                ],
+                "is_enabled": true,
+                "match_phrases": [
+                    "Storage"
+                ],
+                "recipients": [
+                    "storage-oncall@example.com"
+                ],
+                "severities": [
+                    "CRITICAL",
+                    "WARNING"
+                ]
+            }
+        ],
+        "email_contact_list": [
+            "sre-team@example.com",
+            "platform-oncall@example.com"
+        ],
+        "email_template": {
+            "body_suffix": "Please contact SRE if you have any questions.",
+            "subject_prefix": "[Nutanix Alerts]"
+        },
+        "ext_id": null,
+        "has_default_nutanix_email": false,
+        "is_email_digest_enabled": true,
+        "is_empty_alert_email_digest_skipped": true,
+        "is_enabled": true,
+        "links": null,
+        "tenant_id": null,
+        "tunnel_details": {
+            "connection_status": {
+                "last_changed_time": null,
+                "last_checked_time": "1970-01-01T00:00:00+00:00",
+                "last_successful_transmission_time": "2026-07-20T15:13:31.191422+00:00",
+                "message": null,
+                "status": "SUCCESS"
+            },
+            "http_proxy": null,
+            "service_center": {
+                "ip_address": "nsc02.nutanix.net",
+                "name": null,
+                "port": 0,
+                "username": null
+            },
+            "transport_status": {
+                "last_changed_time": null,
+                "last_checked_time": "2026-07-20T15:14:24.673147+00:00",
+                "last_successful_transmission_time": "2026-07-20T15:14:24.673145+00:00",
+                "message": null,
+                "status": "SUCCESS"
+            }
+        }
     }
 
 changed:
@@ -76,12 +126,6 @@ changed:
   returned: always
   type: bool
   sample: false
-
-msg:
-  description: This indicates the message if any message occurred.
-  returned: When there is an error
-  type: str
-  sample: "Api Exception raised while fetching alert email configuration"
 
 failed:
   description: This indicates whether the task have failed.

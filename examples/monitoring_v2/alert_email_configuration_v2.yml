@@ -1,6 +1,8 @@
 ---
 # Summary:
-# Update alert email configuration.
+# This playbook will do:
+# 1. Update alert email configuration
+# 2. Get alert email configuration
 
 - name: Alert email configuration playbook
   hosts: localhost
@@ -30,3 +32,11 @@
     - name: Print updated alert email configuration
       ansible.builtin.debug:
         msg: "{{ result }}"
+
+    - name: Get alert email configuration
+      nutanix.ncp.ntnx_alert_email_configuration_info_v2:
+      register: result_info
+
+    - name: Print alert email configuration info
+      ansible.builtin.debug:
+        msg: "{{ result_info }}"

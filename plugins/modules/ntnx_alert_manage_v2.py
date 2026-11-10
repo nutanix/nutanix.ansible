@@ -89,8 +89,37 @@ response:
     returned: always
     sample:
         {
-            "ext_id": "ZXJnb24=:1a1a1a1a-2b2b-3c3c-4d4d-5e5e5e5e5e5e",
-            "status": "SUCCEEDED"
+            "cluster_ext_ids": [
+                "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
+            ],
+            "completed_time": "2026-07-20T15:30:44.510131+00:00",
+            "completion_details": null,
+            "created_time": "2026-07-20T15:30:43.887321+00:00",
+            "entities_affected": [
+                {
+                    "ext_id": "6f9d2e12-1a1f-4c9c-8b1c-2f3d21e2f0a1",
+                    "name": null,
+                    "rel": "monitoring:v4:serviceability:alert"
+                }
+            ],
+            "error_messages": null,
+            "ext_id": "ZXJnb24=:83e58c9d-5b57-4b62-8b5f-6b57f4d0c2c1",
+            "is_cancelable": false,
+            "last_updated_time": "2026-07-20T15:30:44.510131+00:00",
+            "legacy_error_message": null,
+            "operation": "APR-AlertManager",
+            "operation_description": "Manage Alert",
+            "owned_by": {
+                "ext_id": "00000000-0000-0000-0000-000000000000",
+                "name": "admin"
+            },
+            "parent_task": null,
+            "progress_percentage": 100,
+            "started_time": "2026-07-20T15:30:43.912541+00:00",
+            "status": "SUCCEEDED",
+            "sub_steps": null,
+            "sub_tasks": null,
+            "warnings": null
         }
 task_ext_id:
     description: The external ID of the task.
@@ -116,7 +145,7 @@ msg:
     description: This indicates the message if any message occurred
     type: str
     returned: When there is an error or in check mode operation
-    sample: "Alert with ext_id:af3a40be-d079-454a-968a-9903d1bf0549 will be managed."
+    sample: "Alert with ext_id:af3a40be-d079-454a-968a-9903d1bf0549 will be acknowledged or resolved."
 error:
     description: This indicates the error message if any error occurred
     type: str
@@ -168,7 +197,7 @@ def get_module_spec():
     return module_args
 
 
-def manage_alert(module, result, manage_api, alerts_api):
+def acknowledge_or_resolve_alert(module, result, manage_api, alerts_api):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -186,13 +215,13 @@ def manage_alert(module, result, manage_api, alerts_api):
     if err:
         result["error"] = err
         module.fail_json(
-            msg="Failed generating spec for managing alert",
+            msg="Failed generating spec for acknowledge or resolve alert",
             **result,
         )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
-        result["msg"] = "Alert with ext_id:{0} will be managed.".format(ext_id)
+        result["msg"] = "Alert with ext_id:{0} will be acknowledged or resolved.".format(ext_id)
         return
 
     kwargs = {"if_match": etag_value}
@@ -203,10 +232,10 @@ def manage_alert(module, result, manage_api, alerts_api):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while managing alert",
+            msg="Api Exception raised while acknowledging or resolving alert",
         )
 
-    task_ext_id = getattr(resp.data, "ext_id", None)
+    task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
@@ -231,11 +260,10 @@ def run_module():
         "changed": False,
         "response": None,
         "failed": False,
-        "ext_id": None,
     }
     manage_api = get_manage_alerts_api_instance(module)
     alerts_api = get_alerts_api_instance(module)
-    manage_alert(module, result, manage_api, alerts_api)
+    acknowledge_or_resolve_alert(module, result, manage_api, alerts_api)
     module.exit_json(**result)
 
 

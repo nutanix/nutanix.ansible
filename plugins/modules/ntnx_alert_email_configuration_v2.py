@@ -6,6 +6,10 @@
 
 from __future__ import absolute_import, division, print_function
 
+from ansible_collections.nutanix.ncp.plugins.module_utils.v4.prism.tasks import (
+    wait_for_completion,
+)
+
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -164,19 +168,75 @@ RETURN = r"""
 response:
     description:
         - Response for updating alert email configuration.
-        - Alert email configuration details after the update operation.
+        - If C(wait) is false, the response will be the initial task details.
+        - If C(wait) is true, the response will be the email configuration details after the update operation.
     type: dict
     returned: always
     sample:
         {
-            "alert_email_digest_send_time": "00:00",
-            "alert_email_digest_send_timezone": "UTC",
-            "default_nutanix_email": "nos-alerts@nutanix.com",
-            "email_contact_list": ["alerts@example.com"],
-            "has_default_nutanix_email": false,
-            "is_email_digest_enabled": true,
-            "is_enabled": true
+        "alert_email_digest_send_time": "09:00",
+        "alert_email_digest_send_timezone": "UTC",
+        "default_nutanix_email": "nos-alerts@nutanix.com",
+        "email_config_rules": [
+            {
+                "cluster_uuids": null,
+                "has_global_email_contact_list": true,
+                "impact_types": [
+                    "AVAILABILITY",
+                    "CAPACITY"
+                ],
+                "is_enabled": true,
+                "match_phrases": [
+                    "Storage"
+                ],
+                "recipients": [
+                    "storage-oncall@example.com"
+                ],
+                "severities": [
+                    "CRITICAL",
+                    "WARNING"
+                ]
+            }
+        ],
+        "email_contact_list": [
+            "sre-team@example.com",
+            "platform-oncall@example.com"
+        ],
+        "email_template": {
+            "body_suffix": "Please contact SRE if you have any questions.",
+            "subject_prefix": "[Nutanix Alerts]"
+        },
+        "ext_id": null,
+        "has_default_nutanix_email": false,
+        "is_email_digest_enabled": true,
+        "is_empty_alert_email_digest_skipped": true,
+        "is_enabled": true,
+        "links": null,
+        "tenant_id": null,
+        "tunnel_details": {
+            "connection_status": {
+                "last_changed_time": null,
+                "last_checked_time": "1970-01-01T00:00:00+00:00",
+                "last_successful_transmission_time": "2026-07-20T15:13:31.191422+00:00",
+                "message": null,
+                "status": "SUCCESS"
+            },
+            "http_proxy": null,
+            "service_center": {
+                "ip_address": "nsc02.nutanix.net",
+                "name": null,
+                "port": 0,
+                "username": null
+            },
+            "transport_status": {
+                "last_changed_time": null,
+                "last_checked_time": "2026-07-20T15:14:24.673147+00:00",
+                "last_successful_transmission_time": "2026-07-20T15:14:24.673145+00:00",
+                "message": null,
+                "status": "SUCCESS"
+            }
         }
+    }
 changed:
     description: This indicates whether the task resulted in any changes
     type: bool
@@ -346,7 +406,7 @@ def update_alert_email_configuration(module, result, api_instance):
 
     kwargs = {"if_match": etag_value}
     try:
-        api_instance.update_alert_email_configuration(body=update_spec, **kwargs)
+        resp = api_instance.update_alert_email_configuration(body=update_spec, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -354,8 +414,13 @@ def update_alert_email_configuration(module, result, api_instance):
             msg="Api Exception raised while updating alert email configuration",
         )
 
-    updated_config = get_alert_email_configuration(module, api_instance)
-    result["response"] = strip_internal_attributes(updated_config.to_dict())
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if task_ext_id and module.params.get("wait"):
+        wait_for_completion(module, task_ext_id)
+        fetched = get_alert_email_configuration(module, api_instance)
+        result["response"] = strip_internal_attributes(fetched.to_dict())
     result["changed"] = True
 
 

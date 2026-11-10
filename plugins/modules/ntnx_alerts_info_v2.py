@@ -138,14 +138,45 @@ response:
   type: dict
   sample:
     {
-      "alert_type": "A802005",
-      "cluster_uuid": "c54feb73-6b69-4d70-ace4-7df5bae94e1f",
-      "creation_time": "2026-11-10T01:56:42.850645+00:00",
-      "ext_id": "bb9f7753-2492-4b64-98d3-cfef0ca60fff",
-      "is_acknowledged": true,
-      "is_resolved": true,
-      "severity": "CRITICAL",
-      "title": "Network gateway gw_ansible_izvwiHdzjnCJ_all is down"
+      "acknowledged_by_username": null,
+      "acknowledged_time": null,
+      "affected_entities": null,
+      "alert_type": "A130200",
+      "classifications": [
+        "System Indicator"
+      ],
+      "cluster_name": "cluster-a",
+      "cluster_uuid": "0006361b-6855-3644-7458-2268f8ffb2bd",
+      "creation_time": "2026-07-19T05:36:52.146000+00:00",
+      "ext_id": "1e8b6c9c-4a1e-4b7b-9f9e-5c1e2a3b4c5d",
+      "impact_types": [
+        "Availability"
+      ],
+      "is_acknowledged": false,
+      "is_auto_resolved": false,
+      "is_resolved": false,
+      "is_runnable": false,
+      "is_user_defined": false,
+      "kb_articles": null,
+      "last_updated_time": "2026-07-19T05:36:52.146000+00:00",
+      "links": null,
+      "message": "Sample alert message",
+      "metric_details": null,
+      "originating_cluster_uuid": "0006361b-6855-3644-7458-2268f8ffb2bd",
+      "parameters": null,
+      "resolved_by_username": null,
+      "resolved_time": null,
+      "root_cause_analysis": null,
+      "service_name": "Prism Central",
+      "severity": "kInfo",
+      "severity_trails": null,
+      "source_entity": {
+        "ext_id": "0006361b-6855-3644-7458-2268f8ffb2bd",
+        "name": "cluster-a",
+        "type": "cluster"
+      },
+      "tenant_id": null,
+      "title": "Sample alert title"
     }
 
 changed:
