@@ -1,0 +1,112 @@
+---
+- name: Start ntnx_alert_email_configuration_v2 tests
+  ansible.builtin.debug:
+    msg: "Starting ntnx_alert_email_configuration_v2 tests"
+
+- name: Get alert email configuration
+  nutanix.ncp.ntnx_alert_email_configuration_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Verify get alert email configuration
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "Failed to get alert email configuration"
+    success_msg: "Got alert email configuration successfully"
+
+- name: Set original config fact
+  ansible.builtin.set_fact:
+    original_config: "{{ result.response }}"
+  when:
+    - result.response is defined
+    - result.failed == false
+
+- name: Update alert email configuration with check mode enabled
+  nutanix.ncp.ntnx_alert_email_configuration_v2:
+    state: present
+    is_enabled: true
+    is_email_digest_enabled: false
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify check mode update
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "Check mode update failed"
+    success_msg: "Check mode update passed"
+
+- name: Update alert email configuration
+  nutanix.ncp.ntnx_alert_email_configuration_v2:
+    state: present
+    is_enabled: true
+    is_email_digest_enabled: false
+  register: result
+  ignore_errors: true
+
+- name: Verify update alert email configuration
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "Failed to update alert email configuration"
+    success_msg: "Updated alert email configuration successfully"
+
+- name: Idempotency check with same values
+  nutanix.ncp.ntnx_alert_email_configuration_v2:
+    state: present
+    is_enabled: true
+    is_email_digest_enabled: false
+  register: result
+  ignore_errors: true
+
+- name: Verify idempotency
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+    fail_msg: "Idempotency check failed"
+    success_msg: "Idempotency check passed"
+
+- name: Update with email contact list check mode
+  nutanix.ncp.ntnx_alert_email_configuration_v2:
+    state: present
+    is_enabled: false
+    email_contact_list:
+      - email_address: "test@example.com"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify check mode with email list
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "Check mode with email list failed"
+    success_msg: "Check mode with email list passed"
+
+- name: Revert to original state if possible
+  nutanix.ncp.ntnx_alert_email_configuration_v2:
+    state: present
+    is_enabled: "{{ original_config.is_enabled | default(true) }}"
+    is_email_digest_enabled: "{{ original_config.is_email_digest_enabled | default(false) }}"
+  register: result
+  ignore_errors: true
+  when: original_config is defined
+
+- name: Verify revert
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+    fail_msg: "Failed to revert alert email configuration"
+    success_msg: "Reverted alert email configuration"
+  when: original_config is defined
