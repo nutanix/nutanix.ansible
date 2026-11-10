@@ -1,0 +1,59 @@
+---
+# Summary:
+# This playbook will do:
+# 1. List all alerts
+# 2. List alerts with filter
+# 3. List alerts with limit
+# 4. List alerts with apply
+# 5. List all alerts with fetch_all
+# 6. Get an alert using ext_id
+# 7. Get an alert using ext_id with expand
+
+- name: Alerts info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        alert_ext_id: "<alert_ext_id>"
+
+    - name: List all alerts
+      nutanix.ncp.ntnx_alerts_info_v2:
+      register: list_result
+
+    - name: List alerts with filter
+      nutanix.ncp.ntnx_alerts_info_v2:
+        filter: "isResolved eq false"
+      register: list_result_filter
+
+    - name: List alerts with limit
+      nutanix.ncp.ntnx_alerts_info_v2:
+        limit: 1
+      register: list_result_limit
+
+    - name: List alerts with apply
+      nutanix.ncp.ntnx_alerts_info_v2:
+        apply: "groupby((severity))"
+      register: list_result_apply
+
+    - name: List all alerts with fetch_all
+      nutanix.ncp.ntnx_alerts_info_v2:
+        fetch_all: true
+      register: list_result_fetch_all
+
+    - name: Get an alert using ext_id
+      nutanix.ncp.ntnx_alerts_info_v2:
+        ext_id: "{{ alert_ext_id }}"
+      register: get_result
+
+    - name: Get an alert using ext_id with expand
+      nutanix.ncp.ntnx_alerts_info_v2:
+        ext_id: "{{ alert_ext_id }}"
+        expand: "project"
+      register: get_result_expand

@@ -1,0 +1,32 @@
+---
+# Summary:
+# Update alert email configuration.
+
+- name: Alert email configuration playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Update alert email configuration
+      nutanix.ncp.ntnx_alert_email_configuration_v2:
+        is_enabled: true
+        has_default_nutanix_email: false
+        is_email_digest_enabled: true
+        is_empty_alert_email_digest_skipped: true
+        email_contact_list:
+          - alerts@example.com
+        email_template:
+          subject_prefix: "URGENT: Immediate Action Required"
+          body_suffix: "Sent from example.com"
+        alert_email_digest_send_time: "10:00"
+        alert_email_digest_send_timezone: "GMT"
+      register: result
+
+    - name: Print updated alert email configuration
+      ansible.builtin.debug:
+        msg: "{{ result }}"

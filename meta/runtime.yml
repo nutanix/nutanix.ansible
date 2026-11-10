@@ -470,3 +470,18 @@ action_groups:
     - ntnx_hardware_provider_connection_v2
     - ntnx_hardware_provider_refresh_connection_v2
     - ntnx_hardware_providers_info_v2
+    - ntnx_alerts_info_v2
+    - ntnx_alert_manage_v2
+    - ntnx_alert_email_configuration_info_v2
+    - ntnx_alert_email_configuration_v2
+    - ntnx_audits_info_v2
+    - ntnx_events_info_v2
+    - ntnx_cluster_logs_collect_v2
+    - ntnx_cluster_log_tags_info_v2
+    - ntnx_system_defined_checks_v2
+    - ntnx_system_defined_policies_info_v2
+    - ntnx_system_defined_policy_cluster_configs_info_v2
+    - ntnx_system_defined_policy_cluster_config_v2
+    - ntnx_user_defined_policies_v2
+    - ntnx_user_defined_policies_info_v2
+    - ntnx_user_defined_policies_conflicts_v2
