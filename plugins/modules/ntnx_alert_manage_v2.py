@@ -221,7 +221,9 @@ def acknowledge_or_resolve_alert(module, result, manage_api, alerts_api):
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
-        result["msg"] = "Alert with ext_id:{0} will be acknowledged or resolved.".format(ext_id)
+        result["msg"] = (
+            "Alert with ext_id:{0} will be acknowledged or resolved.".format(ext_id)
+        )
         return
 
     kwargs = {"if_match": etag_value}

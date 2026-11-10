@@ -29,44 +29,9 @@ options:
       - Cluster UUID for which log collection tags are requested.
     type: str
     required: true
-  page:
-    description:
-      - A URL query parameter that specifies the page number of the result set.
-      - It must be a positive integer between 0 and the maximum number of pages that are available
-        for that resource.
-      - Any number out of this range might lead to no results.
-    type: int
-    required: false
-  limit:
-    description:
-      - A URL query parameter that specifies the total number of records returned in the result set.
-      - Must be a positive integer between 1 and 100.
-      - Any number out of this range will lead to a validation error.
-      - If the limit is not provided, a default value of 50 records will be returned in the result set.
-    type: int
-    required: false
-  filter:
-    description:
-      - The filter in OData syntax used for the results.
-    type: str
-    required: false
-  orderby:
-    description:
-      - The sort order in which results are returned.
-    type: str
-    required: false
-  select:
-    description:
-      - The attribute name to select.
-    type: str
-    required: false
-  read_timeout:
-    description: Read timeout in milliseconds for API calls.
-    type: int
-    required: false
-    default: 30000
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
+  - nutanix.ncp.ntnx_info_v2
   - nutanix.ncp.ntnx_logger
   - nutanix.ncp.ntnx_proxy_v2
 author:
@@ -114,10 +79,24 @@ response:
   sample:
     [
       {
+        "description": "ABAC service logs",
+        "ext_id": "6624a35d-3fed-aace-c13f-7af3e51b491f",
+        "links": null,
+        "name": "abac",
+        "tenant_id": null
+      },
+      {
         "description": "Acropolis log files",
         "ext_id": "93eef4ed-1c91-4a04-3ff9-41e0c4c3a313",
         "links": null,
         "name": "acropolis",
+        "tenant_id": null
+      },
+      {
+        "description": "Cassandra log files",
+        "ext_id": "121c60df-0c03-083d-2693-c251f15fdfb2",
+        "links": null,
+        "name": "cassandra",
         "tenant_id": null
       }
     ]
@@ -154,7 +133,7 @@ cluster_ext_id:
 total_available_results:
   description: The total number of available cluster log tags.
   type: int
-  returned: when cluster log tags are fetched
+  returned: always
   sample: 5
 """
 
@@ -180,11 +159,6 @@ def get_module_spec():
 
     module_args = dict(
         cluster_ext_id=dict(type="str", required=True),
-        page=dict(type="int"),
-        limit=dict(type="int"),
-        filter=dict(type="str"),
-        orderby=dict(type="str"),
-        select=dict(type="str"),
     )
 
     return module_args
@@ -226,7 +200,6 @@ def get_cluster_log_tags(module, api_instance, result):
 
 def run_module():
     module = BaseInfoModule(
-        skip_info_args=True,
         argument_spec=get_module_spec(),
         supports_check_mode=False,
     )

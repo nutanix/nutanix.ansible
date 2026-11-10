@@ -6,10 +6,6 @@
 
 from __future__ import absolute_import, division, print_function
 
-from ansible_collections.nutanix.ncp.plugins.module_utils.v4.prism.tasks import (
-    wait_for_completion,
-)
-
 __metaclass__ = type
 
 DOCUMENTATION = r"""
@@ -278,6 +274,7 @@ from ..module_utils.v4.monitoring.api_client import (  # noqa: E402
 from ..module_utils.v4.monitoring.helpers import (  # noqa: E402
     get_alert_email_configuration,
 )
+from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
