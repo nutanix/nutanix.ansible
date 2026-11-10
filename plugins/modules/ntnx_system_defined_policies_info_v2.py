@@ -99,13 +99,35 @@ response:
   type: dict
   sample:
     {
-      "description": "Check that .dvsData directory is present on pynfs mounted local datastore",
-      "entity_type": "HOST",
-      "ext_id": "106439",
-      "impact_types": ["CONFIGURATION"],
-      "name": ".dvsData directory in local datastore",
-      "policy_id": "A106439",
-      "title": ".dvsData directory not present on pynfs mounted local datastore",
+      "classifications": ["Availability", "Configuration"],
+      "cluster_configs": [
+          {
+              "alert_config": {
+                  "auto_resolve": "ENABLED",
+                  "critical_severity": {"state": "ENABLED", "threshold_parameters": null},
+                  "info_severity": {"state": "DISABLED", "threshold_parameters": null},
+                  "warning_severity": {"state": "ENABLED", "threshold_parameters": null}
+              },
+              "configurable_parameters": null,
+              "ext_id": "00062e83-7dd7-51d9-2ebe-ac1f6b7a7ba0",
+              "is_enabled": true,
+              "last_modified_by_user": "Nutanix",
+              "last_modified_time": "2026-06-11T09:14:22.517000+00:00",
+              "schedule_interval_seconds": 300
+          }
+      ],
+      "description": "Detects Cassandra Service down state.",
+      "entity_type": "CLUSTER",
+      "ext_id": "3f47bbcd-6912-5b0f-bee6-8b45a0d1b1de",
+      "impact_types": ["AVAILABILITY"],
+      "kb_articles": ["KB-1234"],
+      "name": "Cassandra Service Down",
+      "policy_id": "A1055",
+      "publisher": "Nutanix",
+      "scope": "CLUSTER",
+      "sub_type": "SCHEDULED",
+      "target_clusters": ["PE"],
+      "title": "Cassandra Service Down Check",
       "type": "HEALTH_CHECK"
     }
 

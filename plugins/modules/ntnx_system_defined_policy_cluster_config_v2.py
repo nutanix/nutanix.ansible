@@ -395,13 +395,28 @@ response:
     sample:
         {
             "alert_config": {
-              "auto_resolve": "ENABLED",
-              "critical_severity": {"state": "ENABLED"},
-              "warning_severity": {"state": "ENABLED"}
+                "auto_resolve": "ENABLED",
+                "critical_severity": {
+                    "state": "ENABLED",
+                    "threshold_parameters": null
+                },
+                "info_severity": {
+                    "state": "DISABLED",
+                    "threshold_parameters": null
+                },
+                "warning_severity": {
+                    "state": "ENABLED",
+                    "threshold_parameters": null
+                }
             },
-            "ext_id": "00061de6-4a87-6b06-185b-ac1f6b6f97e2",
+            "configurable_parameters": null,
+            "ext_id": "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258",
             "is_enabled": true,
-            "schedule_interval_seconds": 3600
+            "last_modified_by_user": "admin",
+            "last_modified_time": "2026-07-20T12:30:00Z",
+            "links": null,
+            "schedule_interval_seconds": 600,
+            "tenant_id": null
         }
 task_ext_id:
     description: The external ID of the task.
@@ -602,8 +617,6 @@ def update_cluster_config(module, result, api_instance):
             **result,
         )
 
-    strip_users_empty_attributes(current_spec)
-
     sg = SpecGenerator(module)
     default_spec = copy.deepcopy(current_spec)
     update_spec, err = sg.generate_spec(obj=default_spec)
@@ -666,7 +679,6 @@ def run_module():
         "changed": False,
         "response": None,
         "failed": False,
-        "ext_id": None,
     }
     api_instance = get_system_defined_policies_api_instance(module)
     update_cluster_config(module, result, api_instance)

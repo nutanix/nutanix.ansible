@@ -137,7 +137,6 @@ response:
     sample:
         {
             "ext_id": "ZXJnb24=:1a1a1a1a-2b2b-3c3c-4d4d-5e5e5e5e5e5e",
-            "status": "SUCCEEDED"
         }
 task_ext_id:
     description: The external ID of the task.
@@ -246,11 +245,10 @@ def run_system_defined_checks(module, result, api_instance):
         )
         return
 
-    kwargs = {"NTNX-Request-Id": str(uuid.uuid4())}
     resp = None
     try:
         resp = api_instance.run_system_defined_checks(
-            clusterExtId=cluster_ext_id, body=spec, **kwargs
+            clusterExtId=cluster_ext_id, body=spec
         )
     except Exception as e:
         raise_api_exception(
@@ -285,7 +283,6 @@ def run_module():
         "changed": False,
         "response": None,
         "failed": False,
-        "ext_id": None,
     }
     api_instance = get_system_defined_checks_api_instance(module)
     run_system_defined_checks(module, result, api_instance)

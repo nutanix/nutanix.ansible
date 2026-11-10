@@ -110,15 +110,29 @@ response:
   type: dict
   sample:
     {
-      "alert_config": {
-        "auto_resolve": "ENABLED",
-        "critical_severity": {"state": "NOT_SUPPORTED"},
-        "warning_severity": {"state": "ENABLED"}
-      },
-      "configurable_parameters": null,
-      "ext_id": "00065ea6-bab3-6489-0000-000000028f57",
-      "is_enabled": true,
-      "schedule_interval_seconds": null
+        "alert_config": {
+            "auto_resolve": "ENABLED",
+            "critical_severity": {
+                "state": "ENABLED",
+                "threshold_parameters": null
+            },
+            "info_severity": {
+                "state": "DISABLED",
+                "threshold_parameters": null
+            },
+            "warning_severity": {
+                "state": "ENABLED",
+                "threshold_parameters": null
+            }
+        },
+        "configurable_parameters": null,
+        "ext_id": "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258",
+        "is_enabled": true,
+        "last_modified_by_user": "admin",
+        "last_modified_time": "2026-07-20T12:30:00Z",
+        "links": null,
+        "schedule_interval_seconds": 600,
+        "tenant_id": null
     }
 
 changed:

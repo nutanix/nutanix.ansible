@@ -1,6 +1,12 @@
 ---
 # Summary:
-# Update System-Defined Alert policy cluster configuration.
+# This playbook will do:
+# 1. Update System-Defined policy cluster configuration
+# 2. List cluster configs for a System-Defined Alert Policy
+# 3. List cluster configs with filter
+# 4. List cluster configs with limit
+# 5. List all cluster configs with fetch_all
+# 6. Get a cluster config using system_defined_policy_ext_id and ext_id
 
 - name: System-Defined policy cluster configuration playbook
   hosts: localhost
@@ -29,6 +35,31 @@
             state: ENABLED
       register: result
 
-    - name: Print updated cluster configuration
-      ansible.builtin.debug:
-        msg: "{{ result }}"
+    - name: List cluster configs for a System-Defined Alert Policy
+      nutanix.ncp.ntnx_system_defined_policy_cluster_configs_info_v2:
+        system_defined_policy_ext_id: "{{ system_defined_policy_ext_id }}"
+      register: cluster_configs_list
+
+    - name: List cluster configs with filter
+      nutanix.ncp.ntnx_system_defined_policy_cluster_configs_info_v2:
+        system_defined_policy_ext_id: "{{ system_defined_policy_ext_id }}"
+        filter: "extId eq '{{ cluster_config_ext_id }}'"
+      register: cluster_configs_filter
+
+    - name: List cluster configs with limit
+      nutanix.ncp.ntnx_system_defined_policy_cluster_configs_info_v2:
+        system_defined_policy_ext_id: "{{ system_defined_policy_ext_id }}"
+        limit: 1
+      register: cluster_configs_limit
+
+    - name: List all cluster configs with fetch_all
+      nutanix.ncp.ntnx_system_defined_policy_cluster_configs_info_v2:
+        system_defined_policy_ext_id: "{{ system_defined_policy_ext_id }}"
+        fetch_all: true
+      register: cluster_configs_fetch_all
+
+    - name: Get a cluster config using system_defined_policy_ext_id and ext_id
+      nutanix.ncp.ntnx_system_defined_policy_cluster_configs_info_v2:
+        system_defined_policy_ext_id: "{{ system_defined_policy_ext_id }}"
+        ext_id: "{{ cluster_config_ext_id }}"
+      register: cluster_config_get

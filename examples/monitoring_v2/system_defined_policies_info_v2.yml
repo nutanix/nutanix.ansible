@@ -6,9 +6,6 @@
 # 3. List System-Defined Alert Policies with limit
 # 4. List all System-Defined Alert Policies with fetch_all
 # 5. Get a System-Defined Alert Policy using ext_id
-# 6. List cluster configs for a System-Defined Alert Policy
-# 7. List cluster configs with filter and limit
-# 8. Get a cluster config using system_defined_policy_ext_id and ext_id
 
 - name: System-Defined Alert Policies info playbook
   hosts: localhost
@@ -23,7 +20,6 @@
     - name: Set variables
       ansible.builtin.set_fact:
         system_defined_policy_ext_id: "<system_defined_policy_ext_id>"
-        cluster_config_ext_id: "<cluster_config_ext_id>"
 
     - name: List all System-Defined Alert Policies
       nutanix.ncp.ntnx_system_defined_policies_info_v2:
@@ -48,32 +44,3 @@
       nutanix.ncp.ntnx_system_defined_policies_info_v2:
         ext_id: "{{ system_defined_policy_ext_id }}"
       register: get_result
-
-    - name: List cluster configs for a System-Defined Alert Policy
-      nutanix.ncp.ntnx_system_defined_policy_cluster_configs_info_v2:
-        system_defined_policy_ext_id: "{{ system_defined_policy_ext_id }}"
-      register: cluster_configs_list
-
-    - name: List cluster configs with filter
-      nutanix.ncp.ntnx_system_defined_policy_cluster_configs_info_v2:
-        system_defined_policy_ext_id: "{{ system_defined_policy_ext_id }}"
-        filter: "extId eq '{{ cluster_config_ext_id }}'"
-      register: cluster_configs_filter
-
-    - name: List cluster configs with limit
-      nutanix.ncp.ntnx_system_defined_policy_cluster_configs_info_v2:
-        system_defined_policy_ext_id: "{{ system_defined_policy_ext_id }}"
-        limit: 1
-      register: cluster_configs_limit
-
-    - name: List all cluster configs with fetch_all
-      nutanix.ncp.ntnx_system_defined_policy_cluster_configs_info_v2:
-        system_defined_policy_ext_id: "{{ system_defined_policy_ext_id }}"
-        fetch_all: true
-      register: cluster_configs_fetch_all
-
-    - name: Get a cluster config using system_defined_policy_ext_id and ext_id
-      nutanix.ncp.ntnx_system_defined_policy_cluster_configs_info_v2:
-        system_defined_policy_ext_id: "{{ system_defined_policy_ext_id }}"
-        ext_id: "{{ cluster_config_ext_id }}"
-      register: cluster_config_get
