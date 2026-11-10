@@ -22,7 +22,7 @@
     original_config: "{{ result.response }}"
   when:
     - result.response is defined
-    - result.failed == false
+    - not result.failed
 
 - name: Update alert email configuration with check mode enabled
   nutanix.ncp.ntnx_alert_email_configuration_v2:
