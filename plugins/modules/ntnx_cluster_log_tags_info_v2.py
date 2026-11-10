@@ -114,9 +114,11 @@ response:
   sample:
     [
       {
-        "description": "Acropolis logs",
-        "ext_id": "acropolis",
-        "name": "acropolis"
+        "description": "Acropolis log files",
+        "ext_id": "93eef4ed-1c91-4a04-3ff9-41e0c4c3a313",
+        "links": null,
+        "name": "acropolis",
+        "tenant_id": null
       }
     ]
 

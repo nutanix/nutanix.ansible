@@ -394,6 +394,11 @@ response:
     returned: always
     sample:
         {
+            "alert_config": {
+              "auto_resolve": "ENABLED",
+              "critical_severity": {"state": "ENABLED"},
+              "warning_severity": {"state": "ENABLED"}
+            },
             "ext_id": "00061de6-4a87-6b06-185b-ac1f6b6f97e2",
             "is_enabled": true,
             "schedule_interval_seconds": 3600

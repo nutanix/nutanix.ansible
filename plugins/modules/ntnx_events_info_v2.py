@@ -99,10 +99,12 @@ response:
   type: dict
   sample:
     {
-      "event_type": "MulticlusterAudit",
-      "ext_id": "32632d45-b7f8-4969-b284-c01c032f7c33",
-      "operation_type": "CREATE",
-      "title": "Password changed for user admin"
+      "cluster_name": "auto_cluster_prod_f6d9437390a9",
+      "cluster_uuid": "00065ea6-bab3-6489-0000-000000028f57",
+      "creation_time": "2026-10-25T12:09:44.195874+00:00",
+      "event_type": "ContainerAudit",
+      "ext_id": "666dddba-65aa-4f0d-8293-78ac871758a2",
+      "message": "Added Storage Container flow_data to storage pool default-storage-pool-167767"
     }
 
 changed:

@@ -169,10 +169,13 @@ response:
     returned: always
     sample:
         {
-            "is_enabled": true,
+            "alert_email_digest_send_time": "00:00",
+            "alert_email_digest_send_timezone": "UTC",
+            "default_nutanix_email": "nos-alerts@nutanix.com",
+            "email_contact_list": ["alerts@example.com"],
             "has_default_nutanix_email": false,
             "is_email_digest_enabled": true,
-            "email_contact_list": ["alerts@example.com"]
+            "is_enabled": true
         }
 changed:
     description: This indicates whether the task resulted in any changes

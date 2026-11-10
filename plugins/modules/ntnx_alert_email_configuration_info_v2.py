@@ -57,8 +57,17 @@ response:
   type: dict
   sample:
     {
-      "default_nutanix_email": "noreply@nutanix.com",
-      "is_email_digest_enabled": false,
+      "alert_email_digest_send_time": "00:00",
+      "alert_email_digest_send_timezone": "UTC",
+      "default_nutanix_email": "nos-alerts@nutanix.com",
+      "email_contact_list": null,
+      "email_template": {
+        "body_suffix": null,
+        "subject_prefix": null
+      },
+      "has_default_nutanix_email": false,
+      "is_email_digest_enabled": true,
+      "is_empty_alert_email_digest_skipped": true,
       "is_enabled": true
     }
 

@@ -110,9 +110,15 @@ response:
   type: dict
   sample:
     {
-      "ext_id": "15e5a7d0-c007-42ac-82c0-7d1a6d542678",
+      "alert_config": {
+        "auto_resolve": "ENABLED",
+        "critical_severity": {"state": "NOT_SUPPORTED"},
+        "warning_severity": {"state": "ENABLED"}
+      },
+      "configurable_parameters": null,
+      "ext_id": "00065ea6-bab3-6489-0000-000000028f57",
       "is_enabled": true,
-      "schedule_interval_seconds": 3600
+      "schedule_interval_seconds": null
     }
 
 changed:

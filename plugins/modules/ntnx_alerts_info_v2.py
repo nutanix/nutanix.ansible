@@ -138,12 +138,14 @@ response:
   type: dict
   sample:
     {
-      "alert_type": "A1074",
-      "ext_id": "af3a40be-d079-454a-968a-9903d1bf0549",
-      "is_acknowledged": false,
-      "is_resolved": false,
-      "severity": "INFO",
-      "title": "Storage Container Replication Factor Low"
+      "alert_type": "A802005",
+      "cluster_uuid": "c54feb73-6b69-4d70-ace4-7df5bae94e1f",
+      "creation_time": "2026-11-10T01:56:42.850645+00:00",
+      "ext_id": "bb9f7753-2492-4b64-98d3-cfef0ca60fff",
+      "is_acknowledged": true,
+      "is_resolved": true,
+      "severity": "CRITICAL",
+      "title": "Network gateway gw_ansible_izvwiHdzjnCJ_all is down"
     }
 
 changed:

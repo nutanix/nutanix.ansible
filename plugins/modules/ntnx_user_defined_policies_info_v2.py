@@ -99,9 +99,25 @@ response:
   type: dict
   sample:
     {
-      "ext_id": "701bcb62-de3c-4f24-aec9-dd9de450d3ac",
+      "created_by": "admin",
+      "description": "Sample UDA for docs",
+      "entity_type": "vm",
+      "ext_id": "8101e53a-ccfa-4c36-81e7-c818a0f6873f",
+      "is_auto_resolved": true,
       "is_enabled": true,
-      "title": "VM CPU Usage"
+      "title": "ansible-sample-92174",
+      "trigger_conditions": [
+        {
+          "condition": {
+            "metric_name": "hypervisor_cpu_usage_ppm",
+            "operator": "GREATER_THAN",
+            "threshold_value": {"int_value": 80}
+          },
+          "condition_type": "STATIC_THRESHOLD",
+          "severity_level": "CRITICAL"
+        }
+      ],
+      "trigger_wait_period": 600
     }
 
 changed:

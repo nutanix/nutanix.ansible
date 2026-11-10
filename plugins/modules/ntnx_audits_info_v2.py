@@ -99,10 +99,12 @@ response:
   type: dict
   sample:
     {
-      "audit_type": "CategoryAudit",
-      "ext_id": "f92b961e-6f0e-4c1c-b6de-36e328396c9e",
+      "audit_type": "IAMAdministrationEventAudit",
+      "creation_time": "2026-11-10T08:45:10.905533+00:00",
+      "ext_id": "235dfdc9-0524-43ea-5343-e5242624a911",
+      "message": "Token for user admin from 10.100.0.24 has been created",
       "operation_type": "CREATE",
-      "title": "Powered on VM"
+      "title": "Token for user admin from 10.100.0.24 has been created"
     }
 
 changed:

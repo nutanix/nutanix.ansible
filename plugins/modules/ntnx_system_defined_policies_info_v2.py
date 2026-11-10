@@ -99,10 +99,14 @@ response:
   type: dict
   sample:
     {
-      "ext_id": "111053",
-      "name": "AHV Crash File Check",
-      "policy_id": "A111053",
-      "title": "Recent AHV Crash File Detected"
+      "description": "Check that .dvsData directory is present on pynfs mounted local datastore",
+      "entity_type": "HOST",
+      "ext_id": "106439",
+      "impact_types": ["CONFIGURATION"],
+      "name": ".dvsData directory in local datastore",
+      "policy_id": "A106439",
+      "title": ".dvsData directory not present on pynfs mounted local datastore",
+      "type": "HEALTH_CHECK"
     }
 
 changed:
