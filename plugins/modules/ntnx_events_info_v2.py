@@ -99,12 +99,34 @@ response:
   type: dict
   sample:
     {
-      "cluster_name": "auto_cluster_prod_f6d9437390a9",
-      "cluster_uuid": "00065ea6-bab3-6489-0000-000000028f57",
-      "creation_time": "2026-10-25T12:09:44.195874+00:00",
+      "affected_entities": null,
+      "classifications": ["Storage", "UserAction"],
+      "cluster_name": "auto_cluster_prod_36acf9b012ca",
+      "cluster_uuid": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2",
+      "creation_time": "2026-07-20T13:53:20.211796+00:00",
       "event_type": "ContainerAudit",
-      "ext_id": "666dddba-65aa-4f0d-8293-78ac871758a2",
-      "message": "Added Storage Container flow_data to storage pool default-storage-pool-167767"
+      "ext_id": "fe096096-df86-48df-a75a-1fffa525aa0a",
+      "links": null,
+      "message": "Marked Storage Container {container_name} for removal",
+      "metric_details": null,
+      "operation_type": null,
+      "parameters": [
+          {
+              "param_name": "container_name",
+              "param_value": {
+                  "string_value": "ansible_storage_container_example_updated"
+              }
+          },
+          {
+              "param_name": "audit_user",
+              "param_value": {"string_value": "admin"}
+          }
+      ],
+      "service_name": null,
+      "source_cluster_uuid": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2",
+      "source_entity": null,
+      "tenant_id": null,
+      "title": "Marked Storage Container ansible_storage_container_example_updated for removal"
     }
 
 changed:
