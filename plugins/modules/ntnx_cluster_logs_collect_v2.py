@@ -427,7 +427,6 @@ response:
     sample:
         {
             "ext_id": "ZXJnb24=:1a1a1a1a-2b2b-3c3c-4d4d-5e5e5e5e5e5e",
-            "status": "SUCCEEDED"
         }
 task_ext_id:
     description: The external ID of the task.
@@ -710,7 +709,6 @@ def run_module():
         "changed": False,
         "response": None,
         "failed": False,
-        "ext_id": None,
     }
     api_instance = get_cluster_logs_api_instance(module)
     collect_logs(module, result, api_instance)
