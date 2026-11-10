@@ -22,10 +22,16 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get alert by ext_id) -
-      Required Roles: Account Owner, Administrator, Disaster Recovery Admin, Disaster Recovery Viewer, Files Admin, Files Viewer, Flow Admin, Flow Policy Author, Flow Viewer, Monitoring Admin, Monitoring Viewer, NCM Connector, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Tenant Admin, Tenant Consumer
+      Required Roles: Account Owner, Administrator, Disaster Recovery Admin, Disaster Recovery Viewer,
+      Files Admin, Files Viewer, Flow Admin, Flow Policy Author, Flow Viewer, Monitoring Admin,
+      Monitoring Viewer, NCM Connector, Prism Admin, Prism Viewer, Project Admin, Project Manager,
+      Super Admin, Tenant Admin, Tenant Consumer
     - >-
       B(List all the alerts) -
-      Required Roles: Account Owner, Administrator, Disaster Recovery Admin, Disaster Recovery Viewer, Files Admin, Files Viewer, Flow Admin, Flow Policy Author, Flow Viewer, Monitoring Admin, Monitoring Viewer, NCM Connector, Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Tenant Admin, Tenant Consumer
+      Required Roles: Account Owner, Administrator, Disaster Recovery Admin, Disaster Recovery Viewer,
+      Files Admin, Files Viewer, Flow Admin, Flow Policy Author, Flow Viewer, Monitoring Admin,
+      Monitoring Viewer, NCM Connector, Prism Admin, Prism Viewer, Project Admin, Project Manager,
+      Super Admin, Tenant Admin, Tenant Consumer
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=monitoring)"
 options:
   ext_id:

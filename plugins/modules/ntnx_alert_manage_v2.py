@@ -21,7 +21,8 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Update Alert) -
-      Required Roles: Account Owner, Administrator, Files Admin, Monitoring Admin, NCM Connector, Prism Admin, Project Admin, Project Manager, Super Admin, Tenant Admin
+      Required Roles: Account Owner, Administrator, Files Admin, Monitoring Admin, NCM Connector,
+      Prism Admin, Project Admin, Project Manager, Super Admin, Tenant Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=monitoring)"
 options:
     state:
