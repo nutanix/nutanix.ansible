@@ -1,1 +1,2 @@
-dependencies: []
+dependencies:
+  - prepare_env
