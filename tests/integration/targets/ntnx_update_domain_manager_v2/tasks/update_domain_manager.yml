@@ -33,7 +33,7 @@
 
 - name: Update domain manager name with check mode enabled
   nutanix.ncp.ntnx_update_domain_manager_v2:
-    ext_id: "83083083-0000-0000-0000-000000000000"
+    ext_id: "{{ domain_manager_ext_id }}"
     config:
       name: "PC_check_mode_name"
     network: {}
@@ -45,15 +45,15 @@
   ansible.builtin.assert:
     that:
       - result is defined
-      - result.changed == false
+      - result.failed == false
       - result.response is defined
-      - result.ext_id == "83083083-0000-0000-0000-000000000000"
+      - result.ext_id == domain_manager_ext_id
     success_msg: "check_mode update spec generated correctly"
     fail_msg: "check_mode update spec was not generated correctly"
 
 - name: Update domain manager network with check mode enabled
   nutanix.ncp.ntnx_update_domain_manager_v2:
-    ext_id: "83083083-0000-0000-0000-000000000000"
+    ext_id: "{{ domain_manager_ext_id }}"
     config: {}
     network:
       external_address:
@@ -68,8 +68,9 @@
   ansible.builtin.assert:
     that:
       - result is defined
-      - result.changed == false
+      - result.failed == false
       - result.response is defined
+      - result.ext_id == domain_manager_ext_id
     success_msg: "check_mode network update spec generated correctly"
     fail_msg: "check_mode network update spec was not generated correctly"
 

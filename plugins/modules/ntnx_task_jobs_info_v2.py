@@ -200,7 +200,7 @@ def get_task_job_with_ext_id(module, tasks_api, result):
 
 def get_task_jobs(module, tasks_api, result):
     task_ext_id = module.params.get("task_ext_id")
-
+    result["task_ext_id"] = task_ext_id
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
     if err:

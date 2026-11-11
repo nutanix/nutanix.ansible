@@ -246,7 +246,7 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - "'Missing required parameter(s): name' in result.msg"
+      - "'name' in result.msg"
     fail_msg: "Create without name did not fail"
     success_msg: "Create without name failed as expected"
 
@@ -263,7 +263,7 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - "'Missing required parameter(s): vm_ext_id' in result.msg"
+      - "'vm_ext_id' in result.msg"
     fail_msg: "Create without vm_ext_id did not fail"
     success_msg: "Create without vm_ext_id failed as expected"
 

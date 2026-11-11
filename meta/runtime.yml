@@ -485,3 +485,10 @@ action_groups:
     - ntnx_user_defined_policies_v2
     - ntnx_user_defined_policies_info_v2
     - ntnx_user_defined_policies_conflicts_v2
+    - ntnx_cluster_data_stores_v2
+    - ntnx_cluster_disk_v2
+    - ntnx_external_storages_v2
+    - ntnx_patched_images_v2
+    - ntnx_product_v2
+    - ntnx_traffic_mirror_stats_info_v2
+    - ntnx_volume_group_category_v2
