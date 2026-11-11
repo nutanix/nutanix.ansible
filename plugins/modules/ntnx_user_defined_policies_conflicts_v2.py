@@ -463,7 +463,8 @@ def find_conflicting_uda_policies(module, api_instance, result):
         )
 
     resp = strip_internal_attributes(resp.to_dict())
-    total_available_results = resp.get("metadata").get("total_available_results")
+    metadata = resp.get("metadata") or {}
+    total_available_results = metadata.get("total_available_results")
     result["total_available_results"] = total_available_results
     resp = resp.get("data")
 
