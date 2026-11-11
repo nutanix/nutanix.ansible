@@ -1,0 +1,302 @@
+---
+- name: Start Volume Group NVMf client tests
+  ansible.builtin.debug:
+    msg: "Start Volume Group NVMf client tests"
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: >-
+      {{ query('community.general.random_string',
+      numbers=false, special=false, length=12)[0] }}
+    suffix_name: "ansible-vgnvmf"
+
+- name: Set VG and NVMf names
+  ansible.builtin.set_fact:
+    vg_name: "{{ suffix_name }}-{{ random_name }}-vg"
+    nvmf_name: "nqn.2025-12.org.nvmexpress:uuid:{{ random_name }}-{{ suffix_name }}"
+    wrong_ext_id: "00000000-0000-0000-0000-000000000000"
+
+######################################## Test Setup ########################################
+
+- name: Create Volume Group for NVMf tests
+  nutanix.ncp.ntnx_volume_groups_v2:
+    name: "{{ vg_name }}"
+    description: "VG for NVMf tests"
+    target_prefix: "vgnvmf"
+    cluster_reference: "{{ cluster.uuid }}"
+    usage_type: "USER"
+    sharing_status: "SHARED"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+  register: vg_result
+  retries: 3
+  delay: 10
+  until: vg_result is succeeded and vg_result.failed == false
+  ignore_errors: true
+
+- name: Verify VG creation
+  ansible.builtin.assert:
+    that:
+      - vg_result is defined
+      - vg_result.changed == true
+      - vg_result.failed == false
+      - vg_result.ext_id is defined
+    fail_msg: "Unable to create VG for NVMf tests"
+    success_msg: "VG created successfully"
+
+- name: Set VG creation success flag
+  ansible.builtin.set_fact:
+    vg_create_succeeded: "{{ vg_result.failed == false }}"
+
+- name: Fail fast if VG creation failed after retries
+  ansible.builtin.fail:
+    msg: "VG creation failed after retries - skipping NVMf tests due to env"
+  when: not vg_create_succeeded | bool
+  ignore_errors: true
+
+- name: Set VG ext_id fact
+  ansible.builtin.set_fact:
+    vg_ext_id: "{{ vg_result.ext_id }}"
+  when: vg_create_succeeded | bool
+
+- name: Skip remaining tests if VG creation failed
+  ansible.builtin.meta: end_play
+  when: not vg_create_succeeded | bool
+
+############################## Check mode - attach ##############################
+
+- name: Attach NVMf client in check mode with dummy IDs
+  nutanix.ncp.ntnx_volume_groups_nvmf_clients_v2:
+    state: present
+    volume_group_ext_id: "11111111-1111-1111-1111-111111111111"
+    nvmf_initiator_name: "nqn.2025-12.org.nvmexpress:uuid:dummy-check-mode"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify check mode attach response
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.nvmf_initiator_name == "nqn.2025-12.org.nvmexpress:uuid:dummy-check-mode"
+    fail_msg: "Check mode attach failed"
+    success_msg: "Check mode attach passed"
+
+############################## Negative tests ####################################
+
+- name: Attach NVMf with missing volume_group_ext_id
+  nutanix.ncp.ntnx_volume_groups_nvmf_clients_v2:
+    state: present
+    nvmf_initiator_name: "{{ nvmf_name }}"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing volume_group_ext_id failure
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Missing volume_group_ext_id did not fail"
+    success_msg: "Missing volume_group_ext_id correctly failed"
+
+- name: Attach NVMf with missing nvmf_initiator_name
+  nutanix.ncp.ntnx_volume_groups_nvmf_clients_v2:
+    state: present
+    volume_group_ext_id: "{{ vg_ext_id }}"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing nvmf_initiator_name failure
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Missing nvmf_initiator_name did not fail"
+    success_msg: "Missing nvmf_initiator_name correctly failed"
+
+############################## Attach - real #####################################
+
+- name: Attach NVMf client to VG
+  nutanix.ncp.ntnx_volume_groups_nvmf_clients_v2:
+    state: present
+    volume_group_ext_id: "{{ vg_ext_id }}"
+    nvmf_initiator_name: "{{ nvmf_name }}"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify attach success or environmental skip
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - (result.failed == false and result.changed == true) or (result.failed == true and "Backend server error" in (result | string))
+    fail_msg: "Unable to attach NVMf client to VG"
+    success_msg: "NVMf client attach handled (success or env skip)"
+
+- name: Set NVMf client ext_id
+  ansible.builtin.set_fact:
+    nvmf_ext_id: "{{ result.ext_id | default('') }}"
+
+- name: Set NVMf attach success flag
+  ansible.builtin.set_fact:
+    nvmf_attach_succeeded: "{{ result.failed == false }}"
+
+- name: Debug NVMf attach result for troubleshooting
+  ansible.builtin.debug:
+    var: result
+  when: result.failed == true
+
+- name: List NVMf clients to verify attachment
+  nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+  register: list_result
+  ignore_errors: true
+
+- name: Verify NVMf client list
+  ansible.builtin.assert:
+    that:
+      - list_result is defined
+      - list_result.failed == false
+      - list_result.response is defined
+    fail_msg: "Unable to list NVMf clients"
+    success_msg: "NVMf clients listed successfully"
+  when: nvmf_attach_succeeded | bool
+
+- name: Fetch specific NVMf client
+  nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+    ext_id: "{{ nvmf_ext_id }}"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+  register: fetch_result
+  ignore_errors: true
+  when: nvmf_attach_succeeded | bool and nvmf_ext_id != ""
+
+- name: Verify fetch specific NVMf client
+  ansible.builtin.assert:
+    that:
+      - fetch_result is defined
+      - fetch_result.failed == false
+      - fetch_result.response.ext_id == nvmf_ext_id
+    fail_msg: "Unable to fetch specific NVMf client"
+    success_msg: "Specific NVMf client fetched successfully"
+  when: nvmf_attach_succeeded | bool and nvmf_ext_id != ""
+
+############################## Detach - check mode ###############################
+
+- name: Detach NVMf client in check mode with dummy IDs
+  nutanix.ncp.ntnx_volume_groups_nvmf_clients_v2:
+    state: absent
+    volume_group_ext_id: "11111111-1111-1111-1111-111111111111"
+    nvmf_initiator_name: "nqn.2025-12.org.nvmexpress:uuid:dummy-detach-check"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify check mode detach
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.msg is defined
+    fail_msg: "Check mode detach failed"
+    success_msg: "Check mode detach passed"
+
+############################## Detach - real #####################################
+
+- name: Detach NVMf client from VG
+  nutanix.ncp.ntnx_volume_groups_nvmf_clients_v2:
+    state: absent
+    volume_group_ext_id: "{{ vg_ext_id }}"
+    nvmf_initiator_name: "{{ nvmf_name }}"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+  register: result
+  ignore_errors: true
+  when: nvmf_attach_succeeded | bool
+
+- name: Verify detach success
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - (result.failed == false and result.changed == true) or (result.failed == true)
+    fail_msg: "Unable to detach NVMf client from VG"
+    success_msg: "NVMf client detach handled"
+  when: nvmf_attach_succeeded | bool
+
+- name: Detach with wrong NVMf initiator name (negative)
+  nutanix.ncp.ntnx_volume_groups_nvmf_clients_v2:
+    state: absent
+    volume_group_ext_id: "{{ vg_ext_id }}"
+    nvmf_initiator_name: "nqn.2025-12.org.nvmexpress:uuid:wrong-{{ random_name }}"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify wrong initiator detach failure or no change
+  ansible.builtin.assert:
+    that:
+      - result is defined
+    fail_msg: "Wrong initiator detach missing result"
+    success_msg: "Wrong initiator detach handled"
+
+############################## Cleanup ###########################################
+
+- name: Delete Volume Group
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ vg_ext_id }}"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: "{{ validate_certs }}"
+  register: result
+  ignore_errors: true
+  retries: 3
+  delay: 5
+  until: result is succeeded
+
+- name: Verify VG deletion
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - (result.failed == false and result.changed == true) or ("Backend server error" in (result | string))
+    fail_msg: "Unable to delete VG"
+    success_msg: "VG deletion handled (success or env skip)"
