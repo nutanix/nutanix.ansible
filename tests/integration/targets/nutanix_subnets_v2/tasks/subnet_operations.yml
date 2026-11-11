@@ -193,6 +193,26 @@
   ansible.builtin.set_fact:
     result: "{{ result.response[0] }}"
 
+
+########################################################################
+
+- name: List all subnets with fetch_all
+  nutanix.ncp.ntnx_subnets_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_subnets_info_v2
+  ignore_errors: true
+
+- name: List all subnets with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_subnets_info_v2.changed == false
+      - fetch_all_ntnx_subnets_info_v2.failed == false
+      - fetch_all_ntnx_subnets_info_v2.response is defined
+      - fetch_all_ntnx_subnets_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_subnets_info_v2.response | default([]) | length) == (fetch_all_ntnx_subnets_info_v2.total_available_results | int)
+    fail_msg: "Unable to list all subnets with fetch_all"
+    success_msg: "Listed all subnets with fetch_all successfully"
+
 - name: Creation Status
   ansible.builtin.assert:
     that:
@@ -289,6 +309,28 @@
 - name: Adding subnet external ID to delete list
   ansible.builtin.set_fact:
     todelete: "{{ todelete + [  ext_id ] }}"
+
+################################################################
+
+- name: Update VLAN subnet with IPAM
+  nutanix.ncp.ntnx_subnets_v2:
+    state: present
+    name: "{{ subnet_name }}_2_updated_ipam"
+    ext_id: "{{ ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Update Status for VLAN subnet with IPAM
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.ext_id is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ subnet_name }}_2_updated_ipam"
+      - result.response.ip_config.0.ipv4.ip_subnet.ip.value == "{{ ip_address_management.network_ip }}"
+    fail_msg: " Unable to update VLAN subnet with IPAM "
+    success_msg: " VLAN subnet with IPAM updated successfully "
 
 ################################################################
 

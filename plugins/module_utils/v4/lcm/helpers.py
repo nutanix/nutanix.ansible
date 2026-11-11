@@ -66,3 +66,25 @@ def get_lcm_entity(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching entity info using external identifier of the entity",
         )
+
+
+def get_lcm_bundle(module, api_instance, ext_id):
+    """
+    This method will return LCM bundle info using external identifier of the bundle.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): LCM Bundles api instance
+        ext_id (str): External id of the LCM bundle
+    Returns:
+        bundle_info (object): LCM bundle info
+    """
+    try:
+        return api_instance.get_bundle_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching LCM bundle info using ext_id {0}".format(
+                ext_id
+            ),
+        )
