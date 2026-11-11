@@ -51,10 +51,9 @@
     vg_create_succeeded: "{{ vg_result.failed == false }}"
 
 - name: Fail fast if VG creation failed after retries
-  ansible.builtin.fail:
+  ansible.builtin.debug:
     msg: "VG creation failed after retries - skipping NVMf tests due to env"
   when: not vg_create_succeeded | bool
-  ignore_errors: true
 
 - name: Set VG ext_id fact
   ansible.builtin.set_fact:
@@ -93,7 +92,7 @@
 
 ############################## Negative tests ####################################
 
-- name: Attach NVMf with missing volume_group_ext_id
+- name: Attach NVMf with missing volume_group_ext_id # noqa args[module]
   nutanix.ncp.ntnx_volume_groups_nvmf_clients_v2:
     state: present
     nvmf_initiator_name: "{{ nvmf_name }}"
@@ -102,18 +101,19 @@
     nutanix_password: "{{ password }}"
     validate_certs: "{{ validate_certs }}"
   register: result
-  ignore_errors: true
+  failed_when: false
 
 - name: Verify missing volume_group_ext_id failure
   ansible.builtin.assert:
     that:
       - result is defined
-      - result.failed == true
+      - result.failed == false
       - result.changed == false
+      - "'missing required arguments: volume_group_ext_id' in result.msg"
     fail_msg: "Missing volume_group_ext_id did not fail"
     success_msg: "Missing volume_group_ext_id correctly failed"
 
-- name: Attach NVMf with missing nvmf_initiator_name
+- name: Attach NVMf with missing nvmf_initiator_name # noqa args[module]
   nutanix.ncp.ntnx_volume_groups_nvmf_clients_v2:
     state: present
     volume_group_ext_id: "{{ vg_ext_id }}"
@@ -122,14 +122,15 @@
     nutanix_password: "{{ password }}"
     validate_certs: "{{ validate_certs }}"
   register: result
-  ignore_errors: true
+  failed_when: false
 
 - name: Verify missing nvmf_initiator_name failure
   ansible.builtin.assert:
     that:
       - result is defined
-      - result.failed == true
+      - result.failed == false
       - result.changed == false
+      - "'missing required arguments: nvmf_initiator_name' in result.msg"
     fail_msg: "Missing nvmf_initiator_name did not fail"
     success_msg: "Missing nvmf_initiator_name correctly failed"
 
@@ -166,7 +167,7 @@
 - name: Debug NVMf attach result for troubleshooting
   ansible.builtin.debug:
     var: result
-  when: result.failed == true
+  when: result.failed
 
 - name: List NVMf clients to verify attachment
   nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:

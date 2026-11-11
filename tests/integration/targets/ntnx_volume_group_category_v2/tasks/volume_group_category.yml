@@ -104,7 +104,7 @@
 
 ############################## Negative tests ####################################
 
-- name: Associate category with missing ext_id
+- name: Associate category with missing ext_id # noqa args[module]
   nutanix.ncp.ntnx_volume_group_category_v2:
     state: present
     categories:
@@ -126,7 +126,7 @@
     fail_msg: "Missing ext_id did not fail as expected"
     success_msg: "Missing ext_id correctly failed"
 
-- name: Associate category with missing categories
+- name: Associate category with missing categories # noqa args[module]
   nutanix.ncp.ntnx_volume_group_category_v2:
     state: present
     ext_id: "{{ vg_ext_id }}"

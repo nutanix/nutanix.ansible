@@ -165,7 +165,7 @@
 
 ############################## Negative tests ####################################
 
-- name: Associate with missing ext_id
+- name: Associate with missing ext_id # noqa args[module]
   nutanix.ncp.ntnx_nic_profiles_association_v2:
     state: present
     host_nic_ext_id: "{{ host_nic_ext_id }}"
@@ -185,7 +185,7 @@
     fail_msg: "Missing ext_id did not fail"
     success_msg: "Missing ext_id correctly failed"
 
-- name: Associate with missing host_nic_ext_id
+- name: Associate with missing host_nic_ext_id # noqa args[module]
   nutanix.ncp.ntnx_nic_profiles_association_v2:
     state: present
     ext_id: "{{ nic_profile_ext_id }}"

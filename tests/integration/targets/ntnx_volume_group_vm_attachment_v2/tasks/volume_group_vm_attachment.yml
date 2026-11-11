@@ -111,7 +111,7 @@
 
 ############################## Negative tests ####################################
 
-- name: Attach VM with missing volume_group_ext_id
+- name: Attach VM with missing volume_group_ext_id # noqa args[module]
   nutanix.ncp.ntnx_volume_group_vm_attachment_v2:
     state: present
     ext_id: "{{ vm_ext_id }}"
@@ -131,7 +131,7 @@
     fail_msg: "Missing volume_group_ext_id did not fail"
     success_msg: "Missing volume_group_ext_id correctly failed"
 
-- name: Attach VM with missing ext_id
+- name: Attach VM with missing ext_id # noqa args[module]
   nutanix.ncp.ntnx_volume_group_vm_attachment_v2:
     state: present
     volume_group_ext_id: "{{ vg_ext_id }}"

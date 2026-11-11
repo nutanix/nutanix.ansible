@@ -102,7 +102,7 @@
 
 ############################## Negative tests ####################################
 
-- name: Attach iSCSI with missing volume_group_ext_id
+- name: Attach iSCSI with missing volume_group_ext_id # noqa args[module]
   nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments_v2:
     state: present
     iscsi_initiator_name: "{{ iscsi_name }}"
@@ -111,18 +111,19 @@
     nutanix_password: "{{ password }}"
     validate_certs: "{{ validate_certs }}"
   register: result
-  ignore_errors: true
+  failed_when: false
 
 - name: Verify missing volume_group_ext_id failure
   ansible.builtin.assert:
     that:
       - result is defined
-      - result.failed == true
+      - result.failed == false
       - result.changed == false
+      - "'missing required arguments: volume_group_ext_id' in result.msg"
     fail_msg: "Missing volume_group_ext_id did not fail"
     success_msg: "Missing volume_group_ext_id correctly failed"
 
-- name: Detach iSCSI with missing ext_id
+- name: Detach iSCSI with missing ext_id # noqa args[module]
   nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments_v2:
     state: absent
     volume_group_ext_id: "{{ vg_ext_id }}"
