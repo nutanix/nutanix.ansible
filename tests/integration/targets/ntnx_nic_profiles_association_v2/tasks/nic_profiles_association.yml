@@ -79,12 +79,20 @@
 
 - name: Find SRIOV-capable host NIC
   ansible.builtin.set_fact:
-    sriov_nics: "{{ host_nics_info.response | selectattr('supported_capabilities', 'defined') | selectattr('supported_capabilities', 'contains', 'SRIOV') | list }}"
+    sriov_nics: >-
+      {{ host_nics_info.response
+      | selectattr('supported_capabilities', 'defined')
+      | selectattr('supported_capabilities', 'contains', 'SRIOV') | list }}
   when: has_host_nics | bool
 
 - name: Set NIC family for profile creation
   ansible.builtin.set_fact:
-    target_nic_family: "{{ (sriov_nics[0].pci_model_id if sriov_nics is defined and sriov_nics | length > 0 else host_nics_info.response[0].pci_model_id) if (has_host_nics | bool) else nic_profile.first_nic_profile_family }}"
+    target_nic_family: >-
+      {{ (sriov_nics[0].pci_model_id if sriov_nics is defined
+      and sriov_nics | length > 0
+      else host_nics_info.response[0].pci_model_id)
+      if (has_host_nics | bool)
+      else nic_profile.first_nic_profile_family }}
     target_capability: "SRIOV"
     has_sriov_nic: "{{ sriov_nics is defined and sriov_nics | length > 0 }}"
   when: has_host_nics | bool
@@ -221,7 +229,10 @@
   ansible.builtin.assert:
     that:
       - result is defined
-      - (result.failed == false and result.changed == true) or (result.failed == true and ("NETWORKING-10056" in (result | string) or "does not support" in (result | string)))
+      - >-
+        (result.failed == false and result.changed == true) or
+        (result.failed == true and ("NETWORKING-10056" in (result | string)
+        or "does not support" in (result | string)))
     fail_msg: "Unable to associate host NIC with NIC profile"
     success_msg: "Host NIC associate handled (success or env skip)"
   when: has_sriov_nic | bool
