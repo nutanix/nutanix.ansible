@@ -98,6 +98,27 @@ def get_restore_point(
         )
 
 
+def get_category(module, api_instance, ext_id, expand=None):
+    """
+    This method will return category info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: CategoriesApi instance from ntnx_prism_py_client sdk
+        ext_id (str): category external ID
+        expand (str): optional query param to expand the response with more details
+    return:
+        category_info (object): category info
+    """
+    try:
+        return api_instance.get_category_by_id(extId=ext_id, _expand=expand).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching category info using ext_id",
+        )
+
+
 def get_pc_task(
     module,
     api_instance,

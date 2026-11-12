@@ -60,6 +60,14 @@ EXAMPLES = r"""
     ext_id: '47ca25c3-9d27-4b94-b6b1-dfa5b25660b4'
   register: result
   ignore_errors: true
+
+- name: List all PBRs with fetch_all
+  nutanix.ncp.ntnx_pbrs_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 RETURN = r"""
 response:
@@ -143,6 +151,7 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -187,7 +196,10 @@ def get_pbrs(module, result):
         module.fail_json(msg="Failed generating pbrs info Spec", **result)
 
     try:
-        resp = pbrs.list_routing_policies(**kwargs)
+        resp = list_entities(
+            pbrs.list_routing_policies,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

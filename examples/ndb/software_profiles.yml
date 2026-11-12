@@ -1,6 +1,20 @@
 ---
 # Summary:
 # This playbook will perform below cases:
+# 1. Create software profile create spec
+# 2. Create software profile with base version and cluster instance topology. Replicate to multiple clusters
+# 3. Create software profile with base version and single instance topology
+# 4. Update software profile
+# 5. Create software profile version spec
+# 6. Create software profile version
+# 7. Create spec for update software profile version
+# 8. Update software profile version
+# 9. Publish software profile version
+# 10. Unpublish software profile version
+# 11. Deprecate software profile version
+# 12. Delete software profile version
+# 13. Replicate software profile
+# 14. Delete software profile
 #   1. Creation of software profile
 #   2. Update software profile
 #   3. Create, update and delete version
