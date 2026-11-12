@@ -112,13 +112,7 @@ def get_protected_resource_api_instance(module):
 
 def get_recovery_plan_actions_api_instance(module):
     """
-    This method will return a Recovery Plan Actions api instance.
-
-    The Recovery Plan Actions API exposes the recovery plan action endpoints
-    such as planned failover, unplanned failover, test failover, validate and
-    cleanup. It is reused by every module that triggers a recovery plan
-    action; keeping it here avoids duplicating the boiler-plate in each
-    module.
+    This method will return the Recovery Plan Actions API instance.
 
     Args:
         module (object): Ansible module object

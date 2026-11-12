@@ -146,8 +146,9 @@ RETURN = r"""
 response:
     description:
         - Response for the planned failover Recovery Plan action.
-        - Recovery Plan Job task details when C(wait) is true.
-        - Immediate task submission details when C(wait) is false.
+        - If C(wait) is C(true) (default) it contains the full task details after
+          completion, otherwise if C(wait) is C(false) it contains the initial task reference returned by
+          the create action.
     returned: always
     type: dict
     sample:
@@ -234,6 +235,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    validate_required_params,
 )
 
 SDK_IMP_ERROR = None
@@ -306,7 +308,7 @@ def planned_failover_recovery_plan(module, result, api_instance):
     """
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-
+    validate_required_params(module, ["ext_id", "name", "failover_directions"])
     sg = SpecGenerator(module)
     default_spec = data_protection_sdk.PlannedFailoverSpec()
     spec, err = sg.generate_spec(obj=default_spec)
