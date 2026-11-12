@@ -157,8 +157,7 @@ response:
     description:
         - Response for triggering the unplanned failover on a recovery plan.
         - When C(wait) is C(true) (default) it contains the full task details after
-          completion, otherwise if C(wait) is C(false) it contains the initial task reference returned by
-          the create action.
+          completion, otherwise if C(wait) is C(false) it contains the initial task reference returned after the unplanned failover action.
     returned: always
     type: dict
     sample:

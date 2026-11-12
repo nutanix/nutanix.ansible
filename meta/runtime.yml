@@ -496,3 +496,6 @@ action_groups:
     - ntnx_product_v2
     - ntnx_traffic_mirror_stats_info_v2
     - ntnx_volume_group_category_v2
+    - ntnx_validate_recovery_plan_v2
+    - ntnx_cleanup_recovery_plan_resources_v2
+    - ntnx_resume_protection_recovery_plan_v2
