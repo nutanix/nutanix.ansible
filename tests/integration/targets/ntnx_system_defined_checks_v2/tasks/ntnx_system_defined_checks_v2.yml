@@ -1,0 +1,111 @@
+---
+- name: Start ntnx_system_defined_checks_v2 tests
+  ansible.builtin.debug:
+    msg: "Starting ntnx_system_defined_checks_v2 tests"
+
+- name: Fetch clusters for checks
+  nutanix.ncp.ntnx_clusters_info_v2:
+    limit: 5
+  register: clusters_info
+  ignore_errors: true
+
+- name: Verify clusters for checks
+  ansible.builtin.assert:
+    that:
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    fail_msg: "Failed to fetch clusters for checks"
+    success_msg: "Fetched clusters for checks"
+
+- name: Set cluster ext_id
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ clusters_info.response[0].ext_id }}"
+
+- name: Fetch system defined policies to get sda_ext_ids
+  nutanix.ncp.ntnx_system_defined_policies_info_v2:
+    limit: 5
+  register: policies_info
+  ignore_errors: true
+
+- name: Verify policies for checks
+  ansible.builtin.assert:
+    that:
+      - policies_info.failed == false
+      - policies_info.response is defined
+      - policies_info.response | length > 0
+    fail_msg: "Failed to fetch policies for checks"
+    success_msg: "Fetched policies for checks"
+
+- name: Set sda_ext_ids
+  ansible.builtin.set_fact:
+    sda_ext_ids: ["{{ policies_info.response[0].ext_id }}"]
+
+- name: Run system defined checks with check mode
+  nutanix.ncp.ntnx_system_defined_checks_v2:
+    state: present
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+    sda_ext_ids:
+      - "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify check mode run checks
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+    fail_msg: "Check mode run checks failed"
+    success_msg: "Check mode run checks passed"
+
+- name: Missing cluster_ext_id negative  # noqa: args[module]
+  nutanix.ncp.ntnx_system_defined_checks_v2:
+    state: present
+    sda_ext_ids:
+      - "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing cluster_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Missing cluster_ext_id should fail"
+    success_msg: "Missing cluster_ext_id correctly failed"
+
+- name: Invalid cluster_ext_id negative
+  nutanix.ncp.ntnx_system_defined_checks_v2:
+    state: present
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+    sda_ext_ids:
+      - "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Verify invalid cluster_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Invalid cluster_ext_id should fail"
+    success_msg: "Invalid cluster_ext_id correctly failed"
+
+- name: Mutually exclusive sda_ext_ids and should_run_all_checks negative
+  nutanix.ncp.ntnx_system_defined_checks_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    sda_ext_ids:
+      - "00000000-0000-0000-0000-000000000000"
+    should_run_all_checks: true
+  register: result
+  ignore_errors: true
+
+- name: Verify mutually exclusive fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Mutually exclusive should fail"
+    success_msg: "Mutually exclusive correctly failed"

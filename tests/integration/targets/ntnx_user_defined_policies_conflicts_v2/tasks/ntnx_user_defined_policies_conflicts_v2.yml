@@ -1,0 +1,173 @@
+---
+- name: Start ntnx_user_defined_policies_conflicts_v2 tests
+  ansible.builtin.debug:
+    msg: "Starting ntnx_user_defined_policies_conflicts_v2 tests"
+
+- name: Check conflicting policies with check mode
+  nutanix.ncp.ntnx_user_defined_policies_conflicts_v2:
+    state: present
+    title: "conflict-test-policy-ansible"
+    description: "Test conflict detection"
+    entity_type: "vm"
+    trigger_conditions:
+      - condition_type: "STATIC_THRESHOLD"
+        severity_level: "WARNING"
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: "GREATER_THAN"
+          threshold_value:
+            int_value:
+              int_value: 80
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify conflicts check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "Conflicts check mode failed"
+    success_msg: "Conflicts check mode passed"
+
+- name: Check conflicting policies live
+  nutanix.ncp.ntnx_user_defined_policies_conflicts_v2:
+    state: present
+    title: "conflict-test-policy-ansible"
+    description: "Test conflict detection"
+    entity_type: "vm"
+    trigger_conditions:
+      - condition_type: "STATIC_THRESHOLD"
+        severity_level: "WARNING"
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: "GREATER_THAN"
+          threshold_value:
+            int_value:
+              int_value: 80
+  register: result
+  ignore_errors: true
+
+- name: Verify check conflicts live
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results is defined
+    fail_msg: "Check conflicts live failed"
+    success_msg: "Check conflicts live passed"
+
+- name: Check conflicting policies with critical severity
+  nutanix.ncp.ntnx_user_defined_policies_conflicts_v2:
+    state: present
+    title: "conflict-test-critical-severity"
+    entity_type: "vm"
+    trigger_conditions:
+      - condition_type: "STATIC_THRESHOLD"
+        severity_level: "CRITICAL"
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: "GREATER_THAN"
+          threshold_value:
+            int_value:
+              int_value: 90
+  register: result
+  ignore_errors: true
+
+- name: Verify critical severity
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "Critical severity threshold failed"
+    success_msg: "Critical severity threshold passed"
+
+- name: Check conflicts with different entity_type cluster
+  nutanix.ncp.ntnx_user_defined_policies_conflicts_v2:
+    state: present
+    title: "conflict-test-cluster-entity"
+    entity_type: "cluster"
+    trigger_conditions:
+      - condition_type: "STATIC_THRESHOLD"
+        severity_level: "WARNING"
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: "GREATER_THAN"
+          threshold_value:
+            int_value:
+              int_value: 80
+  register: result
+  ignore_errors: true
+
+- name: Verify cluster entity_type
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "Cluster entity_type conflicts failed"
+    success_msg: "Cluster entity_type conflicts passed"
+
+- name: Missing title negative  # noqa: args[module]
+  nutanix.ncp.ntnx_user_defined_policies_conflicts_v2:
+    state: present
+    entity_type: "vm"
+    trigger_conditions:
+      - condition_type: "STATIC_THRESHOLD"
+        severity_level: "WARNING"
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: "GREATER_THAN"
+          threshold_value:
+            int_value:
+              int_value: 80
+  register: result
+  ignore_errors: true
+
+- name: Verify missing title fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Missing title should fail"
+    success_msg: "Missing title correctly failed"
+
+- name: Missing entity_type negative  # noqa: args[module]
+  nutanix.ncp.ntnx_user_defined_policies_conflicts_v2:
+    state: present
+    title: "missing-entity-type-test"
+    trigger_conditions:
+      - condition_type: "STATIC_THRESHOLD"
+        severity_level: "WARNING"
+        condition:
+          metric_name: "hypervisor_cpu_usage_ppm"
+          operator: "GREATER_THAN"
+          threshold_value:
+            int_value:
+              int_value: 80
+  register: result
+  ignore_errors: true
+
+- name: Verify missing entity_type fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Missing entity_type should fail"
+    success_msg: "Missing entity_type correctly failed"
+
+- name: Missing trigger_conditions negative  # noqa: args[module]
+  nutanix.ncp.ntnx_user_defined_policies_conflicts_v2:
+    state: present
+    title: "missing-trigger-test"
+    entity_type: "vm"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing trigger_conditions fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Missing trigger_conditions should fail"
+    success_msg: "Missing trigger_conditions correctly failed"
