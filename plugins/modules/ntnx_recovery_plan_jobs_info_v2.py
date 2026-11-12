@@ -31,13 +31,12 @@ notes:
       B(List Recovery Plan Jobs) -
       Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, NCM Connector,
       Prism Admin, Prism Viewer, Project Manager, Self-Service Admin (Deprecated), Super Admin
-      Prism Viewer, Super Admin
     - >-
-      B(List Recovery Plan Job Execution Steps)
+      B(List Recovery Plan Job Execution Steps) -
       Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, NCM Connector,
       Prism Admin, Prism Viewer, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - >-
-      B(List Recovery Plan Job Validation Errors)
+      B(List Recovery Plan Job Validation Errors) -
       Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer,
       Prism Admin, Prism Viewer, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection)"
@@ -61,14 +60,14 @@ options:
             - Mutually exclusive with C(fetch_execution_steps).
         type: bool
     apply:
-    description:
-      - A URL query parameter that allows clients to specify a sequence of transformations to the
-        entity set, such as groupby, orderby, aggregate etc.
-      - For example C(groupby((property))) will get the entity set grouped by "property".
-      - The sequence must start with groupby, which may include multiple nested aggregates.
-        It may optionally be followed by orderby and/or pagination parameters.
-      - only applicable when listing recovery plan jobs
-    type: str
+        description:
+            - A URL query parameter that allows clients to specify a sequence of transformations to the
+              entity set, such as groupby, orderby, aggregate etc.
+            - For example C(groupby((property))) will get the entity set grouped by "property".
+            - The sequence must start with groupby, which may include multiple nested aggregates.
+              It may optionally be followed by orderby and/or pagination parameters.
+            - Only applicable when listing recovery plan jobs.
+        type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
