@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -15,25 +15,21 @@ short_description: Perform a planned failover on a Nutanix Recovery Plan
 version_added: 2.7.0
 description:
     - Trigger a planned failover on a Recovery Plan identified by its external ID.
-    - >-
-      A planned failover gracefully migrates the entities protected by the
-      Recovery Plan (VMs and Volume Groups) from the source cluster to the
-      recovery cluster with zero data loss. Optionally, VMs can be
-      live-migrated when synchronous replication is configured.
+    - VMs are powered off on the source before migrating it to the target domain manager.
     - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Planned Failover on a Recovery Plan) -
-      Required Roles: Disaster Recovery Admin, Prism Admin, Super Admin.
+      Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin.
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection)"
 options:
     state:
         description:
             - State of the module.
             - If C(state) is C(present), the module will trigger a planned failover.
-            - Any other value will fail (this is an action module and does not support absent).
+            - If C(state) is C(absent), the module will fail.
         type: str
         choices:
             - present
@@ -46,73 +42,76 @@ options:
         required: true
     name:
         description:
-            - A user-defined name for the resulting Recovery Plan Job.
-            - If omitted, the platform generates a name automatically.
+            - Name of the Recovery Plan Job.
         type: str
+        required: true
     should_ignore_warnings:
         description:
-            - Continue the failover even if validation warnings are detected.
-            - >-
-              For example, when the IP address of some VMs cannot be preserved
-              after recovery, setting this to C(true) allows the failover to
-              proceed. When C(false) (default) any validation warning aborts
-              the action - the user must then either resolve the warnings and
-              retry, or re-issue the request with this flag set.
+            - Indicates whether to continue the recovery plan action despite validation warnings.
+            - For example, if the IP of some virtual machines (VMs) cannot be preserved after recovery,
+              the Recovery Plan action can still be initiated by passing shouldIgnoreWarnings as true.
+            - This value allows the recovery operations to continue despite the validation warnings.
+            - Alternatively, the user can choose to resolve the validation warnings and trigger another failover action on recovery plan.
         type: bool
     should_live_migrate_vms:
         description:
-            - Orchestrate a Cross Cluster Live Migration (CCLM) for the
-              protected VMs during the failover.
-            - When C(true), running VMs are migrated between clusters with no
-              downtime; this requires that the entities are stretch-protected
-              with synchronous replication.
-            - When C(false) or omitted, the classic power-off / recover flow
-              is used.
+            - Indicates whether to perform a live migration of virtual machines (VMs) during a PLANNED_FAILOVER operation.
+            - When not specified or specified as false, the migration is performed for all virtual machines (VMs) in offline mode.
+            - When specified as true, the migration is performed for all virtual machines (VMs) in a running state.
         type: bool
     failover_directions:
         description:
-            - The failover topology - one entry per source/target cluster
-              pair involved in the Recovery Plan.
-            - Each entry describes which source cluster (managed by which
-              Prism Central) the entities are failing over from, and which
-              target cluster (managed by which Prism Central) they should be
-              recovered on.
+            - List of failover directions from source disaster recovery location to target disaster recovery location.
+            - For example, when failing over virtual machines (VMs) and volume groups from clusters C1, C2 registered to domain manager PC1 on source location
+              to cluster C3 registered to domain manager PC1 on target location, there must be one direction between source location (PC1, C1)
+              to target location (PC1, C3) and another mapping between source location (PC1, C2) and target location (PC1, C3).
+            - Domain manager is a required parameter while describing disaster recovery location in failover directions.
+            - When creating a Recovery Plan Job across two domain managers, the source clusters are not required.
+            - Failover direction contains clusters only when failing over between primary and secondary clusters registered to the same domain manager.
         type: list
         elements: dict
+        required: true
         suboptions:
             source_domain_manager_ext_id:
                 description:
                     - External identifier of the Prism Central instance
                       managing the source cluster.
                 type: str
+                required: true
             source_cluster:
                 description:
-                    - Reference to the source Prism Element cluster from
-                      which the entities are failing over.
+                    - External reference of the source cluster.
                 type: dict
                 suboptions:
                     ext_id:
                         description:
                             - External identifier of the source cluster.
                         type: str
+                        required: true
             target_domain_manager_ext_id:
                 description:
-                    - External identifier of the Prism Central instance
-                      managing the target (recovery) cluster.
-                    - In a single-PC / local availability zone setup this
-                      may be the same value as
-                      C(source_domain_manager_ext_id).
+                    - External identifier of the target domain manager.
                 type: str
+                required: true
             target_cluster:
                 description:
-                    - Reference to the target Prism Element cluster where
-                      the entities will be recovered.
+                    - External reference of the target cluster.
                 type: dict
                 suboptions:
                     ext_id:
                         description:
                             - External identifier of the target cluster.
                         type: str
+                        required: true
+    post_failover_behaviour:
+        description:
+            - Defines the overall set of behaviors that should be applied after a failover.
+        type: str
+        suboptions:
+            should_pause_protection:
+                description:
+                    - Defines whether to pause protection of the recovered workloads after a failover.
+                type: bool
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -137,21 +136,8 @@ EXAMPLES = r"""
         target_domain_manager_ext_id: "63bebabf-744c-48ff-a6d7-cb028707f972"
         target_cluster:
           ext_id: "00062411-a2b3-4dd8-185b-ac1f6b6f97e2"
-  register: result
-  ignore_errors: true
-
-- name: Perform a planned failover with live migration (CCLM)
-  nutanix.ncp.ntnx_planned_failover_recovery_plan_v2:
-    ext_id: "6f4ffcee-1dc4-4982-9401-aa1f65dd7177"
-    should_live_migrate_vms: true
-    should_ignore_warnings: true
-    failover_directions:
-      - source_domain_manager_ext_id: "63bebabf-744c-48ff-a6d7-cb028707f972"
-        source_cluster:
-          ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
-        target_domain_manager_ext_id: "63bebabf-744c-48ff-a6d7-cb028707f972"
-        target_cluster:
-          ext_id: "00062411-a2b3-4dd8-185b-ac1f6b6f97e2"
+    post_failover_behaviour:
+      should_pause_protection: false
   register: result
   ignore_errors: true
 """
@@ -216,7 +202,6 @@ error:
     description: This field typically holds information about if the task have errors that occurred during the task execution.
     returned: when an error occurs
     type: str
-    sample: "Failed generating planned failover spec"
 failed:
     description: This field typically holds information about if the task have failed.
     returned: always
@@ -363,9 +348,8 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "failed": False,
         "response": None,
-        "ext_id": None,
-        "task_ext_id": None,
     }
 
     api_instance = get_recovery_plan_actions_api_instance(module)
