@@ -1,0 +1,41 @@
+---
+# Summary:
+# This playbook will trigger a test failover on a Recovery Plan identified by its external ID.
+
+- name: Test Failover Recovery Plan playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        recovery_plan_name: "Recovery Plan 1"
+        recovery_plan_ext_id: "6f4ffcee-1dc4-4982-9401-aa1f65dd7177"
+        should_ignore_warnings: false
+        is_instant_restore: false
+        source_domain_manager_ext_id: "63bebabf-744c-48ff-a6d7-cb028707f972"
+        source_cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
+        target_domain_manager_ext_id: "63bebabf-744c-48ff-a6d7-cb028707f972"
+        target_cluster_ext_id: "00062411-a2b3-4dd8-185b-ac1f6b6f97e2"
+
+    - name: Trigger Test Failover Recovery Plan
+      nutanix.ncp.ntnx_test_failover_recovery_plan_v2:
+        name: "{{ recovery_plan_name }}"
+        ext_id: "{{ recovery_plan_ext_id }}"
+        should_ignore_warnings: "{{ should_ignore_warnings }}"
+        is_instant_restore: "{{ is_instant_restore }}"
+        failover_directions:
+          - source_domain_manager_ext_id: "{{ source_domain_manager_ext_id }}"
+            source_cluster:
+              ext_id: "{{ source_cluster_ext_id }}"
+            target_domain_manager_ext_id: "{{ target_domain_manager_ext_id }}"
+            target_cluster:
+              ext_id: "{{ target_cluster_ext_id }}"
+      register: result
+      ignore_errors: true

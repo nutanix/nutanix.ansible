@@ -1,0 +1,202 @@
+---
+# Integration tests for the ntnx_test_failover_recovery_plan_v2 action module.
+#
+# Test plan:
+#   1. Argument-spec / negative validation
+#      - Missing required `ext_id` -> module fails with a clear error.
+#      - Invalid enum value on `state` -> module fails with a clear error.
+#   2. Check-mode
+#      - One check-mode task covering ALL supported attributes; assert that
+#        the module returns the constructed spec without invoking the API,
+#        that `changed` is false and `failed` is false.
+#   3. Real Test Failover (idempotent-friendly)
+#      - Perform a Test Failover against an existing Recovery Plan on the
+#        target Prism Central; assert task and ext_id are propagated.
+#      - Perform a second call with `should_ignore_warnings: true` to
+#        exercise the alternate code path.
+#   4. Cleanup
+#      - Real invocations are wrapped in `ignore_errors: true` and rely on
+#        the cluster's own Recovery Plan cleanup action; no additional
+#        teardown is required here.
+#
+# Prerequisites (supplied via integration_config.yml):
+#   - recovery_plan_ext_id: ExtID of a Recovery Plan on the target PC.
+#   - source_domain_manager_ext_id / target_domain_manager_ext_id.
+#   - Optional source_cluster_ext_id / target_cluster_ext_id.
+
+- name: Start ntnx_test_failover_recovery_plan_v2 integration tests
+  ansible.builtin.debug:
+    msg: Start ntnx_test_failover_recovery_plan_v2 integration tests
+
+- name: Set dynamic test data (random suffix to avoid job-name collisions)
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+
+- name: Set derived variables for the test failover jobs
+  ansible.builtin.set_fact:
+    test_failover_job_name: "ansible-test-failover-{{ random_name }}"
+
+########################################################################
+# Negative test 1: `ext_id` is required
+########################################################################
+
+- name: Attempt Test Failover without required ext_id (negative)
+  nutanix.ncp.ntnx_test_failover_recovery_plan_v2:
+    name: "no-ext-id-{{ random_name }}"
+  register: missing_ext_id_result
+  ignore_errors: true
+
+- name: Assert Test Failover failed due to missing ext_id
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_result.failed == true
+      - missing_ext_id_result.changed == false
+      - "'ext_id' in (missing_ext_id_result.msg | default(''))"
+    fail_msg: "Module did not fail as expected when ext_id was missing"
+    success_msg: "Module correctly rejected missing ext_id"
+
+########################################################################
+# Negative test 2: invalid state value
+########################################################################
+
+- name: Attempt Test Failover with invalid state (negative)
+  nutanix.ncp.ntnx_test_failover_recovery_plan_v2:
+    state: absent
+    ext_id: "{{ recovery_plan_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+  register: invalid_state_result
+  ignore_errors: true
+
+- name: Assert Test Failover failed due to invalid state value
+  ansible.builtin.assert:
+    that:
+      - invalid_state_result.failed == true
+      - invalid_state_result.changed == false
+    fail_msg: "Module did not reject invalid state value"
+    success_msg: "Module correctly rejected invalid state value"
+
+########################################################################
+# Check-mode: full spec, no API call, all attributes populated
+########################################################################
+
+- name: Test Failover in check_mode with ALL attributes
+  nutanix.ncp.ntnx_test_failover_recovery_plan_v2:
+    ext_id: "{{ recovery_plan_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    name: "{{ test_failover_job_name }}"
+    should_ignore_warnings: true
+    is_instant_restore: true
+    failover_directions:
+      - source_domain_manager_ext_id: "{{ source_domain_manager_ext_id | default('00000000-0000-0000-0000-000000000001') }}"
+        source_cluster:
+          ext_id: "{{ source_cluster_ext_id | default('00000000-0000-0000-0000-000000000002') }}"
+        target_domain_manager_ext_id: "{{ target_domain_manager_ext_id | default('00000000-0000-0000-0000-000000000003') }}"
+        target_cluster:
+          ext_id: "{{ target_cluster_ext_id | default('00000000-0000-0000-0000-000000000004') }}"
+  check_mode: true
+  register: check_mode_result
+  ignore_errors: true
+
+- name: Assert check_mode returned the constructed spec without calling the API
+  ansible.builtin.assert:
+    that:
+      - check_mode_result.failed == false
+      - check_mode_result.changed == false
+      - check_mode_result.response is defined
+      - check_mode_result.response.name == test_failover_job_name
+      - check_mode_result.response.should_ignore_warnings == true
+      - check_mode_result.response.is_instant_restore == true
+      - check_mode_result.response.failover_directions is defined
+      - check_mode_result.response.failover_directions | length == 1
+      - check_mode_result.response.failover_directions[0].source_domain_manager_ext_id ==
+        (source_domain_manager_ext_id | default('00000000-0000-0000-0000-000000000001'))
+      - check_mode_result.response.failover_directions[0].target_domain_manager_ext_id ==
+        (target_domain_manager_ext_id | default('00000000-0000-0000-0000-000000000003'))
+      - check_mode_result.response.failover_directions[0].source_cluster.ext_id ==
+        (source_cluster_ext_id | default('00000000-0000-0000-0000-000000000002'))
+      - check_mode_result.response.failover_directions[0].target_cluster.ext_id ==
+        (target_cluster_ext_id | default('00000000-0000-0000-0000-000000000004'))
+      - check_mode_result.ext_id ==
+        (recovery_plan_ext_id | default('00000000-0000-0000-0000-000000000000'))
+    fail_msg: "Check-mode response did not match the requested spec"
+    success_msg: "Check-mode response correctly reflects the requested spec"
+
+########################################################################
+# Real Test Failover across different domain managers
+########################################################################
+
+- name: Real Test Failover across different domain managers
+  nutanix.ncp.ntnx_test_failover_recovery_plan_v2:
+    ext_id: "{{ recovery_plan_ext_id }}"
+    name: "{{ test_failover_job_name }}-diff-pc"
+    should_ignore_warnings: true
+    is_instant_restore: false
+    failover_directions:
+      - source_domain_manager_ext_id: "{{ source_domain_manager_ext_id }}"
+        target_domain_manager_ext_id: "{{ target_domain_manager_ext_id }}"
+  register: test_failover_diff_pc
+  ignore_errors: true
+  when:
+    - recovery_plan_ext_id is defined
+    - source_domain_manager_ext_id is defined
+    - target_domain_manager_ext_id is defined
+
+- name: Assert real Test Failover (different domain managers) succeeded
+  ansible.builtin.assert:
+    that:
+      - test_failover_diff_pc.failed == false
+      - test_failover_diff_pc.changed == true
+      - test_failover_diff_pc.task_ext_id is defined
+      - test_failover_diff_pc.ext_id == recovery_plan_ext_id
+      - test_failover_diff_pc.response is defined
+      - test_failover_diff_pc.response.status is defined
+    fail_msg: "Real Test Failover across different domain managers did not succeed"
+    success_msg: "Real Test Failover across different domain managers succeeded"
+  when:
+    - recovery_plan_ext_id is defined
+    - source_domain_manager_ext_id is defined
+    - target_domain_manager_ext_id is defined
+    - test_failover_diff_pc is defined
+    - test_failover_diff_pc.skipped is not defined
+
+########################################################################
+# Real Test Failover within the same domain manager (with cluster refs)
+########################################################################
+
+- name: Real Test Failover within the same domain manager (with cluster refs)
+  nutanix.ncp.ntnx_test_failover_recovery_plan_v2:
+    ext_id: "{{ recovery_plan_ext_id }}"
+    name: "{{ test_failover_job_name }}-same-pc"
+    should_ignore_warnings: true
+    is_instant_restore: true
+    failover_directions:
+      - source_domain_manager_ext_id: "{{ source_domain_manager_ext_id }}"
+        source_cluster:
+          ext_id: "{{ source_cluster_ext_id }}"
+        target_domain_manager_ext_id: "{{ source_domain_manager_ext_id }}"
+        target_cluster:
+          ext_id: "{{ target_cluster_ext_id }}"
+  register: test_failover_same_pc
+  ignore_errors: true
+  when:
+    - recovery_plan_ext_id is defined
+    - source_domain_manager_ext_id is defined
+    - source_cluster_ext_id is defined
+    - target_cluster_ext_id is defined
+
+- name: Assert real Test Failover (same domain manager) succeeded
+  ansible.builtin.assert:
+    that:
+      - test_failover_same_pc.failed == false
+      - test_failover_same_pc.changed == true
+      - test_failover_same_pc.task_ext_id is defined
+      - test_failover_same_pc.ext_id == recovery_plan_ext_id
+      - test_failover_same_pc.response is defined
+      - test_failover_same_pc.response.status is defined
+    fail_msg: "Real Test Failover within the same domain manager did not succeed"
+    success_msg: "Real Test Failover within the same domain manager succeeded"
+  when:
+    - recovery_plan_ext_id is defined
+    - source_domain_manager_ext_id is defined
+    - source_cluster_ext_id is defined
+    - target_cluster_ext_id is defined
+    - test_failover_same_pc is defined
+    - test_failover_same_pc.skipped is not defined

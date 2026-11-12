@@ -29,6 +29,39 @@
     role_1_name: role_name_{{ raw_role_1_name | regex_replace('[^a-zA-Z0-9]', '') }}
     role_2_name: role_name_{{ raw_role_2_name | regex_replace('[^a-zA-Z0-9]', '') }}
 
+- name: Generate random project name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+###################################################################################################
+
+- name: Create project for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: present
+    name: "{{ random_name }}-ansible-project"
+    project_id: "{{ random_name }}-ansible-project-id"
+  register: create_project_result
+  ignore_errors: true
+
+- name: Status of project creation for tests
+  ansible.builtin.assert:
+    that:
+      - create_project_result.changed == true
+      - create_project_result.failed == false
+      - create_project_result.response is defined
+      - create_project_result.ext_id is defined
+      - create_project_result.ext_id | length > 0
+      - create_project_result.task_ext_id is defined
+      - create_project_result.response.state == "ACTIVE"
+    fail_msg: "Unable to create project for tests"
+    success_msg: "Project for tests created successfully"
+
+- name: Set project fact for tests
+  ansible.builtin.set_fact:
+    project1:
+      name: "{{ random_name }}-ansible-project"
+      uuid: "{{ create_project_result.ext_id }}"
+
 ###################################################################################################
 
 - name: Create roles with operations in check mode
@@ -36,6 +69,8 @@
     state: present
     display_name: "{{ role_2_name }}"
     description: test-ansible-role-1-desc
+    project_ext_id: "83083083-0000-0000-0000-000000000000"
+    is_global: true
     operations:
       - "{{ test_operation_1_uuid }}"
       - "{{ test_operation_2_uuid }}"
@@ -53,7 +88,8 @@
       - result.response.description == "test-ansible-role-1-desc"
       - result.response.operations[0] == "{{ test_operation_1_uuid }}"
       - result.response.operations[1] == "{{ test_operation_2_uuid }}"
-
+      - result.response.project_ext_id == "83083083-0000-0000-0000-000000000000"
+      - result.response.is_global == true
     fail_msg: Create roles with operations in check mode failed
     success_msg: Create roles with operations in check mode passed
 
@@ -64,6 +100,7 @@
     state: present
     display_name: "{{ role_1_name }}"
     description: test-ansible-role-1-desc
+    project_ext_id: "{{ project1.uuid }}"
     operations:
       - "{{ test_operation_1_uuid }}"
       - "{{ test_operation_2_uuid }}"
@@ -88,6 +125,7 @@
       - result.response.operations | length == 2
       - p1 in result.response.operations
       - p2 in result.response.operations
+      - result.response.project_ext_id == project1.uuid
 
     fail_msg: Unable to create roles with certain operations
     success_msg: Roles with given operations created successfully
@@ -283,6 +321,25 @@
 
 ###################################################################################################
 
+- name: Verify update of project_ext_id is not supported
+  nutanix.ncp.ntnx_roles_v2:
+    state: present
+    ext_id: "{{ todelete }}"
+    project_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Verify update of project_ext_id is blocked status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - 'result.msg == "Update is not supported for the following field(s): project_ext_id"'
+    fail_msg: "Update of project_ext_id should have been blocked"
+    success_msg: "Update of project_ext_id is correctly blocked"
+
+###################################################################################################
+
 - name: Delete role with check mode enabled
   nutanix.ncp.ntnx_roles_v2:
     state: absent
@@ -324,3 +381,24 @@
 - name: Reset todelete list
   ansible.builtin.set_fact:
     todelete: []
+
+###################################################################################################
+
+- name: Delete project created for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: absent
+    ext_id: "{{ project1.uuid }}"
+  register: delete_project_result
+  ignore_errors: true
+
+- name: Status of project deletion for tests
+  ansible.builtin.assert:
+    that:
+      - delete_project_result.changed == true
+      - delete_project_result.failed == false
+      - delete_project_result.ext_id == project1.uuid
+      - delete_project_result.response is defined
+      - delete_project_result.response.status == "SUCCEEDED"
+      - delete_project_result.task_ext_id is defined
+    fail_msg: "Unable to delete project created for tests"
+    success_msg: "Project created for tests deleted successfully"
