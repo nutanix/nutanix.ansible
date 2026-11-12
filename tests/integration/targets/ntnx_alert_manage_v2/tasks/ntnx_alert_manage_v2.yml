@@ -1,0 +1,126 @@
+---
+- name: Start ntnx_alert_manage_v2 tests
+  ansible.builtin.debug:
+    msg: "Starting ntnx_alert_manage_v2 tests"
+
+- name: List alerts to get ext_id for manage tests
+  nutanix.ncp.ntnx_alerts_info_v2:
+    limit: 5
+  register: alerts_list
+  ignore_errors: true
+
+- name: Verify alerts list for manage
+  ansible.builtin.assert:
+    that:
+      - alerts_list.failed == false
+      - alerts_list.response is defined
+    fail_msg: "Failed to list alerts for manage tests"
+    success_msg: "Listed alerts for manage tests"
+
+- name: Set alert ext_id for manage
+  ansible.builtin.set_fact:
+    alert_ext_id: "{{ alerts_list.response[0].ext_id }}"
+  when:
+    - alerts_list.response is defined
+    - alerts_list.response | length > 0
+    - alerts_list.response[0].ext_id is defined
+
+- name: Manage alert with check mode - acknowledge
+  nutanix.ncp.ntnx_alert_manage_v2:
+    state: present
+    ext_id: "{{ alert_ext_id }}"
+    action_type: "ACKNOWLEDGE"
+  register: result
+  ignore_errors: true
+  check_mode: true
+  when: alert_ext_id is defined
+
+- name: Verify check mode manage alert
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "Check mode manage alert failed"
+    success_msg: "Check mode manage alert passed"
+  when: alert_ext_id is defined
+
+- name: Manage alert missing ext_id negative  # noqa: args[module]
+  nutanix.ncp.ntnx_alert_manage_v2:
+    state: present
+    action_type: "ACKNOWLEDGE"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Missing ext_id should fail"
+    success_msg: "Missing ext_id correctly failed"
+
+- name: Manage alert missing action_type negative  # noqa: args[module]
+  nutanix.ncp.ntnx_alert_manage_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing action_type fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Missing action_type should fail"
+    success_msg: "Missing action_type correctly failed"
+
+- name: Manage alert invalid ext_id
+  nutanix.ncp.ntnx_alert_manage_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    action_type: "ACKNOWLEDGE"
+  register: result
+  ignore_errors: true
+
+- name: Verify invalid ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Invalid ext_id should fail"
+    success_msg: "Invalid ext_id correctly failed"
+
+- name: Manage alert with invalid action_type  # noqa: args[module]
+  nutanix.ncp.ntnx_alert_manage_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    action_type: "INVALID"
+  register: result
+  ignore_errors: true
+
+- name: Verify invalid action_type fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Invalid action_type should fail"
+    success_msg: "Invalid action_type correctly failed"
+
+- name: Manage alert acknowledge if alert available
+  nutanix.ncp.ntnx_alert_manage_v2:
+    state: present
+    ext_id: "{{ alert_ext_id }}"
+    action_type: "ACKNOWLEDGE"
+  register: result
+  ignore_errors: true
+  when: alert_ext_id is defined
+
+- name: Verify manage alert acknowledge
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+    fail_msg: "Failed to acknowledge alert"
+    success_msg: "Acknowledged alert successfully"
+  when: alert_ext_id is defined
