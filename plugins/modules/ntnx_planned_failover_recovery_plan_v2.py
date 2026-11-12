@@ -53,12 +53,14 @@ options:
             - This value allows the recovery operations to continue despite the validation warnings.
             - Alternatively, the user can choose to resolve the validation warnings and trigger another failover action on recovery plan.
         type: bool
+        default: false
     should_live_migrate_vms:
         description:
             - Indicates whether to perform a live migration of virtual machines (VMs) during a PLANNED_FAILOVER operation.
             - When not specified or specified as false, the migration is performed for all virtual machines (VMs) in offline mode.
             - When specified as true, the migration is performed for all virtual machines (VMs) in a running state.
         type: bool
+        default: false
     failover_directions:
         description:
             - List of failover directions from source disaster recovery location to target disaster recovery location.
@@ -112,6 +114,7 @@ options:
                 description:
                     - Defines whether to pause protection of the recovered workloads after a failover.
                 type: bool
+                default: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -271,15 +274,15 @@ def get_module_spec():
     )
 
     post_failover_behaviour_sub_spec = dict(
-        should_pause_protection=dict(type="bool"),
+        should_pause_protection=dict(type="bool", default=False),
     )
 
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         name=dict(type="str", required=True),
-        should_ignore_warnings=dict(type="bool"),
-        should_live_migrate_vms=dict(type="bool"),
+        should_ignore_warnings=dict(type="bool", default=False),
+        should_live_migrate_vms=dict(type="bool", default=False),
         failover_directions=dict(
             type="list",
             elements="dict",

@@ -28,7 +28,7 @@ options:
     state:
         description:
             - State of the module.
-            - If C(state) is C(present), the module will trigger a planned failover.
+            - If C(state) is C(present), the module will trigger an unplanned failover.
             - If C(state) is C(absent), the module will fail.
         type: str
         choices:
@@ -36,7 +36,7 @@ options:
         default: present
     ext_id:
         description:
-            - The external identifier of the Recovery Plan on which the planned
+            - The external identifier of the Recovery Plan on which the unplanned
               failover action must be executed.
         type: str
         required: true
@@ -53,6 +53,7 @@ options:
             - This value allows the recovery operations to continue despite the validation warnings.
             - Alternatively, the user can choose to resolve the validation warnings and trigger another failover action on recovery plan.
         type: bool
+        default: false
     recovery_reference_time:
         description:
             - Point in time from which to restore the entities during an UNPLANNED_FAILOVER operation.
@@ -114,10 +115,12 @@ options:
                 description:
                     - Defines whether to pause protection of the recovered workloads after a failover.
                 type: bool
+                default: false
     is_instant_restore:
                 description:
                     - Indicates whether this is an instant restore task.
                 type: bool
+                default: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -282,7 +285,7 @@ def get_module_spec():
     )
 
     post_failover_behaviour_spec = dict(
-        should_pause_protection=dict(type="bool"),
+        should_pause_protection=dict(type="bool", default=False),
     )
 
     module_args = dict(
@@ -290,8 +293,8 @@ def get_module_spec():
         ext_id=dict(type="str", required=True),
         name=dict(type="str", required=True),
         recovery_reference_time=dict(type="str"),
-        should_ignore_warnings=dict(type="bool"),
-        is_instant_restore=dict(type="bool"),
+        should_ignore_warnings=dict(type="bool", default=False),
+        is_instant_restore=dict(type="bool", default=False),
         failover_directions=dict(
             type="list",
             elements="dict",
