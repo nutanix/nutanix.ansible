@@ -56,7 +56,6 @@ class Tasks:
         LAYER2_STRETCH = "networking:config:layer2-stretch"
         LOAD_BALANCER_SESSION = "networking:config:load-balancer-session"
         ENTITY_GROUP = "microseg:config:entity-group"
-        RECOVERY_PLAN_JOB = "dataprotection:config:recovery-plan-job"
         DATA_SERVICES_IP_MAPPING = (
             "datapolicies:config:recovery-plan:data-services-ip-mapping"
         )
@@ -100,7 +99,6 @@ class Tasks:
         VM_EXT_IDS = "vmExtIds"
         VG_EXT_IDS = "volumeGroupExtIds"
         PROTECTION_POLICY = "protectionPolicyExtId"
-        RECOVERY_PLAN_JOB = "recoveryPlanJobExtId"
         NETWORK_MAPPING = "networkMappingExtId"
         NOTIFICATION = "notificationExtId"
         PRESIGNED_URL = "presigned_url"
