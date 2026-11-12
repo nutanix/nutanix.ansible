@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -11,27 +11,35 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_recovery_plan_jobs_info_v2
-short_description: Fetch Recovery Plan Jobs info in Nutanix Prism Central
-version_added: 2.5.0
+short_description: Fetch Recovery Plan Jobs info
+version_added: 2.7.0
 description:
-  - This module allows you to fetch information about RecoveryPlanJob in Nutanix Prism Central.
-  - If C(ext_id) is provided and no sub-resource flag is set, fetch details of the specific RecoveryPlanJob.
-  - If C(ext_id) is not provided, list multiple RecoveryPlanJob optionally filtered / paginated.
+  - This module allows you to fetch information about Recovery Plan Jobs.
+  - If C(ext_id) is provided and no sub-resource flag is set, fetch details of the specific Recovery Plan Job.
+  - If C(ext_id) is not provided, list multiple Recovery Plan Jobs optionally filtered / paginated.
   - If C(ext_id) is provided together with C(fetch_execution_steps), list all execution steps of the given Recovery Plan Job.
   - If C(ext_id) is provided together with C(fetch_validation_errors), list all validation errors of the given Recovery Plan Job.
-  - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user
       performing the operation.
     - >-
       B(Get Recovery Plan Job by ext_id) -
-      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin,
-      Prism Viewer, Super Admin
+      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, NCM Connector,
+      Prism Admin, Prism Viewer, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - >-
       B(List Recovery Plan Jobs) -
-      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin,
+      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, NCM Connector,
+      Prism Admin, Prism Viewer, Project Manager, Self-Service Admin (Deprecated), Super Admin
       Prism Viewer, Super Admin
+    - >-
+      B(List Recovery Plan Job Execution Steps)
+      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, NCM Connector,
+      Prism Admin, Prism Viewer, Project Manager, Self-Service Admin (Deprecated), Super Admin
+    - >-
+      B(List Recovery Plan Job Validation Errors)
+      Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer,
+      Prism Admin, Prism Viewer, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection)"
 options:
     ext_id:
@@ -52,14 +60,23 @@ options:
             - Requires C(ext_id).
             - Mutually exclusive with C(fetch_execution_steps).
         type: bool
+    apply:
+    description:
+      - A URL query parameter that allows clients to specify a sequence of transformations to the
+        entity set, such as groupby, orderby, aggregate etc.
+      - For example C(groupby((property))) will get the entity set grouped by "property".
+      - The sequence must start with groupby, which may include multiple nested aggregates.
+        It may optionally be followed by orderby and/or pagination parameters.
+      - only applicable when listing recovery plan jobs
+    type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
     - nutanix.ncp.ntnx_logger
     - nutanix.ncp.ntnx_proxy_v2
 author:
-    - George Ghawali (@george-ghawali)
     - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
@@ -85,7 +102,7 @@ EXAMPLES = r"""
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
-    filter: "actionType eq Nutanix.DataProtection.Config.RecoveryPlanActionType'VALIDATE'"
+    filter: "actionType eq Dataprotection.Config.RecoveryPlanActionType'VALIDATE'"
   register: result
   ignore_errors: true
 
@@ -98,7 +115,16 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
-- name: Fetch execution steps for a Recovery Plan Job
+- name: List Recovery Plan Jobs with apply
+  nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    apply: "groupby((recoveryPlanExtId))"
+  register: result
+  ignore_errors: true
+
+- name: List execution steps for a Recovery Plan Job
   nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -108,7 +134,29 @@ EXAMPLES = r"""
   register: result
   ignore_errors: true
 
-- name: Fetch validation errors for a Recovery Plan Job
+- name: List execution steps for a Recovery Plan Job with limit
+  nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    ext_id: "0d9d8f39-2e6b-4a19-8d33-6a2bde7ac1f2"
+    fetch_execution_steps: true
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List execution steps for a Recovery Plan Job with filter
+  nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    ext_id: "0d9d8f39-2e6b-4a19-8d33-6a2bde7ac1f2"
+    fetch_execution_steps: true
+    filter: "extId eq '2bb43b2f-488c-4422-8e56-4f4866bf768c'"
+  register: result
+  ignore_errors: true
+
+- name: List validation errors for a Recovery Plan Job
   nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -117,16 +165,38 @@ EXAMPLES = r"""
     fetch_validation_errors: true
   register: result
   ignore_errors: true
+
+- name: List validation errors for a Recovery Plan Job with limit
+  nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    ext_id: "0d9d8f39-2e6b-4a19-8d33-6a2bde7ac1f2"
+    fetch_validation_errors: true
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List validation errors for a Recovery Plan Job with filter
+  nutanix.ncp.ntnx_recovery_plan_jobs_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    ext_id: "0d9d8f39-2e6b-4a19-8d33-6a2bde7ac1f2"
+    fetch_validation_errors: true
+    filter: "extId eq '2bb43b2f-488c-4422-8e56-4f4866bf768c'"
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
 response:
     description:
-        - The response from the Nutanix PC RecoveryPlanJob info v4 API.
-        - It can be a single RecoveryPlanJob if external ID is provided.
-        - List of multiple RecoveryPlanJob if external ID is not provided with optional filter or limit.
-        - List of execution steps if C(fetch_execution_steps=true) with C(ext_id).
-        - List of validation errors if C(fetch_validation_errors=true) with C(ext_id).
+        - The response from the Nutanix PC Recovery Plan Job info API.
+        - It can be a single Recovery Plan Job if external ID is provided.
+        - List of multiple Recovery Plan Jobs if external ID is not provided with optional filter or limit.
+        - List of execution steps if C(fetch_execution_steps=true) with C(ext_id) with optional filter or limit.
+        - List of validation errors if C(fetch_validation_errors=true) with C(ext_id) with optional filter or limit.
     returned: always
     type: dict
     sample:
@@ -201,7 +271,7 @@ ext_id:
     sample: "0d9d8f39-2e6b-4a19-8d33-6a2bde7ac1f2"
 
 total_available_results:
-    description: The total number of available Recovery Plan Jobs (or sub-resources) in PC.
+    description: The total number of available results in the response
     type: int
     returned: when a list operation is performed
     sample: 5
@@ -219,6 +289,7 @@ from ..module_utils.v4.data_protection.helpers import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -231,6 +302,7 @@ def get_module_spec():
         ext_id=dict(type="str"),
         fetch_execution_steps=dict(type="bool"),
         fetch_validation_errors=dict(type="bool"),
+        apply=dict(type="str"),
     )
     return module_args
 
@@ -244,13 +316,16 @@ def get_recovery_plan_job_using_ext_id(module, api_instance, result):
 
 def list_recovery_plan_jobs(module, api_instance, result):
     sg = SpecGenerator(module)
-    kwargs, err = sg.get_info_spec(attr=module.params)
+    kwargs, err = sg.get_info_spec(attr=module.params, extra_params=["apply"])
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating recovery plan jobs info spec", **result)
 
     try:
-        resp = api_instance.list_recovery_plan_jobs(**kwargs)
+        resp = list_entities(
+            api_instance.list_recovery_plan_jobs,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -279,8 +354,10 @@ def list_recovery_plan_job_execution_steps(module, api_instance, result):
         )
 
     try:
-        resp = api_instance.list_execution_steps_by_recovery_plan_job_id(
-            recoveryPlanJobExtId=ext_id, **kwargs
+        resp = list_entities(
+            api_instance.list_execution_steps_by_recovery_plan_job_id,
+            recoveryPlanJobExtId=ext_id,
+            kwargs=kwargs,
         )
     except Exception as e:
         raise_api_exception(
@@ -310,8 +387,10 @@ def list_recovery_plan_job_validation_errors(module, api_instance, result):
         )
 
     try:
-        resp = api_instance.list_validation_errors_by_recovery_plan_job_id(
-            recoveryPlanJobExtId=ext_id, **kwargs
+        resp = list_entities(
+            api_instance.list_validation_errors_by_recovery_plan_job_id,
+            recoveryPlanJobExtId=ext_id,
+            kwargs=kwargs,
         )
     except Exception as e:
         raise_api_exception(
@@ -334,6 +413,7 @@ def run_module():
         supports_check_mode=False,
         mutually_exclusive=[
             ("ext_id", "filter"),
+            ("ext_id", "apply"),
             ("fetch_execution_steps", "fetch_validation_errors"),
         ],
         required_if=[
