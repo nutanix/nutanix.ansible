@@ -113,6 +113,7 @@ options:
             should_pause_protection:
                 description:
                     - Defines whether to pause protection of the recovered workloads after a failover.
+                type: bool
     is_instant_restore:
                 description:
                     - Indicates whether this is an instant restore task.
@@ -280,6 +281,10 @@ def get_module_spec():
         ),
     )
 
+    post_failover_behaviour_spec = dict(
+        should_pause_protection=dict(type="bool"),
+    )
+
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
@@ -293,6 +298,11 @@ def get_module_spec():
             options=failover_direction_spec,
             obj=data_protection_sdk.FailoverDirection,
             required=True,
+        ),
+        post_failover_behaviour=dict(
+            type="dict",
+            options=post_failover_behaviour_spec,
+            obj=data_protection_sdk.PostFailoverBehaviourSpec,
         ),
     )
     return module_args
