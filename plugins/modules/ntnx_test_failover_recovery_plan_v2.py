@@ -51,6 +51,7 @@ options:
             - This value allows the recovery operations to continue despite the validation warnings.
             - Alternatively, the user can choose to resolve the validation warnings and trigger another failover action on recovery plan.
         type: bool
+        default: false
     failover_directions:
         description:
             - List of failover directions from source disaster recovery location to target disaster recovery location.
@@ -102,6 +103,7 @@ options:
                       to be quickly restored and powered on directly from an external backup repository on a Nutanix AOS cluster,
                       without waiting for a full data transfer.
                 type: bool
+                default: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
