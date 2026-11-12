@@ -150,8 +150,7 @@ response:
     description:
         - Response for the planned failover Recovery Plan action.
         - If C(wait) is C(true) (default) it contains the full task details after
-          completion, otherwise if C(wait) is C(false) it contains the initial task reference returned by
-          the create action.
+          completion, otherwise if C(wait) is C(false) it contains the initial task reference returned after the planned failover action.
     returned: always
     type: dict
     sample:
