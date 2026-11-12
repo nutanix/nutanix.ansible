@@ -1,0 +1,70 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Attach NVMe-TCP client to VG using initiator name
+# 2. Fetch specific NVMe-TCP client
+# 3. List all NVMe-TCP clients
+# 4. List NVMe-TCP clients with filter / pagination / fetch_all
+# 5. Detach NVMe-TCP client from VG
+
+- name: Volume groups NVMe-TCP (NVMf) clients playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        vg1_ext_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
+        nvmf_initiator_name: "nqn.2025-12.org.nvmexpress:uuid:59d5de78-a964-5746-8c6e-677c4c7a79df"
+        nvmf_client_ext_id: "aea43b5c-ae4d-4b60-934b-f8f581275dec"
+        cluster_reference: "00061663-9fa0-28ca-185b-ac1f6b6f97e2"
+
+    - name: Attach NVMe-TCP client to VG using initiator name
+      nutanix.ncp.ntnx_volume_groups_nvmf_clients_v2:
+        volume_group_ext_id: "{{ vg1_ext_id }}"
+        nvmf_initiator_name: "{{ nvmf_initiator_name }}"
+      register: attach_result
+      ignore_errors: true
+
+    - name: Fetch specific NVMe-TCP client
+      nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+        ext_id: "{{ nvmf_client_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all NVMe-TCP clients across Volume Groups
+      nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List NVMe-TCP clients filtered by clusterReference
+      nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+        filter: "clusterReference eq '{{ cluster_reference }}'"
+      register: result
+      ignore_errors: true
+
+    - name: List NVMe-TCP clients with pagination
+      nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+        page: 0
+        limit: 10
+      register: result
+      ignore_errors: true
+
+    - name: List all NVMe-TCP clients with fetch_all
+      nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
+
+    - name: Detach NVMe-TCP client from VG
+      nutanix.ncp.ntnx_volume_groups_nvmf_clients_v2:
+        volume_group_ext_id: "{{ vg1_ext_id }}"
+        nvmf_initiator_name: "{{ nvmf_initiator_name }}"
+        state: absent
+      register: result
+      ignore_errors: true

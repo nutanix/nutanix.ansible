@@ -1,0 +1,388 @@
+---
+# Test plan for ntnx_cluster_ip_pools_v2 / ntnx_cluster_ip_pools_info_v2:
+# 1. Discover cluster_ext_id
+# 2. Create check_mode + live create with all writable fields
+# 3. Info get/list/limit/filter/fetch_all
+# 4. Update check_mode + live update + idempotency
+# 5. Negatives (missing args, bad ext_id)
+# 6. Delete check_mode + live delete + cleanup
+
+- name: Start cluster IP pools tests
+  ansible.builtin.debug:
+    msg: Start cluster IP pools tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false,
+      special=false, length=12)[0] }}"
+    todelete: []
+
+- name: Set IP pool names and unique ranges
+  ansible.builtin.set_fact:
+    ip_pool_name: "ansible_ip_pool_{{ random_name }}"
+    ip_pool_name_updated: "ansible_ip_pool_upd_{{ random_name }}"
+    # Derive unique private octets so parallel/leftover pools do not collide.
+    ip_octet_a: "{{ 50 + (range(1, 200) | random) }}"
+    ip_octet_b: "{{ 10 + (range(1, 200) | random) }}"
+
+- name: List clusters to discover cluster_ext_id
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(e:e eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_result
+  ignore_errors: true
+
+- name: Assert clusters listed
+  ansible.builtin.assert:
+    that:
+      - clusters_result.failed == false
+      - clusters_result.response | length > 0
+    fail_msg: Failed to list clusters for IP pool tests
+    success_msg: Clusters listed for IP pool tests
+
+- name: Set cluster_ext_id
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+- name: Create IP pool with check mode enabled
+  nutanix.ncp.ntnx_cluster_ip_pools_v2:
+    state: present
+    cluster_ext_id: "00000000-0000-0000-0000-000000000001"
+    name: "{{ ip_pool_name }}"
+    ranges:
+      - start_address:
+          ipv4:
+            value: "10.{{ ip_octet_a }}.{{ ip_octet_b }}.10"
+            prefix_length: 32
+        end_address:
+          ipv4:
+            value: "10.{{ ip_octet_a }}.{{ ip_octet_b }}.20"
+            prefix_length: 32
+    netmask:
+      ipv4:
+        value: "255.255.255.0"
+        prefix_length: 32
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert create IP pool check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == ip_pool_name
+    fail_msg: Create IP pool check mode failed
+    success_msg: Create IP pool check mode passed
+
+# Platform create task only reports the parent cluster in entities_affected
+# (not clustermgmt:config:ip-pool), so wait=true cannot resolve ext_id.
+# Create with wait=false, then resolve ext_id via the info filter.
+- name: Create IP pool
+  nutanix.ncp.ntnx_cluster_ip_pools_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    name: "{{ ip_pool_name }}"
+    wait: false
+    ranges:
+      - start_address:
+          ipv4:
+            value: "10.{{ ip_octet_a }}.{{ ip_octet_b }}.10"
+            prefix_length: 32
+        end_address:
+          ipv4:
+            value: "10.{{ ip_octet_a }}.{{ ip_octet_b }}.20"
+            prefix_length: 32
+    netmask:
+      ipv4:
+        value: "255.255.255.0"
+        prefix_length: 32
+  register: result
+  ignore_errors: true
+
+- name: Assert create IP pool
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+      - result.task_ext_id is defined
+    fail_msg: Create IP pool failed
+    success_msg: Create IP pool passed
+
+- name: Wait briefly for IP pool create task to settle
+  ansible.builtin.pause:
+    seconds: 5
+
+- name: Resolve created IP pool ext_id via info filter
+  nutanix.ncp.ntnx_cluster_ip_pools_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    filter: "name eq '{{ ip_pool_name }}'"
+  register: created_info
+  ignore_errors: true
+
+- name: Assert created IP pool found
+  ansible.builtin.assert:
+    that:
+      - created_info.failed == false
+      - created_info.response | length >= 1
+      - created_info.response[0].ext_id is defined
+    fail_msg: Created IP pool not found via info filter
+    success_msg: Created IP pool found via info filter
+
+- name: Track IP pool for cleanup
+  ansible.builtin.set_fact:
+    ip_pool_ext_id: "{{ created_info.response[0].ext_id }}"
+    todelete: "{{ todelete + [created_info.response[0].ext_id] }}"
+
+########################################################################
+# Info module coverage
+########################################################################
+
+- name: Get IP pool by ext_id
+  nutanix.ncp.ntnx_cluster_ip_pools_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ ip_pool_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert get IP pool by ext_id
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.response.ext_id == ip_pool_ext_id
+      - result.response.name == ip_pool_name
+    fail_msg: Get IP pool by ext_id failed
+    success_msg: Get IP pool by ext_id passed
+
+- name: List IP pools
+  nutanix.ncp.ntnx_cluster_ip_pools_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert list IP pools
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results is defined
+    fail_msg: List IP pools failed
+    success_msg: List IP pools passed
+
+- name: List IP pools with limit
+  nutanix.ncp.ntnx_cluster_ip_pools_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Assert list IP pools with limit
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.response | length <= 1
+    fail_msg: List IP pools with limit failed
+    success_msg: List IP pools with limit passed
+
+- name: List IP pools with filter
+  nutanix.ncp.ntnx_cluster_ip_pools_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    filter: "name eq '{{ ip_pool_name }}'"
+  register: result
+  ignore_errors: true
+
+- name: Assert list IP pools with filter
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.response | length >= 1
+      - result.response[0].name == ip_pool_name
+    fail_msg: List IP pools with filter failed
+    success_msg: List IP pools with filter passed
+
+- name: List IP pools with fetch_all
+  nutanix.ncp.ntnx_cluster_ip_pools_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    fetch_all: true
+  register: result
+  ignore_errors: true
+
+- name: Assert list IP pools with fetch_all
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - (result.response | length) == (result.total_available_results | int)
+    fail_msg: List IP pools with fetch_all failed
+    success_msg: List IP pools with fetch_all passed
+
+########################################################################
+# Update + idempotency
+########################################################################
+
+- name: Update IP pool with check mode enabled
+  nutanix.ncp.ntnx_cluster_ip_pools_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ ip_pool_ext_id }}"
+    name: "{{ ip_pool_name_updated }}"
+    ranges:
+      - start_address:
+          ipv4:
+            value: "10.{{ ip_octet_a }}.{{ ip_octet_b }}.30"
+            prefix_length: 32
+        end_address:
+          ipv4:
+            value: "10.{{ ip_octet_a }}.{{ ip_octet_b }}.40"
+            prefix_length: 32
+    netmask:
+      ipv4:
+        value: "255.255.255.0"
+        prefix_length: 32
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert update IP pool check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: Update IP pool check mode failed
+    success_msg: Update IP pool check mode passed
+
+- name: Update IP pool
+  nutanix.ncp.ntnx_cluster_ip_pools_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ ip_pool_ext_id }}"
+    name: "{{ ip_pool_name_updated }}"
+    ranges:
+      - start_address:
+          ipv4:
+            value: "10.{{ ip_octet_a }}.{{ ip_octet_b }}.30"
+            prefix_length: 32
+        end_address:
+          ipv4:
+            value: "10.{{ ip_octet_a }}.{{ ip_octet_b }}.40"
+            prefix_length: 32
+    netmask:
+      ipv4:
+        value: "255.255.255.0"
+        prefix_length: 32
+  register: result
+  ignore_errors: true
+
+- name: Assert update IP pool
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+    fail_msg: Update IP pool failed
+    success_msg: Update IP pool passed
+
+- name: Test IP pool idempotency
+  nutanix.ncp.ntnx_cluster_ip_pools_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ ip_pool_ext_id }}"
+    name: "{{ ip_pool_name_updated }}"
+    ranges:
+      - start_address:
+          ipv4:
+            value: "10.{{ ip_octet_a }}.{{ ip_octet_b }}.30"
+            prefix_length: 32
+        end_address:
+          ipv4:
+            value: "10.{{ ip_octet_a }}.{{ ip_octet_b }}.40"
+            prefix_length: 32
+    netmask:
+      ipv4:
+        value: "255.255.255.0"
+        prefix_length: 32
+  register: result
+  ignore_errors: true
+
+- name: Assert IP pool idempotency
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.msg == "Nothing to change."
+    fail_msg: IP pool idempotency failed
+    success_msg: IP pool idempotency passed
+
+########################################################################
+# Negatives
+########################################################################
+
+- name: Create IP pool missing required fields
+  nutanix.ncp.ntnx_cluster_ip_pools_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert create IP pool missing required fields
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Missing required fields negative failed
+    success_msg: Missing required fields negative passed
+
+- name: Get IP pool with invalid ext_id
+  nutanix.ncp.ntnx_cluster_ip_pools_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000099"
+  register: result
+  ignore_errors: true
+
+- name: Assert get IP pool invalid ext_id
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Invalid ext_id negative failed
+    success_msg: Invalid ext_id negative passed
+
+########################################################################
+# Delete
+########################################################################
+
+- name: Delete IP pool with check mode enabled
+  nutanix.ncp.ntnx_cluster_ip_pools_v2:
+    state: absent
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ ip_pool_ext_id }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert delete IP pool check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg == ("IP pool with ext_id:" ~ ip_pool_ext_id ~ " will be deleted.")
+    fail_msg: Delete IP pool check mode failed
+    success_msg: Delete IP pool check mode passed
+
+- name: Delete IP pool
+  nutanix.ncp.ntnx_cluster_ip_pools_v2:
+    state: absent
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ ip_pool_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert delete IP pool
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+    fail_msg: Delete IP pool failed
+    success_msg: Delete IP pool passed
+
+- name: Reset todelete after successful delete
+  ansible.builtin.set_fact:
+    todelete: []

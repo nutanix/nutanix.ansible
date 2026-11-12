@@ -1,0 +1,19 @@
+---
+# Summary:
+# This playbook demonstrates the LCM (Life Cycle Manager) Inventory action:
+# Export entity inventory information of connected clusters as a downloadable file in CSV format
+- name: LCM Export Inventory playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host }}"
+      nutanix_username: "{{ nutanix_username }}"
+      nutanix_password: "{{ nutanix_password }}"
+      validate_certs: false
+
+  tasks:
+    - name: Export entity inventory as a downloadable file in CSV format
+      nutanix.ncp.ntnx_lcm_export_inventory_v2:
+        file_format: CSV
+      register: inventory_export

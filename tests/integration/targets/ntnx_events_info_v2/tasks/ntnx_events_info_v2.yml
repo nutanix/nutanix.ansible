@@ -1,0 +1,127 @@
+---
+- name: Start ntnx_events_info_v2 tests
+  ansible.builtin.debug:
+    msg: "Starting ntnx_events_info_v2 tests"
+
+- name: List all events
+  nutanix.ncp.ntnx_events_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Verify list all events
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results is defined
+    fail_msg: "Failed to list all events"
+    success_msg: "Listed all events successfully"
+
+- name: List all events with fetch_all
+  nutanix.ncp.ntnx_events_info_v2:
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: Verify fetch_all events
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result.changed == false
+      - fetch_all_result.failed == false
+      - fetch_all_result.response is defined
+      - fetch_all_result.total_available_results is defined
+      - (fetch_all_result.response | default([]) | length) == (fetch_all_result.total_available_results | int)
+    fail_msg: "fetch_all for events failed"
+    success_msg: "fetch_all for events passed"
+
+- name: List events with limit
+  nutanix.ncp.ntnx_events_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Verify list events with limit
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    fail_msg: "List events with limit failed"
+    success_msg: "List events with limit passed"
+
+- name: List events with filter
+  nutanix.ncp.ntnx_events_info_v2:
+    filter: "eventType eq 'MulticlusterAudit'"
+  register: result
+  ignore_errors: true
+
+- name: Verify list events with filter
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "List events with filter failed"
+    success_msg: "List events with filter passed"
+
+- name: Attempt to fetch event with invalid ext_id
+  nutanix.ncp.ntnx_events_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Verify invalid ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Invalid ext_id should fail"
+    success_msg: "Invalid ext_id correctly failed"
+
+- name: Fetch event by ext_id if available
+  nutanix.ncp.ntnx_events_info_v2:
+    limit: 1
+  register: list_one
+  ignore_errors: true
+
+- name: Set event ext_id fact
+  ansible.builtin.set_fact:
+    event_ext_id: "{{ list_one.response[0].ext_id }}"
+  when:
+    - list_one.response is defined
+    - list_one.response | length > 0
+    - list_one.response[0].ext_id is defined
+
+- name: Get event by ext_id
+  nutanix.ncp.ntnx_events_info_v2:
+    ext_id: "{{ event_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: event_ext_id is defined
+
+- name: Verify get event by ext_id
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == event_ext_id
+    fail_msg: "Get event by ext_id failed"
+    success_msg: "Get event by ext_id passed"
+  when: event_ext_id is defined
+
+- name: Negative with invalid filter
+  nutanix.ncp.ntnx_events_info_v2:
+    filter: "invalidField eq 'test'"
+  register: result
+  ignore_errors: true
+
+- name: Verify invalid filter fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Invalid filter should fail"
+    success_msg: "Invalid filter correctly failed"
