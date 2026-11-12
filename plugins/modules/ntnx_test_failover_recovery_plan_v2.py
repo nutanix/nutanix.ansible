@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -14,109 +14,94 @@ module: ntnx_test_failover_recovery_plan_v2
 short_description: Perform Test Failover on a Nutanix Recovery Plan
 version_added: 2.7.0
 description:
-    - Performs a Test Failover action on an existing Recovery Plan in Nutanix Prism Central.
-    - The test failover action creates a Recovery Plan Job that recovers the protected
-      entities (VMs / Volume Groups) in a test environment on the target site without
-      impacting the production entities on the primary site.
-    - This module MUST be executed against the target/recovery Prism Central endpoint
-      where the entities will be recovered.
-    - Use C(clean-up-resources) on the same Recovery Plan afterwards to delete the
-      resources spun up by the test failover.
+    - Performs a test failover action on an existing Recovery Plan in Nutanix Prism Central.
     - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(Test Failover a Recovery Plan) -
-      Required Roles: Disaster Recovery Admin, Prism Admin, Super Admin
+      B(Planned Failover on a Recovery Plan) -
+      Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin.
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection)"
 options:
     state:
         description:
             - State of the module.
-            - This is an action module; only C(present) is supported.
-            - When C(state) is C(present) the Test Failover action is triggered on
-              the referenced Recovery Plan.
+            - If C(state) is C(present), the module will trigger a test failover.
+            - If C(state) is C(absent), the module will fail.
         type: str
         choices:
             - present
         default: present
     ext_id:
         description:
-            - The external identifier of the Recovery Plan on which to perform the
-              Test Failover action.
+            - The external identifier of the Recovery Plan on which the test failover action must be executed.
         type: str
         required: true
     name:
         description:
-            - Name to assign to the generated Recovery Plan Job.
-            - When omitted the system auto-generates a name in the form
-              C(TestFailover-<random>-<timestamp>).
+            - Name of the Test Failover Recovery Plan Job.
         type: str
-        required: false
+        required: true
     should_ignore_warnings:
         description:
-            - When set to C(true) the recovery plan action proceeds even if there
-              are non-fatal validation warnings (for example the IP address of
-              some VMs cannot be preserved after recovery).
-            - When C(false) (the default) validation warnings abort the failover
-              and the user is expected to fix them first.
+            - Indicates whether to continue the recovery plan action despite validation warnings.
+            - For example, if the IP of some virtual machines (VMs) cannot be preserved after recovery,
+              the Recovery Plan action can still be initiated by passing shouldIgnoreWarnings as true.
+            - This value allows the recovery operations to continue despite the validation warnings.
+            - Alternatively, the user can choose to resolve the validation warnings and trigger another failover action on recovery plan.
         type: bool
-        required: false
-        default: false
-    is_instant_restore:
-        description:
-            - Indicates whether the Instant Restore capability should be used for
-              this test failover so that VMs come up faster on the target site.
-        type: bool
-        required: false
-        default: false
     failover_directions:
         description:
-            - List of failover directions describing which source site/cluster
-              should be recovered on which target site/cluster.
-            - Every direction represents one source-to-target pair.
+            - List of failover directions from source disaster recovery location to target disaster recovery location.
+            - For example, when failing over virtual machines (VMs) and volume groups from clusters C1, C2 registered to domain manager PC1 on source location
+              to cluster C3 registered to domain manager PC1 on target location, there must be one direction between source location (PC1, C1)
+              to target location (PC1, C3) and another mapping between source location (PC1, C2) and target location (PC1, C3).
+            - Domain manager is a required parameter while describing disaster recovery location in failover directions.
+            - When creating a Recovery Plan Job across two domain managers, the source clusters are not required.
+            - Failover direction contains clusters only when failing over between primary and secondary clusters registered to the same domain manager.
         type: list
         elements: dict
-        required: false
+        required: true
         suboptions:
             source_domain_manager_ext_id:
                 description:
-                    - External identifier of the source Prism Central (domain manager)
-                      from which the entities are being failed over.
+                    - External identifier of the Prism Central instance
+                      managing the source cluster.
                 type: str
-                required: false
+                required: true
             source_cluster:
                 description:
-                    - Reference to the source Prism Element cluster.
-                    - Omit when the source and target domain managers differ.
+                    - External reference of the source cluster.
                 type: dict
-                required: false
                 suboptions:
                     ext_id:
                         description:
-                            - External identifier of the source Prism Element cluster.
+                            - External identifier of the source cluster.
                         type: str
-                        required: false
+                        required: true
             target_domain_manager_ext_id:
                 description:
-                    - External identifier of the target Prism Central (domain manager)
-                      to which the entities are being failed over.
-                    - This should match the PC on which this action is executed.
+                    - External identifier of the target domain manager.
                 type: str
-                required: false
+                required: true
             target_cluster:
                 description:
-                    - Reference to the target Prism Element cluster.
-                    - Omit when the source and target domain managers differ.
+                    - External reference of the target cluster.
                 type: dict
-                required: false
                 suboptions:
                     ext_id:
                         description:
-                            - External identifier of the target Prism Element cluster.
+                            - External identifier of the target cluster.
                         type: str
-                        required: false
+                        required: true
+    is_instant_restore:
+                description:
+                    - Indicates whether to enable Instant Restore.
+                    - This feature allows a workload, such as a virtual machine (VM),
+                      to be quickly restored and powered on directly from an external backup repository on a Nutanix AOS cluster,
+                      without waiting for a full data transfer.
+                type: bool
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -127,46 +112,28 @@ author:
     - George Ghawali (@george-ghawali)
 """
 EXAMPLES = r"""
-- name: Perform Test Failover on a Recovery Plan (different domain managers)
+- name: Perform Test Failover on a Recovery Plan
   nutanix.ncp.ntnx_test_failover_recovery_plan_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    ext_id: "0005c0ef-b0f4-40b6-a5a1-2a5a2a5a2a5a"
-    name: "ansible-test-failover-job"
-    should_ignore_warnings: true
+    ext_id: "6f4ffcee-1dc4-4982-9401-aa1f65dd7177"
+    name: "test_failover_job_ansible"
+    should_ignore_warnings: false
     is_instant_restore: false
     failover_directions:
-      - source_domain_manager_ext_id: "d4d3f6d5-1111-2222-3333-4444d3f6d5c3"
-        target_domain_manager_ext_id: "d4d3f6d5-5555-6666-7777-8888d3f6d5c3"
-  register: result
-
-- name: Perform Test Failover with explicit source and target clusters
-  nutanix.ncp.ntnx_test_failover_recovery_plan_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    ext_id: "0005c0ef-b0f4-40b6-a5a1-2a5a2a5a2a5a"
-    name: "ansible-test-failover-same-pc"
-    should_ignore_warnings: false
-    is_instant_restore: true
-    failover_directions:
-      - source_domain_manager_ext_id: "d4d3f6d5-1111-2222-3333-4444d3f6d5c3"
+      - source_domain_manager_ext_id: "63bebabf-744c-48ff-a6d7-cb028707f972"
         source_cluster:
-          ext_id: "000647b8-ddb3-6bbb-0000-000000028f57"
-        target_domain_manager_ext_id: "d4d3f6d5-1111-2222-3333-4444d3f6d5c3"
+          ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
+        target_domain_manager_ext_id: "63bebabf-744c-48ff-a6d7-cb028707f972"
         target_cluster:
-          ext_id: "000647b8-ddb3-6bbb-0000-000000028f58"
+          ext_id: "00062411-a2b3-4dd8-185b-ac1f6b6f97e2"
   register: result
 """
 RETURN = r"""
 response:
     description:
-        - Response for the Test Failover action on the Recovery Plan.
-        - Task details if C(wait) is true.
-        - Task reference if C(wait) is false.
+        - Response for triggering the test failover on a recovery plan.
+        - When C(wait) is C(true) (default) it contains the full task details after
+          completion, otherwise if C(wait) is C(false) it contains the initial task reference returned by
+          the create action.
     returned: always
     type: dict
     sample:
@@ -225,7 +192,6 @@ error:
     description: This field typically holds information about errors that occurred during task execution.
     returned: when an error occurs
     type: str
-    sample: null
 failed:
     description: This field indicates whether the task failed.
     returned: always
@@ -258,6 +224,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    validate_required_params,
 )
 
 SDK_IMP_ERROR = None
@@ -275,18 +242,18 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     entity_reference_spec = dict(
-        ext_id=dict(type="str", required=False),
+        ext_id=dict(type="str", required=True),
     )
 
     failover_direction_spec = dict(
-        source_domain_manager_ext_id=dict(type="str", required=False),
+        source_domain_manager_ext_id=dict(type="str", required=True),
         source_cluster=dict(
             type="dict",
             options=entity_reference_spec,
             required=False,
             obj=data_protection_sdk.DataprotectionConfigEntityReference,
         ),
-        target_domain_manager_ext_id=dict(type="str", required=False),
+        target_domain_manager_ext_id=dict(type="str", required=True),
         target_cluster=dict(
             type="dict",
             options=entity_reference_spec,
@@ -298,14 +265,14 @@ def get_module_spec():
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
-        name=dict(type="str", required=False),
+        name=dict(type="str", required=True),
         should_ignore_warnings=dict(type="bool", required=False, default=False),
         is_instant_restore=dict(type="bool", required=False, default=False),
         failover_directions=dict(
             type="list",
             elements="dict",
             options=failover_direction_spec,
-            required=False,
+            required=True,
             obj=data_protection_sdk.FailoverDirection,
         ),
     )
@@ -315,7 +282,7 @@ def get_module_spec():
 def test_failover_recovery_plan(module, result, api_instance):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-
+    validate_required_params(module, ["ext_id", "name", "failover_directions"])
     sg = SpecGenerator(module)
     default_spec = data_protection_sdk.TestFailoverSpec()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -364,9 +331,8 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
+        "failed": False,
         "response": None,
-        "ext_id": None,
-        "task_ext_id": None,
     }
     api_instance = get_recovery_plan_actions_api_instance(module)
     test_failover_recovery_plan(module, result, api_instance)

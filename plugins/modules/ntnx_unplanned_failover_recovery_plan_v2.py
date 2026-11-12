@@ -28,7 +28,7 @@ options:
     state:
         description:
             - State of the module.
-            - If C(state) is C(present), the module will trigger a planned failover.
+            - If C(state) is C(present), the module will trigger an unplanned failover.
             - If C(state) is C(absent), the module will fail.
         type: str
         choices:
@@ -36,7 +36,7 @@ options:
         default: present
     ext_id:
         description:
-            - The external identifier of the Recovery Plan on which the planned
+            - The external identifier of the Recovery Plan on which the unplanned
               failover action must be executed.
         type: str
         required: true
