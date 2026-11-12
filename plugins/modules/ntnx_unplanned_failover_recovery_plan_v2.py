@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,158 +12,138 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_unplanned_failover_recovery_plan_v2
 short_description: Trigger an unplanned failover on a Nutanix Recovery Plan
-version_added: 2.5.0
+version_added: 2.7.0
 description:
-    - Perform an unplanned failover on an existing Recovery Plan in Nutanix Prism Central.
-    - Restores the protected entities (VMs/Volume Groups) from their latest available
-      recovery points on the target disaster recovery location.
-    - This is an asynchronous action; the API returns a task reference that is polled
-      to completion when C(wait) is true (the default).
+    - Trigger an unplanned failover on a Recovery Plan identified by its external ID.
+    - Restore the entity from the recovery points on the target domain manager.
     - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
-      This module requires the following Nutanix IAM roles to be assigned to the user
-      performing the operation.
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(Unplanned Failover Recovery Plan) -
-      Required Roles: Disaster Recovery Admin, Prism Admin, Super Admin
+      B(Planned Failover on a Recovery Plan) -
+      Required Roles: Disaster Recovery Admin, Prism Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin.
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection)"
 options:
     state:
         description:
             - State of the module.
-            - If C(state) is set to C(present) the module will trigger the unplanned
-              failover on the recovery plan referenced by C(ext_id).
-            - Only C(present) is supported for this action module.
+            - If C(state) is C(present), the module will trigger a planned failover.
+            - If C(state) is C(absent), the module will fail.
         type: str
         choices:
             - present
         default: present
     ext_id:
         description:
-            - The external identifier of the recovery plan on which the unplanned
-              failover should be performed.
+            - The external identifier of the Recovery Plan on which the planned
+              failover action must be executed.
         type: str
         required: true
     name:
         description:
-            - Human-readable name for the recovery plan job that will be created for
-              this unplanned failover.
-            - Required by the API when triggering the unplanned failover.
+            - Name of the Recovery Plan Job.
         type: str
-        required: false
-    recovery_reference_time:
-        description:
-            - Point in time from which to restore the entities during the
-              C(UNPLANNED_FAILOVER) operation.
-            - Only ISO-8601 formatted timestamps are supported (for example,
-              C(2024-01-02T03:04:05Z)).
-            - When specified, VMs and volume groups are restored from the latest
-              recovery points created on or before the given timestamp. If not
-              specified, the latest recovery points before the start of the recovery
-              plan job are used.
-        type: str
-        required: false
+        required: true
     should_ignore_warnings:
         description:
-            - If set to C(true), non-critical validation warnings raised while
-              triggering the unplanned failover are ignored and the action proceeds.
+            - Indicates whether to continue the recovery plan action despite validation warnings.
+            - For example, if the IP of some virtual machines (VMs) cannot be preserved after recovery,
+              the Recovery Plan action can still be initiated by passing shouldIgnoreWarnings as true.
+            - This value allows the recovery operations to continue despite the validation warnings.
+            - Alternatively, the user can choose to resolve the validation warnings and trigger another failover action on recovery plan.
         type: bool
-        required: false
-    is_instant_restore:
+    recovery_reference_time:
         description:
-            - When set to C(true), an instant restore is attempted for the recovery
-              points instead of a full restore.
-        type: bool
-        required: false
+            - Point in time from which to restore the entities during an UNPLANNED_FAILOVER operation.
+            - Only ISO-8601 formatted timestamps are supported. For example, 2023-01-02T03:04:05Z.
+            - When specified, virtual machines (VMs) and volume groups are restored from the latest recovery points
+              created on or before the specified timestamp. If not specified, virtual machines (VMs) and volume groups are
+              restored from the latest recovery points created on or before the start of the Recovery plan job.
+        type: str
     failover_directions:
         description:
-            - Failover direction(s) mapping source disaster recovery locations to
-              target disaster recovery locations for the unplanned failover.
-            - Required by the API when triggering the unplanned failover.
+            - List of failover directions from source disaster recovery location to target disaster recovery location.
+            - For example, when failing over virtual machines (VMs) and volume groups from clusters C1, C2 registered to domain manager PC1 on source location
+              to cluster C3 registered to domain manager PC1 on target location, there must be one direction between source location (PC1, C1)
+              to target location (PC1, C3) and another mapping between source location (PC1, C2) and target location (PC1, C3).
+            - Domain manager is a required parameter while describing disaster recovery location in failover directions.
+            - When creating a Recovery Plan Job across two domain managers, the source clusters are not required.
+            - Failover direction contains clusters only when failing over between primary and secondary clusters registered to the same domain manager.
         type: list
         elements: dict
-        required: false
+        required: true
         suboptions:
             source_domain_manager_ext_id:
                 description:
-                    - External identifier of the source domain manager (Prism Central).
+                    - External identifier of the Prism Central instance
+                      managing the source cluster.
                 type: str
-                required: false
+                required: true
             source_cluster:
                 description:
-                    - Reference to the source cluster participating in the failover.
+                    - External reference of the source cluster.
                 type: dict
-                required: false
                 suboptions:
                     ext_id:
                         description:
                             - External identifier of the source cluster.
                         type: str
-                        required: false
+                        required: true
             target_domain_manager_ext_id:
                 description:
-                    - External identifier of the target domain manager (Prism Central).
+                    - External identifier of the target domain manager.
                 type: str
-                required: false
+                required: true
             target_cluster:
                 description:
-                    - Reference to the target cluster participating in the failover.
+                    - External reference of the target cluster.
                 type: dict
-                required: false
                 suboptions:
                     ext_id:
                         description:
                             - External identifier of the target cluster.
                         type: str
-                        required: false
+                        required: true
+    post_failover_behaviour:
+        description:
+            - Defines the overall set of behaviors that should be applied after a failover.
+        type: dict
+        suboptions:
+            should_pause_protection:
+                description:
+                    - Defines whether to pause protection of the recovered workloads after a failover.
+    is_instant_restore:
+                description:
+                    - Indicates whether this is an instant restore task.
+                type: bool
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
     - nutanix.ncp.ntnx_logger
     - nutanix.ncp.ntnx_proxy_v2
 author:
-    - George Ghawali (@george-ghawali)
     - Abhinav Bansal (@abhinavbansal29)
+    - George Ghawali (@george-ghawali)
 """
 
 EXAMPLES = r"""
-- name: Trigger an unplanned failover with only the required fields
+- name: Trigger an unplanned failover on a Recovery Plan
   nutanix.ncp.ntnx_unplanned_failover_recovery_plan_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     ext_id: "6f4ffcee-1dc4-4982-9401-aa1f65dd7177"
-    name: "rpj_unplanned_failover_ansible"
+    name: "unplanned_failover_job_ansible"
+    should_ignore_warnings: false
+    recovery_reference_time: "2023-01-02T03:04:05Z"
     failover_directions:
       - source_domain_manager_ext_id: "63bebabf-744c-48ff-a6d7-cb028707f972"
         source_cluster:
           ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
-        target_domain_manager_ext_id: "97da301d-0a8b-4334-94cd-16a83563218e"
+        target_domain_manager_ext_id: "63bebabf-744c-48ff-a6d7-cb028707f972"
         target_cluster:
-          ext_id: "00062899-58d4-9d37-185b-ac1f6b6f97e2"
-  register: result
-  ignore_errors: true
-
-- name: Trigger an unplanned failover with all supported attributes
-  nutanix.ncp.ntnx_unplanned_failover_recovery_plan_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    ext_id: "6f4ffcee-1dc4-4982-9401-aa1f65dd7177"
-    name: "rpj_unplanned_failover_ansible"
-    recovery_reference_time: "2024-01-02T03:04:05Z"
-    should_ignore_warnings: true
+          ext_id: "00062411-a2b3-4dd8-185b-ac1f6b6f97e2"
+    post_failover_behaviour:
+      should_pause_protection: false
     is_instant_restore: false
-    failover_directions:
-      - source_domain_manager_ext_id: "63bebabf-744c-48ff-a6d7-cb028707f972"
-        source_cluster:
-          ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
-        target_domain_manager_ext_id: "97da301d-0a8b-4334-94cd-16a83563218e"
-        target_cluster:
-          ext_id: "00062899-58d4-9d37-185b-ac1f6b6f97e2"
   register: result
   ignore_errors: true
 """
@@ -173,7 +153,7 @@ response:
     description:
         - Response for triggering the unplanned failover on a recovery plan.
         - When C(wait) is C(true) (default) it contains the full task details after
-          completion, otherwise it contains the initial task reference returned by
+          completion, otherwise if C(wait) is C(false) it contains the initial task reference returned by
           the create action.
     returned: always
     type: dict
@@ -233,23 +213,17 @@ changed:
     returned: always
     type: bool
     sample: true
-skipped:
-    description: This indicates whether the task was skipped (for example in check mode).
-    returned: when applicable
-    type: bool
-    sample: false
 error:
     description: Error details if the task failed.
     returned: When an error occurs
     type: str
-    sample: null
 failed:
     description: This indicates whether the task failed.
     returned: always
     type: bool
     sample: false
 msg:
-    description: Human-readable status message, populated on errors or informational paths.
+    description: This indicates the message if any message occurred.
     returned: When there is an error or an informational status
     type: str
     sample: "Api Exception raised while triggering unplanned failover on recovery plan"
@@ -288,17 +262,17 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     entity_reference_spec = dict(
-        ext_id=dict(type="str"),
+        ext_id=dict(type="str", required=True),
     )
 
     failover_direction_spec = dict(
-        source_domain_manager_ext_id=dict(type="str"),
+        source_domain_manager_ext_id=dict(type="str", required=True),
         source_cluster=dict(
             type="dict",
             options=entity_reference_spec,
             obj=data_protection_sdk.DataprotectionConfigEntityReference,
         ),
-        target_domain_manager_ext_id=dict(type="str"),
+        target_domain_manager_ext_id=dict(type="str", required=True),
         target_cluster=dict(
             type="dict",
             options=entity_reference_spec,
@@ -309,7 +283,7 @@ def get_module_spec():
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
-        name=dict(type="str"),
+        name=dict(type="str", required=True),
         recovery_reference_time=dict(type="str"),
         should_ignore_warnings=dict(type="bool"),
         is_instant_restore=dict(type="bool"),
@@ -318,6 +292,7 @@ def get_module_spec():
             elements="dict",
             options=failover_direction_spec,
             obj=data_protection_sdk.FailoverDirection,
+            required=True,
         ),
     )
     return module_args
@@ -382,10 +357,8 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
-        "ext_id": None,
-        "task_ext_id": None,
     }
     api_instance = get_recovery_plan_actions_api_instance(module)
     unplanned_failover_recovery_plan(module, result, api_instance)
