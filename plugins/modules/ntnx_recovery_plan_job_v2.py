@@ -152,7 +152,6 @@ from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.data_protection.api_client import (  # noqa: E402
     get_recovery_plan_jobs_api_instance,
 )
-
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
