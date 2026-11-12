@@ -106,7 +106,7 @@ options:
     post_failover_behaviour:
         description:
             - Defines the overall set of behaviors that should be applied after a failover.
-        type: str
+        type: dict
         suboptions:
             should_pause_protection:
                 description:
@@ -250,17 +250,17 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     entity_reference_sub_spec = dict(
-        ext_id=dict(type="str"),
+        ext_id=dict(type="str", required=True),
     )
 
     failover_directions_sub_spec = dict(
-        source_domain_manager_ext_id=dict(type="str"),
+        source_domain_manager_ext_id=dict(type="str", required=True),
         source_cluster=dict(
             type="dict",
             options=entity_reference_sub_spec,
             obj=data_protection_sdk.DataprotectionConfigEntityReference,
         ),
-        target_domain_manager_ext_id=dict(type="str"),
+        target_domain_manager_ext_id=dict(type="str", required=True),
         target_cluster=dict(
             type="dict",
             options=entity_reference_sub_spec,
@@ -268,10 +268,14 @@ def get_module_spec():
         ),
     )
 
+    post_failover_behaviour_sub_spec = dict(
+        should_pause_protection=dict(type="bool"),
+    )
+
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
-        name=dict(type="str"),
+        name=dict(type="str", required=True),
         should_ignore_warnings=dict(type="bool"),
         should_live_migrate_vms=dict(type="bool"),
         failover_directions=dict(
@@ -279,6 +283,12 @@ def get_module_spec():
             elements="dict",
             options=failover_directions_sub_spec,
             obj=data_protection_sdk.FailoverDirection,
+            required=True,
+        ),
+        post_failover_behaviour=dict(
+            type="dict",
+            options=post_failover_behaviour_sub_spec,
+            obj=data_protection_sdk.PostFailoverBehaviourSpec,
         ),
     )
 
