@@ -118,8 +118,9 @@ RETURN = r"""
 response:
     description:
         - Response for computing changed regions of a VM disk recovery point.
-        - Contains C(changed_regions), a list of region entries with C(offset),
-          C(length), and C(region_type).
+        - Contains the list of changed regions for the requested VM disk recovery point.
+        - Each region is described by an C(offset) (bytes), a C(length) (bytes) and a
+          C(region_type) (C(REGULAR) or C(ZEROED)).
     returned: always
     type: dict
     sample:
