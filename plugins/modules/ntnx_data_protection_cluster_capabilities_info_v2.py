@@ -81,7 +81,6 @@ EXAMPLES = r"""
     limit: 1
   register: result
   ignore_errors: true
-
 """
 
 RETURN = r"""
