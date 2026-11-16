@@ -172,6 +172,29 @@ def get_virtual_switch(module, api_instance, ext_id):
         )
 
 
+def get_remote_vtep_gateway_for_cluster(module, api_instance, cluster_ext_id, ext_id):
+    """
+    This method will return remote VTEP gateway info using cluster and gateway ext_id.
+    Args:
+        module: Ansible module
+        api_instance: RemoteEntitiesApi instance from ntnx_networking_py_client sdk
+        cluster_ext_id (str): Prism Element cluster external ID
+        ext_id (str): remote VTEP gateway external ID
+    return:
+        info (object): remote VTEP gateway info
+    """
+    try:
+        return api_instance.get_remote_vtep_gateway_for_cluster_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching remote VTEP gateway info using cluster ext_id and ext_id",
+        )
+
+
 def get_bgp_route(module, api_instance, ext_id, bgp_session_ext_id):
     """
     This method will return BGP route info using route external ID and
