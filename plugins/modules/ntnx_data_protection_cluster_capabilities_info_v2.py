@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,25 +12,23 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_data_protection_cluster_capabilities_info_v2
 short_description: Fetch data protection cluster capabilities in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
-  - This module allows you to fetch information about DataProtectionClusterCapability in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific DataProtectionClusterCapability.
-  - If C(ext_id) is not provided, list multiple DataProtectionClusterCapability optionally filtered / paginated.
+  - This module allows you to fetch information about Data Protection Cluster Capabilities in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch details of the specific Data Protection Cluster Capabilities.
+  - If C(ext_id) is not provided, list multiple Data Protection Cluster Capabilities optionally filtered / paginated.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
-    B(Get data protection cluster capabilities) -
-    Required Roles: Backup Admin, Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin, Prism Viewer,
-    Super Admin
+    B(Get/List data protection cluster capabilities) -
+    Required Roles: Disaster Recovery Admin, Disaster Recovery Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection)"
 options:
   ext_id:
     description:
-      - The external ID of the DataProtectionClusterCapability entity.
-      - This is the cluster UUID whose data protection capabilities are being retrieved.
+      - The external ID of the Data Protection Cluster Capabilities entity.
       - When provided, only the capabilities for the matching cluster are returned.
     type: str
     required: false
@@ -47,53 +45,51 @@ author:
 EXAMPLES = r"""
 - name: Get data protection cluster capabilities using ext_id
   nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     ext_id: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
   register: result
   ignore_errors: true
 
 - name: List all data protection cluster capabilities
   nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
   register: result
   ignore_errors: true
 
-- name: List data protection cluster capabilities with filter on extId
+- name: List data protection cluster capabilities with filter on cluster external ID
   nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
-    filter: "extId eq '0006555e-4e63-4a5e-185b-ac1f6b6f97e2'"
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    filter: "clusterExtId eq '0006555e-4e63-4a5e-185b-ac1f6b6f97e2'"
   register: result
   ignore_errors: true
 
 - name: List data protection cluster capabilities with limit
   nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     limit: 1
   register: result
   ignore_errors: true
 
-- name: List data protection cluster capabilities with pagination
-  nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
-    page: 0
-    limit: 10
-  register: result
-  ignore_errors: true
-
-- name: List data protection cluster capabilities selecting only extId and clusterExtId
-  nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
-    select: "extId,clusterExtId"
-  register: result
-  ignore_errors: true
-
-- name: List data protection cluster capabilities ordered by extId
-  nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
-    orderby: "extId"
-  register: result
-  ignore_errors: true
 """
 
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC DataProtectionClusterCapability info v4 API.
-    - It can be a single DataProtectionClusterCapability if external ID is provided.
-    - List of multiple DataProtectionClusterCapability if external ID is not provided with optional filter or limit.
+    - The response from the Nutanix PC Data Protection Cluster Capabilities info v4 API.
+    - It can be a single Data Protection Cluster Capabilities if external ID is provided.
+    - List of multiple Data Protection Cluster Capabilities if external ID is not provided with optional filter or limit.
   returned: always
   type: dict
   sample:
@@ -116,15 +112,15 @@ response:
 
 ext_id:
   description:
-    - The external ID of the DataProtectionClusterCapability entity.
+    - The external ID of the Data Protection Cluster Capabilities entity.
   returned: when external ID is provided
   type: str
   sample: "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
 
 total_available_results:
   description:
-    - The total number of available DataProtectionClusterCapability entities in PC.
-  returned: when listing all DataProtectionClusterCapability entities
+    - The total number of available Data Protection Cluster Capabilities entities in PC.
+  returned: when listing all Data Protection Cluster Capabilities entities
   type: int
   sample: 1
 
@@ -136,7 +132,7 @@ changed:
 
 msg:
   description: This indicates the message if any message occurred.
-  returned: When there is an error, or DataProtectionClusterCapability is not found by C(ext_id).
+  returned: When there is an error.
   type: str
   sample: "Api Exception raised while fetching data protection cluster capabilities info"
 
@@ -189,7 +185,7 @@ def get_data_protection_cluster_capability_using_ext_id(module, api_instance, re
     if entity is None:
         module.fail_json(
             msg=(
-                "DataProtectionClusterCapability with ext_id '{0}' not found.".format(
+                "Data Protection Cluster Capabilities with ext_id '{0}' not found.".format(
                     ext_id
                 )
             ),
