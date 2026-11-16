@@ -298,6 +298,7 @@ action_groups:
     - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_vm_recovery_point_compute_changed_region_v2
     - ntnx_subnet_migrate_v2
     - ntnx_recovery_plan_job_v2
     - ntnx_recovery_plan_jobs_info_v2
