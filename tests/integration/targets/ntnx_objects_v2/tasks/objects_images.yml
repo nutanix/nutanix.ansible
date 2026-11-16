@@ -85,7 +85,7 @@
 
 - name: Upload image to object store bucket using AWS CLI
   ansible.builtin.shell: |
-    aws s3api put-object --bucket vmm-images --body {{ disk_image.dest }} --key {{ object_1_name }} --no-verify-ssl
+    aws s3api put-object --bucket vmm-images --body {{ cirros_image.dest }} --key {{ object_1_name }} --no-verify-ssl
   register: upload_result
   ignore_errors: true
   changed_when: "'ETag' in upload_result.stdout"

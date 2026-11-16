@@ -1,0 +1,52 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Attach a new iSCSI client to the Volume Group
+# 2. Detach the iSCSI client from the Volume Group
+
+- name: External iSCSI Attachments playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        volume_group_ext_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
+        iscsi_initiator_name: "iqn.1991-05.com.microsoft:ansible-client"
+        client_secret: "Secret1234567"
+        enabled_authentications: "CHAP"
+        num_virtual_targets: 1
+        attachment_site: "PRIMARY"
+      register: result
+      ignore_errors: true
+
+    - name: Attach the iSCSI client to the Volume Group
+      nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments_v2:
+        state: present
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        iscsi_initiator_name: "{{ iscsi_initiator_name }}"
+        client_secret: "{{ client_secret }}"
+        enabled_authentications: "{{ enabled_authentications }}"
+        num_virtual_targets: "{{ num_virtual_targets }}"
+        attachment_site: "{{ attachment_site }}"
+      register: result
+      ignore_errors: true
+
+    - name: Set iSCSI client external ID
+      ansible.builtin.set_fact:
+        iscsi_client_ext_id: "{{ result.response.ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Detach the iSCSI client from the Volume Group
+      nutanix.ncp.ntnx_volume_groups_external_iscsi_attachments_v2:
+        state: absent
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        ext_id: "{{ iscsi_client_ext_id }}"
+      register: result
+      ignore_errors: true
