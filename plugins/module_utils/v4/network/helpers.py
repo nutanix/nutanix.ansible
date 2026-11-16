@@ -172,23 +172,16 @@ def get_virtual_switch(module, api_instance, ext_id):
         )
 
 
-def get_remote_subnet(module, api_instance, cluster_ext_id, ext_id):
+def get_remote_subnet_for_cluster(module, api_instance, cluster_ext_id, ext_id):
     """
-    Return a single remote subnet mirrored from another Prism Central cluster.
-
-    The Nutanix Networking v4 API scopes remote subnets under the owning
-    Prism Central cluster (see ``GetRemoteSubnetForClusterById``), so both
-    the cluster external ID and the remote subnet external ID are required.
-
+    This method will return remote subnet info using cluster and subnet ext_id.
     Args:
-        module: Ansible module object.
-        api_instance: ``RemoteEntitiesApi`` instance from the
-            ``ntnx_networking_py_client`` SDK.
-        cluster_ext_id (str): External ID of the Prism Central cluster that
-            owns the remote subnet.
-        ext_id (str): External ID of the remote subnet to fetch.
-    Returns:
-        info (object): Remote subnet model returned by the SDK.
+        module: Ansible module
+        api_instance: RemoteEntitiesApi instance from ntnx_networking_py_client sdk
+        cluster_ext_id (str): Prism Element cluster external ID
+        ext_id (str): remote subnet external ID
+    return:
+        info (object): remote subnet info
     """
     try:
         return api_instance.get_remote_subnet_for_cluster_by_id(
@@ -198,10 +191,7 @@ def get_remote_subnet(module, api_instance, cluster_ext_id, ext_id):
         raise_api_exception(
             module=module,
             exception=e,
-            msg=(
-                "Api Exception raised while fetching remote subnet info using "
-                "cluster ext_id and remote subnet ext_id"
-            ),
+            msg="Api Exception raised while fetching remote subnet info using cluster ext_id and ext_id",
         )
 
 
