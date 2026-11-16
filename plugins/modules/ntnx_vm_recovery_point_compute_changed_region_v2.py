@@ -117,12 +117,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - The response for computing changed regions of a VM disk recovery
-          point.
-        - It will contain the list of changed regions with the following details:
-          - offset: The start offset of the changed region.
-          - length: The length of the changed region.
-          - region_type: The type of the changed region.
+        - Response for computing changed regions of a VM disk recovery point.
+        - Contains C(changed_regions), a list of region entries with C(offset),
+          C(length), and C(region_type).
     returned: always
     type: dict
     sample:
