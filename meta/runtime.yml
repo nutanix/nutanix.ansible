@@ -146,6 +146,8 @@ action_groups:
     - ntnx_routes_v2
     - ntnx_routes_info_v2
     - ntnx_route_tables_info_v2
+    - ntnx_route_for_bgp_sessions_info_v2
+    - ntnx_bgp_session_routes_info_v2
     - ntnx_categories_v2
     - ntnx_categories_info_v2
     - ntnx_volume_groups_v2
@@ -296,8 +298,6 @@ action_groups:
     - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
-    - ntnx_remote_vtep_gateways_by_cluster_id_v2
-    - ntnx_remote_vtep_gateways_by_cluster_ids_info_v2
     - ntnx_recovery_plan_job_v2
     - ntnx_recovery_plan_jobs_info_v2
     - ntnx_unplanned_failover_recovery_plan_v2
@@ -356,6 +356,7 @@ action_groups:
     - ntnx_cluster_rackable_units_info_v2
     - ntnx_cluster_cvm_v2
     - ntnx_cluster_cvms_info_v2
+    - ntnx_cluster_remote_vtep_gateways_info_v2
     - ntnx_vcenter_extension_v2
     - ntnx_vcenter_extensions_info_v2
     - ntnx_lcm_bundle_v2

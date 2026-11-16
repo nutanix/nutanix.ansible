@@ -195,6 +195,30 @@ def get_remote_vtep_gateway_for_cluster(module, api_instance, cluster_ext_id, ex
         )
 
 
+def get_bgp_route(module, api_instance, ext_id, bgp_session_ext_id):
+    """
+    This method will return BGP route info using route external ID and
+    BGP session external ID.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): BgpRoutesApi instance from ntnx_networking_py_client sdk
+        ext_id (str): BGP route external ID
+        bgp_session_ext_id (str): BGP session external ID
+    return:
+        route_info (object): BGP route info
+    """
+    try:
+        return api_instance.get_route_for_bgp_session_by_id(
+            extId=ext_id, bgpSessionExtId=bgp_session_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching BGP route info using ext_id and bgp_session_ext_id",
+        )
+
+
 def get_nic_profile(module, api_instance, ext_id):
     """
     This method will return NIC profile info using its ext_id.

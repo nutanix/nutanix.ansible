@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_remote_vtep_gateways_by_cluster_ids_info_v2
+module: ntnx_cluster_remote_vtep_gateways_info_v2
 short_description: Fetch remote VTEP gateways info discovered under a Prism Element cluster in Nutanix Prism Central
 version_added: 2.7.0
 description:
@@ -63,41 +63,41 @@ author:
 
 EXAMPLES = r"""
 - name: Fetch a remote VTEP gateway using its external ID
-  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_vtep_gateways_info_v2:
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     ext_id: "7c6bc5f3-c18c-4702-4c2d-b769fd5f94b0"
   register: result
   ignore_errors: true
 
 - name: List all remote VTEP gateways discovered on a Prism Element cluster
-  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_vtep_gateways_info_v2:
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
   register: result
   ignore_errors: true
 
 - name: List remote VTEP gateways with a filter
-  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_vtep_gateways_info_v2:
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     filter: "name eq 'remote-vtep-gw-ansible'"
   register: result
   ignore_errors: true
 
 - name: List remote VTEP gateways with a limit
-  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_vtep_gateways_info_v2:
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     limit: 1
   register: result
   ignore_errors: true
 
 - name: List remote VTEP gateways sorted by name descending
-  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_vtep_gateways_info_v2:
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     orderby: "name desc"
   register: result
   ignore_errors: true
 
 - name: List remote VTEP gateways using pagination
-  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_vtep_gateways_info_v2:
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     page: 0
     limit: 10
@@ -105,7 +105,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List all remote VTEP gateways with fetch_all
-  nutanix.ncp.ntnx_remote_vtep_gateways_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_vtep_gateways_info_v2:
     cluster_ext_id: "bde7fc02-fe9c-4ce3-9212-2ca4e4b4d258"
     fetch_all: true
   register: result
