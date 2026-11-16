@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -14,13 +14,9 @@ module: ntnx_vm_recovery_point_compute_changed_region_v2
 short_description: Compute VM recovery point changed regions in Nutanix Prism Central
 version_added: 2.7.0
 description:
-    - This module allows you to compute the changed regions between two VM
-      disk recovery points (Changed Block Tracking).
-    - It returns the list of changed regions of a disk recovery point that
-      belongs to a VM recovery point which itself belongs to a top-level
-      recovery point.
-    - Backup software can use this metadata to efficiently transfer only
-      the modified (or non-zero) regions between two disk recovery points.
+    - This module displays the calculated metadata with the changed region details between any two VM disk recovery points of a file.
+    - This API can be used for incremental and differential backups, as well as for a full backup, because it indicates the regions that are zeros,
+      helping to avoid copying zero regions.
     - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -28,9 +24,9 @@ notes:
       the user performing the operation.
     - >-
       B(Compute VM recovery point changed regions) -
-      Required Roles: Backup Admin, CSI System, Disaster Recovery Admin,
-      Kubernetes Data Services System, Prism Admin, Project Manager,
-      Super Admin, Self-Service Admin (deprecated).
+      Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Kubernetes Data Services System, Prism Admin,
+      Prism Viewer, Project Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin,
+      Tenant Admin, Tenant Consumer
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection)"
 options:
     state:
@@ -44,70 +40,53 @@ options:
         default: present
     recovery_point_ext_id:
         description:
-            - The external identifier of the top-level recovery point that
-              owns the VM recovery point.
+            - The external identifier that can be used to retrieve the recovery point using its URL.
         type: str
         required: true
     vm_recovery_point_ext_id:
         description:
-            - The external identifier of the VM recovery point that owns the
-              disk recovery point.
+            - The external identifier that can be used to identify a VM recovery point.
         type: str
         required: true
     disk_recovery_point_ext_id:
         description:
-            - The external identifier of the disk recovery point for which
-              the changed regions must be computed.
+            - Disk recovery point identifier.
         type: str
         required: true
     offset:
         description:
-            - The start offset value (in bytes) from which the changed
-              region computation should begin.
-            - If not provided, computation starts from offset 0.
-            - The start offset may be automatically aligned to a
-              system-defined block boundary.
+            - The start offset value to compute the changed region.
+            - If the value is not provided, then the difference is executed from the offset of 0.
+            - The start offset might automatically align to a system-defined block boundary.
         type: int
         required: false
     length:
         description:
-            - The length (in bytes) starting from I(offset) that should be
-              considered for changed region computation.
+            - The length to compute the changed region.
+            - If the value is not provided, then the difference is performed from the start offset to the end of the disk.
+            - The end offset might automatically align to a system-defined block boundary.
         type: int
         required: false
     block_size_byte:
         description:
-            - The block size (in bytes) to be used for the changed region
-              computation granularity.
-            - The SDK constrains this value to be less than or equal to
-              C(262144) (256 KiB); passing a value larger than this will
-              result in an SDK-side validation error before the request is
-              sent.
+            - When blockSizeByte is set, all returned ranges start and end at blockSize addresses, and the changed blocks match the block size.
+            - Supported values of blockSizeByte are [32768, 65536, 131072, 262144].
+            - For example, if blockSizeByte is set to 32768 (i.e 32KB), all ranges start at multiple of 32KB and end at multiple of 32KB value.
         type: int
         required: false
     reference_recovery_point_ext_id:
         description:
-            - The external identifier of the reference top-level recovery
-              point to compare against.
-            - Required only when specifying a reference disk recovery point.
-              All three of I(reference_recovery_point_ext_id),
-              I(reference_vm_recovery_point_ext_id) and
-              I(reference_disk_recovery_point_ext_id) must be provided
-              together.
+            - The external identifier that can be used to retrieve the recovery point using its URL.
         type: str
         required: false
     reference_vm_recovery_point_ext_id:
         description:
-            - The external identifier of the reference VM recovery point to
-              compare against.
-            - Required only when specifying a reference disk recovery point.
+            - The external identifier that can be used to identify a VM recovery point.
         type: str
         required: false
     reference_disk_recovery_point_ext_id:
         description:
-            - The external identifier of the reference disk recovery point
-              to compare against.
-            - Required only when specifying a reference disk recovery point.
+            - Disk recovery point identifier.
         type: str
         required: false
 extends_documentation_fragment:
@@ -121,14 +100,7 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Compute changed regions for a VM disk recovery point (full disk)
-  nutanix.ncp.ntnx_vm_recovery_point_compute_changed_region_v2:
-    recovery_point_ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
-    vm_recovery_point_ext_id: "522670d7-e92d-45c5-9139-76ccff6813c2"
-    disk_recovery_point_ext_id: "21d467f0-ccef-4733-91cc-f04db58a92eb"
-  register: full_regions
-
-- name: Compute incremental changed regions between two disk recovery points
+- name: Compute changed regions for a VM disk recovery point
   nutanix.ncp.ntnx_vm_recovery_point_compute_changed_region_v2:
     recovery_point_ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
     vm_recovery_point_ext_id: "522670d7-e92d-45c5-9139-76ccff6813c2"
@@ -139,7 +111,7 @@ EXAMPLES = r"""
     reference_recovery_point_ext_id: "0bc9d9a7-eaf1-46f4-9f3c-2b52a5f57b6d"
     reference_vm_recovery_point_ext_id: "9bd35b60-1c26-4c0c-a2ba-8a2b7cb7fbcd"
     reference_disk_recovery_point_ext_id: "3f18f321-59e5-4a09-b74a-4b6d1adf5d47"
-  register: incremental_regions
+  register: changed_regions
 """
 
 RETURN = r"""
@@ -147,10 +119,10 @@ response:
     description:
         - The response for computing changed regions of a VM disk recovery
           point.
-        - When the API returns a list of changed regions, this will be a
-          dict with a C(changed_regions) key containing the list of regions.
-        - Each changed region contains C(offset), C(length) and
-          C(region_type) (C(ZEROED) or C(REGULAR)).
+        - It will contain the list of changed regions with the following details:
+          - offset: The start offset of the changed region.
+          - length: The length of the changed region.
+          - region_type: The type of the changed region.
     returned: always
     type: dict
     sample:
@@ -181,15 +153,6 @@ ext_id:
     type: str
     sample: "21d467f0-ccef-4733-91cc-f04db58a92eb"
 
-task_ext_id:
-    description:
-        - The external ID of the task.
-        - This action is synchronous and does not create a task, so this
-          value is typically null.
-    returned: always
-    type: str
-    sample: null
-
 msg:
     description: This indicates the message if any message occurred.
     returned: When there is an error, or the operation is executed in check mode.
@@ -200,7 +163,6 @@ error:
     description: This field typically holds information about if any error occurred during the task execution.
     returned: When an error occurs.
     type: str
-    sample: null
 
 failed:
     description: This field indicates whether the task failed.
@@ -286,14 +248,6 @@ def _normalize_response_data(data):
 
 
 def compute_vm_recovery_point_changed_regions(module, result, api_instance):
-    """Compute changed regions of a VM disk recovery point.
-
-    Sends the compute-changed-regions POST request for the given VM disk
-    recovery point identifiers and returns the list of ``ChangedRegion``
-    entries in ``result['response']``. All body parameters are optional per
-    the SDK; if a reference disk recovery point is desired, all three
-    reference IDs must be provided together.
-    """
     recovery_point_ext_id = module.params.get("recovery_point_ext_id")
     vm_recovery_point_ext_id = module.params.get("vm_recovery_point_ext_id")
     disk_recovery_point_ext_id = module.params.get("disk_recovery_point_ext_id")
@@ -357,10 +311,8 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
-        "ext_id": None,
-        "task_ext_id": None,
     }
     api_instance = get_recovery_point_api_instance(module)
     compute_vm_recovery_point_changed_regions(module, result, api_instance)
