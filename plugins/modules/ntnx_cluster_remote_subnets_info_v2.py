@@ -10,13 +10,18 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_remote_subnets_by_cluster_ids_info_v2
-short_description: Fetch remote subnets discovered on a remote Prism Central cluster
+module: ntnx_cluster_remote_subnets_info_v2
+short_description: Fetch remote subnets discovered under a Prism Element cluster
 version_added: 2.5.0
 description:
-  - This module allows you to fetch information about RemoteSubnetsByClusterId in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific RemoteSubnetsByClusterId.
-  - If C(ext_id) is not provided, list multiple RemoteSubnetsByClusterId optionally filtered / paginated.
+  - This module allows you to fetch remote subnets discovered under a Prism Element
+    cluster in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch details of that specific remote subnet.
+  - If C(ext_id) is not provided, list remote subnets for the cluster, optionally
+    filtered / paginated.
+  - C(cluster_ext_id) is required — the API is scoped to a single cluster.
+  - The remote subnet resource is a B(read-only) discovery surface; create, update
+    and delete are not supported.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -31,7 +36,7 @@ notes:
 options:
   cluster_ext_id:
     description:
-      - The external ID of the Prism Central cluster that owns the remote subnets.
+      - The external ID of the Prism Element cluster that owns the remote subnets.
       - Required for both get-by-ID and list operations because the underlying
         Nutanix Networking v4 API is scoped by cluster.
     type: str
@@ -54,7 +59,7 @@ author:
 
 EXAMPLES = r"""
 - name: Get remote subnet using ext_id
-  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_subnets_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -65,7 +70,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List all remote subnets discovered on a cluster
-  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_subnets_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -75,7 +80,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List remote subnets with OData filter
-  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_subnets_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -86,7 +91,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List remote subnets with limit
-  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_subnets_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -100,9 +105,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC RemoteSubnetsByClusterId info v4 API.
-    - It can be a single RemoteSubnetsByClusterId if external ID is provided.
-    - List of multiple RemoteSubnetsByClusterId if external ID is not provided
+    - The response from the Nutanix PC remote subnets info v4 API.
+    - It can be a single remote subnet if external ID is provided.
+    - List of multiple remote subnets if external ID is not provided
       with optional filter or limit.
   returned: always
   type: dict

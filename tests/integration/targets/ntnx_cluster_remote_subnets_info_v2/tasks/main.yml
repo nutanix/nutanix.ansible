@@ -1,5 +1,5 @@
 ---
-- name: Set module defaults for RemoteSubnetsByClusterId info tests
+- name: Set module defaults for cluster remote subnets info tests
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: "{{ ip }}"
@@ -14,5 +14,5 @@
       # instead of urllib3 ReadTimeoutErrors.
       read_timeout: 120000
   block:
-    - name: Import remote_subnets_by_cluster_ids_info.yml
-      ansible.builtin.import_tasks: remote_subnets_by_cluster_ids_info.yml
+    - name: Import cluster_remote_subnets_info.yml
+      ansible.builtin.import_tasks: cluster_remote_subnets_info.yml

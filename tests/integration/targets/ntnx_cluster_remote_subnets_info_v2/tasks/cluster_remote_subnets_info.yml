@@ -1,7 +1,7 @@
 ---
-# Test plan for ntnx_remote_subnets_by_cluster_ids_info_v2
+# Test plan for ntnx_cluster_remote_subnets_info_v2
 # ---------------------------------------------------------
-# The RemoteSubnetsByClusterId entity is read-only in the Nutanix Networking
+# Remote subnets under a cluster are read-only in the Nutanix Networking
 # v4 SDK — only get_remote_subnet_for_cluster_by_id (GET-by-ID) and
 # list_remote_subnets_by_cluster_id (LIST) are exposed via
 # ntnx_networking_py_client.RemoteEntitiesApi. There are no create / update /
@@ -35,9 +35,9 @@
 # genuinely down (NETWORKING-10055 on the target PC), the assertions still
 # verify that the module wrapped the response correctly.
 
-- name: Start RemoteSubnetsByClusterId info tests
+- name: Start cluster remote subnets info tests
   ansible.builtin.debug:
-    msg: "Start ntnx_remote_subnets_by_cluster_ids_info_v2 tests"
+    msg: "Start ntnx_cluster_remote_subnets_info_v2 tests"
 
 - name: Generate random suffix for test data
   ansible.builtin.set_fact:
@@ -79,7 +79,7 @@
     that:
       - remote_cluster_ext_id is defined
       - remote_cluster_ext_id | length > 0
-    success_msg: "Using cluster_ext_id={{ remote_cluster_ext_id }} for RemoteSubnetsByClusterId tests."
+    success_msg: "Using cluster_ext_id={{ remote_cluster_ext_id }} for cluster remote subnets tests."
     fail_msg: "No cluster ext_id could be resolved from ntnx_clusters_info_v2."
 
 ##############################################################################
@@ -87,7 +87,7 @@
 ##############################################################################
 
 - name: List all remote subnets for the selected cluster
-  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_subnets_info_v2:
     cluster_ext_id: "{{ remote_cluster_ext_id }}"
   register: list_all_result
   ignore_errors: true
@@ -123,7 +123,7 @@
 ##############################################################################
 
 - name: List remote subnets with limit=1
-  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_subnets_info_v2:
     cluster_ext_id: "{{ remote_cluster_ext_id }}"
     limit: 1
   register: list_limit_result
@@ -154,7 +154,7 @@
 ##############################################################################
 
 - name: List remote subnets with orderby=name
-  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_subnets_info_v2:
     cluster_ext_id: "{{ remote_cluster_ext_id }}"
     orderby: "name"
   register: list_orderby_result
@@ -174,7 +174,7 @@
 ##############################################################################
 
 - name: List remote subnets with page=0 and limit=5
-  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_subnets_info_v2:
     cluster_ext_id: "{{ remote_cluster_ext_id }}"
     page: 0
     limit: 5
@@ -195,7 +195,7 @@
 ##############################################################################
 
 - name: List remote subnets with OData filter (startswith)
-  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_subnets_info_v2:
     cluster_ext_id: "{{ remote_cluster_ext_id }}"
     filter: "startswith(name, 'a')"
   register: list_filter_result
@@ -235,7 +235,7 @@
     first_remote_subnet: "{{ (list_all_result.response | default([]))[0] | default({}) }}"
 
 - name: Get remote subnet by ext_id
-  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_subnets_info_v2:
     cluster_ext_id: "{{ remote_cluster_ext_id }}"
     ext_id: "{{ first_remote_subnet.ext_id }}"
   register: get_result
@@ -272,7 +272,7 @@
 ##############################################################################
 
 - name: List remote subnets with an invalid cluster ext_id
-  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_subnets_info_v2:
     cluster_ext_id: "00000000-0000-0000-0000-{{ random_name }}"
   register: bad_cluster_result
   ignore_errors: true
@@ -291,7 +291,7 @@
 ##############################################################################
 
 - name: Get remote subnet by a bogus ext_id
-  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_subnets_info_v2:
     cluster_ext_id: "{{ remote_cluster_ext_id }}"
     ext_id: "00000000-0000-0000-0000-000000000000"
   register: bad_ext_id_result
@@ -311,7 +311,7 @@
 ##############################################################################
 
 - name: Reject ext_id + filter (mutually exclusive)
-  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_subnets_info_v2:
     cluster_ext_id: "{{ remote_cluster_ext_id }}"
     ext_id: "00000000-0000-0000-0000-000000000000"
     filter: "startswith(name, 'x')"
@@ -334,7 +334,7 @@
 ##############################################################################
 
 - name: Call info module without cluster_ext_id
-  nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2: {}
+  nutanix.ncp.ntnx_cluster_remote_subnets_info_v2: {}
   register: missing_cluster_result
   ignore_errors: true
 

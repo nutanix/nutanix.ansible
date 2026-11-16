@@ -1,6 +1,6 @@
 ---
 # Summary:
-# This playbook demonstrates the ntnx_remote_subnets_by_cluster_ids_info_v2
+# This playbook demonstrates the ntnx_cluster_remote_subnets_info_v2
 # module against a Prism Central. The entity is read-only in the Nutanix
 # Networking v4 API (only GET / LIST endpoints exist), so this playbook only
 # lists and fetches remote subnets.
@@ -11,7 +11,7 @@
 # 3. If any remote subnet is returned, fetch it by ext_id.
 # 4. Re-list with an OData filter and with a limit.
 
-- name: RemoteSubnetsByClusterId info playbook
+- name: Cluster remote subnets info playbook
   hosts: localhost
   gather_facts: false
   module_defaults:
@@ -48,7 +48,7 @@
         success_msg: "Using cluster_ext_id={{ cluster_ext_id }} for remote subnet lookups."
 
     - name: List all remote subnets discovered on the cluster
-      nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+      nutanix.ncp.ntnx_cluster_remote_subnets_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
       register: list_result
       ignore_errors: true
@@ -65,7 +65,7 @@
         remote_subnet_ext_id: "{{ (list_result.response | default([]))[0].ext_id | default('') }}"
 
     - name: Get remote subnet using ext_id
-      nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+      nutanix.ncp.ntnx_cluster_remote_subnets_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
         ext_id: "{{ remote_subnet_ext_id }}"
       register: get_result
@@ -73,14 +73,14 @@
       ignore_errors: true
 
     - name: List remote subnets with OData filter (startswith on name)
-      nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+      nutanix.ncp.ntnx_cluster_remote_subnets_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
         filter: "startswith(name, 'C')"
       register: filter_result
       ignore_errors: true
 
     - name: List remote subnets with limit
-      nutanix.ncp.ntnx_remote_subnets_by_cluster_ids_info_v2:
+      nutanix.ncp.ntnx_cluster_remote_subnets_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
         limit: 1
       register: limit_result

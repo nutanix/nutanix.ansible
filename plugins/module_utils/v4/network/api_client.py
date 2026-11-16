@@ -203,7 +203,7 @@ def get_remote_entities_api_instance(module):
 
     The Remote Entities API groups the read-only endpoints that expose
     subnets, VPN connections and VTEP gateways discovered on remote Prism
-    Central clusters. It is used by the RemoteSubnetsByClusterId info module.
+    Central clusters. It is used by the cluster remote subnets info module.
 
     Args:
         module (object): Ansible module object

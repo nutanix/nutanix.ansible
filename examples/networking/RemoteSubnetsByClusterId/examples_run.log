@@ -18,7 +18,7 @@ ok: [localhost] => {
 
 TASK [List all remote subnets discovered on the cluster] ***********************
 [ERROR]: Task failed: Module failed: Api Exception raised while fetching remote subnets info
-Origin: /tmp/codegen/aaa0daa1edc741098c09fbb56eb464b1/repo/examples/networking/RemoteSubnetsByClusterId/remote_subnets_by_cluster_ids_info_v2.yml:50:7
+Origin: /tmp/codegen/aaa0daa1edc741098c09fbb56eb464b1/repo/examples/networking/RemoteSubnetsByClusterId/cluster_remote_subnets_info_v2.yml:50:7
 
 48         success_msg: "Using cluster_ext_id={{ cluster_ext_id }} for remote subnet lookups."
 49
@@ -45,7 +45,7 @@ skipping: [localhost] => {"changed": false, "false_condition": "remote_subnet_ex
 
 TASK [List remote subnets with OData filter (startswith on name)] **************
 [ERROR]: Task failed: Module failed: Api Exception raised while fetching remote subnets info
-Origin: /tmp/codegen/aaa0daa1edc741098c09fbb56eb464b1/repo/examples/networking/RemoteSubnetsByClusterId/remote_subnets_by_cluster_ids_info_v2.yml:75:7
+Origin: /tmp/codegen/aaa0daa1edc741098c09fbb56eb464b1/repo/examples/networking/RemoteSubnetsByClusterId/cluster_remote_subnets_info_v2.yml:75:7
 
 73       ignore_errors: true
 74
@@ -57,7 +57,7 @@ fatal: [localhost]: FAILED! => {"changed": false, "error": "INTERNAL SERVER ERRO
 
 TASK [List remote subnets with limit] ******************************************
 [ERROR]: Task failed: Module failed: Api Exception raised while fetching remote subnets info
-Origin: /tmp/codegen/aaa0daa1edc741098c09fbb56eb464b1/repo/examples/networking/RemoteSubnetsByClusterId/remote_subnets_by_cluster_ids_info_v2.yml:82:7
+Origin: /tmp/codegen/aaa0daa1edc741098c09fbb56eb464b1/repo/examples/networking/RemoteSubnetsByClusterId/cluster_remote_subnets_info_v2.yml:82:7
 
 80       ignore_errors: true
 81
