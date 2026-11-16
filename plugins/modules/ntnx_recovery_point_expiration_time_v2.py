@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -15,10 +15,7 @@ short_description: Set the expiration time of a recovery point in Nutanix Prism 
 version_added: 2.7.0
 description:
     - This module allows you to set (update) the expiration time of an existing
-      recovery point in Nutanix Prism Central using the
-      C($actions/set-expiration-time) V4 API.
-    - The expiration time controls when the recovery point is garbage
-      collected.
+      recovery point in Nutanix Prism Central.
     - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -27,8 +24,8 @@ notes:
     - >-
       B(Set the expiration time of the recovery point) -
       Required Roles: Backup Admin, CSI System, Disaster Recovery Admin,
-      Kubernetes Data Services System, NCM Connector, Prism Admin,
-      Project Manager, Super Admin, Self-Service Admin (deprecated).
+      Kubernetes Data Services System, NCM Connector, Prism Admin, Project Admin,
+      Project Manager, Self-Service Admin (Deprecated), Super Admin, Tenant Admin, Tenant Consumer
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection)"
 options:
     state:
@@ -41,16 +38,12 @@ options:
         default: present
     ext_id:
         description:
-            - The external identifier of the top-level recovery point whose
-              expiration time is being set.
+            - The external identifier that can be used to retrieve the recovery point using its URL.
         type: str
         required: true
     expiration_time:
         description:
-            - The UTC date and time in ISO-8601 format when the recovery point
-              expires.
-            - Required for the C(set-expiration-time) action; the SDK does not
-              accept a null expiration time.
+            - The UTC date and time in ISO-8601 format when the current recovery point expires.
         type: str
         required: true
 extends_documentation_fragment:
@@ -74,24 +67,14 @@ EXAMPLES = r"""
     expiration_time: "2026-12-31T23:59:00+00:00"
   register: result
   ignore_errors: true
-
-- name: Extend the expiration time of an existing recovery point
-  nutanix.ncp.ntnx_recovery_point_expiration_time_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
-    expiration_time: "2027-06-30T12:00:00+00:00"
-  register: result
-  ignore_errors: true
 """
 
 RETURN = r"""
 response:
     description:
         - Response for setting the expiration time of a recovery point.
-        - Task details when C(wait) is true.
+        - If C(wait) is true, the response will contain the final task details.
+        - If C(wait) is false, the response will contain the initial task details.
     returned: always
     type: dict
     sample:
@@ -269,8 +252,6 @@ def run_module():
     result = {
         "changed": False,
         "response": None,
-        "ext_id": None,
-        "task_ext_id": None,
         "failed": False,
     }
     api_instance = get_recovery_point_api_instance(module)
