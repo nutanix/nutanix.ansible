@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 tests/output/
 tests/integration/integration_config.yml
+INSTRUCTIONS.md
