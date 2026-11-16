@@ -56,6 +56,14 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     limit: 1
   register: limited_passwords
+
+- name: List all password managers with fetch_all
+  nutanix.ncp.ntnx_password_managers_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -159,6 +167,7 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -178,7 +187,10 @@ def get_password_status_system_users(module, result):
         )
     resp = None
     try:
-        resp = password_manager_api.list_system_user_passwords(**kwargs)
+        resp = list_entities(
+            password_manager_api.list_system_user_passwords,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

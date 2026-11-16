@@ -70,6 +70,14 @@ EXAMPLES = r"""
     nutanix_password: <pass>
     filter: "name eq 'storage_container_name'"
   register: result
+
+- name: List all storage containers with fetch_all
+  nutanix.ncp.ntnx_storage_containers_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 
 RETURN = r"""
@@ -153,6 +161,7 @@ from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.helpers import get_storage_container  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -188,7 +197,10 @@ def get_storage_containers(module, result):
         )
     resp = None
     try:
-        resp = storage_containers.list_storage_containers(**kwargs)
+        resp = list_entities(
+            storage_containers.list_storage_containers,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

@@ -1,11 +1,13 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create CD ROM for a VM
+# 1. Create CD ROM with all attributes
 # 2. Inject ISO in CD ROM of a VM
 # 3. Get CD ROM details
 # 4. Eject ISO from CD ROM of a VM
-# 5. Delete CD ROM
+# 5. List all VM CD-ROMs
+# 6. List all VM CD-ROMs with fetch_all
+# 7. Delete CD ROM
 
 - name: VM cd rom playbook
   hosts: localhost
@@ -69,6 +71,19 @@
             reference:
               image_reference:
                 image_ext_id: "{{ image_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all VM CD-ROMs
+      nutanix.ncp.ntnx_vms_cd_rom_info_v2:
+        vm_ext_id: "{{ vm_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all VM CD-ROMs with fetch_all
+      nutanix.ncp.ntnx_vms_cd_rom_info_v2:
+        vm_ext_id: "{{ vm_uuid }}"
+        fetch_all: true
       register: result
       ignore_errors: true
 
