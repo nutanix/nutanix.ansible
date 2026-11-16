@@ -50,8 +50,8 @@
   ansible.builtin.assert:
     that:
       - subnet_migrate_check_mode is defined
-      - subnet_migrate_check_mode.changed == false
-      - subnet_migrate_check_mode.failed == false
+      - not subnet_migrate_check_mode.changed
+      - not subnet_migrate_check_mode.failed
       - subnet_migrate_check_mode.response is defined
       - subnet_migrate_check_mode.response.subnets is defined
       - subnet_migrate_check_mode.response.subnets | length == 2
@@ -76,7 +76,7 @@
   ansible.builtin.assert:
     that:
       - missing_all is defined
-      - missing_all.failed == true
+      - missing_all.failed
       - missing_all.msg is defined
       - >-
         ("missing required arguments: subnets" in missing_all.msg)
@@ -100,7 +100,7 @@
   ansible.builtin.assert:
     that:
       - bad_subnet_result is defined
-      - bad_subnet_result.failed == true
+      - bad_subnet_result.failed
       - bad_subnet_result.msg is defined
       # The API accepts the request but the wait_for_completion path fails the
       # task when the referenced subnet does not exist. The module surfaces
@@ -145,7 +145,7 @@
       delay: 5
       until:
         - created_subnet is defined
-        - created_subnet.failed == false
+        - not created_subnet.failed
         - created_subnet.ext_id is defined
 
     - name: Report the create-subnet outcome for the migration test
@@ -158,13 +158,13 @@
     - name: Run the live migration block only if the pre-req subnet exists
       when:
         - created_subnet is defined
-        - created_subnet.failed == false
+        - not created_subnet.failed
         - created_subnet.ext_id is defined
       block:
         - name: Assert VLAN basic subnet was created successfully
           ansible.builtin.assert:
             that:
-              - created_subnet.changed == true
+              - created_subnet.changed
               - created_subnet.response is defined
               - created_subnet.response.subnet_type == "VLAN"
             success_msg: "VLAN basic subnet created for migration test"
@@ -193,8 +193,8 @@
               # was propagated with a task-shaped response — both prove the
               # module correctly integrated with the SubnetMigrationsApi.
               - >-
-                (live_migrate_result.failed == false and live_migrate_result.changed == true)
-                or (live_migrate_result.failed == true
+                (not live_migrate_result.failed and live_migrate_result.changed)
+                or (live_migrate_result.failed
                     and live_migrate_result.response.status is defined)
             success_msg: "VLAN subnet migration task completed with a well-formed response"
             fail_msg: "Live subnet migration did not produce the expected task response"
@@ -212,8 +212,8 @@
             that:
               - rerun_migrate_result is defined
               - >-
-                (rerun_migrate_result.failed == false and rerun_migrate_result.changed == true)
-                or (rerun_migrate_result.failed == true and rerun_migrate_result.msg is defined)
+                (not rerun_migrate_result.failed and rerun_migrate_result.changed)
+                or (rerun_migrate_result.failed and rerun_migrate_result.msg is defined)
             success_msg: "Re-running migration returned a well-formed result"
             fail_msg: "Re-running migration produced an unexpected result shape"
 
