@@ -1,0 +1,30 @@
+---
+# Summary:
+# This playbook will Set the expiration time of a recovery point
+
+- name: Recovery Plans v2 playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        recovery_point_ext_id: "6f4ffcee-1dc4-4982-9401-aa1f65dd7177"
+        expiration_time: "2027-06-30T12:00:00+00:00"
+
+    - name: Set the expiration time of a recovery point
+      nutanix.ncp.ntnx_recovery_point_expiration_time_v2:
+        ext_id: "{{ recovery_point_ext_id }}"
+        expiration_time: "{{ expiration_time }}"
+      register: result
+      ignore_errors: true
+
+    - name: Print the result
+      ansible.builtin.debug:
+        var: result
