@@ -1,13 +1,15 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create nic for a VM
-# 2. Update nic for a VM
-# 3. Migrate nic to another subnet
+# 1. Create nic
+# 2. Update nic
+# 3. Migrate nic to another subnet with assigning given IP
 # 4. Retrieve nic info after migrating nic to another subnet
 # 5. Assign IP address to nic
 # 6. Release IP address from nic
-# 7. Delete nic
+# 7. List all VM NICs
+# 8. List all VM NICs with fetch_all
+# 9. Delete nic
 
 - name: VM nics playbook
   hosts: localhost
@@ -82,6 +84,19 @@
         vm_ext_id: "{{ vm_uuid }}"
         ip_address:
           value: "{{ ip_address }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all VM NICs
+      nutanix.ncp.ntnx_vms_nics_info_v2:
+        vm_ext_id: "{{ vm_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all VM NICs with fetch_all
+      nutanix.ncp.ntnx_vms_nics_info_v2:
+        vm_ext_id: "{{ vm_uuid }}"
+        fetch_all: true
       register: result
       ignore_errors: true
 

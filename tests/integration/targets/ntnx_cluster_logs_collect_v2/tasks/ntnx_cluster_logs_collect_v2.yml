@@ -1,0 +1,109 @@
+---
+- name: Start ntnx_cluster_logs_collect_v2 tests
+  ansible.builtin.debug:
+    msg: "Starting ntnx_cluster_logs_collect_v2 tests"
+
+- name: Fetch clusters for log collect
+  nutanix.ncp.ntnx_clusters_info_v2:
+    limit: 5
+  register: clusters_info
+  ignore_errors: true
+
+- name: Verify clusters for log collect
+  ansible.builtin.assert:
+    that:
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    fail_msg: "Failed to fetch clusters for log collect"
+    success_msg: "Fetched clusters for log collect"
+
+- name: Set cluster facts
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ clusters_info.response[0].ext_id }}"
+
+- name: Compute time window for log collect
+  ansible.builtin.set_fact:
+    _epoch_now: "{{ ansible_date_time.epoch | int }}"
+    _collect_end: "{{ '%Y-%m-%dT%H:%M:%SZ' | strftime(ansible_date_time.epoch | int) }}"
+    _collect_start: "{{ '%Y-%m-%dT%H:%M:%SZ' | strftime((ansible_date_time.epoch | int) - 3600) }}"
+
+- name: Collect logs with check mode enabled
+  nutanix.ncp.ntnx_cluster_logs_collect_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ _collect_start }}"
+    end_time: "{{ _collect_end }}"
+    archive_opts:
+      upload_params:
+        local_upload_params:
+          path: "/tmp/logs.tar.gz"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Verify check mode collect logs
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+    fail_msg: "Check mode collect logs failed"
+    success_msg: "Check mode collect logs passed"
+
+- name: Missing required archive_opts negative  # noqa: args[module]
+  nutanix.ncp.ntnx_cluster_logs_collect_v2:
+    state: present
+    ext_id: "{{ cluster_ext_id }}"
+    start_time: "{{ _collect_start }}"
+    end_time: "{{ _collect_end }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing archive_opts fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Missing archive_opts should fail"
+    success_msg: "Missing archive_opts correctly failed"
+
+- name: Missing start_time negative  # noqa: args[module]
+  nutanix.ncp.ntnx_cluster_logs_collect_v2:
+    state: present
+    ext_id: "{{ cluster_ext_id }}"
+    end_time: "{{ _collect_end }}"
+    archive_opts:
+      upload_params:
+        local_upload_params:
+          path: "/tmp/logs.tar.gz"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing start_time fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Missing start_time should fail"
+    success_msg: "Missing start_time correctly failed"
+
+- name: Invalid ext_id collect logs
+  nutanix.ncp.ntnx_cluster_logs_collect_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ _collect_start }}"
+    end_time: "{{ _collect_end }}"
+    archive_opts:
+      upload_params:
+        local_upload_params:
+          path: "/tmp/logs.tar.gz"
+  register: result
+  ignore_errors: true
+
+- name: Verify invalid ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Invalid ext_id should fail"
+    success_msg: "Invalid ext_id correctly failed"
