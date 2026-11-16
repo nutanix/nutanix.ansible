@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -10,18 +10,12 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_discover_cluster_for_recovery_point_id_v2
+module: ntnx_recovery_point_discover_cluster_v2
 short_description: Discover the cluster hosting a recovery point in Nutanix Prism Central
 version_added: 2.7.0
 description:
   - This module allows you to discover the cluster hosting a recovery point in Nutanix Prism Central.
-  - The API returns the redirect cluster IP and a JWT token that must be set as a session
-    cookie while invoking the follow-up Changed Block Tracking (CBT) or VSS metadata endpoints
-    on that cluster.
-  - Use C(operation=COMPUTE_CHANGED_REGIONS) to discover the cluster before invoking the
-    compute changed regions APIs.
-  - Use C(operation=GET_VSS_METADATA) to discover the cluster before invoking the VSS
-    metadata API for a VM recovery point.
+  - The API returns cluster details where the given recovery point is located, and a certificate to access the endpoint.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -29,17 +23,15 @@ notes:
     performing the operation.
   - >-
     B(Discover cluster for a recovery point) -
-    Required Roles: Backup Admin, CSI System, Disaster Recovery Admin, Kubernetes Data
-    Services System, NCM Connector, Prism Admin, Project Manager, Super Admin,
-    Self-Service Admin (deprecated)
+    Required Roles: Backup Admin, Disaster Recovery Admin, Prism Admin, Project Admin,
+    Project Manager, Super Admin, Tenant Admin, Tenant Consumer
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=dataprotection)"
 options:
   state:
     description:
       - State of the module.
       - If C(state) is set to C(present), the module will discover the cluster for the recovery point.
-      - The action is idempotent from the API perspective. C(changed) is set to C(false) since no
-        persistent server-side change is made.
+      - If C(state) is set to C(absent), the module will fail.
     type: str
     choices:
       - present
@@ -90,6 +82,7 @@ options:
               - Exactly one of C(vm_disk_recovery_point) or C(volume_group_disk_recovery_point)
                 must be provided.
             type: dict
+            required: true
             suboptions:
               vm_disk_recovery_point:
                 description:
@@ -100,14 +93,17 @@ options:
                     description:
                       - External identifier of the VM recovery point.
                     type: str
+                    required: true
                   recovery_point_ext_id:
                     description:
                       - External identifier of the top level recovery point.
                     type: str
+                    required: true
                   disk_recovery_point_ext_id:
                     description:
                       - Disk recovery point identifier.
                     type: str
+                    required: true
               volume_group_disk_recovery_point:
                 description:
                   - Reference to a volume group disk recovery point.
@@ -117,14 +113,17 @@ options:
                     description:
                       - External identifier of the volume group recovery point.
                     type: str
+                    required: true
                   recovery_point_ext_id:
                     description:
                       - External identifier of the top level recovery point.
                     type: str
+                    required: true
                   disk_recovery_point_ext_id:
                     description:
                       - Disk recovery point identifier.
                     type: str
+                    required: true
           reference_disk_recovery_point:
             description:
               - Optional reference disk recovery point to compute changed regions against.
@@ -141,14 +140,17 @@ options:
                     description:
                       - External identifier of the VM recovery point.
                     type: str
+                    required: true
                   recovery_point_ext_id:
                     description:
                       - External identifier of the top level recovery point.
                     type: str
+                    required: true
                   disk_recovery_point_ext_id:
                     description:
                       - Disk recovery point identifier.
                     type: str
+                    required: true
               volume_group_disk_recovery_point:
                 description:
                   - Reference to a volume group disk recovery point.
@@ -158,14 +160,17 @@ options:
                     description:
                       - External identifier of the volume group recovery point.
                     type: str
+                    required: true
                   recovery_point_ext_id:
                     description:
                       - External identifier of the top level recovery point.
                     type: str
+                    required: true
                   disk_recovery_point_ext_id:
                     description:
                       - Disk recovery point identifier.
                     type: str
+                    required: true
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_operations_v2
@@ -178,7 +183,7 @@ author:
 
 EXAMPLES = r"""
 - name: Discover cluster for a recovery point (GET_VSS_METADATA)
-  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+  nutanix.ncp.ntnx_recovery_point_discover_cluster_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -192,7 +197,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: Discover cluster for a recovery point (COMPUTE_CHANGED_REGIONS - VM)
-  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+  nutanix.ncp.ntnx_recovery_point_discover_cluster_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
@@ -275,6 +280,7 @@ from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.data_protection.api_client import (  # noqa: E402
     get_recovery_point_api_instance,
 )
+from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
@@ -294,30 +300,40 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
+    vm_disk_recovery_point_spec = dict(
+        vm_recovery_point_ext_id=dict(type="str", required=True),
+        recovery_point_ext_id=dict(type="str", required=True),
+        disk_recovery_point_ext_id=dict(type="str", required=True),
+    )
+    volume_group_disk_recovery_point_spec = dict(
+        volume_group_recovery_point_ext_id=dict(type="str", required=True),
+        recovery_point_ext_id=dict(type="str", required=True),
+        disk_recovery_point_ext_id=dict(type="str", required=True),
+    )
 
+    disk_recovery_point_obj_map = {
+        "vm_disk_recovery_point": data_protection_sdk.VmDiskRecoveryPointReference,
+        "volume_group_disk_recovery_point": (
+            data_protection_sdk.VolumeGroupDiskRecoveryPointReference
+        ),
+    }
     disk_recovery_point_options = dict(
         vm_disk_recovery_point=dict(
             type="dict",
-            options=dict(
-                vm_recovery_point_ext_id=dict(type="str"),
-                recovery_point_ext_id=dict(type="str"),
-                disk_recovery_point_ext_id=dict(type="str"),
-            ),
+            options=vm_disk_recovery_point_spec,
         ),
         volume_group_disk_recovery_point=dict(
             type="dict",
-            options=dict(
-                volume_group_recovery_point_ext_id=dict(type="str"),
-                recovery_point_ext_id=dict(type="str"),
-                disk_recovery_point_ext_id=dict(type="str"),
-            ),
+            options=volume_group_disk_recovery_point_spec,
         ),
     )
 
     compute_changed_regions_sub_spec = dict(
         disk_recovery_point=dict(
             type="dict",
+            required=True,
             options=disk_recovery_point_options,
+            obj=disk_recovery_point_obj_map,
             mutually_exclusive=[
                 ("vm_disk_recovery_point", "volume_group_disk_recovery_point"),
             ],
@@ -325,6 +341,7 @@ def get_module_spec():
         reference_disk_recovery_point=dict(
             type="dict",
             options=disk_recovery_point_options,
+            obj=disk_recovery_point_obj_map,
             mutually_exclusive=[
                 ("vm_disk_recovery_point", "volume_group_disk_recovery_point"),
             ],
@@ -335,10 +352,17 @@ def get_module_spec():
         vm_recovery_point_ext_id=dict(type="str", required=True),
     )
 
+    cluster_discover_spec_obj_map = {
+        "get_vss_metadata": data_protection_sdk.GetVssMetadataClusterDiscoverSpec,
+        "compute_changed_regions": (
+            data_protection_sdk.ComputeChangedRegionsClusterDiscoverSpec
+        ),
+    }
     spec_sub_spec = dict(
         get_vss_metadata=dict(type="dict", options=get_vss_metadata_sub_spec),
         compute_changed_regions=dict(
-            type="dict", options=compute_changed_regions_sub_spec
+            type="dict",
+            options=compute_changed_regions_sub_spec,
         ),
     )
 
@@ -354,81 +378,11 @@ def get_module_spec():
             type="dict",
             required=True,
             options=spec_sub_spec,
+            obj=cluster_discover_spec_obj_map,
             mutually_exclusive=[("get_vss_metadata", "compute_changed_regions")],
         ),
     )
     return module_args
-
-
-def _build_disk_recovery_point_reference(reference):
-    """Build the disk recovery point reference SDK object.
-
-    ``reference`` is the dict from the module spec containing exactly one of
-    ``vm_disk_recovery_point`` or ``volume_group_disk_recovery_point``.
-    Returns ``None`` if neither is provided.
-    """
-    if not reference:
-        return None
-    vm_ref = reference.get("vm_disk_recovery_point")
-    vg_ref = reference.get("volume_group_disk_recovery_point")
-    if vm_ref:
-        obj = data_protection_sdk.VmDiskRecoveryPointReference()
-        if vm_ref.get("vm_recovery_point_ext_id") is not None:
-            obj.vm_recovery_point_ext_id = vm_ref.get("vm_recovery_point_ext_id")
-        if vm_ref.get("recovery_point_ext_id") is not None:
-            obj.recovery_point_ext_id = vm_ref.get("recovery_point_ext_id")
-        if vm_ref.get("disk_recovery_point_ext_id") is not None:
-            obj.disk_recovery_point_ext_id = vm_ref.get("disk_recovery_point_ext_id")
-        return obj
-    if vg_ref:
-        obj = data_protection_sdk.VolumeGroupDiskRecoveryPointReference()
-        if vg_ref.get("volume_group_recovery_point_ext_id") is not None:
-            obj.volume_group_recovery_point_ext_id = vg_ref.get(
-                "volume_group_recovery_point_ext_id"
-            )
-        if vg_ref.get("recovery_point_ext_id") is not None:
-            obj.recovery_point_ext_id = vg_ref.get("recovery_point_ext_id")
-        if vg_ref.get("disk_recovery_point_ext_id") is not None:
-            obj.disk_recovery_point_ext_id = vg_ref.get("disk_recovery_point_ext_id")
-        return obj
-    return None
-
-
-def _build_cluster_discover_spec(module, result):
-    """Build the ClusterDiscoverSpec SDK object from module params."""
-    operation = module.params.get("operation")
-    spec_params = module.params.get("spec") or {}
-
-    body = data_protection_sdk.ClusterDiscoverSpec()
-    body.operation = operation
-
-    if operation == "GET_VSS_METADATA":
-        vss_params = spec_params.get("get_vss_metadata")
-        if not vss_params:
-            module.fail_json(
-                msg="spec.get_vss_metadata is required when operation is GET_VSS_METADATA",
-                **result,
-            )
-        vss_spec = data_protection_sdk.GetVssMetadataClusterDiscoverSpec()
-        vss_spec.vm_recovery_point_ext_id = vss_params.get("vm_recovery_point_ext_id")
-        body.spec = vss_spec
-    else:  # COMPUTE_CHANGED_REGIONS
-        ccr_params = spec_params.get("compute_changed_regions")
-        if not ccr_params:
-            module.fail_json(
-                msg="spec.compute_changed_regions is required when operation is COMPUTE_CHANGED_REGIONS",
-                **result,
-            )
-        ccr_spec = data_protection_sdk.ComputeChangedRegionsClusterDiscoverSpec()
-        ccr_spec.disk_recovery_point = _build_disk_recovery_point_reference(
-            ccr_params.get("disk_recovery_point")
-        )
-        ccr_spec.reference_disk_recovery_point = _build_disk_recovery_point_reference(
-            ccr_params.get("reference_disk_recovery_point")
-        )
-        body.spec = ccr_spec
-
-    return body
 
 
 def discover_cluster_for_recovery_point(module, result, api_instance):
@@ -436,7 +390,29 @@ def discover_cluster_for_recovery_point(module, result, api_instance):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
-    body = _build_cluster_discover_spec(module, result)
+    operation = module.params.get("operation")
+    spec_params = module.params.get("spec") or {}
+    if operation == "GET_VSS_METADATA" and not spec_params.get("get_vss_metadata"):
+        module.fail_json(
+            msg="spec.get_vss_metadata is required when operation is GET_VSS_METADATA",
+            **result,
+        )
+    if operation == "COMPUTE_CHANGED_REGIONS" and not spec_params.get(
+        "compute_changed_regions"
+    ):
+        module.fail_json(
+            msg="spec.compute_changed_regions is required when operation is COMPUTE_CHANGED_REGIONS",
+            **result,
+        )
+
+    sg = SpecGenerator(module)
+    body, err = sg.generate_spec(obj=data_protection_sdk.ClusterDiscoverSpec())
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed generating discover cluster for recovery point spec",
+            **result,
+        )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(body.to_dict())
@@ -460,10 +436,6 @@ def run_module():
     module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
-        required_if=[
-            ("operation", "GET_VSS_METADATA", ("spec",)),
-            ("operation", "COMPUTE_CHANGED_REGIONS", ("spec",)),
-        ],
     )
     if SDK_IMP_ERROR:
         module.fail_json(
@@ -474,9 +446,8 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
-        "ext_id": None,
     }
     api_instance = get_recovery_point_api_instance(module)
     discover_cluster_for_recovery_point(module, result, api_instance)

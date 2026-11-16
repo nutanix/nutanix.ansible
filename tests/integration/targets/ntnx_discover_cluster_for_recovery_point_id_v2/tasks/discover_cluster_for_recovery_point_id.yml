@@ -1,5 +1,5 @@
 ---
-# Test plan for ntnx_discover_cluster_for_recovery_point_id_v2
+# Test plan for ntnx_recovery_point_discover_cluster_v2
 #
 # Setup (prerequisites created on-the-fly):
 #   1. Create a VM on the cluster.
@@ -33,9 +33,9 @@
 # Teardown:
 #   - Delete both recovery points and the VM.
 
-- name: Start ntnx_discover_cluster_for_recovery_point_id_v2 tests
+- name: Start ntnx_recovery_point_discover_cluster_v2 tests
   ansible.builtin.debug:
-    msg: Start ntnx_discover_cluster_for_recovery_point_id_v2 tests
+    msg: Start ntnx_recovery_point_discover_cluster_v2 tests
 
 - name: Generate random suffix
   ansible.builtin.set_fact:
@@ -65,7 +65,7 @@
 ########################################################################################
 
 - name: Generate spec for GET_VSS_METADATA operation using check mode
-  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+  nutanix.ncp.ntnx_recovery_point_discover_cluster_v2:
     ext_id: "{{ dummy_uuid }}"
     operation: "GET_VSS_METADATA"
     spec:
@@ -90,7 +90,7 @@
     fail_msg: "GET_VSS_METADATA check_mode spec generation failed"
 
 - name: Generate spec for COMPUTE_CHANGED_REGIONS with vm_disk variant using check mode
-  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+  nutanix.ncp.ntnx_recovery_point_discover_cluster_v2:
     ext_id: "{{ dummy_uuid }}"
     operation: "COMPUTE_CHANGED_REGIONS"
     spec:
@@ -131,7 +131,7 @@
     fail_msg: "COMPUTE_CHANGED_REGIONS vm_disk check_mode spec generation failed"
 
 - name: Generate spec for COMPUTE_CHANGED_REGIONS with vg_disk variant using check mode
-  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+  nutanix.ncp.ntnx_recovery_point_discover_cluster_v2:
     ext_id: "{{ dummy_uuid }}"
     operation: "COMPUTE_CHANGED_REGIONS"
     spec:
@@ -166,7 +166,7 @@
 ########################################################################################
 
 - name: Fail without ext_id
-  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+  nutanix.ncp.ntnx_recovery_point_discover_cluster_v2:
     operation: "GET_VSS_METADATA"
     spec:
       get_vss_metadata:
@@ -185,7 +185,7 @@
     fail_msg: "Missing ext_id did not fail as expected"
 
 - name: Fail without operation
-  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+  nutanix.ncp.ntnx_recovery_point_discover_cluster_v2:
     ext_id: "{{ dummy_uuid }}"
     spec:
       get_vss_metadata:
@@ -204,7 +204,7 @@
     fail_msg: "Missing operation did not fail as expected"
 
 - name: Fail without spec
-  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+  nutanix.ncp.ntnx_recovery_point_discover_cluster_v2:
     ext_id: "{{ dummy_uuid }}"
     operation: "GET_VSS_METADATA"
   register: result
@@ -221,7 +221,7 @@
     fail_msg: "Missing spec did not fail as expected"
 
 - name: Fail with invalid operation value
-  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+  nutanix.ncp.ntnx_recovery_point_discover_cluster_v2:
     ext_id: "{{ dummy_uuid }}"
     operation: "INVALID_OP"
     spec:
@@ -241,7 +241,7 @@
     fail_msg: "Invalid operation value did not fail as expected"
 
 - name: Fail when spec.get_vss_metadata is missing for GET_VSS_METADATA operation
-  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+  nutanix.ncp.ntnx_recovery_point_discover_cluster_v2:
     ext_id: "{{ dummy_uuid }}"
     operation: "GET_VSS_METADATA"
     spec:
@@ -264,7 +264,7 @@
     fail_msg: "Missing spec.get_vss_metadata for GET_VSS_METADATA did not fail as expected"
 
 - name: Fail when spec.compute_changed_regions is missing for COMPUTE_CHANGED_REGIONS operation
-  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+  nutanix.ncp.ntnx_recovery_point_discover_cluster_v2:
     ext_id: "{{ dummy_uuid }}"
     operation: "COMPUTE_CHANGED_REGIONS"
     spec:
@@ -285,7 +285,7 @@
     fail_msg: "Missing spec.compute_changed_regions for COMPUTE_CHANGED_REGIONS did not fail as expected"
 
 - name: Fail when both vm_disk and vg_disk are provided in disk_recovery_point (mutually exclusive)
-  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+  nutanix.ncp.ntnx_recovery_point_discover_cluster_v2:
     ext_id: "{{ dummy_uuid }}"
     operation: "COMPUTE_CHANGED_REGIONS"
     spec:
@@ -309,7 +309,7 @@
     fail_msg: "Mutually exclusive vm_disk/vg_disk did not fail as expected"
 
 - name: Fail when both get_vss_metadata and compute_changed_regions are provided in spec
-  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+  nutanix.ncp.ntnx_recovery_point_discover_cluster_v2:
     ext_id: "{{ dummy_uuid }}"
     operation: "GET_VSS_METADATA"
     spec:
@@ -486,7 +486,7 @@
 ########################################################################################
 
 - name: Discover cluster for CBT using disk_recovery_point only
-  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+  nutanix.ncp.ntnx_recovery_point_discover_cluster_v2:
     ext_id: "{{ rp_cbt_ext_id }}"
     operation: "COMPUTE_CHANGED_REGIONS"
     spec:
@@ -514,7 +514,7 @@
     fail_msg: "Cluster discovery for CBT failed"
 
 - name: Discover cluster for CBT with reference_disk_recovery_point (self-reference)
-  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+  nutanix.ncp.ntnx_recovery_point_discover_cluster_v2:
     ext_id: "{{ rp_cbt_ext_id }}"
     operation: "COMPUTE_CHANGED_REGIONS"
     spec:
@@ -548,7 +548,7 @@
 
 - name: Discover cluster for VSS metadata (only when APPLICATION_CONSISTENT RP is available)
   when: rp_vss_ext_id is defined
-  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+  nutanix.ncp.ntnx_recovery_point_discover_cluster_v2:
     ext_id: "{{ rp_vss_ext_id }}"
     operation: "GET_VSS_METADATA"
     spec:
@@ -572,7 +572,7 @@
 ########################################################################################
 
 - name: Discover cluster for a non-existent recovery point ext_id
-  nutanix.ncp.ntnx_discover_cluster_for_recovery_point_id_v2:
+  nutanix.ncp.ntnx_recovery_point_discover_cluster_v2:
     ext_id: "{{ missing_uuid }}"
     operation: "COMPUTE_CHANGED_REGIONS"
     spec:
