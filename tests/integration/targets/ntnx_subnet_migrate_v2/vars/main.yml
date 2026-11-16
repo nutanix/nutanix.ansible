@@ -7,9 +7,6 @@
 
 placeholder_subnet_uuid_a: "00000000-0000-0000-0000-000000000001"
 placeholder_subnet_uuid_b: "00000000-0000-0000-0000-000000000002"
-placeholder_vnic_ext_id: "00000000-0000-0000-0000-0000000000aa"
-placeholder_network_uuid: "00000000-0000-0000-0000-0000000000bb"
-placeholder_ipv4: "10.51.144.137"
 
 vlan_subnet_test:
   network_id: 231
