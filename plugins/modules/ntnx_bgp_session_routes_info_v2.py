@@ -31,38 +31,51 @@ notes:
       Required Roles: Prism Admin, Prism Viewer, Project Admin, Super Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
-  ext_id:
-    description:
-      - The external ID of the BGP route to fetch.
-      - When provided together with C(bgp_session_ext_id), the module fetches only that route.
-    type: str
-    required: false
+    ext_id:
+        description:
+            - The external ID of the BGP route to fetch.
+            - When provided together with C(bgp_session_ext_id), the module fetches only that route.
+        type: str
+        required: false
     bgp_session_ext_id:
         description:
-          - The external ID of the parent BGP session whose routes should be fetched or listed.
+            - The external ID of the parent BGP session whose routes should be fetched or listed.
         type: str
         required: true
+    filter:
+        description:
+            - A URL query parameter that specifies the filter to apply to the result set.
+            - The filter uses oData format (e.g., C(name eq 'my_route'), C(bgpRouteType eq Nutanix.Networking.Config.BgpRouteType'ADVERTISED')).
+        type: str
+        required: false
+    orderby:
+        description:
+            - A URL query parameter that specifies the sort order of the result set.
+            - The value must be a comma-separated list of property names with optional
+              C(asc) or C(desc) suffix (e.g., C(name asc), C(creation_time desc)).
+        type: str
+        required: false
     page:
         description:
-          - A URL query parameter that specifies the page number of the result set.
-          - It must be a positive integer between 0 and the maximum number of pages that are available for that resource.
-          - Any number out of this range might lead to no results.
+            - A URL query parameter that specifies the page number of the result set.
+            - It must be a positive integer between 0 and the maximum number of pages that are available for that resource.
+            - Any number out of this range might lead to no results.
         type: int
         required: false
     limit:
         description:
-          - A URL query parameter that specifies the total number of records returned in the result set.
-          - Must be a positive integer between 1 and 100.
-          - Any number out of this range will lead to a validation error.
-          - If the limit is not provided, a default value of 50 records will be returned in the result set.
+            - A URL query parameter that specifies the total number of records returned in the result set.
+            - Must be a positive integer between 1 and 100.
+            - Any number out of this range will lead to a validation error.
+            - If the limit is not provided, a default value of 50 records will be returned in the result set.
         type: int
         required: false
     fetch_all:
         description:
-          - When C(true), paginate through the list API until all available entities are returned.
-            C(page) and C(limit) are ignored; each request uses the maximum page size (100).
-          - When C(false), return a single page (API default limit).
-          - Does not apply when fetching a single entity by C(ext_id).
+            - When C(true), paginate through the list API until all available entities are returned.
+              C(page) and C(limit) are ignored; each request uses the maximum page size (100).
+            - When C(false), return a single page (API default limit).
+            - Does not apply when fetching a single entity by C(ext_id).
         type: bool
         required: false
         default: false
@@ -229,7 +242,7 @@ def get_bgp_route_by_ext_id(module, api_instance, result):
     result["ext_id"] = ext_id
     result["bgp_session_ext_id"] = bgp_session_ext_id
     resp = get_bgp_route(module, api_instance, ext_id, bgp_session_ext_id)
-    result["response"] = strip_internal_attributes(resp.to_dict())
+    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
 
 
 def list_bgp_routes(module, api_instance, result):
