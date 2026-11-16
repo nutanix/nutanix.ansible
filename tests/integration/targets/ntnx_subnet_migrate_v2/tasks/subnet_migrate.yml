@@ -64,8 +64,6 @@
       - subnet_migrate_check_mode.response.subnets[0].subnet_uuid == placeholder_subnet_uuid_a
       - subnet_migrate_check_mode.response.subnets[1].subnet_uuid == placeholder_subnet_uuid_b
       - subnet_migrate_check_mode.ext_id == placeholder_subnet_uuid_a
-      - subnet_migrate_check_mode.msg is defined
-      - "'Subnet migration to VLAN advanced will be triggered' in subnet_migrate_check_mode.msg"
     success_msg: "check_mode spec for subnet migration generated correctly"
     fail_msg: "check_mode spec for subnet migration did not match expectations"
 
@@ -99,8 +97,6 @@
       - vnic_migrate_check_mode.response.requested_ip_addresses[0].ipv4.value == placeholder_ipv4
       - vnic_migrate_check_mode.response.requested_ip_addresses[0].ipv4.prefix_length == 32
       - vnic_migrate_check_mode.ext_id == placeholder_vnic_ext_id
-      - vnic_migrate_check_mode.msg is defined
-      - placeholder_vnic_ext_id in vnic_migrate_check_mode.msg
     success_msg: "check_mode spec for vNIC migration generated correctly"
     fail_msg: "check_mode spec for vNIC migration did not match expectations"
 
