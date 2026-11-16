@@ -1,5 +1,5 @@
 ---
-# Test plan for ntnx_vss_metadata_by_vm_recovery_point_ids_info_v2
+# Test plan for ntnx_vm_recovery_point_vss_metadata_info_v2
 # =================================================================
 #
 # The SDK endpoint `RecoveryPointsApi.get_vss_metadata_by_vm_recovery_point_id`
@@ -15,11 +15,11 @@
 #   1. Argument-spec validation (both ext_ids are required).
 #   2. Positive lifecycle: create a Linux VM -> capture an
 #      APPLICATION_CONSISTENT recovery point with `should_store_vss_metadata`
-#      -> call the info module. The module is expected either to return a
-#      metadata payload wrapper (Windows guest, VSS writers enrolled) OR to
-#      surface a descriptive API error (non-Windows guest / no VSS metadata
-#      present). Either outcome is a "clean" run of the module — we assert
-#      that the call did not raise a Python exception and produced a
+#      -> call the download module. The module is expected either to save the
+#      VSS .cab and return `response.path` (Windows guest, VSS writers enrolled)
+#      OR to surface a descriptive API error (non-Windows guest / no VSS
+#      metadata present). Either outcome is a "clean" run of the module — we
+#      assert that the call did not raise a Python exception and produced a
 #      result dict with a populated `ext_id`.
 #   3. Negative: invalid parent recovery-point ext_id -> module must fail
 #      cleanly with an error, not crash.
@@ -53,7 +53,7 @@
 ########################################################################################################
 
 - name: Call info module with no arguments (should fail on argument spec)
-  nutanix.ncp.ntnx_vss_metadata_by_vm_recovery_point_ids_info_v2:
+  nutanix.ncp.ntnx_vm_recovery_point_vss_metadata_info_v2:
   register: result
   ignore_errors: true
 
@@ -69,7 +69,7 @@
     success_msg: "Module correctly rejected missing required arguments"
 
 - name: Call info module missing vm_recovery_point_ext_id (should fail)
-  nutanix.ncp.ntnx_vss_metadata_by_vm_recovery_point_ids_info_v2:
+  nutanix.ncp.ntnx_vm_recovery_point_vss_metadata_info_v2:
     recovery_point_ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
   register: result
   ignore_errors: true
@@ -89,7 +89,7 @@
 ########################################################################################################
 
 - name: Call info module with a non-existent parent recovery point ext_id
-  nutanix.ncp.ntnx_vss_metadata_by_vm_recovery_point_ids_info_v2:
+  nutanix.ncp.ntnx_vm_recovery_point_vss_metadata_info_v2:
     recovery_point_ext_id: "00000000-0000-0000-0000-000000000000"
     vm_recovery_point_ext_id: "00000000-0000-0000-0000-000000000001"
   register: result
@@ -105,7 +105,7 @@
     success_msg: "Module correctly surfaced an API error for invalid parent ext_id"
 
 - name: Call info module with a syntactically valid but non-existent VM recovery point ext_id
-  nutanix.ncp.ntnx_vss_metadata_by_vm_recovery_point_ids_info_v2:
+  nutanix.ncp.ntnx_vm_recovery_point_vss_metadata_info_v2:
     recovery_point_ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
     vm_recovery_point_ext_id: "deadbeef-dead-beef-dead-beefdeadbeef"
   register: result
@@ -201,17 +201,18 @@
                  if (rp_result.ext_id is defined and rp_result.ext_id)
                  else recovery_point_todelete }}
 
-        - name: Fetch VSS metadata for the freshly created recovery point
-          nutanix.ncp.ntnx_vss_metadata_by_vm_recovery_point_ids_info_v2:
+        - name: Download VSS metadata for the freshly created recovery point
+          nutanix.ncp.ntnx_vm_recovery_point_vss_metadata_info_v2:
             recovery_point_ext_id: "{{ recovery_point_ext_id }}"
             vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id }}"
+            dest: "/tmp/ansible_vss_metadata_{{ vm_recovery_point_ext_id }}.cab"
           register: vss_result
           ignore_errors: true
           when:
             - recovery_point_ext_id != ''
             - vm_recovery_point_ext_id != ''
 
-        - name: Verify VSS metadata call produced a stable result dict (success path)
+        - name: Verify VSS metadata download produced a local file path (success path)
           ansible.builtin.assert:
             that:
               - vss_result is defined
@@ -219,8 +220,10 @@
               - vss_result.ext_id | default('') == vm_recovery_point_ext_id
               - vss_result.recovery_point_ext_id | default('') == recovery_point_ext_id
               - vss_result.response is defined
+              - vss_result.response.path is defined
+              - vss_result.response.path | length > 0
             fail_msg: "VSS metadata success-path assertions failed"
-            success_msg: "VSS metadata call returned a payload for the created recovery point"
+            success_msg: "VSS metadata download returned a local file path"
           when:
             - vss_result is defined
             - not (vss_result.failed | default(false))

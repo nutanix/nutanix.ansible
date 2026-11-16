@@ -102,6 +102,10 @@ author:
 EXAMPLES = r"""
 - name: Compute changed regions for a VM disk recovery point
   nutanix.ncp.ntnx_vm_recovery_point_compute_changed_region_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     recovery_point_ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
     vm_recovery_point_ext_id: "522670d7-e92d-45c5-9139-76ccff6813c2"
     disk_recovery_point_ext_id: "21d467f0-ccef-4733-91cc-f04db58a92eb"

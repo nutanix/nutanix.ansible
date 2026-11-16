@@ -97,7 +97,7 @@ def get_vss_metadata_by_vm_recovery_point(
     module, api_instance, recovery_point_ext_id, vm_recovery_point_ext_id
 ):
     """
-    This method will return VSS metadata for a VM recovery point which is part of
+    This method will download VSS metadata for a VM recovery point which is part of
     the given top level recovery point.
     Args:
         module: Ansible module
@@ -105,15 +105,15 @@ def get_vss_metadata_by_vm_recovery_point(
         recovery_point_ext_id (str): top level recovery point external ID
         vm_recovery_point_ext_id (str): VM recovery point external ID
     Returns:
-        vss_metadata_info (object): VSS metadata payload wrapper for the VM
-            recovery point (FileWrapper/Path reference for the streamed
-            application/octet-stream response).
+        vss_metadata_response (object): GetVssMetadataApiResponse whose C(data)
+            wraps the local path of the downloaded application/octet-stream
+            (.cab) file.
     """
     try:
         return api_instance.get_vss_metadata_by_vm_recovery_point_id(
             recoveryPointExtId=recovery_point_ext_id,
             vmRecoveryPointExtId=vm_recovery_point_ext_id,
-        ).data
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
