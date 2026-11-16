@@ -71,3 +71,23 @@ def get_protected_resource(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching protected resource info using ext_id",
         )
+
+
+def get_recovery_plan_job(module, api_instance, ext_id):
+    """
+    This method will return recovery plan job info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: RecoveryPlanJobsApi instance from ntnx_dataprotection_py_client sdk
+        ext_id (str): recovery plan job external ID
+    Returns:
+        recovery_plan_job_info (object): recovery plan job info
+    """
+    try:
+        return api_instance.get_recovery_plan_job_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching recovery plan job info using ext_id",
+        )
