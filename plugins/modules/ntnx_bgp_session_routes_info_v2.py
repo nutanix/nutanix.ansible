@@ -14,71 +14,32 @@ module: ntnx_bgp_session_routes_info_v2
 short_description: Fetch BGP routes info for a BGP session in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module allows you to fetch information about BGP routes for a BGP session in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific BGP route for the given BGP session.
-  - If C(ext_id) is not provided, list multiple BGP routes for the specified BGP session optionally filtered / paginated.
+  - This module allows you to fetch BGP routes info for a BGP session in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch a particular BGP route info using its external ID.
+  - If C(ext_id) is not provided, fetch multiple BGP routes info with/without using filters, limit, etc.
   - This module uses PC v4 APIs based SDKs.
-  - Set C(fetch_all=true) to automatically paginate through all available BGP routes
-    (C(page) and C(limit) are ignored when C(fetch_all) is true).
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(Get the specified route of the specified BGP session) -
+      B(View Bgp Route) -
       Required Roles: Prism Admin, Prism Viewer, Project Admin, Super Admin, VPC Admin
     - >-
-      B(Lists routes of the specified BGP session) -
+      B(View Bgp Route) (List) -
       Required Roles: Prism Admin, Prism Viewer, Project Admin, Super Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
-    ext_id:
-        description:
-            - The external ID of the BGP route to fetch.
-            - When provided together with C(bgp_session_ext_id), the module fetches only that route.
-        type: str
-        required: false
-    bgp_session_ext_id:
-        description:
-            - The external ID of the parent BGP session whose routes should be fetched or listed.
-        type: str
-        required: true
-    filter:
-        description:
-            - A URL query parameter that specifies the filter to apply to the result set.
-            - The filter uses oData format (e.g., C(name eq 'my_route'), C(bgpRouteType eq Nutanix.Networking.Config.BgpRouteType'ADVERTISED')).
-        type: str
-        required: false
-    orderby:
-        description:
-            - A URL query parameter that specifies the sort order of the result set.
-            - The value must be a comma-separated list of property names with optional
-              C(asc) or C(desc) suffix (e.g., C(name asc), C(creation_time desc)).
-        type: str
-        required: false
-    page:
-        description:
-            - A URL query parameter that specifies the page number of the result set.
-            - It must be a positive integer between 0 and the maximum number of pages that are available for that resource.
-            - Any number out of this range might lead to no results.
-        type: int
-        required: false
-    limit:
-        description:
-            - A URL query parameter that specifies the total number of records returned in the result set.
-            - Must be a positive integer between 1 and 100.
-            - Any number out of this range will lead to a validation error.
-            - If the limit is not provided, a default value of 50 records will be returned in the result set.
-        type: int
-        required: false
-    fetch_all:
-        description:
-            - When C(true), paginate through the list API until all available entities are returned.
-              C(page) and C(limit) are ignored; each request uses the maximum page size (100).
-            - When C(false), return a single page (API default limit).
-            - Does not apply when fetching a single entity by C(ext_id).
-        type: bool
-        required: false
-        default: false
+  ext_id:
+    description:
+      - The external ID of the BGP route.
+      - If provided, a single BGP route is returned.
+    type: str
+    required: false
+  bgp_session_ext_id:
+    description:
+      - The external ID of the parent BGP session whose routes should be fetched or listed.
+    type: str
+    required: true
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
@@ -90,38 +51,30 @@ author:
 """
 
 EXAMPLES = r"""
-- name: List all BGP routes for a given BGP session
-  nutanix.ncp.ntnx_bgp_session_routes_info_v2:
-    bgp_session_ext_id: "8a3cf052-1234-4222-8d60-143a33c77e9f"
-  register: result
-  ignore_errors: true
-
-- name: Fetch a specific BGP route for a BGP session by external ID
+- name: Get BGP route using ext_id
   nutanix.ncp.ntnx_bgp_session_routes_info_v2:
     bgp_session_ext_id: "8a3cf052-1234-4222-8d60-143a33c77e9f"
     ext_id: "ed3cf052-a96a-4222-8d60-143a33c77e9f"
   register: result
   ignore_errors: true
 
-- name: List BGP routes for a BGP session with a filter (only received routes)
+- name: List all BGP routes for a given BGP session
   nutanix.ncp.ntnx_bgp_session_routes_info_v2:
     bgp_session_ext_id: "8a3cf052-1234-4222-8d60-143a33c77e9f"
-    filter: "bgpRouteType eq Nutanix.Networking.Config.BgpRouteType'RECEIVED'"
   register: result
   ignore_errors: true
 
-- name: List BGP routes for a BGP session with pagination (page 0, limit 10)
+- name: List BGP routes for a BGP session with filter
   nutanix.ncp.ntnx_bgp_session_routes_info_v2:
     bgp_session_ext_id: "8a3cf052-1234-4222-8d60-143a33c77e9f"
-    page: 0
-    limit: 10
+    filter: "bgpRouteType eq Networking.Config.BgpRouteType'RECEIVED'"
   register: result
   ignore_errors: true
 
-- name: List BGP routes for a BGP session sorted by name
+- name: List BGP routes for a BGP session with limit
   nutanix.ncp.ntnx_bgp_session_routes_info_v2:
     bgp_session_ext_id: "8a3cf052-1234-4222-8d60-143a33c77e9f"
-    orderby: "name asc"
+    limit: 1
   register: result
   ignore_errors: true
 
@@ -136,45 +89,42 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC RoutesByBgpSessionId info v4 API.
-    - It can be a single RoutesByBgpSessionId if external ID is provided.
-    - List of multiple RoutesByBgpSessionId if external ID is not provided
-      with optional filter or limit.
+    - The response from the Nutanix PC BGP routes info v4 API.
+    - It can be a single BGP route if external ID is provided.
+    - List of multiple BGP routes if external ID is not provided with optional filter or limit.
   returned: always
   type: dict
   sample:
-    [
-      {
-        "bgp_communities": null,
-        "bgp_route_type": "ADVERTISED",
-        "bgp_session_reference": "8a3cf052-1234-4222-8d60-143a33c77e9f",
-        "description": null,
-        "destination": {
-            "ipv4": {"ip": {"prefix_length": 32, "value": "10.0.0.0"}, "prefix_length": 24},
-            "ipv6": null
-        },
-        "ext_id": "ed3cf052-a96a-4222-8d60-143a33c77e9f",
-        "links": null,
-        "metadata": null,
-        "name": "advertised_route",
-        "nexthop": {
-            "nexthop_ip_address": {"ipv4": {"prefix_length": 32, "value": "10.44.3.1"}, "ipv6": null},
-            "nexthop_name": "local-bgp-gateway",
-            "nexthop_reference": "5e98d574-c54c-4775-9f7a-8ebb2bc77d2c",
-            "nexthop_type": "EXTERNAL_SUBNET"
-        },
-        "tenant_id": null
-      }
-    ]
+    {
+      "bgp_communities": null,
+      "bgp_route_type": "ADVERTISED",
+      "bgp_session_reference": "8a3cf052-1234-4222-8d60-143a33c77e9f",
+      "description": null,
+      "destination": {
+          "ipv4": {"ip": {"prefix_length": 32, "value": "10.0.0.0"}, "prefix_length": 24},
+          "ipv6": null
+      },
+      "ext_id": "ed3cf052-a96a-4222-8d60-143a33c77e9f",
+      "links": null,
+      "metadata": null,
+      "name": "advertised_route",
+      "nexthop": {
+          "nexthop_ip_address": {"ipv4": {"prefix_length": 32, "value": "10.44.3.1"}, "ipv6": null},
+          "nexthop_name": "local-bgp-gateway",
+          "nexthop_reference": "5e98d574-c54c-4775-9f7a-8ebb2bc77d2c",
+          "nexthop_type": "EXTERNAL_SUBNET"
+      },
+      "tenant_id": null
+    }
 
 changed:
-  description: This indicates whether the task resulted in any changes. Always C(False) for info modules.
+  description: This indicates whether the task resulted in any changes. Always false for info modules.
   returned: always
   type: bool
   sample: false
 
 msg:
-  description: This indicates the message if any message occurred.
+  description: This indicates the message if any message occurred
   returned: When there is an error
   type: str
   sample: "Api Exception raised while fetching BGP routes info"
@@ -191,19 +141,19 @@ failed:
   sample: false
 
 ext_id:
-  description: External ID of the BGP route when a single route is fetched.
+  description: External ID of the BGP route
   type: str
   returned: when external ID is provided
   sample: "ed3cf052-a96a-4222-8d60-143a33c77e9f"
 
 bgp_session_ext_id:
-  description: External ID of the parent BGP session.
+  description: External ID of the parent BGP session
   type: str
   returned: always
   sample: "8a3cf052-1234-4222-8d60-143a33c77e9f"
 
 total_available_results:
-  description: The total number of BGP routes available for the parent BGP session.
+  description: The total number of available BGP routes for the parent BGP session.
   type: int
   returned: when all BGP routes are fetched
   sample: 5
@@ -224,36 +174,37 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_internal_attributes,
 )
 
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
 def get_module_spec():
+
     module_args = dict(
         ext_id=dict(type="str"),
         bgp_session_ext_id=dict(type="str", required=True),
     )
+
     return module_args
 
 
-def get_bgp_route_by_ext_id(module, api_instance, result):
-    """Fetch a single BGP route by (bgp_session_ext_id, ext_id)."""
+def get_bgp_route_using_ext_id(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     bgp_session_ext_id = module.params.get("bgp_session_ext_id")
+    resp = get_bgp_route(module, api_instance, ext_id, bgp_session_ext_id)
     result["ext_id"] = ext_id
     result["bgp_session_ext_id"] = bgp_session_ext_id
-    resp = get_bgp_route(module, api_instance, ext_id, bgp_session_ext_id)
-    result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    result["response"] = strip_internal_attributes(resp.to_dict())
 
 
-def list_bgp_routes(module, api_instance, result):
-    """List BGP routes for a given BGP session (supports filter/limit/page/orderby/fetch_all)."""
+def get_bgp_routes(module, api_instance, result):
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
     bgp_session_ext_id = module.params.get("bgp_session_ext_id")
     result["bgp_session_ext_id"] = bgp_session_ext_id
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating BGP routes info Spec", **result)
+        module.fail_json(msg="Failed generating BGP routes info spec", **result)
 
     try:
         resp = list_entities(
@@ -270,10 +221,10 @@ def list_bgp_routes(module, api_instance, result):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
-    if not resp:
-        resp = []
-    result["response"] = resp
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    else:
+        result["response"] = []
 
 
 def run_module():
@@ -285,13 +236,12 @@ def run_module():
         ],
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "failed": False, "response": None}
+    result = {"changed": False, "response": None, "failed": False}
     api_instance = get_bgp_routes_api_instance(module)
     if module.params.get("ext_id"):
-        get_bgp_route_by_ext_id(module, api_instance, result)
+        get_bgp_route_using_ext_id(module, api_instance, result)
     else:
-        list_bgp_routes(module, api_instance, result)
-
+        get_bgp_routes(module, api_instance, result)
     module.exit_json(**result)
 
 

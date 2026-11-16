@@ -219,7 +219,7 @@
 - name: List BGP routes for the discovered BGP session filtered to ADVERTISED
   nutanix.ncp.ntnx_bgp_session_routes_info_v2:
     bgp_session_ext_id: "{{ real_bgp_session_ext_id }}"
-    filter: "bgpRouteType eq Nutanix.Networking.Config.BgpRouteType'ADVERTISED'"
+    filter: "bgpRouteType eq Networking.Config.BgpRouteType'ADVERTISED'"
   register: real_list_advertised
   ignore_errors: true
   when: real_bgp_session_ext_id is defined
