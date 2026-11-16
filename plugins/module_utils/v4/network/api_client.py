@@ -199,9 +199,7 @@ def get_bridges_api_instance(module):
 
 def get_remote_entities_api_instance(module):
     """
-    This method will return RemoteEntitiesApi instance for read-only
-    remote entity queries (remote subnets, remote VPN connections and
-    remote VTEP gateways discovered under a Prism Element cluster).
+    This method will return RemoteEntitiesApi instance.
     Args:
         module (object): Ansible module object
     return:

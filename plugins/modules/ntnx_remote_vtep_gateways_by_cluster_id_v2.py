@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -14,35 +14,31 @@ module: ntnx_remote_vtep_gateways_by_cluster_id_v2
 short_description: Fetch a single remote VTEP gateway discovered under a Prism Element cluster
 version_added: 2.7.0
 description:
-  - This module fetches a single Remote VTEP Gateway that has been discovered on
-    a specific Prism Element cluster registered with Prism Central.
-  - The Remote VTEP Gateway resource is exposed by the Prism Central v4
-    networking API as a B(read-only) discovery surface — it is used by workflows
-    such as L2 Subnet Extension (a.k.a. L2 stretch) to pick a peer VTEP gateway
-    on a remote availability zone. Create, Update and Delete operations are B(not)
-    supported by the underlying SDK for this entity.
-  - Both C(cluster_ext_id) and C(ext_id) are required for this module — the
-    Prism Central v4 API path is
-    C(/api/networking/v4.3/config/clusters/{clusterExtId}/remote-vtep-gateways/{extId}).
+  - This module fetches a single remote VTEP gateway discovered under a Prism Element
+    cluster registered with Prism Central.
+  - Both C(cluster_ext_id) and C(ext_id) are required.
+  - The Remote VTEP Gateway resource is a B(read-only) discovery surface used for
+    Layer 2 subnet extension peer selection; create, update and delete are not supported.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(Get a Remote VTEP Gateway by ext_id) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Super Admin,
-      Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
+      B(View Remote Vtep Gateway) -
+      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Super Admin, Tenant Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   cluster_ext_id:
     description:
       - External ID of the Prism Element cluster that owns the remote VTEP gateway.
+      - Maps to the API path parameter C(clusterExtId).
       - Required.
     type: str
     required: true
   ext_id:
     description:
       - External ID of the remote VTEP gateway to fetch.
+      - Maps to the API path parameter C(extId).
       - Required.
     type: str
     required: true
@@ -74,8 +70,6 @@ RETURN = r"""
 response:
   description:
     - The response for fetching a remote VTEP gateway using its external ID.
-    - Contains the full RemoteVtepGateway payload returned by the
-      Nutanix PC networking v4 API for the C(GetRemoteVtepGatewayForClusterById) operation.
   returned: always
   type: dict
   sample:
@@ -89,7 +83,10 @@ response:
           "peered_gateways": [
               {
                   "ext_id": "9f6cca9c-4a53-4ad5-9f4d-3f5a8a1e7db1",
-                  "status": "UP"
+                  "status": {
+                      "message": "Entity is healthy",
+                      "state": "UP"
+                  }
               }
           ]
       },
@@ -98,6 +95,7 @@ response:
       "links": null,
       "metadata": null,
       "name": "remote-vtep-gw-ansible",
+      "project_name": "example-project",
       "tenant_id": null,
       "vpc_name": "vpc_ansible",
       "vpc_reference": "1c6bc5f3-c18c-4702-4c2d-b769fd5f9401",
