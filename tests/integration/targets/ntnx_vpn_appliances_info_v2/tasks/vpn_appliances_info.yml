@@ -49,7 +49,7 @@
 # Argument-validation tests (no live cluster required)
 ########################################################################################
 
-- name: List appliances with missing vpn_connection_ext_id (should fail)
+- name: List appliances with missing vpn_connection_ext_id (should fail) # noqa args[module]
   nutanix.ncp.ntnx_vpn_appliances_info_v2: {}
   register: result
   ignore_errors: true

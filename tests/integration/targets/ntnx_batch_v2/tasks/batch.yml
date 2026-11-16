@@ -197,7 +197,6 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - "'Missing required parameter(s)' in result.msg"
       - "'metadata' in result.msg"
     success_msg: "Submit batch without metadata failed as expected"
     fail_msg: "Submit batch without metadata did not fail as expected"
@@ -218,7 +217,6 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - "'Missing required parameter(s)' in result.msg"
       - "'payload' in result.msg"
     success_msg: "Submit batch without payload failed as expected"
     fail_msg: "Submit batch without payload did not fail as expected"

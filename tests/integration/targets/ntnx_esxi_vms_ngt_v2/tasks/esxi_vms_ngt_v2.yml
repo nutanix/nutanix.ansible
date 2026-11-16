@@ -55,6 +55,9 @@
   nutanix.ncp.ntnx_esxi_vms_ngt_v2:
     state: present
     ext_id: "00000000-0000-0000-0000-000000000001"
+    credential:
+      username: "dummy"
+      password: "dummy"
     reboot_preference:
       schedule_type: INVALID_TYPE
   register: result

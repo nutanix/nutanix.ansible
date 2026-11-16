@@ -186,7 +186,7 @@
 # 4. Negative: invalid stat_type value must be rejected by argument spec.
 ########################################################################################
 
-- name: Fetch VPC North-South stats with invalid stat_type (must fail)
+- name: Fetch VPC North-South stats with invalid stat_type (must fail) # noqa args[module]
   nutanix.ncp.ntnx_vpc_ns_stats_info_v2:
     vpc_ext_id: "00000000-0000-0000-0000-000000000000"
     ext_id: "00000000-0000-0000-0000-000000000000"

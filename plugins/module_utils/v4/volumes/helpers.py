@@ -49,3 +49,23 @@ def get_volume_disk(module, api_instance, ext_id, volume_group_ext_id):
             exception=e,
             msg="Api Exception raised while fetching Volume Disk info using ext_id",
         )
+
+
+def get_nvmf_client(module, api_instance, ext_id):
+    """
+    Get NVMe-TCP (NVMf) client by ext_id
+    Args:
+        module: Ansible module
+        api_instance: NvmfClientsApi instance from ntnx_volumes_py_client sdk
+        ext_id: ext_id of NVMe-TCP client
+    Returns:
+        client (obj): NvmfClient info object
+    """
+    try:
+        return api_instance.get_nvmf_client_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching given NVMe-TCP client",
+        )
