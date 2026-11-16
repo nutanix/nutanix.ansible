@@ -274,6 +274,7 @@
       - full_scan_result.ext_id == base_disk_recovery_point_ext_id
       - full_scan_result.task_ext_id is none
       - full_scan_result.response is defined
+      - full_scan_result.response.changed_regions is defined
     fail_msg: "Full-scan compute-changed-regions failed on a cluster that reported the endpoint as supported"
     success_msg: "Full-scan compute-changed-regions returned a response"
   when: ccr_endpoint_supported
@@ -289,6 +290,11 @@
     success_msg: "Module correctly surfaced backend failure (status={{ ccr_endpoint_status }})"
   when: not ccr_endpoint_supported
 
+- name: Capture full-scan changed regions for shape checks
+  ansible.builtin.set_fact:
+    full_scan_regions: "{{ full_scan_result.response.changed_regions | default([]) }}"
+  when: ccr_endpoint_supported
+
 - name: Verify every returned region has a valid region_type (REGULAR / ZEROED)
   ansible.builtin.assert:
     that:
@@ -298,12 +304,10 @@
       - item.length | int >= 0
     fail_msg: "Encountered an invalid region_type in full-scan response"
     success_msg: "All returned regions have valid region_type"
-  loop: "{{ full_scan_result.response if (ccr_endpoint_supported and full_scan_result.response is iterable and (full_scan_result.response is not mapping)) else [] }}"
+  loop: "{{ full_scan_regions | default([]) }}"
   when:
     - ccr_endpoint_supported
-    - full_scan_result.response is defined
-    - full_scan_result.response is iterable
-    - full_scan_result.response is not mapping
+    - (full_scan_regions | default([]) | length) > 0
 
 - name: Windowed compute-changed-regions (offset+length+block_size_byte)
   nutanix.ncp.ntnx_volume_group_recovery_point_compute_changed_region_v2:
@@ -324,6 +328,7 @@
       - windowed_result.ext_id == base_disk_recovery_point_ext_id
       - windowed_result.task_ext_id is none
       - windowed_result.response is defined
+      - windowed_result.response.changed_regions is defined
     fail_msg: "Windowed compute-changed-regions failed"
     success_msg: "Windowed compute-changed-regions returned a response"
   when: ccr_endpoint_supported
@@ -337,6 +342,11 @@
     success_msg: "Module correctly surfaced backend failure for the windowed call"
   when: not ccr_endpoint_supported
 
+- name: Capture windowed changed regions for alignment checks
+  ansible.builtin.set_fact:
+    windowed_regions: "{{ windowed_result.response.changed_regions | default([]) }}"
+  when: ccr_endpoint_supported
+
 - name: Verify block-size alignment (all offsets/lengths multiples of 65536)
   ansible.builtin.assert:
     that:
@@ -345,12 +355,10 @@
       - item.region_type in ["REGULAR", "ZEROED"]
     fail_msg: "Windowed response contains a region not aligned to 65536"
     success_msg: "All windowed regions are aligned to the requested block size"
-  loop: "{{ windowed_result.response if (ccr_endpoint_supported and windowed_result.response is iterable and (windowed_result.response is not mapping)) else [] }}"
+  loop: "{{ windowed_regions | default([]) }}"
   when:
     - ccr_endpoint_supported
-    - windowed_result.response is defined
-    - windowed_result.response is iterable
-    - windowed_result.response is not mapping
+    - (windowed_regions | default([]) | length) > 0
 
 - name: Incremental compute-changed-regions vs a reference disk recovery point
   nutanix.ncp.ntnx_volume_group_recovery_point_compute_changed_region_v2:
