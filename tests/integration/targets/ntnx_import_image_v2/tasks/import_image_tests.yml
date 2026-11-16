@@ -1,0 +1,180 @@
+---
+- name: Start ntnx_import_image_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_import_image_v2 tests
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    todelete: []
+
+##################################################################################
+# Check-mode / spec-generation tests (inline dummy values)
+##################################################################################
+
+- name: Generate spec for importing images using check mode with all attributes
+  nutanix.ncp.ntnx_import_image_v2:
+    state: present
+    cluster_ext_id: "00000000-0000-0000-0000-0000000c1b3a"
+    images_ext_ids:
+      - "00000000-0000-0000-0000-00000000ab01"
+      - "00000000-0000-0000-0000-00000000ab02"
+    project_ext_id: "00000000-0000-0000-0000-00000000proj"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for importing images using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.cluster_ext_id == "00000000-0000-0000-0000-0000000c1b3a"
+      - result.response.images_ext_ids | length == 2
+      - result.response.images_ext_ids[0] == "00000000-0000-0000-0000-00000000ab01"
+      - result.response.images_ext_ids[1] == "00000000-0000-0000-0000-00000000ab02"
+      - result.response.project_ext_id == "00000000-0000-0000-0000-00000000proj"
+    success_msg: "Import image spec generated correctly in check_mode with all attributes"
+    fail_msg: "Import image spec did not generate correctly in check_mode with all attributes"
+
+- name: Generate spec for importing image using check mode with minimum attributes
+  nutanix.ncp.ntnx_import_image_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-0000000c1b3a"
+    images_ext_ids:
+      - "00000000-0000-0000-0000-00000000ab01"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for importing image using check mode with minimum attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.cluster_ext_id == "00000000-0000-0000-0000-0000000c1b3a"
+      - result.response.images_ext_ids | length == 1
+      - result.response.images_ext_ids[0] == "00000000-0000-0000-0000-00000000ab01"
+    success_msg: "Import image spec generated correctly in check_mode with minimum attributes"
+    fail_msg: "Import image spec did not generate correctly in check_mode with minimum attributes"
+
+##################################################################################
+# Negative / validation tests
+##################################################################################
+
+- name: Try to import images without cluster_ext_id
+  nutanix.ncp.ntnx_import_image_v2:
+    state: present
+    images_ext_ids:
+      - "00000000-0000-0000-0000-00000000ab01"
+  register: result
+  ignore_errors: true
+
+- name: Import without cluster_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'cluster_ext_id' in result.msg"
+    success_msg: "Missing cluster_ext_id was rejected as expected"
+    fail_msg: "Missing cluster_ext_id was NOT rejected as expected"
+
+- name: Try to import images without images_ext_ids
+  nutanix.ncp.ntnx_import_image_v2:
+    state: present
+    cluster_ext_id: "00000000-0000-0000-0000-0000000c1b3a"
+  register: result
+  ignore_errors: true
+
+- name: Import without images_ext_ids status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'images_ext_ids' in result.msg"
+    success_msg: "Missing images_ext_ids was rejected as expected"
+    fail_msg: "Missing images_ext_ids was NOT rejected as expected"
+
+- name: Try to import with an invalid cluster ext_id
+  nutanix.ncp.ntnx_import_image_v2:
+    state: present
+    cluster_ext_id: "00000000-0000-0000-0000-0000000c1b3a"
+    images_ext_ids:
+      - "00000000-0000-0000-0000-00000000ab01"
+  register: result
+  ignore_errors: true
+
+- name: Import with invalid cluster ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+    success_msg: "Import with invalid cluster ext_id failed as expected"
+    fail_msg: "Import with invalid cluster ext_id did NOT fail as expected"
+
+##################################################################################
+# Optional real import (best-effort — needs live PE image ids)
+##################################################################################
+
+- name: Best-effort real import when pe_owned_image_ext_ids is supplied
+  when:
+    - pe_owned_image_ext_ids is defined
+    - pe_owned_image_ext_ids | length > 0
+    - pe_owned_cluster_ext_id is defined
+    - pe_owned_cluster_ext_id | length > 0
+  block:
+    - name: Import images from a real registered PE cluster
+      nutanix.ncp.ntnx_import_image_v2:
+        state: present
+        cluster_ext_id: "{{ pe_owned_cluster_ext_id }}"
+        images_ext_ids: "{{ pe_owned_image_ext_ids }}"
+      register: real_import_result
+      ignore_errors: true
+
+    - name: Real import status
+      ansible.builtin.assert:
+        that:
+          - real_import_result is defined
+          - real_import_result.changed == true
+          - real_import_result.failed == false
+          - real_import_result.task_ext_id is defined
+          - real_import_result.response is defined
+          - real_import_result.response.status == "SUCCEEDED"
+          - real_import_result.imported_image_ext_ids is defined
+          - real_import_result.imported_image_ext_ids | length > 0
+          - real_import_result.ext_id == real_import_result.imported_image_ext_ids[0]
+        success_msg: "Real import from PE completed successfully"
+        fail_msg: "Real import from PE did not complete successfully"
+
+    - name: Track imported images for cleanup
+      ansible.builtin.set_fact:
+        todelete: "{{ todelete + real_import_result.imported_image_ext_ids }}"
+
+##################################################################################
+# Cleanup
+##################################################################################
+
+- name: Delete all imported images
+  nutanix.ncp.ntnx_images_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ todelete }}"
+  register: delete_results
+  ignore_errors: true
+  when: todelete | length > 0
+
+- name: Deletion status
+  ansible.builtin.assert:
+    that:
+      - delete_results is defined
+      - delete_results.results | length == todelete | length
+    success_msg: "Cleanup completed"
+    fail_msg: "Cleanup failed"
+  when: todelete | length > 0
