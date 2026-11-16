@@ -1,0 +1,18 @@
+---
+# NOTE: Claim tokens are Foundation Central (FCVM) entities. The module_defaults
+# below point at the Foundation Central endpoint. When running this target,
+# `ip` in integration_config.yml must be the Foundation Central VM endpoint
+# (or override with a dedicated `foundation_central_ip` variable).
+- name: Set module defaults
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ foundation_central_ip | default(ip) }}"
+      nutanix_username: "{{ username | default(omit) }}"
+      nutanix_password: "{{ password | default(omit) }}"
+      nutanix_api_key: "{{ nutanix_api_key | default(omit) }}"
+      validate_certs: "{{ validate_certs }}"
+      nutanix_debug: "{{ nutanix_debug | default(omit) }}"
+      nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
+  block:
+    - name: Import claim_tokens.yml
+      ansible.builtin.import_tasks: claim_tokens.yml

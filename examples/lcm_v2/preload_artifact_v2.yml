@@ -1,0 +1,36 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Preload LCM artifacts on Prism Central (default target)
+# 2. Preload LCM artifacts on a specific Prism Element cluster
+
+- name: LCM PreloadArtifact playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        cluster_ext_id: "00062db4-a450-e685-0fda-cdf9ca935bfd"
+        lcm_entity_external_id: "3c196eac-e1d5-4c8a-9b01-c133f6907ca2"
+        lcm_entity_model_version: "4.0.0"
+
+    - name: Preload LCM artifacts on Prism Central (default target)
+      nutanix.ncp.ntnx_lcm_preload_artifact_v2:
+        entity_update_specs:
+          - entity_uuid: "{{ lcm_entity_external_id }}"
+            to_version: "{{ lcm_entity_model_version }}"
+      register: preload_result_pe
+
+    - name: Preload LCM artifacts on a specific Prism Element cluster
+      nutanix.ncp.ntnx_lcm_preload_artifact_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        entity_update_specs:
+          - entity_uuid: "{{ lcm_entity_external_id }}"
+            to_version: "{{ lcm_entity_model_version }}"
+      register: preload_result_pc
