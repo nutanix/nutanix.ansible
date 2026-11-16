@@ -1,0 +1,388 @@
+---
+# Test plan for ntnx_storage_config_v2 and ntnx_storage_config_info_v2
+#
+# StorageConfig is a SINGLETON per-cluster resource in the clustermgmt namespace.
+# The SDK exposes only two operations: GetStorageConfig and UpdateStorageConfig.
+# There is NO create and NO delete operation. Therefore the CRUD module only
+# supports the update flow (state=present + cluster_ext_id), and the info module
+# always fetches the storage config for a single cluster (cluster_ext_id required).
+#
+# Because we mutate a real cluster's storage configuration, every test captures the
+# ORIGINAL configuration first and RESTORES it at the very end (always block) so the
+# cluster is left in its initial state.
+#
+# Scenarios covered:
+#   1. Discover a real AOS (Prism Element) cluster ext_id from the live PC.
+#   2. Info: get storage config with a valid cluster_ext_id (single entity).
+#   3. Update check_mode: generate update spec with ALL fields, assert no change made.
+#   4. Update: change ALL fields to different valid values, assert changed + values.
+#   5. Info after update: assert persisted values match what we set.
+#   6. Idempotency: run the same update again, assert skipped + "Nothing to change.".
+#   7. Update transition: flip boolean fields and change scalar values again.
+#   8. Boundary values: resilient_capacity_warning_threshold_percentage = 0 and 100.
+#   9. Negative: missing required cluster_ext_id -> descriptive error.
+#  10. Negative: invalid cluster_ext_id -> API "not found"/error path.
+#  11. Info negative: missing required cluster_ext_id -> descriptive error.
+#  12. Restore original configuration (always).
+
+- name: Start ntnx_storage_config_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_storage_config_v2 tests
+
+########################### Discover a real AOS cluster ###########################
+
+- name: List all clusters to find an AOS (Prism Element) cluster
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_result
+  ignore_errors: true
+
+- name: Assert an AOS cluster was found
+  ansible.builtin.assert:
+    that:
+      - clusters_result.changed == false
+      - clusters_result.failed == false
+      - clusters_result.response | length > 0
+    fail_msg: "No AOS (Prism Element) cluster found on this Prism Central; cannot run storage config tests"
+    success_msg: "AOS cluster discovered successfully"
+
+- name: Set cluster external id
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+########################### Capture original config ###########################
+
+- name: Get the original storage configuration to restore later
+  nutanix.ncp.ntnx_storage_config_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: original_config
+  ignore_errors: true
+
+- name: Assert original storage config fetched
+  ansible.builtin.assert:
+    that:
+      - original_config.changed == false
+      - original_config.failed == false
+      - original_config.ext_id == cluster_ext_id
+      - original_config.response is defined
+    fail_msg: "Unable to fetch original storage configuration"
+    success_msg: "Original storage configuration fetched successfully"
+
+- name: Run storage config tests and always restore the original config
+  block:
+    ########################### Info: get by cluster ###########################
+
+    - name: Get storage config using cluster_ext_id
+      nutanix.ncp.ntnx_storage_config_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Assert storage config fetched using cluster_ext_id
+      ansible.builtin.assert:
+        that:
+          - result.changed == false
+          - result.failed == false
+          - result.ext_id == cluster_ext_id
+          - result.response is defined
+          - "'is_rebuild_reservation_enabled' in result.response"
+          - "'is_rf1_enabled' in result.response"
+        fail_msg: "Unable to fetch storage config using cluster_ext_id"
+        success_msg: "Storage config fetched successfully using cluster_ext_id"
+
+    ########################### Update check_mode (all fields) ###########################
+
+    # NOTE (domain constraint discovered on the live cluster):
+    # A cluster that has an RF1 storage container present cannot enable Rebuild
+    # Reservation (the task fails with "Cluster cannot enable Rebuild Reservation").
+    # So the positive-path tests keep is_rebuild_reservation_enabled=false, and a
+    # dedicated negative test below asserts the RF1 constraint is enforced.
+    - name: Generate update storage config spec with check mode enabled (all fields)
+      nutanix.ncp.ntnx_storage_config_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resilient_capacity_warning_threshold_percentage: 80
+        is_rebuild_reservation_enabled: false
+        is_rf1_enabled: false
+        storage_over_provisioning_caution_threshold: 4.0
+        is_delayed_maintenance_resiliency_enabled: true
+      check_mode: true
+      register: result
+      ignore_errors: true
+
+    - name: Assert update storage config check mode spec
+      ansible.builtin.assert:
+        that:
+          - result.changed == false
+          - result.failed == false
+          - result.ext_id == cluster_ext_id
+          - result.response.resilient_capacity_warning_threshold_percentage == 80
+          - result.response.is_rebuild_reservation_enabled == false
+          - result.response.is_rf1_enabled == false
+          - result.response.storage_over_provisioning_caution_threshold == 4.0
+          - result.response.is_delayed_maintenance_resiliency_enabled == true
+        fail_msg: "Unable to generate update storage config spec with check mode enabled"
+        success_msg: "Update storage config spec generated successfully with check mode enabled"
+
+    ########################### Update (all fields) ###########################
+
+    - name: Update storage config with all fields
+      nutanix.ncp.ntnx_storage_config_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resilient_capacity_warning_threshold_percentage: 70
+        is_rebuild_reservation_enabled: false
+        is_rf1_enabled: false
+        storage_over_provisioning_caution_threshold: 2.0
+        is_delayed_maintenance_resiliency_enabled: false
+      register: result
+      ignore_errors: true
+
+    - name: Assert storage config updated with all fields
+      ansible.builtin.assert:
+        that:
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id == cluster_ext_id
+          - result.response.resilient_capacity_warning_threshold_percentage == 70
+          - result.response.is_rebuild_reservation_enabled == false
+          - result.response.is_rf1_enabled == false
+          - result.response.storage_over_provisioning_caution_threshold == 2.0
+          - result.response.is_delayed_maintenance_resiliency_enabled == false
+        fail_msg: "Unable to update storage config with all fields"
+        success_msg: "Storage config updated successfully with all fields"
+
+    ########################### Info after update ###########################
+
+    - name: Get storage config after update
+      nutanix.ncp.ntnx_storage_config_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Assert persisted values after update
+      ansible.builtin.assert:
+        that:
+          - result.changed == false
+          - result.failed == false
+          - result.ext_id == cluster_ext_id
+          - result.response.resilient_capacity_warning_threshold_percentage == 70
+          - result.response.is_rebuild_reservation_enabled == false
+          - result.response.is_rf1_enabled == false
+          - result.response.storage_over_provisioning_caution_threshold == 2.0
+          - result.response.is_delayed_maintenance_resiliency_enabled == false
+        fail_msg: "Persisted storage config values do not match update"
+        success_msg: "Persisted storage config values match update"
+
+    ########################### Idempotency ###########################
+
+    - name: Update storage config again with same values (idempotency)
+      nutanix.ncp.ntnx_storage_config_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resilient_capacity_warning_threshold_percentage: 70
+        is_rebuild_reservation_enabled: false
+        is_rf1_enabled: false
+        storage_over_provisioning_caution_threshold: 2.0
+        is_delayed_maintenance_resiliency_enabled: false
+      register: result
+      ignore_errors: true
+
+    - name: Assert idempotency (no change)
+      ansible.builtin.assert:
+        that:
+          - result.changed == false
+          - result.failed == false
+          - result.skipped == true
+          - result.ext_id == cluster_ext_id
+          - result.msg == "Nothing to change."
+        fail_msg: "Idempotency check failed for storage config update"
+        success_msg: "Idempotency check passed for storage config update"
+
+    ########################### Update transition (flip values) ###########################
+
+    - name: Update storage config with different values (state transition)
+      nutanix.ncp.ntnx_storage_config_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resilient_capacity_warning_threshold_percentage: 90
+        is_rebuild_reservation_enabled: false
+        is_rf1_enabled: false
+        storage_over_provisioning_caution_threshold: 5.0
+        is_delayed_maintenance_resiliency_enabled: true
+      register: result
+      ignore_errors: true
+
+    - name: Assert storage config transition update
+      ansible.builtin.assert:
+        that:
+          - result.changed == true
+          - result.failed == false
+          - result.ext_id == cluster_ext_id
+          - result.response.resilient_capacity_warning_threshold_percentage == 90
+          - result.response.is_rebuild_reservation_enabled == false
+          - result.response.storage_over_provisioning_caution_threshold == 5.0
+          - result.response.is_delayed_maintenance_resiliency_enabled == true
+        fail_msg: "Unable to update storage config with different values"
+        success_msg: "Storage config updated successfully with different values"
+
+    ########################### Boundary values ###########################
+
+    - name: Update storage config with minimum threshold (0)
+      nutanix.ncp.ntnx_storage_config_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resilient_capacity_warning_threshold_percentage: 0
+      register: result
+      ignore_errors: true
+
+    - name: Assert minimum threshold accepted
+      ansible.builtin.assert:
+        that:
+          - result.changed == true
+          - result.failed == false
+          - result.response.resilient_capacity_warning_threshold_percentage == 0
+        fail_msg: "Unable to set minimum resilient capacity warning threshold"
+        success_msg: "Minimum resilient capacity warning threshold set successfully"
+
+    - name: Update storage config with maximum threshold (100)
+      nutanix.ncp.ntnx_storage_config_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resilient_capacity_warning_threshold_percentage: 100
+      register: result
+      ignore_errors: true
+
+    - name: Assert maximum threshold accepted
+      ansible.builtin.assert:
+        that:
+          - result.changed == true
+          - result.failed == false
+          - result.response.resilient_capacity_warning_threshold_percentage == 100
+        fail_msg: "Unable to set maximum resilient capacity warning threshold"
+        success_msg: "Maximum resilient capacity warning threshold set successfully"
+
+    ########################### Domain constraint test ###########################
+
+    # Domain rule: when an RF1 storage container is present on the cluster, enabling
+    # Rebuild Reservation is rejected by the platform. This proves the module surfaces
+    # the backend task failure instead of silently reporting success.
+    - name: Attempt to enable rebuild reservation on a cluster with RF1 containers
+      nutanix.ncp.ntnx_storage_config_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        is_rebuild_reservation_enabled: true
+      register: rebuild_result
+      ignore_errors: true
+
+    - name: Assert rebuild reservation domain constraint is enforced
+      ansible.builtin.assert:
+        that:
+          - rebuild_result.changed == false
+          - rebuild_result.failed == true
+        fail_msg: >-
+          Enabling rebuild reservation unexpectedly succeeded even though the
+          cluster has RF1 containers (or the module did not surface the failure)
+        success_msg: "Rebuild reservation domain constraint correctly enforced"
+
+    ########################### Negative tests ###########################
+
+    - name: Update storage config with missing cluster_ext_id
+      nutanix.ncp.ntnx_storage_config_v2:
+        state: present
+        resilient_capacity_warning_threshold_percentage: 50
+      register: result
+      ignore_errors: true
+
+    - name: Assert missing cluster_ext_id is rejected (update)
+      ansible.builtin.assert:
+        that:
+          - result.failed == true
+          - result.changed == false
+          - "'cluster_ext_id' in result.msg"
+        fail_msg: "Update did not fail on missing cluster_ext_id"
+        success_msg: "Update correctly failed on missing cluster_ext_id"
+
+    - name: Update storage config with an invalid cluster_ext_id
+      nutanix.ncp.ntnx_storage_config_v2:
+        state: present
+        cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+        resilient_capacity_warning_threshold_percentage: 50
+      register: result
+      ignore_errors: true
+
+    - name: Assert invalid cluster_ext_id is rejected (update)
+      ansible.builtin.assert:
+        that:
+          - result.failed == true
+          - result.changed == false
+        fail_msg: "Update did not fail on invalid cluster_ext_id"
+        success_msg: "Update correctly failed on invalid cluster_ext_id"
+
+    - name: Get storage config with missing cluster_ext_id
+      nutanix.ncp.ntnx_storage_config_info_v2: {}
+      register: result
+      ignore_errors: true
+
+    - name: Assert missing cluster_ext_id is rejected (info)
+      ansible.builtin.assert:
+        that:
+          - result.failed == true
+          - "'cluster_ext_id' in result.msg"
+        fail_msg: "Info did not fail on missing cluster_ext_id"
+        success_msg: "Info correctly failed on missing cluster_ext_id"
+
+    - name: Get storage config with invalid cluster_ext_id
+      nutanix.ncp.ntnx_storage_config_info_v2:
+        cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+      register: result
+      ignore_errors: true
+
+    - name: Assert invalid cluster_ext_id is rejected (info)
+      ansible.builtin.assert:
+        that:
+          - result.failed == true
+        fail_msg: "Info did not fail on invalid cluster_ext_id"
+        success_msg: "Info correctly failed on invalid cluster_ext_id"
+
+  always:
+    ########################### Restore original config ###########################
+
+    - name: Build restore spec from the original configuration (drop null values)
+      ansible.builtin.set_fact:
+        restore_spec: >-
+          {{
+            {
+              'resilient_capacity_warning_threshold_percentage':
+                original_config.response.resilient_capacity_warning_threshold_percentage,
+              'is_rebuild_reservation_enabled':
+                original_config.response.is_rebuild_reservation_enabled,
+              'is_rf1_enabled':
+                original_config.response.is_rf1_enabled,
+              'storage_over_provisioning_caution_threshold':
+                original_config.response.storage_over_provisioning_caution_threshold,
+              'is_delayed_maintenance_resiliency_enabled':
+                original_config.response.is_delayed_maintenance_resiliency_enabled
+            } | dict2items | rejectattr('value', 'none') | list | items2dict
+          }}
+      when:
+        - original_config.response is defined
+        - cluster_ext_id is defined
+
+    - name: Restore original storage configuration
+      nutanix.ncp.ntnx_storage_config_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        resilient_capacity_warning_threshold_percentage: "{{ restore_spec.resilient_capacity_warning_threshold_percentage | default(omit) }}"
+        is_rebuild_reservation_enabled: "{{ restore_spec.is_rebuild_reservation_enabled | default(omit) }}"
+        is_rf1_enabled: "{{ restore_spec.is_rf1_enabled | default(omit) }}"
+        storage_over_provisioning_caution_threshold: "{{ restore_spec.storage_over_provisioning_caution_threshold | default(omit) }}"
+        is_delayed_maintenance_resiliency_enabled: "{{ restore_spec.is_delayed_maintenance_resiliency_enabled | default(omit) }}"
+      register: restore_result
+      ignore_errors: true
+      when:
+        - restore_spec is defined
+
+    - name: Report restore status
+      ansible.builtin.debug:
+        msg: "Storage config restore: changed={{ restore_result.changed | default('n/a') }}"
