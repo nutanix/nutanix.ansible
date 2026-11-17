@@ -22,7 +22,7 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(List LCM Downloaded Images) -
-      Required Roles: Super Admin
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=lifecycle)"
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
@@ -49,7 +49,7 @@ EXAMPLES = r"""
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
     validate_certs: false
-    filter: "entityClass eq 'AOS'"
+    filter: "entityClass eq 'Core Cluster'"
   register: result
 
 - name: List LCM downloaded images with limit

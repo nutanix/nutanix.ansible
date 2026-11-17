@@ -16,41 +16,21 @@
       nutanix_password: <pass>
       validate_certs: false
   tasks:
-    ################################################################################
-    # List operations
-    ################################################################################
-
     - name: List all LCM downloaded images
       nutanix.ncp.ntnx_lcm_images_info_v2:
       register: list_result
 
-    - name: Print list result
-      ansible.builtin.debug:
-        var: list_result
-
     - name: List LCM downloaded images with filter
       nutanix.ncp.ntnx_lcm_images_info_v2:
-        filter: "entityClass eq 'AOS'"
+        filter: "entityClass eq 'Core Cluster'"
       register: filter_result
-
-    - name: Print filter result
-      ansible.builtin.debug:
-        var: filter_result
 
     - name: List LCM downloaded images with limit
       nutanix.ncp.ntnx_lcm_images_info_v2:
         limit: 1
       register: limit_result
 
-    - name: Print limit result
-      ansible.builtin.debug:
-        var: limit_result
-
     - name: List all LCM downloaded images with fetch_all
       nutanix.ncp.ntnx_lcm_images_info_v2:
         fetch_all: true
       register: fetch_all_result
-
-    - name: Print fetch_all result
-      ansible.builtin.debug:
-        var: fetch_all_result

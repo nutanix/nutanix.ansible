@@ -23,48 +23,12 @@ notes:
     - >-
       B(List Legacy VM Anti-Affinity Policies) -
       Required Roles: Prism Admin, Prism Viewer, Project Admin, Project Manager,
-      Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin, Virtual Machine Viewer
+      Self-Service Admin (Deprecated), Super Admin, Tenant Admin, Tenant Consumer,
+      Virtual Machine Admin, Virtual Machine Viewer
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
-options:
-    filter:
-        description:
-            - >-
-              A URL query parameter that allows clients to filter a collection of resources.
-              The expression specified with C($filter) must conform to the OData V4.01 URL conventions.
-        type: str
-        required: false
-    page:
-        description:
-            - >-
-              A URL query parameter that specifies the page number of the result set.
-              It must be a positive integer between 0 and the maximum number of pages
-              that are available for that resource.
-        type: int
-        required: false
-    limit:
-        description:
-            - >-
-              A URL query parameter that specifies the total number of records returned in the result set.
-              Must be a positive integer between 1 and 100.
-        type: int
-        required: false
-    fetch_all:
-        description:
-            - >-
-              Whether to fetch all pages of results. When C(true), iterates through all available
-              pages and returns the complete list. C(page) and C(limit) are ignored; each request
-              uses the maximum page size (100).
-            - When C(false), return a single page (API default limit).
-        type: bool
-        required: false
-        default: false
-    read_timeout:
-        description: Read timeout in milliseconds for API calls.
-        type: int
-        required: false
-        default: 30000
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
+    - nutanix.ncp.ntnx_info_v2
     - nutanix.ncp.ntnx_logger
     - nutanix.ncp.ntnx_proxy_v2
 author:
