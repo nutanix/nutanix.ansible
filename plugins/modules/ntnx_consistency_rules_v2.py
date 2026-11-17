@@ -237,7 +237,7 @@ def get_module_spec():
 
 
 def create_consistency_rule(module, result, api_instance):
-    validate_required_params(module, ["name", "category_ids"])
+    validate_required_params(module, ["protection_policy_ext_id", "name", "category_ids"])
     protection_policy_ext_id = module.params.get("protection_policy_ext_id")
     sg = SpecGenerator(module)
     default_spec = data_policies_sdk.ConsistencyRule()
@@ -376,7 +376,7 @@ def delete_consistency_rule(module, result, api_instance):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, raise_error=True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
 
