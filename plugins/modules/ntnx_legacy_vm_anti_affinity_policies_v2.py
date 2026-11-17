@@ -38,7 +38,6 @@ options:
             - If C(state) is C(present), the module will fail.
         type: str
         choices:
-            - present
             - absent
         default: absent
     wait:
@@ -167,6 +166,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = dict(
         ext_id=dict(type="str"),
+        state=dict(type="str", choices=["absent"], default="absent"),
     )
     return module_args
 
