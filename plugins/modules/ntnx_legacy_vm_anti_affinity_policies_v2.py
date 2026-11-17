@@ -165,7 +165,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
-        ext_id=dict(type="str"),
+        ext_id=dict(type="str", required=True),
         state=dict(type="str", choices=["absent"], default="absent"),
     )
     return module_args
