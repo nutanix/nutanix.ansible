@@ -81,7 +81,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     protection_policy_ext_id: "0985aafc-8cb8-4e22-b863-3ff5f91c911e"
-    filter: "name eq 'example-consistency-rule'"
+    filter: "name eq 'Consistency_Rule_1'"
   register: result
 
 - name: List Consistency Rules with limit

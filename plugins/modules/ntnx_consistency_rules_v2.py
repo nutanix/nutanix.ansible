@@ -97,7 +97,7 @@ EXAMPLES = r"""
     validate_certs: false
     state: present
     protection_policy_ext_id: "0985aafc-8cb8-4e22-b863-3ff5f91c911e"
-    name: "example-consistency-rule"
+    name: "Consistency_Rule_1"
     category_ids:
       - "0d2c792d-8687-4e99-95f7-3c7cc401fe1a"
   register: result
@@ -111,7 +111,7 @@ EXAMPLES = r"""
     state: present
     protection_policy_ext_id: "0985aafc-8cb8-4e22-b863-3ff5f91c911e"
     ext_id: "63311404-8b2e-4dbf-9e33-7848cc88d330"
-    name: "example-consistency-rule-updated"
+    name: "Consistency_Rule_1-updated"
     category_ids:
       - "0d2c792d-8687-4e99-95f7-3c7cc401fe1a"
   register: updated
@@ -237,7 +237,9 @@ def get_module_spec():
 
 
 def create_consistency_rule(module, result, api_instance):
-    validate_required_params(module, ["protection_policy_ext_id", "name", "category_ids"])
+    validate_required_params(
+        module, ["protection_policy_ext_id", "name", "category_ids"]
+    )
     protection_policy_ext_id = module.params.get("protection_policy_ext_id")
     sg = SpecGenerator(module)
     default_spec = data_policies_sdk.ConsistencyRule()
