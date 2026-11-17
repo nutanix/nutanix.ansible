@@ -63,6 +63,12 @@ options:
                     - The value of the IPv4 address.
                   type: str
                   required: true
+                prefix_length:
+                  description:
+                    - The prefix length of the network to which this host IPv4 address belongs.
+                    - Defaults to 32 when omitted.
+                  type: int
+                  required: false
             ipv6:
               description:
                 - IPv6 address of the initiator.
@@ -74,6 +80,12 @@ options:
                     - The value of the IPv6 address.
                   type: str
                   required: true
+                prefix_length:
+                  description:
+                    - The prefix length of the network to which this host IPv6 address belongs.
+                    - Defaults to 128 when omitted.
+                  type: int
+                  required: false
             fqdn:
               description:
                 - Fully qualified domain name of the initiator.
@@ -144,12 +156,6 @@ EXAMPLES = r"""
       ipv4:
         value: "192.168.1.100"
         prefix_length: 24
-      ipv6:
-        value: "2001:db8::100"
-        prefix_length: 64
-    fqdn:
-      value: "ansibletest2.com"
-      prefix_length: 24
   register: result
 
 - name: Update iSCSI client authentication type to NONE
@@ -264,13 +270,21 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
-    address_spec = dict(
+    ipv4_address_spec = dict(
+        value=dict(type="str", required=True),
+        prefix_length=dict(type="int", required=False),
+    )
+    ipv6_address_spec = dict(
+        value=dict(type="str", required=True),
+        prefix_length=dict(type="int", required=False),
+    )
+    fqdn_spec = dict(
         value=dict(type="str", required=True),
     )
     iscsi_initiator_network_id_spec = dict(
-        ipv4=dict(type="dict", options=address_spec, obj=volumes_sdk.IPv4Address),
-        ipv6=dict(type="dict", options=address_spec, obj=volumes_sdk.IPv6Address),
-        fqdn=dict(type="dict", options=address_spec, obj=volumes_sdk.FQDN),
+        ipv4=dict(type="dict", options=ipv4_address_spec, obj=volumes_sdk.IPv4Address),
+        ipv6=dict(type="dict", options=ipv6_address_spec, obj=volumes_sdk.IPv6Address),
+        fqdn=dict(type="dict", options=fqdn_spec, obj=volumes_sdk.FQDN),
     )
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
