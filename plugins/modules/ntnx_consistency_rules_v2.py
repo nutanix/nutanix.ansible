@@ -110,7 +110,7 @@ EXAMPLES = r"""
     validate_certs: false
     state: present
     protection_policy_ext_id: "0985aafc-8cb8-4e22-b863-3ff5f91c911e"
-    ext_id: "{{ result.ext_id }}"
+    ext_id: "63311404-8b2e-4dbf-9e33-7848cc88d330"
     name: "example-consistency-rule-updated"
     category_ids:
       - "0d2c792d-8687-4e99-95f7-3c7cc401fe1a"
@@ -124,16 +124,16 @@ EXAMPLES = r"""
     validate_certs: false
     state: absent
     protection_policy_ext_id: "0985aafc-8cb8-4e22-b863-3ff5f91c911e"
-    ext_id: "{{ result.ext_id }}"
+    ext_id: "63311404-8b2e-4dbf-9e33-7848cc88d330"
   register: deleted
 """
 
 RETURN = r"""
 response:
     description:
-        - Response for Consistency Rule operations.
-        - Consistency Rule details if C(wait) is true.
-        - Task details if C(wait) is false.
+        - Response for creating, updating, or deleting Consistency Rule.
+        - If C(wait) is true and the operation is Create or Update, it will contain the Consistency Rule details.
+        - If C(wait) is false or the operation is Delete, it will contain the task details.
     returned: always
     type: dict
     sample:
