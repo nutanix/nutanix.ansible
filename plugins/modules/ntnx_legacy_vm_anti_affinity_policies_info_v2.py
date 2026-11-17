@@ -14,18 +14,64 @@ module: ntnx_legacy_vm_anti_affinity_policies_info_v2
 short_description: Fetch legacy VM-VM anti-affinity policies info from Nutanix Prism Central.
 version_added: "2.7.0"
 description:
-    - This module fetches information about legacy VM-VM anti-affinity policies in Nutanix Prism Central.
-    - It supports listing all legacy policies with optional filter, page, and limit.
-    - This module uses PC v4 APIs based SDKs.
+    - This module allows you to fetch information about legacy VM-VM anti-affinity policies in Nutanix Prism Central.
+    - If C(ext_id) is provided, fetch details of the specific legacy VM-VM anti-affinity policy.
+    - If C(ext_id) is not provided, list multiple legacy VM-VM anti-affinity policies optionally filtered or paginated.
+    - This module uses PC v4 APIs based SDKs
 notes:
+    - There is no Get-by-ID API for legacy VM-VM anti-affinity policies. When C(ext_id) is provided, the module lists
+      policies with an OData filter on C(extId).
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(List Legacy VM Anti-Affinity Policies) -
+      B(GET/List Legacy VM Anti-Affinity Policies) -
       Required Roles: Prism Admin, Prism Viewer, Project Admin, Project Manager,
       Self-Service Admin (Deprecated), Super Admin, Tenant Admin, Tenant Consumer,
       Virtual Machine Admin, Virtual Machine Viewer
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
+options:
+    ext_id:
+        description:
+            - The External ID of the legacy VM-VM anti-affinity policy.
+            - If provided, only that particular policy is fetched via list + C($filter) on C(extId).
+        type: str
+        required: false
+    filter:
+        description:
+            - A URL query parameter that allows clients to filter a collection of resources.
+            - The expression specified with C($filter) is evaluated for each resource in the collection,
+              and only items where the expression evaluates to true are included in the response.
+        type: str
+        required: false
+    page:
+        description:
+            - A URL query parameter that specifies the page number of the result set.
+            - It must be a positive integer between 0 and the maximum number of pages that are available for that resource.
+            - Any number out of this range might lead to no results.
+        type: int
+        required: false
+    limit:
+        description:
+            - A URL query parameter that specifies the total number of records returned in the result set.
+            - Must be a positive integer between 1 and 100.
+            - Any number out of this range will lead to a validation error.
+            - If the limit is not provided, a default value of 50 records will be returned in the result set.
+        type: int
+        required: false
+    fetch_all:
+        description:
+            - When C(true), paginate through the list API until all available entities are returned.
+              C(page) and C(limit) are ignored; each request uses the maximum page size (100).
+            - When C(false), return a single page (API default limit).
+            - Does not apply when fetching a single entity by C(ext_id).
+        type: bool
+        required: false
+        default: false
+    read_timeout:
+        description: Read timeout in milliseconds for API calls.
+        type: int
+        required: false
+        default: 30000
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
@@ -37,6 +83,15 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Get legacy VM-VM anti-affinity policy using ext_id
+  nutanix.ncp.ntnx_legacy_vm_anti_affinity_policies_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    ext_id: "00060a2b-5c99-5a52-ebd2-ac1f6b02d3e0"
+  register: result
+
 - name: List all legacy VM-VM anti-affinity policies
   nutanix.ncp.ntnx_legacy_vm_anti_affinity_policies_info_v2:
     nutanix_host: "{{ ip }}"
@@ -76,30 +131,29 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - Response for fetching legacy VM-VM anti-affinity policy list.
-        - List of legacy VM-VM anti-affinity policies.
-    type: list
+        - The response from the Nutanix PC legacy VM-VM anti-affinity policies info v4 API.
+        - It can be a single legacy VM-VM anti-affinity policy if External ID is provided.
+        - List of multiple legacy VM-VM anti-affinity policies if External ID is not provided with optional filter or limit.
+    type: dict
     returned: always
     sample:
-        [
-            {
-                "cluster": {
-                    "ext_id": "0005cfe0-7f26-5e6a-0000-000000013179"
+        {
+            "cluster": {
+                "ext_id": "0005cfe0-7f26-5e6a-0000-000000013179"
+            },
+            "ext_id": "00060a2b-5c99-5a52-ebd2-ac1f6b02d3e0",
+            "links": null,
+            "name": "legacy_anti_affinity_test",
+            "tenant_id": null,
+            "vms": [
+                {
+                    "ext_id": "2f54419e-596d-4b34-aa8f-1a1e944ee7d7"
                 },
-                "ext_id": "00060a2b-5c99-5a52-ebd2-ac1f6b02d3e0",
-                "links": null,
-                "name": "legacy_anti_affinity_test",
-                "tenant_id": null,
-                "vms": [
-                    {
-                        "ext_id": "2f54419e-596d-4b34-aa8f-1a1e944ee7d7"
-                    },
-                    {
-                        "ext_id": "8811743f-f3ea-463c-539a-8d6a7f69b8f5"
-                    }
-                ]
-            }
-        ]
+                {
+                    "ext_id": "8811743f-f3ea-463c-539a-8d6a7f69b8f5"
+                }
+            ]
+        }
 changed:
     description: This indicates whether the task resulted in any changes.
     returned: always
@@ -119,6 +173,11 @@ msg:
     returned: When there is an error
     type: str
     sample: "Api Exception raised while fetching legacy VM-VM anti-affinity policies info"
+ext_id:
+    description: External ID of the legacy VM-VM anti-affinity policy.
+    type: str
+    returned: when External ID is provided
+    sample: "00060a2b-5c99-5a52-ebd2-ac1f6b02d3e0"
 total_available_results:
     description: The total number of available legacy VM-VM anti-affinity policies in PC.
     type: int
@@ -145,12 +204,52 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
+        ext_id=dict(type="str"),
         filter=dict(type="str"),
         page=dict(type="int"),
         limit=dict(type="int"),
         fetch_all=dict(type="bool", required=False, default=False),
     )
     return module_args
+
+
+def get_legacy_policy_using_ext_id(module, api_instance, result):
+    """Fetch one legacy policy via list + $filter on extId (no Get-by-ID API)."""
+    ext_id = module.params.get("ext_id")
+    sg = SpecGenerator(module)
+    kwargs, err = sg.get_info_spec(attr=module.params)
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed generating legacy VM-VM anti-affinity policies info spec",
+            **result,
+        )
+
+    kwargs["_filter"] = "extId eq '{0}'".format(ext_id)
+
+    try:
+        resp = list_entities(
+            api_instance.list_legacy_vm_anti_affinity_policies,
+            kwargs=kwargs,
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching legacy VM-VM anti-affinity policy info using ext_id",
+        )
+
+    result["ext_id"] = ext_id
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        result["response"] = {}
+        result["msg"] = (
+            "Legacy VM-VM anti-affinity policy with ext_id '{0}' not found".format(
+                ext_id
+            )
+        )
+        return
+    result["response"] = resp[0]
 
 
 def get_legacy_policies(module, api_instance, result):
@@ -191,11 +290,17 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=False,
         skip_info_args=True,
+        mutually_exclusive=[
+            ("ext_id", "filter"),
+        ],
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "failed": False, "response": None}
     api_instance = get_vm_anti_affinity_policies_api_instance(module)
-    get_legacy_policies(module, api_instance, result)
+    if module.params.get("ext_id"):
+        get_legacy_policy_using_ext_id(module, api_instance, result)
+    else:
+        get_legacy_policies(module, api_instance, result)
     module.exit_json(**result)
 
 
