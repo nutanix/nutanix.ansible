@@ -6,6 +6,7 @@
 # 3. Detach client from VG
 # 4. List all volume group iSCSI clients
 # 5. List all volume group iSCSI clients with fetch_all
+# 6. Update iSCSI client authentication type
 
 - name: Volume groups iscsi clients playbook
   hosts: localhost
@@ -52,3 +53,16 @@
         fetch_all: true
       register: result
       ignore_errors: true
+
+    - name: Update iSCSI client authentication type to CHAP
+      nutanix.ncp.ntnx_iscsi_clients_v2:
+        ext_id: "{{ iscsi_client_uuid }}"
+        enabled_authentications: CHAP
+        client_secret: "Nutanix.1234455"
+      register: result
+
+    - name: Update iSCSI client authentication type to NONE
+      nutanix.ncp.ntnx_iscsi_clients_v2:
+        ext_id: "{{ iscsi_client_uuid }}"
+        enabled_authentications: NONE
+      register: result
