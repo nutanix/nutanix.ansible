@@ -14,7 +14,7 @@ version_added: "2.7.0"
 description:
     - Fetch details of a storage backend when C(ext_id) is provided.
     - Fetch a list of the storage backends configured in an Object store when
-      C(ext_id) is not provided.
+      C(ext_id) is not provided with optional filters.
     - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -51,6 +51,16 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Get details of a storage backend
+  nutanix.ncp.ntnx_object_stores_storage_backends_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+    ext_id: "f3197423-f486-4037-6037-95442e58484e"
+  register: result
+
 - name: List all storage backends for an object store
   nutanix.ncp.ntnx_object_stores_storage_backends_info_v2:
     nutanix_host: "{{ ip }}"
@@ -70,6 +80,16 @@ EXAMPLES = r"""
     filter: "isPrimary eq true"
   register: result
 
+- name: List storage backends with limit
+  nutanix.ncp.ntnx_object_stores_storage_backends_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+    limit: 1
+  register: result
+
 - name: List all storage backends with fetch_all
   nutanix.ncp.ntnx_object_stores_storage_backends_info_v2:
     nutanix_host: "{{ ip }}"
@@ -79,16 +99,6 @@ EXAMPLES = r"""
     object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
     fetch_all: true
   register: result
-
-- name: Get details of a storage backend
-  nutanix.ncp.ntnx_object_stores_storage_backends_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
-    ext_id: "f3197423-f486-4037-6037-95442e58484e"
-  register: result
 """
 
 RETURN = r"""
@@ -96,7 +106,7 @@ response:
     description:
         - Response for fetching object store storage backends info.
         - Storage backend details if C(ext_id) is provided.
-        - List of storage backends if C(ext_id) is not provided.
+        - List of multiple storage backend details if C(ext_id) is not provided with optional filters.
     type: dict
     returned: always
     sample:

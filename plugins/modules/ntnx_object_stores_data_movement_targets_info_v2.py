@@ -51,6 +51,16 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Get details of a data movement target
+  nutanix.ncp.ntnx_object_stores_data_movement_targets_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+    ext_id: "a1352721-9ade-4a39-a338-7569e57f3afc"
+  register: result
+
 - name: List all data movement targets for an object store
   nutanix.ncp.ntnx_object_stores_data_movement_targets_info_v2:
     nutanix_host: "{{ ip }}"
@@ -70,6 +80,16 @@ EXAMPLES = r"""
     filter: "name eq 'data-movement-target-1'"
   register: result
 
+- name: List data movement targets with limit
+  nutanix.ncp.ntnx_object_stores_data_movement_targets_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+    limit: 1
+  register: result
+
 - name: List all data movement targets with fetch_all
   nutanix.ncp.ntnx_object_stores_data_movement_targets_info_v2:
     nutanix_host: "{{ ip }}"
@@ -78,16 +98,6 @@ EXAMPLES = r"""
     validate_certs: false
     object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
     fetch_all: true
-  register: result
-
-- name: Get details of a data movement target
-  nutanix.ncp.ntnx_object_stores_data_movement_targets_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
-    ext_id: "a1352721-9ade-4a39-a338-7569e57f3afc"
   register: result
 """
 

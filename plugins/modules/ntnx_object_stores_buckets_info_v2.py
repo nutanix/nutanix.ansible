@@ -89,16 +89,6 @@ EXAMPLES = r"""
     object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
   register: result
 
-- name: List all buckets with limit
-  nutanix.ncp.ntnx_object_stores_buckets_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
-    limit: 1
-  register: result
-
 - name: List buckets with filter
   nutanix.ncp.ntnx_object_stores_buckets_info_v2:
     nutanix_host: "{{ ip }}"
@@ -107,6 +97,16 @@ EXAMPLES = r"""
     validate_certs: false
     object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
     filter: "name eq 'bucket-1'"
+  register: result
+
+- name: List buckets with limit
+  nutanix.ncp.ntnx_object_stores_buckets_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+    limit: 1
   register: result
 
 - name: List all buckets with fetch_all
