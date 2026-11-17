@@ -231,8 +231,11 @@ msg:
     sample: "Api Exception raised while updating iSCSI client"
 """
 
+import traceback
 import warnings  # noqa: E402
 from copy import deepcopy  # noqa: E402
+
+from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
@@ -249,16 +252,61 @@ from ..module_utils.v4.volumes.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.volumes.helpers import get_iscsi_client  # noqa: E402
 
+SDK_IMP_ERROR = None
+try:
+    import ntnx_volumes_py_client as volumes_sdk  # noqa: E402
+except ImportError:
+    from ..module_utils.v4.sdk_mock import mock_sdk as volumes_sdk  # noqa: E402
+
+    SDK_IMP_ERROR = traceback.format_exc()
+
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
 def get_module_spec():
+
+    iscsi_initiator_network_id_spec = dict(
+        ipv4=dict(
+            type="dict",
+            suboptions=dict(
+                value=dict(type="str", required=True),
+                prefix_length=dict(type="int", required=True),
+            ),
+        ),
+        ipv6=dict(
+            type="dict",
+            suboptions=dict(
+                value=dict(type="str", required=True),
+                prefix_length=dict(type="int", required=True),
+            ),
+        ),
+        fqdn=dict(
+            type="dict",
+            suboptions=dict(
+                value=dict(type="str", required=True),
+                prefix_length=dict(type="int", required=True),
+            ),
+        ),
+    )
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
         ext_id=dict(type="str", required=True),
         client_secret=dict(type="str", no_log=True),
-        enabled_authentications=dict(type="str", choices=["CHAP", "NONE"]),
-        attachment_site=dict(type="str", choices=["PRIMARY", "SECONDARY"]),
+        enabled_authentications=dict(
+            type="str", choices=["CHAP", "NONE"], obj=volumes_sdk.AuthenticationType
+        ),
+        attachment_site=dict(
+            type="str",
+            choices=["PRIMARY", "SECONDARY"],
+            obj=volumes_sdk.VolumeGroupAttachmentSite,
+        ),
+        num_virtual_targets=dict(type="int"),
+        iscsi_initiator_name=dict(type="str"),
+        iscsi_initiator_network_id=dict(
+            type="dict",
+            suboptions=iscsi_initiator_network_id_spec,
+            obj=volumes_sdk.IPAddressOrFQDN,
+        ),
     )
     return module_args
 
@@ -328,6 +376,11 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )
+
+    if SDK_IMP_ERROR:
+        module.fail_json(
+            msg=missing_required_lib("ntnx_volumes_py_client"), exception=SDK_IMP_ERROR
+        )
 
     remove_param_with_none_value(module.params)
     result = {"changed": False, "failed": False, "response": None}
