@@ -81,6 +81,16 @@ EXAMPLES = r"""
     limit: 1
   register: result
   ignore_errors: true
+
+- name: List data protection cluster capabilities with fetch_all
+  nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -160,6 +170,7 @@ from ..module_utils.v4.data_protection.helpers import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -204,7 +215,10 @@ def list_data_protection_cluster_capabilities(module, api_instance, result):
         )
 
     try:
-        resp = api_instance.list_data_protection_cluster_capabilities(**kwargs)
+        resp = list_entities(
+            api_instance.list_data_protection_cluster_capabilities,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
