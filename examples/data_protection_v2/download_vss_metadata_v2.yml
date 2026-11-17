@@ -1,0 +1,40 @@
+---
+# Summary:
+# This playbook will download VSS metadata for a VM recovery point
+
+- name: Download VSS metadata for a VM recovery point playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+
+  tasks:
+    - name: Set VSS metadata source recovery point identifiers
+      ansible.builtin.set_fact:
+        recovery_point_ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
+        vm_recovery_point_ext_id: "522670d7-e92d-45c5-9139-76ccff6813c2"
+
+    - name: Download VSS metadata for a VM recovery point to the default location
+      nutanix.ncp.ntnx_vm_recovery_point_vss_metadata_info_v2:
+        recovery_point_ext_id: "{{ recovery_point_ext_id }}"
+        vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id }}"
+      register: vss_metadata_result
+
+    - name: Print downloaded VSS metadata path
+      ansible.builtin.debug:
+        var: vss_metadata_result.response.path
+
+    - name: Download VSS metadata for a VM recovery point to a destination path
+      nutanix.ncp.ntnx_vm_recovery_point_vss_metadata_info_v2:
+        recovery_point_ext_id: "{{ recovery_point_ext_id }}"
+        vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id }}"
+        dest: "/tmp/vss_metadata.cab"
+      register: vss_metadata_result
+
+    - name: Print downloaded VSS metadata path
+      ansible.builtin.debug:
+        var: vss_metadata_result.response.path

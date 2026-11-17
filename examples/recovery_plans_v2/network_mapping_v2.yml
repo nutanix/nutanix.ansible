@@ -1,0 +1,98 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a Network mapping
+# 2. Update a Network mapping
+# 3. List all Network mappings of the Recovery Plan
+# 4. List all Network mappings of the Recovery Plan using filter
+# 5. List all Network mappings of the Recovery Plan using limit
+# 6. Get a Network mapping using ext_id
+# 7. Delete a Network mapping
+
+- name: Network Mapping playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        recovery_plan_ext_id: "e7ae4b0d-726d-410d-87c2-af46f8bea264"
+        primary_network_ext_id: "9e9c7f6a-4b28-4d5f-a1d9-1f1b3a92aa11"
+        recovery_network_ext_id: "a92aa11-4b28-4d5f-a1d9-1f1b3a92aa11"
+        primary_test_network: "d61b160b-8717-488e-8945-38d27050d0a2"
+        recovery_test_network: "d61b160b-8717-488e-8945-38d27050d0a2"
+
+    - name: Create a Network mapping
+      nutanix.ncp.ntnx_network_mapping_v2:
+        state: present
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        primary_network:
+          ext_id: "{{ primary_network_ext_id }}"
+        recovery_network:
+          ext_id: "{{ recovery_network_ext_id }}"
+        is_ip_mapping_enabled: false
+      register: create_result
+      ignore_errors: true
+
+    - name: Save created Network mapping ext_id
+      ansible.builtin.set_fact:
+        network_mapping_ext_id: "{{ create_result.ext_id | default('') }}"
+
+    - name: Update the Network mapping
+      nutanix.ncp.ntnx_network_mapping_v2:
+        state: present
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ network_mapping_ext_id }}"
+        primary_network:
+          ext_id: "{{ primary_network_ext_id }}"
+        recovery_network:
+          ext_id: "{{ recovery_network_ext_id }}"
+        primary_test_network:
+          ext_id: "{{ primary_test_network }}"
+        recovery_test_network:
+          ext_id: "{{ recovery_test_network }}"
+      register: update_result
+      ignore_errors: true
+      when: network_mapping_ext_id | length > 0
+
+    - name: List all Network mappings of the Recovery Plan
+      nutanix.ncp.ntnx_network_mappings_info_v2:
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+      register: list_result
+      ignore_errors: true
+
+    - name: List all Network mappings of the Recovery Plan using filter
+      nutanix.ncp.ntnx_network_mappings_info_v2:
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        filter: "extId eq '{{ network_mapping_ext_id }}'"
+      register: list_result_filter
+      ignore_errors: true
+
+    - name: List all Network mappings of the Recovery Plan using limit
+      nutanix.ncp.ntnx_network_mappings_info_v2:
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        limit: 1
+      register: list_result_limit
+      ignore_errors: true
+
+    - name: Get a Network mapping using ext_id
+      nutanix.ncp.ntnx_network_mappings_info_v2:
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ network_mapping_ext_id }}"
+      register: get_result
+      ignore_errors: true
+      when: network_mapping_ext_id | length > 0
+
+    - name: Delete the Network mapping
+      nutanix.ncp.ntnx_network_mapping_v2:
+        state: absent
+        recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+        ext_id: "{{ network_mapping_ext_id }}"
+      register: delete_result
+      ignore_errors: true
+      when: network_mapping_ext_id | length > 0

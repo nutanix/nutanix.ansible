@@ -1,0 +1,83 @@
+---
+- name: Start ntnx_login_providers_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_login_providers_info_v2 tests
+
+- name: List all login providers
+  nutanix.ncp.ntnx_login_providers_info_v2:
+  register: all_providers
+  ignore_errors: true
+
+- name: List all login providers - status
+  ansible.builtin.assert:
+    that:
+      - all_providers.changed == false
+      - all_providers.failed == false
+      - all_providers.response is defined
+      - all_providers.response | length > 0
+      - all_providers.total_available_results is defined
+      - all_providers.total_available_results | int > 0
+    fail_msg: "Unable to list login providers"
+    success_msg: "Login providers listed successfully"
+
+- name: Capture name / ext_id of the first provider for filter tests
+  ansible.builtin.set_fact:
+    first_provider_ext_id: "{{ all_providers.response[0].ext_id }}"
+    first_provider_name: "{{ all_providers.response[0].name }}"
+
+- name: Filter login providers by the first provider's name (server-side filter)
+  nutanix.ncp.ntnx_login_providers_info_v2:
+    filter: "name eq '{{ first_provider_name }}'"
+  register: filtered_providers
+  ignore_errors: true
+
+- name: Show filtered providers
+  ansible.builtin.debug:
+    var: filtered_providers
+
+- name: Filter by name - status
+  ansible.builtin.assert:
+    that:
+      - filtered_providers.changed == false
+      - filtered_providers.failed == false
+      - filtered_providers.response is defined
+      - filtered_providers.response | length >= 1
+      - filtered_providers.response[0].name == first_provider_name
+      - filtered_providers.response[0].ext_id == first_provider_ext_id
+    fail_msg: "Filtering login providers by name returned unexpected result"
+    success_msg: "Filtering login providers by name works as expected"
+
+- name: List login providers with limit=1
+  nutanix.ncp.ntnx_login_providers_info_v2:
+    limit: 1
+  register: limited_providers
+  ignore_errors: true
+
+- name: Limit - status
+  ansible.builtin.assert:
+    that:
+      - limited_providers.changed == false
+      - limited_providers.failed == false
+      - limited_providers.response is defined
+      - limited_providers.response | length <= 1
+      - limited_providers.total_available_results | int >= limited_providers.response | length
+    fail_msg: "Limit pagination did not cap the result set"
+    success_msg: "Limit pagination works as expected"
+
+- name: List entities with fetch_all
+  nutanix.ncp.ntnx_login_providers_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_login_providers_info_v2
+  ignore_errors: true
+
+- name: Status of list with fetch_all
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_login_providers_info_v2.changed == false
+      - fetch_all_ntnx_login_providers_info_v2.failed == false
+      - fetch_all_ntnx_login_providers_info_v2.response is defined
+      - fetch_all_ntnx_login_providers_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_login_providers_info_v2.response | default([]) | length) ==
+        (fetch_all_ntnx_login_providers_info_v2.total_available_results | int)
+    fail_msg: "Unable to list with fetch_all"
+    success_msg: "Listed with fetch_all successfully"

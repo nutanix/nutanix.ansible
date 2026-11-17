@@ -69,6 +69,14 @@ EXAMPLES = r"""
     validate_certs: false
     ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
   register: result
+
+- name: List all SAML identity providers with fetch_all
+  nutanix.ncp.ntnx_saml_identity_providers_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 RETURN = r"""
 response:
@@ -142,6 +150,7 @@ from ..module_utils.v4.iam.api_client import (  # noqa: E402
 from ..module_utils.v4.iam.helpers import get_identity_provider  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -174,7 +183,10 @@ def get_identity_providers(module, identity_providers, result):
         module.fail_json(msg="Failed generating identity providers info Spec", **result)
 
     try:
-        resp = identity_providers.list_saml_identity_providers(**kwargs)
+        resp = list_entities(
+            identity_providers.list_saml_identity_providers,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,

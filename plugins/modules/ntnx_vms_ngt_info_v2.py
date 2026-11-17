@@ -82,10 +82,6 @@ msg:
     returned: When there is an error
     type: str
     sample: "Api Exception raised while fetching NGT info for given vm"
-error:
-    description: The error message, if any.
-    type: str
-    returned: on error
 ext_id:
     description: The external ID of the virtual machine.
     type: str
@@ -135,14 +131,14 @@ def get_ngt_config(module, result):
 def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
-        supports_check_mode=True,
+        supports_check_mode=False,
         skip_info_args=True,
     )
 
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "ext_id": None,
     }
