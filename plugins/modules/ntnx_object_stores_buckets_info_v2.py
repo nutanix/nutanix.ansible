@@ -29,7 +29,7 @@ notes:
 options:
     object_store_ext_id:
         description:
-            - The UUID of the Object store.
+            - The External ID of the Object Store.
         type: str
         required: true
     bucket_name:

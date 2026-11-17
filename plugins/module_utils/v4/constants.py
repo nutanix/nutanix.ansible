@@ -91,7 +91,6 @@ class Tasks:
         )
         NOTIFICATION = "lifecycle:resources:notification"
         NVMF_CLIENT = "volumes:config:nvmf-client"
-        DATA_MOVEMENT_TARGET = "objects:config:object-store:data-movement-target"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""

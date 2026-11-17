@@ -35,7 +35,7 @@ options:
         default: present
     object_store_ext_id:
         description:
-            - The UUID of the Object store.
+            - The External ID of the Object Store.
         type: str
         required: true
     name:
@@ -59,85 +59,86 @@ options:
         description:
             - The details specific to the type of the data movement target in the
               Object store.
-            - Nutanix Objects Data Movement Target Definition.
+            - Exactly one of the oneOf variants must be supplied.
         type: dict
         required: true
         suboptions:
-            object_store_ext_id:
+            ntnx_objects:
                 description:
-                    - The extId of the remote Object store associated with the Nutanix
-                      Objects data movement target.
-                type: str
-                required: true
-            object_store_fqdn:
-                description:
-                    - The FQDN of the remote Object store associated with the Nutanix
-                      Objects data movement target.
+                    - Nutanix Objects Data Movement Target Definition.
                 type: dict
-                required: true
+                required: false
                 suboptions:
-                    value:
+                    object_store_ext_id:
                         description:
-                            - The FQDN value.
+                            - The extId of the remote Object store associated with the
+                              Nutanix Objects data movement target.
                         type: str
                         required: true
-            domain_manager_name:
-                description:
-                    - The name of the Domain Manager (Prism Central) instance that hosts
-                      the remote Nutanix Objects.
-                type: str
-                required: false
-            domain_manager_ext_id:
-                description:
-                    - The UUID of the Domain Manager (Prism Central) instance that hosts
-                      the remote Nutanix Objects.
-                    - This instance should already be registered with Prism Central that
-                      is hosting the source Object store if the source and target
-                      Object stores are hosted in different Prism Central instances.
-                type: str
-                required: true
-            object_store_public_network_ips:
-                description:
-                    - The public network IP addresses of the Nutanix Objects associated
-                      with the data movement target.
-                type: list
-                elements: dict
-                required: true
-                suboptions:
-                    ipv4:
+                    object_store_fqdn:
                         description:
-                            - An IPv4 address.
+                            - The FQDN of the remote Object store associated with the
+                              Nutanix Objects data movement target.
                         type: dict
-                        required: false
+                        required: true
                         suboptions:
                             value:
                                 description:
-                                    - The IPv4 address value.
+                                    - The fully qualified domain name.
                                 type: str
                                 required: true
-                            prefix_length:
-                                description:
-                                    - The prefix length of the network to which this
-                                      host IPv4 address belongs.
-                                type: int
-                                required: false
-                    ipv6:
+                    domain_manager_ext_id:
                         description:
-                            - An IPv6 address.
-                        type: dict
-                        required: false
+                            - The External ID of the Domain Manager (Prism Central)
+                              instance that hosts the remote Nutanix Objects.
+                            - This instance should already be registered with Prism
+                              Central that is hosting the source Object store if the
+                              source and target Object stores are hosted in different
+                              Prism Central instances.
+                        type: str
+                        required: true
+                    object_store_public_network_ips:
+                        description:
+                            - The public network IP addresses of the Nutanix Objects
+                              associated with the data movement target.
+                        type: list
+                        elements: dict
+                        required: true
                         suboptions:
-                            value:
+                            ipv4:
                                 description:
-                                    - The IPv6 address value.
-                                type: str
-                                required: true
-                            prefix_length:
-                                description:
-                                    - The prefix length of the network to which this
-                                      host IPv6 address belongs.
-                                type: int
+                                    - An IPv4 address.
+                                type: dict
                                 required: false
+                                suboptions:
+                                    value:
+                                        description:
+                                            - The IPv4 address value.
+                                        type: str
+                                        required: true
+                                    prefix_length:
+                                        description:
+                                            - The prefix length of the network to which
+                                              this host IPv4 address belongs.
+                                        type: int
+                                        required: false
+                            ipv6:
+                                description:
+                                    - An IPv6 address.
+                                type: dict
+                                required: false
+                                suboptions:
+                                    value:
+                                        description:
+                                            - The IPv6 address value.
+                                        type: str
+                                        required: true
+                                    prefix_length:
+                                        description:
+                                            - The prefix length of the network to which
+                                              this host IPv6 address belongs.
+                                        type: int
+                                        required: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -160,15 +161,16 @@ EXAMPLES = r"""
     name: "data-movement-target-1"
     type: "NTNX_OBJECTS"
     details:
-      object_store_ext_id: "00062664-c65f-f854-65af-7cc25581f458"
-      object_store_fqdn:
-        value: "objects-0.pc.nutanix.com"
-      domain_manager_ext_id: "00062664-c65f-f854-65af-7cc25581f459"
-      object_store_public_network_ips:
-        - ipv4:
-            value: "10.10.10.10"
-        - ipv4:
-            value: "10.10.10.11"
+      ntnx_objects:
+        object_store_ext_id: "00062664-c65f-f854-65af-7cc25581f458"
+        object_store_fqdn:
+          value: "objects-0.pc.nutanix.com"
+        domain_manager_ext_id: "00062664-c65f-f854-65af-7cc25581f459"
+        object_store_public_network_ips:
+          - ipv4:
+              value: "10.10.10.10"
+          - ipv4:
+              value: "10.10.10.11"
   register: result
 """
 
@@ -176,8 +178,8 @@ RETURN = r"""
 response:
     description:
         - Response for creating a data movement target.
-        - Data movement target details if C(wait) is true.
-        - Task details if C(wait) is false.
+        - The create API returns the data movement target entity directly
+          (not a task reference).
     returned: always
     type: dict
     sample:
@@ -214,17 +216,11 @@ response:
             }
         }
 
-task_ext_id:
-    description: The external ID of the task.
-    returned: always
-    type: str
-    sample: "ZXJnb24=:90458bc7-a12b-4616-ac66-562fdb00c209"
-
 ext_id:
     description: The external ID of the data movement target.
     returned: always
     type: str
-    sample: "a1352721-9ade-4a39-a338-7569e57f3afc"
+    sample: "8e36bec3-b4a4-427a-b54f-600604fd1e4c"
 
 changed:
     description: This indicates whether the task resulted in any changes
@@ -257,14 +253,8 @@ from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
-from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 from ..module_utils.v4.objects.api_client import (  # noqa: E402
     get_data_movement_targets_api_instance,
-)
-from ..module_utils.v4.objects.helpers import get_data_movement_target  # noqa: E402
-from ..module_utils.v4.prism.tasks import (  # noqa: E402
-    get_entity_ext_id_from_task,
-    wait_for_completion,
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
@@ -309,7 +299,7 @@ def get_module_spec():
             obj=objects_sdk.IPv6Address,
         ),
     )
-    details_spec = dict(
+    ntnx_objects_spec = dict(
         object_store_ext_id=dict(type="str", required=True),
         object_store_fqdn=dict(
             type="dict",
@@ -327,6 +317,13 @@ def get_module_spec():
             obj=objects_sdk.IPAddress,
         ),
     )
+    details_spec = dict(
+        ntnx_objects=dict(
+            type="dict",
+            options=ntnx_objects_spec,
+            required=False,
+        ),
+    )
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
         object_store_ext_id=dict(type="str", required=True),
@@ -336,7 +333,10 @@ def get_module_spec():
             type="dict",
             required=True,
             options=details_spec,
-            obj=objects_sdk.NTNXObjectsDataMovementTarget,
+            obj={
+                "ntnx_objects": objects_sdk.NTNXObjectsDataMovementTarget,
+            },
+            required_one_of=[("ntnx_objects",)],
         ),
     )
     return module_args
@@ -374,30 +374,8 @@ def create_data_movement_target(module, data_movement_targets_api, result):
             msg="Api Exception raised while creating object store data movement target",
         )
 
-    task_ext_id = resp.data.ext_id
-    result["task_ext_id"] = task_ext_id
+    result["ext_id"] = resp.data.ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
-    if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id)
-        result["response"] = strip_internal_attributes(task_status.to_dict())
-        ext_id = get_entity_ext_id_from_task(
-            task_status, rel=TASK_CONSTANTS.RelEntityType.DATA_MOVEMENT_TARGET
-        )
-        if ext_id:
-            resp = get_data_movement_target(
-                module, data_movement_targets_api, object_store_ext_id, ext_id
-            )
-            result["ext_id"] = ext_id
-            result["response"] = strip_internal_attributes(resp.to_dict())
-        else:
-            raise_api_exception(
-                module=module,
-                exception=Exception(
-                    "Failed to get entity ext_id from task for Data Movement Target"
-                ),
-                msg="Failed to get entity ext_id from task for Data Movement Target",
-            )
-
     result["changed"] = True
 
 
@@ -415,9 +393,8 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "response": None,
         "failed": False,
-        "ext_id": None,
+        "response": None,
     }
     data_movement_targets_api = get_data_movement_targets_api_instance(module)
     create_data_movement_target(module, data_movement_targets_api, result)

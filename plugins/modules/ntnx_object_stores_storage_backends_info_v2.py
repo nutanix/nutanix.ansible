@@ -30,12 +30,12 @@ notes:
 options:
     object_store_ext_id:
         description:
-            - The UUID of the Object store.
+            - The External ID of the Object Store.
         type: str
         required: true
     ext_id:
         description:
-            - The UUID of the storage backend in the Object store.
+            - The External ID of the storage backend in the Object store.
             - If provided, fetches the specific storage backend; otherwise lists
               storage backends.
         type: str

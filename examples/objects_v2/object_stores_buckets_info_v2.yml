@@ -4,8 +4,8 @@
 # 1. Get details of a specific bucket
 # 2. Get details of a specific bucket with namespace
 # 3. List all buckets for an object store
-# 4. List all buckets with limit
-# 5. List buckets with filter
+# 4. List buckets with filter
+# 5. List buckets with limit
 # 6. List all buckets with fetch_all
 
 - name: Object store buckets info playbook
@@ -43,17 +43,17 @@
         object_store_ext_id: "{{ object_store_ext_id }}"
       register: buckets_list
 
-    - name: List all buckets with limit
-      nutanix.ncp.ntnx_object_stores_buckets_info_v2:
-        object_store_ext_id: "{{ object_store_ext_id }}"
-        limit: 1
-      register: buckets_limit
-
     - name: List buckets with filter
       nutanix.ncp.ntnx_object_stores_buckets_info_v2:
         object_store_ext_id: "{{ object_store_ext_id }}"
         filter: "name eq '{{ bucket_name }}'"
       register: buckets_filter
+
+    - name: List buckets with limit
+      nutanix.ncp.ntnx_object_stores_buckets_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        limit: 1
+      register: buckets_limit
 
     - name: List all buckets with fetch_all
       nutanix.ncp.ntnx_object_stores_buckets_info_v2:

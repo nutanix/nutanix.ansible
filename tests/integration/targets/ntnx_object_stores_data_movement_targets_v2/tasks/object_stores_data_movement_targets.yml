@@ -35,13 +35,14 @@
     name: "dmt-checkmode"
     type: "NTNX_OBJECTS"
     details:
-      object_store_ext_id: "00062664-c65f-f854-65af-7cc25581f458"
-      object_store_fqdn:
-        value: "objects-0.pc.nutanix.com"
-      domain_manager_ext_id: "00062664-c65f-f854-65af-7cc25581f459"
-      object_store_public_network_ips:
-        - ipv4:
-            value: "10.10.10.10"
+      ntnx_objects:
+        object_store_ext_id: "00062664-c65f-f854-65af-7cc25581f458"
+        object_store_fqdn:
+          value: "objects-0.pc.nutanix.com"
+        domain_manager_ext_id: "00062664-c65f-f854-65af-7cc25581f459"
+        object_store_public_network_ips:
+          - ipv4:
+              value: "10.10.10.10"
   register: dmt_check
   check_mode: true
   ignore_errors: true
@@ -205,13 +206,14 @@
     name: "{{ dmt_name }}"
     type: "NTNX_OBJECTS"
     details:
-      object_store_ext_id: "00062664-c65f-f854-65af-7cc25581f458"
-      object_store_fqdn:
-        value: "objects-0.pc.nutanix.com"
-      domain_manager_ext_id: "00062664-c65f-f854-65af-7cc25581f459"
-      object_store_public_network_ips:
-        - ipv4:
-            value: "10.10.10.10"
+      ntnx_objects:
+        object_store_ext_id: "00062664-c65f-f854-65af-7cc25581f458"
+        object_store_fqdn:
+          value: "objects-0.pc.nutanix.com"
+        domain_manager_ext_id: "00062664-c65f-f854-65af-7cc25581f459"
+        object_store_public_network_ips:
+          - ipv4:
+              value: "10.10.10.10"
   register: dmt_create
   ignore_errors: true
   when: has_object_store | bool

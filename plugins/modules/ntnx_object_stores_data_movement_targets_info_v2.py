@@ -14,7 +14,7 @@ version_added: "2.7.0"
 description:
     - Fetch details of a data movement target when C(ext_id) is provided.
     - Fetch a list of the data movement targets configured in an Object store when
-      C(ext_id) is not provided.
+      C(ext_id) is not provided with optional filters.
     - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -30,12 +30,12 @@ notes:
 options:
     object_store_ext_id:
         description:
-            - The UUID of the Object store.
+            - The External ID of the Object Store.
         type: str
         required: true
     ext_id:
         description:
-            - The UUID of the data movement target in the Object store.
+            - The External ID of the data movement target in the Object store.
             - If provided, fetches the specific data movement target; otherwise lists
               data movement targets.
         type: str
@@ -106,7 +106,7 @@ response:
     description:
         - Response for fetching object store data movement targets info.
         - Data movement target details if C(ext_id) is provided.
-        - List of data movement targets if C(ext_id) is not provided.
+        - List of data movement targets if C(ext_id) is not provided with optional filters.
     type: dict
     returned: always
     sample:
