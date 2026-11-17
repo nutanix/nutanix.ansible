@@ -132,3 +132,15 @@ def get_recovery_plans_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_datapolicies_py_client.RecoveryPlansApi(client)
+
+
+def get_consistency_rules_api_instance(module):
+    """
+    This method will return protection policies api instance for consistency rules.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): protection policies api instance
+    """
+    client = get_api_client(module)
+    return ntnx_datapolicies_py_client.ProtectionPoliciesApi(client)

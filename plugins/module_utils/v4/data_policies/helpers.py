@@ -183,3 +183,26 @@ def get_entity_sync_policy(module, api_instance, ext_id):
                 ext_id
             ),
         )
+
+
+def get_consistency_rule(module, api_instance, protection_policy_ext_id, ext_id):
+    """
+    This method will return consistency rule info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ProtectionPoliciesApi instance from ntnx_datapolicies_py_client sdk
+        protection_policy_ext_id (str): External identifier of the parent Protection Policy
+        ext_id (str): Consistency Rule external ID
+    Returns:
+        consistency_rule_info (object): consistency rule info
+    """
+    try:
+        return api_instance.get_consistency_rule_by_id(
+            protectionPolicyExtId=protection_policy_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching consistency rule info using ext_id",
+        )

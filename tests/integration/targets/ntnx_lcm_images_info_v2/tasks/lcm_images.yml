@@ -1,0 +1,86 @@
+---
+- name: Start LCM downloaded images info tests
+  ansible.builtin.debug:
+    msg: "Starting LCM downloaded images info integration tests"
+
+################################################################################
+# List all LCM downloaded images
+################################################################################
+
+- name: List all LCM downloaded images
+  nutanix.ncp.ntnx_lcm_images_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all LCM downloaded images status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.total_available_results is defined
+    fail_msg: "List all LCM downloaded images failed"
+    success_msg: "List all LCM downloaded images passed"
+
+################################################################################
+# List with filter
+################################################################################
+
+- name: List LCM downloaded images with filter
+  nutanix.ncp.ntnx_lcm_images_info_v2:
+    filter: "entityClass eq 'AOS'"
+  register: result
+  ignore_errors: true
+
+- name: List LCM downloaded images with filter status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+    fail_msg: "List LCM downloaded images with filter failed"
+    success_msg: "List LCM downloaded images with filter passed"
+
+################################################################################
+# List with limit
+################################################################################
+
+- name: List LCM downloaded images with limit
+  nutanix.ncp.ntnx_lcm_images_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List LCM downloaded images with limit status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length <= 1
+    fail_msg: "List LCM downloaded images with limit failed"
+    success_msg: "List LCM downloaded images with limit passed"
+
+################################################################################
+# fetch_all
+################################################################################
+
+- name: List all LCM downloaded images with fetch_all
+  nutanix.ncp.ntnx_lcm_images_info_v2:
+    fetch_all: true
+  register: result
+  ignore_errors: true
+
+- name: List all LCM downloaded images with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - (result.response | length) == (result.total_available_results | int)
+    fail_msg: "List LCM downloaded images with fetch_all failed"
+    success_msg: "List LCM downloaded images with fetch_all passed"
+
+- name: End LCM downloaded images info tests
+  ansible.builtin.debug:
+    msg: "LCM downloaded images info integration tests complete"

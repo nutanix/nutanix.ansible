@@ -327,3 +327,19 @@ def get_hardware_providers_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_lifecycle_py_client.HardwareProvidersApi(api_client=api_client)
+
+
+def get_lcm_images_api_instance(module):
+    """
+    This method will return LCM images API instance.
+
+    The LCM images API lists downloaded LCM images on the cluster. This is
+    served by Prism Central and is distinct from InstallerImagesApi (which
+    is served by Foundation Central/FCVM).
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): v4 LCM ImagesApi instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_lifecycle_py_client.ImagesApi(api_client=api_client)
