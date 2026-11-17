@@ -1,0 +1,47 @@
+---
+# Summary:
+# Demonstrates listing and getting Object store storage backends using
+# ntnx_object_stores_storage_backends_info_v2.
+
+- name: Object store storage backends info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        object_store_ext_id: "<object_store_ext_id>"
+        storage_backend_ext_id: "<storage_backend_ext_id>"
+
+    - name: List all storage backends for an object store
+      nutanix.ncp.ntnx_object_stores_storage_backends_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+      register: backends_list
+
+    - name: List storage backends with filter
+      nutanix.ncp.ntnx_object_stores_storage_backends_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        filter: "isPrimary eq true"
+      register: backends_filter
+
+    - name: List all storage backends with fetch_all
+      nutanix.ncp.ntnx_object_stores_storage_backends_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        fetch_all: true
+      register: backends_fetch_all
+
+    - name: Get details of a storage backend
+      nutanix.ncp.ntnx_object_stores_storage_backends_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        ext_id: "{{ storage_backend_ext_id }}"
+      register: backend_get
+
+    - name: Print storage backend get result
+      ansible.builtin.debug:
+        var: backend_get.response

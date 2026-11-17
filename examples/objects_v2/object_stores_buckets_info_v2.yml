@@ -1,0 +1,47 @@
+---
+# Summary:
+# Demonstrates listing and getting Object store buckets using
+# ntnx_object_stores_buckets_info_v2.
+
+- name: Object store buckets info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        object_store_ext_id: "<object_store_ext_id>"
+        bucket_name: "<bucket_name>"
+
+    - name: List all buckets for an object store
+      nutanix.ncp.ntnx_object_stores_buckets_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+      register: buckets_list
+
+    - name: List buckets with filter
+      nutanix.ncp.ntnx_object_stores_buckets_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        filter: "name eq '{{ bucket_name }}'"
+      register: buckets_filter
+
+    - name: List all buckets with fetch_all
+      nutanix.ncp.ntnx_object_stores_buckets_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        fetch_all: true
+      register: buckets_fetch_all
+
+    - name: Get details of a specific bucket
+      nutanix.ncp.ntnx_object_stores_buckets_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        bucket_name: "{{ bucket_name }}"
+      register: bucket_get
+
+    - name: Print bucket get result
+      ansible.builtin.debug:
+        var: bucket_get.response
