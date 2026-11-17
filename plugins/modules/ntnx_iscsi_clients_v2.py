@@ -231,7 +231,7 @@ msg:
     sample: "Api Exception raised while updating iSCSI client"
 """
 
-import traceback
+import traceback  # noqa: E402
 import warnings  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
