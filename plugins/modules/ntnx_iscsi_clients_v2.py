@@ -264,29 +264,13 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
-
+    address_spec = dict(
+        value=dict(type="str", required=True),
+    )
     iscsi_initiator_network_id_spec = dict(
-        ipv4=dict(
-            type="dict",
-            suboptions=dict(
-                value=dict(type="str", required=True),
-                prefix_length=dict(type="int", required=True),
-            ),
-        ),
-        ipv6=dict(
-            type="dict",
-            suboptions=dict(
-                value=dict(type="str", required=True),
-                prefix_length=dict(type="int", required=True),
-            ),
-        ),
-        fqdn=dict(
-            type="dict",
-            suboptions=dict(
-                value=dict(type="str", required=True),
-                prefix_length=dict(type="int", required=True),
-            ),
-        ),
+        ipv4=dict(type="dict", options=address_spec, obj=volumes_sdk.IPv4Address),
+        ipv6=dict(type="dict", options=address_spec, obj=volumes_sdk.IPv6Address),
+        fqdn=dict(type="dict", options=address_spec, obj=volumes_sdk.FQDN),
     )
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
@@ -304,7 +288,7 @@ def get_module_spec():
         iscsi_initiator_name=dict(type="str"),
         iscsi_initiator_network_id=dict(
             type="dict",
-            suboptions=iscsi_initiator_network_id_spec,
+            options=iscsi_initiator_network_id_spec,
             obj=volumes_sdk.IPAddressOrFQDN,
         ),
     )
