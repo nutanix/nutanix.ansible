@@ -14,7 +14,7 @@ version_added: "2.7.0"
 description:
     - Fetch details of a specific bucket in an Object store when C(bucket_name) is provided.
     - Fetch a list of the buckets in an Object store when C(bucket_name) is not provided.
-    - If C(x_ntnx_objects_namespace) is provided with a valid federated namespace value,
+    - If C(object_store_namespace) is provided with a valid federated namespace value,
       the buckets in the federated namespace are returned. Otherwise, the buckets in the
       local namespace are returned.
     - This module uses PC v4 APIs based SDKs.
@@ -40,7 +40,7 @@ options:
             - If provided, fetches the specific bucket; otherwise lists buckets.
         type: str
         required: false
-    x_ntnx_objects_namespace:
+    object_store_namespace:
         description:
             - Name of the federated namespace that this Object store belongs to.
             - It must contain only letters, numbers and hyphens but not consecutive hyphens.
@@ -59,6 +59,27 @@ author:
 """
 
 EXAMPLES = r"""
+- name: Get details of a specific bucket
+  nutanix.ncp.ntnx_object_stores_buckets_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+    bucket_name: "bucket-1"
+  register: result
+
+- name: Get details of a specific bucket with namespace
+  nutanix.ncp.ntnx_object_stores_buckets_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+    bucket_name: "bucket-1"
+    object_store_namespace: "namespace-1"
+  register: result
+
 - name: List all buckets for an object store
   nutanix.ncp.ntnx_object_stores_buckets_info_v2:
     nutanix_host: "{{ ip }}"
@@ -66,6 +87,16 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+  register: result
+
+- name: List all buckets with limit
+  nutanix.ncp.ntnx_object_stores_buckets_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
+    limit: 1
   register: result
 
 - name: List buckets with filter
@@ -87,16 +118,6 @@ EXAMPLES = r"""
     object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
     fetch_all: true
   register: result
-
-- name: Get details of a specific bucket
-  nutanix.ncp.ntnx_object_stores_buckets_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    object_store_ext_id: "cda893b8-2aee-34bf-817d-d2ee6026790b"
-    bucket_name: "bucket-1"
-  register: result
 """
 
 RETURN = r"""
@@ -110,11 +131,38 @@ response:
     sample:
         {
             "name": "bucket-1",
-            "owner_name": "admin",
+            "owner_name": "user1@example.com",
+            "versioning_state": "ENABLED",
+            "state": "NORMAL",
             "is_object_lock_enabled": false,
-            "is_cors_enabled": false,
-            "object_count": 0,
-            "storage_usage_bytes": 0
+            "object_lock_retention_secs": 3600,
+            "object_lock_enabled_time": "2009-09-23T14:30:00-07:00",
+            "is_multi_protocol_access_enabled": true,
+            "is_static_website_enabled": true,
+            "is_cors_enabled": true,
+            "object_count": 15000,
+            "storage_usage_bytes": 5497558138880,
+            "tiered_usage_bytes": 824633720832,
+            "tiered_garbage_bytes": 219902325555,
+            "pending_tiered_usage_bytes": 879609302220,
+            "outbound_replication_status": "UNCONFIGURED",
+            "inbound_replication_status": "UNCONFIGURED",
+            "replication_relations": [
+                {
+                    "ext_id": "22262664-c65f-f854-65af-7cc25581f458",
+                    "is_replication_source": false,
+                    "peer": {
+                        "bucket_name": "bucket-1",
+                        "fqdn": "objectstore.example.com"
+                    },
+                    "pending_object_count": 10,
+                    "pending_object_size_bytes": 1099500,
+                    "last_sync_time_usecs": 1764604700000000,
+                    "full_sync_pending_object_count": 10,
+                    "full_sync_pending_object_size_bytes": 1099500,
+                    "full_sync_progress_percentage": 50
+                }
+            ]
         }
 
 bucket_name:
@@ -173,13 +221,13 @@ def get_module_spec():
     module_args = dict(
         object_store_ext_id=dict(type="str", required=True),
         bucket_name=dict(type="str"),
-        x_ntnx_objects_namespace=dict(type="str"),
+        object_store_namespace=dict(type="str"),
     )
     return module_args
 
 
 def _namespace_kwargs(module):
-    namespace = module.params.get("x_ntnx_objects_namespace")
+    namespace = module.params.get("object_store_namespace")
     if namespace:
         return {"x_ntnx_objects_namespace": namespace}
     return {}

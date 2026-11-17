@@ -101,12 +101,23 @@ response:
     returned: always
     sample:
         {
+            "tenant_id": "4cf559d1-4510-4f5f-ab44-008b4600f2b1",
+            "ext_id": "8e36bec3-b4a4-427a-b54f-600604fd1e4c",
+            "links": [
+                {
+                    "href": "string",
+                    "rel": "string"
+                }
+            ],
             "name": "cluster-1",
             "cluster_ext_id": "00062664-c65f-f854-65af-7cc25581f458",
-            "max_usage_pct": 100,
-            "is_primary": true,
+            "max_usage_pct": 75,
+            "total_capacity_bytes": 1073741824,
             "container_name": "container-1",
-            "ext_id": "f3197423-f486-4037-6037-95442e58484e"
+            "physical_used_capacity_bytes": 536870912,
+            "logical_used_capacity_bytes": 536870912,
+            "available_capacity_bytes": 536870912,
+            "is_primary": false
         }
 
 ext_id:

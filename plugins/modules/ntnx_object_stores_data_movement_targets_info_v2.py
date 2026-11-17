@@ -101,15 +101,35 @@ response:
     returned: always
     sample:
         {
+            "tenant_id": "4cf559d1-4510-4f5f-ab44-008b4600f2b1",
+            "ext_id": "8e36bec3-b4a4-427a-b54f-600604fd1e4c",
+            "links": [
+                {
+                    "href": "string",
+                    "rel": "string"
+                }
+            ],
             "name": "data-movement-target-1",
             "type": "NTNX_OBJECTS",
-            "ext_id": "a1352721-9ade-4a39-a338-7569e57f3afc",
             "details": {
                 "object_store_ext_id": "00062664-c65f-f854-65af-7cc25581f458",
                 "object_store_fqdn": {
                     "value": "objects-0.pc.nutanix.com"
                 },
-                "domain_manager_ext_id": "00062664-c65f-f854-65af-7cc25581f459"
+                "domain_manager_name": "alpha",
+                "domain_manager_ext_id": "00062664-c65f-f854-65af-7cc25581f459",
+                "object_store_public_network_ips": [
+                    {
+                        "ipv4": {
+                            "value": "92.41.252.152",
+                            "prefix_length": 32
+                        },
+                        "ipv6": {
+                            "value": "0047:3611:a7d9:a64d:f8dd:fd83:9c6c:4eae",
+                            "prefix_length": 128
+                        }
+                    }
+                ]
             }
         }
 

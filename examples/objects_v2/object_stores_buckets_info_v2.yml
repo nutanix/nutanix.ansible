@@ -1,7 +1,12 @@
 ---
 # Summary:
-# Demonstrates listing and getting Object store buckets using
-# ntnx_object_stores_buckets_info_v2.
+# This playbook will do:
+# 1. Get details of a specific bucket
+# 2. Get details of a specific bucket with namespace
+# 3. List all buckets for an object store
+# 4. List all buckets with limit
+# 5. List buckets with filter
+# 6. List all buckets with fetch_all
 
 - name: Object store buckets info playbook
   hosts: localhost
@@ -18,11 +23,31 @@
       ansible.builtin.set_fact:
         object_store_ext_id: "<object_store_ext_id>"
         bucket_name: "<bucket_name>"
+        object_store_namespace: "<object_store_namespace>"
+
+    - name: Get details of a specific bucket
+      nutanix.ncp.ntnx_object_stores_buckets_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        bucket_name: "{{ bucket_name }}"
+      register: bucket_get_details
+
+    - name: Get details of a specific bucket with namespace
+      nutanix.ncp.ntnx_object_stores_buckets_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        bucket_name: "{{ bucket_name }}"
+        object_store_namespace: "{{ object_store_namespace }}"
+      register: bucket_get_namespace
 
     - name: List all buckets for an object store
       nutanix.ncp.ntnx_object_stores_buckets_info_v2:
         object_store_ext_id: "{{ object_store_ext_id }}"
       register: buckets_list
+
+    - name: List all buckets with limit
+      nutanix.ncp.ntnx_object_stores_buckets_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        limit: 1
+      register: buckets_limit
 
     - name: List buckets with filter
       nutanix.ncp.ntnx_object_stores_buckets_info_v2:
@@ -35,13 +60,3 @@
         object_store_ext_id: "{{ object_store_ext_id }}"
         fetch_all: true
       register: buckets_fetch_all
-
-    - name: Get details of a specific bucket
-      nutanix.ncp.ntnx_object_stores_buckets_info_v2:
-        object_store_ext_id: "{{ object_store_ext_id }}"
-        bucket_name: "{{ bucket_name }}"
-      register: bucket_get
-
-    - name: Print bucket get result
-      ansible.builtin.debug:
-        var: bucket_get.response
