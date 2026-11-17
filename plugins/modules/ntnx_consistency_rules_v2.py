@@ -170,7 +170,7 @@ changed:
     sample: true
 skipped:
     description: This indicates whether the task was skipped
-    returned: always
+    returned: when module is idempotent
     type: bool
     sample: false
 error:
