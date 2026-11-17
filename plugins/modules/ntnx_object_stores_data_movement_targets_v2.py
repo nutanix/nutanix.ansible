@@ -66,8 +66,9 @@ options:
             ntnx_objects:
                 description:
                     - Nutanix Objects Data Movement Target Definition.
+                    - Remote Nutanix Objects data movement target details.
                 type: dict
-                required: false
+                required: true
                 suboptions:
                     object_store_ext_id:
                         description:
@@ -307,7 +308,6 @@ def get_module_spec():
             options=fqdn_spec,
             obj=objects_sdk.FQDN,
         ),
-        domain_manager_name=dict(type="str"),
         domain_manager_ext_id=dict(type="str", required=True),
         object_store_public_network_ips=dict(
             type="list",
@@ -321,7 +321,7 @@ def get_module_spec():
         ntnx_objects=dict(
             type="dict",
             options=ntnx_objects_spec,
-            required=False,
+            required=True,
         ),
     )
     module_args = dict(
@@ -336,7 +336,6 @@ def get_module_spec():
             obj={
                 "ntnx_objects": objects_sdk.NTNXObjectsDataMovementTarget,
             },
-            required_one_of=[("ntnx_objects",)],
         ),
     )
     return module_args
