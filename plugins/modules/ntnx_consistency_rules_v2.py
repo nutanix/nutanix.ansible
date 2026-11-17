@@ -136,7 +136,21 @@ response:
         - Task details if C(wait) is false.
     returned: always
     type: dict
-    sample: {}
+    sample:
+        {
+            "tenant_id": "fd4a402d-b2c7-41dd-9fdf-62b9a1d7fe18",
+            "ext_id": "84196575-327d-4ba5-9c78-9dff781217f4",
+            "links": [
+                {
+                    "href": "string",
+                    "rel": "string"
+                }
+            ],
+            "name": "Consistency_Rule_1",
+            "category_ids": [
+                "0d2c792d-8687-4e99-95f7-3c7cc401fe1a"
+            ]
+        }
 task_ext_id:
     description:
         - The external ID of the task.
