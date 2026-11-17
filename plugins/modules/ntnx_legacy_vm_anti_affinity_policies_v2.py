@@ -22,7 +22,7 @@ notes:
     - >-
       B(Delete Legacy VM Anti-Affinity Policy) -
       Required Roles: Prism Admin, Project Admin, Project Manager,
-      Self-Service Admin (deprecated), Super Admin, Virtual Machine Admin
+      Self-Service Admin (deprecated), Super Admin, Tenant Admin, Tenant Consumer, Virtual Machine Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     ext_id:
@@ -30,7 +30,7 @@ options:
             - The External ID of the legacy VM-VM anti-affinity policy.
             - Required for deleting the policy.
         type: str
-        required: false
+        required: true
     state:
         description:
             - State of the module.
@@ -38,9 +38,8 @@ options:
             - If C(state) is C(present), the module will fail.
         type: str
         choices:
-            - present
             - absent
-        default: present
+        default: absent
     wait:
         description:
             - Wait for the delete task to complete.
@@ -66,18 +65,6 @@ EXAMPLES = r"""
     validate_certs: false
     ext_id: "00060a2b-5c99-5a52-ebd2-ac1f6b02d3e0"
     state: absent
-    wait: true
-  register: result
-
-- name: Delete a legacy VM-VM anti-affinity policy without waiting for task
-  nutanix.ncp.ntnx_legacy_vm_anti_affinity_policies_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    ext_id: "00060a2b-5c99-5a52-ebd2-ac1f6b02d3e0"
-    state: absent
-    wait: false
   register: result
 """
 
@@ -178,7 +165,8 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 def get_module_spec():
     module_args = dict(
-        ext_id=dict(type="str"),
+        ext_id=dict(type="str", required=True),
+        state=dict(type="str", choices=["absent"], default="absent"),
     )
     return module_args
 

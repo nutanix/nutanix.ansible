@@ -97,7 +97,7 @@ EXAMPLES = r"""
     validate_certs: false
     state: present
     protection_policy_ext_id: "0985aafc-8cb8-4e22-b863-3ff5f91c911e"
-    name: "example-consistency-rule"
+    name: "Consistency_Rule_1"
     category_ids:
       - "0d2c792d-8687-4e99-95f7-3c7cc401fe1a"
   register: result
@@ -110,8 +110,8 @@ EXAMPLES = r"""
     validate_certs: false
     state: present
     protection_policy_ext_id: "0985aafc-8cb8-4e22-b863-3ff5f91c911e"
-    ext_id: "{{ result.ext_id }}"
-    name: "example-consistency-rule-updated"
+    ext_id: "63311404-8b2e-4dbf-9e33-7848cc88d330"
+    name: "Consistency_Rule_1-updated"
     category_ids:
       - "0d2c792d-8687-4e99-95f7-3c7cc401fe1a"
   register: updated
@@ -124,19 +124,33 @@ EXAMPLES = r"""
     validate_certs: false
     state: absent
     protection_policy_ext_id: "0985aafc-8cb8-4e22-b863-3ff5f91c911e"
-    ext_id: "{{ result.ext_id }}"
+    ext_id: "63311404-8b2e-4dbf-9e33-7848cc88d330"
   register: deleted
 """
 
 RETURN = r"""
 response:
     description:
-        - Response for Consistency Rule operations.
-        - Consistency Rule details if C(wait) is true.
-        - Task details if C(wait) is false.
+        - Response for creating, updating, or deleting Consistency Rule.
+        - If C(wait) is true and the operation is Create or Update, it will contain the Consistency Rule details.
+        - If C(wait) is false or the operation is Delete, it will contain the task details.
     returned: always
     type: dict
-    sample: {}
+    sample:
+        {
+            "tenant_id": "fd4a402d-b2c7-41dd-9fdf-62b9a1d7fe18",
+            "ext_id": "84196575-327d-4ba5-9c78-9dff781217f4",
+            "links": [
+                {
+                    "href": "string",
+                    "rel": "string"
+                }
+            ],
+            "name": "Consistency_Rule_1",
+            "category_ids": [
+                "0d2c792d-8687-4e99-95f7-3c7cc401fe1a"
+            ]
+        }
 task_ext_id:
     description:
         - The external ID of the task.
@@ -156,7 +170,7 @@ changed:
     sample: true
 skipped:
     description: This indicates whether the task was skipped
-    returned: always
+    returned: when module is idempotent
     type: bool
     sample: false
 error:
@@ -223,7 +237,9 @@ def get_module_spec():
 
 
 def create_consistency_rule(module, result, api_instance):
-    validate_required_params(module, ["name", "category_ids"])
+    validate_required_params(
+        module, ["protection_policy_ext_id", "name", "category_ids"]
+    )
     protection_policy_ext_id = module.params.get("protection_policy_ext_id")
     sg = SpecGenerator(module)
     default_spec = data_policies_sdk.ConsistencyRule()
@@ -362,7 +378,7 @@ def delete_consistency_rule(module, result, api_instance):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, raise_error=True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
 

@@ -30,12 +30,6 @@
           ipv4:
             value: "192.168.1.100"
             prefix_length: 24
-          ipv6:
-            value: "2001:db8::100"
-            prefix_length: 64
-        fqdn:
-          value: "ansibletest2.com"
-          prefix_length: 24
       register: result
 
     - name: Update iSCSI client authentication type to NONE

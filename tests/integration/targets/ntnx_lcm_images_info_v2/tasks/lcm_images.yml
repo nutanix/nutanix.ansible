@@ -28,7 +28,7 @@
 
 - name: List LCM downloaded images with filter
   nutanix.ncp.ntnx_lcm_images_info_v2:
-    filter: "entityClass eq 'AOS'"
+    filter: "entityClass eq 'Core Cluster'"
   register: result
   ignore_errors: true
 
