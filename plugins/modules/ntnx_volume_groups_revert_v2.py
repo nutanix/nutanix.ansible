@@ -11,10 +11,10 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_volume_groups_revert_v2
-short_description: Revert a Volume Group to a recovery point
+short_description: Revert a Volume Group
 version_added: "2.7.0"
 description:
-    - Reverts a Volume Group identified by its External ID to a specified recovery point.
+    - Reverts a Volume Group identified by its External ID.
     - This API performs an in-place restore from a specified Volume Group recovery point.
     - This module uses PC v4 APIs based SDKs
 notes:
@@ -41,7 +41,7 @@ options:
         required: true
     volume_group_recovery_point_ext_id:
         description:
-            - The External ID of the Volume Group recovery point to which the Volume Group would be reverted.
+            - The external identifier of the Volume Group recovery point.
             - This is a mandatory field.
         type: str
         required: true

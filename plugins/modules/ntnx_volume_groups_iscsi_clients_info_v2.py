@@ -133,6 +133,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
 from ..module_utils.v4.volumes.api_client import (  # noqa: E402
     get_iscsi_client_api_instance,
 )
+from ..module_utils.v4.volumes.helpers import get_iscsi_client  # noqa: E402
 
 
 def get_module_spec():
@@ -142,19 +143,10 @@ def get_module_spec():
     return module_args
 
 
-def get_iscsi_client(module, result):
+def get_iscsi_client_by_ext_id(module, result):
     clients = get_iscsi_client_api_instance(module)
     ext_id = module.params.get("ext_id")
-
-    try:
-        resp = clients.get_iscsi_client_by_id(extId=ext_id)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching given ISCSI client",
-        )
-
+    resp = get_iscsi_client(module, clients, ext_id)
     result["ext_id"] = ext_id
     result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
 
@@ -201,7 +193,7 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {"changed": False, "error": None, "response": None}
     if module.params.get("ext_id"):
-        get_iscsi_client(module, result)
+        get_iscsi_client_by_ext_id(module, result)
     else:
         get_iscsi_clients(module, result)
 

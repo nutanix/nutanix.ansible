@@ -39,6 +39,52 @@ options:
             - The External ID of the iSCSI client to update.
         type: str
         required: true
+    iscsi_initiator_name:
+        description:
+            - iSCSI initiator name.
+            - Exactly one of iscsiInitiatorName and iscsiInitiatorNetworkId must be specified during the attach operation.
+            - This field is immutable.
+        type: str
+    iscsi_initiator_network_id:
+        description:
+            - iSCSI initiator network identifier.
+            - During the attach operation, exactly one of iscsiInitiatorName and iscsiInitiatorNetworkId must be specified.
+            - This field is immutable.
+        type: dict
+        suboptions:
+            ipv4:
+              description:
+                - IPv4 address of the initiator.
+              type: dict
+              required: false
+              suboptions:
+                value:
+                  description:
+                    - The value of the IPv4 address.
+                  type: str
+                  required: true
+            ipv6:
+              description:
+                - IPv6 address of the initiator.
+              type: dict
+              required: false
+              suboptions:
+                value:
+                  description:
+                    - The value of the IPv6 address.
+                  type: str
+                  required: true
+            fqdn:
+              description:
+                - Fully qualified domain name of the initiator.
+              type: dict
+              required: false
+              suboptions:
+                value:
+                  description:
+                    - The value of the FQDN address.
+                  type: str
+                  required: true
     client_secret:
         description:
             - iSCSI initiator client secret in case of CHAP authentication.
@@ -62,6 +108,11 @@ options:
         choices:
             - PRIMARY
             - SECONDARY
+    num_virtual_targets:
+        description:
+            - Number of virtual targets generated for the iSCSI target.
+            - This field is immutable.
+        type: int
     wait:
         description:
             - Wait for the task to complete.
@@ -87,16 +138,18 @@ EXAMPLES = r"""
     ext_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
     enabled_authentications: CHAP
     client_secret: "Nutanix.1234455"
-  register: result
-
-- name: Update iSCSI client attachment site
-  nutanix.ncp.ntnx_iscsi_clients_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    ext_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
+    num_virtual_targets: 2
     attachment_site: PRIMARY
+    iscsi_initiator_network_id:
+      ipv4:
+        value: "192.168.1.100"
+        prefix_length: 24
+      ipv6:
+        value: "2001:db8::100"
+        prefix_length: 64
+    fqdn:
+      value: "ansibletest2.com"
+      prefix_length: 24
   register: result
 
 - name: Update iSCSI client authentication type to NONE
@@ -107,6 +160,9 @@ EXAMPLES = r"""
     validate_certs: false
     ext_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
     enabled_authentications: NONE
+    num_virtual_targets: 2
+    attachment_site: PRIMARY
+    iscsi_initiator_name: "iqn.2024-01.com.nutanix.test:ansibletest2"
   register: result
 """
 
@@ -149,6 +205,11 @@ ext_id:
     returned: always
     type: str
     sample: "63311404-8b2e-4dbf-9e33-7848cc88d330"
+skipped:
+    description: This indicates whether the task was skipped due to idempotency
+    returned: when module is idempotent and no changes are made
+    type: bool
+    sample: false
 changed:
     description: This indicates whether the task resulted in any changes
     returned: always
@@ -165,7 +226,7 @@ failed:
     sample: false
 msg:
     description: This indicates the message if any message occurred
-    returned: When there is an error
+    returned: When there is an error, module is idempotent or in check mode
     type: str
     sample: "Api Exception raised while updating iSCSI client"
 """
@@ -202,6 +263,12 @@ def get_module_spec():
     return module_args
 
 
+def check_iscsi_client_idempotency(old_spec, update_spec):
+    strip_internal_attributes(old_spec)
+    strip_internal_attributes(update_spec)
+    return old_spec == update_spec
+
+
 def update_iscsi_client(module, result, api_instance):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
@@ -220,6 +287,12 @@ def update_iscsi_client(module, result, api_instance):
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
+
+    current_dict = current_spec.to_dict()
+    current_dict.pop("cluster_reference", None)
+    if check_iscsi_client_idempotency(current_dict, update_spec.to_dict()):
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.", **result)
 
     etag = get_etag(data=current_spec)
     if not etag:

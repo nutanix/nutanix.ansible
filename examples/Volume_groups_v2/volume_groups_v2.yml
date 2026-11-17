@@ -24,7 +24,7 @@
         cluster_reference: "00057b8b-1b1b-1b1b-1b1b-1b1b1b1b1b1b1"
         vg1_uuid: "d1b1b3b1-1b1b-1b1b-1b1b-1b1b1b1b1b1b"
         project_ext_id: "89798789-1234-1111-2222-6788222f17b8"
-        vg_recovery_point_ext_id: "<vg_recovery_point_ext_id>"
+        vg_recovery_point_ext_id: "63311404-8b2e-4dbf-9e33-7848cc88d330"
 
     - name: Create Volume group
       nutanix.ncp.ntnx_volume_groups_v2:
