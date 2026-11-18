@@ -1,0 +1,136 @@
+---
+# Summary:
+# This playbook exercises the ntnx_cluster_capabilities_info_v2 module. The
+# underlying /networking/v4.3/config/capabilities API only supports LIST
+# (there is no create/update/delete/get-by-id), so this playbook demonstrates
+# all the ways the list operation can be queried:
+#   1. List capabilities for every registered Prism Element cluster
+#   2. List capabilities for a specific cluster via the cluster_id convenience option
+#   3. List capabilities via an explicit OData $filter expression
+#   4. List capabilities with pagination (limit / page)
+#   5. List capabilities with an orderby expression
+#   6. Fetch a cluster capability and consume it downstream (feature-gate example)
+
+- name: Cluster Capabilities playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      nutanix_port: "{{ port | default(lookup('env', 'NUTANIX_PORT') or 9440) }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: List all cluster capabilities
+      nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+      register: all_capabilities
+      ignore_errors: true
+      # sample: |
+      #   {
+      #     "changed": false,
+      #     "failed": false,
+      #     "response": [
+      #       {
+      #         "capabilities": [
+      #           {"capability_name": "NIC_TEAM_TBL_SYNC_ENABLE", "is_supported": true},
+      #           {"capability_name": "SUPPORTS_ADVANCED_NETWORK_FUNCTION_NICS", "is_supported": true},
+      #           {"capability_name": "SUPPORTS_PC_DVS_V1", "is_supported": true},
+      #           {"capability_name": "SUPPORTS_SPAN_V3", "is_supported": true}
+      #         ],
+      #         "cluster_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2",
+      #         "ext_id": null,
+      #         "links": null,
+      #         "metadata": null,
+      #         "tenant_id": null
+      #       }
+      #     ],
+      #     "total_available_results": null
+      #   }
+
+    - name: Capture the first cluster's UUID for the follow-up queries
+      ansible.builtin.set_fact:
+        first_cluster_id: "{{ all_capabilities.response[0].cluster_id }}"
+      when:
+        - all_capabilities is defined
+        - all_capabilities.response is defined
+        - all_capabilities.response | length > 0
+
+    - name: List cluster capabilities for a specific Prism Element cluster (convenience option)
+      nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+        cluster_id: "{{ first_cluster_id }}"
+      register: single_cluster_capabilities
+      when: first_cluster_id is defined
+      ignore_errors: true
+      # sample: |
+      #   {
+      #     "changed": false,
+      #     "failed": false,
+      #     "response": [
+      #       {
+      #         "capabilities": [
+      #           {"capability_name": "NIC_TEAM_TBL_SYNC_ENABLE", "is_supported": true},
+      #           {"capability_name": "SUPPORTS_SPAN_V3", "is_supported": true}
+      #         ],
+      #         "cluster_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2",
+      #         "ext_id": null
+      #       }
+      #     ],
+      #     "total_available_results": null
+      #   }
+
+    - name: List cluster capabilities using an explicit OData filter
+      nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+        filter: "clusterId eq '{{ first_cluster_id }}'"
+      register: filtered_capabilities
+      when: first_cluster_id is defined
+      ignore_errors: true
+      # sample: identical to the previous task since both target the same $filter
+
+    - name: List cluster capabilities with a limit
+      nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+        limit: 1
+      register: limited_capabilities
+      ignore_errors: true
+      # sample: |
+      #   {
+      #     "changed": false,
+      #     "failed": false,
+      #     "response": [
+      #       {
+      #         "capabilities": [
+      #           {"capability_name": "SUPPORTS_SPAN_V3", "is_supported": true}
+      #         ],
+      #         "cluster_id": "0006555e-4e63-4a5e-185b-ac1f6b6f97e2"
+      #       }
+      #     ],
+      #     "total_available_results": null
+      #   }
+
+    - name: List cluster capabilities ordered by clusterId
+      nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+        orderby: "clusterId"
+      register: ordered_capabilities
+      ignore_errors: true
+      # sample: order of the response follows the OData orderby expression
+
+    - name: Determine if the cluster supports the SPAN v3 traffic-mirroring feature
+      ansible.builtin.set_fact:
+        supports_span_v3: >-
+          {{
+            (single_cluster_capabilities.response[0].capabilities
+              | selectattr('capability_name', 'equalto', 'SUPPORTS_SPAN_V3')
+              | map(attribute='is_supported')
+              | list
+              | first)
+            if (single_cluster_capabilities is defined
+                and single_cluster_capabilities.response is defined
+                and single_cluster_capabilities.response | length > 0)
+            else false
+          }}
+      when: first_cluster_id is defined
+
+    - name: Show whether the target cluster supports SPAN v3
+      ansible.builtin.debug:
+        msg: "Cluster {{ first_cluster_id }} supports SPAN v3: {{ supports_span_v3 }}"
+      when: first_cluster_id is defined

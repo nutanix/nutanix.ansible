@@ -358,8 +358,8 @@ def create_policy(module, result):
         ext_id = get_entity_ext_id_from_task(
             task, rel=Tasks.RelEntityType.IMAGE_PLACEMENT_POLICY
         )
-        policy = get_policy(module, policies, ext_id)
         if ext_id:
+            policy = get_policy(module, policies, ext_id)
             result["ext_id"] = ext_id
 
             # update policy enforcement state if needed
@@ -371,6 +371,14 @@ def create_policy(module, result):
 
             policy = get_policy(module, policies, ext_id)
             result["response"] = strip_internal_attributes(policy.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Image Placement Policy"
+                ),
+                msg="Failed to get entity ext_id from task for Image Placement Policy",
+            )
 
     result["changed"] = True
 

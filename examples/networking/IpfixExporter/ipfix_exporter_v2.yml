@@ -12,9 +12,9 @@
   gather_facts: false
   module_defaults:
     group/nutanix.ncp.ntnx:
-      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', True) }}"
-      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', True) }}"
-      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', True) }}"
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') }}"
       validate_certs: false
   tasks:
     - name: Set common variables for this playbook

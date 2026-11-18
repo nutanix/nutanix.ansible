@@ -1,14 +1,16 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create Disk with storage container
+# 1. Create Disk in given storage container
 # 2. Create Disk with image reference
-# 3. Create Disk with disk reference
+# 3. Create disk from existing vm's disk
 # 4. Create disk from volume group disk
 # 5. Create Disk with VG reference
 # 6. Update disk data source
 # 7. Get disk info
-# 8. Delete disk
+# 8. List all VM disks
+# 9. List all VM disks with fetch_all
+# 10. Delete disk
 
 - name: VM disks playbook
   hosts: localhost
@@ -132,6 +134,19 @@
       nutanix.ncp.ntnx_vms_disks_info_v2:
         vm_ext_id: "{{ vm_uuid }}"
         ext_id: "{{ disk_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all VM disks
+      nutanix.ncp.ntnx_vms_disks_info_v2:
+        vm_ext_id: "{{ vm_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all VM disks with fetch_all
+      nutanix.ncp.ntnx_vms_disks_info_v2:
+        vm_ext_id: "{{ vm_uuid }}"
+        fetch_all: true
       register: result
       ignore_errors: true
 

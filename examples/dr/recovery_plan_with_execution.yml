@@ -14,6 +14,7 @@
   gather_facts: false
   tasks:
     ################################# Create recovery plans using ntnx_recovery_plans #############
+
     - name: Create recovery plan with custom ip network mapping
       nutanix.ncp.ntnx_recovery_plans:
         nutanix_host: <pcip>
@@ -130,6 +131,7 @@
         msg: "{{ recovery_plan_info }}"
 
     # We can also perform FAILOVER, LIVE_MIGRATE and FAILOVER here
+
     - name: Run migrate (planned failover)
       nutanix.ncp.ntnx_recovery_plan_jobs:
         nutanix_host: <pc-ip>
