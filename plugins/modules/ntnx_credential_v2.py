@@ -450,6 +450,7 @@ def get_module_spec():
             type="dict",
             options=basic_auth_spec,
             obj=security_sdk.BasicAuth,
+            required=True,
             no_log=False,
         ),
     )
@@ -465,6 +466,7 @@ def get_module_spec():
             type="dict",
             options=basic_auth_spec,
             obj=security_sdk.BasicAuth,
+            required=True,
             no_log=False,
         ),
     )
@@ -480,6 +482,7 @@ def get_module_spec():
             type="dict",
             options=key_based_auth_spec,
             obj=security_sdk.KeyBasedAuth,
+            required=True,
             no_log=False,
         ),
     )
