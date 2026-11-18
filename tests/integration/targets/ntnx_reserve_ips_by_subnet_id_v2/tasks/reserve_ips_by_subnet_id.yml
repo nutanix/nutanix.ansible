@@ -99,7 +99,7 @@
 - name: Reserve IPs in check mode (all attributes)
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
     state: present
-    ext_id: "{{ subnet_ext_id }}"
+    subnet_ext_id: "{{ subnet_ext_id }}"
     reserve_type: IP_ADDRESS_LIST
     ip_addresses:
       - ipv4:
@@ -142,7 +142,7 @@
 - name: Unreserve IPs in check mode (all attributes)
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
     state: absent
-    ext_id: "{{ subnet_ext_id }}"
+    subnet_ext_id: "{{ subnet_ext_id }}"
     unreserve_type: IP_ADDRESS_LIST
     ip_addresses:
       - ipv4:
@@ -185,7 +185,7 @@
 - name: Reserve IPs (IP_ADDRESS_LIST — required fields only)
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
     state: present
-    ext_id: "{{ subnet_ext_id }}"
+    subnet_ext_id: "{{ subnet_ext_id }}"
     reserve_type: IP_ADDRESS_LIST
     ip_addresses:
       - ipv4:
@@ -213,7 +213,7 @@
 - name: Reserve IPs (IP_ADDRESS_LIST — all attributes)
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
     state: present
-    ext_id: "{{ subnet_ext_id }}"
+    subnet_ext_id: "{{ subnet_ext_id }}"
     reserve_type: IP_ADDRESS_LIST
     ip_addresses:
       - ipv4:
@@ -243,7 +243,7 @@
 - name: Reserve IPs (IP_ADDRESS_COUNT)
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
     state: present
-    ext_id: "{{ subnet_ext_id }}"
+    subnet_ext_id: "{{ subnet_ext_id }}"
     reserve_type: IP_ADDRESS_COUNT
     count: "{{ random_count }}"
     client_context: "{{ reserve_context_count }}"
@@ -270,7 +270,7 @@
 - name: Reserve IPs (IP_ADDRESS_RANGE)
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
     state: present
-    ext_id: "{{ subnet_ext_id }}"
+    subnet_ext_id: "{{ subnet_ext_id }}"
     reserve_type: IP_ADDRESS_RANGE
     start_ip_address:
       ipv4:
@@ -299,7 +299,7 @@
 
 - name: List reserved IPs on the subnet
   nutanix.ncp.ntnx_reserve_ips_by_subnet_ids_info_v2:
-    ext_id: "{{ subnet_ext_id }}"
+    subnet_ext_id: "{{ subnet_ext_id }}"
   register: list_reserved_result
   ignore_errors: true
 
@@ -309,7 +309,7 @@
       - list_reserved_result is defined
       - list_reserved_result.changed == false
       - list_reserved_result.failed == false
-      - list_reserved_result.ext_id == subnet_ext_id
+      - list_reserved_result.subnet_ext_id == subnet_ext_id
       - list_reserved_result.response is defined
       - list_reserved_result.response | length >= 4
       - list_reserved_result.total_available_results is defined
@@ -334,7 +334,7 @@
 
 - name: List reserved IPs on the subnet with limit=1
   nutanix.ncp.ntnx_reserve_ips_by_subnet_ids_info_v2:
-    ext_id: "{{ subnet_ext_id }}"
+    subnet_ext_id: "{{ subnet_ext_id }}"
     limit: 1
   register: list_reserved_limited_result
   ignore_errors: true
@@ -357,7 +357,7 @@
 - name: Unreserve IPs (IP_ADDRESS_LIST — no cookie)
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
     state: absent
-    ext_id: "{{ subnet_ext_id }}"
+    subnet_ext_id: "{{ subnet_ext_id }}"
     unreserve_type: IP_ADDRESS_LIST
     ip_addresses:
       - ipv4:
@@ -385,7 +385,7 @@
 - name: Unreserve IPs (IP_ADDRESS_LIST — with matching cookie)
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
     state: absent
-    ext_id: "{{ subnet_ext_id }}"
+    subnet_ext_id: "{{ subnet_ext_id }}"
     unreserve_type: IP_ADDRESS_LIST
     ip_addresses:
       - ipv4:
@@ -414,7 +414,7 @@
 - name: Unreserve IPs (IP_ADDRESS_RANGE)
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
     state: absent
-    ext_id: "{{ subnet_ext_id }}"
+    subnet_ext_id: "{{ subnet_ext_id }}"
     unreserve_type: IP_ADDRESS_RANGE
     start_ip_address:
       ipv4:
@@ -444,7 +444,7 @@
 - name: Unreserve IPs (CONTEXT)
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
     state: absent
-    ext_id: "{{ subnet_ext_id }}"
+    subnet_ext_id: "{{ subnet_ext_id }}"
     unreserve_type: CONTEXT
     client_context: "{{ reserve_context_count }}"
   register: unreserve_context_result
@@ -471,7 +471,7 @@
 - name: Unreserve IPs (CONTEXT) a second time (already released)
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
     state: absent
-    ext_id: "{{ subnet_ext_id }}"
+    subnet_ext_id: "{{ subnet_ext_id }}"
     unreserve_type: CONTEXT
     client_context: "{{ reserve_context_count }}"
   register: unreserve_context_again_result
@@ -492,7 +492,7 @@
 - name: Reserve IPs without reserve_type (must fail)
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
     state: present
-    ext_id: "{{ subnet_ext_id }}"
+    subnet_ext_id: "{{ subnet_ext_id }}"
     count: 1
   register: reserve_missing_type_result
   ignore_errors: true
@@ -513,7 +513,7 @@
 - name: Reserve IPs (IP_ADDRESS_COUNT) without count (must fail)
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
     state: present
-    ext_id: "{{ subnet_ext_id }}"
+    subnet_ext_id: "{{ subnet_ext_id }}"
     reserve_type: IP_ADDRESS_COUNT
   register: reserve_missing_count_result
   ignore_errors: true
@@ -534,7 +534,7 @@
 - name: Reserve IPs with invalid reserve_type (must fail)
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
     state: present
-    ext_id: "{{ subnet_ext_id }}"
+    subnet_ext_id: "{{ subnet_ext_id }}"
     reserve_type: BOGUS_VALUE
     count: 1
   register: reserve_invalid_enum_result
@@ -556,7 +556,7 @@
 - name: Reserve IPs with unknown subnet ext_id (must fail)
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
     state: present
-    ext_id: "00000000-0000-0000-0000-000000000000"
+    subnet_ext_id: "00000000-0000-0000-0000-000000000000"
     reserve_type: IP_ADDRESS_COUNT
     count: 1
   register: reserve_unknown_subnet_result
@@ -577,7 +577,7 @@
 
 - name: List reserved IPs on unknown subnet ext_id (must fail)
   nutanix.ncp.ntnx_reserve_ips_by_subnet_ids_info_v2:
-    ext_id: "00000000-0000-0000-0000-000000000000"
+    subnet_ext_id: "00000000-0000-0000-0000-000000000000"
   register: list_unknown_subnet_result
   ignore_errors: true
 
@@ -596,7 +596,7 @@
 - name: Cleanup any remaining reservations tagged with the LIST context
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
     state: absent
-    ext_id: "{{ subnet_ext_id }}"
+    subnet_ext_id: "{{ subnet_ext_id }}"
     unreserve_type: CONTEXT
     client_context: "{{ reserve_context_list }}"
   register: cleanup_list_ctx_result
@@ -605,7 +605,7 @@
 - name: Cleanup any remaining reservations tagged with the RANGE context
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
     state: absent
-    ext_id: "{{ subnet_ext_id }}"
+    subnet_ext_id: "{{ subnet_ext_id }}"
     unreserve_type: CONTEXT
     client_context: "{{ reserve_context_range }}"
   register: cleanup_range_ctx_result

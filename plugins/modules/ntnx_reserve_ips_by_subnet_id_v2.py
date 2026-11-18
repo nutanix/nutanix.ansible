@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -11,52 +11,79 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_reserve_ips_by_subnet_id_v2
-short_description: Reserve or unreserve IP addresses on a managed subnet in Nutanix Prism Central
-version_added: 2.5.0
+short_description: Reserve and unreserve IP addresses on a managed subnet in Nutanix Prism Central
+version_added: 2.7.0
 description:
-  - This module allows you to reserve or unreserve IP addresses on a managed subnet in Nutanix Prism Central.
-  - This is an action-style module — a reservation does not have its own external ID.
-  - When C(state=present) the module invokes the Reserve IPs API on the given subnet.
-  - When C(state=absent) the module invokes the Unreserve IPs API on the given subnet.
-  - This module uses PC v4 APIs based SDKs
+  - This module reserves and unreserves IP addresses on a managed subnet in Nutanix Prism Central.
+  - When C(state) is C(present), it reserves IPs
+  - When C(state) is C(absent), it unreserves IPs
+  - Reserved IPs are excluded from automatic IPAM allocations for the target subnet.
+  - This module uses PC v4 APIs based SDKs.
 notes:
-    - >-
-      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
-      The required roles depend on the operation being performed.
-    - >-
-      B(Reserve IPs on a subnet) -
-      Required Roles: Network Infra Admin, Prism Admin, Super Admin, VPC Admin
-    - >-
-      B(Unreserve IPs on a subnet) -
-      Required Roles: Network Infra Admin, Prism Admin, Super Admin, VPC Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
+  - >-
+    This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+    The required roles depend on the operation being performed.
+  - >-
+    B(Reserve IP addresses on a subnet) -
+    Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Super Admin,
+    Tenant Admin, VPC Admin
+  - >-
+    B(Unreserve IP addresses on a subnet) -
+    Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Super Admin,
+    Tenant Admin, VPC Admin
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
     description:
-      - If C(state) is set to C(present) the module will reserve IPs on the subnet identified by C(ext_id).
-      - If C(state) is set to C(absent) the module will unreserve IPs on the subnet identified by C(ext_id).
+      - If C(state) is C(present), reserve IP addresses on the subnet.
+      - If C(state) is C(absent), unreserve IP addresses on the subnet.
     type: str
     required: false
     choices:
       - present
       - absent
     default: present
-  ext_id:
+  subnet_ext_id:
     description:
-      - The external ID (UUID) of the managed subnet on which IPs are (un)reserved.
-      - Required for both reserve (C(state=present)) and unreserve (C(state=absent)) operations.
+      - External ID (UUID) of the managed subnet on which IPs are reserved or unreserved.
+      - Required for all operations.
     type: str
     required: true
+  reserve_type:
+    description:
+      - Strategy used to select which IPs to reserve. Used when C(state=present).
+      - C(IP_ADDRESS_COUNT) reserves C(count) free IPs from the pool.
+      - C(IP_ADDRESS_LIST) reserves the explicit list of C(ip_addresses).
+      - C(IP_ADDRESS_RANGE) reserves C(count) consecutive IPs starting from C(start_ip_address).
+    type: str
+    required: false
+    choices:
+      - IP_ADDRESS_COUNT
+      - IP_ADDRESS_LIST
+      - IP_ADDRESS_RANGE
+  unreserve_type:
+    description:
+      - Strategy used to select which IPs to unreserve. Used when C(state=absent).
+      - C(IP_ADDRESS_LIST) unreserves the explicit list of C(ip_addresses).
+      - C(IP_ADDRESS_RANGE) unreserves C(count) consecutive IPs starting from C(start_ip_address).
+      - C(CONTEXT) unreserves every IP tagged with the same C(client_context).
+    type: str
+    required: false
+    choices:
+      - IP_ADDRESS_LIST
+      - IP_ADDRESS_RANGE
+      - CONTEXT
   count:
     description:
-      - Number of IP addresses to reserve (when C(state=present)) or unreserve (when C(state=absent)).
-      - Required when C(reserve_type=IP_ADDRESS_COUNT) on reserve.
+      - Number of IP addresses to reserve or unreserve.
+      - Required when C(reserve_type) is C(IP_ADDRESS_COUNT) or C(IP_ADDRESS_RANGE),
+        or when C(unreserve_type) is C(IP_ADDRESS_RANGE).
     type: int
     required: false
   start_ip_address:
     description:
-      - Starting IP address for range-based reserve / unreserve.
-      - Required when C(reserve_type=IP_ADDRESS_RANGE) on reserve or C(unreserve_type=IP_ADDRESS_RANGE) on unreserve.
+      - Starting IP address for a range reserve or unreserve.
+      - Required when C(reserve_type) or C(unreserve_type) is C(IP_ADDRESS_RANGE).
     type: dict
     required: false
     suboptions:
@@ -68,7 +95,7 @@ options:
         suboptions:
           value:
             description:
-              - The IPv4 address value.
+              - The IPv4 address value in dotted decimal notation.
             type: str
             required: true
           prefix_length:
@@ -97,7 +124,7 @@ options:
   ip_addresses:
     description:
       - Explicit list of IP addresses to reserve or unreserve.
-      - Required when C(reserve_type=IP_ADDRESS_LIST) on reserve or C(unreserve_type=IP_ADDRESS_LIST) on unreserve.
+      - Required when C(reserve_type) or C(unreserve_type) is C(IP_ADDRESS_LIST).
     type: list
     elements: dict
     required: false
@@ -110,7 +137,7 @@ options:
         suboptions:
           value:
             description:
-              - The IPv4 address value.
+              - The IPv4 address value in dotted decimal notation.
             type: str
             required: true
           prefix_length:
@@ -136,36 +163,11 @@ options:
             type: int
             required: false
             default: 128
-  reserve_type:
-    description:
-      - How the caller wants to reserve IPs on the subnet.
-      - Required for reserve operation (C(state=present)).
-      - C(IP_ADDRESS_COUNT) reserves C(count) random free IPs.
-      - C(IP_ADDRESS_LIST) reserves the explicit C(ip_addresses).
-      - C(IP_ADDRESS_RANGE) reserves C(count) IPs starting from C(start_ip_address).
-    type: str
-    required: false
-    choices:
-      - IP_ADDRESS_COUNT
-      - IP_ADDRESS_LIST
-      - IP_ADDRESS_RANGE
-  unreserve_type:
-    description:
-      - How the caller wants to unreserve IPs on the subnet.
-      - Required for unreserve operation (C(state=absent)).
-      - C(IP_ADDRESS_LIST) unreserves the explicit C(ip_addresses).
-      - C(IP_ADDRESS_RANGE) unreserves C(count) IPs starting from C(start_ip_address).
-      - C(CONTEXT) unreserves every IP tagged with the supplied C(client_context).
-    type: str
-    required: false
-    choices:
-      - IP_ADDRESS_LIST
-      - IP_ADDRESS_RANGE
-      - CONTEXT
   client_context:
     description:
-      - Free-form string that the client can use to tag / correlate reserved IPs.
-      - Required when C(unreserve_type=CONTEXT).
+      - Opaque label attached to the reservation.
+      - Required when C(unreserve_type) is C(CONTEXT).
+      - Length must be between 1 and 64 characters when set.
     type: str
     required: false
 extends_documentation_fragment:
@@ -175,166 +177,160 @@ extends_documentation_fragment:
   - nutanix.ncp.ntnx_proxy_v2
 author:
   - George Ghawali (@george-ghawali)
+  - Abhinav Bansal (@abhinavbansal29)
 """
 
 EXAMPLES = r"""
-- name: Reserve a specific list of IPs on a managed subnet
+- name: Reserve 2 IPs from the pool
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: present
-    ext_id: "9cc4abba-f27d-40db-90ba-c1592dccaedf"
+    subnet_ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
+    reserve_type: IP_ADDRESS_COUNT
+    count: 2
+    client_context: "ansible-count"
+  register: result
+  ignore_errors: true
+
+- name: Reserve an explicit list of IPs
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+    state: present
+    subnet_ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
     reserve_type: IP_ADDRESS_LIST
     ip_addresses:
       - ipv4:
-          value: "192.168.0.21"
+          value: "10.30.30.81"
       - ipv4:
-          value: "192.168.0.22"
-    client_context: "ansible_reserve_test"
+          value: "10.30.30.82"
+    client_context: "ansible-list"
   register: result
+  ignore_errors: true
 
-- name: Reserve N random IPs on a managed subnet
+- name: Reserve a range of IPs
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: present
-    ext_id: "9cc4abba-f27d-40db-90ba-c1592dccaedf"
-    reserve_type: IP_ADDRESS_COUNT
-    count: 3
-    client_context: "ansible_reserve_count"
-  register: result
-
-- name: Reserve a range of IPs starting from a given address
-  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    state: present
-    ext_id: "9cc4abba-f27d-40db-90ba-c1592dccaedf"
+    subnet_ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
     reserve_type: IP_ADDRESS_RANGE
     start_ip_address:
       ipv4:
-        value: "192.168.0.25"
-    count: 2
-    client_context: "ansible_reserve_range"
+        value: "10.30.30.80"
+    count: 3
+    client_context: "ansible-range"
   register: result
+  ignore_errors: true
 
 - name: Unreserve a specific list of IPs
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: absent
-    ext_id: "9cc4abba-f27d-40db-90ba-c1592dccaedf"
+    subnet_ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
     unreserve_type: IP_ADDRESS_LIST
     ip_addresses:
       - ipv4:
-          value: "192.168.0.21"
+          value: "10.30.30.81"
       - ipv4:
-          value: "192.168.0.22"
+          value: "10.30.30.82"
   register: result
+  ignore_errors: true
 
-- name: Unreserve every IP previously tagged with client_context
+- name: Unreserve a range of IPs
   nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     state: absent
-    ext_id: "9cc4abba-f27d-40db-90ba-c1592dccaedf"
-    unreserve_type: CONTEXT
-    client_context: "ansible_reserve_count"
+    subnet_ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
+    unreserve_type: IP_ADDRESS_RANGE
+    start_ip_address:
+      ipv4:
+        value: "10.30.30.80"
+    count: 3
   register: result
+  ignore_errors: true
+
+- name: Unreserve every IP tagged with a client context
+  nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
+    state: absent
+    subnet_ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
+    unreserve_type: CONTEXT
+    client_context: "ansible-context-tag"
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
 response:
   description:
-    - Response for the reserve / unreserve IP operation on the subnet.
-    - When C(wait=true) this is the completed task payload from Prism Central.
-    - When C(wait=false) this is the task reference returned by the SDK.
+    - Response for the reserve or unreserve action.
+    - When C(wait) is true, this is the completed task object as returned by the tasks API.
+    - When C(wait) is false, this is the task reference returned immediately by the API call.
   returned: always
   type: dict
   sample:
     {
-      "app_name": null,
-      "batch_summary": null,
       "cluster_ext_ids": null,
-      "completed_time": "2026-07-21T05:51:41.861959+00:00",
+      "completed_time": "2026-07-21T06:35:24.224345+00:00",
       "completion_details": [
-          {
-              "name": "reserved_or_unreserved_ips",
-              "value": "{\"reserved_ips\": [\"192.168.214.21\", \"192.168.214.22\"]}"
-          }
+        {
+          "name": "reserved_or_unreserved_ips",
+          "value": "{\"unreserved_ips\": [\"10.30.30.75\", \"10.30.30.76\"]}"
+        }
       ],
-      "created_time": "2026-07-21T05:51:41.730026+00:00",
+      "created_time": "2026-07-21T06:35:24.115619+00:00",
       "entities_affected": [
-          {
-              "ext_id": "6be3e46b-794a-43f9-ab3e-04b94acf9f2e",
-              "name": null,
-              "rel": "networking:config:subnet"
-          }
+        {
+          "ext_id": "61959708-6efc-4d80-8c86-92c01f080672",
+          "name": null,
+          "rel": "networking:config:subnet"
+        }
       ],
       "error_messages": null,
-      "ext_id": "ZXJnb24=:b7d0e296-5968-43b1-a14e-10480ba7191b",
+      "ext_id": "ZXJnb24=:521746d7-f26f-4652-b5fb-1b38c89a1dca",
       "is_background_task": false,
       "is_cancelable": false,
-      "last_updated_time": "2026-07-21T05:51:41.861958+00:00",
+      "last_updated_time": "2026-07-21T06:35:24.224344+00:00",
       "legacy_error_message": null,
       "number_of_entities_affected": 1,
       "number_of_subtasks": 0,
       "operation": "kSubnetReserveIp",
       "operation_description": "Reserve or Unreserve IP on Managed Subnet",
       "owned_by": {
-          "ext_id": "00000000-0000-0000-0000-000000000000",
-          "name": "admin"
+        "ext_id": "00000000-0000-0000-0000-000000000000",
+        "name": "admin"
       },
       "parent_task": null,
       "progress_percentage": 100,
       "root_task": null,
-      "started_time": "2026-07-21T05:51:41.739554+00:00",
+      "started_time": "2026-07-21T06:35:24.129524+00:00",
       "status": "SUCCEEDED",
       "sub_steps": null,
-      "sub_tasks": null,
-      "warnings": null
+      "sub_tasks": null
     }
-
-task_ext_id:
-  description:
-    - The external ID of the Prism Central task created by the reserve / unreserve operation.
-  returned: always
-  type: str
-  sample: "ZXJnb24=:b7d0e296-5968-43b1-a14e-10480ba7191b"
 
 ext_id:
   description:
-    - The external ID of the subnet on which IPs were reserved / unreserved.
+    - External ID (UUID) of the subnet the action was performed against.
   returned: always
   type: str
-  sample: "6be3e46b-794a-43f9-ab3e-04b94acf9f2e"
+  sample: "61959708-6efc-4d80-8c86-92c01f080672"
+
+task_ext_id:
+  description:
+    - The external ID of the reserve or unreserve task.
+  returned: always
+  type: str
+  sample: "ZXJnb24=:521746d7-f26f-4652-b5fb-1b38c89a1dca"
 
 changed:
-  description: This indicates whether the task resulted in any changes.
+  description: This indicates whether the action resulted in any changes.
   returned: always
   type: bool
   sample: true
 
-skipped:
-  description:
-    - This indicates whether the task was skipped (e.g. check mode with no changes).
-  returned: when applicable
-  type: bool
-  sample: false
+msg:
+  description: This indicates the status/error message if any occurred.
+  returned: When there is an error or in check mode.
+  type: str
+  sample: "Api Exception raised while reserving IPs on subnet"
 
 error:
   description: This indicates the error message if any error occurred.
-  returned: When an error occurs
+  returned: when an error occurs
   type: str
 
 failed:
@@ -342,12 +338,6 @@ failed:
   returned: always
   type: bool
   sample: false
-
-msg:
-  description: Status / informational message from the module.
-  returned: When there is an error or the module runs in check mode
-  type: str
-  sample: "Api Exception raised while reserving IPs on subnet"
 """
 
 import traceback  # noqa: E402
@@ -365,7 +355,6 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
-    validate_required_params,
 )
 
 SDK_IMP_ERROR = None
@@ -382,7 +371,6 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
-
     ipv4_address_spec = dict(
         value=dict(type="str", required=True),
         prefix_length=dict(type="int", required=False, default=32),
@@ -409,7 +397,19 @@ def get_module_spec():
     )
 
     module_args = dict(
-        ext_id=dict(type="str", required=True),
+        subnet_ext_id=dict(type="str", required=True),
+        reserve_type=dict(
+            type="str",
+            required=False,
+            choices=["IP_ADDRESS_COUNT", "IP_ADDRESS_LIST", "IP_ADDRESS_RANGE"],
+            obj=networking_sdk.ReserveType,
+        ),
+        unreserve_type=dict(
+            type="str",
+            required=False,
+            choices=["IP_ADDRESS_LIST", "IP_ADDRESS_RANGE", "CONTEXT"],
+            obj=networking_sdk.UnreserveType,
+        ),
         count=dict(type="int", required=False),
         start_ip_address=dict(
             type="dict",
@@ -424,66 +424,27 @@ def get_module_spec():
             required=False,
             obj=networking_sdk.IPAddress,
         ),
-        reserve_type=dict(
-            type="str",
-            required=False,
-            choices=["IP_ADDRESS_COUNT", "IP_ADDRESS_LIST", "IP_ADDRESS_RANGE"],
-            obj=networking_sdk.ReserveType,
-        ),
-        unreserve_type=dict(
-            type="str",
-            required=False,
-            choices=["IP_ADDRESS_LIST", "IP_ADDRESS_RANGE", "CONTEXT"],
-            obj=networking_sdk.UnreserveType,
-        ),
         client_context=dict(type="str", required=False),
     )
     return module_args
 
 
-def _validate_reserve_params(module):
-    """Enforce SDK-level required combinations for reserve operation."""
-    validate_required_params(module, ["reserve_type"])
-    reserve_type = module.params.get("reserve_type")
-    if reserve_type == "IP_ADDRESS_COUNT":
-        validate_required_params(module, ["count"])
-    elif reserve_type == "IP_ADDRESS_LIST":
-        validate_required_params(module, ["ip_addresses"])
-    elif reserve_type == "IP_ADDRESS_RANGE":
-        validate_required_params(module, ["start_ip_address", "count"])
-
-
-def _validate_unreserve_params(module):
-    """Enforce SDK-level required combinations for unreserve operation."""
-    validate_required_params(module, ["unreserve_type"])
-    unreserve_type = module.params.get("unreserve_type")
-    if unreserve_type == "IP_ADDRESS_LIST":
-        validate_required_params(module, ["ip_addresses"])
-    elif unreserve_type == "IP_ADDRESS_RANGE":
-        validate_required_params(module, ["start_ip_address", "count"])
-    elif unreserve_type == "CONTEXT":
-        validate_required_params(module, ["client_context"])
-
-
-def create_ReserveIpsBySubnetId(module, result, api_instance):
-    """Reserve IPs on the target subnet (state=present)."""
-    subnet_ext_id = module.params.get("ext_id")
+def reserve_ips(module, result, api_instance):
+    """Reserve IP addresses on the subnet identified by ``subnet_ext_id``."""
+    subnet_ext_id = module.params.get("subnet_ext_id")
     result["ext_id"] = subnet_ext_id
-
-    _validate_reserve_params(module)
 
     sg = SpecGenerator(module)
     default_spec = networking_sdk.IpReserveSpec()
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating reserve IPs spec", **result)
+        module.fail_json(
+            msg="Failed generating spec for reserving IPs on subnet", **result
+        )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
-        result["msg"] = "IPs will be reserved on subnet ext_id: {0}".format(
-            subnet_ext_id
-        )
         return
 
     resp = None
@@ -499,30 +460,34 @@ def create_ReserveIpsBySubnetId(module, result, api_instance):
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
+
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id)
-        result["response"] = strip_internal_attributes(task_status.to_dict())
+        task = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(task.to_dict())
+
     result["changed"] = True
 
 
-def delete_ReserveIpsBySubnetId(module, result, api_instance):
-    """Unreserve IPs on the target subnet (state=absent)."""
-    subnet_ext_id = module.params.get("ext_id")
+def unreserve_ips(module, result, api_instance):
+    """Unreserve IP addresses on the subnet identified by ``subnet_ext_id``."""
+    subnet_ext_id = module.params.get("subnet_ext_id")
     result["ext_id"] = subnet_ext_id
-
-    _validate_unreserve_params(module)
 
     sg = SpecGenerator(module)
     default_spec = networking_sdk.IpUnreserveSpec()
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating unreserve IPs spec", **result)
+        module.fail_json(
+            msg="Failed generating spec for unreserving IPs on subnet", **result
+        )
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
-        result["msg"] = "IPs will be unreserved on subnet ext_id: {0}".format(
-            subnet_ext_id
+        result["msg"] = (
+            "Reserved IPs on subnet with ext_id:{0} will be unreserved.".format(
+                subnet_ext_id
+            )
         )
         return
 
@@ -539,9 +504,11 @@ def delete_ReserveIpsBySubnetId(module, result, api_instance):
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
+
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id)
-        result["response"] = strip_internal_attributes(task_status.to_dict())
+        task = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(task.to_dict())
+
     result["changed"] = True
 
 
@@ -549,12 +516,18 @@ def run_module():
     module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        mutually_exclusive=[
+            ("reserve_type", "unreserve_type"),
+        ],
         required_if=[
             ("state", "present", ("reserve_type",)),
             ("state", "absent", ("unreserve_type",)),
-        ],
-        mutually_exclusive=[
-            ("reserve_type", "unreserve_type"),
+            ("reserve_type", "IP_ADDRESS_COUNT", ("count",)),
+            ("reserve_type", "IP_ADDRESS_LIST", ("ip_addresses",)),
+            ("reserve_type", "IP_ADDRESS_RANGE", ("start_ip_address", "count")),
+            ("unreserve_type", "IP_ADDRESS_LIST", ("ip_addresses",)),
+            ("unreserve_type", "IP_ADDRESS_RANGE", ("start_ip_address", "count")),
+            ("unreserve_type", "CONTEXT", ("client_context",)),
         ],
     )
     if SDK_IMP_ERROR:
@@ -571,12 +544,13 @@ def run_module():
         "ext_id": None,
         "task_ext_id": None,
     }
+
     api_instance = get_subnet_ip_reservation_api_instance(module)
     state = module.params.get("state")
     if state == "present":
-        create_ReserveIpsBySubnetId(module, result, api_instance)
+        reserve_ips(module, result, api_instance)
     else:
-        delete_ReserveIpsBySubnetId(module, result, api_instance)
+        unreserve_ips(module, result, api_instance)
     module.exit_json(**result)
 
 

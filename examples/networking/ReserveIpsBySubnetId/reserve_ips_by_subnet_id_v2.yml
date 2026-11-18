@@ -33,7 +33,7 @@
     - name: Reserve IPs on a managed subnet (all attributes)
       nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
         state: present
-        ext_id: "{{ subnet_ext_id }}"
+        subnet_ext_id: "{{ subnet_ext_id }}"
         reserve_type: IP_ADDRESS_LIST
         ip_addresses:
           - ipv4:
@@ -48,14 +48,14 @@
 
     - name: List reserved IPs on the subnet
       nutanix.ncp.ntnx_reserve_ips_by_subnet_ids_info_v2:
-        ext_id: "{{ subnet_ext_id }}"
+        subnet_ext_id: "{{ subnet_ext_id }}"
       register: list_result
       ignore_errors: true
 
     - name: Unreserve IPs on the subnet (all attributes)
       nutanix.ncp.ntnx_reserve_ips_by_subnet_id_v2:
         state: absent
-        ext_id: "{{ subnet_ext_id }}"
+        subnet_ext_id: "{{ subnet_ext_id }}"
         unreserve_type: CONTEXT
         client_context: "{{ reserve_client_context }}"
       register: unreserve_result

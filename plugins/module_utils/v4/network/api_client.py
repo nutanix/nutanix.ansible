@@ -284,8 +284,7 @@ def get_uplink_bonds_api_instance(module):
 
 def get_subnet_ip_reservation_api_instance(module):
     """
-    This method will return SubnetIPReservationApi instance for reserve /
-    unreserve / list-reserved IP operations on a managed subnet.
+    This method will return SubnetIPReservationApi instance.
     Args:
         module (object): Ansible module object
     return:
