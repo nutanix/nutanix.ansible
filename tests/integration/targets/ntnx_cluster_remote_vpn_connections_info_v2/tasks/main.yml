@@ -10,5 +10,5 @@
       nutanix_debug: "{{ nutanix_debug | default(omit) }}"
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
   block:
-    - name: Import remote_vpn_connection_for_clusters_info.yml
-      ansible.builtin.import_tasks: remote_vpn_connection_for_clusters_info.yml
+    - name: Import cluster_remote_vpn_connections_info.yml
+      ansible.builtin.import_tasks: cluster_remote_vpn_connections_info.yml

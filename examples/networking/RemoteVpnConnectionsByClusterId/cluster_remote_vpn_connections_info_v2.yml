@@ -1,7 +1,7 @@
 ---
 # Summary:
 # This playbook demonstrates how to fetch remote VPN connections for a
-# Prism Central cluster using the ntnx_remote_vpn_connection_for_clusters_info_v2
+# Prism Central cluster using the ntnx_cluster_remote_vpn_connections_info_v2
 # module.
 #
 # The RemoteVpnConnectionForCluster feature is read-only: it exposes
@@ -36,27 +36,27 @@
         cluster_ext_id: "{{ pc_cluster_info.response[0].ext_id }}"
 
     - name: List all remote VPN connections for a Prism Central cluster
-      nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+      nutanix.ncp.ntnx_cluster_remote_vpn_connections_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
       register: all_result
       ignore_errors: true
 
     - name: List remote VPN connections with limit
-      nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+      nutanix.ncp.ntnx_cluster_remote_vpn_connections_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
         limit: 1
       register: limited_result
       ignore_errors: true
 
     - name: List remote VPN connections with a name filter
-      nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+      nutanix.ncp.ntnx_cluster_remote_vpn_connections_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
         filter: "name eq 'remote-vpn-01'"
       register: filtered_result
       ignore_errors: true
 
     - name: List remote VPN connections ordered by name (desc)
-      nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+      nutanix.ncp.ntnx_cluster_remote_vpn_connections_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
         orderby: "name desc"
         limit: 5
@@ -64,7 +64,7 @@
       ignore_errors: true
 
     - name: Get a specific remote VPN connection by external ID
-      nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+      nutanix.ncp.ntnx_cluster_remote_vpn_connections_info_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
         ext_id: "00000000-0000-0000-0000-000000000000"
       register: single_result

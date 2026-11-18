@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_remote_vpn_connection_for_clusters_info_v2
+module: ntnx_cluster_remote_vpn_connections_info_v2
 short_description: Fetch remote VPN connections info for a Prism Central cluster in Nutanix Prism Central
 version_added: 2.7.0
 description:
@@ -62,41 +62,41 @@ author:
 
 EXAMPLES = r"""
 - name: Fetch a remote VPN connection using its external ID
-  nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_vpn_connections_info_v2:
     cluster_ext_id: "cae459ec-08db-475e-a5e5-151e390c9484"
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
   register: result
   ignore_errors: true
 
 - name: List all remote VPN connections for a Prism Central cluster
-  nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_vpn_connections_info_v2:
     cluster_ext_id: "cae459ec-08db-475e-a5e5-151e390c9484"
   register: result
   ignore_errors: true
 
 - name: List remote VPN connections with a filter
-  nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_vpn_connections_info_v2:
     cluster_ext_id: "cae459ec-08db-475e-a5e5-151e390c9484"
     filter: "name eq 'remote-vpn-01'"
   register: result
   ignore_errors: true
 
 - name: List remote VPN connections with a limit
-  nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_vpn_connections_info_v2:
     cluster_ext_id: "cae459ec-08db-475e-a5e5-151e390c9484"
     limit: 1
   register: result
   ignore_errors: true
 
 - name: List remote VPN connections sorted by name descending
-  nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_vpn_connections_info_v2:
     cluster_ext_id: "cae459ec-08db-475e-a5e5-151e390c9484"
     orderby: "name desc"
   register: result
   ignore_errors: true
 
 - name: List remote VPN connections using pagination
-  nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_vpn_connections_info_v2:
     cluster_ext_id: "cae459ec-08db-475e-a5e5-151e390c9484"
     page: 0
     limit: 10
@@ -104,7 +104,7 @@ EXAMPLES = r"""
   ignore_errors: true
 
 - name: List all remote VPN connections with fetch_all
-  nutanix.ncp.ntnx_remote_vpn_connection_for_clusters_info_v2:
+  nutanix.ncp.ntnx_cluster_remote_vpn_connections_info_v2:
     cluster_ext_id: "cae459ec-08db-475e-a5e5-151e390c9484"
     fetch_all: true
   register: result
