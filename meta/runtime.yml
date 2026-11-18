@@ -305,6 +305,7 @@ action_groups:
     - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_vulnerabilities_info_v2
     - ntnx_aws_vpcs_info_v2
     - ntnx_layer2_stretch_stats_info_v2
     - ntnx_ipfix_exporter_v2
