@@ -105,7 +105,16 @@
       - item.vpc_id is defined
     success_msg: "AwsVpc entry {{ item.ext_id }} exposes expected fields"
     fail_msg: "AwsVpc entry does not expose the expected fields"
-  loop: "{{ (list_result.response | default([])) if (list_result.response is iterable and list_result.response is not string and list_result.response is not mapping) else [] }}"
+  loop: >-
+    {{
+      (list_result.response | default([]))
+      if (
+        list_result.response is iterable
+        and list_result.response is not string
+        and list_result.response is not mapping
+      )
+      else []
+    }}
   when: not (list_result.failed | default(true) | bool)
 
 ########################################################################################
@@ -133,7 +142,7 @@
     fail_msg: "List AWS VPCs with select returned an unexpected response envelope"
   when:
     - select_result is defined
-    - select_result.skipped | default(false) | bool == false
+    - not (select_result.skipped | default(false))
 
 ########################################################################################
 # Negative — cluster_ext_id is required (Ansible argument validation)
