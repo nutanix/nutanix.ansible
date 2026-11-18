@@ -1,0 +1,36 @@
+---
+# Summary:
+# This playbook will do:
+# 1. List all LCM downloaded images
+# 2. List LCM downloaded images with filter
+# 3. List LCM downloaded images with limit
+# 4. List all LCM downloaded images with fetch_all
+
+- name: LCM downloaded images info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: List all LCM downloaded images
+      nutanix.ncp.ntnx_lcm_images_info_v2:
+      register: list_result
+
+    - name: List LCM downloaded images with filter
+      nutanix.ncp.ntnx_lcm_images_info_v2:
+        filter: "entityClass eq 'Core Cluster'"
+      register: filter_result
+
+    - name: List LCM downloaded images with limit
+      nutanix.ncp.ntnx_lcm_images_info_v2:
+        limit: 1
+      register: limit_result
+
+    - name: List all LCM downloaded images with fetch_all
+      nutanix.ncp.ntnx_lcm_images_info_v2:
+        fetch_all: true
+      register: fetch_all_result

@@ -1,0 +1,103 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a Recovery plan
+# 2. Update a Recovery plan
+# 3. List all Recovery plans
+# 4. List all Recovery plans using filter
+# 5. List all Recovery plans using limit
+# 6. Get a Recovery plan using ext_id
+# 7. Delete a Recovery plan
+
+- name: Recovery Plan playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        recovery_plan_name: "recovery_plan_ansible"
+        primary_domain_manager_ext_id: "b3a6932b-f64e-49ee-924d-c5a5b8ce2f3f"
+        primary_cluster_ext_id: "000647b8-ddb3-6bbb-0000-000000028f57"
+        recovery_domain_manager_ext_id: "425cd2d4-32e0-4c2d-a026-31d81fa4c805"
+        recovery_cluster_ext_id: "000649c4-1a2b-1234-5678-000000012345"
+        witness_timeout_secs: 120
+        witness_ext_id: "b3a6932b-f64e-49ee-924d-c5a5b8ce2f3f"
+
+    - name: Create a Recovery plan
+      nutanix.ncp.ntnx_recovery_plan_v2:
+        state: present
+        name: "{{ recovery_plan_name }}"
+        description: "Recovery plan created by Ansible"
+        primary_location:
+          domain_manager_ext_id: "{{ primary_domain_manager_ext_id }}"
+          clusters:
+            - ext_id: "{{ primary_cluster_ext_id }}"
+        recovery_location:
+          domain_manager_ext_id: "{{ recovery_domain_manager_ext_id }}"
+          clusters:
+            - ext_id: "{{ recovery_cluster_ext_id }}"
+      register: create_result
+      ignore_errors: true
+
+    - name: Save created Recovery plan ext_id
+      ansible.builtin.set_fact:
+        recovery_plan_ext_id: "{{ create_result.ext_id | default('') }}"
+
+    - name: Update the Recovery plan
+      nutanix.ncp.ntnx_recovery_plan_v2:
+        state: present
+        ext_id: "{{ recovery_plan_ext_id }}"
+        name: "{{ recovery_plan_name }}_updated"
+        description: "Updated recovery plan description"
+        primary_location:
+          domain_manager_ext_id: "{{ primary_domain_manager_ext_id }}"
+          clusters:
+            - ext_id: "{{ primary_cluster_ext_id }}"
+        recovery_location:
+          domain_manager_ext_id: "{{ recovery_domain_manager_ext_id }}"
+          clusters:
+            - ext_id: "{{ recovery_cluster_ext_id }}"
+        witness:
+          ext_id: "{{ witness_ext_id }}"
+          timeout_secs: "{{ witness_timeout_secs }}"
+      register: update_result
+      ignore_errors: true
+      when: recovery_plan_ext_id | length > 0
+
+    - name: List all Recovery plans
+      nutanix.ncp.ntnx_recovery_plans_info_v2:
+      register: list_result
+      ignore_errors: true
+
+    - name: List all Recovery plans using filter
+      nutanix.ncp.ntnx_recovery_plans_info_v2:
+        filter: "name eq '{{ recovery_plan_name }}_updated'"
+      register: list_result_filter
+      ignore_errors: true
+
+    - name: List all Recovery plans using limit
+      nutanix.ncp.ntnx_recovery_plans_info_v2:
+        limit: 1
+      register: list_result_limit
+      ignore_errors: true
+
+    - name: Get a Recovery plan using ext_id
+      nutanix.ncp.ntnx_recovery_plans_info_v2:
+        ext_id: "{{ recovery_plan_ext_id }}"
+      register: get_result
+      ignore_errors: true
+      when: recovery_plan_ext_id | length > 0
+
+    - name: Delete the Recovery plan
+      nutanix.ncp.ntnx_recovery_plan_v2:
+        state: absent
+        ext_id: "{{ recovery_plan_ext_id }}"
+      register: delete_result
+      ignore_errors: true
+      when: recovery_plan_ext_id | length > 0
