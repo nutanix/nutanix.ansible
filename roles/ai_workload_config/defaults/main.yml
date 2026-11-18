@@ -1,0 +1,28 @@
+---
+# Nutanix Prism Central connection
+ai_config_nutanix_host: ""
+ai_config_nutanix_username: admin
+ai_config_nutanix_password: ""
+ai_config_nutanix_validate_certs: false
+
+# Target cluster
+ai_config_cluster_name: ""
+
+# VM names to configure GPUs on
+ai_config_vm_names: []
+
+# GPU configuration
+# Mode: passthrough (full GPU) or virtual (vGPU)
+ai_config_gpu_mode: passthrough
+# GPU device name (e.g., "NVIDIA A100", "Tesla T4")
+ai_config_gpu_name: ""
+# Number of GPUs per VM
+ai_config_gpu_count: 1
+# GPU vendor
+ai_config_gpu_vendor: NVIDIA
+
+# Power management
+# Whether to power off VMs before GPU config changes
+ai_config_power_off_before: true
+# Whether to power on VMs after GPU config changes
+ai_config_power_on_after: true

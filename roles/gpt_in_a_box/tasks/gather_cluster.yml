@@ -1,0 +1,34 @@
+---
+- name: Get cluster information
+  nutanix.ansible.ntnx_clusters_info_v2:
+    nutanix_host: "{{ gptbox_nutanix_host }}"
+    nutanix_username: "{{ gptbox_nutanix_username }}"
+    nutanix_password: "{{ gptbox_nutanix_password }}"
+    validate_certs: "{{ gptbox_nutanix_validate_certs }}"
+  register: _gptbox_clusters
+
+- name: Find target cluster
+  ansible.builtin.set_fact:
+    _gptbox_cluster: >-
+      {{ _gptbox_clusters.response | selectattr('name', 'equalto', gptbox_cluster_name) | first }}
+  failed_when: _gptbox_cluster is not defined
+
+- name: Get subnet information
+  nutanix.ansible.ntnx_subnets_info_v2:
+    nutanix_host: "{{ gptbox_nutanix_host }}"
+    nutanix_username: "{{ gptbox_nutanix_username }}"
+    nutanix_password: "{{ gptbox_nutanix_password }}"
+    validate_certs: "{{ gptbox_nutanix_validate_certs }}"
+  register: _gptbox_subnets
+
+- name: Find target subnet
+  ansible.builtin.set_fact:
+    _gptbox_subnet: >-
+      {{ _gptbox_subnets.response | selectattr('name', 'equalto', gptbox_subnet_name) | first }}
+  failed_when: _gptbox_subnet is not defined
+
+- name: Display cluster and subnet info
+  ansible.builtin.debug:
+    msg: >-
+      Cluster: {{ _gptbox_cluster.name }} ({{ _gptbox_cluster.ext_id }}),
+      Subnet: {{ _gptbox_subnet.name }} ({{ _gptbox_subnet.ext_id }})
