@@ -101,6 +101,18 @@ def get_routing_policies_api_instance(module):
     return ntnx_networking_py_client.RoutingPoliciesApi(api_client=api_client)
 
 
+def get_routing_policy_stats_api_instance(module):
+    """
+    This method will return RoutingPolicyStatsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): routing policy stats api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.RoutingPolicyStatsApi(api_client=api_client)
+
+
 def get_floating_ip_api_instance(module):
     """
     This method will return FloatingIpsApi instance.
