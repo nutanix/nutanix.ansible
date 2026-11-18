@@ -1,0 +1,37 @@
+---
+# Summary:
+# This playbook will do:
+# 1. List all cluster log tags
+# 2. List cluster log tags with filter
+# 3. List cluster log tags with limit
+
+- name: Cluster log tags info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        cluster_ext_id: "<cluster_ext_id>"
+
+    - name: List all cluster log tags
+      nutanix.ncp.ntnx_cluster_log_tags_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: list_result
+
+    - name: List cluster log tags with filter
+      nutanix.ncp.ntnx_cluster_log_tags_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        filter: "name eq 'acropolis'"
+      register: list_result_filter
+
+    - name: List cluster log tags with limit
+      nutanix.ncp.ntnx_cluster_log_tags_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        limit: 1
+      register: list_result_limit

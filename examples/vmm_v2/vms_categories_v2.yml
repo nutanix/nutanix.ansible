@@ -1,8 +1,8 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Associate a category to a VM
-# 2. Disassociate a category from a VM
+# 1. Associate category to VM
+# 2. Disassociate category from VM
 
 - name: VM categories playbook
   hosts: localhost
