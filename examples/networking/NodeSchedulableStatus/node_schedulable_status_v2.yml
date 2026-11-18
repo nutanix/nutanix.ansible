@@ -20,7 +20,6 @@
 # 5. List with a page size limit.
 # 6. Sort by isNeverSchedulable ascending.
 # 7. Sort by isNeverSchedulable descending.
-# 8. Fetch a single node's schedulable status by node ext_id.
 
 - name: Node Schedulable Status playbook
   hosts: localhost
@@ -81,17 +80,3 @@
         cluster_ext_id: "{{ pe_cluster_ext_id }}"
         orderby: "isNeverSchedulable desc"
       register: sorted_desc
-
-    - name: Set a node ext_id to fetch (from the earlier full listing)
-      ansible.builtin.set_fact:
-        first_node_ext_id: "{{ all_statuses.response[0].ext_id }}"
-      when:
-        - all_statuses.response is defined
-        - (all_statuses.response | length) > 0
-
-    - name: Fetch a specific node's schedulable status by node ext_id
-      nutanix.ncp.ntnx_node_schedulable_status_info_v2:
-        cluster_ext_id: "{{ pe_cluster_ext_id }}"
-        ext_id: "{{ first_node_ext_id }}"
-      register: by_ext_id
-      when: first_node_ext_id is defined

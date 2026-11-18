@@ -10,10 +10,7 @@
 #      isNeverSchedulable).
 #   3. Paging / limiting.
 #   4. Sorting with $orderby.
-#   5. Fetching a single node by ext_id (OData filter on listed data).
-#   6. Negative test: unknown ext_id -> graceful "not found" handling.
-#   7. Negative test: mutually exclusive ext_id + filter.
-#   8. Schema assertions on every listed entry: ext_id + is_never_schedulable.
+#   5. Schema assertions on every listed entry: ext_id + is_never_schedulable.
 #
 # Note: on Prism Central deployments that manage a single PE cluster, the
 # underlying API requires the X-Cluster-Id header (SDK param
@@ -98,7 +95,6 @@
   ansible.builtin.set_fact:
     all_statuses: "{{ result.response }}"
     total_statuses: "{{ result.total_available_results }}"
-    first_node_ext_id: "{{ result.response[0].ext_id }}"
 
 ########################################################################################
 # 2. Filter with isNeverSchedulable eq true / false
@@ -261,72 +257,3 @@
       - result_desc.response is defined
     success_msg: "orderby desc returned successfully"
     fail_msg: "orderby desc failed"
-
-########################################################################################
-# 5. Fetch a specific node by ext_id (OData filter via list_entities)
-########################################################################################
-
-- name: Fetch node schedulable status by ext_id
-  nutanix.ncp.ntnx_node_schedulable_status_info_v2:
-    cluster_ext_id: "{{ pe_cluster_ext_id }}"
-    ext_id: "{{ first_node_ext_id }}"
-  register: result
-  ignore_errors: true
-
-- name: Fetch by ext_id status
-  ansible.builtin.assert:
-    that:
-      - result is defined
-      - result.changed == false
-      - result.failed == false
-      - result.response is defined
-      - result.response.ext_id == first_node_ext_id
-      - result.response.is_never_schedulable in [true, false]
-      - result.ext_id == first_node_ext_id
-    success_msg: "Fetch by ext_id returned the correct node"
-    fail_msg: "Fetch by ext_id returned wrong or missing data"
-
-########################################################################################
-# 6. Negative — unknown ext_id (graceful not-found handling)
-########################################################################################
-
-- name: Fetch node schedulable status with a non-existent ext_id
-  nutanix.ncp.ntnx_node_schedulable_status_info_v2:
-    cluster_ext_id: "{{ pe_cluster_ext_id }}"
-    ext_id: "00000000-0000-0000-0000-000000000000"
-  register: result
-  ignore_errors: true
-
-- name: Non-existent ext_id status
-  ansible.builtin.assert:
-    that:
-      - result is defined
-      - result.changed == false
-      - result.response is defined
-      - result.response | length == 0
-      - "'not found' in result.msg"
-      - result.ext_id == "00000000-0000-0000-0000-000000000000"
-    success_msg: "Non-existent ext_id handled gracefully"
-    fail_msg: "Non-existent ext_id was not handled gracefully"
-
-########################################################################################
-# 7. Negative — mutually exclusive ext_id + filter
-########################################################################################
-
-- name: Fetch with both ext_id and filter (should be rejected)
-  nutanix.ncp.ntnx_node_schedulable_status_info_v2:
-    cluster_ext_id: "{{ pe_cluster_ext_id }}"
-    ext_id: "{{ first_node_ext_id }}"
-    filter: "isNeverSchedulable eq true"
-  register: result
-  ignore_errors: true
-
-- name: Mutually exclusive params status
-  ansible.builtin.assert:
-    that:
-      - result is defined
-      - result.failed == true
-      - result.changed == false
-      - "'mutually exclusive' in result.msg"
-    success_msg: "ext_id + filter correctly rejected as mutually exclusive"
-    fail_msg: "ext_id + filter was NOT rejected as mutually exclusive"
