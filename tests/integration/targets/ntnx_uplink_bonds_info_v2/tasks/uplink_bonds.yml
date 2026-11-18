@@ -1,0 +1,238 @@
+---
+# ============================================================================
+# Test plan for ntnx_uplink_bonds_info_v2
+# ----------------------------------------------------------------------------
+# UplinkBond is a READ-ONLY entity in the Nutanix Networking v4 SDK; the only
+# public API methods are GetUplinkBondById and ListUplinkBonds. There is no
+# Create/Update/Delete/Action API, therefore there is no `state`-based CRUD
+# module and no check_mode surface to exercise. All tests below cover the two
+# supported read operations plus their negative branches and query options.
+#
+# Scenarios covered:
+#   1.  List all uplink bonds — expect >= 1 entry on a healthy cluster and
+#       assert every schema field exists on the returned entities.
+#   2.  Extract a bond ext_id from step 1 and Get the bond by ext_id; assert
+#       the response payload matches the entry from the list.
+#   3.  List with filter (name eq '<name>') — server currently rejects
+#       $filter with "Odata Error"; asserted as a negative test.
+#   4.  List with limit=1 — assert exactly one row is returned.
+#   5.  List with page=0 combined with limit=1 — assert pagination works.
+#   6.  List with orderby=name — assert response is returned (server-side
+#       ordering; we do not re-sort locally).
+#   7.  Get by wrong ext_id — expect failed=true with descriptive error.
+#   8.  Providing both ext_id and filter together — expect argument-spec
+#       validation to fail (mutually_exclusive).
+#   9.  Enum sanity: assert `type` is one of the SDK-declared UplinkBondType
+#       values and `lacp_status` is one of the SDK-declared UplinkBondLacpStatus
+#       values for every discovered bond.
+# ============================================================================
+
+- name: Start UplinkBond info module tests
+  ansible.builtin.debug:
+    msg: Start UplinkBond info module tests
+
+########################################################################################
+# 1. List all uplink bonds
+########################################################################################
+
+- name: List all uplink bonds
+  nutanix.ncp.ntnx_uplink_bonds_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all uplink bonds status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 1
+      - result.total_available_results is defined
+      - result.total_available_results >= 1
+      - result.response[0].ext_id is defined
+      - result.response[0].name is defined
+      - result.response[0].type is defined
+      - result.response[0].lacp_status is defined
+      - result.response[0].cluster_reference is defined
+      - result.response[0].host_reference is defined
+      - result.response[0].host_nic_references is defined
+    success_msg: "List all uplink bonds passed"
+    fail_msg: "List all uplink bonds failed"
+
+- name: Assert enum values for every discovered uplink bond
+  ansible.builtin.assert:
+    that:
+      - item.type in ['ACTIVE_BACKUP', 'BALANCE_SLB', 'BALANCE_TCP']
+      - item.lacp_status in ['CONFIGURED', 'NEGOTIATED', 'NIL']
+    success_msg: "Uplink bond {{ item.ext_id }} carries valid enum values"
+    fail_msg: "Uplink bond {{ item.ext_id }} carries unexpected enum values"
+  loop: "{{ result.response }}"
+  loop_control:
+    label: "{{ item.ext_id }}"
+
+- name: Capture first uplink bond for subsequent tests
+  ansible.builtin.set_fact:
+    uplink_bond_ext_id: "{{ result.response[0].ext_id }}"
+    uplink_bond_name: "{{ result.response[0].name }}"
+    uplink_bond_type: "{{ result.response[0].type }}"
+    uplink_bond_cluster_ref: "{{ result.response[0].cluster_reference }}"
+
+########################################################################################
+# 2. Get uplink bond by ext_id
+########################################################################################
+
+- name: Get uplink bond using ext_id
+  nutanix.ncp.ntnx_uplink_bonds_info_v2:
+    ext_id: "{{ uplink_bond_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Get uplink bond using ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == uplink_bond_ext_id
+      - result.response is defined
+      - result.response.ext_id == uplink_bond_ext_id
+      - result.response.name == uplink_bond_name
+      - result.response.type == uplink_bond_type
+      - result.response.cluster_reference == uplink_bond_cluster_ref
+      - result.response.host_nic_references is defined
+      - result.response.host_reference is defined
+    success_msg: "Get uplink bond using ext_id passed"
+    fail_msg: "Get uplink bond using ext_id failed"
+
+########################################################################################
+# 3. List with filter (server-side $filter is currently rejected by PC 7.6 for
+#    the UplinkBonds endpoint even though the SDK method signature declares the
+#    parameter; treat this as a negative test until the server adds support.)
+########################################################################################
+
+- name: List uplink bonds with filter by name (currently unsupported by PC)
+  nutanix.ncp.ntnx_uplink_bonds_info_v2:
+    filter: "name eq '{{ uplink_bond_name }}'"
+  register: result
+  ignore_errors: true
+
+- name: List uplink bonds with filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching uplink bonds info"
+      - "'Odata Error' in (result.response.data.error[0].message | default(''))"
+    success_msg: "Filter rejection surfaced with a descriptive error as expected"
+    fail_msg: "Expected the server to reject $filter on UplinkBonds, but got a different response"
+
+########################################################################################
+# 4. List with limit
+########################################################################################
+
+- name: List uplink bonds with limit=1
+  nutanix.ncp.ntnx_uplink_bonds_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List uplink bonds with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    success_msg: "List uplink bonds with limit passed"
+    fail_msg: "List uplink bonds with limit failed"
+
+########################################################################################
+# 5. List with page + limit
+########################################################################################
+
+- name: List uplink bonds with page=0 and limit=1
+  nutanix.ncp.ntnx_uplink_bonds_info_v2:
+    page: 0
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List uplink bonds with page and limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    success_msg: "List uplink bonds with page + limit passed"
+    fail_msg: "List uplink bonds with page + limit failed"
+
+########################################################################################
+# 6. List with orderby
+########################################################################################
+
+- name: List uplink bonds with orderby=name
+  nutanix.ncp.ntnx_uplink_bonds_info_v2:
+    orderby: "name"
+  register: result
+  ignore_errors: true
+
+- name: List uplink bonds with orderby status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 1
+    success_msg: "List uplink bonds with orderby passed"
+    fail_msg: "List uplink bonds with orderby failed"
+
+########################################################################################
+# 7. Negative test: get with wrong ext_id
+########################################################################################
+
+- name: Fetch uplink bond using wrong external ID
+  nutanix.ncp.ntnx_uplink_bonds_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Fetch uplink bond using wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+    success_msg: "Fetch uplink bond using wrong external ID failed as expected"
+    fail_msg: "Fetch uplink bond using wrong external ID did not fail as expected"
+
+########################################################################################
+# 8. Negative test: mutually exclusive ext_id + filter
+########################################################################################
+
+- name: Fetch uplink bond with both ext_id and filter (should fail)
+  nutanix.ncp.ntnx_uplink_bonds_info_v2:
+    ext_id: "{{ uplink_bond_ext_id }}"
+    filter: "name eq '{{ uplink_bond_name }}'"
+  register: result
+  ignore_errors: true
+
+- name: Fetch uplink bond with both ext_id and filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    success_msg: "Fetch uplink bond with ext_id+filter failed as expected"
+    fail_msg: "Fetch uplink bond with ext_id+filter did not fail as expected"
+
+- name: Finish UplinkBond info module tests
+  ansible.builtin.debug:
+    msg: Finish UplinkBond info module tests

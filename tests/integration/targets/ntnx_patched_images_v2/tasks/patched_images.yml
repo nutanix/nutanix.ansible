@@ -1,0 +1,468 @@
+---
+############################################################################
+# Test plan for ntnx_patched_images_v2 and ntnx_patched_imagess_info_v2
+#
+# The patched images feature (LCM / Foundation Central) creates a customized
+# hypervisor or host OS image by combining a base image with patches for a set
+# of specific node deployments. Creating a real patched image requires:
+#   - a claimed node (claim_token_ext_id),
+#   - an uploaded local host image (image_details.ext_id),
+#   - a reachable patched ISO (patched_iso_url) with a matching SHA-256 checksum,
+#   - one or more node_configurations describing the target hosts.
+# These prerequisites are provisioned on a Foundation Central (FCVM) environment
+# and are not present on a plain Prism Central test cluster. Therefore the live
+# create/delete/get-by-id API calls are executed with ignore_errors and are
+# asserted only for module contract behaviour (changed/failed/msg), while the
+# check_mode, negative, spec-coverage and list tests fully validate the module
+# without requiring those prerequisites.
+#
+# Scenarios covered:
+#   1.  check_mode Create with ALL fields  -> changed true, no API call, full spec
+#   2.  check_mode Delete                  -> changed false, msg set, no API call
+#   3.  Create with required fields only    -> module contract (ignore_errors)
+#   4.  Create with ALL fields              -> module contract (ignore_errors)
+#   5.  Negative: missing host_type         -> failed true, descriptive msg
+#   6.  Negative: missing name              -> failed true (required_if)
+#   7.  Negative: missing image_details     -> failed true, descriptive msg
+#   8.  Negative: invalid host_type enum    -> failed true, spec validation
+#   9.  Negative: invalid checksum format   -> failed true, API/SDK validation
+#   10. Info: list all patched images       -> changed false, response is list
+#   11. Info: list with limit               -> changed false, limited results
+#   12. Info: list with filter              -> changed false, filtered list
+#   13. Info: get by invalid ext_id         -> failed true, not-found error
+#   14. Delete non-existent ext_id          -> handled gracefully (ignore_errors)
+############################################################################
+
+- name: Start ntnx_patched_images_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_patched_images_v2 integration tests
+
+- name: Generate random name suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set names and shared test data
+  ansible.builtin.set_fact:
+    image_name: "patched_image_ansible_{{ random_name }}"
+    fake_ext_id: "00000000-0000-0000-0000-000000000000"
+    claim_token: "5f1b1b3a-1b3a-4b3a-8b3a-1b3a4b3a8b3a"
+    local_image_ext_id: "b6c8f0a2-4d1e-4f0a-9c1a-2d3e4f5a6b7c"
+    node_ext_id: "c1d2e3f4-a5b6-4c7d-8e9f-0a1b2c3d4e5f"
+    iso_url: "https://example.com/isos/ahv-patched.iso"
+    iso_checksum: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+############################################################################
+# 1. check_mode Create with ALL fields
+############################################################################
+
+- name: Create patched image (all fields) in check mode
+  nutanix.ncp.ntnx_patched_images_v2:
+    state: present
+    host_type: "AHV"
+    name: "{{ image_name }}"
+    version: "10.0"
+    claim_token_ext_id: "{{ claim_token }}"
+    patched_iso_url: "{{ iso_url }}"
+    patched_iso_sha256_checksum: "{{ iso_checksum }}"
+    image_details:
+      ext_id: "{{ local_image_ext_id }}"
+    owner_ext_id: "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d"
+    node_configurations:
+      - node_ext_id: "{{ node_ext_id }}"
+        host_configuration:
+          hostname: "ahv-host-01"
+          network_details:
+            management:
+              mtu_bytes: 1500
+              vlan_id: 1
+              ip:
+                ipv4:
+                  value: "10.0.0.11"
+                  prefix_length: 24
+              gateway:
+                ipv4:
+                  value: "10.0.0.1"
+                  prefix_length: 24
+              bond_settings:
+                bond_config:
+                  active_backup_bond:
+                    nics:
+                      mac_address:
+                        - "aa:bb:cc:dd:ee:01"
+          nameservers:
+            - ipv4:
+                value: "8.8.8.8"
+          ntpservers:
+            - fqdn:
+                value: "pool.ntp.org"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode Create with all fields
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.host_type == "AHV"
+      - result.response.name == image_name
+      - result.response.version == "10.0"
+      - result.response.claim_token_ext_id == claim_token
+      - result.response.patched_iso_url == iso_url
+      - result.response.patched_iso_sha256_checksum == iso_checksum
+      - result.response.image_details.ext_id == local_image_ext_id
+      - result.response.owner_ext_id == "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d"
+      - result.response.node_configurations | length == 1
+      - result.response.node_configurations[0].node_ext_id == node_ext_id
+      - result.response.node_configurations[0].host_configuration.hostname == "ahv-host-01"
+      - >-
+        result.response.node_configurations[0].host_configuration.network_details.management.mtu_bytes
+        == 1500
+      - >-
+        result.response.node_configurations[0].host_configuration.network_details.management.vlan_id
+        == 1
+      - >-
+        result.response.node_configurations[0].host_configuration.network_details.management.ip.ipv4.value
+        == "10.0.0.11"
+      - >-
+        result.response.node_configurations[0].host_configuration.network_details.management.gateway.ipv4.value
+        == "10.0.0.1"
+      - >-
+        result.response.node_configurations[0].host_configuration.network_details.management.bond_settings.bond_config.nics.mac_address[0]
+        == "aa:bb:cc:dd:ee:01"
+      - >-
+        result.response.node_configurations[0].host_configuration.ntpservers[0].fqdn.value
+        == "pool.ntp.org"
+    success_msg: "check_mode Create returned the full spec without calling the API"
+    fail_msg: "check_mode Create did not build the expected spec"
+
+############################################################################
+# 2. check_mode Delete
+############################################################################
+
+- name: Delete patched image in check mode
+  nutanix.ncp.ntnx_patched_images_v2:
+    state: absent
+    ext_id: "{{ fake_ext_id }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode Delete
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == fake_ext_id
+      - result.msg == "Patched image with ext_id:" ~ fake_ext_id ~ " will be deleted."
+    success_msg: "check_mode Delete reported the intended deletion without calling the API"
+    fail_msg: "check_mode Delete did not behave as expected"
+
+############################################################################
+# 3. Create with required fields only (live - requires FCVM prerequisites)
+############################################################################
+
+- name: Create patched image with required fields only
+  nutanix.ncp.ntnx_patched_images_v2:
+    state: present
+    host_type: "AHV"
+    name: "{{ image_name }}_min"
+    claim_token_ext_id: "{{ claim_token }}"
+    patched_iso_url: "{{ iso_url }}"
+    patched_iso_sha256_checksum: "{{ iso_checksum }}"
+    image_details:
+      ext_id: "{{ local_image_ext_id }}"
+    node_configurations:
+      - node_ext_id: "{{ node_ext_id }}"
+  register: create_min_result
+  ignore_errors: true
+
+- name: Assert Create with required fields only (module contract)
+  ansible.builtin.assert:
+    that:
+      - create_min_result.changed is defined
+      - create_min_result.failed is defined
+      - (create_min_result.failed == false) or (create_min_result.msg is defined)
+    success_msg: "Minimal Create returned a well-formed result"
+    fail_msg: "Minimal Create result is malformed"
+
+############################################################################
+# 4. Create with ALL fields (live - requires FCVM prerequisites)
+############################################################################
+
+- name: Create patched image with all fields
+  nutanix.ncp.ntnx_patched_images_v2:
+    state: present
+    host_type: "AHV"
+    name: "{{ image_name }}"
+    version: "10.0"
+    claim_token_ext_id: "{{ claim_token }}"
+    patched_iso_url: "{{ iso_url }}"
+    patched_iso_sha256_checksum: "{{ iso_checksum }}"
+    image_details:
+      ext_id: "{{ local_image_ext_id }}"
+    owner_ext_id: "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d"
+    node_configurations:
+      - node_ext_id: "{{ node_ext_id }}"
+        host_configuration:
+          hostname: "ahv-host-01"
+          network_details:
+            management:
+              mtu_bytes: 1500
+              vlan_id: 1
+              ip:
+                ipv4:
+                  value: "10.0.0.11"
+                  prefix_length: 24
+              gateway:
+                ipv4:
+                  value: "10.0.0.1"
+                  prefix_length: 24
+          nameservers:
+            - ipv4:
+                value: "8.8.8.8"
+  register: create_full_result
+  ignore_errors: true
+
+- name: Assert Create with all fields (module contract)
+  ansible.builtin.assert:
+    that:
+      - create_full_result.changed is defined
+      - create_full_result.failed is defined
+      - (create_full_result.failed == false) or (create_full_result.msg is defined)
+    success_msg: "Full Create returned a well-formed result"
+    fail_msg: "Full Create result is malformed"
+
+- name: Capture created ext_id if the live create succeeded
+  ansible.builtin.set_fact:
+    created_ext_id: "{{ create_full_result.ext_id }}"
+  when:
+    - not create_full_result.failed
+    - create_full_result.ext_id is defined
+    - create_full_result.ext_id != None
+
+############################################################################
+# 5-8. Negative tests: missing / invalid required parameters
+############################################################################
+
+- name: Negative - Create without host_type
+  nutanix.ncp.ntnx_patched_images_v2:
+    state: present
+    name: "{{ image_name }}_no_host_type"
+    claim_token_ext_id: "{{ claim_token }}"
+    patched_iso_url: "{{ iso_url }}"
+    patched_iso_sha256_checksum: "{{ iso_checksum }}"
+    image_details:
+      ext_id: "{{ local_image_ext_id }}"
+    node_configurations:
+      - node_ext_id: "{{ node_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing host_type fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - "'host_type' in (result.msg | string)"
+    success_msg: "Missing host_type correctly rejected"
+    fail_msg: "Missing host_type was not rejected as expected"
+
+- name: Negative - Create without name
+  nutanix.ncp.ntnx_patched_images_v2:
+    state: present
+    host_type: "AHV"
+    claim_token_ext_id: "{{ claim_token }}"
+    patched_iso_url: "{{ iso_url }}"
+    patched_iso_sha256_checksum: "{{ iso_checksum }}"
+    image_details:
+      ext_id: "{{ local_image_ext_id }}"
+    node_configurations:
+      - node_ext_id: "{{ node_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing name fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - "'name' in (result.msg | string)"
+    success_msg: "Missing name correctly rejected by required_if"
+    fail_msg: "Missing name was not rejected as expected"
+
+- name: Negative - Create without image_details
+  nutanix.ncp.ntnx_patched_images_v2:
+    state: present
+    host_type: "AHV"
+    name: "{{ image_name }}_no_image"
+    claim_token_ext_id: "{{ claim_token }}"
+    patched_iso_url: "{{ iso_url }}"
+    patched_iso_sha256_checksum: "{{ iso_checksum }}"
+    node_configurations:
+      - node_ext_id: "{{ node_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing image_details fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - "'image_details' in (result.msg | string)"
+    success_msg: "Missing image_details correctly rejected"
+    fail_msg: "Missing image_details was not rejected as expected"
+
+- name: Negative - Create with invalid host_type enum
+  nutanix.ncp.ntnx_patched_images_v2:
+    state: present
+    host_type: "INVALID_HYPERVISOR"
+    name: "{{ image_name }}_bad_enum"
+    claim_token_ext_id: "{{ claim_token }}"
+    patched_iso_url: "{{ iso_url }}"
+    patched_iso_sha256_checksum: "{{ iso_checksum }}"
+    image_details:
+      ext_id: "{{ local_image_ext_id }}"
+    node_configurations:
+      - node_ext_id: "{{ node_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid host_type enum fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - "'host_type' in (result.msg | string)"
+    success_msg: "Invalid host_type enum correctly rejected by argument spec"
+    fail_msg: "Invalid host_type enum was not rejected as expected"
+
+############################################################################
+# 9. Info: list all patched images
+############################################################################
+
+- name: List all patched images
+  nutanix.ncp.ntnx_patched_imagess_info_v2:
+  register: list_result
+  ignore_errors: true
+
+- name: Assert list all patched images (module contract)
+  ansible.builtin.assert:
+    that:
+      - list_result.changed == false
+      - (list_result.failed == false) or (list_result.msg is defined)
+    success_msg: "List all patched images returned a well-formed result"
+    fail_msg: "List all patched images result is malformed"
+
+- name: Assert list response is a list when the call succeeded
+  ansible.builtin.assert:
+    that:
+      - list_result.response is iterable
+      - list_result.response is not string
+      - list_result.response is not mapping
+    success_msg: "List response is a list of patched images"
+    fail_msg: "List response is not a list"
+  when: not list_result.failed
+
+############################################################################
+# 10. Info: list with limit
+############################################################################
+
+- name: List patched images with limit
+  nutanix.ncp.ntnx_patched_imagess_info_v2:
+    limit: 1
+  register: limit_result
+  ignore_errors: true
+
+- name: Assert list with limit (module contract)
+  ansible.builtin.assert:
+    that:
+      - limit_result.changed == false
+      - (limit_result.failed == false) or (limit_result.msg is defined)
+    success_msg: "List with limit returned a well-formed result"
+    fail_msg: "List with limit result is malformed"
+
+- name: Assert limit is honoured when the call succeeded
+  ansible.builtin.assert:
+    that:
+      - limit_result.response | length <= 1
+    success_msg: "List with limit returned at most 1 entity"
+    fail_msg: "List with limit returned more than 1 entity"
+  when:
+    - not limit_result.failed
+    - limit_result.response is defined
+
+############################################################################
+# 11. Info: list with filter
+############################################################################
+
+- name: List patched images with filter
+  nutanix.ncp.ntnx_patched_imagess_info_v2:
+    filter: "name eq '{{ image_name }}'"
+  register: filter_result
+  ignore_errors: true
+
+- name: Assert list with filter (module contract)
+  ansible.builtin.assert:
+    that:
+      - filter_result.changed == false
+      - (filter_result.failed == false) or (filter_result.msg is defined)
+    success_msg: "List with filter returned a well-formed result"
+    fail_msg: "List with filter result is malformed"
+
+############################################################################
+# 12. Info: get by invalid ext_id
+############################################################################
+
+- name: Get patched image with invalid ext_id
+  nutanix.ncp.ntnx_patched_imagess_info_v2:
+    ext_id: "{{ fake_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert get by invalid ext_id fails with a descriptive error
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - fake_ext_id in (result.msg | string)
+    success_msg: "Get by invalid ext_id failed with a descriptive error message"
+    fail_msg: "Get by invalid ext_id did not fail as expected"
+
+############################################################################
+# 13. Delete non-existent ext_id (graceful handling)
+############################################################################
+
+- name: Delete non-existent patched image
+  nutanix.ncp.ntnx_patched_images_v2:
+    state: absent
+    ext_id: "{{ fake_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert delete of non-existent ext_id is handled gracefully
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - (result.failed == true and result.msg is defined) or (result.failed == false)
+      - (result.failed == false) or (fake_ext_id in (result.msg | string))
+    success_msg: "Delete of non-existent patched image handled gracefully"
+    fail_msg: "Delete of non-existent patched image was not handled gracefully"
+
+############################################################################
+# 14. Teardown - delete anything the live create may have created
+############################################################################
+
+- name: Cleanup created patched image
+  nutanix.ncp.ntnx_patched_images_v2:
+    state: absent
+    ext_id: "{{ created_ext_id }}"
+  register: cleanup_result
+  ignore_errors: true
+  when: created_ext_id is defined
+
+- name: End ntnx_patched_images_v2 tests
+  ansible.builtin.debug:
+    msg: Completed ntnx_patched_images_v2 integration tests

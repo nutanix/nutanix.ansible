@@ -1,7 +1,7 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Get End of User License Agreement info before acceptance
+# 1. Get End of User License Agreement info
 # 2. Accept End of User License Agreement
 
 - name: Licensing EULA v2 playbook

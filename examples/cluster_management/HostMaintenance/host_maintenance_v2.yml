@@ -1,0 +1,104 @@
+---
+# Summary:
+# Demonstrates put a host into and out of maintenance mode using
+# ntnx_cluster_host_maintenance_v2 (Planned Outage Manager v4 API).
+#
+# High level flow:
+#   1. Discover a Prism Element (AOS) cluster and one of its hosts.
+#   2. Put the host into maintenance (AHV + ESXi with vCenter credentials).
+#   3. Take the host out of maintenance (AHV + ESXi with vCenter credentials).
+#
+# NOTE: maintenance enter/exit is disruptive. Use a lab cluster
+# with enough capacity, and prefer ignore_errors on these tasks when
+# running against single-node clusters (POM rejects them).
+
+- name: Host maintenance enter/exit playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "<pc_ip>"
+      nutanix_username: "<user>"
+      nutanix_password: "<pass>"
+      validate_certs: false
+  tasks:
+    - name: List Prism Element clusters attached to this Prism Central
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: pe_clusters
+
+    - name: Set the target cluster external ID
+      ansible.builtin.set_fact:
+        target_cluster_ext_id: "{{ pe_clusters.response[0].ext_id }}"
+
+    - name: List hosts of the target cluster
+      nutanix.ncp.ntnx_hosts_info_v2:
+        cluster_ext_id: "{{ target_cluster_ext_id }}"
+      register: cluster_hosts
+
+    - name: Set the target host external ID
+      ansible.builtin.set_fact:
+        target_host_ext_id: "{{ cluster_hosts.response[0].ext_id }}"
+
+    ####################################################################
+    # state=present — put host into maintenance
+    ####################################################################
+    - name: Put AHV host into maintenance mode
+      nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+        state: present
+        cluster_ext_id: "{{ target_cluster_ext_id }}"
+        ext_id: "{{ target_host_ext_id }}"
+        should_rollback_on_failure: true
+        should_shutdown_non_migratable_uvms: true
+        timeout_seconds: 3600
+      register: enter_maintenance_ahv
+      ignore_errors: true
+
+    - name: Put ESXi host into maintenance mode with vCenter info
+      nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+        state: present
+        cluster_ext_id: "{{ target_cluster_ext_id }}"
+        ext_id: "{{ target_host_ext_id }}"
+        should_rollback_on_failure: true
+        should_shutdown_non_migratable_uvms: false
+        timeout_seconds: 1800
+        vcenter_info:
+          address:
+            ipv4:
+              value: "10.44.76.29"
+          credentials:
+            username: "administrator@vsphere.local"
+            password: "vcenter-password"
+            port: 443
+      register: enter_maintenance_esxi
+      ignore_errors: true
+
+    ####################################################################
+    # state=absent — take host out of maintenance
+    ####################################################################
+    - name: Take AHV host out of maintenance mode
+      nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+        state: absent
+        cluster_ext_id: "{{ target_cluster_ext_id }}"
+        ext_id: "{{ target_host_ext_id }}"
+        timeout_seconds: 600
+      register: exit_maintenance_ahv
+      ignore_errors: true
+
+    - name: Take ESXi host out of maintenance mode with vCenter info
+      nutanix.ncp.ntnx_cluster_host_maintenance_v2:
+        state: absent
+        cluster_ext_id: "{{ target_cluster_ext_id }}"
+        ext_id: "{{ target_host_ext_id }}"
+        timeout_seconds: 900
+        vcenter_info:
+          address:
+            ipv4:
+              value: "10.44.100.10"
+              prefix_length: 32
+          credentials:
+            username: "administrator@vsphere.local"
+            password: "vcenter-password"
+            port: 443
+      register: exit_maintenance_esxi
+      ignore_errors: true

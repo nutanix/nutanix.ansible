@@ -108,3 +108,39 @@ def get_storage_policies_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_datapolicies_py_client.StoragePoliciesApi(client)
+
+
+def get_entity_sync_policies_api_instance(module):
+    """
+    This method will return entity sync policies api instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): entity sync policies api instance
+    """
+    client = get_api_client(module)
+    return ntnx_datapolicies_py_client.EntitySyncPoliciesApi(client)
+
+
+def get_recovery_plans_api_instance(module):
+    """
+    This method will return recovery plans api instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): recovery plans api instance
+    """
+    client = get_api_client(module)
+    return ntnx_datapolicies_py_client.RecoveryPlansApi(client)
+
+
+def get_consistency_rules_api_instance(module):
+    """
+    This method will return protection policies api instance for consistency rules.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): protection policies api instance
+    """
+    client = get_api_client(module)
+    return ntnx_datapolicies_py_client.ProtectionPoliciesApi(client)
