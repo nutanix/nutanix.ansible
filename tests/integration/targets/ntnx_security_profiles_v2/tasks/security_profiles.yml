@@ -1,0 +1,190 @@
+---
+- name: Start security profiles tests
+  ansible.builtin.debug:
+    msg: "Starting ntnx_security_profiles_v2 tests"
+
+- name: List security profiles
+  nutanix.ncp.ntnx_security_profiles_info_v2:
+  register: list_result
+  ignore_errors: true
+
+- name: Assert list security profiles
+  ansible.builtin.assert:
+    that:
+      - list_result.changed == false
+      - list_result.failed == false
+      - list_result.response is defined
+      - list_result.total_available_results is defined
+      - list_result.response | length > 0
+    fail_msg: "List security profiles failed"
+    success_msg: "List security profiles passed"
+
+- name: Set profile facts
+  ansible.builtin.set_fact:
+    profile_ext_id: "{{ list_result.response[0].ext_id }}"
+    profile_type: "{{ list_result.response[0].type }}"
+    profile_cluster_ext_id: "{{ list_result.response[0].cluster_ext_id }}"
+
+- name: Get security profile by External ID
+  nutanix.ncp.ntnx_security_profiles_info_v2:
+    ext_id: "{{ profile_ext_id }}"
+  register: get_result
+  ignore_errors: true
+
+- name: Assert get security profile
+  ansible.builtin.assert:
+    that:
+      - get_result.changed == false
+      - get_result.failed == false
+      - get_result.ext_id == profile_ext_id
+      - get_result.response.ext_id == profile_ext_id
+    fail_msg: "Get security profile failed"
+    success_msg: "Get security profile passed"
+
+- name: List security profiles with filter
+  nutanix.ncp.ntnx_security_profiles_info_v2:
+    filter: "clusterExtId eq '{{ profile_cluster_ext_id }}'"
+  register: filter_result
+  ignore_errors: true
+
+- name: Assert filter security profiles
+  ansible.builtin.assert:
+    that:
+      - filter_result.changed == false
+      - filter_result.failed == false
+      - filter_result.response | length > 0
+    fail_msg: "Filter security profiles failed"
+    success_msg: "Filter security profiles passed"
+
+- name: List security profiles with limit
+  nutanix.ncp.ntnx_security_profiles_info_v2:
+    limit: 1
+  register: limit_result
+  ignore_errors: true
+
+- name: Assert limit security profiles
+  ansible.builtin.assert:
+    that:
+      - limit_result.changed == false
+      - limit_result.failed == false
+      - limit_result.response | length == 1
+    fail_msg: "Limit security profiles failed"
+    success_msg: "Limit security profiles passed"
+
+- name: List all security profiles with fetch_all
+  nutanix.ncp.ntnx_security_profiles_info_v2:
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: Assert fetch_all security profiles
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result.changed == false
+      - fetch_all_result.failed == false
+      - (fetch_all_result.response | length) == (fetch_all_result.total_available_results | int)
+    fail_msg: "fetch_all security profiles failed"
+    success_msg: "fetch_all security profiles passed"
+
+- name: Update security profile with check mode
+  nutanix.ncp.ntnx_security_profiles_v2:
+    ext_id: "{{ profile_ext_id }}"
+    type: "{{ profile_type }}"
+  register: check_update
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check mode update profile
+  ansible.builtin.assert:
+    that:
+      - check_update.changed == false
+      - check_update.failed == false
+      - check_update.response is defined
+    fail_msg: "Check mode update profile failed"
+    success_msg: "Check mode update profile passed"
+
+- name: Idempotent update security profile with same type
+  nutanix.ncp.ntnx_security_profiles_v2:
+    ext_id: "{{ profile_ext_id }}"
+    type: "{{ profile_type }}"
+  register: idempotent_update
+  ignore_errors: true
+
+- name: Assert idempotent profile update
+  ansible.builtin.assert:
+    that:
+      - idempotent_update.failed == false
+      - idempotent_update.changed == false
+      - idempotent_update.skipped == true
+      - idempotent_update.msg == "Nothing to change."
+    fail_msg: "Idempotent profile update failed"
+    success_msg: "Idempotent profile update passed"
+
+- name: Fetch advanced config
+  nutanix.ncp.ntnx_security_profiles_advanced_config_info_v2:
+    security_profile_ext_id: "{{ profile_ext_id }}"
+  register: advanced_info
+  ignore_errors: true
+
+- name: Assert advanced config info
+  ansible.builtin.assert:
+    that:
+      - advanced_info.changed == false
+      - advanced_info.failed == false
+      - advanced_info.response is defined
+      - advanced_info.response.is_consent_banner_enabled is defined
+    fail_msg: "Advanced config info failed"
+    success_msg: "Advanced config info passed"
+
+- name: Update advanced config with check mode
+  nutanix.ncp.ntnx_security_profiles_advanced_config_v2:
+    security_profile_ext_id: "{{ profile_ext_id }}"
+    is_consent_banner_enabled: "{{ advanced_info.response.is_consent_banner_enabled }}"
+    consent_banner_text: "{{ advanced_info.response.consent_banner_text | default('') }}"
+    user_space_core_dump_level: "{{ advanced_info.response.user_space_core_dump_level }}"
+    kernel_space_core_dump_level: "{{ advanced_info.response.kernel_space_core_dump_level }}"
+  register: advanced_check
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert advanced config check mode
+  ansible.builtin.assert:
+    that:
+      - advanced_check.changed == false
+      - advanced_check.failed == false
+      - advanced_check.response is defined
+    fail_msg: "Advanced config check mode failed"
+    success_msg: "Advanced config check mode passed"
+
+- name: Idempotent update advanced config
+  nutanix.ncp.ntnx_security_profiles_advanced_config_v2:
+    security_profile_ext_id: "{{ profile_ext_id }}"
+    is_consent_banner_enabled: "{{ advanced_info.response.is_consent_banner_enabled }}"
+    consent_banner_text: "{{ advanced_info.response.consent_banner_text | default('') }}"
+    user_space_core_dump_level: "{{ advanced_info.response.user_space_core_dump_level }}"
+    kernel_space_core_dump_level: "{{ advanced_info.response.kernel_space_core_dump_level }}"
+  register: advanced_idempotent
+  ignore_errors: true
+
+- name: Assert advanced config idempotent
+  ansible.builtin.assert:
+    that:
+      - advanced_idempotent.failed == false
+      - advanced_idempotent.changed == false
+      - advanced_idempotent.skipped == true
+      - advanced_idempotent.msg == "Nothing to change."
+    fail_msg: "Advanced config idempotent failed"
+    success_msg: "Advanced config idempotent passed"
+
+- name: Negative get with invalid External ID
+  nutanix.ncp.ntnx_security_profiles_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: invalid_get
+  ignore_errors: true
+
+- name: Assert invalid get fails
+  ansible.builtin.assert:
+    that:
+      - invalid_get.failed == true
+    fail_msg: "Invalid get should fail"
+    success_msg: "Invalid get failed as expected"

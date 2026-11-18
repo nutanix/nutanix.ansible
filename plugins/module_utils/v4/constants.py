@@ -94,6 +94,7 @@ class Tasks:
         NOTIFICATION = "lifecycle:resources:notification"
         NVMF_CLIENT = "volumes:config:nvmf-client"
         CONSISTENCY_RULE = "datapolicies:config:consistency-rule"
+        APPROVAL_POLICY = "security:management:approval-policy"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
