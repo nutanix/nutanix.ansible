@@ -197,6 +197,18 @@ def get_bridges_api_instance(module):
     return ntnx_networking_py_client.BridgesApi(api_client=api_client)
 
 
+def get_virtual_switch_nodes_info_api_instance(module):
+    """
+    This method will return VirtualSwitchNodesInfoApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Virtual Switch Nodes Info Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.VirtualSwitchNodesInfoApi(api_client=api_client)
+
+
 def get_remote_entities_api_instance(module):
     """
     This method will return RemoteEntitiesApi instance.
