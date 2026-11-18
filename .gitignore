@@ -3,4 +3,6 @@ nutanix-ncp-*
 py3.12_virt
 __pycache__/
 *.pyc
+tests/output/
 tests/integration/integration_config.yml
+INSTRUCTIONS.md

@@ -1,0 +1,71 @@
+---
+# Summary:
+# This playbook demonstrates the available operations for UplinkBond entities.
+# UplinkBond is a read-only entity in the Nutanix Networking v4 SDK; only
+# get-by-ext_id and list operations are supported.
+#
+# The playbook covers:
+# 1. List all uplink bonds available in Prism Central.
+# 2. Fetch a specific uplink bond by ext_id.
+# 3. List uplink bonds paginated with a limit.
+# 4. List uplink bonds sorted by name.
+#
+# NOTE: The Nutanix Networking v4 UplinkBonds list API accepts $orderby, $page
+# and $limit query parameters. $filter is declared in the SDK signature but is
+# rejected by the server for this entity in PC 7.6 (returns "Odata Error:
+# Error while parsing URI"); it is therefore intentionally omitted here.
+
+- name: UplinkBond info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ pc_ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ pc_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ pc_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: List all uplink bonds
+      nutanix.ncp.ntnx_uplink_bonds_info_v2:
+      register: uplink_bonds_list
+
+    - name: Show list result
+      ansible.builtin.debug:
+        var: uplink_bonds_list
+
+    - name: Fail if no uplink bonds are present
+      ansible.builtin.fail:
+        msg: "No uplink bonds discovered on this cluster; downstream tasks require at least one."
+      when: uplink_bonds_list.response | length == 0
+
+    - name: Capture first uplink bond ext_id
+      ansible.builtin.set_fact:
+        uplink_bond_ext_id: "{{ uplink_bonds_list.response[0].ext_id }}"
+        uplink_bond_name: "{{ uplink_bonds_list.response[0].name }}"
+
+    - name: Get uplink bond using ext_id
+      nutanix.ncp.ntnx_uplink_bonds_info_v2:
+        ext_id: "{{ uplink_bond_ext_id }}"
+      register: uplink_bond_get
+
+    - name: Show get-by-ext_id result
+      ansible.builtin.debug:
+        var: uplink_bond_get
+
+    - name: List uplink bonds with limit
+      nutanix.ncp.ntnx_uplink_bonds_info_v2:
+        limit: 1
+      register: uplink_bonds_limit
+
+    - name: Show limit result
+      ansible.builtin.debug:
+        var: uplink_bonds_limit
+
+    - name: List uplink bonds sorted by name
+      nutanix.ncp.ntnx_uplink_bonds_info_v2:
+        orderby: "name"
+      register: uplink_bonds_orderby
+
+    - name: Show orderby result
+      ansible.builtin.debug:
+        var: uplink_bonds_orderby

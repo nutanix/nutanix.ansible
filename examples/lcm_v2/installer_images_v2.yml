@@ -1,0 +1,83 @@
+---
+# Summary:
+# This playbook will:
+# 1. Create an installer image
+# 2. Update the installer image
+# 3. Fetch the installer image using its external ID
+# 4. List all installer images
+# 5. List all installer images with filter
+# 6. List all installer images with limit
+# 7. Delete the installer image
+
+- name: Installer Images playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <fcvm_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        installer_image_name: "aos_image_ansible"
+        installer_image_type: "AOS"
+        installer_image_source: "REMOTE_URL"
+        installer_image_url: "https://download.example.com/aos/nutanix_installer_package.tar.gz"
+        installer_image_metadata_url: "https://download.example.com/aos/metadata.json"
+
+    - name: Create installer image
+      nutanix.ncp.ntnx_installer_images_v2:
+        state: present
+        name: "{{ installer_image_name }}"
+        type: "{{ installer_image_type }}"
+        source: "{{ installer_image_source }}"
+      register: create_result
+      ignore_errors: true
+
+    - name: Set installer image external ID
+      ansible.builtin.set_fact:
+        installer_image_ext_id: "{{ create_result.ext_id }}"
+
+    - name: Update installer image with all attributes
+      nutanix.ncp.ntnx_installer_images_v2:
+        state: present
+        ext_id: "{{ installer_image_ext_id }}"
+        name: "{{ installer_image_name }}"
+        type: "{{ installer_image_type }}"
+        source: "{{ installer_image_source }}"
+        url: "{{ installer_image_url }}"
+        metadata_download_url: "{{ installer_image_metadata_url }}"
+      register: update_result
+      ignore_errors: true
+
+    - name: Fetch installer image using external ID
+      nutanix.ncp.ntnx_installer_images_info_v2:
+        ext_id: "{{ installer_image_ext_id }}"
+      register: info_result
+      ignore_errors: true
+
+    - name: List all installer images
+      nutanix.ncp.ntnx_installer_images_info_v2:
+      register: list_result
+      ignore_errors: true
+
+    - name: List all installer images with filter
+      nutanix.ncp.ntnx_installer_images_info_v2:
+        filter: "name eq {{ installer_image_name }}"
+      register: filter_result
+      ignore_errors: true
+
+    - name: List all installer images with limit
+      nutanix.ncp.ntnx_installer_images_info_v2:
+        limit: 1
+      register: limit_result
+      ignore_errors: true
+
+    - name: Delete installer image
+      nutanix.ncp.ntnx_installer_images_v2:
+        state: absent
+        ext_id: "{{ installer_image_ext_id }}"
+      register: delete_result
+      ignore_errors: true
