@@ -463,6 +463,18 @@ def get_layer2_stretches_api_instance(module):
     return ntnx_networking_py_client.Layer2StretchesApi(api_client=api_client)
 
 
+def get_layer2_stretch_stats_api_instance(module):
+    """
+    This method will return Layer2StretchStatsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Layer2 Stretch Stats Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.Layer2StretchStatsApi(api_client=api_client)
+
+
 def get_gateways_api_instance(module):
     """
     This method will return GatewaysApi instance.
