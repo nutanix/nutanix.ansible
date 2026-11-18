@@ -49,6 +49,7 @@ class Tasks:
         RECOVERY_PLAN = "datapolicies:config:recovery-plan"
         NETWORK_MAPPING = "datapolicies:config:network-mapping"
         KMS = "security:encryption:key-management-server"
+        CREDENTIAL = "security:config:credential"
         CLUSTER_PROFILE = "clustermgmt:config:cluster-profile"
         NETWORK_FUNCTION = "Networking:config:network-function"
         VIRTUAL_SWITCH = "networking:config:virtual-switch"
