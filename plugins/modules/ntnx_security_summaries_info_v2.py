@@ -86,8 +86,8 @@ EXAMPLES = r"""
   register: result_fetch_all
   ignore_errors: true
 
- - name: List security summaries with expand
-   nutanix.ncp.ntnx_security_summaries_info_v2:
+- name: List security summaries with expand
+  nutanix.ncp.ntnx_security_summaries_info_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
     nutanix_password: "{{ password }}"
