@@ -256,8 +256,8 @@
 
 ########################################################################################
 # 7) Get-by-ext_id for a non-existent subnet.
-#    NC2A -> empty response + descriptive `No AWS subnet with ext_id ...` msg.
-#    Non-NC2A -> raise_api_exception (module surfaces the by-ext_id variant).
+#    NC2A -> empty response + descriptive `AWS subnet with ext_id ... not found` msg.
+#    Non-NC2A -> raise_api_exception (module surfaces the using-ext_id variant).
 ########################################################################################
 
 - name: Fetch a bogus AWS subnet by ext_id
@@ -277,10 +277,11 @@
          and (bogus_get_result.ext_id | default('')) == bogus_subnet_ext_id
          and (bogus_get_result.response | default({}) | length) == 0
          and bogus_get_result.msg is defined
-         and 'No AWS subnet with ext_id' in bogus_get_result.msg)
+         and 'AWS subnet with ext_id' in bogus_get_result.msg
+         and 'not found' in bogus_get_result.msg)
         or
         (bogus_get_result.failed == true
-         and 'Api Exception raised while fetching AWS subnet info by ext_id' in (bogus_get_result.msg | default('')))
+         and 'Api Exception raised while fetching AWS subnet info using ext_id' in (bogus_get_result.msg | default('')))
     success_msg: "Bogus ext_id was handled with a descriptive not-found or clean api-exception message."
     fail_msg: "Bogus ext_id did not surface a not-found or clean api-exception message."
 

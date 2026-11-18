@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,36 +12,33 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_aws_subnets_info_v2
 short_description: Fetch AWS subnets (NC2A) info in Nutanix Prism Central
-version_added: 2.6.0
+version_added: 2.7.0
 description:
-  - This module allows you to fetch information about AwsSubnet in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific AwsSubnet.
-  - If C(ext_id) is not provided, list multiple AwsSubnet optionally filtered / paginated.
+  - This module allows you to fetch AWS subnets info or a specific AWS subnet in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch a particular AWS subnet info using its external ID.
+  - If C(ext_id) is not provided, fetch multiple AWS subnets info with/without using filters, limit, etc.
+  - C(cluster_ext_id) is required — the AWS subnet catalogue is scoped to a single NC2A cluster.
+  - The Nutanix v4 API exposes only a list endpoint for AWS subnets (no Get-by-ID); when C(ext_id)
+    is provided the module filters the list response for that external ID.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
-    B(List NC2A subnets) -
-    Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin,
-    Super Admin, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
+    B(View NC2 AWS Subnets) -
+    Required Roles: Network Infra Admin, Prism Admin, Prism Viewer, Super Admin
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   ext_id:
     description:
-      - The external ID of a specific AWS subnet mapping to fetch.
-      - When set, the module fetches only the AWS subnet whose C(extId) matches this value.
-      - The underlying v4.3 API only exposes a list endpoint, so this filter is applied
-        using an OData C($filter=extId eq '...') expression on top of the list call.
+      - The external ID of the AWS subnet.
+      - If provided, only the AWS subnet with the given external ID is returned.
     type: str
     required: false
   cluster_ext_id:
     description:
-      - Prism Element / NC2A cluster UUID.
-      - Passed as the required C(X-Cluster-Id) header on the underlying
-        C(GET /networking/v4.3/aws/config/subnets) API.
-      - Required for every invocation of this info module because the AWS subnet
-        catalogue is always scoped to a single NC2A cluster.
+      - Prism Element / NC2A cluster UUID (maps to the C(X-Cluster-Id) header).
+      - Required because the AWS subnet catalogue is always scoped to a single NC2A cluster.
     type: str
     required: true
 extends_documentation_fragment:
@@ -59,42 +56,43 @@ EXAMPLES = r"""
   nutanix.ncp.ntnx_aws_subnets_info_v2:
     cluster_ext_id: "0005f9f2-1c1c-9d68-0000-000000012345"
   register: result
+  ignore_errors: true
 
 - name: Fetch a specific AWS subnet by ext_id
   nutanix.ncp.ntnx_aws_subnets_info_v2:
     cluster_ext_id: "0005f9f2-1c1c-9d68-0000-000000012345"
     ext_id: "a4d1e6cf-4a2c-4d38-b0f4-2f6cd3a5b8d1"
   register: result
+  ignore_errors: true
 
 - name: List AWS subnets filtered by AWS VPC ID
   nutanix.ncp.ntnx_aws_subnets_info_v2:
     cluster_ext_id: "0005f9f2-1c1c-9d68-0000-000000012345"
     filter: "vpcId eq 'vpc-0abc123def4567890'"
   register: result
+  ignore_errors: true
 
-- name: List first 5 AWS subnets ordered by CIDR
+- name: List AWS subnets with a limit
   nutanix.ncp.ntnx_aws_subnets_info_v2:
     cluster_ext_id: "0005f9f2-1c1c-9d68-0000-000000012345"
     limit: 5
-    orderby: "cidr"
   register: result
+  ignore_errors: true
 
-- name: Page through AWS subnets and select a subset of fields
+- name: List all AWS subnets with fetch_all
   nutanix.ncp.ntnx_aws_subnets_info_v2:
     cluster_ext_id: "0005f9f2-1c1c-9d68-0000-000000012345"
-    page: 0
-    limit: 10
-    select: "subnetId,cidr,availabilityZone,cloudType"
+    fetch_all: true
   register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC AwsSubnet info v4 API.
-    - It can be a single AwsSubnet if external ID is provided.
-    - It is a list of multiple AwsSubnet if external ID is not provided, optionally
-      filtered by C(filter), C(limit), C(page), C(orderby), C(select).
+    - The response from the Nutanix PC AWS subnets info v4 API.
+    - It can be a single AWS subnet if external ID is provided.
+    - It is a list of multiple AWS subnets if external ID is not provided, with optional filter or limit.
   returned: always
   type: dict
   sample:
@@ -118,25 +116,25 @@ changed:
   sample: false
 
 ext_id:
-  description: External ID of the AWS subnet, echoed back when the caller filters by C(ext_id).
+  description: External ID of the AWS subnet.
   returned: when external ID is provided
   type: str
   sample: "a4d1e6cf-4a2c-4d38-b0f4-2f6cd3a5b8d1"
 
 total_available_results:
-  description: The total number of AWS subnets available on the target NC2A cluster (from the list response metadata).
-  returned: when all AWS subnets are fetched (no C(ext_id))
+  description: The total number of available AWS subnets on the target NC2A cluster.
+  returned: when all AWS subnets are fetched
   type: int
   sample: 3
 
 msg:
-  description: Human-readable status/error message. Populated on error or when an C(ext_id) lookup returns no match.
-  returned: When there is an error or when no AWS subnet matches the provided C(ext_id)
+  description: This indicates the message if any message occurred.
+  returned: When there is an error
   type: str
-  sample: "No AWS subnet with ext_id 'a4d1e6cf-4a2c-4d38-b0f4-2f6cd3a5b8d1' was found on cluster '0005f9f2-1c1c-9d68-0000-000000012345'."
+  sample: "Api Exception raised while fetching AWS subnets info"
 
 error:
-  description: Error details returned by the SDK when the underlying API call fails.
+  description: This field typically holds information about any errors that occurred during the task execution.
   type: str
   returned: When an error occurs
 
@@ -156,6 +154,7 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -165,91 +164,61 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
-    """Return the argument spec for this info module.
-
-    The list_aws_subnets SDK signature is:
-        list_aws_subnets(X_Cluster_Id, _page=None, _limit=None,
-                        _filter=None, _orderby=None, _select=None)
-
-    The pagination/query params (page, limit, filter, orderby, select) come
-    from the info fragment (see BaseInfoModule.info_argument_spec). Only the
-    entity-specific options are declared here.
-    """
 
     module_args = dict(
-        ext_id=dict(type="str", required=False),
+        ext_id=dict(type="str"),
         cluster_ext_id=dict(type="str", required=True),
     )
 
     return module_args
 
 
-def _build_list_kwargs(module, extra_filter=None):
-    """Assemble the OData/query kwargs passed to list_aws_subnets."""
+def get_aws_subnet_using_ext_id(module, aws_subnets_api, result):
+    ext_id = module.params.get("ext_id")
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
-    if err:
-        return None, err
-
-    if extra_filter:
-        existing = kwargs.get("_filter")
-        if existing:
-            kwargs["_filter"] = "{0} and {1}".format(existing, extra_filter)
-        else:
-            kwargs["_filter"] = extra_filter
-
-    kwargs["X_Cluster_Id"] = module.params.get("cluster_ext_id")
-    return kwargs, None
-
-
-def get_aws_subnet_using_ext_id(module, aws_subnets_api, result):
-    """Fetch a single AWS subnet by ext_id.
-
-    The AwsSubnetsApi only exposes a list endpoint, so we hit the list API
-    with an OData filter on ``extId`` and return the (at most one) match.
-    """
-    ext_id = module.params.get("ext_id")
-    result["ext_id"] = ext_id
-
-    kwargs, err = _build_list_kwargs(
-        module, extra_filter="extId eq '{0}'".format(ext_id)
-    )
-    if err:
-        result["error"] = err
-        module.fail_json(msg="Failed generating AWS subnet info spec", **result)
-
-    try:
-        resp = aws_subnets_api.list_aws_subnets(**kwargs)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching AWS subnet info by ext_id",
-        )
-
-    stripped = strip_internal_attributes(resp.to_dict())
-    data = stripped.get("data") or []
-    if not data:
-        result["response"] = {}
-        result["msg"] = (
-            "No AWS subnet with ext_id '{0}' was found on cluster '{1}'.".format(
-                ext_id, module.params.get("cluster_ext_id")
-            )
-        )
-        return
-
-    result["response"] = data[0]
-
-
-def get_aws_subnets(module, aws_subnets_api, result):
-    """List AWS subnets scoped to the target NC2A cluster."""
-    kwargs, err = _build_list_kwargs(module)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating AWS subnets info spec", **result)
 
+    kwargs["_filter"] = "extId eq '{0}'".format(ext_id)
+    kwargs["X_Cluster_Id"] = module.params.get("cluster_ext_id")
+
     try:
-        resp = aws_subnets_api.list_aws_subnets(**kwargs)
+        resp = list_entities(
+            aws_subnets_api.list_aws_subnets,
+            kwargs=kwargs,
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching AWS subnet info using ext_id",
+        )
+
+    result["ext_id"] = ext_id
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        result["response"] = {}
+        result["msg"] = "AWS subnet with ext_id '{0}' not found".format(ext_id)
+        return
+    result["response"] = resp[0]
+
+
+def get_aws_subnets(module, aws_subnets_api, result):
+    sg = SpecGenerator(module)
+    kwargs, err = sg.get_info_spec(attr=module.params)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating AWS subnets info spec", **result)
+
+    kwargs["X_Cluster_Id"] = module.params.get("cluster_ext_id")
+
+    try:
+        resp = list_entities(
+            aws_subnets_api.list_aws_subnets,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -257,14 +226,12 @@ def get_aws_subnets(module, aws_subnets_api, result):
             msg="Api Exception raised while fetching AWS subnets info",
         )
 
-    stripped = strip_internal_attributes(resp.to_dict())
-    metadata = stripped.get("metadata") or {}
-    result["total_available_results"] = metadata.get("total_available_results")
-
-    data = stripped.get("data")
-    if not data:
-        data = []
-    result["response"] = data
+    total_available_results = resp.metadata.total_available_results
+    result["total_available_results"] = total_available_results
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    else:
+        result["response"] = []
 
 
 def run_module():
