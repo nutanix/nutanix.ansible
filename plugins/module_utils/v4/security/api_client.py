@@ -120,6 +120,18 @@ def get_credentials_api_instance(module):
     return ntnx_security_py_client.CredentialsApi(client)
 
 
+def get_security_summaries_api_instance(module):
+    """
+    This method will return Security Summaries Api instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Security Summaries api instance
+    """
+    client = get_api_client(module)
+    return ntnx_security_py_client.SecuritySummariesApi(client)
+
+
 def get_approval_policies_api_instance(module):
     """
     This method will return ApprovalPoliciesApi instance.

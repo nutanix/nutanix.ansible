@@ -163,6 +163,7 @@ from ..module_utils.v4.security.api_client import (  # noqa: E402
 from ..module_utils.v4.security.helpers import get_credential_by_ext_id  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -193,7 +194,10 @@ def get_credentials(module, api_instance, result):
         module.fail_json(msg="Failed generating Credentials info spec", **result)
 
     try:
-        resp = api_instance.list_credentials(**kwargs)
+        resp = list_entities(
+            api_instance.list_credentials,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
