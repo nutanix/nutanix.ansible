@@ -125,7 +125,7 @@ error:
     returned: When an error occurs
 """
 
-import copy  # noqa: E402
+from copy import deepcopy  # noqa: E402
 import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
@@ -141,18 +141,13 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    strip_read_only_fields,
     strip_users_empty_attributes,
 )
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
-WRITABLE_FIELDS = (
-    "is_secure_boot_visible",
-    "is_network_segmentation_visible",
-    "is_cluster_lockdown_visible",
-    "is_log_forwarding_visible",
-    "is_consent_banner_visible",
-)
+READ_ONLY_ATTRIBUTES = ("is_security_profile_visible",)
 
 
 def get_module_spec():
@@ -167,11 +162,13 @@ def get_module_spec():
     return module_args
 
 
-def check_visibility_idempotency(current_spec, update_spec):
-    for field in WRITABLE_FIELDS:
-        if getattr(current_spec, field, None) != getattr(update_spec, field, None):
-            return False
-    return True
+def check_visibility_idempotency(old_spec, update_spec):
+    old_dict = strip_internal_attributes(old_spec.to_dict())
+    update_dict = strip_internal_attributes(update_spec.to_dict())
+    for field in READ_ONLY_ATTRIBUTES:
+        old_dict.pop(field, None)
+        update_dict.pop(field, None)
+    return old_dict == update_dict
 
 
 def update_security_configs_visibility(module, result, api_instance):
@@ -186,7 +183,7 @@ def update_security_configs_visibility(module, result, api_instance):
     strip_users_empty_attributes(current_spec)
 
     sg = SpecGenerator(module)
-    default_spec = copy.deepcopy(current_spec)
+    default_spec = deepcopy(current_spec)
     update_spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
@@ -194,6 +191,8 @@ def update_security_configs_visibility(module, result, api_instance):
             msg="Failed generating spec for updating security configs visibility setting",
             **result,
         )
+
+    strip_read_only_fields(update_spec, fields=READ_ONLY_ATTRIBUTES)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())

@@ -17,6 +17,11 @@
       nutanix.ncp.ntnx_security_configs_visibility_info_v2:
       register: result
 
+    - name: Fetch security configurations visibility setting with select
+      nutanix.ncp.ntnx_security_configs_visibility_info_v2:
+        select: "isSecureBootVisible,isClusterLockdownVisible"
+      register: result_select
+
     - name: Update security configurations visibility setting
       nutanix.ncp.ntnx_security_configs_visibility_v2:
         is_secure_boot_visible: true
