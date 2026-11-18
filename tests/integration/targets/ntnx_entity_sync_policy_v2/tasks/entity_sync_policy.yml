@@ -1,0 +1,306 @@
+---
+# Test plan for ntnx_entity_sync_policy_v2 and ntnx_entity_sync_policies_info_v2:
+#
+# EntitySyncPolicy is a read-only + single-action entity. There is no
+# create / update / delete API, so we cannot bootstrap a sync-policy from
+# these tests. Instead:
+#
+# 1. Info module - list-all:
+#    - Assert the list call succeeds (`changed == false`, `failed == false`,
+#      `response` is a list, `total_available_results` is defined).
+# 2. Info module - filter (SECURITY_POLICY):
+#    - Assert filtered list succeeds; every returned entry (if any) has
+#      entity_type == SECURITY_POLICY.
+# 3. Info module - limit:
+#    - Assert the returned page has at most `limit` items.
+# 4. Info module - get-by-ID (positive):
+#    - Skip cleanly if no entity sync policy exists on this PC.
+#    - Otherwise, fetch by ext_id and assert all schema fields are present.
+# 5. Info module - get-by-ID (negative, non-existent UUID):
+#    - Assert the call fails with the expected "not found" error.
+# 6. Info module - mutual exclusion (ext_id + filter):
+#    - Assert the module rejects both being set at the same time.
+# 7. Action module - check_mode sync (full attributes):
+#    - Assert `changed == false`, `failed == false`, and the "will be
+#      synchronized" message is returned.
+# 8. Action module - missing required ext_id:
+#    - Assert the module fails with a "missing required arguments: ext_id"
+#      message.
+# 9. Action module - invalid state (state=absent not allowed):
+#    - Assert the module fails argspec validation because only `present`
+#      is a valid choice.
+# 10. Action module - non-existent ext_id (negative):
+#     - Assert the API returns a not-found error.
+# 11. Action module - real sync (positive, only when an existing policy is
+#     available):
+#     - Trigger a sync-entity action and assert the task succeeds,
+#       response.status == SUCCEEDED, and `changed == true`.
+
+- name: Start Entity Sync Policy tests
+  ansible.builtin.debug:
+    msg: Start Entity Sync Policy tests
+
+- name: Initialise per-run facts
+  ansible.builtin.set_fact:
+    fake_ext_id: "00000000-0000-0000-0000-000000000000"
+    existing_policy_ext_id: ""
+
+########################################################################################
+# 1. Info module - list all entity sync policies
+########################################################################################
+
+- name: List all entity sync policies
+  nutanix.ncp.ntnx_entity_sync_policies_info_v2:
+  register: list_all_result
+  ignore_errors: true
+
+- name: List all entity sync policies status
+  ansible.builtin.assert:
+    that:
+      - list_all_result is defined
+      - list_all_result.changed == false
+      - list_all_result.failed == false
+      - list_all_result.response is defined
+      - list_all_result.response is iterable
+      - list_all_result.total_available_results is defined
+    success_msg: "List all entity sync policies passed"
+    fail_msg: "List all entity sync policies failed"
+
+- name: Capture the first entity sync policy ext_id if any
+  ansible.builtin.set_fact:
+    existing_policy_ext_id: "{{ list_all_result.response[0].ext_id }}"
+  when:
+    - list_all_result.response is defined
+    - list_all_result.response | length > 0
+
+########################################################################################
+# 2. Info module - list with a filter (SECURITY_POLICY)
+########################################################################################
+
+- name: List entity sync policies filtered by entityType SECURITY_POLICY
+  nutanix.ncp.ntnx_entity_sync_policies_info_v2:
+    filter: "entityType eq Datapolicies.Config.SyncedEntityType'SECURITY_POLICY'"
+  register: list_filtered_result
+  ignore_errors: true
+
+- name: List filtered entity sync policies status
+  ansible.builtin.assert:
+    that:
+      - list_filtered_result is defined
+      - list_filtered_result.changed == false
+      - list_filtered_result.failed == false
+      - list_filtered_result.response is defined
+      - list_filtered_result.response is iterable
+    success_msg: "List filtered entity sync policies passed"
+    fail_msg: "List filtered entity sync policies failed"
+
+- name: Verify every filtered entry is a SECURITY_POLICY
+  ansible.builtin.assert:
+    that:
+      - item.entity_type == "SECURITY_POLICY"
+    success_msg: "Filtered entry {{ item.ext_id }} matched SECURITY_POLICY"
+    fail_msg: "Filtered entry {{ item.ext_id }} did not match SECURITY_POLICY"
+  loop: "{{ list_filtered_result.response | default([]) }}"
+  loop_control:
+    label: "{{ item.ext_id | default('n/a') }}"
+  when: list_filtered_result.response | default([]) | length > 0
+
+########################################################################################
+# 3. Info module - list with a page limit
+########################################################################################
+
+- name: List entity sync policies with limit=1
+  nutanix.ncp.ntnx_entity_sync_policies_info_v2:
+    limit: 1
+  register: list_limited_result
+  ignore_errors: true
+
+- name: List entity sync policies with limit status
+  ansible.builtin.assert:
+    that:
+      - list_limited_result is defined
+      - list_limited_result.changed == false
+      - list_limited_result.failed == false
+      - list_limited_result.response is defined
+      - list_limited_result.response | length <= 1
+    success_msg: "List with limit passed"
+    fail_msg: "List with limit failed"
+
+########################################################################################
+# 4. Info module - get by external ID (positive path when data is available)
+########################################################################################
+
+- name: Fetch entity sync policy by external ID (positive, only when data exists)
+  nutanix.ncp.ntnx_entity_sync_policies_info_v2:
+    ext_id: "{{ existing_policy_ext_id }}"
+  register: get_by_id_result
+  when: existing_policy_ext_id | length > 0
+  ignore_errors: true
+
+- name: Get entity sync policy by external ID status
+  ansible.builtin.assert:
+    that:
+      - get_by_id_result is defined
+      - get_by_id_result.changed == false
+      - get_by_id_result.failed == false
+      - get_by_id_result.ext_id == existing_policy_ext_id
+      - get_by_id_result.response is defined
+      - get_by_id_result.response.ext_id == existing_policy_ext_id
+      - get_by_id_result.response.entity_ext_id is defined
+      - get_by_id_result.response.entity_type is defined
+      - get_by_id_result.response.remote_domain_manager_ext_id is defined
+      - get_by_id_result.response.status is defined
+    success_msg: "Fetch entity sync policy by external ID passed"
+    fail_msg: "Fetch entity sync policy by external ID failed"
+  when: existing_policy_ext_id | length > 0
+
+########################################################################################
+# 5. Info module - get by external ID (negative, non-existent UUID)
+########################################################################################
+
+- name: Fetch entity sync policy using a non-existent external ID
+  nutanix.ncp.ntnx_entity_sync_policies_info_v2:
+    ext_id: "{{ fake_ext_id }}"
+  register: get_by_fake_id_result
+  ignore_errors: true
+
+- name: Fetch entity sync policy using a non-existent external ID status
+  ansible.builtin.assert:
+    that:
+      - get_by_fake_id_result is defined
+      - get_by_fake_id_result.changed == false
+      - get_by_fake_id_result.failed == true
+    success_msg: "Fetch entity sync policy using a non-existent external ID failed as expected"
+    fail_msg: "Fetch entity sync policy using a non-existent external ID did not fail as expected"
+
+########################################################################################
+# 6. Info module - mutually exclusive ext_id + filter
+########################################################################################
+
+- name: Fetch entity sync policy with mutually exclusive ext_id and filter
+  nutanix.ncp.ntnx_entity_sync_policies_info_v2:
+    ext_id: "{{ fake_ext_id }}"
+    filter: "entityType eq Datapolicies.Config.SyncedEntityType'SECURITY_POLICY'"
+  register: mutex_result
+  ignore_errors: true
+
+- name: Fetch entity sync policy with mutually exclusive ext_id and filter status
+  ansible.builtin.assert:
+    that:
+      - mutex_result is defined
+      - mutex_result.changed == false
+      - mutex_result.failed == true
+      - "'mutually exclusive' in mutex_result.msg"
+    success_msg: "Mutually exclusive ext_id and filter rejected as expected"
+    fail_msg: "Mutually exclusive ext_id and filter was not rejected"
+
+########################################################################################
+# 7. Action module - check_mode sync (with all attributes)
+########################################################################################
+
+- name: Sync entity sync policy in check mode
+  nutanix.ncp.ntnx_entity_sync_policy_v2:
+    state: present
+    ext_id: "{{ fake_ext_id }}"
+  check_mode: true
+  register: sync_check_mode_result
+  ignore_errors: true
+
+- name: Sync entity sync policy in check mode status
+  ansible.builtin.assert:
+    that:
+      - sync_check_mode_result is defined
+      - sync_check_mode_result.changed == false
+      - sync_check_mode_result.failed == false
+      - sync_check_mode_result.ext_id == fake_ext_id
+      - sync_check_mode_result.msg is defined
+      - "'will be synchronized' in sync_check_mode_result.msg"
+    success_msg: "Sync entity sync policy in check mode passed"
+    fail_msg: "Sync entity sync policy in check mode failed"
+
+########################################################################################
+# 8. Action module - missing required ext_id
+########################################################################################
+
+- name: Sync entity sync policy without ext_id
+  nutanix.ncp.ntnx_entity_sync_policy_v2:
+    state: present
+  register: sync_no_ext_id_result
+  ignore_errors: true
+
+- name: Sync entity sync policy without ext_id status
+  ansible.builtin.assert:
+    that:
+      - sync_no_ext_id_result is defined
+      - sync_no_ext_id_result.changed == false
+      - sync_no_ext_id_result.failed == true
+      - "'missing required arguments: ext_id' in sync_no_ext_id_result.msg"
+    success_msg: "Sync entity sync policy without ext_id failed as expected"
+    fail_msg: "Sync entity sync policy without ext_id did not fail as expected"
+
+########################################################################################
+# 9. Action module - invalid state value (only "present" is supported)
+########################################################################################
+
+- name: Sync entity sync policy with state=absent (invalid)
+  nutanix.ncp.ntnx_entity_sync_policy_v2:
+    state: absent
+    ext_id: "{{ fake_ext_id }}"
+  register: sync_invalid_state_result
+  ignore_errors: true
+
+- name: Sync entity sync policy with state=absent status
+  ansible.builtin.assert:
+    that:
+      - sync_invalid_state_result is defined
+      - sync_invalid_state_result.changed == false
+      - sync_invalid_state_result.failed == true
+      - "'value of state must be one of' in sync_invalid_state_result.msg"
+    success_msg: "Sync entity sync policy with state=absent failed as expected"
+    fail_msg: "Sync entity sync policy with state=absent did not fail as expected"
+
+########################################################################################
+# 10. Action module - non-existent ext_id (negative)
+########################################################################################
+
+- name: Sync a non-existent entity sync policy
+  nutanix.ncp.ntnx_entity_sync_policy_v2:
+    state: present
+    ext_id: "{{ fake_ext_id }}"
+  register: sync_fake_result
+  ignore_errors: true
+
+- name: Sync a non-existent entity sync policy status
+  ansible.builtin.assert:
+    that:
+      - sync_fake_result is defined
+      - sync_fake_result.changed == false
+      - sync_fake_result.failed == true
+    success_msg: "Sync a non-existent entity sync policy failed as expected"
+    fail_msg: "Sync a non-existent entity sync policy did not fail as expected"
+
+########################################################################################
+# 11. Action module - real sync (positive), executed only when a real policy exists
+########################################################################################
+
+- name: Trigger real sync of an existing entity sync policy
+  nutanix.ncp.ntnx_entity_sync_policy_v2:
+    state: present
+    ext_id: "{{ existing_policy_ext_id }}"
+  register: sync_real_result
+  when: existing_policy_ext_id | length > 0
+  ignore_errors: true
+
+- name: Real sync status
+  ansible.builtin.assert:
+    that:
+      - sync_real_result is defined
+      - sync_real_result.failed == false
+      - sync_real_result.changed == true
+      - sync_real_result.ext_id == existing_policy_ext_id
+      - sync_real_result.task_ext_id is defined
+      - sync_real_result.response is defined
+      - sync_real_result.response.status == "SUCCEEDED"
+    success_msg: "Real sync of an existing entity sync policy passed"
+    fail_msg: "Real sync of an existing entity sync policy failed"
+  when: existing_policy_ext_id | length > 0

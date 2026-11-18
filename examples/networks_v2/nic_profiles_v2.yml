@@ -1,0 +1,70 @@
+---
+# Summary:
+# This playbook demonstrates NIC profile operations:
+# 1. Create NIC profile with SRIOV capability
+# 2. Update NIC profile name and description
+# 3. Fetch NIC profile using ext_id
+# 4. List all NIC profiles
+# 5. List NIC profiles with filter
+# 6. List NIC profiles with limit
+# 7. Delete NIC profile
+
+- name: NIC Profiles playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        nic_profile_name: "nic_profile_name"
+        nic_family: "15b3:101d"
+
+    - name: Create NIC profile with SRIOV capability
+      nutanix.ncp.ntnx_nic_profiles_v2:
+        name: "{{ nic_profile_name }}_sriov"
+        description: "NIC profile with SRIOV capability"
+        capability_config:
+          capability_type: "SRIOV"
+        nic_family: "{{ nic_family }}"
+      register: sriov_profile
+
+    - name: Set nic profile ext_id
+      ansible.builtin.set_fact:
+        nic_profile_ext_id: "{{ sriov_profile.response.ext_id }}"
+
+    - name: Update NIC profile name and description
+      nutanix.ncp.ntnx_nic_profiles_v2:
+        ext_id: "{{ sriov_profile.response.ext_id }}"
+        name: "{{ nic_profile_name }}_sriov_updated"
+        description: "Updated NIC profile description"
+      register: updated_profile
+
+    - name: Fetch NIC profile using ext_id
+      nutanix.ncp.ntnx_nic_profiles_info_v2:
+        ext_id: "{{ nic_profile_ext_id }}"
+      register: fetched_profile
+
+    - name: List all NIC profiles
+      nutanix.ncp.ntnx_nic_profiles_info_v2:
+      register: all_profiles
+
+    - name: List NIC profiles with filter
+      nutanix.ncp.ntnx_nic_profiles_info_v2:
+        filter: "name eq '{{ nic_profile_name }}_sriov_updated'"
+      register: filtered_profiles
+
+    - name: List NIC profiles with limit
+      nutanix.ncp.ntnx_nic_profiles_info_v2:
+        limit: 5
+      register: limited_profiles
+
+    - name: Delete NIC profile
+      nutanix.ncp.ntnx_nic_profiles_v2:
+        ext_id: "{{ nic_profile_ext_id }}"
+        state: absent
+      register: delete_result

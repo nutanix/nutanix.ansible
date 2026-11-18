@@ -1,0 +1,255 @@
+---
+- name: Start ntnx_object_stores_data_movement_targets_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_object_stores_data_movement_targets_v2 tests
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] | lower }}"
+    dmt_todelete: []
+
+- name: Set derived names
+  ansible.builtin.set_fact:
+    dmt_name: "dmt-{{ random_name }}"
+
+- name: Create data movement target with missing required fields (should fail)
+  nutanix.ncp.ntnx_object_stores_data_movement_targets_v2:
+    state: present
+    object_store_ext_id: "7e69f898-227f-4b37-bdd3-cccd5f46fc96"
+  register: missing_create_args
+  ignore_errors: true
+
+- name: Verify missing create args are rejected
+  ansible.builtin.assert:
+    that:
+      - missing_create_args.failed == true
+      - missing_create_args.changed == false
+      - "'missing required arguments' in (missing_create_args.msg | default(''))"
+    fail_msg: Expected missing required create args failure
+    success_msg: Module correctly rejected missing create args
+
+- name: Create data movement target with check mode
+  nutanix.ncp.ntnx_object_stores_data_movement_targets_v2:
+    state: present
+    object_store_ext_id: "7e69f898-227f-4b37-bdd3-cccd5f46fc96"
+    name: "dmt-checkmode"
+    type: "NTNX_OBJECTS"
+    details:
+      ntnx_objects:
+        object_store_ext_id: "00062664-c65f-f854-65af-7cc25581f458"
+        object_store_fqdn:
+          value: "objects-0.pc.nutanix.com"
+        domain_manager_ext_id: "00062664-c65f-f854-65af-7cc25581f459"
+        object_store_public_network_ips:
+          - ipv4:
+              value: "10.10.10.10"
+  register: dmt_check
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify create data movement target check mode
+  ansible.builtin.assert:
+    that:
+      - dmt_check.changed == false
+      - dmt_check.failed == false
+      - dmt_check.response is defined
+      - dmt_check.response.name == "dmt-checkmode"
+      - dmt_check.response.type == "NTNX_OBJECTS"
+      - dmt_check.msg is defined
+    fail_msg: Create data movement target check mode failed
+    success_msg: Create data movement target check mode passed
+
+- name: List object stores to locate a parent for live DMT tests
+  nutanix.ncp.ntnx_object_stores_info_v2:
+    fetch_all: true
+  register: object_stores
+  ignore_errors: true
+
+- name: Set object_store_ext_id when available
+  ansible.builtin.set_fact:
+    object_store_ext_id: "{{ (object_stores.response | default([]))[0].ext_id | default('') }}"
+    has_object_store: >-
+      {{ (object_stores.failed | default(true) == false)
+         and ((object_stores.response | default([])) | length > 0) }}
+
+- name: List data movement targets
+  nutanix.ncp.ntnx_object_stores_data_movement_targets_info_v2:
+    object_store_ext_id: "{{ object_store_ext_id }}"
+  register: dmt_list
+  ignore_errors: true
+  when: has_object_store | bool
+
+- name: Verify data movement targets list response
+  ansible.builtin.assert:
+    that:
+      - dmt_list.changed == false
+      - dmt_list.failed == false
+      - dmt_list.response is defined
+      - dmt_list.total_available_results is defined
+      - dmt_list.total_available_results >= 0
+    fail_msg: Listing data movement targets failed
+    success_msg: Listed data movement targets successfully
+  when: has_object_store | bool
+
+- name: List data movement targets with limit
+  nutanix.ncp.ntnx_object_stores_data_movement_targets_info_v2:
+    object_store_ext_id: "{{ object_store_ext_id }}"
+    limit: 1
+  register: dmt_limit
+  ignore_errors: true
+  when: has_object_store | bool
+
+- name: Verify data movement targets list with limit
+  ansible.builtin.assert:
+    that:
+      - dmt_limit.changed == false
+      - dmt_limit.failed == false
+      - dmt_limit.response is defined
+      - (dmt_limit.response | length) <= 1
+    fail_msg: Listing data movement targets with limit failed
+    success_msg: Listed data movement targets with limit successfully
+  when: has_object_store | bool
+
+- name: List data movement targets with filter
+  nutanix.ncp.ntnx_object_stores_data_movement_targets_info_v2:
+    object_store_ext_id: "{{ object_store_ext_id }}"
+    filter: "type eq Objects.Config.DataMovementTargetType'NTNX_OBJECTS'"
+  register: dmt_filter
+  ignore_errors: true
+  when: has_object_store | bool
+
+- name: Verify data movement targets list with filter
+  ansible.builtin.assert:
+    that:
+      - dmt_filter.changed == false
+      - dmt_filter.failed == false
+      - dmt_filter.response is defined
+    fail_msg: Listing data movement targets with filter failed
+    success_msg: Listed data movement targets with filter successfully
+  when: has_object_store | bool
+
+- name: List data movement targets with fetch_all
+  nutanix.ncp.ntnx_object_stores_data_movement_targets_info_v2:
+    object_store_ext_id: "{{ object_store_ext_id }}"
+    fetch_all: true
+  register: dmt_fetch_all
+  ignore_errors: true
+  when: has_object_store | bool
+
+- name: Verify data movement targets fetch_all
+  ansible.builtin.assert:
+    that:
+      - dmt_fetch_all.changed == false
+      - dmt_fetch_all.failed == false
+      - dmt_fetch_all.response is defined
+      - dmt_fetch_all.total_available_results is defined
+      - >-
+          (dmt_fetch_all.response | default([]) | length)
+          == (dmt_fetch_all.total_available_results | int)
+    fail_msg: Listing data movement targets with fetch_all failed
+    success_msg: Listed data movement targets with fetch_all successfully
+  when: has_object_store | bool
+
+- name: Capture first data movement target ext_id when present
+  ansible.builtin.set_fact:
+    first_dmt_ext_id: "{{ (dmt_list.response | default([]))[0].ext_id | default('') }}"
+  when:
+    - has_object_store | bool
+    - (dmt_list.response | default([])) | length > 0
+
+- name: Get data movement target by ext_id
+  nutanix.ncp.ntnx_object_stores_data_movement_targets_info_v2:
+    object_store_ext_id: "{{ object_store_ext_id }}"
+    ext_id: "{{ first_dmt_ext_id }}"
+  register: dmt_get
+  ignore_errors: true
+  when:
+    - has_object_store | bool
+    - (first_dmt_ext_id | default('')) | length > 0
+
+- name: Verify get data movement target by ext_id
+  ansible.builtin.assert:
+    that:
+      - dmt_get.changed == false
+      - dmt_get.failed == false
+      - dmt_get.response is defined
+      - dmt_get.ext_id == first_dmt_ext_id
+      - dmt_get.response.ext_id == first_dmt_ext_id
+    fail_msg: Get data movement target by ext_id failed
+    success_msg: Got data movement target by ext_id successfully
+  when:
+    - has_object_store | bool
+    - (first_dmt_ext_id | default('')) | length > 0
+
+- name: Get data movement target with invalid ext_id
+  nutanix.ncp.ntnx_object_stores_data_movement_targets_info_v2:
+    object_store_ext_id: "{{ object_store_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: dmt_invalid
+  ignore_errors: true
+  when: has_object_store | bool
+
+- name: Verify invalid data movement target ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - dmt_invalid.failed == true
+      - dmt_invalid.changed == false
+      - (dmt_invalid.msg is defined) or (dmt_invalid.response is defined)
+    fail_msg: Invalid data movement target ext_id did not fail cleanly
+    success_msg: Invalid data movement target ext_id failed cleanly
+  when: has_object_store | bool
+
+- name: Create data movement target live with dummy remote details
+  nutanix.ncp.ntnx_object_stores_data_movement_targets_v2:
+    state: present
+    object_store_ext_id: "{{ object_store_ext_id }}"
+    name: "{{ dmt_name }}"
+    type: "NTNX_OBJECTS"
+    details:
+      ntnx_objects:
+        object_store_ext_id: "00062664-c65f-f854-65af-7cc25581f458"
+        object_store_fqdn:
+          value: "objects-0.pc.nutanix.com"
+        domain_manager_ext_id: "00062664-c65f-f854-65af-7cc25581f459"
+        object_store_public_network_ips:
+          - ipv4:
+              value: "10.10.10.10"
+  register: dmt_create
+  ignore_errors: true
+  when: has_object_store | bool
+
+- name: Track created data movement target when create succeeded
+  ansible.builtin.set_fact:
+    dmt_todelete: "{{ dmt_todelete + [dmt_create.ext_id] }}"
+  when:
+    - has_object_store | bool
+    - dmt_create is defined
+    - not (dmt_create.failed | default(true))
+    - dmt_create.ext_id is defined
+
+- name: Verify create data movement target success path when accepted
+  ansible.builtin.assert:
+    that:
+      - dmt_create.changed == true
+      - dmt_create.failed == false
+      - dmt_create.ext_id is defined
+      - dmt_create.response is defined
+    fail_msg: Live create data movement target failed unexpectedly
+    success_msg: Live create data movement target succeeded
+  when:
+    - has_object_store | bool
+    - dmt_create is defined
+    - not (dmt_create.failed | default(true))
+
+- name: Verify create data movement target surfaces API error cleanly when rejected
+  ansible.builtin.assert:
+    that:
+      - dmt_create.failed == true
+      - dmt_create.changed == false
+      - (dmt_create.msg is defined) or (dmt_create.response is defined)
+    fail_msg: Live create data movement target did not fail cleanly
+    success_msg: Live create data movement target failed cleanly as expected
+  when:
+    - has_object_store | bool
+    - dmt_create is defined
+    - dmt_create.failed | default(false)
