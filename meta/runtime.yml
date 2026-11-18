@@ -290,6 +290,7 @@ action_groups:
     - ntnx_iam_entities_info_v2
     - ntnx_virtual_switch_v2
     - ntnx_virtual_switches_info_v2
+    - ntnx_aws_subnets_info_v2
     - ntnx_node_schedulable_status_info_v2
     - ntnx_data_protection_cluster_capabilities_info_v2
     - ntnx_uplink_bonds_info_v2
