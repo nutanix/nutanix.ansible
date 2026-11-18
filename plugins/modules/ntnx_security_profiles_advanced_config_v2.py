@@ -57,6 +57,7 @@ options:
         choices:
             - "ON"
             - "OFF"
+            - "LOG"
         required: false
     kernel_space_core_dump_level:
         description:
@@ -66,7 +67,6 @@ options:
         choices:
             - "ON"
             - "OFF"
-            - "LOG"
         required: false
     wait:
         description:
