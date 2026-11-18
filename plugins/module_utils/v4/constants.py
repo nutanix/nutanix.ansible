@@ -56,6 +56,7 @@ class Tasks:
         LAYER2_STRETCH = "networking:config:layer2-stretch"
         LOAD_BALANCER_SESSION = "networking:config:load-balancer-session"
         ENTITY_GROUP = "microseg:config:entity-group"
+        IPFIX_EXPORTER = "networking:config:ipfix-exporter"
         DATA_SERVICES_IP_MAPPING = (
             "datapolicies:config:recovery-plan:data-services-ip-mapping"
         )
