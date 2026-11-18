@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -23,14 +23,15 @@ notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(Clear Routing Policy counters) -
-      Required Roles: Internal Super Admin, Super Admin, Account Owner, Administrator, Prism Admin, VPC Admin, Tenant Admin.
+      B(Clear Routing Policy Counters) -
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, Tenant Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
     state:
         description:
             - State of the module.
-            - Only C(present) is supported; the module always performs the clear-counters action.
+            - Only C(present) is supported since clearing routing policy counters is an action,
+              not a lifecycle CRUD operation.
         type: str
         choices:
             - present
@@ -60,32 +61,30 @@ author:
 EXAMPLES = r"""
 - name: Clear counters for all routing policies inside a VPC
   nutanix.ncp.ntnx_clear_routing_policy_counter_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     vpc_ext_id: "a4f3f04f-1222-8544-7896-28b62bcc3e3e"
   register: result
   ignore_errors: true
 
 - name: Clear counters of a specific routing policy inside a VPC
   nutanix.ncp.ntnx_clear_routing_policy_counter_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     vpc_ext_id: "a4f3f04f-1222-8544-7896-28b62bcc3e3e"
     routing_policy_ext_id: "b0cce620-3654-8522-9876-a91e2c037862"
   register: result
   ignore_errors: true
+
+- name: Clear counters without waiting for task completion
+  nutanix.ncp.ntnx_clear_routing_policy_counter_v2:
+    vpc_ext_id: "a4f3f04f-1222-8544-7896-28b62bcc3e3e"
+    wait: false
+  register: result
 """
 
 RETURN = r"""
 response:
     description:
         - Response for clearing routing policy counters.
-        - Task details when C(wait) is true - contains the completed task record.
-        - Task reference when C(wait) is false - contains the queued task reference.
+        - Task details when C(wait) is true.
+        - Task reference when C(wait) is false.
     returned: always
     type: dict
     sample:
@@ -126,12 +125,6 @@ response:
             "warnings": null
         }
 
-changed:
-    description: This indicates whether the task resulted in any changes.
-    returned: always
-    type: bool
-    sample: true
-
 task_ext_id:
     description: The external ID of the task that performed the counter clear.
     returned: always
@@ -147,23 +140,29 @@ ext_id:
     type: str
     sample: "6eb8658e-1d92-4755-b969-56e2ecaa5953"
 
-msg:
-    description: This indicates the message if any message occurred.
-    returned: When there is an error
-    type: str
-    sample: "Api Exception raised while clearing routing policy counters"
+changed:
+    description: This indicates whether the task resulted in any changes.
+    returned: always
+    type: bool
+    sample: true
 
 error:
-    description: This field typically holds information about errors that occurred during the task execution.
-    returned: when an error occurs
+    description: The error details, if any, encountered during the operation.
+    returned: When an error occurs
     type: str
     sample: "Not Found"
 
 failed:
-    description: This field indicates whether the task failed.
+    description: This indicates whether the module failed.
     returned: always
     type: bool
     sample: false
+
+msg:
+    description: A status or error message describing the outcome of the operation.
+    returned: When there is an error
+    type: str
+    sample: "Api Exception raised while clearing routing policy counters"
 """
 
 import traceback  # noqa: E402
@@ -181,7 +180,6 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
-    validate_required_params,
 )
 
 SDK_IMP_ERROR = None
@@ -206,19 +204,8 @@ def get_module_spec():
     return module_args
 
 
-def clear_routing_policy_counters(module, result, api_instance):
-    """Invoke the SDK clear_routing_policy_counters action.
-
-    Behaviour follows the ``ntnx_vm_revert_v2`` action-module pattern:
-    * Build the spec via ``SpecGenerator`` so ``vpc_ext_id`` /
-      ``routing_policy_ext_id`` are propagated onto the SDK model.
-    * Support ``check_mode`` — return the generated spec without an API call.
-    * On success, capture the ``task_ext_id`` and — when ``wait`` is true —
-      poll the task until it reaches a terminal state and return the full
-      task record.
-    """
-    validate_required_params(module, ["vpc_ext_id"])
-
+def clear_routing_policy_counters(module, api_instance, result):
+    """Trigger the ClearRoutingPolicyCounters action."""
     vpc_ext_id = module.params.get("vpc_ext_id")
     routing_policy_ext_id = module.params.get("routing_policy_ext_id")
 
@@ -250,9 +237,11 @@ def clear_routing_policy_counters(module, result, api_instance):
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
+
     if task_ext_id and module.params.get("wait"):
         task = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task.to_dict())
+
     result["changed"] = True
 
 
@@ -270,13 +259,13 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
         "ext_id": None,
         "task_ext_id": None,
     }
     api_instance = get_routing_policy_stats_api_instance(module)
-    clear_routing_policy_counters(module, result, api_instance)
+    clear_routing_policy_counters(module, api_instance, result)
 
     module.exit_json(**result)
 
