@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -15,11 +15,6 @@ short_description: Fetch vulnerabilities from the Nutanix Vulnerability Database
 version_added: 2.7.0
 description:
   - This module allows you to fetch information about vulnerabilities in Nutanix Prism Central.
-  - Vulnerabilities are sourced from the Nutanix Vulnerability Database (NXVD) and represent
-    genuine security issues affecting Nutanix products such as AOS, AHV and Prism Central.
-  - Each record contains a CVE / CESA identifier, severity, list of fix versions and the
-    NXVD version at which the vulnerability was published.
-  - The list supports OData style pagination, filtering, ordering and field selection.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -41,29 +36,38 @@ author:
 EXAMPLES = r"""
 - name: Fetch all vulnerabilities from the Nutanix Vulnerability Database (NXVD).
   nutanix.ncp.ntnx_vulnerabilities_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
   register: result
 
 - name: Fetch all vulnerabilities with a limit of one record.
   nutanix.ncp.ntnx_vulnerabilities_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     limit: 1
   register: result_limit
 
 - name: Fetch only HIGH severity vulnerabilities.
   nutanix.ncp.ntnx_vulnerabilities_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     filter: "severity eq Security.Report.Severity'HIGH'"
   register: result_filter
 
-- name: Fetch vulnerabilities ordered by severity (highest severities first).
+- name: Fetch all vulnerabilities with fetch all
   nutanix.ncp.ntnx_vulnerabilities_info_v2:
-    orderby: "severity asc"
-    limit: 5
-  register: result_orderby
-
-- name: Fetch only the ext_id and severity fields of every vulnerability.
-  nutanix.ncp.ntnx_vulnerabilities_info_v2:
-    select: "extId,severity"
-    limit: 5
-  register: result_select
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
+  register: result_fetch_all
 """
 
 RETURN = r"""
@@ -143,6 +147,7 @@ from ..module_utils.v4.security.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -166,7 +171,10 @@ def get_vulnerabilities(module, api_instance, result):
         )
 
     try:
-        resp = api_instance.list_vulnerabilities(**kwargs)
+        resp = list_entities(
+            api_instance.list_vulnerabilities,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -189,7 +197,7 @@ def run_module():
         supports_check_mode=False,
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "failed": False, "error": None, "response": None}
+    result = {"changed": False, "failed": False, "response": None}
     api_instance = get_vulnerabilities_api_instance(module)
     get_vulnerabilities(module, api_instance, result)
     module.exit_json(**result)

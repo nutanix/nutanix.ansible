@@ -1,0 +1,37 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Fetch all vulnerabilities from the Nutanix Vulnerability Database (NXVD).
+# 2. List all vulnerabilities with fetch_all
+# 3. List all vulnerabilities with filter set to HIGH
+# 4. List all vulnerabilities with limit
+
+- name: Vulnerabilities info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Fetch all vulnerabilities from the Nutanix Vulnerability Database (NXVD).
+      nutanix.ncp.ntnx_vulnerabilities_info_v2:
+      register: result
+
+    - name: List all vulnerabilities with fetch_all
+      nutanix.ncp.ntnx_vulnerabilities_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
+
+    - name: List all vulnerabilities with filter set to HIGH
+      nutanix.ncp.ntnx_vulnerabilities_info_v2:
+        filter: "severity eq Security.Report.Severity'HIGH'"
+      register: result_filter
+
+    - name: List all vulnerabilities with limit
+      nutanix.ncp.ntnx_vulnerabilities_info_v2:
+        limit: 1
+      register: result_limit
