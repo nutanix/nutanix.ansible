@@ -57,7 +57,6 @@ options:
         choices:
             - "ON"
             - "OFF"
-            - "LOG"
         required: false
     kernel_space_core_dump_level:
         description:
@@ -166,6 +165,7 @@ from ..module_utils.v4.utils import (  # noqa: E402
 )
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
+
 
 def get_module_spec():
     module_args = dict(
