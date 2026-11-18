@@ -10,5 +10,10 @@
       nutanix_debug: "{{ nutanix_debug | default(omit) }}"
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
   block:
+    - name: Import setup_sp_keypair.yml
+      ansible.builtin.import_tasks: setup_sp_keypair.yml
     - name: Import all_operation.yml
       ansible.builtin.import_tasks: all_operation.yml
+  always:
+    - name: Import cleanup_sp_keypair.yml
+      ansible.builtin.import_tasks: cleanup_sp_keypair.yml

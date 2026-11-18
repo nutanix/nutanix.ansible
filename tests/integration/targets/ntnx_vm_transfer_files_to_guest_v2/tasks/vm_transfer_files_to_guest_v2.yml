@@ -1,0 +1,146 @@
+---
+# Integration tests for ntnx_vm_transfer_files_to_guest_v2.
+# Check-mode uses inline dummy UUIDs (no live transfer required).
+
+- name: Start testing ntnx_vm_transfer_files_to_guest_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_vm_transfer_files_to_guest_v2
+
+#################################################################################
+# check_mode — volume disk source
+#################################################################################
+
+- name: Check mode - transfer files from volume disk
+  nutanix.ncp.ntnx_vm_transfer_files_to_guest_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    guest_authentication:
+      username: "admin"
+      password: "secret"
+    transfer_files_spec:
+      transfer_files_from_volume_disk:
+        volume_disk_reference:
+          disk_ext_id: "00000000-0000-0000-0000-000000000002"
+          volume_group_ext_id: "00000000-0000-0000-0000-000000000003"
+        files_to_transfer:
+          - source_path: "payload/app.bin"
+            destination_path: "/tmp/app.bin"
+            should_overwrite: true
+  register: check_volume
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert check mode volume disk transfer
+  ansible.builtin.assert:
+    that:
+      - check_volume.failed == false
+      - check_volume.changed == false
+      - check_volume.ext_id == "00000000-0000-0000-0000-000000000001"
+      - check_volume.response is defined
+      - check_volume.response.guest_authentication is defined
+      - check_volume.response.transfer_files_spec is defined
+    fail_msg: "check_mode volume disk transfer failed"
+    success_msg: "check_mode volume disk transfer passed"
+
+#################################################################################
+# check_mode — external data source disk
+#################################################################################
+
+- name: Check mode - transfer files from external data source disk
+  nutanix.ncp.ntnx_vm_transfer_files_to_guest_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    guest_authentication:
+      username: "admin"
+      password: "secret"
+    transfer_files_spec:
+      transfer_files_from_external_data_source_disk:
+        external_data_source_disk_reference:
+          external_repository_ext_id: "00000000-0000-0000-0000-000000000004"
+          external_disk_relative_path: "disks/source.vmdk"
+        files_to_transfer:
+          - source_path: "scripts/setup.sh"
+            destination_path: "/tmp/setup.sh"
+            should_overwrite: false
+  register: check_external
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert check mode external data source transfer
+  ansible.builtin.assert:
+    that:
+      - check_external.failed == false
+      - check_external.changed == false
+      - check_external.response is defined
+      - check_external.response.transfer_files_spec is defined
+    fail_msg: "check_mode external data source transfer failed"
+    success_msg: "check_mode external data source transfer passed"
+
+#################################################################################
+# Negative — missing required fields
+#################################################################################
+
+- name: Negative - missing ext_id
+  nutanix.ncp.ntnx_vm_transfer_files_to_guest_v2:
+    guest_authentication:
+      username: "admin"
+      password: "secret"
+    transfer_files_spec:
+      transfer_files_from_volume_disk:
+        volume_disk_reference:
+          disk_ext_id: "00000000-0000-0000-0000-000000000002"
+        files_to_transfer:
+          - source_path: "a.bin"
+            destination_path: "/tmp/a.bin"
+  register: missing_ext_id
+  ignore_errors: true
+
+- name: Assert missing ext_id fails
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id.failed == true
+    fail_msg: "Missing ext_id did not fail"
+    success_msg: "Missing ext_id failed as expected"
+
+- name: Negative - missing guest_authentication
+  nutanix.ncp.ntnx_vm_transfer_files_to_guest_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    transfer_files_spec:
+      transfer_files_from_volume_disk:
+        volume_disk_reference:
+          disk_ext_id: "00000000-0000-0000-0000-000000000002"
+        files_to_transfer:
+          - source_path: "a.bin"
+            destination_path: "/tmp/a.bin"
+  register: missing_auth
+  ignore_errors: true
+
+- name: Assert missing guest_authentication fails
+  ansible.builtin.assert:
+    that:
+      - missing_auth.failed == true
+    fail_msg: "Missing guest_authentication did not fail"
+    success_msg: "Missing guest_authentication failed as expected"
+
+- name: Negative - invalid VM ext_id (live API)
+  nutanix.ncp.ntnx_vm_transfer_files_to_guest_v2:
+    ext_id: "00000000-0000-0000-0000-000000000099"
+    guest_authentication:
+      username: "admin"
+      password: "secret"
+    transfer_files_spec:
+      transfer_files_from_volume_disk:
+        volume_disk_reference:
+          disk_ext_id: "00000000-0000-0000-0000-000000000002"
+          volume_group_ext_id: "00000000-0000-0000-0000-000000000003"
+        files_to_transfer:
+          - source_path: "payload/app.bin"
+            destination_path: "/tmp/app.bin"
+  register: bad_vm
+  ignore_errors: true
+
+- name: Assert invalid VM ext_id fails
+  ansible.builtin.assert:
+    that:
+      - bad_vm.failed == true
+      - bad_vm.msg is defined
+    fail_msg: "Invalid VM ext_id did not fail"
+    success_msg: "Invalid VM ext_id failed as expected"

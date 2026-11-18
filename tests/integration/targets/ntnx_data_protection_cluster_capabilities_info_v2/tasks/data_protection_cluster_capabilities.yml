@@ -1,0 +1,288 @@
+---
+# Test plan for ntnx_data_protection_cluster_capabilities_info_v2
+#
+# The v4 dataprotection SDK only exposes a *list* endpoint for the
+# DataProtectionClusterCapability entity (there is no CRUD API). The tests below
+# therefore cover:
+#   1. List all capabilities (baseline) — asserts total_available_results, presence of
+#      required fields (extId, clusterExtId, capabilities[].capability_name,
+#      capabilities[].is_supported), and structural correctness of the list response.
+#   2. Get by ext_id (via server-side extId filter under the hood) — asserts single
+#      entity is returned and matches an entry from step 1.
+#   3. List with an OData filter on extId — asserts the filter narrows the result set.
+#   4. List with limit=1 — asserts truncation.
+#   5. List with page + limit — asserts pagination works.
+#   6. List with select — asserts partial-projection works.
+#   7. List with orderby — asserts ordering param is accepted.
+#   8. Negative: unknown ext_id — asserts descriptive "not found" error.
+#   9. Negative: invalid filter property — asserts API exception is surfaced.
+#  10. Negative: bad limit (out of range) — asserts API exception is surfaced.
+#  11. Mutually exclusive: ext_id + filter — asserts Ansible-level validation.
+#
+# Every capability_name value returned must be one of the SDK enum values
+# (SUPPORTS_NEAR_SYNC being the documented one — additional values seen on the live
+# cluster include SUPPORTS_POLICY_BASED_RP_RETENTION). is_supported must be a boolean.
+
+- name: Start ntnx_data_protection_cluster_capabilities_info_v2 tests
+  ansible.builtin.debug:
+    msg: "Starting ntnx_data_protection_cluster_capabilities_info_v2 tests"
+
+########################################################################################
+# 1. List all data protection cluster capabilities
+########################################################################################
+
+- name: List all data protection cluster capabilities
+  nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+  register: list_all_result
+  ignore_errors: true
+
+- name: Verify list all data protection cluster capabilities
+  ansible.builtin.assert:
+    that:
+      - list_all_result.changed == false
+      - list_all_result.failed == false
+      - list_all_result.response is defined
+      - list_all_result.response | length > 0
+      - list_all_result.total_available_results is defined
+      - list_all_result.total_available_results >= 1
+      - list_all_result.response[0].ext_id is defined
+      - list_all_result.response[0].cluster_ext_id is defined
+      - list_all_result.response[0].ext_id == list_all_result.response[0].cluster_ext_id
+      - list_all_result.response[0].capabilities is defined
+      - list_all_result.response[0].capabilities | length > 0
+      - list_all_result.response[0].capabilities[0].capability_name is defined
+      - list_all_result.response[0].capabilities[0].is_supported in [true, false]
+    fail_msg: "List all data protection cluster capabilities failed"
+    success_msg: "List all data protection cluster capabilities succeeded"
+
+- name: Save first capability ext_id for reuse
+  ansible.builtin.set_fact:
+    first_capability_ext_id: "{{ list_all_result.response[0].ext_id }}"
+    first_cluster_ext_id: "{{ list_all_result.response[0].cluster_ext_id }}"
+
+########################################################################################
+# 2. Get data protection cluster capability using ext_id
+########################################################################################
+
+- name: Get data protection cluster capability using ext_id
+  nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+    ext_id: "{{ first_capability_ext_id }}"
+  register: get_by_id_result
+  ignore_errors: true
+
+- name: Verify get by ext_id
+  ansible.builtin.assert:
+    that:
+      - get_by_id_result.changed == false
+      - get_by_id_result.failed == false
+      - get_by_id_result.response is defined
+      - get_by_id_result.ext_id == first_capability_ext_id
+      - get_by_id_result.response.ext_id == first_capability_ext_id
+      - get_by_id_result.response.cluster_ext_id == first_cluster_ext_id
+      - get_by_id_result.response.capabilities is defined
+      - get_by_id_result.response.capabilities | length > 0
+    fail_msg: "Get data protection cluster capability by ext_id failed"
+    success_msg: "Get data protection cluster capability by ext_id succeeded"
+
+- name: Verify each capability entry is well-formed (get by ext_id)
+  ansible.builtin.assert:
+    that:
+      - item.capability_name is defined
+      - item.capability_name | length > 0
+      - item.is_supported in [true, false]
+    fail_msg: "Capability entry {{ item }} is malformed"
+    success_msg: "Capability entry {{ item.capability_name }} is well-formed"
+  loop: "{{ get_by_id_result.response.capabilities }}"
+
+########################################################################################
+# 3. List with filter on extId
+########################################################################################
+
+- name: List data protection cluster capabilities with filter on extId
+  nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+    filter: "extId eq '{{ first_capability_ext_id }}'"
+  register: filter_result
+  ignore_errors: true
+
+- name: Verify filter on extId
+  ansible.builtin.assert:
+    that:
+      - filter_result.changed == false
+      - filter_result.failed == false
+      - filter_result.response is defined
+      - filter_result.response | length == 1
+      - filter_result.response[0].ext_id == first_capability_ext_id
+      # NOTE: the v4 list API reports total_available_results=0 when $filter is
+      # applied (server-side filtered result set); the length of `response`
+      # is the reliable indicator here.
+      - filter_result.total_available_results is defined
+    fail_msg: "List with filter on extId failed"
+    success_msg: "List with filter on extId succeeded"
+
+########################################################################################
+# 4. List with limit
+########################################################################################
+
+- name: List data protection cluster capabilities with limit=1
+  nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+    limit: 1
+  register: limit_result
+  ignore_errors: true
+
+- name: Verify list with limit
+  ansible.builtin.assert:
+    that:
+      - limit_result.changed == false
+      - limit_result.failed == false
+      - limit_result.response is defined
+      - limit_result.response | length <= 1
+    fail_msg: "List with limit failed"
+    success_msg: "List with limit succeeded"
+
+########################################################################################
+# 5. List with pagination (page + limit)
+########################################################################################
+
+- name: List data protection cluster capabilities with pagination
+  nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+    page: 0
+    limit: 10
+  register: paginated_result
+  ignore_errors: true
+
+- name: Verify list with pagination
+  ansible.builtin.assert:
+    that:
+      - paginated_result.changed == false
+      - paginated_result.failed == false
+      - paginated_result.response is defined
+      - paginated_result.response | length <= 10
+      - paginated_result.response | length >= 1
+    fail_msg: "List with pagination failed"
+    success_msg: "List with pagination succeeded"
+
+########################################################################################
+# 6. List with select
+########################################################################################
+
+- name: List data protection cluster capabilities with select
+  nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+    select: "extId,clusterExtId"
+  register: select_result
+  ignore_errors: true
+
+- name: Verify list with select
+  ansible.builtin.assert:
+    that:
+      - select_result.changed == false
+      - select_result.failed == false
+      - select_result.response is defined
+      - select_result.response | length >= 1
+      - select_result.response[0].ext_id is defined
+      - select_result.response[0].cluster_ext_id is defined
+    fail_msg: "List with select failed"
+    success_msg: "List with select succeeded"
+
+########################################################################################
+# 7. List with orderby
+########################################################################################
+
+- name: List data protection cluster capabilities ordered by extId
+  nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+    orderby: "extId"
+  register: orderby_result
+  ignore_errors: true
+
+- name: Verify list with orderby
+  ansible.builtin.assert:
+    that:
+      - orderby_result.changed == false
+      - orderby_result.failed == false
+      - orderby_result.response is defined
+      - orderby_result.response | length >= 1
+    fail_msg: "List with orderby failed"
+    success_msg: "List with orderby succeeded"
+
+########################################################################################
+# 8. Negative: get with an unknown ext_id
+########################################################################################
+
+- name: Get data protection cluster capability with unknown ext_id
+  nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+    ext_id: "00000000-0000-0000-0000-deadbeef0000"
+  register: not_found_result
+  ignore_errors: true
+
+- name: Verify unknown ext_id returns descriptive not-found error
+  ansible.builtin.assert:
+    that:
+      - not_found_result.changed == false
+      - not_found_result.failed == true
+      - not_found_result.msg is defined
+      - "'not found' in not_found_result.msg"
+      - not_found_result.ext_id == "00000000-0000-0000-0000-deadbeef0000"
+    fail_msg: "Unknown ext_id did not surface a descriptive not-found error"
+    success_msg: "Unknown ext_id correctly surfaced a not-found error"
+
+########################################################################################
+# 9. Negative: invalid filter property
+########################################################################################
+
+- name: List data protection cluster capabilities with invalid filter property
+  nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+    filter: "notARealProperty eq 'x'"
+  register: invalid_filter_result
+  ignore_errors: true
+
+- name: Verify invalid filter surfaces API exception
+  ansible.builtin.assert:
+    that:
+      - invalid_filter_result.changed == false
+      - invalid_filter_result.failed == true
+      - invalid_filter_result.msg is defined
+      - "'Api Exception raised while fetching data protection cluster capabilities info' in invalid_filter_result.msg"
+    fail_msg: "Invalid filter did not surface API exception"
+    success_msg: "Invalid filter correctly surfaced API exception"
+
+########################################################################################
+# 10. Negative: limit out of allowed range
+########################################################################################
+
+- name: List data protection cluster capabilities with out-of-range limit
+  nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+    limit: 9999
+  register: bad_limit_result
+  ignore_errors: true
+
+- name: Verify out-of-range limit surfaces API exception
+  ansible.builtin.assert:
+    that:
+      - bad_limit_result.changed == false
+      - bad_limit_result.failed == true
+      - bad_limit_result.msg is defined
+    fail_msg: "Out-of-range limit did not surface any error"
+    success_msg: "Out-of-range limit correctly surfaced an error"
+
+########################################################################################
+# 11. Mutually exclusive: ext_id + filter
+########################################################################################
+
+- name: List data protection cluster capabilities with ext_id and filter (mutually exclusive)
+  nutanix.ncp.ntnx_data_protection_cluster_capabilities_info_v2:
+    ext_id: "{{ first_capability_ext_id }}"
+    filter: "extId eq '{{ first_capability_ext_id }}'"
+  register: mutex_result
+  ignore_errors: true
+
+- name: Verify mutually exclusive validation fires
+  ansible.builtin.assert:
+    that:
+      - mutex_result.failed == true
+      - mutex_result.msg is defined
+      - "'mutually exclusive' in (mutex_result.msg | lower)"
+    fail_msg: "Mutually exclusive validation did not fire"
+    success_msg: "Mutually exclusive validation correctly rejected ext_id + filter"
+
+- name: End ntnx_data_protection_cluster_capabilities_info_v2 tests
+  ansible.builtin.debug:
+    msg: "Finished ntnx_data_protection_cluster_capabilities_info_v2 tests"

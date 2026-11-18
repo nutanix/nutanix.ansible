@@ -24,3 +24,21 @@ def get_kms_by_ext_id(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching Key Management Server info using external ID",
         )
+
+
+def get_credential_by_ext_id(module, api_instance, ext_id):
+    """
+    This method will return Credential info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: Credentials Api instance from ntnx_security_py_client sdk
+        ext_id: External ID of the Credential
+    """
+    try:
+        return api_instance.get_credential_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Credential info using external ID",
+        )
