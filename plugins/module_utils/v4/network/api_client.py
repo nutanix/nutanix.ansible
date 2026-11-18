@@ -209,6 +209,18 @@ def get_bridges_api_instance(module):
     return ntnx_networking_py_client.BridgesApi(api_client=api_client)
 
 
+def get_aws_vpcs_api_instance(module):
+    """
+    This method will return AwsVpcsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): AWS VPCs Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.AwsVpcsApi(api_client=api_client)
+
+
 def get_aws_subnets_api_instance(module):
     """
     This method will return AwsSubnetsApi instance.
