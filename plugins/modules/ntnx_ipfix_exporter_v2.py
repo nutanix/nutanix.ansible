@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_ipfix_exporter_v2
 short_description: Create, Update, Delete IPFIX Exporter in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to create, update, and delete IPFIX Exporters in Nutanix Prism Central.
   - An IPFIX Exporter exports IP Flow Information Export (IPFIX) records
@@ -24,13 +24,13 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
       The required roles depend on the operation being performed.
     - >-
-      B(Create an IPFIX Exporter) -
+      B(Create Ipfix Exporter) -
       Required Roles: Prism Admin, Super Admin
     - >-
-      B(Delete an IPFIX Exporter) -
+      B(Update Ipfix Exporter) -
       Required Roles: Prism Admin, Super Admin
     - >-
-      B(Update an IPFIX Exporter) -
+      B(Delete Ipfix Exporter) -
       Required Roles: Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
@@ -51,6 +51,12 @@ options:
       - Required for update and delete operations.
     type: str
     required: false
+  project_ext_id:
+    description:
+      - UUID of the project that owns this entity.
+      - Update of this field is not supported.
+    type: str
+    required: false
   name:
     description:
       - Name of the IPFIX Exporter.
@@ -60,24 +66,27 @@ options:
     required: false
   description:
     description:
-      - User provided description for the IPFIX Exporter.
+      - IPFIX exporter description.
     type: str
     required: false
   collector_ip:
     description:
-      - IP address of the external IPFIX collector to which flow records are exported.
+      - The IP address of the IPFIX collector.
       - Required for create operation.
     type: str
     required: false
   collector_port:
     description:
-      - UDP/TCP port on the external IPFIX collector to which flow records are exported.
+      - The port number of the IPFIX collector.
       - Required for create operation.
     type: int
     required: false
   protocol:
     description:
-      - Transport protocol used to send IPFIX flow records to the collector.
+      - The protocol the IPFIX Exporter should use when sending out data.
+      - C(TCP) Transmission Control Protocol.
+      - C(UDP) User Datagram Protocol.
+      - C(TLS_TCP) TLS over TCP; only supported for internal collectors.
       - Required for create operation.
     type: str
     required: false
@@ -87,14 +96,13 @@ options:
       - TLS_TCP
   export_rate_limit_per_node_bps:
     description:
-      - Maximum export rate limit per node in bits per second.
-      - Used to cap the outgoing IPFIX traffic per AHV node to avoid overwhelming the collector.
+      - The maximum export rate in bits per second(bps) at which the exporter should try to export data.
     type: int
     required: false
   export_scopes:
     description:
-      - List of scopes (Prism Central or Prism Element clusters) whose flow records
-        should be exported by this IPFIX exporter.
+      - List of IPFIX exporter scopes.
+      - Minimum 1 and maximum 64 scopes.
       - Required for create operation.
     type: list
     elements: dict
@@ -102,12 +110,14 @@ options:
     suboptions:
       uuid:
         description:
-          - UUID of the Prism Central (PC) or Prism Element (PE) cluster.
+          - UUID of the PE or PC cluster.
         type: str
         required: true
       scope_type:
         description:
-          - Whether the referenced UUID belongs to a PC or a PE cluster.
+          - Scope type of the referenced UUID.
+          - C(PC) UUID refers to a Prism Central.
+          - C(PE) UUID refers to a Prism Element.
         type: str
         required: false
         choices:
@@ -115,7 +125,10 @@ options:
           - PE
       ip_family:
         description:
-          - IP address family for which flow records should be exported.
+          - The IP family of the IPFIX collector.
+          - C(V4) Supports only IPv4 family.
+          - C(V6) Supports only IPv6 family.
+          - C(BOTH) Supports both IPv4 and IPv6 families.
         type: str
         required: false
         choices:
@@ -124,7 +137,7 @@ options:
           - BOTH
   metadata:
     description:
-      - Metadata associated with the IPFIX exporter.
+      - Metadata associated with this resource.
     type: dict
     required: false
     suboptions:
@@ -179,6 +192,7 @@ EXAMPLES = r"""
         scope_type: "PE"
         ip_family: "V4"
   register: result
+  ignore_errors: true
 
 - name: Update IPFIX exporter
   nutanix.ncp.ntnx_ipfix_exporter_v2:
@@ -195,12 +209,14 @@ EXAMPLES = r"""
         scope_type: "PE"
         ip_family: "BOTH"
   register: result
+  ignore_errors: true
 
 - name: Delete IPFIX exporter
   nutanix.ncp.ntnx_ipfix_exporter_v2:
     state: absent
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
   register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
@@ -241,7 +257,7 @@ response:
 
 task_ext_id:
   description:
-    - The external ID of the task associated with this operation.
+    - The external ID of the task.
   returned: always
   type: str
   sample: "ZXJnb24=:3b7a0e2a-e515-4fdd-ad01-1fe13aef79bc"
@@ -260,8 +276,9 @@ changed:
   sample: true
 
 skipped:
-  description: This indicates whether the task was skipped.
-  returned: always
+  description:
+    - This indicates whether the operation was skipped due to idempotency.
+  returned: when applicable
   type: bool
   sample: false
 
@@ -277,9 +294,7 @@ failed:
   sample: false
 
 msg:
-  description:
-    - This indicates the message if any message occurred.
-    - Populated on error, on idempotent runs, and on delete check_mode.
+  description: This indicates the message describing the outcome of the operation.
   returned: When there is an error, module is idempotent or check mode (in delete operation)
   type: str
   sample: "Api Exception raised while creating IPFIX exporter"
@@ -306,6 +321,7 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    raise_unsupported_update_fields,
     strip_internal_attributes,
     validate_required_params,
 )
@@ -340,15 +356,16 @@ def get_module_spec():
     )
 
     metadata_spec = dict(
-        owner_reference_id=dict(type="str", required=False),
-        owner_user_name=dict(type="str", required=False),
-        project_reference_id=dict(type="str", required=False),
-        project_name=dict(type="str", required=False),
-        category_ids=dict(type="list", elements="str", required=False),
+        owner_reference_id=dict(type="str"),
+        owner_user_name=dict(type="str"),
+        project_reference_id=dict(type="str"),
+        project_name=dict(type="str"),
+        category_ids=dict(type="list", elements="str"),
     )
 
     module_args = dict(
         ext_id=dict(type="str"),
+        project_ext_id=dict(type="str"),
         name=dict(type="str"),
         description=dict(type="str"),
         collector_ip=dict(type="str"),
@@ -374,7 +391,7 @@ def get_module_spec():
     return module_args
 
 
-def create_IpfixExporter(module, result, api_instance):
+def create_ipfix_exporter(module, result, api_instance):
     validate_required_params(
         module,
         ["name", "collector_ip", "collector_port", "protocol", "export_scopes"],
@@ -404,12 +421,11 @@ def create_IpfixExporter(module, result, api_instance):
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
-
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id)
-        result["response"] = strip_internal_attributes(task_status.to_dict())
+        resp = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(resp.to_dict())
         ext_id = get_entity_ext_id_from_task(
-            task_status, rel=TASK_CONSTANTS.RelEntityType.IPFIX_EXPORTER
+            resp, rel=TASK_CONSTANTS.RelEntityType.IPFIX_EXPORTER
         )
         if ext_id:
             result["ext_id"] = ext_id
@@ -432,7 +448,7 @@ def check_for_idempotency(old_spec_dict, update_spec_dict):
     return old_spec_dict == update_spec_dict
 
 
-def update_IpfixExporter(module, result, api_instance):
+def update_ipfix_exporter(module, result, api_instance):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -440,7 +456,7 @@ def update_IpfixExporter(module, result, api_instance):
     etag = get_etag(data=old_spec)
     if not etag:
         return module.fail_json(
-            msg="Unable to fetch etag for updating IPFIX exporter", **result
+            "Unable to fetch etag for updating IPFIX exporter", **result
         )
     kwargs = {"if_match": etag}
 
@@ -449,6 +465,8 @@ def update_IpfixExporter(module, result, api_instance):
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating update IPFIX exporter spec", **result)
+
+    raise_unsupported_update_fields(module, old_spec, update_spec, ["project_ext_id"])
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
@@ -473,7 +491,6 @@ def update_IpfixExporter(module, result, api_instance):
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
-
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
         resp = get_ipfix_exporter(module, api_instance, ext_id)
@@ -481,7 +498,7 @@ def update_IpfixExporter(module, result, api_instance):
     result["changed"] = True
 
 
-def delete_IpfixExporter(module, result, api_instance):
+def delete_ipfix_exporter(module, result, api_instance):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -491,9 +508,12 @@ def delete_IpfixExporter(module, result, api_instance):
 
     current_spec = get_ipfix_exporter(module, api_instance, ext_id)
     etag = get_etag(data=current_spec)
-    kwargs = {}
-    if etag:
-        kwargs["if_match"] = etag
+    if not etag:
+        return module.fail_json(
+            "Unable to fetch etag for deleting IPFIX exporter", **result
+        )
+
+    kwargs = {"if_match": etag}
 
     resp = None
     try:
@@ -508,9 +528,8 @@ def delete_IpfixExporter(module, result, api_instance):
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
-
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, raise_error=True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
 
@@ -536,17 +555,16 @@ def run_module():
         "response": None,
         "failed": False,
         "ext_id": None,
-        "task_ext_id": None,
     }
     api_instance = get_ipfix_exporters_api_instance(module)
     state = module.params.get("state")
     if state == "present":
         if module.params.get("ext_id"):
-            update_IpfixExporter(module, result, api_instance)
+            update_ipfix_exporter(module, result, api_instance)
         else:
-            create_IpfixExporter(module, result, api_instance)
+            create_ipfix_exporter(module, result, api_instance)
     else:
-        delete_IpfixExporter(module, result, api_instance)
+        delete_ipfix_exporter(module, result, api_instance)
     module.exit_json(**result)
 
 

@@ -209,7 +209,6 @@ def get_bridges_api_instance(module):
     return ntnx_networking_py_client.BridgesApi(api_client=api_client)
 
 
-
 def get_ipfix_exporters_api_instance(module):
     """
     This method will return IPFIXExportersApi instance.

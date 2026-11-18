@@ -172,10 +172,9 @@ def get_virtual_switch(module, api_instance, ext_id):
         )
 
 
-
 def get_ipfix_exporter(module, api_instance, ext_id):
     """
-    This method will return IPFIX exporter info using its ext_id.
+    This method will return IPFIX exporter info using its ext_id
     Args:
         module: Ansible module
         api_instance: IPFIXExportersApi instance from ntnx_networking_py_client sdk
