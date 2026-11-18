@@ -18,7 +18,7 @@ ok: [localhost] => {"changed": false, "layer2_stretch_ext_id": "6be8fe36-9612-4f
 
 TASK [Fetch a specific learned MAC address by external ID] *********************
 [ERROR]: Task failed: Module failed: Api Exception raised while fetching learned MAC address info using ext_id and layer2_stretch_ext_id
-Origin: /tmp/codegen/f1933bb5b1804310a9683eae26c56a22/repo/examples/networking/LearnedMacAddressesByLayer2StretchId/learned_mac_addresses_by_layer2_stretch_ids_info_v2.yml:56:7
+Origin: /tmp/codegen/f1933bb5b1804310a9683eae26c56a22/repo/examples/networking/LearnedMacAddressesByLayer2StretchId/layer2_stretches_learned_mac_addresses_info_v2.yml:56:7
 
 54       ignore_errors: true
 55

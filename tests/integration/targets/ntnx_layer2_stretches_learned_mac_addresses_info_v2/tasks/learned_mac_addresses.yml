@@ -2,7 +2,7 @@
 ###############################################################################
 # Test plan
 # -----------------------------------------------------------------------------
-# The info module ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2
+# The info module ntnx_layer2_stretches_learned_mac_addresses_info_v2
 # only reads data — the Layer2Stretch MAC address feature exposes no CRUD
 # operations. Coverage below therefore focuses on:
 #   * argument-spec / required-param validation (negative)
@@ -36,7 +36,7 @@
 ###############################################################################
 
 - name: Call info module without layer2_stretch_ext_id (should fail)
-  nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2: {}
+  nutanix.ncp.ntnx_layer2_stretches_learned_mac_addresses_info_v2: {}
   register: result
   ignore_errors: true
 
@@ -51,7 +51,7 @@
     fail_msg: "Missing required layer2_stretch_ext_id did not fail with the expected message"
 
 - name: Call info module with mutually exclusive ext_id and filter (should fail)
-  nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+  nutanix.ncp.ntnx_layer2_stretches_learned_mac_addresses_info_v2:
     layer2_stretch_ext_id: "{{ fake_layer2_stretch_ext_id }}"
     ext_id: "{{ fake_mac_ext_id }}"
     filter: "value eq '50:6b:8d:9f:00:11'"
@@ -75,7 +75,7 @@
 ###############################################################################
 
 - name: List learned MAC addresses for a synthetic parent stretch (list is empty)
-  nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+  nutanix.ncp.ntnx_layer2_stretches_learned_mac_addresses_info_v2:
     layer2_stretch_ext_id: "{{ fake_layer2_stretch_ext_id }}"
   register: result
 
@@ -93,7 +93,7 @@
     fail_msg: "Empty list response shape did not match expectations"
 
 - name: List learned MAC addresses with limit=1 (pagination)
-  nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+  nutanix.ncp.ntnx_layer2_stretches_learned_mac_addresses_info_v2:
     layer2_stretch_ext_id: "{{ fake_layer2_stretch_ext_id }}"
     limit: 1
   register: result
@@ -111,7 +111,7 @@
     fail_msg: "List with limit=1 returned an unexpected shape"
 
 - name: List learned MAC addresses with page=0 and limit=5 (pagination)
-  nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+  nutanix.ncp.ntnx_layer2_stretches_learned_mac_addresses_info_v2:
     layer2_stretch_ext_id: "{{ fake_layer2_stretch_ext_id }}"
     page: 0
     limit: 5
@@ -172,7 +172,7 @@
   when: real_layer2_stretch_ext_id | length > 0
   block:
     - name: List all learned MAC addresses (real stretch)
-      nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+      nutanix.ncp.ntnx_layer2_stretches_learned_mac_addresses_info_v2:
         layer2_stretch_ext_id: "{{ real_layer2_stretch_ext_id }}"
       register: result
 
@@ -198,7 +198,7 @@
       when: real_mac_ext_id | length > 0
       block:
         - name: Fetch learned MAC address by external ID
-          nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+          nutanix.ncp.ntnx_layer2_stretches_learned_mac_addresses_info_v2:
             layer2_stretch_ext_id: "{{ real_layer2_stretch_ext_id }}"
             ext_id: "{{ real_mac_ext_id }}"
           register: result
@@ -224,7 +224,7 @@
 ###############################################################################
 
 - name: Negative — get learned MAC address using a bogus ext_id
-  nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+  nutanix.ncp.ntnx_layer2_stretches_learned_mac_addresses_info_v2:
     layer2_stretch_ext_id: "{{ fake_layer2_stretch_ext_id }}"
     ext_id: "{{ fake_mac_ext_id }}"
   register: result

@@ -33,20 +33,20 @@
         learned_mac_ext_id: "d4f3f04f-1222-8544-7896-28b62bcc3e3e"
 
     - name: List all learned MAC addresses of a Layer2 Stretch
-      nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+      nutanix.ncp.ntnx_layer2_stretches_learned_mac_addresses_info_v2:
         layer2_stretch_ext_id: "{{ layer2_stretch_ext_id }}"
       register: all_learned_macs
       ignore_errors: true
 
     - name: List learned MAC addresses with a limit of 1
-      nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+      nutanix.ncp.ntnx_layer2_stretches_learned_mac_addresses_info_v2:
         layer2_stretch_ext_id: "{{ layer2_stretch_ext_id }}"
         limit: 1
       register: limited_learned_macs
       ignore_errors: true
 
     - name: List learned MAC addresses with a specific page and limit
-      nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+      nutanix.ncp.ntnx_layer2_stretches_learned_mac_addresses_info_v2:
         layer2_stretch_ext_id: "{{ layer2_stretch_ext_id }}"
         page: 0
         limit: 5
@@ -54,7 +54,7 @@
       ignore_errors: true
 
     - name: Fetch a specific learned MAC address by external ID
-      nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+      nutanix.ncp.ntnx_layer2_stretches_learned_mac_addresses_info_v2:
         layer2_stretch_ext_id: "{{ layer2_stretch_ext_id }}"
         ext_id: "{{ learned_mac_ext_id }}"
       register: single_learned_mac

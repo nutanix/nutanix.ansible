@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2
+module: ntnx_layer2_stretches_learned_mac_addresses_info_v2
 short_description: Fetch learned MAC addresses of a Layer2 Stretch in Nutanix Prism Central
 version_added: 2.7.0
 description:
@@ -54,30 +54,30 @@ author:
 
 EXAMPLES = r"""
 - name: List all learned MAC addresses of a Layer2 Stretch
-  nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+  nutanix.ncp.ntnx_layer2_stretches_learned_mac_addresses_info_v2:
     layer2_stretch_ext_id: "6be8fe36-9612-4fab-aabb-2c02207c794d"
   register: result
 
 - name: Fetch a specific learned MAC address by external ID
-  nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+  nutanix.ncp.ntnx_layer2_stretches_learned_mac_addresses_info_v2:
     layer2_stretch_ext_id: "6be8fe36-9612-4fab-aabb-2c02207c794d"
     ext_id: "d4f3f04f-1222-8544-7896-28b62bcc3e3e"
   register: result
 
 - name: List learned MAC addresses with a filter on macType
-  nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+  nutanix.ncp.ntnx_layer2_stretches_learned_mac_addresses_info_v2:
     layer2_stretch_ext_id: "6be8fe36-9612-4fab-aabb-2c02207c794d"
     filter: "macType eq Networking.Config.MacType'LEARNED'"
   register: result
 
 - name: List learned MAC addresses with a limit of 1
-  nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+  nutanix.ncp.ntnx_layer2_stretches_learned_mac_addresses_info_v2:
     layer2_stretch_ext_id: "6be8fe36-9612-4fab-aabb-2c02207c794d"
     limit: 1
   register: result
 
 - name: List learned MAC addresses ordered by value ascending
-  nutanix.ncp.ntnx_learned_mac_addresses_by_layer2_stretch_ids_info_v2:
+  nutanix.ncp.ntnx_layer2_stretches_learned_mac_addresses_info_v2:
     layer2_stretch_ext_id: "6be8fe36-9612-4fab-aabb-2c02207c794d"
     orderby: "value asc"
   register: result
