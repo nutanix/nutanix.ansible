@@ -174,13 +174,13 @@ def get_virtual_switch(module, api_instance, ext_id):
 
 def get_learned_mac_address(module, api_instance, ext_id, layer2_stretch_ext_id):
     """
-    This method will return a specific learned MAC address for a Layer2Stretch
-    using the MAC address external ID and its parent Layer2Stretch external ID.
+    This method will return learned MAC address info using MAC address external ID
+    and Layer2 Stretch external ID.
     Args:
         module (object): Ansible module object
         api_instance (object): MacAddressesApi instance from ntnx_networking_py_client sdk
         ext_id (str): learned MAC address external ID
-        layer2_stretch_ext_id (str): Layer2Stretch external ID that owns this MAC address
+        layer2_stretch_ext_id (str): Layer2 Stretch external ID
     return:
         info (object): learned MAC address info
     """

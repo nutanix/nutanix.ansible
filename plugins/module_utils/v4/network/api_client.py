@@ -199,12 +199,11 @@ def get_bridges_api_instance(module):
 
 def get_mac_addresses_api_instance(module):
     """
-    This method will return MacAddressesApi instance used to fetch learned
-    MAC addresses of a Layer2 Stretch.
+    This method will return MacAddressesApi instance.
     Args:
         module (object): Ansible module object
     return:
-        api_instance (object): MacAddressesApi instance
+        api_instance (object): Mac Addresses Api instance
     """
     api_client = get_api_client(module)
     return ntnx_networking_py_client.MacAddressesApi(api_client=api_client)
