@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -11,34 +11,35 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_aws_vpcs_info_v2
-short_description: Fetch NC2A (Nutanix Cloud Clusters on AWS) VPC info in Nutanix Prism Central
+short_description: Fetch AWS VPCs (NC2A) info in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module allows you to fetch information about AwsVpc in Nutanix Prism Central.
-  - If C(ext_id) is provided, fetch details of the specific AwsVpc from the target cluster.
-  - If C(ext_id) is not provided, list multiple AwsVpc for the target cluster.
-  - AwsVpc is a read-only listing surface (only the list API is available in the SDK);
-    filtering by C(ext_id) is done client-side against the list response.
+  - This module allows you to fetch AWS VPCs info in Nutanix Prism Central.
+  - If C(ext_id) is provided, fetch a particular AWS VPC using client-side filtering
+    of the list response (there is no Get-by-ID API).
+  - If C(ext_id) is not provided, list AWS VPCs for the target NC2A cluster.
+  - C(cluster_ext_id) is required — the AWS VPC catalogue is scoped to a single NC2A cluster.
+  - The Nutanix v4 API exposes only a list endpoint for AWS VPCs (no Get-by-ID and no
+    OData query parameters such as filter, limit, page, orderby, or select).
   - This module uses PC v4 APIs based SDKs.
 notes:
-    - >-
-      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
-    - >-
-      B(Get NC2A VPCs) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Super Admin, Virtual Machine Admin,
-      Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
+  - >-
+    This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+  - >-
+    B(View NC2 AWS VPC) -
+    Required Roles: Network Infra Admin, Prism Admin, Prism Viewer, Super Admin
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   ext_id:
     description:
-      - The external ID of the AwsVpc.
-      - When provided, only the matching AwsVpc from the target cluster is returned.
-      - AwsVpc has no dedicated get-by-ID endpoint; this is applied as a client-side filter.
+      - The external ID of the AWS VPC.
+      - When provided, only the matching AWS VPC from the target cluster is returned.
+      - AWS VPCs have no dedicated get-by-ID endpoint; this is applied as a client-side filter.
     type: str
   cluster_ext_id:
     description:
-      - The external ID (UUID) of the target NC2A Prism Element cluster whose AWS VPCs should be listed.
-      - Required by the underlying list API which passes this value as the C(X-Cluster-Id) header.
+      - Prism Element / NC2A cluster UUID (maps to the C(X-Cluster-Id) header).
+      - Required because the AWS VPC catalogue is always scoped to a single NC2A cluster.
     type: str
     required: true
   read_timeout:
@@ -56,22 +57,14 @@ author:
 """
 
 EXAMPLES = r"""
-- name: List all AWS VPCs discovered by an NC2A cluster
+- name: List all AWS VPCs available to an NC2A cluster
   nutanix.ncp.ntnx_aws_vpcs_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
   register: result
   ignore_errors: true
 
 - name: Fetch a specific AWS VPC by external ID
   nutanix.ncp.ntnx_aws_vpcs_info_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
     cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
     ext_id: "vpc-0a1b2c3d4e5f67890"
   register: result
@@ -81,9 +74,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC AwsVpc info v4 API.
-    - It can be a single AwsVpc if external ID is provided.
-    - List of multiple AwsVpc if external ID is not provided.
+    - The response from the Nutanix PC AWS VPCs info v4 API.
+    - It can be a single AWS VPC if external ID is provided.
+    - It is a list of AWS VPCs if external ID is not provided.
   returned: always
   type: dict
   sample:
@@ -97,42 +90,40 @@ response:
       "vpc_id": "vpc-0a1b2c3d4e5f67890"
     }
 
+changed:
+  description: This indicates whether the task resulted in any changes. Always false for info modules.
+  returned: always
+  type: bool
+  sample: false
+
 ext_id:
-  description:
-    - External ID of the AwsVpc.
+  description: External ID of the AWS VPC.
   type: str
   returned: when external ID is provided
   sample: "vpc-0a1b2c3d4e5f67890"
 
 total_available_results:
-  description:
-    - The total number of AwsVpc entries returned by the target cluster.
+  description: The total number of available AWS VPCs on the target NC2A cluster.
   type: int
-  returned: when all AwsVpcs are fetched
+  returned: when all AWS VPCs are fetched
   sample: 3
-
-changed:
-  description: This indicates whether the task resulted in any changes.
-  returned: always
-  type: bool
-  sample: false
-
-failed:
-  description: This indicates whether the task failed.
-  returned: always
-  type: bool
-  sample: false
-
-error:
-  description: This field typically holds information about errors that occurred during the task execution.
-  type: str
-  returned: When an error occurs
 
 msg:
   description: This indicates the message if any message occurred.
   returned: When there is an error
   type: str
   sample: "Api Exception raised while fetching AWS VPCs info"
+
+error:
+  description: This field typically holds information about any errors that occurred during the task execution.
+  type: str
+  returned: When an error occurs
+
+failed:
+  description: This indicates whether the task failed.
+  returned: always
+  type: bool
+  sample: false
 """
 
 import warnings  # noqa: E402
@@ -141,6 +132,7 @@ from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.network.api_client import get_aws_vpcs_api_instance  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -160,9 +152,12 @@ def get_module_spec():
 
 
 def _list_aws_vpcs(module, api_instance):
-    cluster_ext_id = module.params.get("cluster_ext_id")
+    kwargs = {"X_Cluster_Id": module.params.get("cluster_ext_id")}
     try:
-        return api_instance.list_aws_vpcs(X_Cluster_Id=cluster_ext_id)
+        return list_entities(
+            api_instance.list_aws_vpcs,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -197,10 +192,10 @@ def get_aws_vpcs(module, api_instance, result):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    resp_dict = strip_internal_attributes(resp.to_dict()).get("data")
-    if not resp_dict:
-        resp_dict = []
-    result["response"] = resp_dict
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    else:
+        result["response"] = []
 
 
 def run_module():
