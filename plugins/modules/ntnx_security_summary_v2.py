@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -11,16 +11,13 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_security_summary_v2
-short_description: Trigger a refresh of security summaries in Nutanix Prism Central
+short_description: Triggers a refresh operation for updating security stats on Prism Central and Prism Element.
 version_added: 2.7.0
 description:
-    - Initiates a refresh operation for the aggregated Security Summary of the ecosystem
-      managed by Prism Central.
-    - The refresh recomputes the current STIG, vulnerability, security-config and password
-      issue counts for every cluster registered with Prism Central and republishes them
-      to the Security Dashboard.
-    - The API returns a task reference; when C(wait) is true (default) the module waits
-      for the refresh task to complete before returning.
+    - Initiates a refresh operation to update security summary statistics.
+    - Refreshes the security summary data for clusters associated with the target
+      Prism Central or Prism Element, including STIG, vulnerability,
+      security-configuration and password summaries.
     - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -34,6 +31,7 @@ options:
         description:
             - State of the module.
             - If state is C(present), the module will trigger a refresh of the security summaries.
+            - If state is C(absent), the module will fail.
         type: str
         choices:
             - present
@@ -63,9 +61,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - Response for triggering a refresh of security summaries.
-        - Task details if C(wait) is true.
-        - Task reference details if C(wait) is false.
+        - Response for refreshing security summaries.
+        - If C(wait) is true, it will contain the final task payload after completion.
+        - If C(wait) is false, it will contain the initial task details.
     returned: always
     type: dict
     sample:
@@ -103,14 +101,9 @@ changed:
 
 msg:
     description: This indicates the message if any message occurred.
-    returned: When there is an error
+    returned: When there is an error or in check mode operation
     type: str
     sample: "Api Exception raised while triggering security summaries refresh"
-
-error:
-    description: This field typically holds information about if the task have errors that occurred during the task execution.
-    returned: when an error occurs
-    type: str
 
 failed:
     description: This field typically holds information about if the task have failed.
@@ -123,22 +116,6 @@ task_ext_id:
     returned: always
     type: str
     sample: "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1"
-
-ext_id:
-    description:
-        - Not applicable for this action module. The refresh operation does not target
-          a single entity ext_id.
-    returned: always
-    type: str
-    sample: null
-
-skipped:
-    description:
-        - Set to true when the refresh could not be triggered because another
-          refresh scan is already in progress on Prism Central.
-    returned: when the refresh is skipped due to an existing task in progress
-    type: bool
-    sample: true
 """
 
 import warnings  # noqa: E402
@@ -180,46 +157,12 @@ def refresh_security_summaries(module, api_instance, result):
             msg="Api Exception raised while triggering security summaries refresh",
         )
 
-    # The refresh API can return either a TaskReference (success) or an
-    # ErrorResponse embedded in a 200 payload — most commonly SEC-10001 when a
-    # refresh scan is already in progress. Detect these variants explicitly so
-    # the module never raises an unhelpful AttributeError on ext_id.
-    data = getattr(resp, "data", None)
-    if data is None:
-        module.fail_json(
-            msg="Security summaries refresh returned an empty response",
-            response=None,
-            **result  # fmt: skip
-        )
-    result["response"] = strip_internal_attributes(data.to_dict())
-    task_ext_id = getattr(data, "ext_id", None)
-    if not task_ext_id:
-        # Treat "already in progress" as an idempotent no-op instead of a hard
-        # failure so callers can safely retry the refresh action.
-        error_payload = result["response"] or {}
-        errors = error_payload.get("error") or []
-        existing_task_ext_id = None
-        for err in errors:
-            args_map = (err or {}).get("arguments_map") or {}
-            if args_map.get("existingTaskUuid"):
-                existing_task_ext_id = args_map.get("existingTaskUuid")
-                break
-        if existing_task_ext_id:
-            result["msg"] = (
-                "Security summaries refresh is already in progress "
-                "(existing task UUID: {0}). Skipping.".format(existing_task_ext_id)
-            )
-            result["skipped"] = True
-            return
-        module.fail_json(
-            msg="Security summaries refresh did not return a task reference",
-            **result  # fmt: skip
-        )
-
+    task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
-    if module.params.get("wait"):
-        task = wait_for_completion(module, task_ext_id)
-        result["response"] = strip_internal_attributes(task.to_dict())
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if task_ext_id and module.params.get("wait"):
+        task_status = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
 
 
@@ -232,10 +175,8 @@ def run_module():
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
-        "error": None,
+        "failed": False,
         "response": None,
-        "ext_id": None,
-        "task_ext_id": None,
     }
     api_instance = get_security_summaries_api_instance(module)
     refresh_security_summaries(module, api_instance, result)

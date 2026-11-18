@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -49,19 +49,51 @@ author:
 EXAMPLES = r"""
 - name: List all security summaries in Prism Central
   nutanix.ncp.ntnx_security_summaries_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
   register: result
   ignore_errors: true
 
 - name: List security summaries with a filter on clusterExtId
   nutanix.ncp.ntnx_security_summaries_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     filter: "clusterExtId eq '00000000-0000-0000-0000-000000000000'"
   register: result_filter
   ignore_errors: true
 
 - name: List security summaries with a limit
   nutanix.ncp.ntnx_security_summaries_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     limit: 1
   register: result_limit
+  ignore_errors: true
+
+- name: List security summaries with fetch all
+  nutanix.ncp.ntnx_security_summaries_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
+  register: result_fetch_all
+  ignore_errors: true
+
+ - name: List security summaries with expand
+   nutanix.ncp.ntnx_security_summaries_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    expand: "cluster"
+  register: result_expand
   ignore_errors: true
 """
 
@@ -144,6 +176,7 @@ from ..module_utils.v4.security.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -161,13 +194,16 @@ def get_module_spec():
 
 def list_security_summaries(module, api_instance, result):
     sg = SpecGenerator(module)
-    kwargs, err = sg.get_info_spec(attr=module.params)
+    kwargs, err = sg.get_info_spec(attr=module.params, extra_params=["expand"])
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating security summaries info spec", **result)
 
     try:
-        resp = api_instance.list_security_summaries(**kwargs)
+        resp = list_entities(
+            api_instance.list_security_summaries,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -189,7 +225,7 @@ def run_module():
         supports_check_mode=False,
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "response": None, "failed": False, "error": None}
+    result = {"changed": False, "response": None, "failed": False}
     api_instance = get_security_summaries_api_instance(module)
     list_security_summaries(module, api_instance, result)
     module.exit_json(**result)

@@ -5,6 +5,8 @@
 # 2. List all security summaries in Prism Central.
 # 3. List security summaries with a filter on clusterExtId.
 # 4. List security summaries with a limit.
+# 5. List security summaries with fetch all.
+# 6. List security summaries with expand.
 
 - name: SecuritySummary playbook
   hosts: localhost
@@ -34,3 +36,13 @@
       nutanix.ncp.ntnx_security_summaries_info_v2:
         limit: 1
       register: limit_result
+
+    - name: List security summaries with fetch all
+      nutanix.ncp.ntnx_security_summaries_info_v2:
+        fetch_all: true
+      register: fetch_all_result
+
+    - name: List security summaries with expand
+      nutanix.ncp.ntnx_security_summaries_info_v2:
+        expand: "cluster"
+      register: expand_result
