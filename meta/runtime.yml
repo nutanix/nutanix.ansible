@@ -304,6 +304,7 @@ action_groups:
     - ntnx_vpc_virtual_switch_mappings_info_v2
     - ntnx_entity_group_v2
     - ntnx_entity_groups_info_v2
+    - ntnx_cluster_capabilities_info_v2
     - ntnx_clear_routing_policy_counter_v2
     - ntnx_load_balancer_session_stats_info_v2
     - ntnx_layer2_stretches_learned_mac_addresses_info_v2
