@@ -97,8 +97,7 @@ response:
     returned: always
     sample:
         {
-            "ext_id": "ZXJnb24=:90458bc7-a12b-4616-ac66-562fdb00c209",
-            "status": "SUCCEEDED"
+            "ext_id": "ZXJnb24=:90458bc7-a12b-4616-ac66-562fdb00c209"
         }
 changed:
     description: This indicates whether the task resulted in any changes
@@ -132,7 +131,6 @@ error:
 """
 
 import traceback  # noqa: E402
-import uuid  # noqa: E402
 import warnings  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
@@ -196,10 +194,9 @@ def associate_policies(module, result, api_instance):
         result["msg"] = "Secured policies will be associated with the approval policy."
         return
 
-    kwargs = {"NTNX-Request-Id": str(uuid.uuid4())}
     resp = None
     try:
-        resp = api_instance.associate_policies(extId=ext_id, body=spec, **kwargs)
+        resp = api_instance.associate_policies(extId=ext_id, body=spec)
     except Exception as e:
         raise_api_exception(
             module=module,

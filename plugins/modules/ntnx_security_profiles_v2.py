@@ -131,7 +131,6 @@ error:
 """
 
 import copy  # noqa: E402
-import uuid  # noqa: E402
 import warnings  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
@@ -213,7 +212,7 @@ def update_security_profile(module, result, api_instance):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
-    kwargs = {"if_match": etag_value, "NTNX-Request-Id": str(uuid.uuid4())}
+    kwargs = {"if_match": etag_value}
     resp = None
     try:
         resp = api_instance.update_security_profile_by_id(

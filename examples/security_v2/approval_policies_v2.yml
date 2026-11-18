@@ -1,5 +1,6 @@
 ---
 # Summary:
+# This playbook will do:
 # 1. Create an approval policy
 # 2. Get approval policy by External ID
 # 3. List approval policies
@@ -37,9 +38,13 @@
                 user_type: LOCAL
       register: create_result
 
+    - name: Set approval policy ext_id
+      ansible.builtin.set_fact:
+        approval_policy_ext_id: "{{ create_result.ext_id }}"
+
     - name: Fetch approval policy by External ID
       nutanix.ncp.ntnx_approval_policies_info_v2:
-        ext_id: "{{ create_result.ext_id }}"
+        ext_id: "{{ approval_policy_ext_id }}"
       register: get_result
 
     - name: List approval policies
@@ -53,7 +58,7 @@
 
     - name: Update an approval policy
       nutanix.ncp.ntnx_approval_policies_v2:
-        ext_id: "{{ create_result.ext_id }}"
+        ext_id: "{{ approval_policy_ext_id }}"
         name: "Ansible Approval Policy Updated"
         description: "Updated by Ansible example"
         approver_groups:
@@ -70,7 +75,7 @@
 
     - name: Associate protection policy with approval policy
       nutanix.ncp.ntnx_approval_policies_associate_v2:
-        ext_id: "{{ create_result.ext_id }}"
+        ext_id: "{{ approval_policy_ext_id }}"
         secured_policies:
           - policy_ext_id: "{{ protection_policy_ext_id }}"
             policy_type: PROTECTION_POLICY

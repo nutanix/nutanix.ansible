@@ -158,7 +158,9 @@ options:
                             value:
                                 description:
                                     - The value associated with the key for this key-value pair.
-                                type: str
+                                    - Can be a string, integer, boolean, list of strings, object,
+                                      list of map-of-string wrappers, or list of integers.
+                                type: raw
                                 required: false
                     description:
                         description:
@@ -293,7 +295,6 @@ error:
 
 import copy  # noqa: E402
 import traceback  # noqa: E402
-import uuid  # noqa: E402
 import warnings  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
@@ -316,6 +317,7 @@ from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
     strip_internal_attributes,
+    strip_read_only_fields,
     strip_users_empty_attributes,
     validate_required_params,
 )
@@ -331,11 +333,21 @@ except ImportError:
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
+READ_ONLY_ATTRIBUTES = (
+    "last_updated_by",
+    "last_update_time",
+    "is_update_pending",
+    "secured_policies",
+    "ext_id",
+    "links",
+    "tenant_id",
+)
+
 
 def get_module_spec():
     additional_attributes_spec = dict(
         name=dict(type="str"),
-        value=dict(type="str"),
+        value=dict(type="raw"),
     )
     approver_spec = dict(
         username=dict(type="str", required=True),
@@ -438,15 +450,7 @@ def create_approval_policy(module, result, api_instance):
 def check_approval_policy_idempotency(old_spec, update_spec):
     old_dict = strip_internal_attributes(old_spec.to_dict())
     update_dict = strip_internal_attributes(update_spec.to_dict())
-    for field in (
-        "last_updated_by",
-        "last_update_time",
-        "is_update_pending",
-        "secured_policies",
-        "ext_id",
-        "links",
-        "tenant_id",
-    ):
+    for field in READ_ONLY_ATTRIBUTES:
         old_dict.pop(field, None)
         update_dict.pop(field, None)
     return old_dict == update_dict
@@ -471,6 +475,8 @@ def update_approval_policy(module, result, api_instance):
         result["error"] = err
         module.fail_json(msg="Failed generating update approval policy Spec", **result)
 
+    strip_read_only_fields(update_spec, fields=READ_ONLY_ATTRIBUTES)
+
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         result["msg"] = "Approval policy will be updated."
@@ -480,7 +486,7 @@ def update_approval_policy(module, result, api_instance):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
-    kwargs = {"if_match": etag_value, "NTNX-Request-Id": str(uuid.uuid4())}
+    kwargs = {"if_match": etag_value}
     resp = None
     try:
         resp = api_instance.update_approval_policy_by_ext_id(
@@ -504,6 +510,12 @@ def update_approval_policy(module, result, api_instance):
 
 
 def run_module():
+
+    module = BaseModuleV4(
+        argument_spec=get_module_spec(),
+        supports_check_mode=True,
+    )
+
     if SDK_IMP_ERROR:
         module = BaseModuleV4(
             argument_spec=get_module_spec(),
@@ -513,11 +525,6 @@ def run_module():
             msg=missing_required_lib("ntnx_security_py_client"),
             exception=SDK_IMP_ERROR,
         )
-
-    module = BaseModuleV4(
-        argument_spec=get_module_spec(),
-        supports_check_mode=True,
-    )
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
