@@ -1,0 +1,68 @@
+---
+# Summary:
+# This playbook demonstrates the Certificate Manager v4 modules for the clustermgmt namespace.
+# All operations target Prism Central (PC).
+# It will do:
+# 1. Create a Certificate on a cluster
+# 2. Get a Certificate using ext_id
+# 3. List all Certificates on a cluster
+# 4. Delete a Certificate
+
+- name: Certificate Manager playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('<user>', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('<pass>', true) }}"
+      nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default(9440, true) }}"
+      validate_certs: false
+  tasks:
+    - name: List AOS clusters to discover cluster_ext_id
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: clusters_info
+      ignore_errors: true
+
+    - name: Set cluster_ext_id from discovered cluster
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters_info.response[0].ext_id if clusters_info.response is defined and clusters_info.response | length > 0 else '00061fa4-ef93-7dd8-185b-ac1f6b6f97e2' }}"
+
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        certificate_base64: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0="
+        certificate_chain_base64: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0="
+        private_key_base64: "LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCi0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0="
+
+    - name: Create a Certificate on a cluster
+      nutanix.ncp.ntnx_cluster_certificate_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        certificate: "{{ certificate_base64 }}"
+        certificate_chain: "{{ certificate_chain_base64 }}"
+        private_key: "{{ private_key_base64 }}"
+        description: "Certificate added by Ansible"
+        purpose: "SERVER_AUTH"
+      register: create_result
+      ignore_errors: true
+
+    - name: Get a Certificate using ext_id
+      nutanix.ncp.ntnx_cluster_certificate_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+      register: result
+      ignore_errors: true
+
+    - name: List all Certificates on a cluster
+      nutanix.ncp.ntnx_cluster_certificate_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete a Certificate on a cluster
+      nutanix.ncp.ntnx_cluster_certificate_delete_v2:
+        state: absent
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+      register: result
+      ignore_errors: true

@@ -364,6 +364,7 @@ action_groups:
     - ntnx_rotate_encryption_keys_v2
     - ntnx_certificate_authority_v2
     - ntnx_cluster_certificate_v2
+    - ntnx_cluster_certificate_delete_v2
     - ntnx_csr_v2
     - ntnx_csr_download_v2
     - ntnx_certificate_authority_info_v2
