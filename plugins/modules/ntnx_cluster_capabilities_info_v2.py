@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,7 +12,7 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_cluster_capabilities_info_v2
 short_description: Fetch cluster capabilities info in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
   - This module allows you to fetch information about ClusterCapability in Nutanix Prism Central.
   - If C(cluster_id) is provided, list capabilities filtered to the given Prism Element cluster UUID.
@@ -23,8 +23,8 @@ notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(List cluster capabilities) -
-      Required Roles: Super Admin, Prism Admin, Prism Viewer, Project Admin, Network Infra Admin, VPC Admin.
+      B(View Cluster Networking Capabilities) -
+      Required Roles: Network Infra Admin, Prism Admin, Prism Viewer, Project Admin, Super Admin, VPC Admin.
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   cluster_id:
@@ -32,6 +32,7 @@ options:
       - Prism Element cluster UUID whose networking capabilities should be retrieved.
       - Convenience option that translates to an OData C(clusterId eq '<cluster_id>') filter on the list API.
       - Mutually exclusive with C(filter) since both target the C($filter) query parameter.
+      - Corresponds to the only OData filterable field documented for this API (C(clusterId)).
     type: str
     required: false
 extends_documentation_fragment:
@@ -70,6 +71,12 @@ EXAMPLES = r"""
 - name: List cluster capabilities with orderby
   nutanix.ncp.ntnx_cluster_capabilities_info_v2:
     orderby: "clusterId"
+  register: result
+  ignore_errors: true
+
+- name: List all cluster capabilities with fetch_all
+  nutanix.ncp.ntnx_cluster_capabilities_info_v2:
+    fetch_all: true
   register: result
   ignore_errors: true
 """
@@ -112,34 +119,32 @@ response:
     ]
 
 changed:
-  description: This indicates whether the task resulted in any changes. Always False for info modules.
+  description: This indicates whether the task resulted in any changes. Always false for info modules.
   returned: always
   type: bool
   sample: false
 
 msg:
-  description: This indicates the message if any message occurred
+  description: This indicates the message if any message occurred.
   returned: When there is an error
   type: str
   sample: "Api Exception raised while fetching cluster capabilities info"
 
 error:
-  description: This field typically holds information about if the task have errors that occurred during the task execution
-  returned: When an error occurs
+  description: This field typically holds information about any errors that occurred during the task execution.
   type: str
+  returned: When an error occurs
 
 failed:
-  description: This field typically holds information about if the task have failed
+  description: This field indicates whether the task failed.
   returned: always
   type: bool
   sample: false
 
 total_available_results:
-  description:
-    - The total number of available cluster capabilities entries in PC.
-    - May be C(None) when the list API does not populate this field for cluster capabilities.
+  description: The total number of available cluster capabilities entries in PC.
   type: int
-  returned: when the list operation is invoked
+  returned: When all cluster capabilities are fetched
   sample: 1
 """
 
@@ -152,10 +157,12 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
 
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
@@ -168,23 +175,10 @@ def get_module_spec():
     return module_args
 
 
-def _merge_cluster_id_filter(module_params):
-    """Fold the cluster_id convenience option into an OData $filter expression."""
-    cluster_id = module_params.get("cluster_id")
-    if not cluster_id:
-        return
-    cluster_filter = "clusterId eq '{0}'".format(cluster_id)
-    existing_filter = module_params.get("filter")
-    if existing_filter:
-        module_params["filter"] = "({0}) and {1}".format(
-            existing_filter, cluster_filter
-        )
-    else:
-        module_params["filter"] = cluster_filter
-
-
 def get_cluster_capabilities(module, api_instance, result):
-    _merge_cluster_id_filter(module.params)
+    cluster_id = module.params.get("cluster_id")
+    if cluster_id:
+        module.params["filter"] = "clusterId eq '{0}'".format(cluster_id)
 
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)
@@ -195,7 +189,10 @@ def get_cluster_capabilities(module, api_instance, result):
         )
 
     try:
-        resp = api_instance.list_cluster_capabilities(**kwargs)
+        resp = list_entities(
+            api_instance.list_cluster_capabilities,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -205,11 +202,10 @@ def get_cluster_capabilities(module, api_instance, result):
 
     total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-
-    resp = strip_internal_attributes(resp.to_dict()).get("data")
-    if not resp:
-        resp = []
-    result["response"] = resp
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    else:
+        result["response"] = []
 
 
 def run_module():
