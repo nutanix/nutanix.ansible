@@ -67,6 +67,7 @@ options:
         choices:
             - "ON"
             - "OFF"
+            - "LOG"
         required: false
     wait:
         description:
@@ -92,7 +93,7 @@ EXAMPLES = r"""
     validate_certs: false
     security_profile_ext_id: "64eae63e-d671-483f-a8bf-e55e426a7168"
     is_consent_banner_enabled: false
-    consent_banner_text: ""
+    consent_banner_text: "consent banner text"
     user_space_core_dump_level: "OFF"
     kernel_space_core_dump_level: "OFF"
   register: result
@@ -166,14 +167,6 @@ from ..module_utils.v4.utils import (  # noqa: E402
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
-WRITABLE_FIELDS = (
-    "is_consent_banner_enabled",
-    "consent_banner_text",
-    "user_space_core_dump_level",
-    "kernel_space_core_dump_level",
-)
-
-
 def get_module_spec():
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
@@ -186,23 +179,10 @@ def get_module_spec():
     return module_args
 
 
-def _normalize_value(value):
-    if value is None:
-        return None
-    if hasattr(value, "value"):
-        return value.value
-    if isinstance(value, str) and value == "":
-        return None
-    return value
-
-
-def check_advanced_config_idempotency(current_spec, update_spec):
-    for field in WRITABLE_FIELDS:
-        current_value = _normalize_value(getattr(current_spec, field, None))
-        update_value = _normalize_value(getattr(update_spec, field, None))
-        if current_value != update_value:
-            return False
-    return True
+def check_advanced_config_idempotency(old_spec, update_spec):
+    old_dict = strip_internal_attributes(old_spec.to_dict())
+    update_dict = strip_internal_attributes(update_spec.to_dict())
+    return old_dict == update_dict
 
 
 def update_advanced_config(module, result, api_instance):

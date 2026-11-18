@@ -90,8 +90,16 @@ EXAMPLES = r"""
     validate_certs: false
     fetch_all: true
   register: result
-"""
 
+- name: List security profiles with expand
+  nutanix.ncp.ntnx_security_profiles_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    expand: "cluster"
+  register: result
+"""
 RETURN = r"""
 response:
     description:

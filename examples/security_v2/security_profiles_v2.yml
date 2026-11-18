@@ -1,9 +1,15 @@
 ---
 # Summary:
-# 1. List security profiles
-# 2. Get security profile by External ID
-# 3. Update security profile
-# 4. Get and update advanced config
+# This playbook will do:
+# 1. Fetch security profile by External ID
+# 2. List security profiles
+# 3. List security profiles with filter
+# 4. List security profiles with limit
+# 5. List all security profiles with fetch_all
+# 6. List security profiles with expand
+# 7. Update security profile type
+# 8. Fetch advanced config
+# 9. Update advanced config
 
 - name: Security profiles playbook
   hosts: localhost
@@ -15,19 +21,23 @@
       nutanix_password: <pass>
       validate_certs: false
   tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        security_profile_ext_id: "64eae63e-d671-483f-a8bf-e55e426a7168"
+        security_profile_type: "STANDARD"
+
+    - name: Fetch security profile by External ID
+      nutanix.ncp.ntnx_security_profiles_info_v2:
+        ext_id: "{{ security_profile_ext_id }}"
+      register: get_result
+
     - name: List security profiles
       nutanix.ncp.ntnx_security_profiles_info_v2:
       register: list_result
 
-    - name: Fetch security profile by External ID
-      nutanix.ncp.ntnx_security_profiles_info_v2:
-        ext_id: "{{ list_result.response[0].ext_id }}"
-      register: get_result
-      when: list_result.response | length > 0
-
     - name: List security profiles with filter
       nutanix.ncp.ntnx_security_profiles_info_v2:
-        filter: "type eq Security.Config.SecurityProfileType'STANDARD'"
+        filter: "type eq Security.Config.SecurityProfileType'{{ security_profile_type }}'"
       register: filter_result
 
     - name: List security profiles with limit
@@ -40,25 +50,27 @@
         fetch_all: true
       register: fetch_all_result
 
+    - name: List security profiles with expand
+      nutanix.ncp.ntnx_security_profiles_info_v2:
+        expand: "cluster"
+      register: expand_result
+
     - name: Update security profile type
       nutanix.ncp.ntnx_security_profiles_v2:
-        ext_id: "{{ list_result.response[0].ext_id }}"
-        type: "{{ list_result.response[0].type }}"
+        ext_id: "{{ security_profile_ext_id }}"
+        type: "{{ security_profile_type }}"
       register: update_result
-      when: list_result.response | length > 0
 
     - name: Fetch advanced config
       nutanix.ncp.ntnx_security_profiles_advanced_config_info_v2:
-        security_profile_ext_id: "{{ list_result.response[0].ext_id }}"
+        security_profile_ext_id: "{{ security_profile_ext_id }}"
       register: advanced_info
-      when: list_result.response | length > 0
 
     - name: Update advanced config
       nutanix.ncp.ntnx_security_profiles_advanced_config_v2:
-        security_profile_ext_id: "{{ list_result.response[0].ext_id }}"
-        is_consent_banner_enabled: "{{ advanced_info.response.is_consent_banner_enabled }}"
-        consent_banner_text: "{{ advanced_info.response.consent_banner_text | default('') }}"
-        user_space_core_dump_level: "{{ advanced_info.response.user_space_core_dump_level }}"
-        kernel_space_core_dump_level: "{{ advanced_info.response.kernel_space_core_dump_level }}"
+        security_profile_ext_id: "{{ security_profile_ext_id }}"
+        is_consent_banner_enabled: "true"
+        consent_banner_text: "consent banner text"
+        user_space_core_dump_level: "OFF"
+        kernel_space_core_dump_level: "OFF"
       register: advanced_update
-      when: list_result.response | length > 0

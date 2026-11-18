@@ -49,7 +49,7 @@ options:
             - STRICT
             - NOT_SET
             - NOT_SUPPORTED
-        required: false
+        required: true
     wait:
         description:
             - Wait for the task to complete.
@@ -161,23 +161,16 @@ def get_module_spec():
         type=dict(
             type="str",
             choices=["STANDARD", "ELEVATED", "STRICT", "NOT_SET", "NOT_SUPPORTED"],
+            required=True,
         ),
     )
     return module_args
 
 
-def _normalize_value(value):
-    if value is None:
-        return None
-    if hasattr(value, "value"):
-        return value.value
-    return value
-
-
 def check_security_profile_idempotency(current_spec, update_spec):
-    return _normalize_value(getattr(current_spec, "type", None)) == _normalize_value(
-        getattr(update_spec, "type", None)
-    )
+    current_spec = strip_users_empty_attributes(current_spec)
+    update_spec = strip_users_empty_attributes(update_spec)
+    return current_spec.type == update_spec.type
 
 
 def update_security_profile(module, result, api_instance):

@@ -77,12 +77,6 @@ failed:
     type: bool
     returned: always
     sample: false
-msg:
-    description: This indicates the message if any message occurred
-    returned: When there is an error
-    type: str
-    sample: >-
-      Api Exception raised while fetching advanced config using security profile external ID
 """
 
 import warnings  # noqa: E402
