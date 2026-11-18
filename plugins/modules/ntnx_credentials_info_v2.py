@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -23,10 +23,10 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get credential by ext_id) -
-      Required Roles: Prism Admin, Prism Viewer, Super Admin
+      Required Roles: Internal Super Admin, Prism Admin, Prism Viewer, Super Admin
     - >-
       B(List credentials) -
-      Required Roles: Prism Admin, Prism Viewer, Super Admin
+      Required Roles: Internal Super Admin, Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=security)"
 options:
   ext_id:
@@ -82,6 +82,16 @@ EXAMPLES = r"""
     limit: 1
   register: result
   ignore_errors: true
+
+- name: List credentials with fetch all
+  nutanix.ncp.ntnx_credentials_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
+  register: result
+  ignore_errors: true
 """
 RETURN = r"""
 response:
@@ -117,7 +127,7 @@ msg:
   description: This indicates the message if any message occurred.
   returned: When there is an error
   type: str
-  sample: "Api Exception raised while fetching Credential info"
+  sample: "Api Exception raised while fetching Credentials info"
 
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution.

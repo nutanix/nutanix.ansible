@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -15,11 +15,6 @@ short_description: Create, Update, Delete credentials in Nutanix Prism Central
 version_added: 2.7.0
 description:
   - This module allows you to create, update, and delete credentials in the Nutanix Prism Central credential store.
-  - Credentials are used by day-2 operations (for example Life Cycle Manager inventory and upgrades) to authenticate with
-    external management endpoints such as Baseboard Management Controllers (BMC), VMware vCenter servers, and
-    Cisco Intersight.
-  - Only one of C(credential_details.bmc), C(credential_details.vcenter) or C(credential_details.intersight) may be
-    supplied for a given credential.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -27,13 +22,13 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create a Credential) -
-      Required Roles: Prism Admin, Super Admin
+      Required Roles: Internal Super Admin, Prism Admin, Super Admin
     - >-
       B(Update a Credential) -
-      Required Roles: Prism Admin, Super Admin
+      Required Roles: Internal Super Admin, Prism Admin, Super Admin
     - >-
       B(Delete a Credential) -
-      Required Roles: Prism Admin, Super Admin
+      Required Roles: Internal Super Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=security)"
 options:
   state:
@@ -57,7 +52,6 @@ options:
     description:
       - Name of the credential.
       - Required for create operation.
-      - Minimum length is 1 character and maximum length is 256 characters.
     type: str
     required: false
   credential_details:
@@ -74,21 +68,16 @@ options:
         type: dict
         required: false
         suboptions:
-          type:
-            description:
-              - Pre-defined type of credential.
-            type: str
-            required: false
           credential:
             description:
               - Basic authentication credential (username / password) for the BMC.
             type: dict
-            required: false
+            required: true
             suboptions:
               username:
                 description:
                   - Username required for the basic auth scheme.
-                  - Minimum length is 3 characters and maximum length is 256 characters.
+                  - As per RFC 2617 usernames might be case sensitive.
                 type: str
                 required: true
               password:
@@ -147,21 +136,16 @@ options:
                     description: The FQDN value.
                     type: str
                     required: true
-          type:
-            description:
-              - Pre-defined type of credential.
-            type: str
-            required: false
           credential:
             description:
               - Basic authentication credential (username / password) for the vCenter server.
             type: dict
-            required: false
+            required: true
             suboptions:
               username:
                 description:
                   - Username required for the basic auth scheme.
-                  - Minimum length is 3 characters and maximum length is 256 characters.
+                  - As per RFC 2617 usernames might be case sensitive.
                 type: str
                 required: true
               password:
@@ -188,16 +172,11 @@ options:
             choices:
               - INTERSIGHT_SAAS
               - INTERSIGHT_VIRTUAL_APPLIANCE
-          type:
-            description:
-              - Pre-defined type of credential.
-            type: str
-            required: false
           credential:
             description:
               - Key based authentication credential for Cisco Intersight.
             type: dict
-            required: false
+            required: true
             suboptions:
               api_key:
                 description:
@@ -268,12 +247,12 @@ EXAMPLES = r"""
         url: "https://intersight.com/api/v1/"
         deployment_type: "INTERSIGHT_SAAS"
         credential:
-          api_key: "5f7a1e2b3c4d5e6f7a8b9c0d/6e7f8a9b0c1d2e3f4a5b6c7d/6e7f8a9b0c1d2e3f4a5b6c7d"
-          secret_key: "-----BEGIN EC PRIVATE KEY-----\nMHcCAQEE...==\n-----END EC PRIVATE KEY-----"
+          api_key: "<api_key>"
+          secret_key: "<secret_key>"
   register: result
   ignore_errors: true
 
-- name: Update BMC credential (rotate password)
+- name: Update BMC credential
   nutanix.ncp.ntnx_credential_v2:
     nutanix_host: "{{ ip }}"
     nutanix_username: "{{ username }}"
@@ -373,6 +352,7 @@ msg:
 
 import traceback  # noqa: E402
 import warnings  # noqa: E402
+from copy import deepcopy
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
@@ -407,6 +387,19 @@ except ImportError:
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
+
+READ_ONLY_ATTRIBUTES = (
+    "is_valid",
+    "links",
+    "tenant_id",
+    "ext_id",
+    "type",
+)
+SENSITIVE_INFORMATION = (
+    "password",
+    "api_key",
+    "secret_key",
+)
 
 
 def get_module_spec():
@@ -454,7 +447,6 @@ def get_module_spec():
     )
 
     bmc_credential_spec = dict(
-        type=dict(type="str", required=False),
         credential=dict(
             type="dict",
             options=basic_auth_spec,
@@ -470,7 +462,6 @@ def get_module_spec():
             required=True,
             obj=security_sdk.IPAddressOrFQDN,
         ),
-        type=dict(type="str", required=False),
         credential=dict(
             type="dict",
             options=basic_auth_spec,
@@ -486,7 +477,6 @@ def get_module_spec():
             required=True,
             choices=["INTERSIGHT_SAAS", "INTERSIGHT_VIRTUAL_APPLIANCE"],
         ),
-        type=dict(type="str", required=False),
         credential=dict(
             type="dict",
             options=key_based_auth_spec,
@@ -534,48 +524,22 @@ def get_module_spec():
     return module_args
 
 
-def _build_credential_spec(module, result, msg):
-    """Build a Credential SDK spec from the current module params."""
+def create_credential(module, api_instance, result):
+    validate_required_params(module, ["name", "credential_details"])
 
     sg = SpecGenerator(module)
     default_spec = security_sdk.Credential()
     spec, err = sg.generate_spec(obj=default_spec)
+
     if err:
         result["error"] = err
-        module.fail_json(msg=msg, **result)
-    return spec
-
-
-def _resolve_credential_ext_id_from_task(task):
-    """Return the credential ext_id from a task response.
-
-    The Credentials service reports the newly created / updated credential
-    inside the task's ``completion_details`` list under the name ``resourceId``.
-    Fall back to ``entities_affected`` for deployments that use that shape.
-    """
-
-    ext_id = get_ext_id_from_task_completion_details(task, name="resourceId")
-    if ext_id:
-        return ext_id
-    ext_id = get_entity_ext_id_from_task(
-        task, rel=TASK_CONSTANTS.RelEntityType.CREDENTIAL
-    )
-    if ext_id:
-        return ext_id
-    return get_entity_ext_id_from_task(task, rel=None)
-
-
-def create_credential(module, api_instance, result):
-    validate_required_params(module, ["name", "credential_details"])
-
-    spec = _build_credential_spec(
-        module, result, "Failed generating create Credential spec"
-    )
+        module.fail_json(msg="Failed generating create Credential Spec", **result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
+    resp = None
     try:
         resp = api_instance.create_credential(body=spec)
     except Exception as e:
@@ -591,11 +555,22 @@ def create_credential(module, api_instance, result):
     if task_ext_id and module.params.get("wait"):
         task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
-        ext_id = _resolve_credential_ext_id_from_task(task_status)
+        ext_id = get_entity_ext_id_from_task(
+            task_status, rel=TASK_CONSTANTS.RelEntityType.CREDENTIAL
+        )
         if ext_id:
+            resp = get_credential_by_ext_id(module, api_instance, ext_id)
             result["ext_id"] = ext_id
-            fetched = get_credential_by_ext_id(module, api_instance, ext_id)
-            result["response"] = strip_internal_attributes(fetched.to_dict())
+            result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Credential"
+                ),
+                msg="Failed to get entity ext_id from task for Credential",
+            )
+
     result["changed"] = True
 
 
@@ -612,7 +587,7 @@ def _user_supplied_secret(module):
     for key in ("bmc", "vcenter", "intersight"):
         block = details.get(key) or {}
         cred = block.get("credential") or {}
-        for sensitive in ("password", "api_key", "secret_key"):
+        for sensitive in SENSITIVE_INFORMATION:
             if cred.get(sensitive) not in (None, ""):
                 return True
     return False
@@ -621,32 +596,27 @@ def _user_supplied_secret(module):
 def check_credential_idempotency(old_spec, update_spec):
     """Compare current and desired credential specs, ignoring server-computed fields.
 
-    The API never returns secret material (password / api_key / secret_key) and
-    also does not return the plain username for BasicAuth-based credentials.
-    We must therefore strip these fields from BOTH sides before comparing so a
-    legitimate no-op update (e.g. re-running the same play with all
-    non-secret fields unchanged AND no secret material supplied) can be
-    detected as idempotent.
+    The API never returns secret material (password / api_key / secret_key), so
+    strip those from BOTH sides before comparing. Username is returned by GET
+    and must remain in the comparison so username changes are detected.
+    Callers must skip this check when the user supplied secret material (see
+    ``_user_supplied_secret``) because secret rotates cannot be detected as
+    no-ops from GET data alone.
     """
 
     old_spec = strip_internal_attributes(old_spec)
     update_spec = strip_internal_attributes(update_spec)
 
-    for attr in ("is_valid", "links", "tenant_id", "ext_id"):
+    for attr in READ_ONLY_ATTRIBUTES:
         old_spec.pop(attr, None)
         update_spec.pop(attr, None)
 
     def _clean(details):
         if not isinstance(details, dict):
             return
-        # The `type` field at the credential_details level acts as the
-        # polymorphic discriminator: the API returns the fully-qualified SDK
-        # class name (e.g. ``security.v4.config.BmcCredential``) while the
-        # user supplies the short enum (e.g. ``BMC``). Skip it entirely.
-        details.pop("type", None)
         cred = details.get("credential")
         if isinstance(cred, dict):
-            for sensitive in ("password", "api_key", "secret_key", "username"):
+            for sensitive in SENSITIVE_INFORMATION:
                 cred.pop(sensitive, None)
             # After stripping unreturned secret material the credential dict
             # is often empty on one side but present on the other; treat both
@@ -665,31 +635,33 @@ def check_credential_idempotency(old_spec, update_spec):
 def update_credential(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-    validate_required_params(module, ["credential_details"])
-
-    current_spec = get_credential_by_ext_id(module, api_instance, ext_id)
-
-    update_spec = _build_credential_spec(
-        module, result, "Failed generating Credential update spec"
-    )
-
-    if check_credential_idempotency(
-        current_spec.to_dict(), update_spec.to_dict()
-    ) and not _user_supplied_secret(module):
-        result["skipped"] = True
-        module.exit_json(msg="Nothing to change.", **result)
+    old_spec = get_credential_by_ext_id(module, api_instance, ext_id)
+    etag = get_etag(data=old_spec)
+    if not etag:
+        return module.fail_json(
+            "Unable to fetch etag for updating Credential", **result
+        )
+    kwargs = {"if_match": etag}
+    sg = SpecGenerator(module)
+    update_spec, err = sg.generate_spec(obj=deepcopy(old_spec))
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating update Credential spec", **result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
 
-    etag = get_etag(data=current_spec)
-    if not etag:
-        return module.fail_json(
-            msg="Unable to fetch etag for updating Credential", **result
-        )
+    # Secrets are never returned by GET, so skip idempotency when the play
+    # supplies password / api_key / secret_key and always send the update.
+    if not _user_supplied_secret(module) and check_credential_idempotency(
+        old_spec.to_dict(), update_spec.to_dict()
+    ):
+        result["skipped"] = True
+        result["response"] = strip_internal_attributes(old_spec.to_dict())
+        return
 
-    kwargs = {"if_match": etag}
+    resp = None
     try:
         resp = api_instance.update_credential_by_id(
             extId=ext_id, body=update_spec, **kwargs
@@ -706,8 +678,8 @@ def update_credential(module, api_instance, result):
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
         wait_for_completion(module, task_ext_id)
-        fetched = get_credential_by_ext_id(module, api_instance, ext_id)
-        result["response"] = strip_internal_attributes(fetched.to_dict())
+        resp = get_credential_by_ext_id(module, api_instance, ext_id)
+        result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True
 
 
@@ -726,8 +698,10 @@ def delete_credential(module, api_instance, result):
             msg="Unable to fetch etag for deleting Credential", **result
         )
 
+    kwargs = {"if_match": etag}
+    resp = None
     try:
-        resp = api_instance.delete_credential_by_id(extId=ext_id, if_match=etag)
+        resp = api_instance.delete_credential_by_id(extId=ext_id, **kwargs)
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -735,12 +709,11 @@ def delete_credential(module, api_instance, result):
             msg="Api Exception raised while deleting Credential",
         )
 
-    task_ext_id = getattr(getattr(resp, "data", None), "ext_id", None)
-    if task_ext_id:
-        result["task_ext_id"] = task_ext_id
-        if module.params.get("wait"):
-            task_status = wait_for_completion(module, task_ext_id)
-            result["response"] = strip_internal_attributes(task_status.to_dict())
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    if task_ext_id and module.params.get("wait"):
+        task_status = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
 
 
@@ -764,7 +737,6 @@ def run_module():
         "changed": False,
         "response": None,
         "failed": False,
-        "ext_id": None,
     }
     api_instance = get_credentials_api_instance(module)
     state = module.params.get("state")
