@@ -329,6 +329,14 @@ def create_kms(module, kms_api_instance, result):
             resp = get_kms_by_ext_id(module, kms_api_instance, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Key Management Server"
+                ),
+                msg="Failed to get entity ext_id from task for Key Management Server",
+            )
 
     result["changed"] = True
 

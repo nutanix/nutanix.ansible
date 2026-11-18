@@ -1,0 +1,159 @@
+---
+- name: Start ntnx_object_stores_buckets_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_object_stores_buckets_info_v2 tests
+
+- name: Call buckets info with missing object_store_ext_id (should fail)
+  nutanix.ncp.ntnx_object_stores_buckets_info_v2:
+  register: missing_args
+  ignore_errors: true
+
+- name: Verify missing object_store_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_args.failed == true
+      - missing_args.changed == false
+      - "'missing required arguments' in (missing_args.msg | default(''))"
+      - "'object_store_ext_id' in (missing_args.msg | default(''))"
+    fail_msg: Expected missing object_store_ext_id failure
+    success_msg: Module correctly rejected missing object_store_ext_id
+
+- name: List object stores to locate a parent for bucket tests
+  nutanix.ncp.ntnx_object_stores_info_v2:
+    fetch_all: true
+  register: object_stores
+  ignore_errors: true
+
+- name: Set object_store_ext_id when available
+  ansible.builtin.set_fact:
+    object_store_ext_id: "{{ (object_stores.response | default([]))[0].ext_id | default('') }}"
+    has_object_store: >-
+      {{ (object_stores.failed | default(true) == false)
+         and ((object_stores.response | default([])) | length > 0) }}
+
+- name: List buckets for object store
+  nutanix.ncp.ntnx_object_stores_buckets_info_v2:
+    object_store_ext_id: "{{ object_store_ext_id }}"
+  register: buckets_list
+  ignore_errors: true
+  when: has_object_store | bool
+
+- name: Verify buckets list response
+  ansible.builtin.assert:
+    that:
+      - buckets_list.changed == false
+      - buckets_list.failed == false
+      - buckets_list.response is defined
+      - buckets_list.total_available_results is defined
+      - buckets_list.total_available_results >= 0
+    fail_msg: Listing buckets failed
+    success_msg: Listed buckets successfully
+  when: has_object_store | bool
+
+- name: List buckets with limit
+  nutanix.ncp.ntnx_object_stores_buckets_info_v2:
+    object_store_ext_id: "{{ object_store_ext_id }}"
+    limit: 1
+  register: buckets_limit
+  ignore_errors: true
+  when: has_object_store | bool
+
+- name: Verify buckets list with limit
+  ansible.builtin.assert:
+    that:
+      - buckets_limit.changed == false
+      - buckets_limit.failed == false
+      - buckets_limit.response is defined
+      - (buckets_limit.response | length) <= 1
+    fail_msg: Listing buckets with limit failed
+    success_msg: Listed buckets with limit successfully
+  when: has_object_store | bool
+
+- name: List buckets with filter
+  nutanix.ncp.ntnx_object_stores_buckets_info_v2:
+    object_store_ext_id: "{{ object_store_ext_id }}"
+    filter: "isCorsEnabled eq false"
+  register: buckets_filter
+  ignore_errors: true
+  when: has_object_store | bool
+
+- name: Verify buckets list with filter
+  ansible.builtin.assert:
+    that:
+      - buckets_filter.changed == false
+      - buckets_filter.failed == false
+      - buckets_filter.response is defined
+    fail_msg: Listing buckets with filter failed
+    success_msg: Listed buckets with filter successfully
+  when: has_object_store | bool
+
+- name: List buckets with fetch_all
+  nutanix.ncp.ntnx_object_stores_buckets_info_v2:
+    object_store_ext_id: "{{ object_store_ext_id }}"
+    fetch_all: true
+  register: buckets_fetch_all
+  ignore_errors: true
+  when: has_object_store | bool
+
+- name: Verify buckets fetch_all
+  ansible.builtin.assert:
+    that:
+      - buckets_fetch_all.changed == false
+      - buckets_fetch_all.failed == false
+      - buckets_fetch_all.response is defined
+      - buckets_fetch_all.total_available_results is defined
+      - >-
+          (buckets_fetch_all.response | default([]) | length)
+          == (buckets_fetch_all.total_available_results | int)
+    fail_msg: Listing buckets with fetch_all failed
+    success_msg: Listed buckets with fetch_all successfully
+  when: has_object_store | bool
+
+- name: Capture first bucket name when present
+  ansible.builtin.set_fact:
+    first_bucket_name: "{{ (buckets_list.response | default([]))[0].name | default('') }}"
+  when:
+    - has_object_store | bool
+    - (buckets_list.response | default([])) | length > 0
+
+- name: Get bucket by name
+  nutanix.ncp.ntnx_object_stores_buckets_info_v2:
+    object_store_ext_id: "{{ object_store_ext_id }}"
+    bucket_name: "{{ first_bucket_name }}"
+  register: bucket_get
+  ignore_errors: true
+  when:
+    - has_object_store | bool
+    - (first_bucket_name | default('')) | length > 0
+
+- name: Verify get bucket by name
+  ansible.builtin.assert:
+    that:
+      - bucket_get.changed == false
+      - bucket_get.failed == false
+      - bucket_get.response is defined
+      - bucket_get.bucket_name == first_bucket_name
+      - bucket_get.response.name == first_bucket_name
+    fail_msg: Get bucket by name failed
+    success_msg: Got bucket by name successfully
+  when:
+    - has_object_store | bool
+    - (first_bucket_name | default('')) | length > 0
+
+- name: Get bucket with invalid name
+  nutanix.ncp.ntnx_object_stores_buckets_info_v2:
+    object_store_ext_id: "{{ object_store_ext_id }}"
+    bucket_name: "ansible-invalid-bucket-name-zzz"
+  register: bucket_invalid
+  ignore_errors: true
+  when: has_object_store | bool
+
+- name: Verify invalid bucket name fails cleanly
+  ansible.builtin.assert:
+    that:
+      - bucket_invalid.failed == true
+      - bucket_invalid.changed == false
+      - (bucket_invalid.msg is defined) or (bucket_invalid.response is defined)
+    fail_msg: Invalid bucket name did not fail cleanly
+    success_msg: Invalid bucket name failed cleanly
+  when: has_object_store | bool

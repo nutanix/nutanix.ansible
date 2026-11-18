@@ -1,0 +1,61 @@
+---
+# Summary:
+# This playbook demonstrates fetching GPU profiles information from a Nutanix
+# Prism Central using the ntnx_gpu_profiles_info_v2 module. It covers:
+# 1. List all GPU profiles (physical and virtual) of a cluster
+# 2. List physical GPU profiles of a cluster
+# 3. List virtual GPU profiles of a cluster
+# 4. List physical GPU profiles with a filter
+# 5. List virtual GPU profiles with a limit
+#
+# GPU profiles are scoped to a single cluster and are served by Prism Central (PC).
+
+- name: GPU Profiles info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_uuid: "00065b6f-ec68-302b-185b-ac1f6b6f97e2"
+
+    - name: List all GPU profiles (physical and virtual) of a cluster
+      nutanix.ncp.ntnx_gpu_profiles_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: List physical GPU profiles of a cluster
+      nutanix.ncp.ntnx_gpu_profiles_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        profile_type: PHYSICAL
+      register: result
+      ignore_errors: true
+
+    - name: List virtual GPU profiles of a cluster
+      nutanix.ncp.ntnx_gpu_profiles_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        profile_type: VIRTUAL
+      register: result
+      ignore_errors: true
+
+    - name: List physical GPU profiles with a filter
+      nutanix.ncp.ntnx_gpu_profiles_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        profile_type: PHYSICAL
+        filter: "physicalGpuConfig/deviceName eq 'Tesla_M10'"
+      register: result
+      ignore_errors: true
+
+    - name: List virtual GPU profiles with a limit
+      nutanix.ncp.ntnx_gpu_profiles_info_v2:
+        cluster_ext_id: "{{ cluster_uuid }}"
+        profile_type: VIRTUAL
+        limit: 1
+      register: result
+      ignore_errors: true

@@ -1,0 +1,292 @@
+---
+# Test plan — BMC info modules
+#
+# The v4.2 clustermgmt BMC endpoint (get_host_bmc_info) is documented to
+# require Large/X-Large PC + AOS 7.0+ and returns 503 "Grpc server
+# unavailable" on smaller PCs (confirmed at run time on the test PC).
+# The tests below are designed to be meaningful in both cases:
+#
+# 1. Argument-validation tests (missing required, mutually_exclusive,
+#    invalid state=absent) — always run, do not touch the API.
+# 2. check_mode preview tests — always run, do not touch the API (the module
+#    builds the update body from a fresh SDK default, not from a live GET).
+# 3. Live API tests — best-effort. They gracefully accept either the
+#    "endpoint available" outcome (2xx) or the documented "503 Grpc server
+#    unavailable" outcome (surfaced as an API exception by the module).
+
+- name: Start BMC info tests
+  ansible.builtin.debug:
+    msg: Start BMC info tests
+
+- name: Fetch a cluster from PC
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(f:f eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_info
+  ignore_errors: true
+
+- name: Set cluster ext_id
+  ansible.builtin.set_fact:
+    bmc_cluster_ext_id: >-
+      {{ (clusters_info.response
+          | default([])
+          | selectattr('config', 'defined')
+          | selectattr('config.cluster_function', 'defined')
+          | rejectattr('config.cluster_function', 'search', 'PRISM_CENTRAL')
+          | list
+          | first
+          | default({})
+          ).ext_id | default('') }}
+  when: clusters_info is defined and clusters_info.response is defined
+
+- name: Fallback to first cluster if no AOS-only match
+  ansible.builtin.set_fact:
+    bmc_cluster_ext_id: "{{ clusters_info.response[0].ext_id }}"
+  when:
+    - clusters_info is defined
+    - clusters_info.response is defined
+    - clusters_info.response | length > 0
+    - (bmc_cluster_ext_id | default('')) == ''
+
+- name: Fetch a host from the cluster
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ bmc_cluster_ext_id }}"
+  register: hosts_info
+  ignore_errors: true
+  when: (bmc_cluster_ext_id | default('')) != ''
+
+- name: Set host ext_id
+  ansible.builtin.set_fact:
+    bmc_host_ext_id: "{{ hosts_info.response[0].ext_id }}"
+  when:
+    - hosts_info is defined
+    - hosts_info.response is defined
+    - hosts_info.response | length > 0
+
+# ---------------------------------------------------------------------------
+# Live GET tests — best-effort (may hit documented 503)
+# ---------------------------------------------------------------------------
+
+- name: Fetch BMC info for the host (live, best-effort)
+  nutanix.ncp.ntnx_cluster_bmc_info_v2:
+    cluster_ext_id: "{{ bmc_cluster_ext_id }}"
+    ext_id: "{{ bmc_host_ext_id }}"
+  register: bmc_get_result
+  ignore_errors: true
+  when:
+    - (bmc_cluster_ext_id | default('')) != ''
+    - (bmc_host_ext_id | default('')) != ''
+
+- name: Assert BMC info fetch either succeeded or failed with the documented 503
+  ansible.builtin.assert:
+    that:
+      - bmc_get_result is defined
+      - bmc_get_result.changed == false
+      - (bmc_get_result.failed == false and bmc_get_result.response is defined)
+        or
+        (bmc_get_result.failed == true and 'BMC info' in (bmc_get_result.msg | default('')))
+    fail_msg: "BMC info fetch produced an unexpected result"
+    success_msg: "BMC info fetch behaved as expected for this PC size"
+  when: bmc_get_result is defined and bmc_get_result.skipped is not defined
+
+# ---------------------------------------------------------------------------
+# Info module — required-field validation
+# ---------------------------------------------------------------------------
+
+- name: Fetch BMC info with missing ext_id (should fail)
+  nutanix.ncp.ntnx_cluster_bmc_info_v2:
+    cluster_ext_id: "{{ bmc_cluster_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing ext_id fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    fail_msg: "Missing ext_id did not fail as expected"
+    success_msg: "Missing ext_id failed as expected"
+
+- name: Fetch BMC info with missing cluster_ext_id (should fail)
+  nutanix.ncp.ntnx_cluster_bmc_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing cluster_ext_id fails as expected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'cluster_ext_id' in result.msg"
+    fail_msg: "Missing cluster_ext_id did not fail as expected"
+    success_msg: "Missing cluster_ext_id failed as expected"
+
+- name: Fetch BMC info with invalid cluster + host ext_id (expect API exception)
+  nutanix.ncp.ntnx_cluster_bmc_info_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid ext_ids raise API exception
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching BMC info using cluster and host ext_id"
+    fail_msg: "Invalid ext_ids did not raise the expected API exception"
+    success_msg: "Invalid ext_ids raised the expected API exception"
+
+# ---------------------------------------------------------------------------
+# CRUD module — argument validation (no API call)
+# ---------------------------------------------------------------------------
+
+- name: Update BMC info with missing ext_id (should fail)
+  nutanix.ncp.ntnx_cluster_bmc_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+    credential:
+      username: "ADMIN"
+      password: "dummy"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing ext_id fails argument validation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'ext_id' in result.msg"
+    fail_msg: "Missing ext_id did not fail as expected"
+    success_msg: "Missing ext_id failed as expected"
+
+- name: Update BMC info with missing cluster_ext_id (should fail)
+  nutanix.ncp.ntnx_cluster_bmc_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    credential:
+      username: "ADMIN"
+      password: "dummy"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing cluster_ext_id fails argument validation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'cluster_ext_id' in result.msg"
+    fail_msg: "Missing cluster_ext_id did not fail as expected"
+    success_msg: "Missing cluster_ext_id failed as expected"
+
+- name: Update BMC info with state=absent (invalid choice)
+  nutanix.ncp.ntnx_cluster_bmc_v2:
+    state: absent
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    credential:
+      username: "ADMIN"
+      password: "dummy"
+  register: result
+  ignore_errors: true
+
+- name: Assert state=absent is rejected by argument validation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of state must be one of: present' in result.msg"
+    fail_msg: "state=absent was not rejected as expected"
+    success_msg: "state=absent was rejected as expected"
+
+- name: Update BMC info with unsupported ip_address param (should fail)
+  nutanix.ncp.ntnx_cluster_bmc_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    credential:
+      username: "ADMIN"
+      password: "dummy"
+    ip_address:
+      ipv4:
+        value: "10.44.60.10"
+        prefix_length: 24
+  register: result
+  ignore_errors: true
+
+- name: Assert unsupported ip_address param is rejected
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'ip_address' in result.msg or 'unsupported parameter' in (result.msg | lower)"
+    fail_msg: "Unsupported ip_address param was not rejected"
+    success_msg: "Unsupported ip_address param rejected as expected"
+
+# ---------------------------------------------------------------------------
+# CRUD module — check_mode preview (no API call)
+# ---------------------------------------------------------------------------
+
+- name: Generate spec for updating BMC credential in check_mode
+  nutanix.ncp.ntnx_cluster_bmc_v2:
+    cluster_ext_id: "{{ bmc_cluster_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    ext_id: "{{ bmc_host_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    credential:
+      username: "ADMIN"
+      password: "dummy_password"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode preview contains credential and omits read-only fields
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.credential is defined
+      - result.response.credential.username == "ADMIN"
+      # Ansible masks no_log values in output as "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"
+      # so we only assert on presence, not on the actual password value.
+      - result.response.credential.password is defined
+      - result.response.credential.password != ""
+      - result.response.ip_address is not defined or result.response.ip_address is none
+      - result.response.status is not defined or result.response.status is none
+      - result.ext_id == (bmc_host_ext_id | default('00000000-0000-0000-0000-000000000000'))
+      - result.cluster_ext_id == (bmc_cluster_ext_id | default('00000000-0000-0000-0000-000000000000'))
+    fail_msg: "check_mode preview did not match credential-only expectation"
+    success_msg: "check_mode preview includes credential and omits read-only fields"
+
+# ---------------------------------------------------------------------------
+# CRUD module — live update (best-effort, expected to surface 503 on small PC)
+# ---------------------------------------------------------------------------
+
+- name: Attempt live BMC update with a non-existent cluster ext_id (expect API exception)
+  nutanix.ncp.ntnx_cluster_bmc_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    credential:
+      username: "ADMIN"
+      password: "dummy_password"
+  register: result
+  ignore_errors: true
+
+- name: Assert live update with invalid IDs is rejected by the API
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching BMC info using cluster and host ext_id"
+    fail_msg: "Live update with invalid IDs did not raise the expected API exception"
+    success_msg: "Live update with invalid IDs raised the expected API exception"
+
+- name: End BMC info tests
+  ansible.builtin.debug:
+    msg: End BMC info tests

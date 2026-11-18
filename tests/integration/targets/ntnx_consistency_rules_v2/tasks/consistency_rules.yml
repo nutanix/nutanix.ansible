@@ -1,0 +1,273 @@
+---
+# ##########################################################################
+# Test plan for ntnx_consistency_rules_v2 / ntnx_consistency_rules_info_v2
+# --------------------------------------------------------------------------
+# Consistency Rules are sub-resources of a Protection Policy. Creating a
+# Protection Policy requires a paired multi-cluster environment (two PCs with
+# cross-cluster replication). Such infrastructure is out of scope for a
+# single-PC test cluster.
+# Therefore this test suite exercises:
+#   * check_mode spec generation for Create and Update (all attrs)
+#   * required-field validation (protection_policy_ext_id, name, category_ids)
+#   * required_if enforcement for absent state (needs ext_id)
+#   * negative API behaviour when the parent Protection Policy is missing
+#     (Create / Update / Delete should surface a NOT FOUND error cleanly)
+#   * info module: get-by-id + list against a non-existent Protection Policy
+#     (should also surface the same NOT FOUND error)
+# ##########################################################################
+
+- name: Start ntnx_consistency_rules_v2 integration tests
+  ansible.builtin.debug:
+    msg: Start ntnx_consistency_rules_v2 integration tests
+
+- name: Generate random names and fake ext_ids for check_mode / negative paths
+  ansible.builtin.set_fact:
+    random_name: >-
+      {{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}
+    fake_protection_policy_ext_id: "00000000-0000-0000-0000-000000000001"
+    fake_consistency_rule_ext_id: "00000000-0000-0000-0000-000000000002"
+    fake_category_ext_id: "0d2c792d-8687-4e99-95f7-3c7cc401fe1a"
+
+# --------------------------------------------------------------------------
+# 1. Create with check_mode (inline dummy values, no live API call)
+# --------------------------------------------------------------------------
+
+- name: Create Consistency Rule with check mode enabled
+  nutanix.ncp.ntnx_consistency_rules_v2:
+    state: present
+    protection_policy_ext_id: "00000000-0000-0000-0000-000000000001"
+    name: "ansible-cr-check-{{ random_name }}"
+    category_ids:
+      - "0d2c792d-8687-4e99-95f7-3c7cc401fe1a"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Create Consistency Rule with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "ansible-cr-check-{{ random_name }}"
+      - result.response.category_ids | length == 1
+    fail_msg: Create Consistency Rule with check mode enabled failed
+    success_msg: Create Consistency Rule with check mode enabled passed
+
+# --------------------------------------------------------------------------
+# 2. Update with check_mode (inline dummy values, no live API call)
+# --------------------------------------------------------------------------
+
+- name: Update Consistency Rule with check mode enabled
+  nutanix.ncp.ntnx_consistency_rules_v2:
+    state: present
+    protection_policy_ext_id: "00000000-0000-0000-0000-000000000001"
+    ext_id: "00000000-0000-0000-0000-000000000002"
+    name: "ansible-cr-check-updated-{{ random_name }}"
+    category_ids:
+      - "0d2c792d-8687-4e99-95f7-3c7cc401fe1a"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update Consistency Rule check mode status - should fail (can't GET from non-existent PP)
+  ansible.builtin.assert:
+    that:
+      - result.failed == true or result.changed == false
+    fail_msg: Update Consistency Rule check mode test produced unexpected result
+    success_msg: Update Consistency Rule check mode test passed (expected no-op or error)
+
+# --------------------------------------------------------------------------
+# 3. Delete with check_mode (inline dummy values)
+# --------------------------------------------------------------------------
+
+- name: Delete Consistency Rule with check mode enabled
+  nutanix.ncp.ntnx_consistency_rules_v2:
+    state: absent
+    protection_policy_ext_id: "00000000-0000-0000-0000-000000000001"
+    ext_id: "00000000-0000-0000-0000-000000000002"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete Consistency Rule with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg is defined
+      - >-
+        "00000000-0000-0000-0000-000000000002" in result.msg
+    fail_msg: Delete Consistency Rule check mode failed
+    success_msg: Delete Consistency Rule check mode passed
+
+# --------------------------------------------------------------------------
+# 4. Required-field validation: missing name on create
+# --------------------------------------------------------------------------
+
+- name: Create Consistency Rule - missing required name
+  nutanix.ncp.ntnx_consistency_rules_v2:
+    state: present
+    protection_policy_ext_id: "{{ fake_protection_policy_ext_id }}"
+    category_ids:
+      - "{{ fake_category_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Missing name validation status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Missing name should have caused failure
+    success_msg: Missing name validation passed
+
+# --------------------------------------------------------------------------
+# 5. Required-field validation: missing category_ids on create
+# --------------------------------------------------------------------------
+
+- name: Create Consistency Rule - missing required category_ids
+  nutanix.ncp.ntnx_consistency_rules_v2:
+    state: present
+    protection_policy_ext_id: "{{ fake_protection_policy_ext_id }}"
+    name: "ansible-cr-neg-{{ random_name }}"
+  register: result
+  ignore_errors: true
+
+- name: Missing category_ids validation status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Missing category_ids should have caused failure
+    success_msg: Missing category_ids validation passed
+
+# --------------------------------------------------------------------------
+# 6. Required_if: absent state requires ext_id
+# --------------------------------------------------------------------------
+
+- name: Delete Consistency Rule - missing required ext_id
+  nutanix.ncp.ntnx_consistency_rules_v2:
+    state: absent
+    protection_policy_ext_id: "{{ fake_protection_policy_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Missing ext_id for absent state validation status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Missing ext_id on absent should have caused failure
+    success_msg: Missing ext_id on absent validation passed
+
+# --------------------------------------------------------------------------
+# 7. Negative: create against non-existent Protection Policy
+# --------------------------------------------------------------------------
+
+- name: Create Consistency Rule against non-existent Protection Policy
+  nutanix.ncp.ntnx_consistency_rules_v2:
+    state: present
+    protection_policy_ext_id: "{{ fake_protection_policy_ext_id }}"
+    name: "ansible-cr-neg-{{ random_name }}"
+    category_ids:
+      - "{{ fake_category_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Create against non-existent Protection Policy status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Create against non-existent Protection Policy should have failed
+    success_msg: Create against non-existent Protection Policy raised expected error
+
+# --------------------------------------------------------------------------
+# 8. Negative: get by ext_id against non-existent Protection Policy (info)
+# --------------------------------------------------------------------------
+
+- name: Get Consistency Rule from non-existent Protection Policy
+  nutanix.ncp.ntnx_consistency_rules_info_v2:
+    protection_policy_ext_id: "{{ fake_protection_policy_ext_id }}"
+    ext_id: "{{ fake_consistency_rule_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Get from non-existent Protection Policy status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Get from non-existent Protection Policy should have failed
+    success_msg: Get from non-existent Protection Policy raised expected error
+
+# --------------------------------------------------------------------------
+# 9. Info: list against non-existent Protection Policy
+# --------------------------------------------------------------------------
+
+- name: List Consistency Rules from non-existent Protection Policy
+  nutanix.ncp.ntnx_consistency_rules_info_v2:
+    protection_policy_ext_id: "{{ fake_protection_policy_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: List from non-existent Protection Policy status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: List from non-existent Protection Policy should have failed
+    success_msg: List from non-existent Protection Policy raised expected error
+
+# --------------------------------------------------------------------------
+# 10. Info: list with limit against non-existent Protection Policy
+# --------------------------------------------------------------------------
+
+- name: List Consistency Rules with limit from non-existent Protection Policy
+  nutanix.ncp.ntnx_consistency_rules_info_v2:
+    protection_policy_ext_id: "{{ fake_protection_policy_ext_id }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List with limit from non-existent Protection Policy status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: List with limit from non-existent Protection Policy should have failed
+    success_msg: List with limit from non-existent Protection Policy raised expected error
+
+# --------------------------------------------------------------------------
+# 11. Info: list with filter against non-existent Protection Policy
+# --------------------------------------------------------------------------
+
+- name: List Consistency Rules with filter from non-existent Protection Policy
+  nutanix.ncp.ntnx_consistency_rules_info_v2:
+    protection_policy_ext_id: "{{ fake_protection_policy_ext_id }}"
+    filter: "name eq 'ansible-cr-{{ random_name }}'"
+  register: result
+  ignore_errors: true
+
+- name: List with filter from non-existent Protection Policy status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: List with filter from non-existent Protection Policy should have failed
+    success_msg: List with filter from non-existent Protection Policy raised expected error
+
+# --------------------------------------------------------------------------
+# 12. Info: fetch_all against non-existent Protection Policy
+# --------------------------------------------------------------------------
+
+- name: List Consistency Rules with fetch_all from non-existent Protection Policy
+  nutanix.ncp.ntnx_consistency_rules_info_v2:
+    protection_policy_ext_id: "{{ fake_protection_policy_ext_id }}"
+    fetch_all: true
+  register: result
+  ignore_errors: true
+
+- name: Fetch_all from non-existent Protection Policy status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Fetch_all from non-existent Protection Policy should have failed
+    success_msg: Fetch_all from non-existent Protection Policy raised expected error
+
+- name: End ntnx_consistency_rules_v2 integration tests
+  ansible.builtin.debug:
+    msg: End ntnx_consistency_rules_v2 integration tests

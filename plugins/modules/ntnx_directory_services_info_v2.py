@@ -73,6 +73,14 @@ EXAMPLES = r"""
     validate_certs: false
     filter: "name eq 'directory_service_name'"
   register: result
+
+- name: List all directory services with fetch_all
+  nutanix.ncp.ntnx_directory_services_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    fetch_all: true
 """
 RETURN = r"""
 response:
@@ -148,6 +156,7 @@ from ..module_utils.v4.iam.api_client import (  # noqa: E402
 from ..module_utils.v4.iam.helpers import get_directory_service  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -179,7 +188,10 @@ def get_directory_services(module, directory_services, result):
         module.fail_json(msg="Failed generating directory services info Spec", **result)
 
     try:
-        resp = directory_services.list_directory_services(**kwargs)
+        resp = list_entities(
+            directory_services.list_directory_services,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
