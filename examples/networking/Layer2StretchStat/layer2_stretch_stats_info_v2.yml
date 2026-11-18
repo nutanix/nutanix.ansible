@@ -1,0 +1,68 @@
+---
+# Summary:
+# This playbook demonstrates the ntnx_layer2_stretch_stats_info_v2 module. It:
+#   1. Computes a small time window (last 5 minutes) suitable for stats retrieval.
+#   2. Fetches Layer2 Stretch stats for a given Layer2 Stretch ext_id using only
+#      the required attributes.
+#   3. Fetches Layer2 Stretch stats using ALL optional attributes.
+#
+# NOTE:
+#   The Layer2 Stretch identified by "layer2_stretch_ext_id" MUST already exist
+#   on the Prism Central. Layer2 Stretch is a Flow Virtual Networking feature
+#   that extends a VLAN across two sites; its creation is a multi-step operation
+#   that requires local + remote gateways and (for VPN mode) an IPSec VPN
+#   connection between the two sites. See the Nutanix Flow Virtual Networking
+#   documentation for how to create a Layer2 Stretch.
+
+- name: Layer2 Stretch stats playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.28', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      validate_certs: false
+  tasks:
+    - name: Set Layer2 Stretch ext_id
+      ansible.builtin.set_fact:
+        layer2_stretch_ext_id: "{{ layer2_stretch_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+
+    - name: Compute end time (now) in ISO-8601 with milliseconds
+      ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+      register: end_time
+      changed_when: false
+
+    - name: Compute start time (5 minutes ago) in ISO-8601 with milliseconds
+      ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+      register: start_time
+      changed_when: false
+
+    - name: Fetch Layer2 Stretch stats with required attributes only
+      nutanix.ncp.ntnx_layer2_stretch_stats_info_v2:
+        ext_id: "{{ layer2_stretch_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+      register: layer2_stretch_stats_minimal
+      ignore_errors: true
+
+    - name: Print Layer2 Stretch stats (minimal fetch)
+      ansible.builtin.debug:
+        var: layer2_stretch_stats_minimal
+
+    - name: Fetch Layer2 Stretch stats with ALL supported attributes
+      nutanix.ncp.ntnx_layer2_stretch_stats_info_v2:
+        ext_id: "{{ layer2_stretch_ext_id }}"
+        start_time: "{{ start_time.stdout }}"
+        end_time: "{{ end_time.stdout }}"
+        sampling_interval: 30
+        stat_type: AVG
+        page: 0
+        limit: 50
+        select: "*"
+      register: layer2_stretch_stats_full
+      ignore_errors: true
+
+    - name: Print Layer2 Stretch stats (full fetch)
+      ansible.builtin.debug:
+        var: layer2_stretch_stats_full

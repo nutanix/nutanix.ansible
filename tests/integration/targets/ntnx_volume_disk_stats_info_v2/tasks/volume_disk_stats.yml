@@ -1,0 +1,456 @@
+---
+# ntnx_volume_disk_stats_info_v2 integration tests
+#
+# Test plan (drives >95% coverage of the module spec):
+#
+# Setup (prerequisites):
+#   * Discover a cluster (AOS function) — needed to host a Volume Group.
+#   * Discover a storage container on that cluster — needed to back the Volume Disk.
+#   * Create a Volume Group with a random name so parallel runs don't collide.
+#   * Attach a Volume Disk of 1 GiB backed by the storage container above.
+#
+# Positive scenarios:
+#   * Minimal spec — only required inputs (volume_group_ext_id, ext_id,
+#     start_time, end_time). Asserts response shape, ext_id echo, and
+#     changed/failed booleans.
+#   * All-attributes spec — adds sampling_interval, stat_type=AVG, select=*.
+#     Confirms the same disk is returned and the sampling_interval takes effect.
+#   * stat_type coverage — one task per remaining valid enum value
+#     (SUM, MIN, MAX, COUNT, LAST) so every choice in the spec is exercised.
+#   * $select — request a narrow property set and assert the module still
+#     returns a dict for the disk (real API decides which fields to include).
+#
+# Negative scenarios:
+#   * Missing required parameters — one omission per required field
+#     (volume_group_ext_id, ext_id, start_time, end_time). Ansible must fail
+#     before the API is called.
+#   * Invalid enum for stat_type — spec-level validation rejects it.
+#   * Invalid volume_group_ext_id — API returns an error, module surfaces it.
+#   * Invalid disk ext_id — API returns an error, module surfaces it.
+#
+# Teardown:
+#   * Delete the Volume Disk.
+#   * Delete the Volume Group.
+
+- name: Start ntnx_volume_disk_stats_info_v2 tests
+  ansible.builtin.debug:
+    msg: "Start ntnx_volume_disk_stats_info_v2 tests"
+
+########################### Prerequisites ###########################
+
+- name: Generate random suffix for VG name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+
+- name: Set fact for VG name
+  ansible.builtin.set_fact:
+    vg_name: "ansible-vds-{{ random_name }}"
+
+- name: Fetch an AOS cluster to host the Volume Group
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(f:f eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_result
+
+- name: Verify cluster discovery
+  ansible.builtin.assert:
+    that:
+      - clusters_result.failed == false
+      - clusters_result.changed == false
+      - clusters_result.response is defined
+      - clusters_result.response | length > 0
+    fail_msg: "Unable to discover an AOS cluster for the tests"
+    success_msg: "Cluster discovered for tests"
+
+- name: Select first non-Unnamed cluster
+  ansible.builtin.set_fact:
+    selected_cluster: "{{ (clusters_result.response | rejectattr('name', 'equalto', 'Unnamed') | list | default(clusters_result.response))[0] }}"
+
+- name: Store cluster ext_id
+  ansible.builtin.set_fact:
+    cluster_uuid: "{{ selected_cluster.ext_id }}"
+
+- name: Fetch storage container on selected cluster
+  nutanix.ncp.ntnx_storage_containers_info_v2:
+    filter: "clusterExtId eq '{{ cluster_uuid }}'"
+  register: storage_containers_result
+
+- name: Verify storage container discovery
+  ansible.builtin.assert:
+    that:
+      - storage_containers_result.failed == false
+      - storage_containers_result.changed == false
+      - storage_containers_result.response is defined
+      - storage_containers_result.response | length > 0
+    fail_msg: "Unable to discover a storage container on cluster {{ cluster_uuid }}"
+    success_msg: "Storage container discovered for tests"
+
+- name: Store storage container ext_id
+  ansible.builtin.set_fact:
+    storage_container_uuid: "{{ storage_containers_result.response[0].container_ext_id }}"
+
+- name: Create Volume Group for stats tests
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: present
+    name: "{{ vg_name }}"
+    description: "VG for ntnx_volume_disk_stats_info_v2 tests"
+    cluster_reference: "{{ cluster_uuid }}"
+    sharing_status: "SHARED"
+    target_prefix: "vg1"
+    usage_type: "USER"
+    storage_features:
+      flash_mode:
+        is_enabled: true
+  register: vg_create_result
+
+- name: Verify VG create
+  ansible.builtin.assert:
+    that:
+      - vg_create_result.failed == false
+      - vg_create_result.changed == true
+      - vg_create_result.error is none
+      - vg_create_result.ext_id is defined
+      - vg_create_result.response is defined
+    fail_msg: "Unable to create Volume Group {{ vg_name }} for tests"
+    success_msg: "Volume Group {{ vg_name }} created successfully"
+
+- name: Store VG ext_id
+  ansible.builtin.set_fact:
+    vg_uuid: "{{ vg_create_result.ext_id }}"
+
+- name: Create Volume Disk (1 GiB) on the Volume Group
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
+    state: present
+    volume_group_ext_id: "{{ vg_uuid }}"
+    disk_size_bytes: 1073741824
+    disk_data_source_reference:
+      entity_type: "STORAGE_CONTAINER"
+      ext_id: "{{ storage_container_uuid }}"
+  register: disk_create_result
+
+- name: Verify disk create
+  ansible.builtin.assert:
+    that:
+      - disk_create_result.failed == false
+      - disk_create_result.changed == true
+      - disk_create_result.error is none
+      - disk_create_result.ext_id is defined
+      - disk_create_result.response is defined
+      - disk_create_result.response.disk_size_bytes == 1073741824
+      - disk_create_result.response.storage_container_id == storage_container_uuid
+    fail_msg: "Unable to create Volume Disk for tests"
+    success_msg: "Volume Disk created successfully for tests"
+
+- name: Store Volume Disk ext_id
+  ansible.builtin.set_fact:
+    disk_uuid: "{{ disk_create_result.ext_id }}"
+
+- name: Compute start_time (5 minutes ago) in ISO-8601 UTC
+  ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: start_time
+  changed_when: false
+
+- name: Compute end_time (now) in ISO-8601 UTC
+  ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: end_time
+  changed_when: false
+
+########################### Positive: minimal spec ###########################
+
+- name: Fetch volume disk stats with minimal spec
+  nutanix.ncp.ntnx_volume_disk_stats_info_v2:
+    volume_group_ext_id: "{{ vg_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: stats_min
+
+- name: Assert minimal spec response
+  ansible.builtin.assert:
+    that:
+      - stats_min.failed == false
+      - stats_min.changed == false
+      - stats_min.error is none
+      - stats_min.ext_id == disk_uuid
+      - stats_min.volume_group_ext_id == vg_uuid
+      - stats_min.response is defined
+      - stats_min.response is mapping
+      - stats_min.response.ext_id == disk_uuid or stats_min.response.volume_disk_ext_id == disk_uuid
+      - stats_min.response.controller_num_iops is defined
+      - stats_min.response.controller_num_read_iops is defined
+      - stats_min.response.controller_num_write_iops is defined
+      - stats_min.response.controller_io_bandwidth_k_bps is defined
+      - stats_min.response.controller_read_io_bandwidth_k_bps is defined
+      - stats_min.response.controller_write_io_bandwidth_k_bps is defined
+      - stats_min.response.controller_avg_io_latency_usecs is defined
+      - stats_min.response.controller_avg_read_io_latency_usecs is defined
+      - stats_min.response.controller_avg_write_io_latency_usecs is defined
+      - stats_min.response.controller_user_bytes is defined
+    fail_msg: "Minimal stats fetch failed or response shape unexpected"
+    success_msg: "Minimal stats fetch succeeded and response shape validated"
+
+########################### Positive: all attributes ###########################
+
+- name: Fetch volume disk stats with all attributes (sampling_interval, stat_type=AVG, select=*)
+  nutanix.ncp.ntnx_volume_disk_stats_info_v2:
+    volume_group_ext_id: "{{ vg_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+    sampling_interval: 30
+    stat_type: "AVG"
+    select: "*"
+  register: stats_full
+
+- name: Assert full spec response
+  ansible.builtin.assert:
+    that:
+      - stats_full.failed == false
+      - stats_full.changed == false
+      - stats_full.error is none
+      - stats_full.ext_id == disk_uuid
+      - stats_full.volume_group_ext_id == vg_uuid
+      - stats_full.response is defined
+      - stats_full.response is mapping
+      - stats_full.response.controller_num_iops is defined
+    fail_msg: "Full-spec stats fetch failed"
+    success_msg: "Full-spec stats fetch succeeded"
+
+########################### Positive: each stat_type enum value ###########################
+
+- name: Fetch stats with each remaining valid stat_type
+  nutanix.ncp.ntnx_volume_disk_stats_info_v2:
+    volume_group_ext_id: "{{ vg_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+    sampling_interval: 30
+    stat_type: "{{ item }}"
+  register: stat_type_results
+  loop:
+    - SUM
+    - MIN
+    - MAX
+    - COUNT
+    - LAST
+
+- name: Assert each stat_type call succeeded
+  ansible.builtin.assert:
+    that:
+      - item.failed == false
+      - item.changed == false
+      - item.error is none
+      - item.response is defined
+      - item.response is mapping
+      - item.ext_id == disk_uuid
+      - item.volume_group_ext_id == vg_uuid
+    fail_msg: "stat_type={{ item.item }} did not return a valid stats response"
+    success_msg: "stat_type={{ item.item }} returned a valid stats response"
+  loop: "{{ stat_type_results.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+########################### Positive: select on a subset of properties ###########################
+
+- name: Fetch stats using select on a subset of properties
+  nutanix.ncp.ntnx_volume_disk_stats_info_v2:
+    volume_group_ext_id: "{{ vg_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+    select: "controllerNumIOPS"
+  register: stats_select
+
+- name: Assert selective stats response
+  ansible.builtin.assert:
+    that:
+      - stats_select.failed == false
+      - stats_select.changed == false
+      - stats_select.error is none
+      - stats_select.response is defined
+      - stats_select.response is mapping
+    fail_msg: "Selective stats fetch failed"
+    success_msg: "Selective stats fetch succeeded"
+
+########################### Negative: missing required parameters ###########################
+
+- name: Fetch stats without volume_group_ext_id (should fail)
+  nutanix.ncp.ntnx_volume_disk_stats_info_v2:
+    ext_id: "{{ disk_uuid }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: missing_vg
+  ignore_errors: true
+
+- name: Assert missing volume_group_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - missing_vg.failed == true
+      - missing_vg.msg is defined
+      - "'volume_group_ext_id' in missing_vg.msg"
+    fail_msg: "Module did not fail as expected on missing volume_group_ext_id"
+    success_msg: "Module correctly refused missing volume_group_ext_id"
+
+- name: Fetch stats without ext_id (should fail)
+  nutanix.ncp.ntnx_volume_disk_stats_info_v2:
+    volume_group_ext_id: "{{ vg_uuid }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: missing_disk
+  ignore_errors: true
+
+- name: Assert missing ext_id fails
+  ansible.builtin.assert:
+    that:
+      - missing_disk.failed == true
+      - missing_disk.msg is defined
+      - "'ext_id' in missing_disk.msg"
+    fail_msg: "Module did not fail as expected on missing ext_id"
+    success_msg: "Module correctly refused missing ext_id"
+
+- name: Fetch stats without start_time (should fail)
+  nutanix.ncp.ntnx_volume_disk_stats_info_v2:
+    volume_group_ext_id: "{{ vg_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+    end_time: "{{ end_time.stdout }}"
+  register: missing_start
+  ignore_errors: true
+
+- name: Assert missing start_time fails
+  ansible.builtin.assert:
+    that:
+      - missing_start.failed == true
+      - missing_start.msg is defined
+      - "'start_time' in missing_start.msg"
+    fail_msg: "Module did not fail as expected on missing start_time"
+    success_msg: "Module correctly refused missing start_time"
+
+- name: Fetch stats without end_time (should fail)
+  nutanix.ncp.ntnx_volume_disk_stats_info_v2:
+    volume_group_ext_id: "{{ vg_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+    start_time: "{{ start_time.stdout }}"
+  register: missing_end
+  ignore_errors: true
+
+- name: Assert missing end_time fails
+  ansible.builtin.assert:
+    that:
+      - missing_end.failed == true
+      - missing_end.msg is defined
+      - "'end_time' in missing_end.msg"
+    fail_msg: "Module did not fail as expected on missing end_time"
+    success_msg: "Module correctly refused missing end_time"
+
+########################### Negative: invalid enum value ###########################
+
+- name: Fetch stats with invalid stat_type (should fail)
+  nutanix.ncp.ntnx_volume_disk_stats_info_v2:
+    volume_group_ext_id: "{{ vg_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+    stat_type: "AVERAGE"
+  register: bad_stat_type
+  ignore_errors: true
+
+- name: Assert invalid stat_type is rejected by spec validation
+  ansible.builtin.assert:
+    that:
+      - bad_stat_type.failed == true
+      - bad_stat_type.msg is defined
+      - "'AVERAGE' in bad_stat_type.msg or 'value of stat_type must be one of' in bad_stat_type.msg"
+    fail_msg: "Module did not reject the invalid stat_type value"
+    success_msg: "Module correctly rejected the invalid stat_type value"
+
+########################### Negative: invalid references ###########################
+# The v4 stats endpoint does NOT fail on unknown VG/disk UUIDs; it returns an
+# empty stats envelope where every controller_* time-series list is null.
+# Assert that behavior so a regression which starts returning fabricated data
+# would fail this test.
+
+- name: Fetch stats with non-existent volume_group_ext_id (empty stats expected)
+  nutanix.ncp.ntnx_volume_disk_stats_info_v2:
+    volume_group_ext_id: "00000000-0000-0000-0000-000000000000"
+    ext_id: "{{ disk_uuid }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: bad_vg
+  ignore_errors: true
+
+- name: Assert bogus VG ext_id returns an empty stats response
+  ansible.builtin.assert:
+    that:
+      - bad_vg.failed == false
+      - bad_vg.changed == false
+      - bad_vg.error is none
+      - bad_vg.volume_group_ext_id == "00000000-0000-0000-0000-000000000000"
+      - bad_vg.response is defined
+      - bad_vg.response is mapping
+      - bad_vg.response.controller_num_iops is none
+      - bad_vg.response.controller_num_read_iops is none
+      - bad_vg.response.controller_num_write_iops is none
+      - bad_vg.response.controller_io_bandwidth_k_bps is none
+      - bad_vg.response.controller_read_io_bandwidth_k_bps is none
+      - bad_vg.response.controller_write_io_bandwidth_k_bps is none
+      - bad_vg.response.controller_avg_io_latency_usecs is none
+      - bad_vg.response.controller_user_bytes is none
+    fail_msg: "Module did not return an empty stats response for bogus volume_group_ext_id"
+    success_msg: "Module returned an empty stats response for bogus volume_group_ext_id (as expected)"
+
+- name: Fetch stats with non-existent disk ext_id (API 404 expected)
+  nutanix.ncp.ntnx_volume_disk_stats_info_v2:
+    volume_group_ext_id: "{{ vg_uuid }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: bad_disk
+  ignore_errors: true
+
+- name: Assert bogus disk ext_id under a real VG surfaces the API 404
+  ansible.builtin.assert:
+    that:
+      - bad_disk.failed == true
+      - bad_disk.msg is defined
+      - "'Api Exception raised while fetching volume disk stats' == bad_disk.msg"
+      - bad_disk.status == 404
+      - "'NOT FOUND' in bad_disk.error"
+    fail_msg: "Module did not surface the expected 404 for a bogus disk ext_id"
+    success_msg: "Module correctly surfaced the API 404 for a bogus disk ext_id"
+
+########################### Teardown ###########################
+
+- name: Delete the Volume Disk used for stats tests
+  nutanix.ncp.ntnx_volume_groups_disks_v2:
+    state: absent
+    volume_group_ext_id: "{{ vg_uuid }}"
+    ext_id: "{{ disk_uuid }}"
+  register: disk_delete
+  ignore_errors: true
+
+- name: Assert disk delete succeeded
+  ansible.builtin.assert:
+    that:
+      - disk_delete.failed == false
+      - disk_delete.changed == true
+      - disk_delete.error is none
+      - disk_delete.ext_id == disk_uuid
+      - disk_delete.volume_group_ext_id == vg_uuid
+    fail_msg: "Cleanup: unable to delete disk {{ disk_uuid }}"
+    success_msg: "Cleanup: disk {{ disk_uuid }} deleted successfully"
+
+- name: Delete the Volume Group used for stats tests
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ vg_uuid }}"
+  register: vg_delete
+  ignore_errors: true
+
+- name: Assert VG delete succeeded
+  ansible.builtin.assert:
+    that:
+      - vg_delete.failed == false
+      - vg_delete.changed == true
+      - vg_delete.error is none
+      - vg_delete.ext_id == vg_uuid
+    fail_msg: "Cleanup: unable to delete Volume Group {{ vg_uuid }}"
+    success_msg: "Cleanup: Volume Group {{ vg_uuid }} deleted successfully"

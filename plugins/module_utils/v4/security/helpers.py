@@ -26,6 +26,24 @@ def get_kms_by_ext_id(module, api_instance, ext_id):
         )
 
 
+def get_credential_by_ext_id(module, api_instance, ext_id):
+    """
+    This method will return Credential info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: Credentials Api instance from ntnx_security_py_client sdk
+        ext_id: External ID of the Credential
+    """
+    try:
+        return api_instance.get_credential_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Credential info using external ID",
+        )
+
+
 def get_approval_policy(module, api_instance, ext_id):
     """
     This method will return an Approval Policy info using its external ID.
@@ -42,7 +60,5 @@ def get_approval_policy(module, api_instance, ext_id):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while fetching Approval Policy info using external ID: {0}".format(
-                ext_id
-            ),
+            msg="Api Exception raised while fetching Approval Policy info using external ID",
         )

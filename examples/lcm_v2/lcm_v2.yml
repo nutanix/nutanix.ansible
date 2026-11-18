@@ -1,18 +1,18 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Get the prism central external ID
-# 2. Get the config of LCM
-# 3. Update the config of LCM
+# 1. List all clusters to get prism central external ID
+# 2. Get config of LCM
+# 3. Update config of LCM
 # 4. Perform inventory of LCM
 # 5. List all LCM entities details
-# 6. List all LCM entities details with filter
-# 7. Set LCM entity external ID
+# 6. List all LCM entities with fetch_all
+# 7. List all LCM entities details with filter
 # 8. List all LCM entities details with limit
 # 9. Fetch LCM entity using external ID
 # 10. Get LCM status before doing prechecks
-# 11. Perform LCM prechecks
-# 12. Perform LCM upgrade
+# 11. Perform LCM prechecks for doing certain entities upgrade
+# 12. Perform LCM upgrade for the given entity chosen in previous tasks
 # Note: cluster_ext_id is used to get/precheck/upgrade the entities on the specific cluster.
 # If we pass the Prism Element cluster ID, it will get the entities on that cluster. Otherwise, it will get the entities on the Prism Central.
 
@@ -64,6 +64,12 @@
     - name: List all LCM entities details
       nutanix.ncp.ntnx_lcm_entities_info_v2:
       register: lcm_entities
+      ignore_errors: true
+
+    - name: List all LCM entities with fetch_all
+      nutanix.ncp.ntnx_lcm_entities_info_v2:
+        fetch_all: true
+      register: result
       ignore_errors: true
 
     - name: List all LCM entities details with filter

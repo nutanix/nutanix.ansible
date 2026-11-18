@@ -1,0 +1,69 @@
+---
+# Summary:
+# Migrate an AHV VM across clusters, including dry-run validation and overrides.
+
+- name: Cross cluster migrate VM playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        vm_ext_id: "<vm_ext_id>"
+        target_availability_zone_ext_id: "<availability_zone_ext_id>"
+        target_cluster_ext_id: "<cluster_ext_id>"
+        target_subnet_ext_id: "<subnet_ext_id>"
+        source_storage_container_ext_id: "<source_storage_container_ext_id>"
+        target_storage_container_ext_id: "<target_storage_container_ext_id>"
+
+    - name: Migrate a VM across clusters
+      nutanix.ncp.ntnx_vm_cross_cluster_migrate_v2:
+        ext_id: "{{ vm_ext_id }}"
+        target_availability_zone:
+          ext_id: "{{ target_availability_zone_ext_id }}"
+        target_cluster:
+          ext_id: "{{ target_cluster_ext_id }}"
+        is_live_migration: false
+      register: result
+
+    - name: Live migrate a VM across clusters with overrides
+      nutanix.ncp.ntnx_vm_cross_cluster_migrate_v2:
+        ext_id: "{{ vm_ext_id }}"
+        target_availability_zone:
+          ext_id: "{{ target_availability_zone_ext_id }}"
+        target_cluster:
+          ext_id: "{{ target_cluster_ext_id }}"
+        is_live_migration: true
+        should_migrate_storage: true
+        overrides:
+          override_nic_list:
+            - nic_backing_info:
+                virtual_ethernet_nic:
+                  model: VIRTIO
+                  is_connected: true
+              nic_network_info:
+                virtual_ethernet_nic_network_info:
+                  nic_type: NORMAL_NIC
+                  subnet:
+                    ext_id: "{{ target_subnet_ext_id }}"
+                  vlan_mode: ACCESS
+          storage_containers_mapping:
+            - source_storage_container:
+                ext_id: "{{ source_storage_container_ext_id }}"
+              target_storage_container:
+                ext_id: "{{ target_storage_container_ext_id }}"
+      register: result
+
+    - name: Validate a cross-cluster migration in dry-run mode
+      nutanix.ncp.ntnx_vm_cross_cluster_migrate_v2:
+        ext_id: "{{ vm_ext_id }}"
+        target_availability_zone:
+          ext_id: "{{ target_availability_zone_ext_id }}"
+        is_live_migration: false
+        dryrun: true
+      register: result
