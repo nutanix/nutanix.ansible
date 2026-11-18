@@ -364,6 +364,7 @@ action_groups:
     - ntnx_cluster_rackable_units_info_v2
     - ntnx_cluster_cvm_v2
     - ntnx_cluster_cvms_info_v2
+    - ntnx_cluster_remote_subnets_info_v2
     - ntnx_cluster_remote_vtep_gateways_info_v2
     - ntnx_vcenter_extension_v2
     - ntnx_vcenter_extensions_info_v2

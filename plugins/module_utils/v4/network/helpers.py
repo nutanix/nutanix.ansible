@@ -172,6 +172,29 @@ def get_virtual_switch(module, api_instance, ext_id):
         )
 
 
+def get_remote_subnet_for_cluster(module, api_instance, cluster_ext_id, ext_id):
+    """
+    This method will return remote subnet info using cluster and subnet ext_id.
+    Args:
+        module: Ansible module
+        api_instance: RemoteEntitiesApi instance from ntnx_networking_py_client sdk
+        cluster_ext_id (str): Prism Element cluster external ID
+        ext_id (str): remote subnet external ID
+    return:
+        info (object): remote subnet info
+    """
+    try:
+        return api_instance.get_remote_subnet_for_cluster_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching remote subnet info using cluster ext_id and ext_id",
+        )
+
+
 def get_remote_vtep_gateway_for_cluster(module, api_instance, cluster_ext_id, ext_id):
     """
     This method will return remote VTEP gateway info using cluster and gateway ext_id.
