@@ -172,6 +172,73 @@ def get_virtual_switch(module, api_instance, ext_id):
         )
 
 
+def get_ipfix_exporter(module, api_instance, ext_id):
+    """
+    This method will return IPFIX exporter info using its ext_id
+    Args:
+        module: Ansible module
+        api_instance: IPFIXExportersApi instance from ntnx_networking_py_client sdk
+        ext_id (str): IPFIX exporter external ID
+    return:
+        info (object): IPFIX exporter info
+    """
+    try:
+        return api_instance.get_ipfix_exporter_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching IPFIX exporter info using ext_id",
+        )
+
+
+def get_learned_mac_address(module, api_instance, ext_id, layer2_stretch_ext_id):
+    """
+    This method will return learned MAC address info using MAC address external ID
+    and Layer2 Stretch external ID.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): MacAddressesApi instance from ntnx_networking_py_client sdk
+        ext_id (str): learned MAC address external ID
+        layer2_stretch_ext_id (str): Layer2 Stretch external ID
+    return:
+        info (object): learned MAC address info
+    """
+    try:
+        return api_instance.get_learned_mac_address_for_layer2_stretch_by_id(
+            extId=ext_id, layer2StretchExtId=layer2_stretch_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching learned MAC address info using ext_id and layer2_stretch_ext_id",
+        )
+
+
+def get_remote_vpn_connection_for_cluster(module, api_instance, cluster_ext_id, ext_id):
+    """
+    This method will return remote VPN connection info using cluster and connection ext_id.
+    Args:
+        module: Ansible module
+        api_instance: RemoteEntitiesApi instance from ntnx_networking_py_client sdk
+        cluster_ext_id (str): Prism Central cluster external ID
+        ext_id (str): remote VPN connection external ID
+    return:
+        info (object): remote VPN connection info
+    """
+    try:
+        return api_instance.get_remote_vpn_connection_for_cluster_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching remote VPN connection info using cluster ext_id and ext_id",
+        )
+
+
 def get_remote_subnet_for_cluster(module, api_instance, cluster_ext_id, ext_id):
     """
     This method will return remote subnet info using cluster and subnet ext_id.

@@ -1,0 +1,52 @@
+---
+- name: LoadBalancerSessionStat info examples
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      nutanix_port: "{{ nutanix_port | default(lookup('env', 'NUTANIX_PORT') | default(9440, true)) }}"
+      validate_certs: false
+
+  vars:
+    load_balancer_session_ext_id: "{{ lookup('env', 'LB_SESSION_EXT_ID') | default('00061de6-4a87-6b06-185b-ac1f6b6f97e2', true) }}"
+
+  tasks:
+    - name: Compute end_time (now) in ISO-8601 (UTC)
+      ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+      register: end_time_cmd
+      changed_when: false
+
+    - name: Compute start_time (5 minutes back) in ISO-8601 (UTC)
+      ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+      register: start_time_cmd
+      changed_when: false
+
+    - name: Fetch load balancer session stats (minimum required attributes)
+      nutanix.ncp.ntnx_load_balancer_session_stats_info_v2:
+        ext_id: "{{ load_balancer_session_ext_id }}"
+        start_time: "{{ start_time_cmd.stdout }}"
+        end_time: "{{ end_time_cmd.stdout }}"
+      register: stats_min
+      ignore_errors: true
+
+    - name: Fetch load balancer session stats with all attributes
+      nutanix.ncp.ntnx_load_balancer_session_stats_info_v2:
+        ext_id: "{{ load_balancer_session_ext_id }}"
+        start_time: "{{ start_time_cmd.stdout }}"
+        end_time: "{{ end_time_cmd.stdout }}"
+        sampling_interval: 30
+        stat_type: "SUM"
+        select: "*"
+      register: stats_full
+      ignore_errors: true
+
+    - name: Show stats results
+      ansible.builtin.debug:
+        msg:
+          - "Minimum-attributes call succeeded: {{ not (stats_min.failed | default(false)) }}"
+          - "All-attributes call succeeded: {{ not (stats_full.failed | default(false)) }}"
+          - "The example is authored to run against a real load balancer session on the cluster."
+          - "Override the target session by exporting LB_SESSION_EXT_ID before running the playbook."

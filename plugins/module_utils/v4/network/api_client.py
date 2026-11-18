@@ -101,6 +101,18 @@ def get_routing_policies_api_instance(module):
     return ntnx_networking_py_client.RoutingPoliciesApi(api_client=api_client)
 
 
+def get_routing_policy_stats_api_instance(module):
+    """
+    This method will return RoutingPolicyStatsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): routing policy stats api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.RoutingPolicyStatsApi(api_client=api_client)
+
+
 def get_floating_ip_api_instance(module):
     """
     This method will return FloatingIpsApi instance.
@@ -195,6 +207,66 @@ def get_bridges_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_networking_py_client.BridgesApi(api_client=api_client)
+
+
+def get_ipfix_exporters_api_instance(module):
+    """
+    This method will return IPFIXExportersApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): IPFIX Exporters Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.IPFIXExportersApi(api_client=api_client)
+
+
+def get_cluster_capabilities_api_instance(module):
+    """
+    This method will return ClusterCapabilitiesApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Cluster Capabilities Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.ClusterCapabilitiesApi(api_client=api_client)
+
+
+def get_load_balancer_session_stats_api_instance(module):
+    """
+    This method will return LoadBalancerSessionStatsApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Load Balancer Session Stats Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.LoadBalancerSessionStatsApi(api_client=api_client)
+
+
+def get_mac_addresses_api_instance(module):
+    """
+    This method will return MacAddressesApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Mac Addresses Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.MacAddressesApi(api_client=api_client)
+
+
+def get_virtual_switch_nodes_info_api_instance(module):
+    """
+    This method will return VirtualSwitchNodesInfoApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Virtual Switch Nodes Info Api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.VirtualSwitchNodesInfoApi(api_client=api_client)
 
 
 def get_remote_entities_api_instance(module):
