@@ -1,0 +1,163 @@
+---
+- name: Start ntnx_iscsi_clients_v2 tests
+  ansible.builtin.debug:
+    msg: "Start ntnx_iscsi_clients_v2 tests"
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set test names
+  ansible.builtin.set_fact:
+    suffix_name: "ansible-iscsi"
+
+- name: Set VG name
+  ansible.builtin.set_fact:
+    vg1_name: "{{ suffix_name }}-{{ random_name }}"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+############################################ Test Setup ############################################
+
+- name: Create Volume Group for iSCSI client tests
+  nutanix.ncp.ntnx_volume_groups_v2:
+    name: "{{ vg1_name }}"
+    description: "Volume group for iSCSI client update tests"
+    target_prefix: "vg1"
+    cluster_reference: "{{ cluster.uuid }}"
+    usage_type: "USER"
+  register: result
+  ignore_errors: true
+
+- name: Verify Volume Group creation
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.ext_id is defined
+    fail_msg: "Unable to create Volume Group for iSCSI client tests"
+    success_msg: "Volume Group created successfully for iSCSI client tests"
+
+- name: Set VG ext_id
+  ansible.builtin.set_fact:
+    vg1_ext_id: "{{ result.ext_id }}"
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+- name: Set iSCSI initiator name
+  ansible.builtin.set_fact:
+    iscsi_initiator_iqn: "iqn.2024-01.com.nutanix.test:{{ random_name }}"
+
+- name: Attach iSCSI client to Volume Group
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
+    volume_group_ext_id: "{{ vg1_ext_id }}"
+    iscsi_initiator_name: "{{ iscsi_initiator_iqn }}"
+    num_virtual_targets: 2
+    enabled_authentications: NONE
+  register: result
+  ignore_errors: true
+
+- name: Verify iSCSI client attachment
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.ext_id is defined
+    fail_msg: "Unable to attach iSCSI client to Volume Group"
+    success_msg: "iSCSI client attached successfully to Volume Group"
+
+- name: Set iSCSI client ext_id
+  ansible.builtin.set_fact:
+    iscsi_client_ext_id: "{{ result.ext_id }}"
+
+############################################ Check Mode Tests ############################################
+
+- name: Update iSCSI client with check mode enabled
+  nutanix.ncp.ntnx_iscsi_clients_v2:
+    ext_id: "{{ iscsi_client_ext_id }}"
+    enabled_authentications: NONE
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify update iSCSI client check mode
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+    fail_msg: "Update iSCSI client check mode failed"
+    success_msg: "Update iSCSI client check mode passed"
+
+############################################ Live Update Tests ############################################
+
+- name: Update iSCSI client authentication type
+  nutanix.ncp.ntnx_iscsi_clients_v2:
+    ext_id: "{{ iscsi_client_ext_id }}"
+    enabled_authentications: NONE
+  register: result
+  ignore_errors: true
+
+- name: Verify iSCSI client update
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined
+      - result.ext_id == iscsi_client_ext_id
+    fail_msg: "Update iSCSI client failed"
+    success_msg: "iSCSI client updated successfully"
+
+############################################ Negative Tests ############################################
+
+- name: Test update with non-existent iSCSI client ext_id
+  nutanix.ncp.ntnx_iscsi_clients_v2:
+    ext_id: "00000000-0000-0000-0000-000000000099"
+    enabled_authentications: NONE
+  register: result
+  ignore_errors: true
+
+- name: Verify negative test for invalid ext_id
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: "Negative test for invalid ext_id did not fail as expected"
+    success_msg: "Negative test for invalid ext_id passed as expected"
+
+############################################ Cleanup ############################################
+
+- name: Detach iSCSI client from Volume Group
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_v2:
+    volume_group_ext_id: "{{ vg1_ext_id }}"
+    ext_id: "{{ iscsi_client_ext_id }}"
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Verify iSCSI client detachment
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+    fail_msg: "Unable to detach iSCSI client"
+    success_msg: "iSCSI client detached successfully"
+
+- name: Delete Volume Group
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  with_items: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Verify Volume Group deletion
+  ansible.builtin.assert:
+    that:
+      - result.results[0].changed == true
+    fail_msg: "Unable to delete Volume Group"
+    success_msg: "Volume Group deleted successfully"
+
+- name: Reset todelete
+  ansible.builtin.set_fact:
+    todelete: []

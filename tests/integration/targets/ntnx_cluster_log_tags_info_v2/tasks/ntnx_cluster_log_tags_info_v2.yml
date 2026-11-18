@@ -1,0 +1,131 @@
+---
+- name: Start ntnx_cluster_log_tags_info_v2 tests
+  ansible.builtin.debug:
+    msg: "Starting ntnx_cluster_log_tags_info_v2 tests"
+
+- name: Fetch clusters to get cluster_ext_id
+  nutanix.ncp.ntnx_clusters_info_v2:
+    limit: 5
+  register: clusters_info
+  ignore_errors: true
+
+- name: Verify clusters list
+  ansible.builtin.assert:
+    that:
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    fail_msg: "Failed to fetch clusters for log tags tests"
+    success_msg: "Fetched clusters for log tags tests"
+
+- name: Set cluster_ext_id
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ clusters_info.response[0].ext_id }}"
+
+- name: List cluster log tags with cluster_ext_id
+  nutanix.ncp.ntnx_cluster_log_tags_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify list cluster log tags
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results is defined
+    fail_msg: "Failed to list cluster log tags"
+    success_msg: "Listed cluster log tags successfully"
+
+- name: List cluster log tags with limit
+  nutanix.ncp.ntnx_cluster_log_tags_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Verify list with limit
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    fail_msg: "List with limit failed"
+    success_msg: "List with limit passed"
+
+- name: List cluster log tags with filter
+  nutanix.ncp.ntnx_cluster_log_tags_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    filter: "name eq 'acropolis'"
+  register: result
+  ignore_errors: true
+
+- name: Verify list with filter
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "List with filter failed"
+    success_msg: "List with filter passed"
+
+- name: List cluster log tags with page
+  nutanix.ncp.ntnx_cluster_log_tags_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    page: 0
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Verify list with page
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "List with page failed"
+    success_msg: "List with page passed"
+
+- name: Negative missing cluster_ext_id  # noqa: args[module]
+  nutanix.ncp.ntnx_cluster_log_tags_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Verify missing cluster_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Missing cluster_ext_id should fail"
+    success_msg: "Missing cluster_ext_id correctly failed"
+
+- name: Negative invalid cluster_ext_id
+  nutanix.ncp.ntnx_cluster_log_tags_info_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Verify invalid cluster_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Invalid cluster_ext_id should fail"
+    success_msg: "Invalid cluster_ext_id correctly failed"
+
+- name: Negative invalid filter
+  nutanix.ncp.ntnx_cluster_log_tags_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    filter: "invalidField eq 'test'"
+  register: result
+  ignore_errors: true
+
+- name: Verify invalid filter fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Invalid filter should fail"
+    success_msg: "Invalid filter correctly failed"

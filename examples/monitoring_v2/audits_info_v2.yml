@@ -1,0 +1,46 @@
+---
+# Summary:
+# This playbook will do:
+# 1. List all audits
+# 2. List audits with filter
+# 3. List audits with limit
+# 4. List all audits with fetch_all
+# 5. Get an audit using ext_id
+
+- name: Audits info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        audit_ext_id: "<audit_ext_id>"
+
+    - name: List all audits
+      nutanix.ncp.ntnx_audits_info_v2:
+      register: list_result
+
+    - name: List audits with filter
+      nutanix.ncp.ntnx_audits_info_v2:
+        filter: "auditType eq 'CategoryAudit'"
+      register: list_result_filter
+
+    - name: List audits with limit
+      nutanix.ncp.ntnx_audits_info_v2:
+        limit: 1
+      register: list_result_limit
+
+    - name: List all audits with fetch_all
+      nutanix.ncp.ntnx_audits_info_v2:
+        fetch_all: true
+      register: list_result_fetch_all
+
+    - name: Get an audit using ext_id
+      nutanix.ncp.ntnx_audits_info_v2:
+        ext_id: "{{ audit_ext_id }}"
+      register: get_result

@@ -1,0 +1,246 @@
+---
+###################################################################################
+# Integration test-plan for ntnx_volume_group_nvmf_clients_info_v2
+#
+# The list APIs are GLOBAL — they enumerate every NVMe-TCP (NVMf) client
+# registered on the Prism Central. They do not scope to a specific Volume
+# Group, so this suite intentionally does not require a Volume Group to
+# be created before running. This suite validates:
+#   1. list operation returns a list + total_available_results.
+#   2. list operation with `limit` truncates the response length.
+#   3. list operation with `page` returns without error.
+#   4. list operation with `orderby` returns without error.
+#   5. list operation with `select` projection returns without error.
+#   6. list operation with `filter` on clusterReference returns without error
+#      and every returned element matches the filter.
+#   7. get-by-ext_id returns the exact NVMf client requested (only if any
+#      NVMf clients exist on the cluster).
+#   8. get-by-ext_id with a garbage UUID reports the NOT FOUND error properly.
+#   9. Passing both `ext_id` and `filter` trips mutually_exclusive validation.
+###################################################################################
+
+- name: Start NVMe-TCP (NVMf) clients info tests
+  ansible.builtin.debug:
+    msg: "Start NVMe-TCP clients info tests"
+
+########################################################################################
+# 1. List all NVMe-TCP clients — base list operation
+########################################################################################
+
+- name: List all NVMe-TCP clients (no filters)
+  nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+  register: list_all
+  ignore_errors: true
+
+- name: Verify list-all response shape
+  ansible.builtin.assert:
+    that:
+      - list_all is defined
+      - list_all.changed == false
+      - list_all.failed == false
+      - list_all.response is defined
+      - list_all.response is iterable
+      - list_all.response | length >= 0
+      - list_all.total_available_results is defined
+      - list_all.total_available_results >= 0
+    success_msg: "List of NVMe-TCP clients returned successfully"
+    fail_msg: "List of NVMe-TCP clients did not return expected shape"
+
+########################################################################################
+# 2. List with limit — verify pagination truncates
+########################################################################################
+
+- name: List NVMe-TCP clients with limit=1
+  nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+    limit: 1
+  register: list_limit
+  ignore_errors: true
+
+- name: Verify list-with-limit response
+  ansible.builtin.assert:
+    that:
+      - list_limit is defined
+      - list_limit.changed == false
+      - list_limit.failed == false
+      - list_limit.response is defined
+      - list_limit.response | length <= 1
+      - list_limit.total_available_results is defined
+    success_msg: "List NVMe-TCP clients with limit passed"
+    fail_msg: "List NVMe-TCP clients with limit failed"
+
+########################################################################################
+# 3. List with page — verify pagination page 0 succeeds
+########################################################################################
+
+- name: List NVMe-TCP clients with page=0 and limit=1
+  nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+    page: 0
+    limit: 1
+  register: list_page
+  ignore_errors: true
+
+- name: Verify list-with-page response
+  ansible.builtin.assert:
+    that:
+      - list_page is defined
+      - list_page.changed == false
+      - list_page.failed == false
+      - list_page.response is defined
+      - list_page.response | length <= 1
+    success_msg: "List NVMe-TCP clients with page/limit passed"
+    fail_msg: "List NVMe-TCP clients with page/limit failed"
+
+########################################################################################
+# 4. List with orderby — accepted by API
+########################################################################################
+
+- name: List NVMe-TCP clients with orderby=extId asc
+  nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+    orderby: "extId asc"
+  register: list_order
+  ignore_errors: true
+
+- name: Verify list-with-orderby response
+  ansible.builtin.assert:
+    that:
+      - list_order is defined
+      - list_order.changed == false
+      - list_order.failed == false
+      - list_order.response is defined
+    success_msg: "List NVMe-TCP clients with orderby passed"
+    fail_msg: "List NVMe-TCP clients with orderby failed"
+
+########################################################################################
+# 5. List with select — accepted by API
+########################################################################################
+
+- name: List NVMe-TCP clients with select projection
+  nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+    select: "extId,clusterReference"
+  register: list_select
+  ignore_errors: true
+
+- name: Verify list-with-select response
+  ansible.builtin.assert:
+    that:
+      - list_select is defined
+      - list_select.changed == false
+      - list_select.failed == false
+      - list_select.response is defined
+    success_msg: "List NVMe-TCP clients with select passed"
+    fail_msg: "List NVMe-TCP clients with select failed"
+
+########################################################################################
+# 6. List with filter on clusterReference — supported OData property.
+########################################################################################
+
+- name: List NVMe-TCP clients filtered by clusterReference (test cluster)
+  nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+    filter: "clusterReference eq '{{ cluster.uuid }}'"
+  register: list_filter_cluster
+  ignore_errors: true
+
+- name: Verify filtered-by-cluster response shape
+  ansible.builtin.assert:
+    that:
+      - list_filter_cluster is defined
+      - list_filter_cluster.changed == false
+      - list_filter_cluster.failed == false
+      - list_filter_cluster.response is defined
+      - list_filter_cluster.total_available_results is defined
+    success_msg: "List NVMe-TCP clients filtered by clusterReference passed"
+    fail_msg: "List NVMe-TCP clients filtered by clusterReference failed"
+
+- name: Assert every returned client matches the filtered clusterReference
+  ansible.builtin.assert:
+    that:
+      - item.cluster_reference == cluster.uuid
+    success_msg: "Filtered client {{ item.ext_id | default('<none>') }} matches expected cluster"
+    fail_msg: "Filtered client did not match expected clusterReference"
+  loop: "{{ list_filter_cluster.response | default([], true) }}"
+  loop_control:
+    label: "{{ item.ext_id | default('<none>') }}"
+
+########################################################################################
+# 7. get-by-ext_id — only when at least one NVMe-TCP client exists.
+########################################################################################
+
+- name: Set first NVMe-TCP client uuid (if any)
+  ansible.builtin.set_fact:
+    first_nvmf_ext_id: >-
+      {{
+        (list_all.response | default([], true)
+         | map(attribute='ext_id')
+         | select('string')
+         | first)
+        | default('', true)
+      }}
+
+- name: Fetch a specific NVMe-TCP client by external ID
+  nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+    ext_id: "{{ first_nvmf_ext_id }}"
+  register: get_single
+  when: first_nvmf_ext_id | length > 0
+  ignore_errors: true
+
+- name: Verify get-by-ext_id response when an NVMf client exists
+  ansible.builtin.assert:
+    that:
+      - get_single is defined
+      - get_single.changed == false
+      - get_single.failed == false
+      - get_single.ext_id == first_nvmf_ext_id
+      - get_single.response is defined
+      - get_single.response.ext_id == first_nvmf_ext_id
+    success_msg: "Fetched a single NVMe-TCP client successfully"
+    fail_msg: "Fetching a single NVMe-TCP client failed"
+  when: first_nvmf_ext_id | length > 0
+
+- name: Log absence of any NVMe-TCP clients when the cluster has none
+  ansible.builtin.debug:
+    msg: "No NVMe-TCP clients present on this cluster — get-by-ext_id positive path is skipped."
+  when: first_nvmf_ext_id | length == 0
+
+########################################################################################
+# 8. Negative — fetch NVMe-TCP client with an invalid ext_id
+########################################################################################
+
+- name: Fetch NVMe-TCP client with an invalid ext_id
+  nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: get_invalid
+  ignore_errors: true
+
+- name: Verify invalid-ext_id response
+  ansible.builtin.assert:
+    that:
+      - get_invalid is defined
+      - get_invalid.changed == false
+      - get_invalid.failed == true
+      - get_invalid.msg is defined
+      - get_invalid.msg == "Api Exception raised while fetching given NVMe-TCP client"
+      - get_invalid.status == 404
+    success_msg: "Fetching NVMe-TCP client with invalid ext_id failed as expected"
+    fail_msg: "Fetching NVMe-TCP client with invalid ext_id should have failed"
+
+########################################################################################
+# 9. Negative — passing both ext_id and filter must trip mutually_exclusive
+########################################################################################
+
+- name: Attempt to fetch with both ext_id and filter (should be rejected)
+  nutanix.ncp.ntnx_volume_group_nvmf_clients_info_v2:
+    ext_id: "aea43b5c-ae4d-4b60-934b-f8f581275dec"
+    filter: "extId eq 'aea43b5c-ae4d-4b60-934b-f8f581275dec'"
+  register: mutex_result
+  ignore_errors: true
+
+- name: Verify mutually_exclusive validation
+  ansible.builtin.assert:
+    that:
+      - mutex_result is defined
+      - mutex_result.changed == false
+      - mutex_result.failed == true
+      - mutex_result.msg is defined
+      - mutex_result.msg == "parameters are mutually exclusive: ext_id|filter"
+    success_msg: "Mutually exclusive rejection on (ext_id, filter) works as expected"
+    fail_msg: "Mutually exclusive rejection on (ext_id, filter) did not trigger"
