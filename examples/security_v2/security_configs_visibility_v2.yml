@@ -1,0 +1,27 @@
+---
+# Summary:
+# 1. Fetch security configurations visibility setting
+# 2. Update security configurations visibility setting
+
+- name: Security configs visibility playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Fetch security configurations visibility setting
+      nutanix.ncp.ntnx_security_configs_visibility_info_v2:
+      register: result
+
+    - name: Update security configurations visibility setting
+      nutanix.ncp.ntnx_security_configs_visibility_v2:
+        is_secure_boot_visible: true
+        is_network_segmentation_visible: true
+        is_cluster_lockdown_visible: true
+        is_log_forwarding_visible: false
+        is_consent_banner_visible: false
+      register: update_result

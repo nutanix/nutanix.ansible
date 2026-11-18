@@ -1,0 +1,100 @@
+---
+- name: Start security configs visibility tests
+  ansible.builtin.debug:
+    msg: "Starting ntnx_security_configs_visibility_v2 tests"
+
+- name: Fetch current visibility setting
+  nutanix.ncp.ntnx_security_configs_visibility_info_v2:
+  register: current
+  ignore_errors: true
+
+- name: Assert fetch visibility setting
+  ansible.builtin.assert:
+    that:
+      - current.changed == false
+      - current.failed == false
+      - current.response is defined
+      - current.response.is_secure_boot_visible is defined
+    fail_msg: "Failed to fetch security configs visibility setting"
+    success_msg: "Fetched security configs visibility setting"
+
+- name: Update visibility with check mode
+  nutanix.ncp.ntnx_security_configs_visibility_v2:
+    is_secure_boot_visible: true
+    is_network_segmentation_visible: true
+    is_cluster_lockdown_visible: true
+    is_log_forwarding_visible: false
+    is_consent_banner_visible: false
+  register: check_update
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check mode update
+  ansible.builtin.assert:
+    that:
+      - check_update.changed == false
+      - check_update.failed == false
+      - check_update.response is defined
+    fail_msg: "Check mode update failed"
+    success_msg: "Check mode update passed"
+
+- name: Update visibility setting
+  nutanix.ncp.ntnx_security_configs_visibility_v2:
+    is_secure_boot_visible: "{{ current.response.is_secure_boot_visible }}"
+    is_network_segmentation_visible: "{{ current.response.is_network_segmentation_visible }}"
+    is_cluster_lockdown_visible: "{{ current.response.is_cluster_lockdown_visible }}"
+    is_log_forwarding_visible: "{{ current.response.is_log_forwarding_visible }}"
+    is_consent_banner_visible: "{{ current.response.is_consent_banner_visible }}"
+  register: update_same
+  ignore_errors: true
+
+- name: Assert idempotent update when values unchanged
+  ansible.builtin.assert:
+    that:
+      - update_same.failed == false
+      - update_same.changed == false
+      - update_same.skipped == true
+      - update_same.msg == "Nothing to change."
+    fail_msg: "Idempotency check failed"
+    success_msg: "Idempotency check passed"
+
+- name: Toggle log forwarding visibility
+  ansible.builtin.set_fact:
+    toggled_log_forwarding: "{{ not (current.response.is_log_forwarding_visible | bool) }}"
+
+- name: Update visibility with toggled log forwarding
+  nutanix.ncp.ntnx_security_configs_visibility_v2:
+    is_secure_boot_visible: "{{ current.response.is_secure_boot_visible }}"
+    is_network_segmentation_visible: "{{ current.response.is_network_segmentation_visible }}"
+    is_cluster_lockdown_visible: "{{ current.response.is_cluster_lockdown_visible }}"
+    is_log_forwarding_visible: "{{ toggled_log_forwarding }}"
+    is_consent_banner_visible: "{{ current.response.is_consent_banner_visible }}"
+  register: update_toggle
+  ignore_errors: true
+
+- name: Assert toggled update
+  ansible.builtin.assert:
+    that:
+      - update_toggle.failed == false
+      - update_toggle.changed == true
+      - update_toggle.response.is_log_forwarding_visible == toggled_log_forwarding
+    fail_msg: "Toggled update failed"
+    success_msg: "Toggled update passed"
+
+- name: Restore original visibility setting
+  nutanix.ncp.ntnx_security_configs_visibility_v2:
+    is_secure_boot_visible: "{{ current.response.is_secure_boot_visible }}"
+    is_network_segmentation_visible: "{{ current.response.is_network_segmentation_visible }}"
+    is_cluster_lockdown_visible: "{{ current.response.is_cluster_lockdown_visible }}"
+    is_log_forwarding_visible: "{{ current.response.is_log_forwarding_visible }}"
+    is_consent_banner_visible: "{{ current.response.is_consent_banner_visible }}"
+  register: restore
+  ignore_errors: true
+
+- name: Assert restore
+  ansible.builtin.assert:
+    that:
+      - restore.failed == false
+      - restore.changed == true or restore.skipped | default(false)
+    fail_msg: "Restore visibility setting failed"
+    success_msg: "Restored visibility setting"

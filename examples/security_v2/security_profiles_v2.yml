@@ -1,0 +1,64 @@
+---
+# Summary:
+# 1. List security profiles
+# 2. Get security profile by External ID
+# 3. Update security profile
+# 4. Get and update advanced config
+
+- name: Security profiles playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: List security profiles
+      nutanix.ncp.ntnx_security_profiles_info_v2:
+      register: list_result
+
+    - name: Fetch security profile by External ID
+      nutanix.ncp.ntnx_security_profiles_info_v2:
+        ext_id: "{{ list_result.response[0].ext_id }}"
+      register: get_result
+      when: list_result.response | length > 0
+
+    - name: List security profiles with filter
+      nutanix.ncp.ntnx_security_profiles_info_v2:
+        filter: "type eq Security.Config.SecurityProfileType'STANDARD'"
+      register: filter_result
+
+    - name: List security profiles with limit
+      nutanix.ncp.ntnx_security_profiles_info_v2:
+        limit: 1
+      register: limit_result
+
+    - name: List all security profiles with fetch_all
+      nutanix.ncp.ntnx_security_profiles_info_v2:
+        fetch_all: true
+      register: fetch_all_result
+
+    - name: Update security profile type
+      nutanix.ncp.ntnx_security_profiles_v2:
+        ext_id: "{{ list_result.response[0].ext_id }}"
+        type: "{{ list_result.response[0].type }}"
+      register: update_result
+      when: list_result.response | length > 0
+
+    - name: Fetch advanced config
+      nutanix.ncp.ntnx_security_profiles_advanced_config_info_v2:
+        security_profile_ext_id: "{{ list_result.response[0].ext_id }}"
+      register: advanced_info
+      when: list_result.response | length > 0
+
+    - name: Update advanced config
+      nutanix.ncp.ntnx_security_profiles_advanced_config_v2:
+        security_profile_ext_id: "{{ list_result.response[0].ext_id }}"
+        is_consent_banner_enabled: "{{ advanced_info.response.is_consent_banner_enabled }}"
+        consent_banner_text: "{{ advanced_info.response.consent_banner_text | default('') }}"
+        user_space_core_dump_level: "{{ advanced_info.response.user_space_core_dump_level }}"
+        kernel_space_core_dump_level: "{{ advanced_info.response.kernel_space_core_dump_level }}"
+      register: advanced_update
+      when: list_result.response | length > 0
