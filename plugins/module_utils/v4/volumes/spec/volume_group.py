@@ -37,6 +37,7 @@ class VGSpecs:
     )
     volume_group = dict(
         ext_id=dict(type="str", required=False),
+        project_ext_id=dict(type="str", required=False),
         name=dict(type="str", required=False),
         description=dict(type="str", required=False),
         should_load_balance_vm_attachments=dict(type="bool", required=False),

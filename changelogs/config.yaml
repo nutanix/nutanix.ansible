@@ -31,8 +31,6 @@ sections:
     - Security Fixes
   - - bugfixes
     - Bugfixes
-  - - known_issues
-    - Known Issues
 title: Nutanix.Ncp
 trivial_section_name: trivial
 use_fqcn: true

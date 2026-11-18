@@ -1,0 +1,36 @@
+---
+# Summary:
+# Download an image file from Prism Central.
+
+- name: Image download playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        image_ext_id: "<image_ext_id>"
+
+    - name: Download an image
+      nutanix.ncp.ntnx_image_download_v2:
+        image_ext_id: "{{ image_ext_id }}"
+      register: result
+
+    - name: Print download result
+      ansible.builtin.debug:
+        msg: "{{ result }}"
+
+    - name: Download an image to a specific destination path
+      nutanix.ncp.ntnx_image_download_v2:
+        image_ext_id: "{{ image_ext_id }}"
+        dest: "/tmp/downloaded_image.qcow2"
+      register: result
+
+    - name: Print download result with destination path
+      ansible.builtin.debug:
+        msg: "{{ result }}"

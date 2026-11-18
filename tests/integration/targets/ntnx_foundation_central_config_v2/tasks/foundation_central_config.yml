@@ -1,0 +1,114 @@
+---
+- name: Start testing ntnx_foundation_central_config_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_foundation_central_config_v2
+
+- name: Get Foundation Central configuration
+  nutanix.ncp.ntnx_foundation_central_config_info_v2:
+  register: fc_info
+  ignore_errors: true
+
+- name: Get Foundation Central configuration status
+  ansible.builtin.assert:
+    that:
+      - fc_info.changed == false
+      - fc_info.failed == false
+      - fc_info.response is defined
+      - fc_info.response.aos_download_timeout_minutes is defined
+      - fc_info.response.ahv_installation_timeout_minutes is defined
+    fail_msg: Failed to fetch Foundation Central configuration
+    success_msg: Foundation Central configuration fetched
+
+- name: Save original Foundation Central configuration
+  ansible.builtin.set_fact:
+    original_aos_timeout: >-
+      {{ fc_info.response.aos_download_timeout_minutes }}
+    original_ahv_timeout: >-
+      {{ fc_info.response.ahv_installation_timeout_minutes }}
+
+- name: Update Foundation Central configuration with check mode enabled
+  nutanix.ncp.ntnx_foundation_central_config_v2:
+    aos_download_timeout_minutes: 95
+    ahv_installation_timeout_minutes: 65
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update Foundation Central configuration with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.aos_download_timeout_minutes == 95
+      - result.response.ahv_installation_timeout_minutes == 65
+    fail_msg: Foundation Central config check mode failed
+    success_msg: Foundation Central config check mode passed
+
+- name: Update Foundation Central configuration
+  nutanix.ncp.ntnx_foundation_central_config_v2:
+    aos_download_timeout_minutes: 91
+    ahv_installation_timeout_minutes: 71
+  register: result
+  ignore_errors: true
+
+- name: Update Foundation Central configuration status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response.aos_download_timeout_minutes == 91
+      - result.response.ahv_installation_timeout_minutes == 71
+    fail_msg: Foundation Central config update failed
+    success_msg: Foundation Central config update passed
+
+- name: Get Foundation Central configuration after update
+  nutanix.ncp.ntnx_foundation_central_config_info_v2:
+  register: fc_info_after_update
+  ignore_errors: true
+
+- name: Get Foundation Central configuration after update status
+  ansible.builtin.assert:
+    that:
+      - fc_info_after_update.failed == false
+      - fc_info_after_update.response.aos_download_timeout_minutes == 91
+      - fc_info_after_update.response.ahv_installation_timeout_minutes == 71
+    fail_msg: Info did not reflect updated Foundation Central configuration
+    success_msg: Info reflects updated Foundation Central configuration
+
+- name: Update Foundation Central configuration idempotently
+  nutanix.ncp.ntnx_foundation_central_config_v2:
+    aos_download_timeout_minutes: 91
+    ahv_installation_timeout_minutes: 71
+  register: result
+  ignore_errors: true
+
+- name: Update Foundation Central configuration idempotently status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: Foundation Central config idempotency failed
+    success_msg: Foundation Central config idempotency passed
+
+- name: Restore original Foundation Central configuration
+  nutanix.ncp.ntnx_foundation_central_config_v2:
+    aos_download_timeout_minutes: "{{ original_aos_timeout | int }}"
+    ahv_installation_timeout_minutes: "{{ original_ahv_timeout | int }}"
+  register: result
+  ignore_errors: true
+
+- name: Restore original Foundation Central configuration status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - >-
+          result.response.aos_download_timeout_minutes ==
+          (original_aos_timeout | int)
+      - >-
+          result.response.ahv_installation_timeout_minutes ==
+          (original_ahv_timeout | int)
+    fail_msg: Failed to restore Foundation Central configuration
+    success_msg: Foundation Central configuration restored

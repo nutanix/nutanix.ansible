@@ -1,0 +1,109 @@
+---
+- name: Start testing ntnx_vm_console_token_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_vm_console_token_v2
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: >-
+      {{ query('community.general.random_string',
+      numbers=false, special=false, length=12)[0] }}
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "ansible-console-token-{{ random_name }}"
+
+- name: Generate VM console token with check mode enabled
+  nutanix.ncp.ntnx_vm_console_token_v2:
+    ext_id: "83083083-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate VM console token with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "83083083-0000-0000-0000-000000000001"
+      - result.msg is defined
+      - result.msg is search("will be generated")
+      - result.msg is search("83083083-0000-0000-0000-000000000001")
+    fail_msg: Generate console token check mode failed
+    success_msg: Generate console token check mode passed
+
+- name: Create prerequisite AHV VM
+  nutanix.ncp.ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: ansible console token test vm
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: create_vm_result
+  ignore_errors: true
+
+- name: Create prerequisite AHV VM status
+  ansible.builtin.assert:
+    that:
+      - create_vm_result.changed == true
+      - create_vm_result.failed == false
+      - create_vm_result.ext_id is defined
+    fail_msg: Prerequisite VM creation failed
+    success_msg: Prerequisite VM created
+
+- name: Capture VM ext_id
+  ansible.builtin.set_fact:
+    vm_ext_id: "{{ create_vm_result.ext_id }}"
+
+- name: Generate VM console token
+  nutanix.ncp.ntnx_vm_console_token_v2:
+    ext_id: "{{ vm_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Generate VM console token status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+      - result.ext_id == vm_ext_id
+      - result.task_ext_id is defined
+      - result.task_ext_id | length > 0
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    fail_msg: Generate console token failed
+    success_msg: Generate console token passed
+
+- name: Generate VM console token with wait disabled
+  nutanix.ncp.ntnx_vm_console_token_v2:
+    ext_id: "{{ vm_ext_id }}"
+    wait: false
+  register: result
+  ignore_errors: true
+
+- name: Generate VM console token with wait disabled status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+      - result.ext_id == vm_ext_id
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.ext_id == result.task_ext_id
+    fail_msg: Generate console token wait false failed
+    success_msg: Generate console token wait false passed
+
+- name: Delete prerequisite VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm_ext_id }}"
+  register: delete_vm_result
+  ignore_errors: true
+
+- name: Delete prerequisite VM status
+  ansible.builtin.assert:
+    that:
+      - delete_vm_result.changed == true
+      - delete_vm_result.failed == false
+      - delete_vm_result.ext_id == vm_ext_id
+    fail_msg: Prerequisite VM cleanup failed
+    success_msg: Prerequisite VM cleaned up
