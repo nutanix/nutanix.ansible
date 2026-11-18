@@ -1,0 +1,40 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Associate categories with a Volume Group
+# 2. Disassociate categories from a Volume Group
+
+- name: Volume Group Category Associations playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        volume_group_ext_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4b35"
+        categories:
+          - ext_id: "0005b6b1-0b3b-4b3b-8b3b-0b3b4b3b4a5d"
+            entity_type: "CATEGORY"
+      register: result
+      ignore_errors: true
+
+    - name: Associate categories with the Volume Group
+      nutanix.ncp.ntnx_volume_group_category_v2:
+        state: present
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        categories: "{{ categories }}"
+      register: result
+      ignore_errors: true
+
+    - name: Disassociate categories from the Volume Group
+      nutanix.ncp.ntnx_volume_group_category_v2:
+        state: absent
+        volume_group_ext_id: "{{ volume_group_ext_id }}"
+        categories: "{{ categories }}"
+      register: result
+      ignore_errors: true
