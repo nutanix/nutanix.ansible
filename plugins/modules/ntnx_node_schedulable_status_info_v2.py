@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -12,32 +12,28 @@ DOCUMENTATION = r"""
 ---
 module: ntnx_node_schedulable_status_info_v2
 short_description: Fetch Node Schedulable Status info in Nutanix Prism Central
-version_added: 2.5.0
+version_added: 2.7.0
 description:
-  - This module allows you to fetch information about NodeSchedulableStatus in Nutanix Prism Central.
+  - This module allows you to fetch Node Schedulable Status info in Nutanix Prism Central.
   - Each entry indicates whether an AHV node in the cluster is a storage-only
     ("never schedulable") node or a regular schedulable node.
-  - If C(ext_id) is not provided, list multiple NodeSchedulableStatus entries
-    optionally filtered / paginated / sorted.
-  - The underlying SDK endpoint C(/networking/v4/config/node-schedulable-statuses)
-    is a list-only API — there is no get-by-id endpoint, so C(ext_id) is used to
-    client-side filter the listed results.
-  - This module uses PC v4 APIs based SDKs
+  - If C(ext_id) is provided, fetch a particular node's schedulable status using its external ID.
+  - If C(ext_id) is not provided, fetch multiple Node Schedulable Status entries with/without using filters, limit, etc.
+  - The Nutanix v4 API does not expose a get-by-id endpoint for Node Schedulable Status; C(ext_id) is applied as an OData filter.
+  - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
-      B(Get list of Node Schedulable Statuses) -
-      Required Roles: Consumer, Developer, Network Infra Admin, Operator, Prism Admin, Prism Viewer,
-      Project Admin, Super Admin, Virtual Machine Admin, Virtual Machine Operator,
-      Virtual Machine Viewer, VPC Admin
+      B(View Node Schedulable Status) -
+      Required Roles: Network Infra Admin, Prism Admin, Project Manager, Super Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   ext_id:
     description:
       - The external ID (UUID) of a specific node.
-      - When provided, the list is fetched from the API and the entry with a matching
-        C(ext_id) is returned (the underlying SDK does not expose a get-by-id endpoint).
+      - The Nutanix v4 API does not expose a get-by-id endpoint for Node Schedulable Status.
+      - When supplied, the module lists statuses with OData filter C(extId eq '<ext_id>').
     type: str
     required: false
   cluster_ext_id:
@@ -96,30 +92,29 @@ EXAMPLES = r"""
     ext_id: "f28e7475-f835-42ef-ac35-ecbc48d5421e"
   register: result
   ignore_errors: true
+
+- name: List all node schedulable statuses with fetch_all
+  nutanix.ncp.ntnx_node_schedulable_status_info_v2:
+    fetch_all: true
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix PC NodeSchedulableStatus info v4 API.
-    - It is a single NodeSchedulableStatus entry (as a dict) when C(ext_id) is
-      provided and a match is found in the listed results.
-    - It is a list of multiple NodeSchedulableStatus entries when C(ext_id) is
-      not provided, optionally narrowed by filter, limit, page, orderby, or
-      cluster_ext_id.
-    - Each entry contains C(ext_id) (the node UUID) and C(is_never_schedulable)
-      (True for storage-only nodes, False for regular schedulable nodes).
+    - The response from the Nutanix PC Node Schedulable Status info v4 API.
+    - It can be a single Node Schedulable Status entry if external ID is provided.
+    - It is a list of multiple Node Schedulable Status entries if external ID is not provided, with optional filter or limit.
   returned: always
   type: dict
   sample:
-    [
-      {
-        "ext_id": "f28e7475-f835-42ef-ac35-ecbc48d5421e",
-        "is_never_schedulable": false,
-        "links": null,
-        "tenant_id": null
-      }
-    ]
+    {
+      "ext_id": "f28e7475-f835-42ef-ac35-ecbc48d5421e",
+      "is_never_schedulable": false,
+      "links": null,
+      "tenant_id": null
+    }
 
 changed:
   description: This indicates whether the task resulted in any changes. Always false for info modules.
@@ -129,17 +124,17 @@ changed:
 
 msg:
   description: This indicates the message if any message occurred.
-  returned: When there is an error or a specific ext_id is not found.
+  returned: When there is an error
   type: str
   sample: "Api Exception raised while fetching node schedulable statuses info"
 
 error:
-  description: This field typically holds information about the error that occurred during the task execution.
+  description: This field typically holds information about any errors that occurred during the task execution.
   type: str
-  returned: when an error occurs
+  returned: When an error occurs
 
 failed:
-  description: Whether the task failed.
+  description: This field indicates whether the task failed.
   returned: always
   type: bool
   sample: false
@@ -147,13 +142,13 @@ failed:
 ext_id:
   description: External ID of the node whose schedulable status was fetched.
   type: str
-  returned: when external ID is provided
+  returned: When external ID is provided
   sample: "f28e7475-f835-42ef-ac35-ecbc48d5421e"
 
 total_available_results:
-  description: The total number of available NodeSchedulableStatus entries in PC.
+  description: The total number of available Node Schedulable Status entries in PC.
   type: int
-  returned: when all node schedulable statuses are fetched (no ext_id supplied)
+  returned: When all node schedulable statuses are fetched
   sample: 4
 """
 
@@ -166,6 +161,7 @@ from ..module_utils.v4.network.api_client import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    list_entities,
     raise_api_exception,
     strip_internal_attributes,
 )
@@ -175,6 +171,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
+
     module_args = dict(
         ext_id=dict(type="str"),
         cluster_ext_id=dict(type="str"),
@@ -183,50 +180,43 @@ def get_module_spec():
     return module_args
 
 
-def _fetch_node_schedulable_statuses(module, api_instance, kwargs):
+def get_node_schedulable_status_using_ext_id(module, api_instance, result):
+    """Fetch one Node Schedulable Status via list + $filter on extId (no Get-by-ID API)."""
+    ext_id = module.params.get("ext_id")
+    sg = SpecGenerator(module)
+    kwargs, err = sg.get_info_spec(attr=module.params)
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed generating node schedulable statuses info spec", **result
+        )
+
+    kwargs["_filter"] = "extId eq '{0}'".format(ext_id)
+
+    if module.params.get("cluster_ext_id"):
+        kwargs["X_Cluster_Id"] = module.params.get("cluster_ext_id")
+
     try:
-        return api_instance.list_node_schedulable_status(**kwargs)
+        resp = list_entities(
+            api_instance.list_node_schedulable_status,
+            kwargs=kwargs,
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while fetching node schedulable statuses info",
+            msg="Api Exception raised while fetching node schedulable status info using ext_id",
         )
 
-
-def get_node_schedulable_status_by_ext_id(module, api_instance, result):
-    """List and locally filter by ext_id.
-
-    The underlying SDK exposes only a list endpoint; there is no get-by-id
-    for NodeSchedulableStatus. We fetch the list (optionally scoped by
-    cluster_ext_id) and return the entry matching the caller-supplied ext_id.
-    """
-    ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-
-    kwargs = {}
-    if module.params.get("cluster_ext_id"):
-        kwargs["X_Cluster_Id"] = module.params.get("cluster_ext_id")
-
-    resp = _fetch_node_schedulable_statuses(module, api_instance, kwargs)
-
-    resp = strip_internal_attributes(resp.to_dict())
-    entries = resp.get("data") or []
-
-    match = next(
-        (entry for entry in entries if entry.get("ext_id") == ext_id),
-        None,
-    )
-    if match is None:
-        module.fail_json(
-            msg=(
-                "Node schedulable status with ext_id '{0}' not found in the "
-                "listed results.".format(ext_id)
-            ),
-            **result,
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        result["response"] = {}
+        result["msg"] = "Node schedulable status with ext_id '{0}' not found".format(
+            ext_id
         )
-
-    result["response"] = match
+        return
+    result["response"] = resp[0]
 
 
 def get_node_schedulable_statuses(module, api_instance, result):
@@ -242,17 +232,24 @@ def get_node_schedulable_statuses(module, api_instance, result):
     if module.params.get("cluster_ext_id"):
         kwargs["X_Cluster_Id"] = module.params.get("cluster_ext_id")
 
-    resp = _fetch_node_schedulable_statuses(module, api_instance, kwargs)
+    try:
+        resp = list_entities(
+            api_instance.list_node_schedulable_status,
+            kwargs=kwargs,
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching node schedulable statuses info",
+        )
 
-    resp = strip_internal_attributes(resp.to_dict())
-    metadata = resp.get("metadata") or {}
-    total_available_results = metadata.get("total_available_results")
+    total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-
-    resp = resp.get("data")
-    if not resp:
-        resp = []
-    result["response"] = resp
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+    else:
+        result["response"] = []
 
 
 def run_module():
@@ -267,7 +264,7 @@ def run_module():
     result = {"changed": False, "response": None, "failed": False}
     api_instance = get_virtual_switch_nodes_info_api_instance(module)
     if module.params.get("ext_id"):
-        get_node_schedulable_status_by_ext_id(module, api_instance, result)
+        get_node_schedulable_status_using_ext_id(module, api_instance, result)
     else:
         get_node_schedulable_statuses(module, api_instance, result)
     module.exit_json(**result)

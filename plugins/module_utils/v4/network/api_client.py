@@ -200,11 +200,6 @@ def get_bridges_api_instance(module):
 def get_virtual_switch_nodes_info_api_instance(module):
     """
     This method will return VirtualSwitchNodesInfoApi instance.
-
-    The VirtualSwitchNodesInfoApi exposes the node-schedulable-status listing
-    endpoint (GET /networking/v4/config/node-schedulable-statuses), which is
-    used to determine whether each AHV node in a cluster is a storage-only
-    ("never schedulable") node or a regular schedulable node.
     Args:
         module (object): Ansible module object
     return:

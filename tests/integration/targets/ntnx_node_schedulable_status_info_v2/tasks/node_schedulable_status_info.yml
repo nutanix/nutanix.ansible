@@ -10,8 +10,8 @@
 #      isNeverSchedulable).
 #   3. Paging / limiting.
 #   4. Sorting with $orderby.
-#   5. Fetching a single node by ext_id (client-side match on listed data).
-#   6. Negative test: unknown ext_id -> module fails cleanly.
+#   5. Fetching a single node by ext_id (OData filter on listed data).
+#   6. Negative test: unknown ext_id -> graceful "not found" handling.
 #   7. Negative test: mutually exclusive ext_id + filter.
 #   8. Schema assertions on every listed entry: ext_id + is_never_schedulable.
 #
@@ -263,7 +263,7 @@
     fail_msg: "orderby desc failed"
 
 ########################################################################################
-# 5. Fetch a specific node by ext_id (client-side match on the listed data)
+# 5. Fetch a specific node by ext_id (OData filter via list_entities)
 ########################################################################################
 
 - name: Fetch node schedulable status by ext_id
@@ -287,7 +287,7 @@
     fail_msg: "Fetch by ext_id returned wrong or missing data"
 
 ########################################################################################
-# 6. Negative — unknown ext_id
+# 6. Negative — unknown ext_id (graceful not-found handling)
 ########################################################################################
 
 - name: Fetch node schedulable status with a non-existent ext_id
@@ -302,12 +302,12 @@
     that:
       - result is defined
       - result.changed == false
-      - result.failed == true
-      - result.msg is defined
+      - result.response is defined
+      - result.response | length == 0
       - "'not found' in result.msg"
       - result.ext_id == "00000000-0000-0000-0000-000000000000"
-    success_msg: "Non-existent ext_id failed as expected"
-    fail_msg: "Non-existent ext_id did not fail as expected"
+    success_msg: "Non-existent ext_id handled gracefully"
+    fail_msg: "Non-existent ext_id was not handled gracefully"
 
 ########################################################################################
 # 7. Negative — mutually exclusive ext_id + filter
