@@ -1,4 +1,4 @@
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -174,19 +174,12 @@ def get_virtual_switch(module, api_instance, ext_id):
 
 def get_remote_vpn_connection_for_cluster(module, api_instance, cluster_ext_id, ext_id):
     """
-    Fetch a single remote VPN connection for the given Prism Central cluster
-    reference and remote VPN connection external ID.
-
-    The RemoteEntitiesApi surfaces information about a VPN connection that
-    lives on a remote (paired) Prism Central cluster. The `cluster_ext_id`
-    identifies the Prism Central cluster from which to query the remote
-    entities and `ext_id` identifies the specific remote VPN connection.
-
+    This method will return remote VPN connection info using cluster and connection ext_id.
     Args:
         module: Ansible module
         api_instance: RemoteEntitiesApi instance from ntnx_networking_py_client sdk
-        cluster_ext_id (str): Reference to the Prism Central cluster.
-        ext_id (str): Reference to the specified remote VPN connection.
+        cluster_ext_id (str): Prism Central cluster external ID
+        ext_id (str): remote VPN connection external ID
     return:
         info (object): remote VPN connection info
     """
@@ -198,7 +191,7 @@ def get_remote_vpn_connection_for_cluster(module, api_instance, cluster_ext_id, 
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while fetching remote VPN connection info using ext_id",
+            msg="Api Exception raised while fetching remote VPN connection info using cluster ext_id and ext_id",
         )
 
 

@@ -1,4 +1,4 @@
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -200,11 +200,6 @@ def get_bridges_api_instance(module):
 def get_remote_entities_api_instance(module):
     """
     This method will return RemoteEntitiesApi instance.
-
-    The RemoteEntitiesApi exposes read-only Get and List endpoints for
-    entities that live on a remote (paired) Prism Central cluster, such as
-    remote VPN connections, remote subnets, and remote VTEP gateways.
-
     Args:
         module (object): Ansible module object
     return:
