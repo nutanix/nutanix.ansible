@@ -1,0 +1,27 @@
+---
+# Summary:
+# Re-enforce an existing VM-Host Affinity Policy by external ID.
+
+- name: VM-Host Affinity Policy re-enforce playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        vm_host_affinity_policy_ext_id: "<vm_host_affinity_policy_ext_id>"
+
+    - name: Re-enforce a VM-Host Affinity Policy
+      nutanix.ncp.ntnx_re_enforce_vm_host_affinity_policy_v2:
+        ext_id: "{{ vm_host_affinity_policy_ext_id }}"
+      register: reenforce_result
+      ignore_errors: true
+
+    - name: Print re-enforce result
+      ansible.builtin.debug:
+        var: reenforce_result

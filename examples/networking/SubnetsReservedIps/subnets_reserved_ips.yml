@@ -1,0 +1,120 @@
+---
+# Summary:
+# This playbook exercises reserve and unreserve of IPs on a managed subnet:
+#   1. Lists currently reserved IPs (ntnx_subnets_reserved_ips_info_v2).
+#   2. Reserves IPs with IP_ADDRESS_LIST / IP_ADDRESS_RANGE / IP_ADDRESS_COUNT
+#      via ntnx_subnets_reserved_ips_v2 (state=present).
+#   3. Unreserves IPs with IP_ADDRESS_LIST / IP_ADDRESS_RANGE / CONTEXT
+#      via ntnx_subnets_reserved_ips_v2 (state=absent).
+#   4. Re-lists to confirm the subnet is clean.
+#
+# Every task uses the module_defaults block for connection parameters — do NOT
+# repeat nutanix_host/username/password/validate_certs on individual tasks.
+
+- name: Reserve and unreserve subnet IPs playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Setting variables
+      ansible.builtin.set_fact:
+        # Replace with a managed subnet ext_id that already exists on your PC,
+        # or create one first with ntnx_subnets_v2.
+        subnet_ext_id: "61959708-6efc-4d80-8c86-92c01f080672"
+        ctx_list: "ansible-example-list"
+        ctx_range: "ansible-example-range"
+        ctx_count: "ansible-example-count"
+
+    - name: List reserved IPs before changes
+      nutanix.ncp.ntnx_subnets_reserved_ips_info_v2:
+        subnet_ext_id: "{{ subnet_ext_id }}"
+      register: before
+      ignore_errors: true
+
+    - name: Reserve an explicit list of IPs
+      nutanix.ncp.ntnx_subnets_reserved_ips_v2:
+        state: present
+        subnet_ext_id: "{{ subnet_ext_id }}"
+        reserve_type: IP_ADDRESS_LIST
+        ip_addresses:
+          - ipv4:
+              value: "10.30.30.81"
+          - ipv4:
+              value: "10.30.30.82"
+        client_context: "{{ ctx_list }}"
+      register: reserve_list
+      ignore_errors: true
+
+    - name: Reserve a consecutive range of IPs
+      nutanix.ncp.ntnx_subnets_reserved_ips_v2:
+        state: present
+        subnet_ext_id: "{{ subnet_ext_id }}"
+        reserve_type: IP_ADDRESS_RANGE
+        start_ip_address:
+          ipv4:
+            value: "10.30.30.80"
+        count: 3
+        client_context: "{{ ctx_range }}"
+      register: reserve_range
+      ignore_errors: true
+
+    - name: Reserve IPs from the pool by count
+      nutanix.ncp.ntnx_subnets_reserved_ips_v2:
+        state: present
+        subnet_ext_id: "{{ subnet_ext_id }}"
+        reserve_type: IP_ADDRESS_COUNT
+        count: 2
+        client_context: "{{ ctx_count }}"
+      register: reserve_count
+      ignore_errors: true
+
+    - name: List reserved IPs after reserve
+      nutanix.ncp.ntnx_subnets_reserved_ips_info_v2:
+        subnet_ext_id: "{{ subnet_ext_id }}"
+      register: after_reserve
+      ignore_errors: true
+
+    - name: Unreserve the explicit list of IPs
+      nutanix.ncp.ntnx_subnets_reserved_ips_v2:
+        state: absent
+        subnet_ext_id: "{{ subnet_ext_id }}"
+        unreserve_type: IP_ADDRESS_LIST
+        ip_addresses:
+          - ipv4:
+              value: "10.30.30.81"
+          - ipv4:
+              value: "10.30.30.82"
+      register: unreserve_list
+      ignore_errors: true
+
+    - name: Unreserve the consecutive range of IPs
+      nutanix.ncp.ntnx_subnets_reserved_ips_v2:
+        state: absent
+        subnet_ext_id: "{{ subnet_ext_id }}"
+        unreserve_type: IP_ADDRESS_RANGE
+        start_ip_address:
+          ipv4:
+            value: "10.30.30.80"
+        count: 3
+      register: unreserve_range
+      ignore_errors: true
+
+    - name: Unreserve every IP tagged with the count client_context
+      nutanix.ncp.ntnx_subnets_reserved_ips_v2:
+        state: absent
+        subnet_ext_id: "{{ subnet_ext_id }}"
+        unreserve_type: CONTEXT
+        client_context: "{{ ctx_count }}"
+      register: unreserve_ctx
+      ignore_errors: true
+
+    - name: List reserved IPs after unreserve
+      nutanix.ncp.ntnx_subnets_reserved_ips_info_v2:
+        subnet_ext_id: "{{ subnet_ext_id }}"
+      register: after
+      ignore_errors: true

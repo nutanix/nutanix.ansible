@@ -162,6 +162,27 @@
     fail_msg: "Unable to list iscsi clients"
     success_msg: "ISCSI clients listed successfully"
 
+
+########################################################################
+
+- name: List all volume group iSCSI clients with fetch_all
+  nutanix.ncp.ntnx_volume_groups_iscsi_clients_info_v2:
+    fetch_all: true
+  register: fetch_all_ntnx_volume_groups_iscsi_clients_info_v2
+  ignore_errors: true
+
+- name: List all volume group iSCSI clients with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_ntnx_volume_groups_iscsi_clients_info_v2.changed == false
+      - fetch_all_ntnx_volume_groups_iscsi_clients_info_v2.failed == false
+      - fetch_all_ntnx_volume_groups_iscsi_clients_info_v2.response is defined
+      - fetch_all_ntnx_volume_groups_iscsi_clients_info_v2.total_available_results is defined
+      - (fetch_all_ntnx_volume_groups_iscsi_clients_info_v2.response | default([]) | length) ==
+        (fetch_all_ntnx_volume_groups_iscsi_clients_info_v2.total_available_results | int)
+    fail_msg: "Unable to list all volume group iSCSI clients with fetch_all"
+    success_msg: "Listed all volume group iSCSI clients with fetch_all successfully"
+
 - name: Set iscsi client uuid by initiator
   ansible.builtin.set_fact:
     iscsi_client_uuid: >-
