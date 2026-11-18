@@ -1,0 +1,116 @@
+---
+- name: Start ntnx_volume_groups_revert_v2 tests
+  ansible.builtin.debug:
+    msg: "Start ntnx_volume_groups_revert_v2 tests"
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set test names
+  ansible.builtin.set_fact:
+    suffix_name: "ansible-vg-revert"
+
+- name: Set VG name
+  ansible.builtin.set_fact:
+    vg1_name: "{{ suffix_name }}-{{ random_name }}"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+############################################ Test Setup ############################################
+
+- name: Create Volume Group for revert tests
+  nutanix.ncp.ntnx_volume_groups_v2:
+    name: "{{ vg1_name }}"
+    description: "Volume group for revert tests"
+    target_prefix: "vg1"
+    cluster_reference: "{{ cluster.uuid }}"
+    usage_type: "USER"
+  register: result
+  ignore_errors: true
+
+- name: Verify Volume Group creation
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.ext_id is defined
+    fail_msg: "Unable to create Volume Group for revert tests"
+    success_msg: "Volume Group created successfully for revert tests"
+
+- name: Set VG ext_id
+  ansible.builtin.set_fact:
+    vg1_ext_id: "{{ result.ext_id }}"
+    todelete: "{{ todelete + [result.ext_id] }}"
+
+############################################ Check Mode Tests ############################################
+
+- name: Revert Volume Group with check mode enabled
+  nutanix.ncp.ntnx_volume_groups_revert_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    volume_group_recovery_point_ext_id: "00000000-0000-0000-0000-000000000002"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify revert Volume Group check mode
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+    fail_msg: "Revert Volume Group check mode failed"
+    success_msg: "Revert Volume Group check mode passed"
+
+############################################ Negative Tests ############################################
+
+- name: Test revert with non-existent recovery point ext_id
+  nutanix.ncp.ntnx_volume_groups_revert_v2:
+    ext_id: "{{ vg1_ext_id }}"
+    volume_group_recovery_point_ext_id: "00000000-0000-0000-0000-000000000099"
+  register: result
+  ignore_errors: true
+
+- name: Verify negative test for invalid recovery point ext_id
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: "Negative test for invalid recovery point ext_id did not fail as expected"
+    success_msg: "Negative test for invalid recovery point ext_id passed as expected"
+
+- name: Test revert with non-existent Volume Group ext_id
+  nutanix.ncp.ntnx_volume_groups_revert_v2:
+    ext_id: "00000000-0000-0000-0000-000000000099"
+    volume_group_recovery_point_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Verify negative test for invalid VG ext_id
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: "Negative test for invalid VG ext_id did not fail as expected"
+    success_msg: "Negative test for invalid VG ext_id passed as expected"
+
+############################################ Cleanup ############################################
+
+- name: Delete Volume Group
+  nutanix.ncp.ntnx_volume_groups_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  with_items: "{{ todelete }}"
+  ignore_errors: true
+
+- name: Verify Volume Group deletion
+  ansible.builtin.assert:
+    that:
+      - result.results[0].changed == true
+    fail_msg: "Unable to delete Volume Group"
+    success_msg: "Volume Group deleted successfully"
+
+- name: Reset todelete
+  ansible.builtin.set_fact:
+    todelete: []

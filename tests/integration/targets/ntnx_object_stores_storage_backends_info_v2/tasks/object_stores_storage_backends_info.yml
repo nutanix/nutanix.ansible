@@ -1,0 +1,159 @@
+---
+- name: Start ntnx_object_stores_storage_backends_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_object_stores_storage_backends_info_v2 tests
+
+- name: Call storage backends info with missing object_store_ext_id (should fail)
+  nutanix.ncp.ntnx_object_stores_storage_backends_info_v2:
+  register: missing_args
+  ignore_errors: true
+
+- name: Verify missing object_store_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_args.failed == true
+      - missing_args.changed == false
+      - "'missing required arguments' in (missing_args.msg | default(''))"
+      - "'object_store_ext_id' in (missing_args.msg | default(''))"
+    fail_msg: Expected missing object_store_ext_id failure
+    success_msg: Module correctly rejected missing object_store_ext_id
+
+- name: List object stores to locate a parent for storage backend tests
+  nutanix.ncp.ntnx_object_stores_info_v2:
+    fetch_all: true
+  register: object_stores
+  ignore_errors: true
+
+- name: Set object_store_ext_id when available
+  ansible.builtin.set_fact:
+    object_store_ext_id: "{{ (object_stores.response | default([]))[0].ext_id | default('') }}"
+    has_object_store: >-
+      {{ (object_stores.failed | default(true) == false)
+         and ((object_stores.response | default([])) | length > 0) }}
+
+- name: List storage backends for object store
+  nutanix.ncp.ntnx_object_stores_storage_backends_info_v2:
+    object_store_ext_id: "{{ object_store_ext_id }}"
+  register: backends_list
+  ignore_errors: true
+  when: has_object_store | bool
+
+- name: Verify storage backends list response
+  ansible.builtin.assert:
+    that:
+      - backends_list.changed == false
+      - backends_list.failed == false
+      - backends_list.response is defined
+      - backends_list.total_available_results is defined
+      - backends_list.total_available_results >= 0
+    fail_msg: Listing storage backends failed
+    success_msg: Listed storage backends successfully
+  when: has_object_store | bool
+
+- name: List storage backends with limit
+  nutanix.ncp.ntnx_object_stores_storage_backends_info_v2:
+    object_store_ext_id: "{{ object_store_ext_id }}"
+    limit: 1
+  register: backends_limit
+  ignore_errors: true
+  when: has_object_store | bool
+
+- name: Verify storage backends list with limit
+  ansible.builtin.assert:
+    that:
+      - backends_limit.changed == false
+      - backends_limit.failed == false
+      - backends_limit.response is defined
+      - (backends_limit.response | length) <= 1
+    fail_msg: Listing storage backends with limit failed
+    success_msg: Listed storage backends with limit successfully
+  when: has_object_store | bool
+
+- name: List storage backends with filter
+  nutanix.ncp.ntnx_object_stores_storage_backends_info_v2:
+    object_store_ext_id: "{{ object_store_ext_id }}"
+    filter: "isPrimary eq true"
+  register: backends_filter
+  ignore_errors: true
+  when: has_object_store | bool
+
+- name: Verify storage backends list with filter
+  ansible.builtin.assert:
+    that:
+      - backends_filter.changed == false
+      - backends_filter.failed == false
+      - backends_filter.response is defined
+    fail_msg: Listing storage backends with filter failed
+    success_msg: Listed storage backends with filter successfully
+  when: has_object_store | bool
+
+- name: List storage backends with fetch_all
+  nutanix.ncp.ntnx_object_stores_storage_backends_info_v2:
+    object_store_ext_id: "{{ object_store_ext_id }}"
+    fetch_all: true
+  register: backends_fetch_all
+  ignore_errors: true
+  when: has_object_store | bool
+
+- name: Verify storage backends fetch_all
+  ansible.builtin.assert:
+    that:
+      - backends_fetch_all.changed == false
+      - backends_fetch_all.failed == false
+      - backends_fetch_all.response is defined
+      - backends_fetch_all.total_available_results is defined
+      - >-
+          (backends_fetch_all.response | default([]) | length)
+          == (backends_fetch_all.total_available_results | int)
+    fail_msg: Listing storage backends with fetch_all failed
+    success_msg: Listed storage backends with fetch_all successfully
+  when: has_object_store | bool
+
+- name: Capture first storage backend ext_id when present
+  ansible.builtin.set_fact:
+    first_backend_ext_id: "{{ (backends_list.response | default([]))[0].ext_id | default('') }}"
+  when:
+    - has_object_store | bool
+    - (backends_list.response | default([])) | length > 0
+
+- name: Get storage backend by ext_id
+  nutanix.ncp.ntnx_object_stores_storage_backends_info_v2:
+    object_store_ext_id: "{{ object_store_ext_id }}"
+    ext_id: "{{ first_backend_ext_id }}"
+  register: backend_get
+  ignore_errors: true
+  when:
+    - has_object_store | bool
+    - (first_backend_ext_id | default('')) | length > 0
+
+- name: Verify get storage backend by ext_id
+  ansible.builtin.assert:
+    that:
+      - backend_get.changed == false
+      - backend_get.failed == false
+      - backend_get.response is defined
+      - backend_get.ext_id == first_backend_ext_id
+      - backend_get.response.ext_id == first_backend_ext_id
+    fail_msg: Get storage backend by ext_id failed
+    success_msg: Got storage backend by ext_id successfully
+  when:
+    - has_object_store | bool
+    - (first_backend_ext_id | default('')) | length > 0
+
+- name: Get storage backend with invalid ext_id
+  nutanix.ncp.ntnx_object_stores_storage_backends_info_v2:
+    object_store_ext_id: "{{ object_store_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: backend_invalid
+  ignore_errors: true
+  when: has_object_store | bool
+
+- name: Verify invalid storage backend ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - backend_invalid.failed == true
+      - backend_invalid.changed == false
+      - (backend_invalid.msg is defined) or (backend_invalid.response is defined)
+    fail_msg: Invalid storage backend ext_id did not fail cleanly
+    success_msg: Invalid storage backend ext_id failed cleanly
+  when: has_object_store | bool

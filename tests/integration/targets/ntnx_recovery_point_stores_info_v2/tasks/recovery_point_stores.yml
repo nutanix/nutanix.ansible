@@ -1,0 +1,236 @@
+---
+# Test plan for ntnx_recovery_point_stores_info_v2 (info-only / read-only module)
+#
+# RecoveryPointStore is a read-only entity discovered from Prism Central;
+# the SDK exposes List and Get-by-ID. Tests cover:
+#   1. List all recovery point stores -> changed=false, failed=false, response is a list,
+#      total_available_results populated.
+#   2. List with limit -> response length bounded.
+#   3. List with fetch_all -> response length equals total_available_results.
+#   4. Fetch a single store by ext_id -> single dict response, ext_id echoed back
+#      (only when stores exist).
+#   5. List with filter on extId -> exactly one matching entity.
+#   6. List with filter on name -> matches entity from step 1.
+#   7. Fetch with a non-existent ext_id -> API exception surfaced.
+#   8. Invalid filter property -> API exception surfaced.
+#   9. Mutually exclusive ext_id + filter -> module rejects combination.
+
+- name: Start ntnx_recovery_point_stores_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_recovery_point_stores_info_v2 tests
+
+########################################################################################
+# List all recovery point stores
+########################################################################################
+
+- name: List all recovery point stores
+  nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Verify list all recovery point stores
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response is iterable
+      - result.total_available_results is defined
+    success_msg: "List all recovery point stores passed"
+    fail_msg: "List all recovery point stores failed"
+
+- name: Set has_recovery_point_stores flag
+  ansible.builtin.set_fact:
+    has_recovery_point_stores: "{{ (result.response | length) > 0 }}"
+    all_recovery_point_stores: "{{ result.response }}"
+    total_available_results_all: "{{ result.total_available_results }}"
+
+########################################################################################
+# List recovery point stores with limit
+########################################################################################
+
+- name: List recovery point stores with limit
+  nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Verify list recovery point stores with limit
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length <= 1
+    success_msg: "List recovery point stores with limit passed"
+    fail_msg: "List recovery point stores with limit failed"
+
+########################################################################################
+# List all recovery point stores with fetch_all
+########################################################################################
+
+- name: List all recovery point stores with fetch_all
+  nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: Verify list all recovery point stores with fetch_all
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result.changed == false
+      - fetch_all_result.failed == false
+      - fetch_all_result.response is defined
+      - fetch_all_result.total_available_results is defined
+      - (fetch_all_result.response | default([]) | length) ==
+        (fetch_all_result.total_available_results | int)
+    success_msg: "Listed all recovery point stores with fetch_all successfully"
+    fail_msg: "Unable to list all recovery point stores with fetch_all"
+
+########################################################################################
+# Fetch a single recovery point store using ext_id (only when stores exist)
+########################################################################################
+
+- name: Set first recovery point store ext_id and name
+  ansible.builtin.set_fact:
+    recovery_point_store_ext_id: "{{ all_recovery_point_stores[0].ext_id }}"
+    recovery_point_store_name: "{{ all_recovery_point_stores[0].name }}"
+  when: has_recovery_point_stores | bool
+
+- name: Fetch a specific recovery point store using ext_id
+  nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+    ext_id: "{{ recovery_point_store_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: has_recovery_point_stores | bool
+
+- name: Verify fetch a specific recovery point store using ext_id
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == recovery_point_store_ext_id
+      - result.response is defined
+      - result.response.ext_id == recovery_point_store_ext_id
+      - result.response.name is defined
+    success_msg: "Fetch a specific recovery point store using ext_id passed"
+    fail_msg: "Fetch a specific recovery point store using ext_id failed"
+  when: has_recovery_point_stores | bool
+
+########################################################################################
+# List recovery point stores with filter on extId
+########################################################################################
+
+- name: List recovery point stores with filter on extId
+  nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+    filter: "extId eq '{{ recovery_point_store_ext_id }}'"
+  register: result
+  ignore_errors: true
+  when: has_recovery_point_stores | bool
+
+- name: Verify list recovery point stores with filter on extId
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].ext_id == recovery_point_store_ext_id
+    success_msg: "List recovery point stores with filter on extId passed"
+    fail_msg: "List recovery point stores with filter on extId failed"
+  when: has_recovery_point_stores | bool
+
+########################################################################################
+# List recovery point stores with filter on name
+########################################################################################
+
+- name: List recovery point stores with filter on name
+  nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+    filter: "name eq '{{ recovery_point_store_name }}'"
+  register: result
+  ignore_errors: true
+  when: has_recovery_point_stores | bool
+
+- name: Verify list recovery point stores with filter on name
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 1
+      - result.response[0].name == recovery_point_store_name
+    success_msg: "List recovery point stores with filter on name passed"
+    fail_msg: "List recovery point stores with filter on name failed"
+  when: has_recovery_point_stores | bool
+
+########################################################################################
+# Fetch recovery point store with a non-existent ext_id (graceful handling)
+########################################################################################
+
+- name: Fetch recovery point store with a non-existent ext_id
+  nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Verify fetch recovery point store with a non-existent ext_id
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'Api Exception raised while fetching recovery point store info using ext_id' in result.msg"
+    success_msg: "Fetch with non-existent ext_id correctly surfaced API exception"
+    fail_msg: "Fetch with non-existent ext_id did not surface expected error"
+
+########################################################################################
+# Negative: invalid filter property
+########################################################################################
+
+- name: List recovery point stores with invalid filter property
+  nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+    filter: "invalidProperty eq 'test'"
+  register: result
+  ignore_errors: true
+
+- name: Verify invalid filter surfaces API exception
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'Api Exception raised while fetching recovery point stores info' in result.msg"
+    success_msg: "Invalid filter correctly surfaced API exception"
+    fail_msg: "Invalid filter did not surface API exception"
+
+########################################################################################
+# Negative: ext_id and filter are mutually exclusive
+########################################################################################
+
+- name: Fetch recovery point store with both ext_id and filter (should fail)
+  nutanix.ncp.ntnx_recovery_point_stores_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    filter: "extId eq '00000000-0000-0000-0000-000000000000'"
+  register: result
+  ignore_errors: true
+
+- name: Verify mutually exclusive validation fires
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.msg is defined
+      - "'mutually exclusive' in (result.msg | lower)"
+    success_msg: "Providing both ext_id and filter failed as expected"
+    fail_msg: "Providing both ext_id and filter did not fail as expected"
+
+- name: End ntnx_recovery_point_stores_info_v2 tests
+  ansible.builtin.debug:
+    msg: "Finished ntnx_recovery_point_stores_info_v2 tests"

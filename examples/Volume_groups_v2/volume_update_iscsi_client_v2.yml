@@ -1,0 +1,42 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Update iSCSI client authentication type to CHAP
+# 2. Update iSCSI client authentication type to NONE
+
+- name: Update iSCSI client authentication type playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        iscsi_client_uuid: "12345678-1b1b-1b1b-1b1b-1b1b1b1b1b1b1"
+        iscsi_client_name: "iqn.2024-01.com.nutanix.test:ansibletest2"
+
+    - name: Update iSCSI client authentication type to CHAP
+      nutanix.ncp.ntnx_iscsi_clients_v2:
+        ext_id: "{{ iscsi_client_uuid }}"
+        enabled_authentications: CHAP
+        client_secret: "Nutanix.1234455"
+        num_virtual_targets: 2
+        attachment_site: PRIMARY
+        iscsi_initiator_network_id:
+          ipv4:
+            value: "192.168.1.100"
+            prefix_length: 24
+      register: result
+
+    - name: Update iSCSI client authentication type to NONE
+      nutanix.ncp.ntnx_iscsi_clients_v2:
+        ext_id: "{{ iscsi_client_uuid }}"
+        enabled_authentications: NONE
+        num_virtual_targets: 2
+        attachment_site: PRIMARY
+        iscsi_initiator_name: "{{ iscsi_client_name }}"
+      register: result

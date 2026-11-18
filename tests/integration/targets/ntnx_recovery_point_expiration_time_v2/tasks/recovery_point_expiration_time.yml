@@ -1,0 +1,392 @@
+---
+# ============================================================================
+# TEST PLAN
+# ============================================================================
+# Module under test: ntnx_recovery_point_expiration_time_v2 (action module).
+#
+# The module wraps the V4 API:
+#   POST /api/dataprotection/v4.3/config/recovery-points/{extId}/$actions/set-expiration-time
+# which is exposed by ntnx_dataprotection_py_client.RecoveryPointsApi as
+# ``set_recovery_point_expiration_time(extId, body=ExpirationTimeSpec, if_match=<etag>)``.
+#
+# The ExpirationTimeSpec has ONE required field:
+#   * expiration_time (datetime, ISO-8601). The SDK rejects a None value.
+#
+# Setup (prereqs, discovered live):
+#   - Find an AOS cluster.
+#   - Create a VM on that cluster.
+#   - Create a top-level recovery point wrapping that VM.
+#
+# Scenarios covered:
+#   1. Check-mode (dry run) with expiration_time set -> spec returned, no API call.
+#   2. Set the expiration time to a future value (happy path).
+#   3. Verify the change with ntnx_recovery_points_info_v2.
+#   4. Re-run the same set (server accepts a repeated set) - proves etag
+#      refresh path works.
+#   5. Extend the expiration time to a further future value.
+#   6. Verify the extended timestamp via the info module.
+#   7. Negative: missing required ext_id -> module fails with a clear message.
+#   8. Negative: missing required expiration_time -> module fails.
+#   9. Negative: invalid ext_id (well-formed UUID) -> API returns 404 and
+#      module surfaces the error cleanly.
+#
+# Cleanup: delete the recovery point and the VM to leave the cluster clean.
+# ============================================================================
+
+- name: Start ntnx_recovery_point_expiration_time_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_recovery_point_expiration_time_v2 tests
+
+- name: Generate random suffix to avoid name collisions in parallel runs
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] }}"
+
+- name: Set entity names
+  ansible.builtin.set_fact:
+    prefix_name: "ansible_rp_exp"
+    todelete_recovery_points: []
+    todelete_vms: []
+
+- name: Set derived names
+  ansible.builtin.set_fact:
+    vm_name: "{{ prefix_name }}_vm_{{ random_name }}"
+    recovery_point_name: "{{ prefix_name }}_rp_{{ random_name }}"
+
+- name: Compute future expiration timestamps in ISO-8601 format
+  ansible.builtin.set_fact:
+    initial_expiration_time: '{{ lookup(''pipe'', ''date -u -d "+1 month" +%Y-%m-%dT%H:%M:%S%:z'') }}'
+    updated_expiration_time: '{{ lookup(''pipe'', ''date -u -d "+2 months" +%Y-%m-%dT%H:%M:%S%:z'') }}'
+    later_expiration_time: '{{ lookup(''pipe'', ''date -u -d "+3 months" +%Y-%m-%dT%H:%M:%S%:z'') }}'
+
+################################################################################
+# Prerequisite discovery: pick an AOS cluster
+################################################################################
+
+- name: Discover an AOS cluster to host the seed VM and recovery point
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: aos_clusters_result
+
+- name: Ensure an AOS cluster exists on this PC
+  ansible.builtin.assert:
+    that:
+      - aos_clusters_result.failed == false
+      - aos_clusters_result.response is defined
+      - aos_clusters_result.response | length > 0
+    fail_msg: "No AOS cluster found on the target Prism Central; cannot run recovery point expiration time tests"
+    success_msg: "AOS cluster discovered successfully"
+
+- name: Capture cluster external ID
+  ansible.builtin.set_fact:
+    seed_cluster_ext_id: "{{ aos_clusters_result.response[0].ext_id }}"
+
+################################################################################
+# Prerequisite: create the seed VM
+################################################################################
+
+- name: Create seed VM
+  nutanix.ncp.ntnx_vms_v2:
+    name: "{{ vm_name }}"
+    description: "seed VM for recovery point expiration time tests"
+    cluster:
+      ext_id: "{{ seed_cluster_ext_id }}"
+  register: seed_vm_result
+
+- name: Verify seed VM creation
+  ansible.builtin.assert:
+    that:
+      - seed_vm_result.changed == true
+      - seed_vm_result.failed == false
+      - seed_vm_result.ext_id is defined
+      - seed_vm_result.response.name == vm_name
+    fail_msg: "Failed to create seed VM"
+    success_msg: "Seed VM created successfully"
+
+- name: Track seed VM for cleanup
+  ansible.builtin.set_fact:
+    seed_vm_ext_id: "{{ seed_vm_result.ext_id }}"
+    todelete_vms: "{{ todelete_vms + [seed_vm_result.ext_id] }}"
+
+################################################################################
+# Prerequisite: create the seed recovery point
+################################################################################
+
+- name: Create seed recovery point wrapping the VM (with retries for backend flakiness)
+  nutanix.ncp.ntnx_recovery_points_v2:
+    name: "{{ recovery_point_name }}"
+    expiration_time: "{{ initial_expiration_time }}"
+    recovery_point_type: "CRASH_CONSISTENT"
+    vm_recovery_points:
+      - vm_ext_id: "{{ seed_vm_ext_id }}"
+  register: seed_rp_result
+  until: seed_rp_result.failed == false
+  retries: 6
+  delay: 20
+  ignore_errors: true
+
+- name: Verify seed recovery point creation
+  ansible.builtin.assert:
+    that:
+      - seed_rp_result.changed == true
+      - seed_rp_result.failed == false
+      - seed_rp_result.ext_id is defined
+      - seed_rp_result.response.name == recovery_point_name
+      - seed_rp_result.response.recovery_point_type == "CRASH_CONSISTENT"
+      - seed_rp_result.response.status == "COMPLETE"
+    fail_msg: "Failed to create seed recovery point after retries"
+    success_msg: "Seed recovery point created successfully"
+
+- name: Track seed recovery point for cleanup
+  ansible.builtin.set_fact:
+    recovery_point_ext_id: "{{ seed_rp_result.ext_id }}"
+    todelete_recovery_points: "{{ todelete_recovery_points + [seed_rp_result.ext_id] }}"
+
+################################################################################
+# 1. Check mode with expiration_time set
+################################################################################
+
+- name: Set expiration time with check mode enabled
+  nutanix.ncp.ntnx_recovery_point_expiration_time_v2:
+    ext_id: "{{ recovery_point_ext_id }}"
+    expiration_time: "{{ updated_expiration_time }}"
+  check_mode: true
+  register: check_mode_result
+
+- name: Verify check mode behaviour
+  ansible.builtin.assert:
+    that:
+      - check_mode_result.changed == false
+      - check_mode_result.failed == false
+      - check_mode_result.ext_id == recovery_point_ext_id
+      - check_mode_result.response is defined
+      - check_mode_result.response.expiration_time == updated_expiration_time
+      - check_mode_result.task_ext_id is none
+    fail_msg: "Check mode did not behave as expected"
+    success_msg: "Check mode returned the expected spec without invoking the API"
+
+################################################################################
+# 2. Happy path: set the expiration time to a new value
+################################################################################
+
+- name: Update expiration time (happy path, with retries for backend flakiness)
+  nutanix.ncp.ntnx_recovery_point_expiration_time_v2:
+    ext_id: "{{ recovery_point_ext_id }}"
+    expiration_time: "{{ updated_expiration_time }}"
+  register: set_result
+  until: set_result.failed == false
+  retries: 6
+  delay: 20
+  ignore_errors: true
+
+- name: Verify happy path result
+  ansible.builtin.assert:
+    that:
+      - set_result.changed == true
+      - set_result.failed == false
+      - set_result.ext_id == recovery_point_ext_id
+      - set_result.task_ext_id is defined
+      - set_result.response is defined
+      - set_result.response.status == "SUCCEEDED"
+      - set_result.response.entities_affected | length >= 1
+      - set_result.response.entities_affected[0].ext_id == recovery_point_ext_id
+    fail_msg: "Setting the expiration time did not succeed"
+    success_msg: "Expiration time set successfully"
+
+################################################################################
+# 3. Verify: the API-side expiration_time matches what we asked for
+################################################################################
+
+- name: Fetch the recovery point to confirm expiration_time was updated
+  nutanix.ncp.ntnx_recovery_points_info_v2:
+    ext_id: "{{ recovery_point_ext_id }}"
+  register: after_update_info
+
+- name: Compute expected and actual expiration in seconds
+  ansible.builtin.set_fact:
+    expected_epoch: "{{ lookup('pipe', 'date -u -d ' ~ updated_expiration_time ~ ' +%s') | int }}"
+    actual_epoch: "{{ lookup('pipe', 'date -u -d ' ~ after_update_info.response.expiration_time ~ ' +%s') | int }}"
+
+- name: Verify the recovery point now carries the new expiration time
+  ansible.builtin.assert:
+    that:
+      - after_update_info.changed == false
+      - after_update_info.failed == false
+      - after_update_info.ext_id == recovery_point_ext_id
+      - after_update_info.response.ext_id == recovery_point_ext_id
+      - after_update_info.response.name == recovery_point_name
+      - actual_epoch == expected_epoch
+    fail_msg: "Recovery point expiration time was not updated correctly on the server"
+    success_msg: "Recovery point expiration time was updated as expected"
+
+################################################################################
+# 4. Re-invoke: the API is not client-side idempotent, but the operation must
+#    still succeed. This proves the module handles etag refresh correctly.
+################################################################################
+
+- name: Re-run the same set expiration (etag refresh path)
+  nutanix.ncp.ntnx_recovery_point_expiration_time_v2:
+    ext_id: "{{ recovery_point_ext_id }}"
+    expiration_time: "{{ updated_expiration_time }}"
+  register: rerun_result
+
+- name: Verify re-run succeeded (server accepts a repeat set)
+  ansible.builtin.assert:
+    that:
+      - rerun_result.changed == true
+      - rerun_result.failed == false
+      - rerun_result.ext_id == recovery_point_ext_id
+      - rerun_result.task_ext_id is defined
+      - rerun_result.response.status == "SUCCEEDED"
+    fail_msg: "Re-running the set expiration time did not succeed"
+    success_msg: "Set expiration time re-run succeeded"
+
+################################################################################
+# 5. Extend the expiration time to a further future value
+################################################################################
+
+- name: Extend the expiration time to a later timestamp
+  nutanix.ncp.ntnx_recovery_point_expiration_time_v2:
+    ext_id: "{{ recovery_point_ext_id }}"
+    expiration_time: "{{ later_expiration_time }}"
+  register: extend_result
+
+- name: Verify the extend result
+  ansible.builtin.assert:
+    that:
+      - extend_result.changed == true
+      - extend_result.failed == false
+      - extend_result.ext_id == recovery_point_ext_id
+      - extend_result.task_ext_id is defined
+      - extend_result.response.status == "SUCCEEDED"
+    fail_msg: "Failed to extend the recovery point expiration time"
+    success_msg: "Recovery point expiration time extended successfully"
+
+################################################################################
+# 6. Verify the extended expiration timestamp
+################################################################################
+
+- name: Fetch recovery point after extending expiration
+  nutanix.ncp.ntnx_recovery_points_info_v2:
+    ext_id: "{{ recovery_point_ext_id }}"
+  register: after_extend_info
+
+- name: Compute expected/actual seconds for later_expiration_time
+  ansible.builtin.set_fact:
+    expected_epoch_later: "{{ lookup('pipe', 'date -u -d ' ~ later_expiration_time ~ ' +%s') | int }}"
+    actual_epoch_later: "{{ lookup('pipe', 'date -u -d ' ~ after_extend_info.response.expiration_time ~ ' +%s') | int }}"
+
+- name: Verify the recovery point carries the extended expiration time
+  ansible.builtin.assert:
+    that:
+      - after_extend_info.response.ext_id == recovery_point_ext_id
+      - actual_epoch_later == expected_epoch_later
+    fail_msg: "Extended expiration time did not match the requested timestamp"
+    success_msg: "Extended expiration time is correct"
+
+################################################################################
+# 7. Negative: missing required ext_id -> Ansible spec validation must reject
+################################################################################
+
+- name: Call the module without ext_id (negative test)
+  nutanix.ncp.ntnx_recovery_point_expiration_time_v2:
+    expiration_time: "{{ later_expiration_time }}"
+  register: missing_ext_id_result
+  ignore_errors: true
+
+- name: Verify missing ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_result.failed == true
+      - missing_ext_id_result.msg is defined
+      - "'ext_id' in missing_ext_id_result.msg"
+    fail_msg: "Missing ext_id was not rejected by the module"
+    success_msg: "Missing ext_id was properly rejected"
+
+################################################################################
+# 8. Negative: missing required expiration_time -> spec validation must reject
+################################################################################
+
+- name: Call the module without expiration_time (negative test)
+  nutanix.ncp.ntnx_recovery_point_expiration_time_v2:
+    ext_id: "{{ recovery_point_ext_id }}"
+  register: missing_expiration_result
+  ignore_errors: true
+
+- name: Verify missing expiration_time is rejected
+  ansible.builtin.assert:
+    that:
+      - missing_expiration_result.failed == true
+      - missing_expiration_result.msg is defined
+      - "'expiration_time' in missing_expiration_result.msg"
+    fail_msg: "Missing expiration_time was not rejected by the module"
+    success_msg: "Missing expiration_time was properly rejected"
+
+################################################################################
+# 9. Negative: invalid ext_id -> API 404, module surfaces the error cleanly
+################################################################################
+
+- name: Call the module with a non-existent recovery point ext_id
+  nutanix.ncp.ntnx_recovery_point_expiration_time_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    expiration_time: "{{ later_expiration_time }}"
+  register: invalid_ext_id_result
+  ignore_errors: true
+
+- name: Verify invalid ext_id yields a clean failure
+  ansible.builtin.assert:
+    that:
+      - invalid_ext_id_result.failed == true
+      - invalid_ext_id_result.changed == false
+    fail_msg: "Invalid ext_id did not fail as expected"
+    success_msg: "Invalid ext_id produced a clean failure as expected"
+
+################################################################################
+# Cleanup
+################################################################################
+
+- name: Delete the seed recovery points
+  nutanix.ncp.ntnx_recovery_points_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: rp_delete_result
+  ignore_errors: true
+  loop: "{{ todelete_recovery_points }}"
+
+- name: Verify recovery point deletion
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == "SUCCEEDED"
+      - item.ext_id == todelete_recovery_points[rp_index]
+    fail_msg: "Failed to delete a seed recovery point"
+    success_msg: "Seed recovery point deleted"
+  loop: "{{ rp_delete_result.results }}"
+  loop_control:
+    index_var: rp_index
+
+- name: Delete the seed VMs
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: vm_delete_result
+  ignore_errors: true
+  loop: "{{ todelete_vms }}"
+
+- name: Verify VM deletion
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response.status == "SUCCEEDED"
+      - item.ext_id == todelete_vms[vm_index]
+    fail_msg: "Failed to delete a seed VM"
+    success_msg: "Seed VM deleted"
+  loop: "{{ vm_delete_result.results }}"
+  loop_control:
+    index_var: vm_index
+
+- name: Reset todelete lists
+  ansible.builtin.set_fact:
+    todelete_recovery_points: []
+    todelete_vms: []

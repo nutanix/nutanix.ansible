@@ -1,0 +1,542 @@
+---
+# Test plan for ntnx_installer_images_v2 / ntnx_installer_images_info_v2
+#
+# These modules talk to Foundation Central (FCVM), not Prism Central.
+#
+# Scenarios covered:
+#   1. check_mode create with ALL attributes (asserts generated spec, no API call)
+#   2. Create with minimum attributes (AOS: name/type/source) -> real API
+#   3. Create AHV without checksum -> negative (Foundation requires checksum for AHV)
+#   4. Create with url -> negative (url only accepted on update)
+#   5. Create with missing required params (name/type/source) -> spec validation
+#   6. Invalid enum for type/source -> argument spec validation
+#   7. check_mode update with ALL attributes (asserts generated spec, no API call)
+#   8. Update name change -> negative (name cannot be modified)
+#   9. Info: get by ext_id (single entity)
+#  10. Info: list all (list of entities + total_available_results)
+#  11. Info: list with filter
+#  12. Info: list with limit
+#  13. Info: get with invalid ext_id -> negative
+#  14. Update with wrong ext_id -> negative
+#  15. Delete with wrong ext_id -> negative
+#  16. Delete missing ext_id -> negative
+#  17. check_mode delete
+#  18. Delete created images (cleanup)
+#
+# Note: Foundation Central enforces a strict API rate limit (~1 req/sec), so a
+# short pause is added between real API calls.
+
+- name: Start installer images tests
+  ansible.builtin.debug:
+    msg: Start installer images tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+    todelete: []
+
+- name: Set image names
+  ansible.builtin.set_fact:
+    image_name_min: "img_{{ suffix_name }}_{{ random_name }}_min"
+    image_name_ahv: "img_{{ suffix_name }}_{{ random_name }}_ahv"
+
+########################################################################################
+# Create Installer Image Tests
+########################################################################################
+
+- name: Generate spec for creating installer image using check mode with all attributes
+  nutanix.ncp.ntnx_installer_images_v2:
+    state: present
+    name: "check_mode_image_full"
+    type: "AHV"
+    source: "REMOTE_URL"
+    url: "https://download.example.com/ahv/host-bundle.tar.gz"
+    metadata_download_url: "https://download.example.com/ahv/metadata.json"
+    certificate_chain: "cert-chain-data"
+    checksum:
+      sha256:
+        hex_digest: "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating installer image using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_image_full"
+      - result.response.type == "AHV"
+      - result.response.source == "REMOTE_URL"
+      - result.response.url == "https://download.example.com/ahv/host-bundle.tar.gz"
+      - result.response.metadata_download_url == "https://download.example.com/ahv/metadata.json"
+      - result.response.certificate_chain == "cert-chain-data"
+      - result.response.checksum.hex_digest == "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+    success_msg: "Spec for creating installer image using check mode with all attributes is generated successfully"
+    fail_msg: "Spec for creating installer image using check mode with all attributes is not generated successfully"
+
+- name: Generate spec for creating installer image using check mode with md5 checksum
+  nutanix.ncp.ntnx_installer_images_v2:
+    state: present
+    name: "check_mode_image_md5"
+    type: "AHV"
+    source: "LOCAL"
+    checksum:
+      md5:
+        hex_digest: "0123456789abcdef0123456789abcdef"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for creating installer image using check mode with md5 checksum status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "check_mode_image_md5"
+      - result.response.type == "AHV"
+      - result.response.source == "LOCAL"
+      - result.response.checksum.hex_digest == "0123456789abcdef0123456789abcdef"
+    success_msg: "Spec for creating installer image using check mode with md5 checksum is generated successfully"
+    fail_msg: "Spec for creating installer image using check mode with md5 checksum is not generated successfully"
+
+- name: Create installer image with mutually exclusive md5 and sha256 checksum (should fail)
+  nutanix.ncp.ntnx_installer_images_v2:
+    state: present
+    name: "img_both_checksum"
+    type: "AHV"
+    source: "LOCAL"
+    checksum:
+      md5:
+        hex_digest: "0123456789abcdef0123456789abcdef"
+      sha256:
+        hex_digest: "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+  register: result
+  ignore_errors: true
+
+- name: Create installer image with mutually exclusive md5 and sha256 checksum status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'parameters are mutually exclusive: md5|sha256' in result.msg"
+    success_msg: "Create installer image with mutually exclusive checksum failed as expected"
+    fail_msg: "Create installer image with mutually exclusive checksum did not fail as expected"
+
+- name: Create installer image with minimum attributes
+  nutanix.ncp.ntnx_installer_images_v2:
+    state: present
+    name: "{{ image_name_min }}"
+    type: "AOS"
+    source: "REMOTE_URL"
+  register: result
+  ignore_errors: true
+
+- name: Create installer image with minimum attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.name == "{{ image_name_min }}"
+      - result.response.type == "AOS"
+      - result.response.source == "REMOTE_URL"
+    success_msg: "Installer image with minimum attributes created successfully"
+    fail_msg: "Installer image with minimum attributes creation failed"
+
+- name: Add installer image to todelete list
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+    image_min_ext_id: "{{ result.ext_id }}"
+
+- name: Pause to respect Foundation Central rate limit
+  ansible.builtin.pause:
+    seconds: 2
+
+########################################################################################
+# Negative Create Tests
+########################################################################################
+
+- name: Create AHV installer image without checksum (should fail)
+  nutanix.ncp.ntnx_installer_images_v2:
+    state: present
+    name: "{{ image_name_ahv }}"
+    type: "AHV"
+    source: "REMOTE_URL"
+  register: result
+  ignore_errors: true
+
+- name: Create AHV installer image without checksum status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Checksum is required for AHV images' in (result.response | string)"
+    success_msg: "Create AHV installer image without checksum failed as expected"
+    fail_msg: "Create AHV installer image without checksum did not fail as expected"
+
+- name: Pause to respect Foundation Central rate limit
+  ansible.builtin.pause:
+    seconds: 2
+
+- name: Create installer image providing url (should fail, url only on update)
+  nutanix.ncp.ntnx_installer_images_v2:
+    state: present
+    name: "img_with_url_{{ random_name }}"
+    type: "AOS"
+    source: "REMOTE_URL"
+    url: "https://download.example.com/aos/nutanix_installer_package.tar.gz"
+  register: result
+  ignore_errors: true
+
+- name: Create installer image providing url status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'ImageUrl can only be provided through the Update API' in (result.response | string)"
+    success_msg: "Create installer image providing url failed as expected"
+    fail_msg: "Create installer image providing url did not fail as expected"
+
+- name: Create installer image with missing name
+  nutanix.ncp.ntnx_installer_images_v2:
+    state: present
+    type: "AOS"
+    source: "REMOTE_URL"
+  register: result
+  ignore_errors: true
+
+- name: Create installer image with missing name status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): name"
+    success_msg: "Create installer image with missing name failed as expected"
+    fail_msg: "Create installer image with missing name did not fail as expected"
+
+- name: Create installer image with missing type
+  nutanix.ncp.ntnx_installer_images_v2:
+    state: present
+    name: "img_missing_type"
+    source: "REMOTE_URL"
+  register: result
+  ignore_errors: true
+
+- name: Create installer image with missing type status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): type"
+    success_msg: "Create installer image with missing type failed as expected"
+    fail_msg: "Create installer image with missing type did not fail as expected"
+
+- name: Create installer image with missing source
+  nutanix.ncp.ntnx_installer_images_v2:
+    state: present
+    name: "img_missing_source"
+    type: "AOS"
+  register: result
+  ignore_errors: true
+
+- name: Create installer image with missing source status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Missing required parameter(s): source"
+    success_msg: "Create installer image with missing source failed as expected"
+    fail_msg: "Create installer image with missing source did not fail as expected"
+
+- name: Create installer image with invalid type enum
+  nutanix.ncp.ntnx_installer_images_v2:
+    state: present
+    name: "img_invalid_type"
+    type: "INVALID_TYPE"
+    source: "REMOTE_URL"
+  register: result
+  ignore_errors: true
+
+- name: Create installer image with invalid type enum status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of type must be one of' in result.msg"
+    success_msg: "Create installer image with invalid type enum failed as expected"
+    fail_msg: "Create installer image with invalid type enum did not fail as expected"
+
+- name: Create installer image with invalid source enum
+  nutanix.ncp.ntnx_installer_images_v2:
+    state: present
+    name: "img_invalid_source"
+    type: "AOS"
+    source: "INVALID_SOURCE"
+  register: result
+  ignore_errors: true
+
+- name: Create installer image with invalid source enum status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of source must be one of' in result.msg"
+    success_msg: "Create installer image with invalid source enum failed as expected"
+    fail_msg: "Create installer image with invalid source enum did not fail as expected"
+
+########################################################################################
+# Update Installer Image Tests
+########################################################################################
+
+- name: Generate spec for updating installer image using check mode with all attributes
+  nutanix.ncp.ntnx_installer_images_v2:
+    state: present
+    ext_id: "{{ image_min_ext_id }}"
+    name: "{{ image_name_min }}"
+    type: "AOS"
+    source: "REMOTE_URL"
+    url: "https://download.example.com/aos/nutanix_installer_package.tar.gz"
+    metadata_download_url: "https://download.example.com/aos/metadata.json"
+    certificate_chain: "updated-cert-chain"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Generate spec for updating installer image using check mode with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == "{{ image_name_min }}"
+      - result.response.type == "AOS"
+      - result.response.source == "REMOTE_URL"
+      - result.response.url == "https://download.example.com/aos/nutanix_installer_package.tar.gz"
+      - result.response.metadata_download_url == "https://download.example.com/aos/metadata.json"
+      - result.response.certificate_chain == "updated-cert-chain"
+    success_msg: "Spec for updating installer image using check mode with all attributes is generated successfully"
+    fail_msg: "Spec for updating installer image using check mode with all attributes is not generated successfully"
+
+- name: Update installer image name (should fail, name cannot be modified)
+  nutanix.ncp.ntnx_installer_images_v2:
+    state: present
+    ext_id: "{{ image_min_ext_id }}"
+    name: "{{ image_name_min }}_renamed"
+    type: "AOS"
+    source: "REMOTE_URL"
+  register: result
+  ignore_errors: true
+
+- name: Update installer image name status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Image name cannot be modified' in (result.response | string)"
+    success_msg: "Update installer image name failed as expected"
+    fail_msg: "Update installer image name did not fail as expected"
+
+- name: Update installer image with wrong external ID
+  nutanix.ncp.ntnx_installer_images_v2:
+    state: present
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+    name: "wrong_ext_id_image"
+    type: "AOS"
+    source: "REMOTE_URL"
+  register: result
+  ignore_errors: true
+
+- name: Update installer image with wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Update installer image with wrong external ID failed as expected"
+    fail_msg: "Update installer image with wrong external ID did not fail as expected"
+
+########################################################################################
+# Info Module Tests - Get Single Installer Image
+########################################################################################
+
+- name: Fetch installer image using external ID
+  nutanix.ncp.ntnx_installer_images_info_v2:
+    ext_id: "{{ image_min_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch installer image using external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == "{{ image_min_ext_id }}"
+      - result.response.name == "{{ image_name_min }}"
+      - result.response.type == "AOS"
+      - result.response.source == "REMOTE_URL"
+    success_msg: "Fetch installer image using external ID passed"
+    fail_msg: "Fetch installer image using external ID failed"
+
+- name: Fetch installer image using wrong external ID
+  nutanix.ncp.ntnx_installer_images_info_v2:
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+  register: result
+  ignore_errors: true
+
+- name: Fetch installer image using wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Fetch installer image using wrong external ID failed as expected"
+    fail_msg: "Fetch installer image using wrong external ID did not fail as expected"
+
+########################################################################################
+# Info Module Tests - List Installer Images
+########################################################################################
+
+- name: List all installer images
+  nutanix.ncp.ntnx_installer_images_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all installer images status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 1
+      - result.total_available_results is defined
+      - result.total_available_results >= 1
+    success_msg: "List all installer images passed"
+    fail_msg: "List all installer images failed"
+
+- name: List installer images with filter
+  nutanix.ncp.ntnx_installer_images_info_v2:
+    filter: "name eq '{{ image_name_min }}'"
+  register: result
+  ignore_errors: true
+
+- name: List installer images with filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].name == "{{ image_name_min }}"
+    success_msg: "List installer images with filter passed"
+    fail_msg: "List installer images with filter failed"
+
+- name: List installer images with limit
+  nutanix.ncp.ntnx_installer_images_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List installer images with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    success_msg: "List installer images with limit passed"
+    fail_msg: "List installer images with limit failed"
+
+########################################################################################
+# Delete Installer Image Tests
+########################################################################################
+
+- name: Delete installer image with check mode
+  nutanix.ncp.ntnx_installer_images_v2:
+    state: absent
+    ext_id: "{{ image_min_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Delete installer image with check mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    success_msg: "Delete installer image with check mode passed"
+    fail_msg: "Delete installer image with check mode failed"
+
+- name: Delete installer image with missing external ID
+  nutanix.ncp.ntnx_installer_images_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Delete installer image with missing external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete installer image with missing external ID failed as expected"
+    fail_msg: "Delete installer image with missing external ID did not fail as expected"
+
+- name: Delete installer image with wrong external ID
+  nutanix.ncp.ntnx_installer_images_v2:
+    state: absent
+    ext_id: "04595a7b-010c-4a89-58dd-060c94e9a1f0"
+  register: result
+  ignore_errors: true
+
+- name: Delete installer image with wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+    success_msg: "Delete installer image with wrong external ID failed as expected"
+    fail_msg: "Delete installer image with wrong external ID did not fail as expected"
+
+- name: Delete all created installer images
+  nutanix.ncp.ntnx_installer_images_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+
+- name: Deletion status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.results | length == todelete | length
+      - result.msg == "All items completed"
+    success_msg: "All installer images are deleted successfully"
+    fail_msg: "Unable to delete all installer images"

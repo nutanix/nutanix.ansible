@@ -71,3 +71,111 @@ def get_protected_resource(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching protected resource info using ext_id",
         )
+
+
+def get_recovery_plan_job(module, api_instance, ext_id):
+    """
+    This method will return recovery plan job info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: RecoveryPlanJobsApi instance from ntnx_dataprotection_py_client sdk
+        ext_id (str): recovery plan job external ID
+    Returns:
+        recovery_plan_job_info (object): recovery plan job info
+    """
+    try:
+        return api_instance.get_recovery_plan_job_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching recovery plan job info using ext_id",
+        )
+
+
+def get_vss_metadata_by_vm_recovery_point(
+    module, api_instance, recovery_point_ext_id, vm_recovery_point_ext_id
+):
+    """
+    This method will download VSS metadata for a VM recovery point which is part of
+    the given top level recovery point.
+    Args:
+        module: Ansible module
+        api_instance: RecoveryPointsApi instance from ntnx_dataprotection_py_client sdk
+        recovery_point_ext_id (str): top level recovery point external ID
+        vm_recovery_point_ext_id (str): VM recovery point external ID
+    Returns:
+        vss_metadata_response (object): GetVssMetadataApiResponse whose C(data)
+            wraps the local path of the downloaded application/octet-stream
+            (.cab) file.
+    """
+    try:
+        return api_instance.get_vss_metadata_by_vm_recovery_point_id(
+            recoveryPointExtId=recovery_point_ext_id,
+            vmRecoveryPointExtId=vm_recovery_point_ext_id,
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VSS metadata for a VM recovery point using ext_ids",
+        )
+
+
+def get_data_protection_cluster_capability(module, api_instance, ext_id):
+    """
+    This method will return the data protection cluster capabilities for a given
+    cluster external ID.
+
+    The underlying v4 SDK only exposes a list API for DataProtectionClusterCapability
+    (no dedicated get-by-id endpoint). This helper filters the list on the server side
+    using ``$filter=extId eq '<ext_id>'`` and returns the single matching entity.
+
+    Args:
+        module: Ansible module.
+        api_instance: ``DataProtectionClusterCapabilitiesApi`` SDK instance.
+        ext_id (str): External identifier of the DataProtectionClusterCapability
+            (which corresponds to a cluster UUID).
+
+    Returns:
+        object | None: SDK ``DataProtectionClusterCapability`` object, or ``None`` if
+        no capability entity is found for the supplied external ID.
+    """
+    try:
+        resp = api_instance.list_data_protection_cluster_capabilities(
+            _filter="extId eq '{0}'".format(ext_id)
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching data protection cluster "
+                "capability using ext_id"
+            ),
+        )
+    entities = resp.data if resp and resp.data else []
+    for entity in entities:
+        if getattr(entity, "ext_id", None) == ext_id:
+            return entity
+    return None
+
+
+def get_recovery_point_store(module, api_instance, ext_id):
+    """
+    This method will return recovery point store info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: RecoveryPointStoresApi instance from ntnx_dataprotection_py_client sdk
+        ext_id (str): recovery point store external ID
+    Returns:
+        recovery_point_store_info (object): recovery point store info
+    """
+    try:
+        return api_instance.get_recovery_point_store_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching recovery point store info using ext_id",
+        )
