@@ -1,0 +1,37 @@
+---
+# Summary:
+# Acknowledge or resolve an alert.
+
+- name: Alert manage playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        alert_ext_id: "<alert_ext_id>"
+
+    - name: Acknowledge an alert
+      nutanix.ncp.ntnx_alert_manage_v2:
+        ext_id: "{{ alert_ext_id }}"
+        action_type: ACKNOWLEDGE
+      register: ack_result
+
+    - name: Print acknowledge result
+      ansible.builtin.debug:
+        msg: "{{ ack_result }}"
+
+    - name: Resolve an alert
+      nutanix.ncp.ntnx_alert_manage_v2:
+        ext_id: "{{ alert_ext_id }}"
+        action_type: RESOLVE
+      register: resolve_result
+
+    - name: Print resolve result
+      ansible.builtin.debug:
+        msg: "{{ resolve_result }}"
