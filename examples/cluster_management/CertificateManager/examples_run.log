@@ -1,0 +1,34 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Cluster Certificate playbook] ********************************************
+
+TASK [Setting Variables] *******************************************************
+ok: [localhost] => {"ansible_facts": {"cluster_ext_id": "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"}, "changed": false}
+
+TASK [Add a Certificate to a cluster] ******************************************
+fatal: [localhost]: FAILED! => {"msg": "The task includes an option with an undefined variable.. 'certificate_base64' is undefined\n\nThe error appears to be in '/tmp/codegen/0f621e1f8dcf44568c3b2a198398899d/repo/examples/cluster_management/CertificateManager/certificate_manager.yml': line 27, column 7, but may\nbe elsewhere in the file depending on the exact syntax problem.\n\nThe offending line appears to be:\n\n\n    - name: Add a Certificate to a cluster\n      ^ here\n"}
+...ignoring
+
+TASK [Set Certificate ext_id] **************************************************
+skipping: [localhost] => {"changed": false, "false_condition": "certificate_result.ext_id is defined", "skip_reason": "Conditional result was False"}
+
+TASK [Get a Certificate using ext_id] ******************************************
+skipping: [localhost] => {"changed": false, "false_condition": "certificate_ext_id is defined", "skip_reason": "Conditional result was False"}
+
+TASK [List all Certificates on a cluster] **************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching Certificate info", "response": {"error": "Not Found", "message": "Not Found", "path": "/api/clustermgmt/v4.2/config/clusters/00061fa4-ef93-7dd8-185b-ac1f6b6f97e2/certificates", "status": 404, "timestamp": "2026-11-19T05:52:02.178+00:00"}, "status": 404}
+...ignoring
+
+TASK [List Certificates with filter] *******************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching Certificate info", "response": {"error": "Not Found", "message": "Not Found", "path": "/api/clustermgmt/v4.2/config/clusters/00061fa4-ef93-7dd8-185b-ac1f6b6f97e2/certificates", "status": 404, "timestamp": "2026-11-19T05:52:03.033+00:00"}, "status": 404}
+...ignoring
+
+TASK [Delete a Certificate] ****************************************************
+skipping: [localhost] => {"changed": false, "false_condition": "certificate_ext_id is defined", "skip_reason": "Conditional result was False"}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0    skipped=3    rescued=0    ignored=3   
+
