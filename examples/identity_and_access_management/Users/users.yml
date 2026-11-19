@@ -1,0 +1,141 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create active local user with all attributes
+# 2. Update user with all attributes
+# 3. Fetch user info using ext_id
+# 4. List all users
+# 5. List users with filter
+# 6. List users with limit
+# 7. List all users with fetch_all
+# 8. Fetch objects auth details for an access key
+# 9. Migrate keys to unified table
+# 10. Delete user
+
+- name: Users playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') }}"
+      nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default(9440, true) }}"
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        username: "test-ansible-user-{{ 100000 | random }}"
+        first_name: "test-firstname"
+        last_name: "test-lastname"
+        display_name: "test-displayname"
+        middle_initial: "M"
+        email_id: "test-ansible@example.com"
+        password: "Test.Password.123!"
+        locale: "en-US"
+        region: "en-US"
+        description: "User created by Ansible"
+        access_key: "AKIAIOSFODNN7EXAMPLE123456"
+        max_key_count: 10
+        sample_user_ext_id: "00000000-0000-0000-0000-000000000000"
+
+    - name: Create active local user with all attributes
+      nutanix.ncp.ntnx_users_v2:
+        state: present
+        user_type: LOCAL
+        username: "{{ username }}"
+        first_name: "{{ first_name }}"
+        last_name: "{{ last_name }}"
+        display_name: "{{ display_name }}"
+        middle_initial: "{{ middle_initial }}"
+        email_id: "{{ email_id }}"
+        locale: "{{ locale }}"
+        region: "{{ region }}"
+        password: "{{ password }}"
+        description: "{{ description }}"
+        status: ACTIVE
+        is_force_reset_password_enabled: true
+        creation_type: USERDEFINED
+        additional_attributes:
+          - name: "attr1"
+            value: "value1"
+      register: create_result
+      ignore_errors: true
+
+    - name: Set user ext_id
+      ansible.builtin.set_fact:
+        user_ext_id: "{{ create_result.response.ext_id \
+          | default(sample_user_ext_id) }}"
+
+    - name: Update user with all attributes
+      nutanix.ncp.ntnx_users_v2:
+        state: present
+        ext_id: "{{ user_ext_id }}"
+        first_name: "{{ first_name }}_updated"
+        last_name: "{{ last_name }}_updated"
+        display_name: "{{ display_name }}_updated"
+        middle_initial: "{{ middle_initial }}"
+        email_id: "{{ email_id }}"
+        locale: "{{ locale }}"
+        region: "{{ region }}"
+        description: "{{ description }} updated"
+      register: update_result
+      ignore_errors: true
+
+    - name: Fetch user info using ext_id
+      nutanix.ncp.ntnx_users_info_v2:
+        ext_id: "{{ user_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all users
+      nutanix.ncp.ntnx_users_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List users with filter
+      nutanix.ncp.ntnx_users_info_v2:
+        filter: "username eq '{{ username }}'"
+      register: result
+      ignore_errors: true
+
+    - name: List users with limit
+      nutanix.ncp.ntnx_users_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: List all users with fetch_all
+      nutanix.ncp.ntnx_users_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
+
+    - name: Fetch objects auth details for an access key
+      nutanix.ncp.ntnx_fetch_objects_auth_details_v2:
+        state: present
+        access_key: "{{ access_key }}"
+      register: result
+      ignore_errors: true
+
+    - name: Migrate keys to unified table
+      nutanix.ncp.ntnx_migrate_keys_v2:
+        state: present
+        max_key_count: "{{ max_key_count }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete user
+      nutanix.ncp.ntnx_users_v2:
+        state: absent
+        ext_id: "{{ user_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete user with soft delete
+      nutanix.ncp.ntnx_users_v2:
+        state: absent
+        ext_id: "{{ user_ext_id }}"
+        soft_delete: true
+      register: result
+      ignore_errors: true
