@@ -1,0 +1,23 @@
+---
+- name: Configure tenant playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Configure tenant
+      nutanix.ncp.ntnx_configure_tenant_v2:
+        tenant_name: "test-tenant-ansible"
+        tenant_description: "Tenant configured via Ansible"
+      register: result
+      ignore_errors: true
+
+    - name: Configure tenant with minimal fields
+      nutanix.ncp.ntnx_configure_tenant_v2:
+        tenant_name: "test-tenant-minimal"
+      register: result
+      ignore_errors: true

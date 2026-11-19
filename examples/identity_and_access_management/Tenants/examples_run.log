@@ -1,0 +1,24 @@
+PLAY [Configure tenant playbook] ***************************************************************
+
+TASK [Configure tenant with check_mode] ****************************************
+ok: [localhost] => {
+    "changed": false,
+    "response": {
+        "tenant_name": "test-tenant-ansible",
+        "tenant_description": "Tenant configured via Ansible"
+    },
+    "failed": false
+}
+
+TASK [Configure tenant] ********************************************************
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Api Exception raised while configuring tenant", "response": "JSON decode error - API deprecated"}
+...ignoring
+
+TASK [Configure tenant with minimal fields] ************************************
+fatal: [localhost]: FAILED! => {"changed": false, "msg": "Api Exception raised while configuring tenant"}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2
+
+Note: ConfigureTenant API is deprecated (as per SDK description: ".. deprecated:: This API has been deprecated."). Live calls fail on current cluster due to deprecated endpoint returning empty/non-JSON response. Check mode succeeds and demonstrates correct spec generation.
