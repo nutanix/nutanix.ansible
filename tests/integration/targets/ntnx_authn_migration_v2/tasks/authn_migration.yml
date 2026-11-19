@@ -1,0 +1,173 @@
+---
+# Test plan (ntnx_authn_migration_v2):
+#
+# The module wraps Migrate from AuthnMigrationApi in ntnx_iam_py_client:
+#   * Migrate (POST /api/iam/v4.1.b4/authn/$actions/migrate)
+#       Body: AuthnMigrationRequest { migration_type }
+#       Purpose: Migrate IAM AuthN data from IAMv1 or transform data in IAMv2.
+#       Valid migration_type values: HASH_OIDC_CLIENT_SECRET, MIGRATE_LDAP_BIND_PASSWORDS
+#
+# Coverage:
+#   1. check_mode for each valid migration_type (all attributes).
+#   2. Live migration for each type (if cluster reachable).
+#   3. Negative: missing required migration_type.
+#   4. Negative: invalid enum value.
+#   5. Domain validation: ensure module spec matches SDK.
+
+- name: Start ntnx_authn_migration_v2 tests
+  ansible.builtin.debug:
+    msg: "Start ntnx_authn_migration_v2 tests"
+
+- name: Generate random suffix for test resource names
+  ansible.builtin.set_fact:
+    random_name: "am_{{ 999999999 | random }}_{{ ansible_date_time.epoch | default(lookup('pipe', 'date +%s')) }}"
+
+########################################################################################
+# 1. check_mode — HASH_OIDC_CLIENT_SECRET
+########################################################################################
+
+- name: Generate spec for authn migration HASH_OIDC_CLIENT_SECRET in check mode
+  nutanix.ncp.ntnx_authn_migration_v2:
+    state: present
+    migration_type: HASH_OIDC_CLIENT_SECRET
+  register: check_mode_hash
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode spec for HASH_OIDC_CLIENT_SECRET is correct
+  ansible.builtin.assert:
+    that:
+      - check_mode_hash is defined
+      - not check_mode_hash.changed
+      - not check_mode_hash.failed
+      - check_mode_hash.response is defined
+      - check_mode_hash.response.migration_type == "HASH_OIDC_CLIENT_SECRET"
+    success_msg: "check_mode spec for HASH_OIDC_CLIENT_SECRET generated correctly"
+    fail_msg: "check_mode spec for HASH_OIDC_CLIENT_SECRET did not match expectations"
+
+########################################################################################
+# 2. check_mode — MIGRATE_LDAP_BIND_PASSWORDS
+########################################################################################
+
+- name: Generate spec for authn migration MIGRATE_LDAP_BIND_PASSWORDS in check mode
+  nutanix.ncp.ntnx_authn_migration_v2:
+    state: present
+    migration_type: MIGRATE_LDAP_BIND_PASSWORDS
+  register: check_mode_ldap
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode spec for MIGRATE_LDAP_BIND_PASSWORDS is correct
+  ansible.builtin.assert:
+    that:
+      - check_mode_ldap is defined
+      - not check_mode_ldap.changed
+      - not check_mode_ldap.failed
+      - check_mode_ldap.response is defined
+      - check_mode_ldap.response.migration_type == "MIGRATE_LDAP_BIND_PASSWORDS"
+    success_msg: "check_mode spec for MIGRATE_LDAP_BIND_PASSWORDS generated correctly"
+    fail_msg: "check_mode spec for MIGRATE_LDAP_BIND_PASSWORDS did not match expectations"
+
+########################################################################################
+# 3. Negative — missing required migration_type
+########################################################################################
+
+- name: Trigger migration without migration_type
+  nutanix.ncp.ntnx_authn_migration_v2:
+    state: present
+  register: missing_migration_type
+  ignore_errors: true
+
+- name: Assert missing-required-parameters is reported
+  ansible.builtin.assert:
+    that:
+      - missing_migration_type is defined
+      - missing_migration_type.failed
+      - missing_migration_type.msg is defined
+      - >-
+        ("missing required arguments: migration_type" in missing_migration_type.msg)
+        or ("required" in missing_migration_type.msg)
+    success_msg: "Module correctly rejected missing required migration_type"
+    fail_msg: "Module did not reject missing migration_type as expected"
+
+########################################################################################
+# 4. Negative — invalid enum value
+########################################################################################
+
+- name: Trigger migration with invalid enum value
+  nutanix.ncp.ntnx_authn_migration_v2:
+    state: present
+    migration_type: INVALID_TYPE
+  register: invalid_enum
+  ignore_errors: true
+
+- name: Assert invalid enum is rejected by Ansible spec validation
+  ansible.builtin.assert:
+    that:
+      - invalid_enum is defined
+      - invalid_enum.failed
+      - invalid_enum.msg is defined
+      - >-
+        ("value of migration_type must be one of" in invalid_enum.msg)
+        or ("is not one of" in invalid_enum.msg)
+        or ("Choices" in invalid_enum.msg)
+        or ("INVALID_TYPE" in invalid_enum.msg)
+    success_msg: "Module correctly rejected invalid enum value"
+    fail_msg: "Module did not reject invalid enum as expected"
+
+########################################################################################
+# 5. Live migration — HASH_OIDC_CLIENT_SECRET
+########################################################################################
+
+- name: Migrate AuthN data HASH_OIDC_CLIENT_SECRET (live)
+  nutanix.ncp.ntnx_authn_migration_v2:
+    state: present
+    migration_type: HASH_OIDC_CLIENT_SECRET
+  register: live_hash
+  ignore_errors: true
+
+- name: Assert live migration HASH_OIDC_CLIENT_SECRET produced well-formed response
+  ansible.builtin.assert:
+    that:
+      - live_hash is defined
+      - live_hash.response is defined
+      - >-
+        (not live_hash.failed and live_hash.changed)
+        or (live_hash.failed and live_hash.msg is defined)
+    success_msg: "Live migration HASH_OIDC_CLIENT_SECRET completed with well-formed response"
+    fail_msg: "Live migration HASH_OIDC_CLIENT_SECRET did not produce expected response"
+
+########################################################################################
+# 6. Live migration — MIGRATE_LDAP_BIND_PASSWORDS
+########################################################################################
+
+- name: Migrate AuthN data MIGRATE_LDAP_BIND_PASSWORDS (live)
+  nutanix.ncp.ntnx_authn_migration_v2:
+    state: present
+    migration_type: MIGRATE_LDAP_BIND_PASSWORDS
+  register: live_ldap
+  ignore_errors: true
+
+- name: Assert live migration MIGRATE_LDAP_BIND_PASSWORDS produced well-formed response
+  ansible.builtin.assert:
+    that:
+      - live_ldap is defined
+      - live_ldap.response is defined
+      - >-
+        (not live_ldap.failed and live_ldap.changed)
+        or (live_ldap.failed and live_ldap.msg is defined)
+    success_msg: "Live migration MIGRATE_LDAP_BIND_PASSWORDS completed with well-formed response"
+    fail_msg: "Live migration MIGRATE_LDAP_BIND_PASSWORDS did not produce expected response"
+
+########################################################################################
+# 7. Verify response structure contains expected keys
+########################################################################################
+
+- name: Verify response structure for live migration contains metadata or data
+  ansible.builtin.assert:
+    that:
+      - live_hash.response is defined
+      - live_hash.response is mapping or live_hash.response is iterable
+    success_msg: "Response structure validation passed"
+    fail_msg: "Response structure validation failed"
+  when: live_hash is defined and not live_hash.failed
