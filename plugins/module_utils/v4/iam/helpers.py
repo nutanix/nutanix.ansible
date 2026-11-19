@@ -307,3 +307,47 @@ def get_welcome_banner(module, api_instance):
             exception=e,
             msg="Api Exception raised while fetching welcome banner",
         )
+
+
+def get_propagated_connector(module, api_instance, ext_id):
+    """
+    This method will return propagated connector info using ext_id.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Propagated connectors api instance
+        ext_id (str): External ID of the propagated connector
+    Returns:
+        propagated_connector_info (object): Propagated connector info
+    """
+    try:
+        # No direct get API; use list with extId filter as workaround
+        from ..spec_generator import SpecGenerator as _SG
+        from ..utils import list_entities as _list_entities
+        from ..utils import strip_internal_attributes as _strip
+
+        sg = _SG(module)
+        kwargs, err = sg.get_info_spec(attr=module.params)
+        if err:
+            raise Exception(err)
+        kwargs["_filter"] = "extId eq '{0}'".format(ext_id)
+        resp = _list_entities(api_instance.list_propagated_connectors, kwargs=kwargs)
+        data = _strip(resp.to_dict()).get("data") or []
+        if not data:
+            raise Exception(
+                "Propagated connector with ext_id '{0}' not found".format(ext_id)
+            )
+        # data[0] is dict; fetch full object via SDK item
+        # Return first item as object-like dict wrapper is sufficient
+        # But callers expect SDK object with to_dict; return reconstructed dict wrapper
+        # So we search for matching item in original resp.data
+        for item in getattr(resp, "data", []) or []:
+            if getattr(item, "ext_id", None) == ext_id:
+                return item
+        # fallback: return dict-based object
+        return data[0]
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching propagated connector using ext_id",
+        )

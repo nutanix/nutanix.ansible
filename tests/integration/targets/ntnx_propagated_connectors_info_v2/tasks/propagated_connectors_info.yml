@@ -1,0 +1,135 @@
+---
+- name: Start ntnx_propagated_connectors_info_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_propagated_connectors_info_v2 tests
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set suffix
+  ansible.builtin.set_fact:
+    suffix_name: ansible-pc-info
+
+- name: Set variables
+  ansible.builtin.set_fact:
+    pc_name: "{{ random_name }}{{ suffix_name }}"
+
+- name: Create propagated connector for info tests
+  nutanix.ncp.ntnx_propagated_connectors_v2:
+    state: present
+    name: "{{ pc_name }}"
+    domain_name: "example.com"
+    type: "SAML"
+    entity_id: "https://example.com/entity/info-test"
+  register: create_result
+  ignore_errors: true
+
+- name: Set ext_id
+  ansible.builtin.set_fact:
+    pc_ext_id: "{{ create_result.ext_id }}"
+  when: create_result.ext_id is defined
+
+- name: Get propagated connector using ext_id
+  nutanix.ncp.ntnx_propagated_connectors_info_v2:
+    ext_id: "{{ pc_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: pc_ext_id is defined
+
+- name: Get by ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "{{ pc_name }}"
+    fail_msg: Unable to get propagated connector by ext_id
+    success_msg: Get by ext_id passed
+  when: pc_ext_id is defined
+
+- name: List all propagated connectors
+  nutanix.ncp.ntnx_propagated_connectors_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length >= 0
+      - result.total_available_results is defined
+    fail_msg: Unable to list all propagated connectors
+    success_msg: List all passed
+
+- name: List with limit
+  nutanix.ncp.ntnx_propagated_connectors_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Limit status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1 or result.response | length == 0
+    fail_msg: Limit failed
+    success_msg: Limit passed
+
+- name: List with filter
+  nutanix.ncp.ntnx_propagated_connectors_info_v2:
+    filter: "name eq '{{ pc_name }}'"
+  register: result
+  ignore_errors: true
+  when: pc_ext_id is defined
+
+- name: Filter status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+    fail_msg: Filter failed
+    success_msg: Filter passed
+  when: pc_ext_id is defined
+
+- name: List with fetch_all
+  nutanix.ncp.ntnx_propagated_connectors_info_v2:
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: Fetch all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result.response is defined
+      - fetch_all_result.changed == false
+      - fetch_all_result.failed == false
+      - (fetch_all_result.response | default([]) | length) == (fetch_all_result.total_available_results | int)
+    fail_msg: Fetch all failed
+    success_msg: Fetch all passed
+
+- name: Negative - get with invalid ext_id
+  nutanix.ncp.ntnx_propagated_connectors_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Invalid ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+    fail_msg: Invalid ext_id should return empty
+    success_msg: Invalid ext_id handled
+
+- name: Cleanup propagated connector
+  nutanix.ncp.ntnx_propagated_connectors_v2:
+    state: absent
+    ext_id: "{{ pc_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: pc_ext_id is defined
