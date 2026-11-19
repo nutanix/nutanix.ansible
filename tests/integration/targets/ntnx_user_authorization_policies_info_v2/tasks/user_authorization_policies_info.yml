@@ -1,0 +1,127 @@
+---
+# Test plan for ntnx_user_authorization_policies_info_v2
+#
+# The underlying IAM /iam/v4.1.b4/authz/user-authorization-policies endpoint
+# only exposes a LIST operation that returns the authorization policies
+# associated with the calling identity. There is no get-by-id, create, update
+# or delete API. Coverage focuses on:
+#   1. Baseline list (no arguments) — asserts response shape and success.
+#   2. List with limit=1 — asserts limit is honoured.
+#   3. List with page=0 + limit — asserts pagination works.
+#   4. List with fetch_all=true — asserts all entities returned and
+#      (response|length == total_available_results).
+#   5. Negative: invalid limit (out of range) — asserts API error surfaced.
+
+- name: Start ntnx_user_authorization_policies_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_user_authorization_policies_info_v2 tests
+
+########################################################################
+# 1. Baseline list
+########################################################################
+
+- name: List all user authorization policies (baseline)
+  nutanix.ncp.ntnx_user_authorization_policies_info_v2:
+  register: baseline
+  ignore_errors: true
+
+- name: Assert baseline list succeeded
+  ansible.builtin.assert:
+    that:
+      - baseline is defined
+      - baseline.changed == false
+      - baseline.failed == false
+      - baseline.response is defined
+      - baseline.total_available_results is defined
+    fail_msg: Baseline list of user authorization policies failed
+    success_msg: Baseline list of user authorization policies succeeded
+
+- name: Assert response entries have expected shape when data exists
+  ansible.builtin.assert:
+    that:
+      - item.ext_id is defined
+      - item.display_name is defined
+    fail_msg: User authorization policy entry missing documented fields
+    success_msg: User authorization policy entry has documented fields
+  loop: "{{ baseline.response }}"
+  loop_control:
+    label: "{{ item.ext_id | default('unknown') }}"
+  when: baseline.response | length > 0
+
+########################################################################
+# 2. List with limit
+########################################################################
+
+- name: List user authorization policies with limit=1
+  nutanix.ncp.ntnx_user_authorization_policies_info_v2:
+    limit: 1
+  register: limited
+  ignore_errors: true
+
+- name: Assert limit=1 returns at most one entry
+  ansible.builtin.assert:
+    that:
+      - limited.changed == false
+      - limited.failed == false
+      - limited.response is defined
+      - limited.response | length <= 1
+    fail_msg: limit=1 returned more than one entry
+    success_msg: limit=1 correctly capped the response
+
+########################################################################
+# 3. Pagination - page and limit
+########################################################################
+
+- name: List user authorization policies with page 0 and limit
+  nutanix.ncp.ntnx_user_authorization_policies_info_v2:
+    page: 0
+    limit: 2
+  register: paged
+  ignore_errors: true
+
+- name: Assert pagination works
+  ansible.builtin.assert:
+    that:
+      - paged.changed == false
+      - paged.failed == false
+      - paged.response is defined
+    fail_msg: Pagination with page/limit failed
+    success_msg: Pagination with page/limit succeeded
+
+########################################################################
+# 4. fetch_all
+########################################################################
+
+- name: List all user authorization policies with fetch_all
+  nutanix.ncp.ntnx_user_authorization_policies_info_v2:
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: Assert fetch_all returns all entities
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result.changed == false
+      - fetch_all_result.failed == false
+      - fetch_all_result.response is defined
+      - fetch_all_result.total_available_results is defined
+      - (fetch_all_result.response | length) == (fetch_all_result.total_available_results | int)
+    fail_msg: fetch_all did not return all entities
+    success_msg: fetch_all returned all entities correctly
+
+########################################################################
+# 5. Negative - invalid limit
+########################################################################
+
+- name: List user authorization policies with invalid limit
+  nutanix.ncp.ntnx_user_authorization_policies_info_v2:
+    limit: 200
+  register: invalid_limit
+  ignore_errors: true
+
+- name: Assert invalid limit surfaces error
+  ansible.builtin.assert:
+    that:
+      - invalid_limit.failed == true
+    fail_msg: Invalid limit should have failed but did not
+    success_msg: Invalid limit correctly surfaced error
