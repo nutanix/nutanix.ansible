@@ -1,0 +1,39 @@
+# Summary:
+# This playbook demonstrates system configurations in Nutanix Prism Central.
+# 1. Fetch system configurations
+# 2. Update system configurations
+
+- name: System Configurations playbook
+  hosts: localhost
+  gather_facts: false
+  vars:
+    ip: "10.44.76.17"
+    username: "admin"
+    password: "Nutanix.123"
+    nutanix_port: 9440
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      nutanix_port: "{{ nutanix_port | default(9440) }}"
+      validate_certs: false
+  tasks:
+    - name: Fetch system configurations
+      nutanix.ncp.ntnx_iam_system_config_info_v2:
+      register: system_config_before
+      ignore_errors: true
+
+    - name: Update system configuration
+      nutanix.ncp.ntnx_iam_system_config_v2:
+        state: present
+        name_value_pair:
+          - name: "sample_config_key"
+            value: "sample_config_value"
+      register: system_config_updated
+      ignore_errors: true
+
+    - name: Fetch system configurations after update
+      nutanix.ncp.ntnx_iam_system_config_info_v2:
+      register: system_config_after
+      ignore_errors: true

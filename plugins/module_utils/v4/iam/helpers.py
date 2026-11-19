@@ -307,3 +307,23 @@ def get_welcome_banner(module, api_instance):
             exception=e,
             msg="Api Exception raised while fetching welcome banner",
         )
+
+
+def get_system_config(module, api_instance):
+    """
+    This method will return the system configuration.
+    Args:
+        module (object): Ansible module object.
+        api_instance (object): System configurations api instance from
+            ``ntnx_iam_py_client``.
+    Returns:
+        system_config (object): System configuration object.
+    """
+    try:
+        return api_instance.get_system_config().data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching system configuration",
+        )

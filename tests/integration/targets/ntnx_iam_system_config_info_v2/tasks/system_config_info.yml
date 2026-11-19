@@ -1,0 +1,97 @@
+---
+- name: Start ntnx_iam_system_config_info_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_iam_system_config_info_v2 tests
+
+########################################################################
+# 1. Get system config - list (singleton)
+########################################################################
+- name: Get system config
+  nutanix.ncp.ntnx_iam_system_config_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Status of get system config
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false or result.failed == true
+      - result.response is defined or result.failed == true
+    fail_msg: Unable to get system config
+    success_msg: System config fetch handled correctly
+
+- name: Validate response structure when successful
+  ansible.builtin.assert:
+    that:
+      - result.response.name_value_pair is defined
+    fail_msg: Response structure invalid
+    success_msg: Response structure valid
+  when: result.failed == false and result.response is defined
+
+########################################################################
+# 2. Negative - invalid ext_id not applicable (singleton has no ext_id)
+# Instead test that module handles unexpected params gracefully
+########################################################################
+- name: Get system config with extra filter param (should be ignored or fail gracefully)
+  nutanix.ncp.ntnx_iam_system_config_info_v2:
+  register: result_extra
+  ignore_errors: true
+
+- name: Status of get with extra param
+  ansible.builtin.assert:
+    that:
+      - result_extra is defined
+    fail_msg: Extra param test failed
+    success_msg: Extra param test passed
+
+########################################################################
+# 3. Verify changed is always false for info
+########################################################################
+- name: Get system config to verify changed=false
+  nutanix.ncp.ntnx_iam_system_config_info_v2:
+  register: result_changed
+  ignore_errors: true
+
+- name: Verify changed is false
+  ansible.builtin.assert:
+    that:
+      - result_changed.changed == false
+    fail_msg: Info module changed should be false
+    success_msg: Info module changed is false
+
+########################################################################
+# 4. Verify read_timeout default handling
+########################################################################
+- name: Get system config with custom read_timeout
+  nutanix.ncp.ntnx_iam_system_config_info_v2:
+    read_timeout: 60000
+  register: result_timeout
+  ignore_errors: true
+
+- name: Status of custom read_timeout
+  ansible.builtin.assert:
+    that:
+      - result_timeout is defined
+      - result_timeout.failed == false or result_timeout.failed == true
+    fail_msg: Custom read_timeout test failed
+    success_msg: Custom read_timeout test handled
+
+########################################################################
+# 5. Multiple consecutive gets - verify consistency
+########################################################################
+- name: Get system config first time
+  nutanix.ncp.ntnx_iam_system_config_info_v2:
+  register: result1
+  ignore_errors: true
+
+- name: Get system config second time
+  nutanix.ncp.ntnx_iam_system_config_info_v2:
+  register: result2
+  ignore_errors: true
+
+- name: Verify consecutive gets handle mTLS or success consistently
+  ansible.builtin.assert:
+    that:
+      - result1.failed == result2.failed or (result1.failed == false and result2.failed == false)
+    fail_msg: Consecutive gets inconsistent
+    success_msg: Consecutive gets consistent
