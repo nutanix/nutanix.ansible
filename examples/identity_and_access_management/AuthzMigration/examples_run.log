@@ -1,0 +1,30 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [AuthzMigration playbook] *************************************************
+
+TASK [List all Authz migration flags] ******************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while listing Authz migration flags", "response": "404 page not found\n", "status": 404}
+...ignoring
+
+TASK [List Authz migration flags with filter] **********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while listing Authz migration flags", "response": "404 page not found\n", "status": 404}
+...ignoring
+
+TASK [List Authz migration flags with orderby] *********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while listing Authz migration flags", "response": "404 page not found\n", "status": 404}
+...ignoring
+
+TASK [Migrate AuthZ data - remove AP tenant ID filters] ************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "FORBIDDEN", "msg": "Api Exception raised while migrating AuthZ data", "response": {"message": "POST on URI:/api/iam/v4/authz/$actions/migrate is allowed only through mTLS", "statusCode": 403}, "status": 403}
+...ignoring
+
+TASK [Migrate AuthZ data with project AP migration] ****************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "FORBIDDEN", "msg": "Api Exception raised while migrating AuthZ data", "response": {"message": "POST on URI:/api/iam/v4/authz/$actions/migrate is allowed only through mTLS", "statusCode": 403}, "status": 403}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=5   
+
