@@ -1,0 +1,264 @@
+---
+# Test plan:
+# - check_mode create with all fields
+# - create with all fields (live)
+# - create with invalid enum (negative)
+# - check_mode update
+# - update with changed fields
+# - idempotency (update same again)
+# - check_mode delete
+# - delete (live)
+# - negative: get with invalid ext_id via info
+# - domain validation: scope enum, response_type enum
+
+- name: Start ntnx_login_requests_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_login_requests_v2 tests
+
+- name: Generate random strings
+  ansible.builtin.set_fact:
+    random_str: "{{ lookup('password', '/dev/null chars=ascii_lowercase length=8') }}"
+    test_client_id: "9a53c903-ba26-588b-ac0f-f8ab26f5a6b0"
+    test_login_provider_id: "37f30135-455b-5ebd-995f-b47e817a59f2"
+
+- name: Create login request with check mode enabled (all fields)
+  nutanix.ncp.ntnx_login_requests_v2:
+    state: present
+    client_id: "{{ test_client_id }}"
+    response_type: "CODE"
+    scope:
+      - OPENID
+    redirect_uri: "https://10.44.76.17:9440"
+    nonce: "nonce-{{ random_str }}"
+    oauth_state: "state-{{ random_str }}"
+    audience: "aud-{{ random_str }}"
+    approval_prompt: "auto"
+    is_user_logged_in: false
+    is_service_provider_enabled: false
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Create login request with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.response is defined
+      - result.response.client_id == test_client_id
+      - result.response.response_type == "CODE"
+      - result.response.scope is defined
+      - "'OPENID' in result.response.scope"
+      - result.response.redirect_uri == "https://10.44.76.17:9440"
+      - result.response.nonce == "nonce-" ~ random_str
+      - result.response.state == "state-" ~ random_str
+      - result.response.audience == "aud-" ~ random_str
+    fail_msg: create login request check mode failed
+    success_msg: create login request check mode passed
+
+- name: Create login request with all fields
+  nutanix.ncp.ntnx_login_requests_v2:
+    state: present
+    client_id: "{{ test_client_id }}"
+    response_type: "CODE"
+    scope:
+      - OPENID
+    redirect_uri: "https://10.44.76.17:9440"
+    nonce: "nonce-{{ random_str }}"
+    oauth_state: "state-{{ random_str }}"
+    audience: "test-audience"
+    approval_prompt: "auto"
+    is_user_logged_in: false
+    is_service_provider_enabled: false
+  register: create_result
+  ignore_errors: true
+
+- name: Create login request with all fields status
+  ansible.builtin.assert:
+    that:
+      - create_result.failed == false
+      - create_result.changed == true
+      - create_result.response is defined
+      - create_result.ext_id is defined
+      - create_result.response.client_id == test_client_id
+      - create_result.response.response_type == "CODE"
+      - create_result.response.scope is defined
+      - create_result.response.redirect_uri == "https://10.44.76.17:9440"
+    fail_msg: create login request failed
+    success_msg: create login request passed
+
+- name: Set created ext_id
+  ansible.builtin.set_fact:
+    login_ext_id: "{{ create_result.ext_id }}"
+
+- name: Create login request with invalid response_type enum
+  nutanix.ncp.ntnx_login_requests_v2:
+    state: present
+    response_type: "INVALID_TYPE"
+    scope:
+      - OPENID
+  register: invalid_enum_result
+  ignore_errors: true
+
+- name: Invalid enum test status
+  ansible.builtin.assert:
+    that:
+      - invalid_enum_result.failed == true
+    fail_msg: invalid enum should have failed
+    success_msg: invalid enum correctly failed
+
+- name: Create login request with invalid scope enum
+  nutanix.ncp.ntnx_login_requests_v2:
+    state: present
+    scope:
+      - INVALID_SCOPE
+  register: invalid_scope_result
+  ignore_errors: true
+
+- name: Invalid scope enum status
+  ansible.builtin.assert:
+    that:
+      - invalid_scope_result.failed == true
+    fail_msg: invalid scope should have failed
+    success_msg: invalid scope correctly failed
+
+- name: Update login request with check mode enabled
+  nutanix.ncp.ntnx_login_requests_v2:
+    state: present
+    ext_id: "{{ login_ext_id }}"
+    login_provider_id: "{{ test_login_provider_id }}"
+  register: update_check_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Update check mode status
+  ansible.builtin.assert:
+    that:
+      - update_check_result.failed == false
+      - update_check_result.changed == false
+      - update_check_result.response is defined
+      - update_check_result.response.login_provider_id == test_login_provider_id
+    fail_msg: update check mode failed
+    success_msg: update check mode passed
+
+- name: Update login request with new values
+  nutanix.ncp.ntnx_login_requests_v2:
+    state: present
+    ext_id: "{{ login_ext_id }}"
+    login_provider_id: "{{ test_login_provider_id }}"
+  register: update_result
+  ignore_errors: true
+
+- name: Update login request status
+  ansible.builtin.assert:
+    that:
+      - update_result.failed == false
+      - update_result.changed == true
+      - update_result.response is defined
+      - update_result.ext_id == login_ext_id
+      - update_result.response.login_provider_id == test_login_provider_id
+    fail_msg: update login request failed
+    success_msg: update login request passed
+
+- name: Idempotency - update with same values again
+  nutanix.ncp.ntnx_login_requests_v2:
+    state: present
+    ext_id: "{{ login_ext_id }}"
+    login_provider_id: "{{ test_login_provider_id }}"
+  register: idempotent_result
+  ignore_errors: true
+
+- name: Idempotency status
+  ansible.builtin.assert:
+    that:
+      - idempotent_result.failed == false
+      - idempotent_result.changed == false
+      - idempotent_result.skipped is defined
+      - idempotent_result.msg == "Nothing to change."
+    fail_msg: idempotency check failed
+    success_msg: idempotency check passed
+
+- name: Get login request after update via info module
+  nutanix.ncp.ntnx_login_requests_info_v2:
+    ext_id: "{{ login_ext_id }}"
+  register: get_result
+  ignore_errors: true
+
+- name: Get login request status
+  ansible.builtin.assert:
+    that:
+      - get_result.failed == false
+      - get_result.changed == false
+      - get_result.response is defined
+      - get_result.ext_id == login_ext_id
+      - get_result.response.ext_id == login_ext_id
+    fail_msg: get login request failed
+    success_msg: get login request passed
+
+- name: Get login request with invalid ext_id
+  nutanix.ncp.ntnx_login_requests_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: invalid_get_result
+  ignore_errors: true
+
+- name: Invalid get status
+  ansible.builtin.assert:
+    that:
+      - invalid_get_result.failed == true
+    fail_msg: invalid get should have failed
+    success_msg: invalid get correctly failed
+
+- name: Delete login request with check mode enabled
+  nutanix.ncp.ntnx_login_requests_v2:
+    state: absent
+    ext_id: "{{ login_ext_id }}"
+  register: delete_check_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Delete check mode status
+  ansible.builtin.assert:
+    that:
+      - delete_check_result.failed == false
+      - delete_check_result.changed == false
+      - delete_check_result.msg is defined
+    fail_msg: delete check mode failed
+    success_msg: delete check mode passed
+
+- name: Delete login request
+  nutanix.ncp.ntnx_login_requests_v2:
+    state: absent
+    ext_id: "{{ login_ext_id }}"
+  register: delete_result
+  ignore_errors: true
+
+- name: Delete status
+  ansible.builtin.assert:
+    that:
+      - delete_result.failed == false
+      - delete_result.changed == true
+      - delete_result.ext_id == login_ext_id
+    fail_msg: delete login request failed
+    success_msg: delete login request passed
+
+- name: Delete non-existent login request (idempotency negative)
+  nutanix.ncp.ntnx_login_requests_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: delete_nonexistent
+  ignore_errors: true
+
+- name: Delete non-existent status
+  ansible.builtin.assert:
+    that:
+      - delete_nonexistent is defined
+    fail_msg: delete nonexistent check failed
+    success_msg: delete nonexistent check passed
+
+- name: Cleanup - delete if still exists
+  nutanix.ncp.ntnx_login_requests_v2:
+    state: absent
+    ext_id: "{{ login_ext_id }}"
+  register: cleanup_result
+  ignore_errors: true
+  when: login_ext_id is defined

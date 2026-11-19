@@ -1,0 +1,69 @@
+---
+- name: Start ntnx_login_requests_info_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_login_requests_info_v2 tests
+
+- name: Create login request for info tests
+  nutanix.ncp.ntnx_login_requests_v2:
+    state: present
+    client_id: "9a53c903-ba26-588b-ac0f-f8ab26f5a6b0"
+    response_type: "CODE"
+    scope:
+      - OPENID
+    redirect_uri: "https://10.44.76.17:9440"
+  register: login_create
+  ignore_errors: true
+
+- name: Set login ext_id
+  ansible.builtin.set_fact:
+    login_ext_id: "{{ login_create.ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+
+- name: Get login request using ext_id
+  nutanix.ncp.ntnx_login_requests_info_v2:
+    ext_id: "{{ login_ext_id }}"
+  register: get_result
+  ignore_errors: true
+
+- name: Get login request status
+  ansible.builtin.assert:
+    that:
+      - get_result.failed == false
+      - get_result.changed == false
+      - get_result.response is defined
+      - get_result.ext_id == login_ext_id
+    fail_msg: get login request failed
+    success_msg: get login request passed
+  when: login_create.failed == false
+
+- name: Get login request with invalid ext_id
+  nutanix.ncp.ntnx_login_requests_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: invalid_result
+  ignore_errors: true
+
+- name: Invalid ext_id status
+  ansible.builtin.assert:
+    that:
+      - invalid_result.failed == true
+    fail_msg: invalid get should fail
+    success_msg: invalid get correctly failed
+
+- name: Get login request with missing ext_id (negative)
+  nutanix.ncp.ntnx_login_requests_info_v2:
+  register: missing_result
+  ignore_errors: true
+
+- name: Missing ext_id status
+  ansible.builtin.assert:
+    that:
+      - missing_result.failed == true
+    fail_msg: missing ext_id should fail
+    success_msg: missing ext_id correctly failed
+
+- name: Cleanup login request
+  nutanix.ncp.ntnx_login_requests_v2:
+    state: absent
+    ext_id: "{{ login_ext_id }}"
+  register: cleanup_result
+  ignore_errors: true
+  when: login_create.ext_id is defined

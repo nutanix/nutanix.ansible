@@ -1,0 +1,34 @@
+[WARNING]: Found variable using reserved name: port
+No config file found; using defaults
+running playbook inside collection nutanix.ncp
+
+PLAY [LoginRequests playbook] **************************************************
+
+TASK [Create login request] ****************************************************
+[WARNING]: Platform linux on host localhost is using the discovered Python
+interpreter at /bin/python3.12, but future installation of another Python
+interpreter could change the meaning of that path. See
+https://docs.ansible.com/ansible-
+core/2.17/reference_appendices/interpreter_discovery.html for more information.
+changed: [localhost] => {"ansible_facts": {"discovered_interpreter_python": "/bin/python3.12"}, "changed": true, "ext_id": "fc8b3c56-e66c-5e7c-9988-2e45bfe85569", "response": {"approval_prompt": null, "audience": null, "client_id": "9a53c903-ba26-588b-ac0f-f8ab26f5a6b0", "ext_id": "fc8b3c56-e66c-5e7c-9988-2e45bfe85569", "is_service_provider_enabled": null, "is_user_logged_in": false, "links": null, "login_provider_id": null, "nonce": null, "redirect_uri": "https://10.44.76.17:9440", "response_type": "CODE", "scope": ["OPENID"], "state": null, "tenant_id": null}}
+
+TASK [Update login request] ****************************************************
+changed: [localhost] => {"changed": true, "ext_id": "fc8b3c56-e66c-5e7c-9988-2e45bfe85569", "response": {"approval_prompt": null, "audience": null, "client_id": "9a53c903-ba26-588b-ac0f-f8ab26f5a6b0", "ext_id": "fc8b3c56-e66c-5e7c-9988-2e45bfe85569", "is_service_provider_enabled": null, "is_user_logged_in": false, "links": null, "login_provider_id": "37f30135-455b-5ebd-995f-b47e817a59f2", "nonce": null, "redirect_uri": "https://10.44.76.17:9440", "response_type": "CODE", "scope": ["OPENID"], "state": null, "tenant_id": null}}
+
+TASK [Validate credentials for login request] **********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "PRECONDITION FAILED", "msg": "Api Exception raised while validating credentials", "response": {"$dataItemDiscriminator": "iam.v4.error.ErrorResponse", "$objectType": "iam.v4.authn.ValidateCredentialsApiResponse", "$reserved": {"$fv": "v4.r1.b2"}, "data": {"$errorItemDiscriminator": "List<iam.v4.error.AppMessage>", "$objectType": "iam.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r1.b2"}, "error": [{"$objectType": "iam.v4.error.AppMessage", "$reserved": {"$fv": "v4.r1.b2"}, "argumentsMap": {"cause": "Login session expired", "operation": "validate credentials"}, "code": "IAM-23102", "errorGroup": "IAM-AUTHN-LOGIN-WORKFLOW-VAL-ERR", "locale": "en_US", "message": "Failed to validate credentials as the login session has expired.", "severity": "ERROR"}]}}, "status": 412}
+...ignoring
+
+TASK [Validate certificate for CAC user] ***************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while validating certificate", "response": "<!DOCTYPE html><html lang=\"en\"><head><meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\"><title>IAMv2 Login</title></head><body><form method=\"GET\" action=\"https://10.44.76.17/ui/iam/providers\" ><input type=\"hidden\" name=\"ec\" value=\"ERR-400\" /></form><script>document.forms[0].submit();</script></body></html>", "status": 400}
+...ignoring
+
+TASK [Get login request by ext_id] *********************************************
+ok: [localhost] => {"changed": false, "ext_id": "fc8b3c56-e66c-5e7c-9988-2e45bfe85569", "response": {"approval_prompt": null, "audience": null, "client_id": "9a53c903-ba26-588b-ac0f-f8ab26f5a6b0", "ext_id": "fc8b3c56-e66c-5e7c-9988-2e45bfe85569", "is_service_provider_enabled": false, "is_user_logged_in": false, "links": null, "login_provider_id": "37f30135-455b-5ebd-995f-b47e817a59f2", "nonce": null, "redirect_uri": "https://10.44.76.17:9440", "response_type": "CODE", "scope": ["OPENID"], "state": null, "tenant_id": null}}
+
+TASK [Delete login request] ****************************************************
+changed: [localhost] => {"changed": true, "ext_id": "fc8b3c56-e66c-5e7c-9988-2e45bfe85569", "response": null}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+

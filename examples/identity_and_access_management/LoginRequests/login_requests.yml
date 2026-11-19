@@ -1,0 +1,71 @@
+# Summary:
+# This playbook will do:
+# 1. Create login request
+# 2. Update login request
+# 3. Delete login request
+# 4. Validate certificate
+# 5. Validate credentials
+# 6. Get login request by ext_id
+
+- name: LoginRequests playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      nutanix_port: "{{ port | default(9440) }}"
+      validate_certs: false
+  tasks:
+    - name: Create login request
+      nutanix.ncp.ntnx_login_requests_v2:
+        state: present
+        client_id: "9a53c903-ba26-588b-ac0f-f8ab26f5a6b0"
+        response_type: "CODE"
+        scope:
+          - OPENID
+        redirect_uri: "https://10.44.76.17:9440"
+        nonce: "test-nonce"
+        oauth_state: "test-state"
+        audience: "test-audience"
+        approval_prompt: "auto"
+        is_user_logged_in: false
+        is_service_provider_enabled: false
+      register: create_result
+      ignore_errors: true
+
+    - name: Update login request
+      nutanix.ncp.ntnx_login_requests_v2:
+        state: present
+        ext_id: "{{ create_result.ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+        login_provider_id: "37f30135-455b-5ebd-995f-b47e817a59f2"
+      register: update_result
+      ignore_errors: true
+
+    - name: Validate credentials for login request
+      nutanix.ncp.ntnx_validate_credentials_v2:
+        ext_id: "{{ create_result.ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+        username: "admin"
+        password: "Nutanix.123"
+      register: validate_creds_result
+      ignore_errors: true
+
+    - name: Validate certificate for CAC user
+      nutanix.ncp.ntnx_validate_certificate_v2:
+        relay_state: "test-relay-state-123"
+      register: validate_cert_result
+      ignore_errors: true
+
+    - name: Get login request by ext_id
+      nutanix.ncp.ntnx_login_requests_info_v2:
+        ext_id: "{{ create_result.ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+      register: get_result
+      ignore_errors: true
+
+    - name: Delete login request
+      nutanix.ncp.ntnx_login_requests_v2:
+        state: absent
+        ext_id: "{{ create_result.ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+      register: delete_result
+      ignore_errors: true
