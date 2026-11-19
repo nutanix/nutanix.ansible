@@ -1,0 +1,34 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Federation CRUD and Info playbook] ***************************************
+
+TASK [Create federation with OIDC provider] ************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "FORBIDDEN", "msg": "Api Exception raised while creating federation", "response": "URI is only accessible over mTLS", "status": 403}
+...ignoring
+
+TASK [Get federation info] *****************************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "FORBIDDEN", "msg": "Api Exception raised while fetching federation info", "response": "URI is only accessible over mTLS", "status": 403}
+...ignoring
+
+TASK [Print federation details] ************************************************
+ok: [localhost] => {
+    "msg": {
+        "changed": false,
+        "error": "FORBIDDEN",
+        "failed": true,
+        "msg": "Api Exception raised while fetching federation info",
+        "response": "URI is only accessible over mTLS",
+        "status": 403
+    }
+}
+
+TASK [Delete federation] *******************************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "FORBIDDEN", "msg": "Api Exception raised while deleting federation", "response": "URI is only accessible over mTLS", "status": 403}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=3   
+
