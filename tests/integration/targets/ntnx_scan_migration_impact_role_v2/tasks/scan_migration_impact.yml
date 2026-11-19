@@ -1,0 +1,176 @@
+---
+# Test plan for ntnx_scan_migration_impact_role_v2
+# Covers:
+# - check_mode with required ext_id
+# - missing required ext_id
+# - invalid ext_id at API
+# - live scan on a real role
+
+- name: Start ntnx_scan_migration_impact_role_v2 tests
+  ansible.builtin.debug:
+    msg: "Start ntnx_scan_migration_impact_role_v2 tests"
+
+- name: Generate random suffix for test resource names
+  ansible.builtin.set_fact:
+    random_name: "scan_{{ 999999 | random }}_{{ ansible_date_time.epoch | default(lookup('pipe', 'date +%s')) }}"
+
+- name: Set names and cleanup buffers
+  ansible.builtin.set_fact:
+    scan_role_name: "scan_role_{{ random_name }}"
+    todelete: []
+
+########################################################################################
+# 1. check_mode — scan migration impact
+########################################################################################
+
+- name: Scan migration impact in check mode
+  nutanix.ncp.ntnx_scan_migration_impact_role_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  check_mode: true
+  register: scan_check_mode
+  ignore_errors: true
+
+- name: Assert check_mode for scan impact is correct
+  ansible.builtin.assert:
+    that:
+      - scan_check_mode is defined
+      - not scan_check_mode.changed
+      - not scan_check_mode.failed
+      - scan_check_mode.response is defined
+      - scan_check_mode.ext_id == "00000000-0000-0000-0000-000000000001"
+    success_msg: "check_mode for scan impact passed"
+    fail_msg: "check_mode for scan impact failed"
+
+########################################################################################
+# 2. Negative — missing required ext_id
+########################################################################################
+
+- name: Trigger scan without ext_id
+  nutanix.ncp.ntnx_scan_migration_impact_role_v2:
+  check_mode: true
+  register: missing_ext
+  ignore_errors: true
+
+- name: Assert missing ext_id is reported
+  ansible.builtin.assert:
+    that:
+      - missing_ext is defined
+      - missing_ext.failed
+      - missing_ext.msg is defined
+      - >
+        ("missing required arguments: ext_id" in missing_ext.msg)
+        or ("required" in missing_ext.msg)
+    success_msg: "Module correctly rejected missing ext_id"
+    fail_msg: "Module did not reject missing ext_id"
+
+########################################################################################
+# 3. Negative — invalid ext_id at API layer
+########################################################################################
+
+- name: Trigger scan with non-existent ext_id
+  nutanix.ncp.ntnx_scan_migration_impact_role_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_scan
+  ignore_errors: true
+
+- name: Assert API error for invalid ext_id
+  ansible.builtin.assert:
+    that:
+      - bad_scan is defined
+      - bad_scan.failed
+      - bad_scan.msg is defined
+    success_msg: "Module correctly surfaced API error for invalid ext_id"
+    fail_msg: "Module did not surface API error for invalid ext_id"
+
+########################################################################################
+# 4. Live cluster path — create a role then scan
+########################################################################################
+
+- name: Get create operations for role creation
+  nutanix.ncp.ntnx_operations_info_v2:
+    filter: displayName startswith 'Create_'
+  register: create_operations
+  ignore_errors: true
+
+- name: Set operation uuids when available
+  ansible.builtin.set_fact:
+    test_op_1: "{{ create_operations.response[0].ext_id | default('') }}"
+    test_op_2: "{{ create_operations.response[1].ext_id | default('') }}"
+  when:
+    - create_operations is defined
+    - not create_operations.failed
+    - create_operations.response is defined
+    - create_operations.response | length >= 2
+
+- name: Live scan block
+  when:
+    - test_op_1 is defined
+    - test_op_1 | length > 0
+  block:
+    - name: Create a role for scan test
+      nutanix.ncp.ntnx_roles_v2:
+        state: present
+        display_name: "{{ scan_role_name }}"
+        description: "role for scan test"
+        operations:
+          - "{{ test_op_1 }}"
+          - "{{ test_op_2 }}"
+      register: created_role
+      ignore_errors: true
+
+    - name: Assert role was created for scan
+      ansible.builtin.assert:
+        that:
+          - created_role is defined
+          - not created_role.failed
+          - created_role.changed
+          - created_role.ext_id is defined
+        success_msg: "Role created for scan test"
+        fail_msg: "Failed to create role for scan test"
+
+    - name: Track created role for cleanup
+      ansible.builtin.set_fact:
+        todelete: "{{ created_role.ext_id }}"
+      when:
+        - created_role is defined
+        - not created_role.failed
+
+    - name: Scan migration impact for the created role
+      nutanix.ncp.ntnx_scan_migration_impact_role_v2:
+        ext_id: "{{ created_role.ext_id }}"
+      register: live_scan
+      ignore_errors: true
+
+    - name: Assert live scan produced a response
+      ansible.builtin.assert:
+        that:
+          - live_scan is defined
+          - live_scan.response is defined
+          - not live_scan.failed or live_scan.response is defined
+        success_msg: "Live scan produced response"
+        fail_msg: "Live scan did not produce expected response"
+
+    - name: Delete role created for scan test
+      nutanix.ncp.ntnx_roles_v2:
+        state: absent
+        ext_id: "{{ created_role.ext_id }}"
+      register: del_role
+      ignore_errors: true
+      when:
+        - created_role is defined
+        - not created_role.failed
+        - created_role.ext_id is defined
+
+    - name: Assert role deletion succeeded
+      ansible.builtin.assert:
+        that:
+          - del_role is defined
+          - not del_role.failed
+        success_msg: "Cleanup role deletion succeeded"
+        fail_msg: "Cleanup role deletion failed"
+      when:
+        - del_role is defined
+
+- name: End of scan migration impact tests
+  ansible.builtin.debug:
+    msg: "Completed ntnx_scan_migration_impact_role_v2 tests"

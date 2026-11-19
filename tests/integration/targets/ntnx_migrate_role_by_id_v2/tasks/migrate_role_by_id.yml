@@ -1,0 +1,204 @@
+---
+# Test plan for ntnx_migrate_role_by_id_v2
+# Covers:
+# - check_mode with all attributes
+# - missing required fields
+# - invalid enum/ missing ext_id / invalid ext_id
+# - live migrate on a real role (create role, migrate, cleanup)
+
+- name: Start ntnx_migrate_role_by_id_v2 tests
+  ansible.builtin.debug:
+    msg: "Start ntnx_migrate_role_by_id_v2 tests"
+
+- name: Generate random suffix for test resource names
+  ansible.builtin.set_fact:
+    random_name: "mig_{{ 999999 | random }}_{{ ansible_date_time.epoch | default(lookup('pipe', 'date +%s')) }}"
+
+- name: Set names and cleanup buffers
+  ansible.builtin.set_fact:
+    migrate_role_name: "migrate_role_{{ random_name }}"
+    todelete: []
+
+########################################################################################
+# 1. check_mode — migrate role
+########################################################################################
+
+- name: Migrate role in check mode
+  nutanix.ncp.ntnx_migrate_role_by_id_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    should_include_related_operations: true
+  check_mode: true
+  register: migrate_check_mode
+  ignore_errors: true
+
+- name: Assert check_mode for migrate role is correct
+  ansible.builtin.assert:
+    that:
+      - migrate_check_mode is defined
+      - not migrate_check_mode.changed
+      - not migrate_check_mode.failed
+      - migrate_check_mode.response is defined
+      - migrate_check_mode.response.should_include_related_operations == true
+      - migrate_check_mode.ext_id == "00000000-0000-0000-0000-000000000001"
+    success_msg: "check_mode for migrate role passed"
+    fail_msg: "check_mode for migrate role failed"
+
+########################################################################################
+# 2. Negative — missing required ext_id
+########################################################################################
+
+- name: Trigger migrate without ext_id
+  nutanix.ncp.ntnx_migrate_role_by_id_v2:
+    should_include_related_operations: true
+  check_mode: true
+  register: missing_ext_id
+  ignore_errors: true
+
+- name: Assert missing ext_id is reported
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id is defined
+      - missing_ext_id.failed
+      - missing_ext_id.msg is defined
+      - >
+        ("missing required arguments: ext_id" in missing_ext_id.msg)
+        or ("required" in missing_ext_id.msg)
+    success_msg: "Module correctly rejected missing ext_id"
+    fail_msg: "Module did not reject missing ext_id as expected"
+
+########################################################################################
+# 3. Negative — missing should_include_related_operations
+########################################################################################
+
+- name: Trigger migrate without should_include_related_operations
+  nutanix.ncp.ntnx_migrate_role_by_id_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  check_mode: true
+  register: missing_flag
+  ignore_errors: true
+
+- name: Assert missing should_include_related_operations is reported
+  ansible.builtin.assert:
+    that:
+      - missing_flag is defined
+      - missing_flag.failed
+      - missing_flag.msg is defined
+      - >
+        ("missing required arguments: should_include_related_operations" in missing_flag.msg)
+        or ("required" in missing_flag.msg)
+    success_msg: "Module correctly rejected missing should_include_related_operations"
+    fail_msg: "Module did not reject missing flag as expected"
+
+########################################################################################
+# 4. Negative — invalid ext_id at API layer
+########################################################################################
+
+- name: Trigger migrate with non-existent ext_id
+  nutanix.ncp.ntnx_migrate_role_by_id_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    should_include_related_operations: false
+  register: bad_ext_result
+  ignore_errors: true
+
+- name: Assert API error for invalid ext_id
+  ansible.builtin.assert:
+    that:
+      - bad_ext_result is defined
+      - bad_ext_result.failed
+      - bad_ext_result.msg is defined
+    success_msg: "Module correctly surfaced API error for invalid ext_id"
+    fail_msg: "Module did not surface API error for invalid ext_id"
+
+########################################################################################
+# 5. Live cluster path — create a role then migrate it
+########################################################################################
+
+- name: Get create operations for role creation
+  nutanix.ncp.ntnx_operations_info_v2:
+    filter: displayName startswith 'Create_'
+  register: create_operations
+  ignore_errors: true
+
+- name: Set operation uuids when available
+  ansible.builtin.set_fact:
+    test_op_1: "{{ create_operations.response[0].ext_id | default('') }}"
+    test_op_2: "{{ create_operations.response[1].ext_id | default('') }}"
+  when:
+    - create_operations is defined
+    - not create_operations.failed
+    - create_operations.response is defined
+    - create_operations.response | length >= 2
+
+- name: Live migrate role block
+  when:
+    - test_op_1 is defined
+    - test_op_1 | length > 0
+  block:
+    - name: Create a role for migrate test
+      nutanix.ncp.ntnx_roles_v2:
+        state: present
+        display_name: "{{ migrate_role_name }}"
+        description: "role for migrate test"
+        operations:
+          - "{{ test_op_1 }}"
+          - "{{ test_op_2 }}"
+      register: created_role
+      ignore_errors: true
+
+    - name: Assert role was created
+      ansible.builtin.assert:
+        that:
+          - created_role is defined
+          - not created_role.failed
+          - created_role.changed
+          - created_role.ext_id is defined
+        success_msg: "Role created for migrate test"
+        fail_msg: "Failed to create role for migrate test"
+
+    - name: Track created role for cleanup
+      ansible.builtin.set_fact:
+        todelete: "{{ created_role.ext_id }}"
+      when:
+        - created_role is defined
+        - not created_role.failed
+
+    - name: Migrate the freshly created role
+      nutanix.ncp.ntnx_migrate_role_by_id_v2:
+        ext_id: "{{ created_role.ext_id }}"
+        should_include_related_operations: true
+      register: live_migrate
+      ignore_errors: true
+
+    - name: Assert live migrate produced a response
+      ansible.builtin.assert:
+        that:
+          - live_migrate is defined
+          - live_migrate.response is defined
+          - not live_migrate.failed or live_migrate.response is defined
+        success_msg: "Live migrate produced response"
+        fail_msg: "Live migrate did not produce expected response"
+
+    - name: Delete role created for migrate test
+      nutanix.ncp.ntnx_roles_v2:
+        state: absent
+        ext_id: "{{ created_role.ext_id }}"
+      register: del_role
+      ignore_errors: true
+      when:
+        - created_role is defined
+        - not created_role.failed
+        - created_role.ext_id is defined
+
+    - name: Assert role deletion succeeded
+      ansible.builtin.assert:
+        that:
+          - del_role is defined
+          - not del_role.failed
+        success_msg: "Cleanup role deletion succeeded"
+        fail_msg: "Cleanup role deletion failed"
+      when:
+        - del_role is defined
+
+- name: End of migrate role tests
+  ansible.builtin.debug:
+    msg: "Completed ntnx_migrate_role_by_id_v2 tests"
