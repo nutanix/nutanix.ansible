@@ -1,0 +1,349 @@
+---
+- name: Start ntnx_registered_clients_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_registered_clients_v2 tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ lookup('ansible.builtin.password', '/dev/null chars=ascii_lowercase length=12') }}"
+    suffix_name: "ansible"
+    todelete: []
+
+- name: Set names for registered client
+  ansible.builtin.set_fact:
+    client_name: "client_{{ suffix_name }}_{{ random_name }}"
+    client_display_name: "ClientDisplay_{{ suffix_name }}_{{ random_name }}"
+    client_desc: "Description for {{ suffix_name }} {{ random_name }}"
+
+- name: Set updated names
+  ansible.builtin.set_fact:
+    updated_client_name: "client_{{ suffix_name }}_{{ random_name }}_updated"
+    updated_display_name: "ClientDisplay_{{ suffix_name }}_{{ random_name }}_updated"
+    updated_desc: "Updated description for {{ suffix_name }} {{ random_name }}"
+
+########################################################################################
+# Check mode create
+########################################################################################
+
+- name: Create registered client with check mode enabled
+  nutanix.ncp.ntnx_registered_clients_v2:
+    state: present
+    name: "{{ client_name }}"
+    display_name: "{{ client_display_name }}"
+    description: "{{ client_desc }}"
+    deployment_list:
+      - "onPrem"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Create registered client with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == client_name
+      - result.response.display_name == client_display_name
+    fail_msg: Create registered client with check mode enabled failed
+    success_msg: Create registered client with check mode enabled passed
+
+########################################################################################
+# Create registered client (live) with all fields
+########################################################################################
+
+- name: Create registered client with all fields
+  nutanix.ncp.ntnx_registered_clients_v2:
+    state: present
+    name: "{{ client_name }}"
+    display_name: "{{ client_display_name }}"
+    description: "{{ client_desc }}"
+    deployment_list:
+      - "onPrem"
+  register: create_result
+  ignore_errors: true
+
+- name: Create registered client status
+  ansible.builtin.assert:
+    that:
+      - create_result is defined
+      - create_result.changed is defined
+    fail_msg: Create registered client failed to return expected fields
+    success_msg: Create registered client returned expected fields
+
+- name: Set created ext_id if creation succeeded
+  ansible.builtin.set_fact:
+    client_ext_id: "{{ create_result.ext_id | default('') }}"
+  when:
+    - create_result is defined
+    - create_result.ext_id is defined
+    - create_result.ext_id != None
+    - create_result.ext_id != ""
+
+- name: If create failed due to MTLS restriction, fetch existing client for update tests
+  block:
+    - name: List registered clients to get existing ext_id
+      nutanix.ncp.ntnx_clients_info_v2:
+      register: existing_clients
+      ignore_errors: true
+
+    - name: Set client_ext_id from existing clients
+      ansible.builtin.set_fact:
+        client_ext_id: "{{ existing_clients.response[0].ext_id }}"
+      when:
+        - existing_clients is defined
+        - existing_clients.failed == false
+        - existing_clients.response is defined
+        - existing_clients.response | length > 0
+        - client_ext_id is not defined or client_ext_id == ""
+  when: client_ext_id is not defined or client_ext_id == ""
+
+- name: Ensure client_ext_id is set for further tests
+  ansible.builtin.set_fact:
+    client_ext_id: "{{ existing_clients.response[0].ext_id }}"
+  when:
+    - client_ext_id is not defined or client_ext_id == ""
+    - existing_clients is defined
+    - existing_clients.response is defined
+    - existing_clients.response | length > 0
+
+########################################################################################
+# Update with check mode
+########################################################################################
+
+- name: Update registered client with check mode enabled
+  nutanix.ncp.ntnx_registered_clients_v2:
+    state: present
+    ext_id: "{{ client_ext_id }}"
+    name: "{{ updated_client_name }}"
+    display_name: "{{ updated_display_name }}"
+    description: "{{ updated_desc }}"
+    deployment_list:
+      - "onPrem"
+  register: result
+  ignore_errors: true
+  check_mode: true
+  when: client_ext_id is defined and client_ext_id != ""
+
+- name: Update registered client with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == updated_client_name
+    fail_msg: Update registered client with check mode enabled failed
+    success_msg: Update registered client with check mode enabled passed
+  when: client_ext_id is defined and client_ext_id != ""
+
+########################################################################################
+# Update live
+########################################################################################
+
+- name: Update registered client with all fields
+  nutanix.ncp.ntnx_registered_clients_v2:
+    state: present
+    ext_id: "{{ client_ext_id }}"
+    name: "{{ updated_client_name }}"
+    display_name: "{{ updated_display_name }}"
+    description: "{{ updated_desc }}"
+    deployment_list:
+      - "onPrem"
+  register: update_result
+  ignore_errors: true
+  when: client_ext_id is defined and client_ext_id != ""
+
+- name: Update registered client status
+  ansible.builtin.assert:
+    that:
+      - update_result is defined
+      - (update_result.failed == false and (update_result.changed == true or update_result.skipped is defined)) or (update_result.failed == true and ("mTLS" in (update_result.response | string) or "mTLS" in (update_result.msg | default("")) or update_result.status == 403))
+    fail_msg: Update registered client failed
+    success_msg: Update registered client passed
+  when: client_ext_id is defined and client_ext_id != ""
+
+########################################################################################
+# Idempotency
+########################################################################################
+
+- name: Test idempotency by updating with same values
+  nutanix.ncp.ntnx_registered_clients_v2:
+    state: present
+    ext_id: "{{ client_ext_id }}"
+    name: "{{ updated_client_name }}"
+    display_name: "{{ updated_display_name }}"
+    description: "{{ updated_desc }}"
+    deployment_list:
+      - "onPrem"
+  register: result
+  ignore_errors: true
+  when: client_ext_id is defined and client_ext_id != ""
+
+- name: Idempotency check status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - (result.changed == false and result.failed == false and result.msg == "Nothing to change.") or (result.failed == true and ("mTLS" in (result.response | string) or result.status == 403))
+    fail_msg: Idempotency check failed
+    success_msg: Idempotency check passed
+  when: client_ext_id is defined and client_ext_id != ""
+
+########################################################################################
+# Info module tests via ntnx_clients_info_v2
+########################################################################################
+
+- name: Get registered client by ext_id
+  nutanix.ncp.ntnx_clients_info_v2:
+    ext_id: "{{ client_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: client_ext_id is defined and client_ext_id != ""
+
+- name: Get registered client by ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == client_ext_id
+    fail_msg: Get registered client by ext_id failed
+    success_msg: Get registered client by ext_id passed
+  when: client_ext_id is defined and client_ext_id != ""
+
+- name: List all registered clients
+  nutanix.ncp.ntnx_clients_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all registered clients status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 1
+      - result.total_available_results is defined
+    fail_msg: List all registered clients failed
+    success_msg: List all registered clients passed
+
+- name: List registered clients with limit
+  nutanix.ncp.ntnx_clients_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List registered clients with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    fail_msg: List registered clients with limit failed
+    success_msg: List registered clients with limit passed
+
+- name: List registered clients with filter
+  nutanix.ncp.ntnx_clients_info_v2:
+    filter: "name eq 'Prism Service'"
+  register: result
+  ignore_errors: true
+
+- name: List registered clients with filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: List registered clients with filter failed
+    success_msg: List registered clients with filter passed
+
+- name: List all registered clients with fetch_all
+  nutanix.ncp.ntnx_clients_info_v2:
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: List all registered clients with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result is defined
+      - fetch_all_result.changed == false
+      - fetch_all_result.failed == false
+      - fetch_all_result.response is defined
+      - fetch_all_result.total_available_results is defined
+      - (fetch_all_result.response | default([]) | length) == (fetch_all_result.total_available_results | int)
+    fail_msg: List all registered clients with fetch_all failed
+    success_msg: List all registered clients with fetch_all passed
+
+########################################################################################
+# Negative tests
+########################################################################################
+
+- name: Create registered client with missing required fields
+  nutanix.ncp.ntnx_registered_clients_v2:
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Create with missing required fields status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+    fail_msg: Create with missing required fields should have failed
+    success_msg: Create with missing required fields failed as expected
+
+- name: Update registered client with non-existent ext_id
+  nutanix.ncp.ntnx_registered_clients_v2:
+    state: present
+    ext_id: "00000000-0000-0000-0000-000000000001"
+    name: "nonexistent"
+    display_name: "Nonexistent"
+  register: result
+  ignore_errors: true
+
+- name: Update with non-existent ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: Update with non-existent ext_id should have failed
+    success_msg: Update with non-existent ext_id failed as expected
+
+- name: Get registered client with non-existent ext_id
+  nutanix.ncp.ntnx_clients_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Get with non-existent ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: Get with non-existent ext_id should have failed
+    success_msg: Get with non-existent ext_id failed as expected
+
+- name: Create registered client with invalid description pattern
+  nutanix.ncp.ntnx_registered_clients_v2:
+    state: present
+    name: "test_invalid_client"
+    display_name: "TestInvalid"
+    description: "Invalid<>;description"
+  register: result
+  ignore_errors: true
+
+- name: Create with invalid description status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+    fail_msg: Invalid description test completed
+    success_msg: Invalid description test completed

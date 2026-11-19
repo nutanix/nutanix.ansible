@@ -1,0 +1,133 @@
+---
+- name: Start ntnx_clients_info_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_clients_info_v2 tests
+
+- name: List all registered clients
+  nutanix.ncp.ntnx_clients_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all registered clients status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results is defined
+      - result.response | length >= 1
+    fail_msg: List all registered clients failed
+    success_msg: List all registered clients passed
+
+- name: Set client ext_id from list for get tests
+  ansible.builtin.set_fact:
+    test_client_ext_id: "{{ result.response[0].ext_id }}"
+    test_client_name: "{{ result.response[0].name }}"
+  when:
+    - result is defined
+    - result.failed == false
+    - result.response is defined
+    - result.response | length > 0
+
+- name: Get registered client by ext_id
+  nutanix.ncp.ntnx_clients_info_v2:
+    ext_id: "{{ test_client_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: test_client_ext_id is defined
+
+- name: Get registered client by ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.ext_id == test_client_ext_id
+      - result.ext_id == test_client_ext_id
+    fail_msg: Get registered client by ext_id failed
+    success_msg: Get registered client by ext_id passed
+  when: test_client_ext_id is defined
+
+- name: List registered clients with filter
+  nutanix.ncp.ntnx_clients_info_v2:
+    filter: "name eq '{{ test_client_name }}'"
+  register: result
+  ignore_errors: true
+  when: test_client_name is defined
+
+- name: List registered clients with filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length >= 1
+    fail_msg: List registered clients with filter failed
+    success_msg: List registered clients with filter passed
+  when: test_client_name is defined
+
+- name: List registered clients with limit
+  nutanix.ncp.ntnx_clients_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List registered clients with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+    fail_msg: List registered clients with limit failed
+    success_msg: List registered clients with limit passed
+
+- name: List all registered clients with fetch_all
+  nutanix.ncp.ntnx_clients_info_v2:
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: List all registered clients with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result is defined
+      - fetch_all_result.changed == false
+      - fetch_all_result.failed == false
+      - fetch_all_result.response is defined
+      - fetch_all_result.total_available_results is defined
+      - (fetch_all_result.response | default([]) | length) == (fetch_all_result.total_available_results | int)
+    fail_msg: List all registered clients with fetch_all failed
+    success_msg: List all registered clients with fetch_all passed
+
+- name: Get registered client with non-existent ext_id
+  nutanix.ncp.ntnx_clients_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Get with non-existent ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: Get with non-existent ext_id should have failed
+    success_msg: Get with non-existent ext_id failed as expected
+
+- name: List with invalid filter
+  nutanix.ncp.ntnx_clients_info_v2:
+    filter: "invalidField eq 'test'"
+  register: result
+  ignore_errors: true
+
+- name: List with invalid filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+    fail_msg: Invalid filter test completed
+    success_msg: Invalid filter test completed

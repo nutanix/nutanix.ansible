@@ -1,0 +1,62 @@
+---
+- name: Registered clients CRUD and info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: List all registered clients (to get existing ext_id)
+      nutanix.ncp.ntnx_clients_info_v2:
+      register: list_all_initial
+
+    - name: Create a registered client
+      nutanix.ncp.ntnx_registered_clients_v2:
+        state: present
+        name: "ansible_test_client"
+        display_name: "AnsibleTestClient"
+        description: "Client created by Ansible"
+        deployment_list:
+          - "onPrem"
+      register: created
+      ignore_errors: true
+
+    - name: Update a registered client
+      nutanix.ncp.ntnx_registered_clients_v2:
+        state: present
+        ext_id: "{{ created.ext_id | default(list_all_initial.response[0].ext_id) }}"
+        name: "ansible_test_client_updated"
+        display_name: "AnsibleTestClientUpdated"
+        description: "Updated client description"
+        deployment_list:
+          - "onPrem"
+      register: updated
+      ignore_errors: true
+
+    - name: Fetch registered client using external ID
+      nutanix.ncp.ntnx_clients_info_v2:
+        ext_id: "{{ list_all_initial.response[0].ext_id }}"
+      register: fetched
+      ignore_errors: true
+
+    - name: List all registered clients
+      nutanix.ncp.ntnx_clients_info_v2:
+      register: list_all
+
+    - name: List registered clients with filter
+      nutanix.ncp.ntnx_clients_info_v2:
+        filter: "name eq 'Prism Service'"
+      register: filtered
+
+    - name: List registered clients with limit
+      nutanix.ncp.ntnx_clients_info_v2:
+        limit: 1
+      register: limited
+
+    - name: List all registered clients with fetch_all
+      nutanix.ncp.ntnx_clients_info_v2:
+        fetch_all: true
+      register: fetch_all_result
