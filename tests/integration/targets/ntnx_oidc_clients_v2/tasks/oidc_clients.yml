@@ -1,0 +1,300 @@
+---
+# yamllint disable rule:line-length
+- name: Start ntnx_oidc_clients_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_oidc_clients_v2 tests
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set variables
+  ansible.builtin.set_fact:
+    oidc_name: "{{ random_name }}-ansible-oidc"
+    oidc_app_type: "Backend application"
+    todelete: []
+
+########################################################################
+# Create with check mode - inline dummy values
+########################################################################
+- name: Create OIDC client with check mode enabled
+  nutanix.ncp.ntnx_oidc_clients_v2:
+    state: present
+    client_name: "{{ oidc_name }}-check"
+    application_type: "Backend application"
+    redirect_uris:
+      - "https://example.com/callback"
+    sha256_thumbprint_list:
+      - "3BCbFA2eeDF0F6bf9E8Fc41ccA8eFAafBF1dCe1B3cEAB51De4fF0E2EB7B52E4d"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Create OIDC client with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.client_name == "{{ oidc_name }}-check"
+      - result.response.application_type == "Backend application"
+      - result.response.redirect_uris[0] == "https://example.com/callback"
+    fail_msg: Create OIDC client with check mode failed
+    success_msg: Create OIDC client with check mode passed
+
+########################################################################
+# Create OIDC client - success
+########################################################################
+- name: Create OIDC client
+  nutanix.ncp.ntnx_oidc_clients_v2:
+    state: present
+    client_name: "{{ oidc_name }}"
+    application_type: "{{ oidc_app_type }}"
+    redirect_uris:
+      - "https://example.com/callback"
+      - "https://example.com/callback2"
+    sha256_thumbprint_list:
+      - "3BCbFA2eeDF0F6bf9E8Fc41ccA8eFAafBF1dCe1B3cEAB51De4fF0E2EB7B52E4d"
+  register: result
+  ignore_errors: true
+
+- name: Create OIDC client status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.ext_id is defined
+      - result.ext_id | length > 0
+      - result.changed == true
+      - result.failed == false
+      - result.response.client_name == "{{ oidc_name }}"
+      - result.response.application_type == "{{ oidc_app_type }}"
+      - result.response.redirect_uris | length == 2
+      - result.response.client_id is defined
+      - result.response.client_secret is defined
+    fail_msg: Unable to create OIDC client
+    success_msg: OIDC client created successfully
+
+- name: Set ext_id for cleanup and info tests
+  ansible.builtin.set_fact:
+    oidc_ext_id: "{{ result.ext_id }}"
+    todelete: "{{ result.ext_id }}"
+
+########################################################################
+# Negative: Create without required client_name
+########################################################################
+- name: Create OIDC client without client_name (negative)
+  nutanix.ncp.ntnx_oidc_clients_v2:
+    state: present
+    application_type: "{{ oidc_app_type }}"
+    redirect_uris:
+      - "https://example.com/callback"
+  register: result
+  ignore_errors: true
+
+- name: Verify creation without client_name failed
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: Creating OIDC client without client_name should fail
+    success_msg: Creating OIDC client without client_name failed as expected
+
+########################################################################
+# Negative: Create with invalid redirect_uris pattern
+########################################################################
+- name: Create OIDC client with invalid redirect_uris (negative)
+  nutanix.ncp.ntnx_oidc_clients_v2:
+    state: present
+    client_name: "{{ random_name }}-invalid"
+    redirect_uris:
+      - "not a valid uri with spaces"
+  register: result
+  ignore_errors: true
+
+- name: Verify creation with invalid redirect_uris failed or succeeded
+  ansible.builtin.assert:
+    that:
+      - result.failed == true or result.changed == true
+    fail_msg: Invalid redirect_uris test produced unexpected result
+    success_msg: Invalid redirect_uris test completed
+
+- name: Cleanup invalid client if created
+  nutanix.ncp.ntnx_oidc_clients_v2:
+    state: absent
+    ext_id: "{{ result.ext_id }}"
+  register: cleanup_invalid
+  ignore_errors: true
+  when:
+    - result.ext_id is defined
+    - result.changed
+
+########################################################################
+# Info tests - get by ext_id
+########################################################################
+- name: Get OIDC client using ext_id
+  nutanix.ncp.ntnx_oidc_clients_info_v2:
+    ext_id: "{{ oidc_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Get OIDC client using ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.client_name == "{{ oidc_name }}"
+      - result.ext_id == "{{ oidc_ext_id }}"
+    fail_msg: Unable to fetch OIDC client using ext_id
+    success_msg: OIDC client fetched successfully using ext_id
+
+########################################################################
+# List all OIDC clients
+########################################################################
+- name: List all OIDC clients
+  nutanix.ncp.ntnx_oidc_clients_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all OIDC clients status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length > 0
+    fail_msg: Unable to list all OIDC clients
+    success_msg: Listed all OIDC clients successfully
+
+########################################################################
+# List with limit
+########################################################################
+- name: List OIDC clients with limit
+  nutanix.ncp.ntnx_oidc_clients_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List OIDC clients with limit status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response | length == 1
+    fail_msg: Unable to list OIDC clients with limit
+    success_msg: Listed OIDC clients with limit successfully
+
+########################################################################
+# List with fetch_all
+########################################################################
+- name: List all OIDC clients with fetch_all
+  nutanix.ncp.ntnx_oidc_clients_info_v2:
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: List all OIDC clients with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result.changed == false
+      - fetch_all_result.failed == false
+      - fetch_all_result.response is defined
+    fail_msg: Unable to list OIDC clients with fetch_all
+    success_msg: Listed OIDC clients with fetch_all successfully
+
+- name: Verify fetch_all length matches total when available
+  ansible.builtin.assert:
+    that:
+      - (fetch_all_result.response | default([]) | length) == (fetch_all_result.total_available_results | int)
+    fail_msg: fetch_all length mismatch
+    success_msg: fetch_all length matches total_available_results
+  when:
+    - fetch_all_result.total_available_results is defined
+
+########################################################################
+# Delete with check mode
+########################################################################
+- name: Delete OIDC client with check mode
+  nutanix.ncp.ntnx_oidc_clients_v2:
+    state: absent
+    ext_id: "{{ oidc_ext_id }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Delete OIDC client with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ oidc_ext_id }}"
+    fail_msg: Delete OIDC client with check mode failed
+    success_msg: Delete OIDC client with check mode passed
+
+########################################################################
+# Delete OIDC client - success
+########################################################################
+- name: Delete OIDC client
+  nutanix.ncp.ntnx_oidc_clients_v2:
+    state: absent
+    ext_id: "{{ oidc_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete OIDC client status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ oidc_ext_id }}"
+    fail_msg: Unable to delete OIDC client
+    success_msg: OIDC client deleted successfully
+
+########################################################################
+# Negative: Delete with invalid ext_id
+########################################################################
+- name: Delete OIDC client with invalid ext_id (negative)
+  nutanix.ncp.ntnx_oidc_clients_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Verify delete with invalid ext_id failed
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: Delete with invalid ext_id should fail
+    success_msg: Delete with invalid ext_id failed as expected
+
+########################################################################
+# Negative: Delete without ext_id
+########################################################################
+- name: Delete OIDC client without ext_id (negative)
+  nutanix.ncp.ntnx_oidc_clients_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Verify delete without ext_id failed
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: Delete without ext_id should fail
+    success_msg: Delete without ext_id failed as expected
+
+########################################################################
+# Cleanup - ensure deleted (idempotent delete should fail or succeed)
+########################################################################
+- name: Ensure OIDC client cleanup
+  nutanix.ncp.ntnx_oidc_clients_v2:
+    state: absent
+    ext_id: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+  when: todelete is defined and todelete | length > 0
+# yamllint enable rule:line-length

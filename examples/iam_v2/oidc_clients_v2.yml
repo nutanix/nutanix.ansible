@@ -1,0 +1,67 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create OIDC client
+# 2. List OIDC clients
+# 3. List OIDC clients with limit
+# 4. List OIDC clients with fetch_all
+# 5. Get OIDC client by ext_id
+# 6. Delete OIDC client
+
+- name: OIDC clients playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        oidc_client_name: "ansible_oidc_client"
+        oidc_client_ext_id: "0e820dbd-aa56-4257-9f99-2b9930a406bf"
+
+    - name: Create OIDC client
+      nutanix.ncp.ntnx_oidc_clients_v2:
+        state: present
+        client_name: "{{ oidc_client_name }}"
+        application_type: "Backend application"
+        redirect_uris:
+          - "https://example.com/callback"
+          - "https://example.com/callback2"
+        sha256_thumbprint_list:
+          - "3BCbFA2eeDF0F6bf9E8Fc41ccA8eFAafBF1dCe1B3cEAB51De4fF0E2EB7B52E4d"
+      register: result
+      ignore_errors: true
+
+    - name: List OIDC clients
+      nutanix.ncp.ntnx_oidc_clients_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List OIDC clients with limit
+      nutanix.ncp.ntnx_oidc_clients_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: List OIDC clients with fetch_all
+      nutanix.ncp.ntnx_oidc_clients_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
+
+    - name: Get OIDC client by ext_id
+      nutanix.ncp.ntnx_oidc_clients_info_v2:
+        ext_id: "{{ oidc_client_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Delete OIDC client
+      nutanix.ncp.ntnx_oidc_clients_v2:
+        state: absent
+        ext_id: "{{ oidc_client_ext_id }}"
+      register: result
+      ignore_errors: true
