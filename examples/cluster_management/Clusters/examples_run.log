@@ -1,0 +1,10 @@
+ERROR! couldn't resolve module/action 'nutanix.ncp.ntnx_cluster_host_gpus_info_v2'. This often indicates a misspelling, missing collection, or incorrect module path.
+
+The error appears to be in '/tmp/codegen/8a2310fe84d64820b9bab5ea0ccbfba9/repo/examples/cluster_management/Clusters/clusters.yml': line 45, column 7, but may
+be elsewhere in the file depending on the exact syntax problem.
+
+The offending line appears to be:
+
+
+    - name: List host GPUs
+      ^ here
