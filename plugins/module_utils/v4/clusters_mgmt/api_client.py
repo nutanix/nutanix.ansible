@@ -281,3 +281,51 @@ def get_network_segments_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.NetworkSegmentsApi(client)
+
+
+def get_cluster_config_api_instance(module):
+    """
+    This method will return ClusterConfigApi instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        ClusterConfigApi: ClusterConfigApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.ClusterConfigApi(client)
+
+
+def get_cluster_protection_api_instance(module):
+    """
+    This method will return ClusterProtectionApi instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        ClusterProtectionApi: ClusterProtectionApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.ClusterProtectionApi(client)
+
+
+def get_cluster_operations_api_instance(module):
+    """
+    This method will return ClusterOperationsApi instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        ClusterOperationsApi: ClusterOperationsApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.ClusterOperationsApi(client)
+
+
+def get_hosts_api_instance(module):
+    """
+    This method will return HostsApi instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        HostsApi: HostsApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.HostsApi(client)

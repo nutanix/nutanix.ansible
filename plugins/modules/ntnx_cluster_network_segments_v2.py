@@ -11,10 +11,10 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_cluster_network_segments_v2
-short_description: Create or Delete cluster network segments
+short_description: Create, Update, or Delete cluster network segments
 version_added: "2.7.0"
 description:
-    - Create or Delete network segments associated with a Nutanix cluster.
+    - Create, Update, or Delete network segments associated with a Nutanix cluster.
     - This module uses PC v4 APIs based SDKs
 notes:
     - >-
@@ -24,13 +24,17 @@ notes:
       B(Create Cluster Network Segment) -
       Required Roles: Cluster Admin, Prism Admin, Super Admin
     - >-
+      B(Update Cluster Network Segment) -
+      Required Roles: Cluster Admin, Prism Admin, Super Admin
+    - >-
       B(Delete Cluster Network Segment) -
       Required Roles: Cluster Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   state:
     description:
-      - If C(state) is C(present), create a network segment.
+      - If C(state) is C(present) and C(ext_id) is not provided, create a network segment.
+      - If C(state) is C(present) and C(ext_id) is provided, update the network segment.
       - If C(state) is C(absent), delete the network segment identified by
         C(ext_id).
     type: str
@@ -45,7 +49,7 @@ options:
   ext_id:
     description:
       - Network Segment UUID.
-      - Required for delete operations.
+      - Required for update and delete operations.
     type: str
   name:
     description:
@@ -418,6 +422,20 @@ EXAMPLES = r"""
               - ISCSI
   register: result
 
+- name: Update a network segment
+  nutanix.ncp.ntnx_cluster_network_segments_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: present
+    cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+    ext_id: "63311404-8b2e-4dbf-9e33-7848cc88d330"
+    name: "ansible-backplane-segment-updated"
+    vlan_id: 101
+    mtu: 1600
+  register: result
+
 - name: Delete a network segment
   nutanix.ncp.ntnx_cluster_network_segments_v2:
     nutanix_host: "{{ ip }}"
@@ -433,9 +451,9 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - Response for network segment operations.
-    - Network segment details if C(wait) is true for create.
-    - Task details if C(wait) is false, or for delete.
+    - Response for creating, updating, or deleting network segment.
+    - If C(wait) is true and the operation is create or update, it will contain the network segment details.
+    - If C(wait) is false or the operation is delete, it will contain the task details.
   returned: always
   type: dict
   sample:
@@ -477,12 +495,14 @@ msg:
 
 import traceback  # noqa: E402
 import warnings  # noqa: E402
+from copy import deepcopy  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
+    get_etag,
     get_network_segments_api_instance,
 )
 from ..module_utils.v4.clusters_mgmt.helpers import get_network_segment  # noqa: E402
@@ -707,6 +727,59 @@ def create_network_segment(module, result, api_instance):
     result["changed"] = True
 
 
+def update_network_segment(module, result, api_instance):
+    validate_required_params(module, ["cluster_ext_id", "ext_id"])
+    cluster_ext_id = module.params.get("cluster_ext_id")
+    ext_id = module.params.get("ext_id")
+    result["ext_id"] = ext_id
+
+    old_spec = get_network_segment(module, api_instance, cluster_ext_id, ext_id)
+    etag = get_etag(data=old_spec)
+    if not etag:
+        module.fail_json(
+            msg="Unable to fetch etag for updating network segment", **result
+        )
+    kwargs = {"if_match": etag}
+
+    sg = SpecGenerator(module)
+    update_spec, err = sg.generate_spec(obj=deepcopy(old_spec))
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating update network segment spec", **result)
+
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(update_spec.to_dict())
+        return
+
+    # Idempotency check
+    old_dict = strip_internal_attributes(old_spec.to_dict())
+    update_dict = strip_internal_attributes(update_spec.to_dict())
+    if old_dict == update_dict:
+        result["skipped"] = True
+        module.exit_json(msg="Nothing to change.", **result)
+
+    try:
+        resp = api_instance.update_network_segment_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id, body=update_spec, **kwargs
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while updating network segment",
+        )
+
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if task_ext_id and module.params.get("wait"):
+        task_status = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(task_status.to_dict())
+        resp = get_network_segment(module, api_instance, cluster_ext_id, ext_id)
+        result["response"] = strip_internal_attributes(resp.to_dict())
+    result["changed"] = True
+
+
 def delete_network_segment(module, result, api_instance):
     validate_required_params(module, ["cluster_ext_id", "ext_id"])
     cluster_ext_id = module.params.get("cluster_ext_id")
@@ -758,7 +831,10 @@ def run_module():
     result = {"changed": False, "response": None, "failed": False, "ext_id": None}
     api_instance = get_network_segments_api_instance(module)
     if module.params.get("state") == "present":
-        create_network_segment(module, result, api_instance)
+        if module.params.get("ext_id"):
+            update_network_segment(module, result, api_instance)
+        else:
+            create_network_segment(module, result, api_instance)
     else:
         delete_network_segment(module, result, api_instance)
     module.exit_json(**result)
