@@ -543,3 +543,4 @@ action_groups:
     - ntnx_security_profiles_v2
     - ntnx_security_profiles_advanced_config_info_v2
     - ntnx_security_profiles_advanced_config_v2
+    - ntnx_tenant_configuration_v2

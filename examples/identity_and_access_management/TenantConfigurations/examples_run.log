@@ -1,0 +1,14 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Tenant configuration examples] *******************************************
+
+TASK [Configure a tenant in IAM] ***********************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while configuring tenant", "response": "(404)\nReason: NOT FOUND\nHTTP response headers: HTTPHeaderDict({'Content-Length': '0', 'Server': 'envoy', 'Date': 'Thu, 19 Nov 2026 13:06:16 GMT', 'Set-Cookie': 'NTNX_IAM_SESSION=CgVhZG1pbhC87/vXBhoHTWVyY3VyeSAAKig4ODQzZGI2ZGZkNDQxNjQzNWJjNGM0YTMyYTNlYzA1NzEwYmMyNzIz|XbyMb9OyDfaalmppSR46VZ0JaeG0cYCke4PvEJgKw1A=;Expires=Thu, 19-Nov-2026 13:21:00 GMT;Path=/;Secure;HttpOnly;SameSite=Lax, NTNX_MERCURY_IAM_SESSION=CgVhZG1pbhC87/vXBhoHTWVyY3VyeSAAKig4ODQzZGI2ZGZkNDQxNjQzNWJjNGM0YTMyYTNlYzA1NzEwYmMyNzIz|XbyMb9OyDfaalmppSR46VZ0JaeG0cYCke4PvEJgKw1A=;Expires=Thu, 19-Nov-2026 13:21:00 GMT;Path=/;Secure;HttpOnly;SameSite=Lax, NTNX_MERCURY_IAM_REFRESH_TOKEN=ChljcnN2aDU1Y3dmYWdvdGNtb25ta3pzbXl4EhlhNHNidHRwb3ViN2szemJuNjZ2YnM3aW1m;Expires=Thu, 19-Nov-2026 13:21:00 GMT;Path=/;Secure;HttpOnly;SameSite=Lax', 'Pragma': 'no-cache', 'Content-Security-Policy': \"connect-src 'self' wss: https://downloads.frame.nutanix.com https://downloads.frame.nutanix.us; default-src 'self' https://*.nutanix.com; frame-ancestors 'self' https://*.nutanix.com; frame-src 'self' https://*.nutanix.com blob: data:; img-src 'self' blob: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'\", 'Strict-Transport-Security': 'max-age=63072000; includeSubdomains; preload', 'X-Xss-Protection': '1; mode=block', 'X-Ntnx-Env': 'pc', 'X-Ntnx-Product': 'pc.7.5.2', 'X-Dns-Prefetch-Control': 'off', 'X-Content-Type-Options': 'nosniff', 'X-Permitted-Cross-Domain-Policies': 'master-only', 'Vary': 'Origin', 'Expires': '0', 'X-Frame-Options': 'SAMEORIGIN', 'Cache-Control': 'no-cache, no-store'})\n", "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+
