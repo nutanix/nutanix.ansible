@@ -1,0 +1,105 @@
+---
+# Summary:
+# This playbook demonstrates seeding Authz configuration in IAM.
+# 1. Seed entity configuration with create operation
+# 2. Seed operation configuration with create operation
+# 3. Seed role configuration with update operation
+
+- name: Seed configuration playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        client_name_seed: "test_client_ansible"
+
+    - name: Seed entity configuration
+      nutanix.ncp.ntnx_seed_config_v2:
+        config_type: ENTITY
+        client_name: "{{ client_name_seed }}"
+        operation_type: CREATE
+        config_list:
+          entity_list:
+            entities:
+              - name: test_entity_ansible
+                display_name: Test Entity Ansible
+                description: Test entity created via Ansible for seeding
+                client_name: "{{ client_name_seed }}"
+                is_internal: false
+                products:
+                  - PC
+      register: result
+      ignore_errors: true
+
+    - name: Seed operation configuration
+      nutanix.ncp.ntnx_seed_config_v2:
+        config_type: OPERATION
+        client_name: "{{ client_name_seed }}"
+        operation_type: CREATE
+        config_list:
+          operation_list:
+            operations:
+              - display_name: Test Operation Ansible
+                description: Test operation via Ansible seeding
+                entity_type: test_entity_ansible
+                client_name: "{{ client_name_seed }}"
+                is_internal: false
+                allow_on_shared_entity: false
+      register: result
+      ignore_errors: true
+
+    - name: Seed role configuration
+      nutanix.ncp.ntnx_seed_config_v2:
+        config_type: ROLE
+        client_name: "{{ client_name_seed }}"
+        operation_type: CREATE
+        config_list:
+          role_list:
+            roles:
+              - display_name: Test Role Ansible
+                description: Test role via Ansible seeding
+                client_name: "{{ client_name_seed }}"
+                is_internal: false
+                operations:
+                  - TestOp1
+                  - TestOp2
+                accessible_clients:
+                  - "{{ client_name_seed }}"
+      register: result
+      ignore_errors: true
+
+    - name: Seed client configuration
+      nutanix.ncp.ntnx_seed_config_v2:
+        config_type: CLIENT
+        client_name: "{{ client_name_seed }}"
+        operation_type: CREATE
+        config_list:
+          client_config:
+            name: test_client_seeded
+            display_name: Test Client Seeded
+            description: Client seeded via Ansible
+            deployment_list:
+              - PRISM_CENTRAL
+      register: result
+      ignore_errors: true
+
+    - name: Seed authorization policy configuration
+      nutanix.ncp.ntnx_seed_config_v2:
+        config_type: AUTHORIZATION_POLICY
+        client_name: "{{ client_name_seed }}"
+        operation_type: CREATE
+        config_list:
+          authorization_policy_list:
+            authorization_policies:
+              - display_name: Test Authz Policy Ansible
+                description: Test authz policy via Ansible
+                client_name: "{{ client_name_seed }}"
+                is_internal: false
+      register: result
+      ignore_errors: true
