@@ -1,0 +1,64 @@
+---
+- name: Authorize playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Authorize incoming requests
+      nutanix.ncp.ntnx_authorize_v2:
+        state: present
+        identity:
+          identity_type: User
+          attributes:
+            user_uuid: "00000000-0000-0000-0000-000000000001"
+        request_list:
+          - request_id: "req-1"
+            response_type: BooleanResponse
+            entity:
+              type: "vm"
+              operation: "view"
+              attributes:
+                cluster_uuid: "00000000-0000-0000-0000-000000000002"
+      register: result
+      ignore_errors: true
+
+    - name: Authorize with multiple requests
+      nutanix.ncp.ntnx_authorize_v2:
+        state: present
+        identity:
+          identity_type: User
+          attributes:
+            user_uuid: "00000000-0000-0000-0000-000000000001"
+        request_list:
+          - request_id: "req-1"
+            response_type: BooleanResponse
+            entity:
+              type: "vm"
+              operation: "view"
+          - request_id: "req-2"
+            response_type: FilterResponse
+            entity:
+              type: "image"
+              operation: "create"
+              attributes:
+                name: "test-image"
+      register: result
+      ignore_errors: true
+
+    - name: Authorize using user token
+      nutanix.ncp.ntnx_authorize_v2:
+        state: present
+        user_token: "eyJhbGciOiJSUzI1NiJ9.dummy"
+        request_list:
+          - request_id: "req-1"
+            response_type: BooleanResponse
+            entity:
+              type: "vm"
+              operation: "delete"
+      register: result
+      ignore_errors: true
