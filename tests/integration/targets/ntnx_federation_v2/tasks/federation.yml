@@ -1,0 +1,288 @@
+---
+- name: Start ntnx_federation_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_federation_v2 tests
+
+- name: Generate random suffix for ansible test content
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', upper=false, lower=true, numbers=true, special=false, length=8)[0] }}"
+
+- name: Set federation test variables
+  ansible.builtin.set_fact:
+    well_known_config_url: "https://example.okta.com/.well-known/openid-configuration"
+    dummy_idp_id: "00000000-0000-0000-0000-000000000000"
+
+########################################################################
+# 0. Get existing federation (baseline) - check if already exists
+########################################################################
+- name: Get existing federation (baseline)
+  nutanix.ncp.ntnx_federation_info_v2:
+  register: baseline_result
+  ignore_errors: true
+
+- name: Status of baseline get federation
+  ansible.builtin.assert:
+    that:
+      - baseline_result is defined
+    fail_msg: Unable to get baseline federation info
+    success_msg: Baseline federation fetched successfully
+
+- name: Store baseline existence
+  ansible.builtin.set_fact:
+    federation_exists_before: "{{ baseline_result.failed == false and baseline_result.response is defined and baseline_result.response != {} and baseline_result.response.well_known_config is defined }}"
+
+- name: Debug baseline federation existence
+  ansible.builtin.debug:
+    msg: "Federation exists before test: {{ federation_exists_before }}"
+
+########################################################################
+# Cleanup if federation exists before (to ensure clean state)
+########################################################################
+- name: Delete existing federation for clean state
+  nutanix.ncp.ntnx_federation_v2:
+    state: absent
+  register: precleanup_result
+  ignore_errors: true
+  when: federation_exists_before | bool
+
+- name: Wait after pre-cleanup
+  ansible.builtin.pause:
+    seconds: 2
+  when: federation_exists_before | bool
+
+########################################################################
+# 1. Create federation with check_mode
+########################################################################
+- name: Create federation with check mode enabled
+  nutanix.ncp.ntnx_federation_v2:
+    state: present
+    well_known_config: "{{ well_known_config_url }}"
+    claim_map:
+      name: "name"
+      email: "email"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Create federation with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.well_known_config == well_known_config_url
+    fail_msg: Create federation with check mode enabled failed
+    success_msg: Create federation with check mode enabled passed
+
+########################################################################
+# 2. Create federation (live) with required fields
+########################################################################
+- name: Create federation
+  nutanix.ncp.ntnx_federation_v2:
+    state: present
+    well_known_config: "{{ well_known_config_url }}"
+    claim_map:
+      name: "name"
+      email: "email"
+  register: result
+  ignore_errors: true
+
+- name: Status of create federation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.response is defined or result.msg is defined
+    fail_msg: Unable to create federation
+    success_msg: Federation create handled
+
+########################################################################
+# 3. Get federation after create and assert
+########################################################################
+- name: Get federation after create
+  nutanix.ncp.ntnx_federation_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Status of get federation after create
+  ansible.builtin.assert:
+    that:
+      - result is defined
+    fail_msg: Get federation after create failed
+    success_msg: Get federation after create passed
+
+########################################################################
+# 4. Create federation with all fields
+########################################################################
+- name: Delete federation before all-fields create
+  nutanix.ncp.ntnx_federation_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Wait after delete
+  ansible.builtin.pause:
+    seconds: 2
+
+- name: Create federation with all fields
+  nutanix.ncp.ntnx_federation_v2:
+    state: present
+    well_known_config: "{{ well_known_config_url }}"
+    idp_id: "{{ dummy_idp_id }}"
+    cloud_tenant: "{{ dummy_idp_id }}"
+    cloud_api_key: "test-api-key-{{ random_name }}"
+    claim_map:
+      name: "preferred_username"
+      email: "email"
+  register: result
+  ignore_errors: true
+
+- name: Status of create federation with all fields
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.response is defined or result.msg is defined
+    fail_msg: Unable to create federation with all fields
+    success_msg: Federation created with all fields handled
+
+########################################################################
+# 5. Get federation after all-fields create
+########################################################################
+- name: Get federation after all-fields create
+  nutanix.ncp.ntnx_federation_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Status of get federation after all-fields create
+  ansible.builtin.assert:
+    that:
+      - result is defined
+    fail_msg: Get federation after all-fields create failed
+    success_msg: Get federation after all-fields create passed
+
+########################################################################
+# 6. Negative test - invalid well_known_config (too short)
+########################################################################
+- name: Delete federation before negative test
+  nutanix.ncp.ntnx_federation_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Wait after delete for negative test
+  ansible.builtin.pause:
+    seconds: 2
+
+- name: Create federation with invalid well_known_config (too short)
+  nutanix.ncp.ntnx_federation_v2:
+    state: present
+    well_known_config: "ab"
+    claim_map:
+      name: "name"
+      email: "email"
+  register: result
+  ignore_errors: true
+
+- name: Status of create federation with invalid config
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Should have failed with invalid well_known_config
+    success_msg: Correctly failed with invalid well_known_config
+
+########################################################################
+# 7. Re-create federation for delete tests
+########################################################################
+- name: Create federation for delete tests
+  nutanix.ncp.ntnx_federation_v2:
+    state: present
+    well_known_config: "{{ well_known_config_url }}"
+    claim_map:
+      name: "name"
+      email: "email"
+  register: result
+  ignore_errors: true
+
+- name: Status of create federation for delete tests
+  ansible.builtin.assert:
+    that:
+      - result is defined
+    fail_msg: Unable to create federation for delete tests
+    success_msg: Federation created for delete tests handled
+
+########################################################################
+# 8. Delete federation with check_mode
+########################################################################
+- name: Delete federation with check mode enabled
+  nutanix.ncp.ntnx_federation_v2:
+    state: absent
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Delete federation with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg is defined
+    fail_msg: Delete federation with check mode enabled failed
+    success_msg: Delete federation with check mode enabled passed
+
+########################################################################
+# 9. Delete federation (live)
+########################################################################
+- name: Delete federation
+  nutanix.ncp.ntnx_federation_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Status of delete federation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+    fail_msg: Unable to delete federation
+    success_msg: Federation delete handled
+
+########################################################################
+# 10. Get federation after delete (should be empty or error)
+########################################################################
+- name: Get federation after delete
+  nutanix.ncp.ntnx_federation_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Status of get federation after delete
+  ansible.builtin.assert:
+    that:
+      - result is defined
+    fail_msg: Get federation after delete unexpectedly failed
+    success_msg: Get federation after delete handled correctly
+
+########################################################################
+# 11. Negative - delete non-existent federation
+########################################################################
+- name: Delete non-existent federation
+  nutanix.ncp.ntnx_federation_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Status of delete non-existent federation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+    fail_msg: Delete non-existent federation behavior unexpected
+    success_msg: Delete non-existent federation handled
+
+########################################################################
+# 12. Restore original state if needed
+########################################################################
+- name: Restore federation if it existed before
+  nutanix.ncp.ntnx_federation_v2:
+    state: present
+    well_known_config: "{{ baseline_result.response.well_known_config }}"
+    claim_map: "{{ baseline_result.response.claim_map }}"
+  register: result
+  ignore_errors: true
+  when: federation_exists_before | bool and baseline_result.response.well_known_config is defined

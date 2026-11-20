@@ -307,3 +307,23 @@ def get_welcome_banner(module, api_instance):
             exception=e,
             msg="Api Exception raised while fetching welcome banner",
         )
+
+
+def get_federation(module, api_instance):
+    """
+    This method will return federation info.
+    Args:
+        module (object): Ansible module object.
+        api_instance (object): Federations api instance from
+            ``ntnx_iam_py_client``.
+    Returns:
+        federation (object): Federation configuration object.
+    """
+    try:
+        return api_instance.get_federation().data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching federation info",
+        )

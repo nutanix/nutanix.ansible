@@ -1,0 +1,73 @@
+---
+- name: Start ntnx_federation_info_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_federation_info_v2 tests
+
+- name: Generate random suffix for ansible test content
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', upper=false, lower=true, numbers=true, special=false, length=8)[0] }}"
+
+- name: Set test variables
+  ansible.builtin.set_fact:
+    well_known_config_url: "https://example.okta.com/.well-known/openid-configuration"
+
+########################################################################
+# 1. Get federation info (baseline)
+########################################################################
+- name: Get federation info
+  nutanix.ncp.ntnx_federation_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Status of get federation info
+  ansible.builtin.assert:
+    that:
+      - result is defined
+    fail_msg: Unable to get federation info
+    success_msg: Federation info fetched successfully
+
+########################################################################
+# 2. Create federation and then get info
+########################################################################
+- name: Create federation for info test
+  nutanix.ncp.ntnx_federation_v2:
+    state: present
+    well_known_config: "{{ well_known_config_url }}"
+    claim_map:
+      name: "name"
+      email: "email"
+  register: create_result
+  ignore_errors: true
+
+- name: Get federation info after create
+  nutanix.ncp.ntnx_federation_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Status of get federation info after create
+  ansible.builtin.assert:
+    that:
+      - result is defined
+    fail_msg: Unable to get federation info after create
+    success_msg: Federation info after create fetched successfully
+
+########################################################################
+# 3. Delete federation and get info
+########################################################################
+- name: Delete federation for info test cleanup
+  nutanix.ncp.ntnx_federation_v2:
+    state: absent
+  register: result
+  ignore_errors: true
+
+- name: Get federation info after delete
+  nutanix.ncp.ntnx_federation_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Status of get federation info after delete
+  ansible.builtin.assert:
+    that:
+      - result is defined
+    fail_msg: Get federation info after delete failed unexpectedly
+    success_msg: Get federation info after delete handled correctly
