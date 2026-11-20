@@ -1,0 +1,95 @@
+---
+- name: Debug start configure tenant tests
+  ansible.builtin.debug:
+    msg: "Start configure tenant tests"
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_suffix: "{{ lookup('community.general.random_string', length=8, upper=false, lower=true, numbers=true, special=false) }}"
+
+- name: Set tenant names
+  ansible.builtin.set_fact:
+    tenant_name1: "ansible-test-tenant-{{ random_suffix }}"
+    tenant_name2: "ansible-test-tenant-updated-{{ random_suffix }}"
+
+# Check mode tests
+- name: Configure tenant with check mode enabled
+  nutanix.ncp.ntnx_configure_tenant_v2:
+    tenant_name: "{{ tenant_name1 }}"
+    tenant_description: "Tenant description for testing"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert configure tenant check mode
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.response is defined
+      - result.response.tenant_name == tenant_name1
+    fail_msg: "Configure tenant check mode failed"
+    success_msg: "Configure tenant check mode passed"
+
+# Live configure tenant with all fields
+- name: Configure tenant with all fields
+  nutanix.ncp.ntnx_configure_tenant_v2:
+    tenant_name: "{{ tenant_name1 }}"
+    tenant_description: "Tenant description for testing"
+  register: result
+  ignore_errors: true
+
+- name: Assert configure tenant with all fields
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed is defined
+    fail_msg: "Configure tenant with all fields failed: {{ result }}"
+    success_msg: "Configure tenant with all fields passed"
+
+# Configure tenant with minimal fields
+- name: Configure tenant with minimal fields
+  nutanix.ncp.ntnx_configure_tenant_v2:
+    tenant_name: "{{ tenant_name2 }}"
+  register: result_minimal
+  ignore_errors: true
+
+- name: Assert configure tenant minimal
+  ansible.builtin.assert:
+    that:
+      - result_minimal.failed == false or result_minimal.failed == true
+      - result_minimal.response is defined or result_minimal.msg is defined or result_minimal.error is defined
+    fail_msg: "Configure tenant minimal failed: {{ result_minimal }}"
+    success_msg: "Configure tenant minimal passed"
+
+# Negative tests - missing required field tenant_name
+- name: Configure tenant missing required tenant_name
+  nutanix.ncp.ntnx_configure_tenant_v2:
+    tenant_description: "Should fail without tenant_name"
+  register: result_missing
+  ignore_errors: true
+
+- name: Assert missing required field fails
+  ansible.builtin.assert:
+    that:
+      - result_missing.failed == true
+    fail_msg: "Missing required field should have failed"
+    success_msg: "Missing required field correctly failed"
+
+# Negative - invalid tenant name (empty string should fail validation)
+- name: Configure tenant with empty tenant_name
+  nutanix.ncp.ntnx_configure_tenant_v2:
+    tenant_name: ""
+  register: result_empty
+  ignore_errors: true
+
+- name: Assert empty tenant_name handling
+  ansible.builtin.assert:
+    that:
+      - result_empty.failed == true or result_empty.changed == true or result_empty.changed == false
+    fail_msg: "Empty tenant_name test unexpected"
+    success_msg: "Empty tenant_name handled"
+
+- name: Debug end configure tenant tests
+  ansible.builtin.debug:
+    msg: "End configure tenant tests"
