@@ -114,7 +114,10 @@ def raise_api_exception(module, exception, msg=None):
         "error": getattr(exception, "reason", ""),
     }
     if getattr(exception, "body", None):
-        kwargs["response"] = json.loads(exception.body)
+        try:
+            kwargs["response"] = json.loads(exception.body)
+        except (ValueError, TypeError, json.JSONDecodeError):
+            kwargs["response"] = exception.body
     else:
         kwargs["response"] = str(exception)
     module.fail_json(**kwargs)
