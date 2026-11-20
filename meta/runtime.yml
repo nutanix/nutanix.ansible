@@ -543,3 +543,7 @@ action_groups:
     - ntnx_security_profiles_v2
     - ntnx_security_profiles_advanced_config_info_v2
     - ntnx_security_profiles_advanced_config_v2
+    - ntnx_login_requests_v2
+    - ntnx_validate_certificate_v2
+    - ntnx_validate_credentials_v2
+    - ntnx_login_requests_info_v2

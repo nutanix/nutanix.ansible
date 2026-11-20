@@ -307,3 +307,23 @@ def get_welcome_banner(module, api_instance):
             exception=e,
             msg="Api Exception raised while fetching welcome banner",
         )
+
+
+def get_login_request(module, api_instance, ext_id):
+    """
+    This method will return login request info using ext_id.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): Login requests api instance
+        ext_id (str): External id of login request
+    Returns:
+        login_request_info (object): Login request info
+    """
+    try:
+        return api_instance.get_login_request_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching login request using ext_id",
+        )

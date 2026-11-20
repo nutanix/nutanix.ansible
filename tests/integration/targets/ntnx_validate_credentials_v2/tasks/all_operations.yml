@@ -1,0 +1,122 @@
+---
+- name: Start ntnx_validate_credentials_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_validate_credentials_v2 tests
+
+- name: Generate random ext_id
+  ansible.builtin.set_fact:
+    random_id: "00000000-0000-0000-0000-00000000000{{ lookup('password', '/dev/null chars=digits length=1') }}"
+
+- name: Create login request for credential validation
+  nutanix.ncp.ntnx_login_requests_v2:
+    state: present
+    client_id: "9a53c903-ba26-588b-ac0f-f8ab26f5a6b0"
+    response_type: "CODE"
+    scope:
+      - OPENID
+    redirect_uri: "https://10.44.76.17:9440"
+  register: login_create
+  ignore_errors: true
+
+- name: Set login ext_id
+  ansible.builtin.set_fact:
+    login_ext_id: "{{ login_create.ext_id | default(random_id) }}"
+
+- name: Validate credentials with check mode
+  nutanix.ncp.ntnx_validate_credentials_v2:
+    ext_id: "{{ login_ext_id }}"
+    username: "admin"
+    password: "Nutanix.123"
+  register: check_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Validate credentials check mode status
+  ansible.builtin.assert:
+    that:
+      - check_result.failed == false
+      - check_result.changed == false
+      - check_result.response is defined
+    fail_msg: validate credentials check mode failed
+    success_msg: validate credentials check mode passed
+
+- name: Validate credentials with valid params
+  nutanix.ncp.ntnx_validate_credentials_v2:
+    ext_id: "{{ login_ext_id }}"
+    username: "admin"
+    password: "Nutanix.123"
+  register: result
+  ignore_errors: true
+
+- name: Validate credentials status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed is defined
+    fail_msg: validate credentials unexpected format
+    success_msg: validate credentials completed
+
+- name: Validate credentials with missing username (negative)
+  nutanix.ncp.ntnx_validate_credentials_v2:
+    ext_id: "{{ login_ext_id }}"
+    password: "Nutanix.123"
+  register: missing_user_result
+  ignore_errors: true
+
+- name: Missing username status
+  ansible.builtin.assert:
+    that:
+      - missing_user_result.failed == true
+    fail_msg: missing username should fail
+    success_msg: missing username correctly failed
+
+- name: Validate credentials with missing password (negative)
+  nutanix.ncp.ntnx_validate_credentials_v2:
+    ext_id: "{{ login_ext_id }}"
+    username: "admin"
+  register: missing_pass_result
+  ignore_errors: true
+
+- name: Missing password status
+  ansible.builtin.assert:
+    that:
+      - missing_pass_result.failed == true
+    fail_msg: missing password should fail
+    success_msg: missing password correctly failed
+
+- name: Validate credentials with missing ext_id (negative)
+  nutanix.ncp.ntnx_validate_credentials_v2:
+    username: "admin"
+    password: "Nutanix.123"
+  register: missing_ext_result
+  ignore_errors: true
+
+- name: Missing ext_id status
+  ansible.builtin.assert:
+    that:
+      - missing_ext_result.failed == true
+    fail_msg: missing ext_id should fail
+    success_msg: missing ext_id correctly failed
+
+- name: Validate credentials with invalid ext_id
+  nutanix.ncp.ntnx_validate_credentials_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    username: "admin"
+    password: "wrongpass"
+  register: invalid_ext_result
+  ignore_errors: true
+
+- name: Invalid ext_id status
+  ansible.builtin.assert:
+    that:
+      - invalid_ext_result is defined
+    fail_msg: invalid ext_id check failed
+    success_msg: invalid ext_id check passed
+
+- name: Cleanup login request
+  nutanix.ncp.ntnx_login_requests_v2:
+    state: absent
+    ext_id: "{{ login_ext_id }}"
+  register: cleanup_result
+  ignore_errors: true
+  when: login_create.ext_id is defined

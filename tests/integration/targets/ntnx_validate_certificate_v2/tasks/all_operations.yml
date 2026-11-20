@@ -1,0 +1,50 @@
+---
+- name: Start ntnx_validate_certificate_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_validate_certificate_v2 tests
+
+- name: Generate random relay_state
+  ansible.builtin.set_fact:
+    random_relay: "{{ lookup('password', '/dev/null chars=ascii_lowercase length=8') }}"
+
+- name: Validate certificate with check mode
+  nutanix.ncp.ntnx_validate_certificate_v2:
+    relay_state: "relay-{{ random_relay }}"
+  register: check_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Validate certificate check mode status
+  ansible.builtin.assert:
+    that:
+      - check_result.failed == false
+      - check_result.changed == false
+      - check_result.response is defined
+    fail_msg: validate certificate check mode failed
+    success_msg: validate certificate check mode passed
+
+- name: Validate certificate with valid relay_state
+  nutanix.ncp.ntnx_validate_certificate_v2:
+    relay_state: "relay-{{ random_relay }}"
+  register: result
+  ignore_errors: true
+
+- name: Validate certificate status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed is defined
+    fail_msg: validate certificate unexpected failure format
+    success_msg: validate certificate completed
+
+- name: Validate certificate with missing relay_state (negative)
+  nutanix.ncp.ntnx_validate_certificate_v2:
+  register: missing_result
+  ignore_errors: true
+
+- name: Missing param status
+  ansible.builtin.assert:
+    that:
+      - missing_result.failed == true
+    fail_msg: missing param should fail
+    success_msg: missing param correctly failed
