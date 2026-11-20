@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -9,11 +9,12 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 DOCUMENTATION = r"""
+---
 module: ntnx_users_v2
-short_description: Module to create and update users from Nutanix PC.
+short_description: Module to create, update and delete users from Nutanix PC
 version_added: "2.0.0"
 description:
-    - This module allows you to create and update users.
+    - This module allows you to create, update and delete users.
     - This module uses PC v4 APIs based SDKs
 notes:
     - >-
@@ -25,15 +26,19 @@ notes:
     - >-
       B(Update user) -
       Required Roles: Nutanix Central Admin, Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
+    - >-
+      B(Delete user) -
+      Required Roles: Nutanix Central Admin, Prism Admin, Project Manager, Super Admin, Self-Service Admin (deprecated)
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=iam)"
 options:
     state:
         description:
-            - State of the user. Whether to create or update.
+            - State of the user. Whether to create, update or delete.
             - If C(state) is C(present) and C(ext_id) is not provided, create a new user.
             - If C(state) is C(present) and C(ext_id) is provided, update the user.
+            - If C(state) is C(absent) and C(ext_id) is provided, delete the user.
         type: str
-        choices: ['present']
+        choices: ['present', 'absent']
         default: present
     ext_id:
         description:
@@ -146,6 +151,11 @@ options:
         required: false
         type: str
         choices: ['PREDEFINED', 'SERVICEDEFINED', 'USERDEFINED']
+    soft_delete:
+        description:
+            - When set to true, the user/user group is soft deleted. Else it is hard deleted.
+        required: false
+        type: bool
 extends_documentation_fragment:
       - nutanix.ncp.ntnx_credentials
       - nutanix.ncp.ntnx_operations_v2
@@ -228,41 +238,73 @@ EXAMPLES = r"""
     email_id: "service_acc_1_updated@email.com"
     description: "description_1_updated"
   register: result
+
+- name: Delete user
+  nutanix.ncp.ntnx_users_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: absent
+    ext_id: "27892065-1d1b-5d66-ab17-a26038088b17"
+  register: result
+
+- name: Delete user with soft delete
+  nutanix.ncp.ntnx_users_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: absent
+    ext_id: "27892065-1d1b-5d66-ab17-a26038088b17"
+    soft_delete: true
+  register: result
 """
 
 RETURN = r"""
 response:
     description:
-        - Response of users operations.
-        - Users details if C(wait) is True
-        - Task details if C(wait) is False
+        - Response for creating, updating, or deleting users.
+        - If C(wait) is true and the operation is Create or Update, it will contain the user details.
+        - If C(wait) is false or the operation is Delete, it will contain the task details.
     type: dict
     returned: always
     sample:
       {
-        "additional_attributes": null,
+        "additional_attributes": [
+          {
+            "name": "attr1",
+            "value": "value1"
+          }
+        ],
         "buckets_access_keys": null,
         "created_by": "00000000-0000-0000-0000-000000000000",
-        "created_time": "2024-06-25T01:31:51.963601-07:00",
-        "display_name": "",
-        "email_id": "",
-        "ext_id": "27892065-1d1b-5d66-ab17-a26038088b17",
-        "first_name": "firstName",
+        "created_time": "2026-11-19T13:05:25.745971+00:00",
+        "creation_type": "USERDEFINED",
+        "default_landing_page_path": null,
+        "description": "",
+        "display_name": "test-displayname",
+        "email_id": "test-ansible@example.com",
+        "ext_id": "7d52f697-d9fb-559d-9fc9-cae9639a4bc4",
+        "external_identifier": null,
+        "first_name": "test-firstname",
+        "has_object_keys": null,
         "idp_id": "37f30135-455b-5ebd-995f-b47e817a59f2",
         "is_force_reset_password_enabled": true,
-        "last_login_time": "2024-06-25T01:31:51.863120-07:00",
-        "last_name": "lastName",
+        "last_login_time": "2026-11-19T13:05:25.711808+00:00",
+        "last_name": "test-lastname",
         "last_updated_by": "00000000-0000-0000-0000-000000000000",
-        "last_updated_time": "2024-06-25T01:31:51.963601-07:00",
+        "last_updated_time": "2026-11-19T13:05:25.745971+00:00",
         "links": null,
         "locale": "en-US",
-        "middle_initial": "",
+        "middle_initial": "M",
         "password": null,
         "region": "en-US",
         "status": "ACTIVE",
-        "tenant_id": null,
+        "tenant_id": "59d5de78-a964-5746-8c6e-677c4c7a79df",
+        "user_group_ext_ids": null,
         "user_type": "LOCAL",
-        "username": "ssptest111@qa.nucalm.io"
+        "username": "test-ansible-user-79570"
       }
 
 changed:
@@ -274,11 +316,17 @@ changed:
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution
   returned: always
-  type: bool
-  sample: false
+  type: str
+  sample: null
+
+task_ext_id:
+  description: The external ID of the task.
+  returned: when task is created
+  type: str
+  sample: "ZXJnb24=:90458bc7-a12b-4616-ac66-562fdb00c209"
 
 ext_id:
-  description: The created user's External ID
+  description: The external ID of the user.
   returned: always
   type: str
   sample: "27892065-1d1b-5d66-ab17-a26038088b17"
@@ -289,19 +337,30 @@ failed:
   type: bool
   sample: false
 
+skipped:
+  description: This indicates whether the task was skipped
+  returned: when module is idempotent
+  type: bool
+  sample: false
+
 msg:
-    description: This field typically holds a message that is displayed to the user in case of delete
-    returned: always
-    type: bool
+    description: This field typically holds a message that is displayed to the user
+    returned: when there is an error, module is idempotent or in check mode for delete
+    type: str
     sample: "User with ext_id: 27892065-1d1b-5d66-ab17-a26038088b17 deleted successfully"
 """
 import traceback  # noqa: E402
 import warnings  # noqa: E402
 from copy import deepcopy  # noqa: E402
 
+from ansible.module_utils.basic import missing_required_lib  # noqa: E402
+
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
-from ..module_utils.v4.iam.api_client import get_user_api_instance  # noqa: E402
+from ..module_utils.v4.iam.api_client import (  # noqa: E402
+    get_etag,
+    get_user_api_instance,
+)
 from ..module_utils.v4.iam.helpers import get_user  # noqa: E402
 from ..module_utils.v4.iam.spec.iam import UserSpecs as user_specs  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
@@ -312,7 +371,6 @@ from ..module_utils.v4.utils import (  # noqa: E402
 )
 
 SDK_IMP_ERROR = None
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 try:
     import ntnx_iam_py_client as iam_sdk  # noqa: E402
@@ -329,7 +387,8 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 def get_module_spec():
     module_args = user_specs.get_users_spec()
     module_args.update(
-        state=dict(type="str", choices=["present"], default="present"),
+        state=dict(type="str", choices=["present", "absent"], default="present"),
+        soft_delete=dict(type="bool", required=False),
     )
     return module_args
 
@@ -407,10 +466,55 @@ def update_user(module, users, result):
     result["changed"] = True
 
 
+def delete_user(module, users, result):
+    ext_id = module.params.get("ext_id")
+    result["ext_id"] = ext_id
+
+    if module.check_mode:
+        result["msg"] = "User with ext_id:{0} will be deleted.".format(ext_id)
+        return
+
+    current_spec = get_user(module, users, ext_id=ext_id)
+
+    etag = get_etag(data=current_spec)
+    if not etag:
+        return module.fail_json(msg="Unable to fetch etag for deleting user", **result)
+
+    kwargs = {"if_match": etag}
+    soft_delete = module.params.get("soft_delete")
+    if soft_delete is not None:
+        kwargs["Soft_Delete"] = soft_delete
+
+    try:
+        resp = users.delete_user_by_id(extId=ext_id, **kwargs)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while deleting user",
+        )
+
+    result["changed"] = True
+    if resp is not None and hasattr(resp, "data") and resp.data is not None:
+        # Handle task-based or empty response
+        try:
+            result["response"] = strip_internal_attributes(resp.data.to_dict())
+        except Exception:
+            result["response"] = strip_internal_attributes(resp.to_dict())
+        # If response contains task ext_id, capture it
+        if hasattr(resp.data, "ext_id") and resp.data.ext_id:
+            result["task_ext_id"] = resp.data.ext_id
+    else:
+        result["msg"] = "User with ext_id: {0} deleted successfully".format(ext_id)
+
+
 def run_module():
     module = BaseModuleV4(
         argument_spec=get_module_spec(),
         supports_check_mode=True,
+        required_if=[
+            ("state", "absent", ("ext_id",)),
+        ],
         mutually_exclusive=[
             ("ext_id", "username"),
         ],
@@ -429,11 +533,12 @@ def run_module():
     }
     state = module.params["state"]
     users = get_user_api_instance(module)
-    if state == "present":
-        if module.params.get("ext_id"):
-            update_user(module, users, result)
-        else:
-            create_user(module, users, result)
+    if state == "absent":
+        delete_user(module, users, result)
+    elif module.params.get("ext_id"):
+        update_user(module, users, result)
+    else:
+        create_user(module, users, result)
 
     module.exit_json(**result)
 
