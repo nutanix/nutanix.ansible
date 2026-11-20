@@ -1,10 +1,12 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a service group
-# 2. Update the service group
-# 3. Fetch the service group details using ext_id
-# 4. Delete the service group
+# 1. Create tcp service group
+# 2. Update tcp service group name and description and other protocols
+# 3. Get particular service group using UUID
+# 4. List all service groups
+# 5. List all service groups with fetch_all
+# 6. Delete service group
 
 - name: Service groups playbook
   hosts: localhost
@@ -68,6 +70,17 @@
     - name: Getting particular service_group using uuid
       nutanix.ncp.ntnx_service_groups_info_v2:
         ext_id: "{{ service_group_uuid }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all service groups
+      nutanix.ncp.ntnx_service_groups_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all service groups with fetch_all
+      nutanix.ncp.ntnx_service_groups_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 

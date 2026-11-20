@@ -1,14 +1,15 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create a project with all fields (name, project_id, description)
-# 2. Create a project without setting project_id
-# 3. Update the project description
-# 4. Fetch a project using external ID
+# 1. Create a project with all fields
+# 2. Create a project without setting project id
+# 3. Update project description
+# 4. Fetch project using external ID
 # 5. List all projects
-# 6. List projects with name filter
-# 7. List projects with limit
-# 8. Delete the project
+# 6. List all projects with fetch_all
+# 7. List projects with name filter
+# 8. List projects with limit
+# 9. Delete project
 
 - name: Projects playbook
   hosts: localhost
@@ -29,6 +30,7 @@
     ###########################################################
     # CREATE OPERATIONS
     ###########################################################
+
     - name: Create a project with all fields
       nutanix.ncp.ntnx_project_v2:
         state: present
@@ -48,6 +50,7 @@
     ###########################################################
     # UPDATE OPERATIONS
     ###########################################################
+
     - name: Update project description
       nutanix.ncp.ntnx_project_v2:
         state: present
@@ -59,6 +62,7 @@
     ###########################################################
     # INFO OPERATIONS
     ###########################################################
+
     - name: Fetch project using external ID
       nutanix.ncp.ntnx_projects_info_v2:
         ext_id: "{{ project_ext_id }}"
@@ -67,6 +71,12 @@
 
     - name: List all projects
       nutanix.ncp.ntnx_projects_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all projects with fetch_all
+      nutanix.ncp.ntnx_projects_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 
@@ -85,6 +95,7 @@
     ###########################################################
     # DELETE OPERATIONS
     ###########################################################
+
     - name: Delete project
       nutanix.ncp.ntnx_project_v2:
         state: absent

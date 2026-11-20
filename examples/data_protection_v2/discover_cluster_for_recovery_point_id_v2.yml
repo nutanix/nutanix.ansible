@@ -1,0 +1,54 @@
+---
+# Summary:
+# This playbook will discover the cluster for a recovery point using its ext_id
+
+- name: Discover Cluster for Recovery Point playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        recovery_point_ext_id: "1ca2963d-77b6-453a-ae23-2c19e7a954a3"
+        vm_recovery_point_ext_id: "522670d7-e92d-45c5-9139-76ccff6813c2"
+        disk_recovery_point_ext_id: "94e61902-1954-4d54-917a-a28205454fce"
+        volume_group_recovery_point_ext_id: "94e61902-1954-4d54-917a-a28205454fce"
+        volume_group_disk_recovery_point_ext_id: "94e61902-1954-4d54-917a-a28205454fce"
+
+    - name: Discover Cluster for Recovery Point (GET_VSS_METADATA)
+      nutanix.ncp.ntnx_recovery_point_discover_cluster_v2:
+        ext_id: "{{ recovery_point_ext_id }}"
+        operation: "GET_VSS_METADATA"
+        spec:
+          get_vss_metadata:
+            vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id }}"
+      register: result
+
+    - name: Print the result
+      ansible.builtin.debug:
+        var: result
+
+    - name: Discover Cluster for Recovery Point (COMPUTE_CHANGED_REGIONS)
+      nutanix.ncp.ntnx_recovery_point_discover_cluster_v2:
+        ext_id: "{{ recovery_point_ext_id }}"
+        operation: "COMPUTE_CHANGED_REGIONS"
+        spec:
+          compute_changed_regions:
+            disk_recovery_point:
+              vm_recovery_point_ext_id: "{{ vm_recovery_point_ext_id }}"
+              recovery_point_ext_id: "{{ recovery_point_ext_id }}"
+              disk_recovery_point_ext_id: "{{ disk_recovery_point_ext_id }}"
+            volume_group_disk_recovery_point:
+              volume_group_recovery_point_ext_id: "{{ volume_group_recovery_point_ext_id }}"
+              recovery_point_ext_id: "{{ recovery_point_ext_id }}"
+              disk_recovery_point_ext_id: "{{ disk_recovery_point_ext_id }}"
+      register: result
+
+    - name: Print the result
+      ansible.builtin.debug:
+        var: result

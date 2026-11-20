@@ -1,3 +1,10 @@
 nutanix-ncp-*
 .ansible/
 py3.12_virt
+__pycache__/
+*.pyc
+tests/output/
+plugins/doc_fragments/__pycache__/
+plugins/**/__pycache__/
+tests/integration/integration_config.yml
+INSTRUCTIONS.md

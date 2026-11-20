@@ -4,8 +4,6 @@
 # 1. Export specific network security policies and download them to a file
 # 2. Export all network security policies and download them to a file
 # 3. Dry-run import of all network security policies
-# 4. Import network security policies from a file
-# 5. Import network security policies and purge existing ones
 
 - name: Network Security Policies export/import playbook
   hosts: localhost

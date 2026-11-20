@@ -14,7 +14,6 @@
 #     per-VM overrides (workgroup join, DHCP). Requires NGT installed on the
 #     source VM the template was captured from; otherwise the deploy API rejects
 #     the request.
-# 11. Delete Template
 
 - name: VM templates playbook
   hosts: localhost
@@ -88,6 +87,30 @@
       register: result
       ignore_errors: true
 
+    - name: List all templates
+      nutanix.ncp.ntnx_templates_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List all templates with fetch_all
+      nutanix.ncp.ntnx_templates_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
+
+    - name: List all template versions
+      nutanix.ncp.ntnx_templates_versions_info_v2:
+        template_ext_id: "{{ template_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all template versions with fetch_all
+      nutanix.ncp.ntnx_templates_versions_info_v2:
+        template_ext_id: "{{ template_ext_id }}"
+        fetch_all: true
+      register: result
+      ignore_errors: true
+
     - name: Delete Template Version
       nutanix.ncp.ntnx_templates_version_v2:
         state: absent
@@ -122,7 +145,8 @@
       ignore_errors: true
       # NGT must be installed on the source VM the template was captured from,
       # otherwise the deploy API rejects the request with an NGT-not-installed error.
-    - name: Deploy VM from template with Guest Customization Profile (workgroup join,
+    - name:
+        Deploy VM from template with Guest Customization Profile (workgroup join,
         DHCP)
       nutanix.ncp.ntnx_templates_deploy_v2:
         ext_id: "{{ template_ext_id }}"

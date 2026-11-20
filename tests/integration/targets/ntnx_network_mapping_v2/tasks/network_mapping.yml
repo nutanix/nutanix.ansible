@@ -1,0 +1,521 @@
+---
+# Test Plan for ntnx_network_mapping_v2 and ntnx_network_mappings_info_v2
+#
+# Prerequisites (must be defined in prepare_env vars or overridden here):
+#   - ip:                        Prism Central endpoint
+#   - username / password:       PC credentials
+#   - recovery_plan_ext_id:      ext_id of a pre-existing recovery plan
+#   - primary_subnet_ext_id:     ext_id of primary subnet
+#   - recovery_subnet_ext_id:    ext_id of recovery subnet
+#   - primary_test_subnet_ext_id: ext_id of primary test subnet
+#   - recovery_test_subnet_ext_id: ext_id of recovery test subnet
+#   - updated_recovery_subnet_ext_id: ext_id used for update transition
+#
+# If the pre-existing recovery plan / subnets are not available in the
+# integration environment we short-circuit the test with a clear message
+# rather than silently skipping — the codegen instructions forbid silent
+# skips.
+#
+# Coverage:
+#   * check_mode: Create (all attrs), Update (all attrs), Delete (all attrs)
+#   * Create with minimal attributes (primary_network only)
+#   * Create with ALL attributes (subnet + IP config + IP pool + gateway + DNS)
+#   * Info: get-by-ext_id, list-all, list with limit
+#   * Update: change scalar (is_ip_mapping_enabled), change subnet ext_id
+#   * Update: idempotency (second update with same body → skipped)
+#   * Negative: missing primary_network on create
+#   * Negative: invalid ext_id on get
+#   * Negative: invalid ext_id on update / delete
+#   * Delete: with check_mode
+#   * Delete: real deletion + verification via info module
+
+- name: Start Network Mapping tests
+  ansible.builtin.debug:
+    msg: Start ntnx_network_mapping_v2 integration tests
+
+- name: Validate required per-target variables are set
+  ansible.builtin.assert:
+    that:
+      - recovery_plan_ext_id is defined and recovery_plan_ext_id | length > 0
+      - primary_subnet_ext_id is defined and primary_subnet_ext_id | length > 0
+      - recovery_subnet_ext_id is defined and recovery_subnet_ext_id | length > 0
+      - primary_test_subnet_ext_id is defined and primary_test_subnet_ext_id | length > 0
+      - recovery_test_subnet_ext_id is defined and recovery_test_subnet_ext_id | length > 0
+      - updated_recovery_subnet_ext_id is defined and updated_recovery_subnet_ext_id | length > 0
+    fail_msg: >-
+      Network Mapping integration tests require a pre-existing recovery plan
+      (recovery_plan_ext_id) and subnet ext_ids
+      (primary_subnet_ext_id, recovery_subnet_ext_id,
+      primary_test_subnet_ext_id, recovery_test_subnet_ext_id,
+      updated_recovery_subnet_ext_id) to be defined in prepare_env vars.
+    success_msg: All required Network Mapping prerequisite variables are defined.
+
+- name: Track created network mappings for cleanup
+  ansible.builtin.set_fact:
+    created_network_mappings: []
+
+########################################################################################
+# Check mode tests
+########################################################################################
+
+- name: Generate spec for creating network mapping using check_mode (all attributes)
+  nutanix.ncp.ntnx_network_mapping_v2:
+    state: present
+    recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+    primary_network:
+      subnet_ext_id: "{{ primary_subnet_ext_id }}"
+      ip_config:
+        ipv4:
+          default_gateway_ip: "10.10.0.1"
+          prefix_length: 24
+          domain_name_servers:
+            - "8.8.8.8"
+          domain_search_suffixes:
+            - "example.com"
+          ip_pool:
+            start_ip:
+              value: "10.10.0.10"
+            end_ip:
+              value: "10.10.0.100"
+    recovery_network:
+      subnet_ext_id: "{{ recovery_subnet_ext_id }}"
+      ip_config:
+        ipv4:
+          default_gateway_ip: "10.20.0.1"
+          prefix_length: 24
+          ip_pool:
+            start_ip:
+              value: "10.20.0.10"
+            end_ip:
+              value: "10.20.0.100"
+    primary_test_network:
+      subnet_ext_id: "{{ primary_test_subnet_ext_id }}"
+    recovery_test_network:
+      subnet_ext_id: "{{ recovery_test_subnet_ext_id }}"
+    is_ip_mapping_enabled: true
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify check_mode create spec is generated correctly
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response is defined
+      - result.response.primary_network.subnet_ext_id == primary_subnet_ext_id
+      - result.response.recovery_network.subnet_ext_id == recovery_subnet_ext_id
+      - result.response.primary_test_network.subnet_ext_id == primary_test_subnet_ext_id
+      - result.response.recovery_test_network.subnet_ext_id == recovery_test_subnet_ext_id
+      - result.response.is_ip_mapping_enabled == true
+      - result.response.primary_network.ip_config.ipv4.default_gateway_ip == "10.10.0.1"
+      - result.response.primary_network.ip_config.ipv4.prefix_length == 24
+      - result.response.primary_network.ip_config.ipv4.ip_pool.start_ip.value == "10.10.0.10"
+      - result.response.primary_network.ip_config.ipv4.ip_pool.end_ip.value == "10.10.0.100"
+    success_msg: "Check mode create spec generated successfully"
+    fail_msg: "Check mode create spec generation failed"
+
+########################################################################################
+# Real Create tests
+########################################################################################
+
+- name: Create network mapping with minimal (required) attributes only
+  nutanix.ncp.ntnx_network_mapping_v2:
+    state: present
+    recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+    primary_network:
+      subnet_ext_id: "{{ primary_subnet_ext_id }}"
+    recovery_network:
+      subnet_ext_id: "{{ recovery_subnet_ext_id }}"
+  register: min_nm
+  ignore_errors: true
+
+- name: Assert minimal network mapping was created
+  ansible.builtin.assert:
+    that:
+      - min_nm is defined
+      - min_nm.changed == true
+      - min_nm.failed == false
+      - min_nm.ext_id is defined and min_nm.ext_id | length > 0
+      - min_nm.task_ext_id is defined and min_nm.task_ext_id | length > 0
+      - min_nm.response is defined
+      - min_nm.response.primary_network.subnet_ext_id == primary_subnet_ext_id
+      - min_nm.response.recovery_network.subnet_ext_id == recovery_subnet_ext_id
+    success_msg: "Network mapping (minimal attrs) created successfully"
+    fail_msg: "Network mapping (minimal attrs) creation failed"
+
+- name: Track network mapping ext_id (minimal)
+  ansible.builtin.set_fact:
+    created_network_mappings: "{{ created_network_mappings + [min_nm.ext_id] }}"
+
+- name: Create network mapping with ALL attributes
+  nutanix.ncp.ntnx_network_mapping_v2:
+    state: present
+    recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+    primary_network:
+      subnet_ext_id: "{{ primary_subnet_ext_id }}"
+      ip_config:
+        ipv4:
+          default_gateway_ip: "10.10.0.1"
+          prefix_length: 24
+          network_ip_address: "10.10.0.0"
+          domain_name_servers:
+            - "8.8.8.8"
+          domain_search_suffixes:
+            - "example.com"
+          ip_pool:
+            start_ip:
+              value: "10.10.0.10"
+            end_ip:
+              value: "10.10.0.100"
+    recovery_network:
+      subnet_ext_id: "{{ recovery_subnet_ext_id }}"
+      ip_config:
+        ipv4:
+          default_gateway_ip: "10.20.0.1"
+          prefix_length: 24
+          ip_pool:
+            start_ip:
+              value: "10.20.0.10"
+            end_ip:
+              value: "10.20.0.100"
+    primary_test_network:
+      subnet_ext_id: "{{ primary_test_subnet_ext_id }}"
+    recovery_test_network:
+      subnet_ext_id: "{{ recovery_test_subnet_ext_id }}"
+    is_ip_mapping_enabled: true
+  register: full_nm
+  ignore_errors: true
+
+- name: Assert full-attribute network mapping was created
+  ansible.builtin.assert:
+    that:
+      - full_nm is defined
+      - full_nm.changed == true
+      - full_nm.failed == false
+      - full_nm.ext_id is defined and full_nm.ext_id | length > 0
+      - full_nm.task_ext_id is defined and full_nm.task_ext_id | length > 0
+      - full_nm.response.primary_network.subnet_ext_id == primary_subnet_ext_id
+      - full_nm.response.recovery_network.subnet_ext_id == recovery_subnet_ext_id
+      - full_nm.response.primary_test_network.subnet_ext_id == primary_test_subnet_ext_id
+      - full_nm.response.recovery_test_network.subnet_ext_id == recovery_test_subnet_ext_id
+      - full_nm.response.is_ip_mapping_enabled == true
+      - full_nm.response.primary_network.ip_config.ipv4.default_gateway_ip == "10.10.0.1"
+      - full_nm.response.primary_network.ip_config.ipv4.prefix_length == 24
+      - full_nm.response.primary_network.ip_config.ipv4.ip_pool.start_ip.value == "10.10.0.10"
+      - full_nm.response.primary_network.ip_config.ipv4.ip_pool.end_ip.value == "10.10.0.100"
+    success_msg: "Network mapping (all attrs) created successfully"
+    fail_msg: "Network mapping (all attrs) creation failed"
+
+- name: Track network mapping ext_id (full)
+  ansible.builtin.set_fact:
+    created_network_mappings: "{{ created_network_mappings + [full_nm.ext_id] }}"
+    full_nm_ext_id: "{{ full_nm.ext_id }}"
+
+########################################################################################
+# Info Module: Get single
+########################################################################################
+
+- name: Fetch network mapping by ext_id
+  nutanix.ncp.ntnx_network_mappings_info_v2:
+    recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+    ext_id: "{{ full_nm_ext_id }}"
+  register: get_nm
+  ignore_errors: true
+
+- name: Assert single fetch returns the created mapping
+  ansible.builtin.assert:
+    that:
+      - get_nm is defined
+      - get_nm.failed == false
+      - get_nm.changed == false
+      - get_nm.ext_id == full_nm_ext_id
+      - get_nm.response is defined
+      - get_nm.response.ext_id == full_nm_ext_id
+      - get_nm.response.primary_network.subnet_ext_id == primary_subnet_ext_id
+      - get_nm.response.recovery_network.subnet_ext_id == recovery_subnet_ext_id
+    success_msg: "Get network mapping by ext_id passed"
+    fail_msg: "Get network mapping by ext_id failed"
+
+- name: Fetch network mapping with an invalid ext_id (should fail)
+  nutanix.ncp.ntnx_network_mappings_info_v2:
+    recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: get_invalid
+  ignore_errors: true
+
+- name: Assert invalid ext_id lookup fails cleanly
+  ansible.builtin.assert:
+    that:
+      - get_invalid is defined
+      - get_invalid.failed == true
+      - get_invalid.changed == false
+    success_msg: "Invalid ext_id lookup failed as expected"
+    fail_msg: "Invalid ext_id lookup did not fail as expected"
+
+########################################################################################
+# Info Module: List
+########################################################################################
+
+- name: List all network mappings for the recovery plan
+  nutanix.ncp.ntnx_network_mappings_info_v2:
+    recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+  register: list_nm
+  ignore_errors: true
+
+- name: Assert list returns at least the two mappings we created
+  ansible.builtin.assert:
+    that:
+      - list_nm is defined
+      - list_nm.failed == false
+      - list_nm.changed == false
+      - list_nm.response is defined
+      - list_nm.response | length >= 2
+      - list_nm.total_available_results is defined
+    success_msg: "List network mappings passed"
+    fail_msg: "List network mappings failed"
+
+- name: List network mappings with limit=1
+  nutanix.ncp.ntnx_network_mappings_info_v2:
+    recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+    limit: 1
+  register: list_nm_limited
+  ignore_errors: true
+
+- name: Assert list respects limit
+  ansible.builtin.assert:
+    that:
+      - list_nm_limited is defined
+      - list_nm_limited.failed == false
+      - list_nm_limited.changed == false
+      - list_nm_limited.response is defined
+      - list_nm_limited.response | length == 1
+    success_msg: "List with limit=1 passed"
+    fail_msg: "List with limit=1 failed"
+
+########################################################################################
+# Update tests
+########################################################################################
+
+- name: Generate spec for updating network mapping using check_mode (all attributes)
+  nutanix.ncp.ntnx_network_mapping_v2:
+    state: present
+    recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+    ext_id: "{{ full_nm_ext_id }}"
+    primary_network:
+      subnet_ext_id: "{{ primary_subnet_ext_id }}"
+    recovery_network:
+      subnet_ext_id: "{{ updated_recovery_subnet_ext_id }}"
+    primary_test_network:
+      subnet_ext_id: "{{ primary_test_subnet_ext_id }}"
+    recovery_test_network:
+      subnet_ext_id: "{{ recovery_test_subnet_ext_id }}"
+    is_ip_mapping_enabled: false
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Verify check_mode update spec is generated correctly
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response.recovery_network.subnet_ext_id == updated_recovery_subnet_ext_id
+      - result.response.is_ip_mapping_enabled == false
+    success_msg: "Check mode update spec generated successfully"
+    fail_msg: "Check mode update spec generation failed"
+
+- name: Update network mapping (change recovery subnet + toggle IP mapping)
+  nutanix.ncp.ntnx_network_mapping_v2:
+    state: present
+    recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+    ext_id: "{{ full_nm_ext_id }}"
+    primary_network:
+      subnet_ext_id: "{{ primary_subnet_ext_id }}"
+    recovery_network:
+      subnet_ext_id: "{{ updated_recovery_subnet_ext_id }}"
+    primary_test_network:
+      subnet_ext_id: "{{ primary_test_subnet_ext_id }}"
+    recovery_test_network:
+      subnet_ext_id: "{{ recovery_test_subnet_ext_id }}"
+    is_ip_mapping_enabled: false
+  register: updated_nm
+  ignore_errors: true
+
+- name: Assert update applied
+  ansible.builtin.assert:
+    that:
+      - updated_nm is defined
+      - updated_nm.changed == true
+      - updated_nm.failed == false
+      - updated_nm.ext_id == full_nm_ext_id
+      - updated_nm.response is defined
+      - updated_nm.response.recovery_network.subnet_ext_id == updated_recovery_subnet_ext_id
+      - updated_nm.response.is_ip_mapping_enabled == false
+    success_msg: "Update network mapping passed"
+    fail_msg: "Update network mapping failed"
+
+- name: Update network mapping with same values (idempotency)
+  nutanix.ncp.ntnx_network_mapping_v2:
+    state: present
+    recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+    ext_id: "{{ full_nm_ext_id }}"
+    primary_network:
+      subnet_ext_id: "{{ primary_subnet_ext_id }}"
+    recovery_network:
+      subnet_ext_id: "{{ updated_recovery_subnet_ext_id }}"
+    primary_test_network:
+      subnet_ext_id: "{{ primary_test_subnet_ext_id }}"
+    recovery_test_network:
+      subnet_ext_id: "{{ recovery_test_subnet_ext_id }}"
+    is_ip_mapping_enabled: false
+  register: idem_nm
+  ignore_errors: true
+
+- name: Assert idempotency — no change on second identical update
+  ansible.builtin.assert:
+    that:
+      - idem_nm is defined
+      - idem_nm.changed == false
+      - idem_nm.failed == false
+      - idem_nm.msg == "Nothing to change."
+    success_msg: "Update idempotency passed"
+    fail_msg: "Update idempotency failed"
+
+- name: Update network mapping with invalid ext_id (should fail)
+  nutanix.ncp.ntnx_network_mapping_v2:
+    state: present
+    recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    primary_network:
+      subnet_ext_id: "{{ primary_subnet_ext_id }}"
+    recovery_network:
+      subnet_ext_id: "{{ recovery_subnet_ext_id }}"
+  register: bad_update
+  ignore_errors: true
+
+- name: Assert update with invalid ext_id fails
+  ansible.builtin.assert:
+    that:
+      - bad_update is defined
+      - bad_update.failed == true
+      - bad_update.changed == false
+    success_msg: "Update with invalid ext_id failed as expected"
+    fail_msg: "Update with invalid ext_id did not fail as expected"
+
+########################################################################################
+# Negative Create tests
+########################################################################################
+
+- name: Attempt to create network mapping without primary_network (should fail)
+  nutanix.ncp.ntnx_network_mapping_v2:
+    state: present
+    recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+    recovery_network:
+      subnet_ext_id: "{{ recovery_subnet_ext_id }}"
+  register: no_primary
+  ignore_errors: true
+
+- name: Assert missing primary_network fails with proper message
+  ansible.builtin.assert:
+    that:
+      - no_primary is defined
+      - no_primary.failed == true
+      - no_primary.changed == false
+      - "'Missing required parameter' in no_primary.msg"
+      - "'primary_network' in no_primary.msg"
+    success_msg: "Missing primary_network failed as expected"
+    fail_msg: "Missing primary_network did not fail as expected"
+
+- name: Attempt delete without providing ext_id (should fail via required_if)
+  nutanix.ncp.ntnx_network_mapping_v2:  # noqa: args[module]
+    state: absent
+    recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+  register: no_ext_id_delete
+  ignore_errors: true
+
+- name: Assert delete without ext_id fails
+  ansible.builtin.assert:
+    that:
+      - no_ext_id_delete is defined
+      - no_ext_id_delete.failed == true
+      - no_ext_id_delete.changed == false
+      - "'state is absent but all of the following are missing: ext_id' in no_ext_id_delete.msg"
+    success_msg: "Delete without ext_id failed as expected"
+    fail_msg: "Delete without ext_id did not fail as expected"
+
+########################################################################################
+# Delete tests
+########################################################################################
+
+- name: Delete network mapping using check_mode
+  nutanix.ncp.ntnx_network_mapping_v2:
+    state: absent
+    recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+    ext_id: "{{ full_nm_ext_id }}"
+  check_mode: true
+  register: check_delete
+  ignore_errors: true
+
+- name: Assert check_mode delete only reports intent
+  ansible.builtin.assert:
+    that:
+      - check_delete is defined
+      - check_delete.changed == false
+      - check_delete.failed == false
+      - "'will be deleted' in check_delete.msg"
+    success_msg: "Check mode delete passed"
+    fail_msg: "Check mode delete failed"
+
+- name: Delete network mapping with invalid ext_id (should fail)
+  nutanix.ncp.ntnx_network_mapping_v2:
+    state: absent
+    recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bad_delete
+  ignore_errors: true
+
+- name: Assert delete with invalid ext_id fails
+  ansible.builtin.assert:
+    that:
+      - bad_delete is defined
+      - bad_delete.failed == true
+      - bad_delete.changed == false
+    success_msg: "Delete with invalid ext_id failed as expected"
+    fail_msg: "Delete with invalid ext_id did not fail as expected"
+
+- name: Delete all network mappings created by this run
+  nutanix.ncp.ntnx_network_mapping_v2:
+    state: absent
+    recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+    ext_id: "{{ item }}"
+  register: delete_results
+  loop: "{{ created_network_mappings }}"
+  ignore_errors: true
+
+- name: Assert all created network mappings were deleted
+  ansible.builtin.assert:
+    that:
+      - delete_results is defined
+      - delete_results.results | length == created_network_mappings | length
+      - delete_results.results | selectattr('changed', 'equalto', true) | list | length == created_network_mappings | length
+    success_msg: "All created network mappings deleted"
+    fail_msg: "One or more network mappings failed to delete"
+
+- name: Verify deletion — fetching deleted mapping should fail
+  nutanix.ncp.ntnx_network_mappings_info_v2:
+    recovery_plan_ext_id: "{{ recovery_plan_ext_id }}"
+    ext_id: "{{ full_nm_ext_id }}"
+  register: post_delete
+  ignore_errors: true
+
+- name: Assert post-delete fetch fails
+  ansible.builtin.assert:
+    that:
+      - post_delete is defined
+      - post_delete.failed == true
+      - post_delete.changed == false
+    success_msg: "Post-delete fetch failed as expected"
+    fail_msg: "Post-delete fetch did not fail — mapping still exists"
