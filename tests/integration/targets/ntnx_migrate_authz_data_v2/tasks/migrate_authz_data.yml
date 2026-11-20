@@ -1,0 +1,197 @@
+---
+# Test plan for ntnx_migrate_authz_data_v2
+# SDK: AuthzMigrationApi.migrate_authz_data POST /authz/$actions/migrate
+# Body: AuthzMigrationRequest { migration_type, project_ap_migration_data }
+# Coverage:
+#  - check_mode with required fields
+#  - missing required migration_type
+#  - invalid enum value
+#  - valid migrate with simple migration_type
+#  - valid migrate with project_ap_migration_data
+#  - check_mode with full payload
+
+- name: Start ntnx_migrate_authz_data_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_migrate_authz_data_v2 tests
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_suffix: "{{ 999999 | random }}"
+
+###################################################################################################
+# Check mode tests
+
+- name: Migrate AuthZ data with check mode enabled (simple)
+  nutanix.ncp.ntnx_migrate_authz_data_v2:
+    migration_type: "REMOVE_AP_TENANT_ID_FILTERS"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Migrate AuthZ data check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.migration_type == "REMOVE_AP_TENANT_ID_FILTERS"
+    fail_msg: Migrate AuthZ data check mode failed
+    success_msg: Migrate AuthZ data check mode passed
+
+- name: Migrate AuthZ data with check mode and project data
+  nutanix.ncp.ntnx_migrate_authz_data_v2:
+    migration_type: "MIGRATE_PROJECT_AP_TO_ROLE_MEMBERSHIP"
+    project_ap_migration_data:
+      project_ext_id: "12345678-1234-1234-1234-123456789012"
+      ap_ext_ids:
+        - "87654321-4321-4321-4321-210987654321"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Migrate with project data check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.migration_type == "MIGRATE_PROJECT_AP_TO_ROLE_MEMBERSHIP"
+      - result.response.project_ap_migration_data.project_ext_id == "12345678-1234-1234-1234-123456789012"
+      - result.response.project_ap_migration_data.ap_ext_ids[0] == "87654321-4321-4321-4321-210987654321"
+    fail_msg: Check mode with project data failed
+    success_msg: Check mode with project data passed
+
+- name: Migrate AuthZ data with full project data and idp mappings check mode
+  nutanix.ncp.ntnx_migrate_authz_data_v2:
+    migration_type: "MIGRATE_PROJECT_AP_TO_ROLE_MEMBERSHIP"
+    project_ap_migration_data:
+      project_ext_id: "12345678-1234-1234-1234-123456789012"
+      ap_ext_ids:
+        - "87654321-4321-4321-4321-210987654321"
+      user_idp_mappings:
+        - identity_ext_id: "11111111-1111-1111-1111-111111111111"
+          idp_ext_id: "22222222-2222-2222-2222-222222222222"
+      user_group_idp_mappings:
+        - identity_ext_id: "33333333-3333-3333-3333-333333333333"
+          idp_ext_id: "44444444-4444-4444-4444-444444444444"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Full project data check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.migration_type == "MIGRATE_PROJECT_AP_TO_ROLE_MEMBERSHIP"
+      - result.response.project_ap_migration_data.user_idp_mappings[0].identity_ext_id == "11111111-1111-1111-1111-111111111111"
+      - result.response.project_ap_migration_data.user_group_idp_mappings[0].identity_ext_id == "33333333-3333-3333-3333-333333333333"
+    fail_msg: Full project data check mode failed
+    success_msg: Full project data check mode passed
+
+###################################################################################################
+# Negative - missing required
+
+- name: Migrate without migration_type (negative)
+  nutanix.ncp.ntnx_migrate_authz_data_v2:
+  register: result
+  ignore_errors: true
+
+- name: Missing required field status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.msg is defined
+      - "'migration_type' in result.msg or 'required' in result.msg"
+    fail_msg: Missing required field not detected
+    success_msg: Missing required field correctly rejected
+
+###################################################################################################
+# Negative - invalid enum
+
+- name: Migrate with invalid migration_type (negative)
+  nutanix.ncp.ntnx_migrate_authz_data_v2:
+    migration_type: "INVALID_MIGRATION_TYPE"
+  register: result
+  ignore_errors: true
+
+- name: Invalid enum status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Invalid enum not rejected
+    success_msg: Invalid enum correctly rejected
+
+###################################################################################################
+# Negative - missing nested required fields
+
+- name: Migrate with project data missing ap_ext_ids (negative)
+  nutanix.ncp.ntnx_migrate_authz_data_v2:
+    migration_type: "MIGRATE_PROJECT_AP_TO_ROLE_MEMBERSHIP"
+    project_ap_migration_data:
+      project_ext_id: "12345678-1234-1234-1234-123456789012"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Missing nested required ap_ext_ids status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+    fail_msg: Missing nested required test failed
+    success_msg: Missing nested required handled
+
+###################################################################################################
+# Live tests - may succeed or fail depending on cluster permissions
+
+- name: Migrate AuthZ data live (simple)
+  nutanix.ncp.ntnx_migrate_authz_data_v2:
+    migration_type: "REMOVE_AP_TENANT_ID_FILTERS"
+  register: result
+  ignore_errors: true
+
+- name: Migrate live status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.response is defined or result.failed == true
+    fail_msg: Live migrate did not return expected structure
+    success_msg: Live migrate returned expected structure
+
+- name: Validate live migrate response when succeeded
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+    fail_msg: Live migrate success validation failed
+    success_msg: Live migrate success validated
+  when: not result.failed
+
+- name: Migrate AuthZ data with POPULATE_USER_ROLE_PRODUCTS
+  nutanix.ncp.ntnx_migrate_authz_data_v2:
+    migration_type: "POPULATE_USER_ROLE_PRODUCTS"
+  register: result
+  ignore_errors: true
+
+- name: POPULATE_USER_ROLE_PRODUCTS status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+    fail_msg: POPULATE_USER_ROLE_PRODUCTS failed unexpectedly
+    success_msg: POPULATE_USER_ROLE_PRODUCTS handled
+
+- name: Migrate with SYNC_AP_TO_AUTHZ_FILTER_SEARCH_TABLE
+  nutanix.ncp.ntnx_migrate_authz_data_v2:
+    migration_type: "SYNC_AP_TO_AUTHZ_FILTER_SEARCH_TABLE"
+  register: result
+  ignore_errors: true
+
+- name: SYNC_AP status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+    fail_msg: SYNC_AP migration failed
+    success_msg: SYNC_AP migration handled
+

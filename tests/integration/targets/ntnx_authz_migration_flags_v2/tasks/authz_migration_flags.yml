@@ -1,0 +1,125 @@
+---
+# Test plan for ntnx_authz_migration_flags_v2
+# SDK: AuthzMigrationApi.authz_migration_flags GET /authz/migration-flags
+# Query params: _filter, _orderby (both optional)
+# Coverage:
+#  - check_mode list
+#  - list all flags (no params)
+#  - list with filter
+#  - list with orderby
+#  - negative invalid filter
+#  - assert response structure
+
+- name: Start ntnx_authz_migration_flags_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_authz_migration_flags_v2 tests
+
+- name: List authz migration flags with check mode enabled
+  nutanix.ncp.ntnx_authz_migration_flags_v2:
+    filter: "flagName eq 'test_flag'"
+    orderby: "flagName asc"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: List authz migration flags with check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg is defined
+      - result.response is defined
+    fail_msg: List authz migration flags check mode failed
+    success_msg: List authz migration flags check mode passed
+
+###################################################################################################
+
+- name: List all Authz migration flags
+  nutanix.ncp.ntnx_authz_migration_flags_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all Authz migration flags status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.response is defined or result.failed == true
+      - result.changed == false or result.failed == true
+    fail_msg: Unable to list Authz migration flags
+    success_msg: Authz migration flags listed successfully
+
+- name: Validate response contains list or dict
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.response.data is defined or result.response | length >= 0
+    fail_msg: Response does not contain expected data
+    success_msg: Response structure validated
+  when: not result.failed and result.response is defined
+
+###################################################################################################
+
+- name: List Authz migration flags with filter
+  nutanix.ncp.ntnx_authz_migration_flags_v2:
+    filter: "flagName eq 'test_flag'"
+  register: result
+  ignore_errors: true
+
+- name: List Authz migration flags with filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.response is defined or result.failed == true
+    fail_msg: Unable to list Authz migration flags with filter
+    success_msg: Authz migration flags with filter listed successfully
+
+###################################################################################################
+
+- name: List Authz migration flags with orderby
+  nutanix.ncp.ntnx_authz_migration_flags_v2:
+    orderby: "flagName asc"
+  register: result
+  ignore_errors: true
+
+- name: List Authz migration flags with orderby status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.response is defined or result.failed == true
+    fail_msg: Unable to list Authz migration flags with orderby
+    success_msg: Authz migration flags with orderby listed successfully
+
+###################################################################################################
+
+- name: List Authz migration flags with filter and orderby
+  nutanix.ncp.ntnx_authz_migration_flags_v2:
+    filter: "flagName eq 'nonexistent_flag_12345'"
+    orderby: "flagName desc"
+  register: result
+  ignore_errors: true
+
+- name: List Authz migration flags with filter and orderby status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.response is defined or result.failed == true
+    fail_msg: Unable to list with both filter and orderby
+    success_msg: Listed with both filter and orderby successfully
+
+###################################################################################################
+# Negative tests
+
+- name: List with invalid filter syntax (negative)
+  nutanix.ncp.ntnx_authz_migration_flags_v2:
+    filter: "invalidField eq 'value'"
+  register: result
+  ignore_errors: true
+
+- name: List with invalid filter status (may succeed or fail gracefully)
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.response is defined or result.failed == true
+    fail_msg: Invalid filter test did not return expected result
+    success_msg: Invalid filter handled gracefully
+

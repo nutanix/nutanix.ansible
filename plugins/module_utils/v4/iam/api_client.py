@@ -240,3 +240,15 @@ def get_login_providers_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_iam_py_client.LoginProvidersApi(api_client=api_client)
+
+
+def get_authz_migration_api_instance(module):
+    """
+    This method will return AuthzMigrationApi instance.
+    Args:
+        module (object): Ansible module object
+    Returns:
+        api_instance (object): AuthzMigration api instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_iam_py_client.AuthzMigrationApi(api_client=api_client)
