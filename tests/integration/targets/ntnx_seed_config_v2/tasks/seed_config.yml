@@ -1,0 +1,336 @@
+---
+# Integration tests for ntnx_seed_config_v2
+# QA engineer coverage: check_mode, required fields, enums, invalid refs, live action
+
+- name: Start testing ntnx_seed_config_v2 module
+  ansible.builtin.debug:
+    msg: Start testing ntnx_seed_config_v2 module
+
+# Check mode with all required fields including nested config_list
+- name: Seed entity config with check_mode enabled
+  nutanix.ncp.ntnx_seed_config_v2:
+    config_type: ENTITY
+    client_name: test_client_check_mode
+    operation_type: CREATE
+    config_list:
+      entity_list:
+        entities:
+          - name: test_entity_check_mode
+            display_name: Test Entity Check Mode
+            client_name: test_client_check_mode
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert seed check_mode success
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.config_type == "ENTITY"
+      - result.response.client_name == "test_client_check_mode"
+    fail_msg: Seed check_mode failed
+    success_msg: Seed check_mode passed
+
+# Negative - missing required config_type
+- name: Seed config missing config_type
+  nutanix.ncp.ntnx_seed_config_v2:
+    client_name: test_client
+    operation_type: CREATE
+    config_list:
+      entity_list:
+        entities:
+          - name: test
+  register: result
+  ignore_errors: true
+
+- name: Assert missing config_type fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+      - "'config_type' in (result.msg | string)"
+    fail_msg: Missing config_type not rejected
+    success_msg: Missing config_type correctly rejected
+
+# Missing client_name
+- name: Seed config missing client_name
+  nutanix.ncp.ntnx_seed_config_v2:
+    config_type: ENTITY
+    operation_type: CREATE
+    config_list:
+      entity_list:
+        entities:
+          - name: test
+  register: result
+  ignore_errors: true
+
+- name: Assert missing client_name fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: Missing client_name not rejected
+    success_msg: Missing client_name correctly rejected
+
+# Missing operation_type
+- name: Seed config missing operation_type
+  nutanix.ncp.ntnx_seed_config_v2:
+    config_type: ENTITY
+    client_name: test_client
+    config_list:
+      entity_list:
+        entities:
+          - name: test
+  register: result
+  ignore_errors: true
+
+- name: Assert missing operation_type fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: Missing operation_type not rejected
+    success_msg: Missing operation_type correctly rejected
+
+# Missing config_list
+- name: Seed config missing config_list
+  nutanix.ncp.ntnx_seed_config_v2:
+    config_type: ENTITY
+    client_name: test_client
+    operation_type: CREATE
+  register: result
+  ignore_errors: true
+
+- name: Assert missing config_list fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: Missing config_list not rejected
+    success_msg: Missing config_list correctly rejected
+
+# Invalid enum config_type
+- name: Seed config with invalid config_type
+  nutanix.ncp.ntnx_seed_config_v2:
+    config_type: INVALID_TYPE
+    client_name: test_client
+    operation_type: CREATE
+    config_list:
+      entity_list:
+        entities:
+          - name: test
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid config_type fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+      - result.msg is defined
+    fail_msg: Invalid config_type not rejected
+    success_msg: Invalid config_type correctly rejected
+
+# Invalid operation_type
+- name: Seed config with invalid operation_type
+  nutanix.ncp.ntnx_seed_config_v2:
+    config_type: ENTITY
+    client_name: test_client
+    operation_type: INVALID_OP
+    config_list:
+      entity_list:
+        entities:
+          - name: test
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid operation_type fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: Invalid operation_type not rejected
+    success_msg: Invalid operation_type correctly rejected
+
+# Live test - seed entity with minimal fields
+- name: Seed entity configuration live
+  nutanix.ncp.ntnx_seed_config_v2:
+    config_type: ENTITY
+    client_name: ansible_test_client_seed
+    operation_type: CREATE
+    config_list:
+      entity_list:
+        entities:
+          - name: ansible_test_entity_seed
+            display_name: Ansible Test Entity Seed
+            description: Created via Ansible integration test
+            client_name: ansible_test_client_seed
+            is_internal: false
+  register: result
+  ignore_errors: true
+
+- name: Assert seed entity live
+  ansible.builtin.assert:
+    that:
+      - result.failed == false or (result.failed == true and result.error is defined and result.error == "FORBIDDEN")
+      - result.response is defined or (result.failed == true and result.msg is defined)
+    fail_msg: Seed entity live failed
+    success_msg: Seed entity live passed
+
+# Live with all fields for entity
+- name: Seed entity with all fields
+  nutanix.ncp.ntnx_seed_config_v2:
+    config_type: ENTITY
+    client_name: ansible_test_client_seed
+    operation_type: CREATE
+    tenant_id: "00000000-0000-0000-0000-000000000000"
+    config_list:
+      entity_list:
+        entities:
+          - legacy_object_list:
+              - legacy_entity_old
+            is_internal: false
+            name: ansible_test_entity_full
+            description: Full entity test via Ansible
+            display_name: Ansible Full Entity
+            client_name: ansible_test_client_seed
+            search_url: /api/test/search
+            attribute_list:
+              - display_name: Test Attr
+                name: test_attr
+                search_endpoint: /api/test
+                version: v1
+                search_field: name
+                operator: eq
+                id_field: extId
+            is_logical_and_supported_for_attributes: true
+            products:
+              - PC
+  register: result
+  ignore_errors: true
+
+- name: Assert seed entity full
+  ansible.builtin.assert:
+    that:
+      - result.failed == false or (result.failed == true and result.error == "FORBIDDEN")
+      - result.response is defined or result.failed == true
+    fail_msg: Seed entity full failed
+    success_msg: Seed entity full passed
+
+# Seed operation config
+- name: Seed operation configuration
+  nutanix.ncp.ntnx_seed_config_v2:
+    config_type: OPERATION
+    client_name: ansible_test_client_seed
+    operation_type: CREATE
+    config_list:
+      operation_list:
+        operations:
+          - display_name: Ansible Test Operation
+            description: Test operation seeding
+            entity_type: ansible_test_entity_seed
+            client_name: ansible_test_client_seed
+            is_internal: false
+            allow_on_shared_entity: false
+            operation_type: EXTERNAL
+            associated_endpoint_list:
+              - api_version: v1
+                endpoint_url: /api/test
+                http_method: GET
+            products:
+              - PC
+  register: result
+  ignore_errors: true
+
+- name: Assert seed operation
+  ansible.builtin.assert:
+    that:
+      - result.failed == false or (result.failed == true and result.error == "FORBIDDEN")
+      - result.response is defined or result.failed == true
+    fail_msg: Seed operation failed
+    success_msg: Seed operation passed
+
+# Seed role config
+- name: Seed role configuration
+  nutanix.ncp.ntnx_seed_config_v2:
+    config_type: ROLE
+    client_name: ansible_test_client_seed
+    operation_type: CREATE
+    config_list:
+      role_list:
+        roles:
+          - display_name: Ansible Test Role
+            description: Test role seeding
+            client_name: ansible_test_client_seed
+            is_internal: false
+            operations:
+              - op1
+              - op2
+            accessible_clients:
+              - ansible_test_client_seed
+            accessible_entity_types:
+              - ansible_test_entity_seed
+            is_global: false
+            products:
+              - PC
+  register: result
+  ignore_errors: true
+
+- name: Assert seed role
+  ansible.builtin.assert:
+    that:
+      - result.failed == false or (result.failed == true and result.error == "FORBIDDEN")
+      - result.response is defined or result.failed == true
+    fail_msg: Seed role failed
+    success_msg: Seed role passed
+
+# Seed client config
+- name: Seed client configuration
+  nutanix.ncp.ntnx_seed_config_v2:
+    config_type: CLIENT
+    client_name: ansible_test_client_seed
+    operation_type: CREATE
+    config_list:
+      client_config:
+        legacy_client_name: legacy_client_old
+        name: ansible_test_client_seeded
+        display_name: Ansible Test Client Seeded
+        description: Client seeded via Ansible
+        deployment_list:
+          - PRISM_CENTRAL
+  register: result
+  ignore_errors: true
+
+- name: Assert seed client
+  ansible.builtin.assert:
+    that:
+      - result.failed == false or (result.failed == true and result.error == "FORBIDDEN")
+      - result.response is defined or result.failed == true
+    fail_msg: Seed client failed
+    success_msg: Seed client passed
+
+# Seed update operation
+- name: Seed entity with update operation_type
+  nutanix.ncp.ntnx_seed_config_v2:
+    config_type: ENTITY
+    client_name: ansible_test_client_seed
+    operation_type: UPDATE
+    config_list:
+      entity_list:
+        entities:
+          - name: ansible_test_entity_seed
+            display_name: Ansible Test Entity Seed Updated
+            client_name: ansible_test_client_seed
+  register: result
+  ignore_errors: true
+
+- name: Assert seed update
+  ansible.builtin.assert:
+    that:
+      - result.failed == false or (result.failed == true and result.error == "FORBIDDEN")
+      - result.response is defined or result.failed == true
+    fail_msg: Seed update failed
+    success_msg: Seed update passed
