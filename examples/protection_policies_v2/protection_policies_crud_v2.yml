@@ -383,6 +383,81 @@
 
     ########################################################################################
 
+    ########################################################################################
+    # Consistency Rules - CRUD and info tasks
+    ########################################################################################
+
+    - name: Set consistency rule variables
+      ansible.builtin.set_fact:
+        todelete_consistency_rules: []
+
+    - name: Create a Consistency Rule under the first protection policy
+      nutanix.ncp.ntnx_consistency_rules_v2:
+        state: present
+        protection_policy_ext_id: "{{ todelete[0] }}"
+        name: "ansible-consistency-rule-{{ random_name }}"
+        category_ids:
+          - "{{ category_ext_id_1 }}"
+      register: consistency_rule_result
+
+    - name: Add Consistency Rule external ID to todelete list
+      ansible.builtin.set_fact:
+        todelete_consistency_rules: >-
+          {{ todelete_consistency_rules + [consistency_rule_result.ext_id] }}
+
+    - name: Update the Consistency Rule
+      nutanix.ncp.ntnx_consistency_rules_v2:
+        state: present
+        protection_policy_ext_id: "{{ todelete[0] }}"
+        ext_id: "{{ consistency_rule_result.ext_id }}"
+        name: "ansible-consistency-rule-{{ random_name }}-updated"
+        category_ids:
+          - "{{ category_ext_id_1 }}"
+      register: consistency_rule_updated
+
+    - name: Get Consistency Rule by External ID
+      nutanix.ncp.ntnx_consistency_rules_info_v2:
+        protection_policy_ext_id: "{{ todelete[0] }}"
+        ext_id: "{{ consistency_rule_result.ext_id }}"
+      register: consistency_rule_info
+
+    - name: Print Consistency Rule details
+      ansible.builtin.debug:
+        msg: "{{ consistency_rule_info }}"
+
+    - name: List all Consistency Rules of the protection policy
+      nutanix.ncp.ntnx_consistency_rules_info_v2:
+        protection_policy_ext_id: "{{ todelete[0] }}"
+      register: consistency_rule_list
+
+    - name: List Consistency Rules with filter
+      nutanix.ncp.ntnx_consistency_rules_info_v2:
+        protection_policy_ext_id: "{{ todelete[0] }}"
+        filter: "name eq 'ansible-consistency-rule-{{ random_name }}-updated'"
+      register: consistency_rule_filtered
+
+    - name: List Consistency Rules with limit
+      nutanix.ncp.ntnx_consistency_rules_info_v2:
+        protection_policy_ext_id: "{{ todelete[0] }}"
+        limit: 1
+      register: consistency_rule_limited
+
+    - name: List all Consistency Rules with fetch_all
+      nutanix.ncp.ntnx_consistency_rules_info_v2:
+        protection_policy_ext_id: "{{ todelete[0] }}"
+        fetch_all: true
+      register: consistency_rule_all
+
+    - name: Delete Consistency Rules
+      nutanix.ncp.ntnx_consistency_rules_v2:
+        state: absent
+        protection_policy_ext_id: "{{ todelete[0] }}"
+        ext_id: "{{ item }}"
+      loop: "{{ todelete_consistency_rules }}"
+      register: consistency_rule_deleted
+
+    ########################################################################################
+
     - name: Delete all protection policies
       nutanix.ncp.ntnx_protection_policies_v2:
         ext_id: "{{ item }}"

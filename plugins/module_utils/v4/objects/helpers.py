@@ -77,3 +77,75 @@ def get_object_store_certificate_authority(
             exception=e,
             msg="Api Exception raised while fetching object store certificate authority using ext_id",
         )
+
+
+def get_bucket(module, buckets_api, object_store_ext_id, bucket_name, **kwargs):
+    """
+    This method will return bucket info using object store ext ID and bucket name.
+    Args:
+        module: Ansible module
+        buckets_api: BucketsApi instance from ntnx_objects_py_client sdk
+        object_store_ext_id (str): object store external ID
+        bucket_name (str): bucket name
+        kwargs: optional kwargs (for example x_ntnx_objects_namespace)
+    return:
+        bucket_info (object): bucket info
+    """
+    try:
+        return buckets_api.get_bucket_by_name(
+            objectStoreExtId=object_store_ext_id, bucketName=bucket_name, **kwargs
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching object store bucket info",
+        )
+
+
+def get_data_movement_target(
+    module, data_movement_targets_api, object_store_ext_id, ext_id
+):
+    """
+    This method will return data movement target info using external ID.
+    Args:
+        module: Ansible module
+        data_movement_targets_api: DataMovementTargetsApi instance
+        object_store_ext_id (str): object store external ID
+        ext_id (str): data movement target external ID
+    return:
+        data_movement_target_info (object): data movement target info
+    """
+    try:
+        return data_movement_targets_api.get_data_movement_target_by_id(
+            objectStoreExtId=object_store_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching object store data movement target info using ext_id",
+        )
+
+
+def get_storage_backend(module, storage_backends_api, object_store_ext_id, ext_id):
+    """
+    This method will return storage backend info using external ID.
+    Args:
+        module: Ansible module
+        storage_backends_api: StorageBackendsApi instance
+        object_store_ext_id (str): object store external ID
+        ext_id (str): storage backend external ID
+    return:
+        storage_backend_info (object): storage backend info
+    """
+    try:
+        return storage_backends_api.get_storage_backend_by_id(
+            objectStoreExtId=object_store_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching object store storage backend info using ext_id",
+        )

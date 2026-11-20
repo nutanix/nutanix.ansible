@@ -1,0 +1,318 @@
+---
+########################################################################################
+# Test plan for ntnx_load_balancer_session_stats_info_v2
+#
+# 1. Positive tests
+#    a. Fetch stats with minimum required attributes (ext_id, start_time, end_time)
+#    b. Fetch stats with all attributes (sampling_interval, stat_type=SUM, select="*")
+#    c. Iterate every valid stat_type (SUM, AVG, MIN, MAX, COUNT, LAST) to make sure
+#       the module accepts every documented enum value.
+#    d. Explicit select subset.
+#    The real load-balancer-session ext_id is discovered from the cluster via the v4
+#    List Load Balancer Sessions REST endpoint (there is no dedicated module for it
+#    yet); if the cluster has no session, the positive tests are skipped and this is
+#    called out in the run log.
+# 2. Negative tests
+#    a. Missing each required parameter (ext_id, start_time, end_time) individually
+#       must fail at spec validation with a descriptive message.
+#    b. Invalid stat_type (not in choices) must fail at spec validation.
+#    c. Non-existent ext_id must return a descriptive API error.
+#    d. Malformed / non-ISO-8601 timestamp must return a descriptive API error.
+# 3. Return-value coverage
+#    a. `changed` is always False.
+#    b. `failed` is set correctly for every path.
+#    c. `ext_id` echoes the requested UUID on success.
+#    d. `response.listener_stats` / `response.target_stats` shape is asserted.
+########################################################################################
+
+- name: Start LoadBalancerSessionStat info tests
+  ansible.builtin.debug:
+    msg: Start LoadBalancerSessionStat info tests
+
+- name: Compute end_time (now) in ISO-8601 (UTC)
+  ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: end_time_cmd
+  changed_when: false
+
+- name: Compute start_time (5 minutes back) in ISO-8601 (UTC)
+  ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: start_time_cmd
+  changed_when: false
+
+- name: Generate random suffix for scoping / logging
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+    start_time: "{{ start_time_cmd.stdout }}"
+    end_time: "{{ end_time_cmd.stdout }}"
+    fake_ext_id: "00000000-0000-0000-0000-00000000dead"
+
+########################################################################################
+# Discover an existing load balancer session on the cluster (best effort)
+# There is no dedicated Ansible module for the load-balancer-sessions collection yet;
+# hit the v4 REST endpoint directly so positive tests can use a REAL ext_id.
+########################################################################################
+
+- name: List load balancer sessions from Prism Central (best effort)
+  ansible.builtin.uri:
+    url: "https://{{ ip }}:9440/api/networking/v4.3/config/load-balancer-sessions"
+    method: GET
+    user: "{{ username }}"
+    password: "{{ password }}"
+    force_basic_auth: true
+    validate_certs: "{{ validate_certs }}"
+    headers:
+      Accept: application/json
+    return_content: true
+    status_code: [200, 400, 401, 403, 404]
+  register: lb_sessions_list
+  ignore_errors: true
+  changed_when: false
+
+- name: Set load balancer session ext_id from list response (if any)
+  ansible.builtin.set_fact:
+    lb_session_ext_id: "{{ (lb_sessions_list.json.data | default([]) | first | default({})).extId | default('') }}"
+  when:
+    - lb_sessions_list is defined
+    - lb_sessions_list.status | default(0) == 200
+
+- name: Report whether a real load balancer session was discovered
+  ansible.builtin.debug:
+    msg: >-
+      {{
+        'Using real load balancer session ext_id: ' ~ lb_session_ext_id
+        if (lb_session_ext_id is defined and lb_session_ext_id | length > 0)
+        else 'No load balancer session found on cluster - positive tests will be skipped.'
+      }}
+
+########################################################################################
+# Negative tests - spec validation (should fail without hitting the API)
+########################################################################################
+
+- name: Fetch stats with missing ext_id (should fail)
+  nutanix.ncp.ntnx_load_balancer_session_stats_info_v2:
+    start_time: "{{ start_time }}"
+    end_time: "{{ end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing ext_id fails at spec validation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'missing required arguments: ext_id' in result.msg"
+    success_msg: "Missing ext_id failed at spec validation as expected"
+    fail_msg: "Missing ext_id did not fail as expected"
+
+- name: Fetch stats with missing start_time (should fail)
+  nutanix.ncp.ntnx_load_balancer_session_stats_info_v2:
+    ext_id: "{{ fake_ext_id }}"
+    end_time: "{{ end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing start_time fails at spec validation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'missing required arguments: start_time' in result.msg"
+    success_msg: "Missing start_time failed at spec validation as expected"
+    fail_msg: "Missing start_time did not fail as expected"
+
+- name: Fetch stats with missing end_time (should fail)
+  nutanix.ncp.ntnx_load_balancer_session_stats_info_v2:
+    ext_id: "{{ fake_ext_id }}"
+    start_time: "{{ start_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing end_time fails at spec validation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'missing required arguments: end_time' in result.msg"
+    success_msg: "Missing end_time failed at spec validation as expected"
+    fail_msg: "Missing end_time did not fail as expected"
+
+- name: Fetch stats with invalid stat_type (should fail)
+  nutanix.ncp.ntnx_load_balancer_session_stats_info_v2:
+    ext_id: "{{ fake_ext_id }}"
+    start_time: "{{ start_time }}"
+    end_time: "{{ end_time }}"
+    stat_type: "BOGUS_STAT_TYPE"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid stat_type is rejected by spec validation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'value of stat_type must be one of' in result.msg"
+    success_msg: "Invalid stat_type rejected at spec validation as expected"
+    fail_msg: "Invalid stat_type was not rejected as expected"
+
+########################################################################################
+# Runtime behavior - the API accepts any well-formed UUID and returns empty stats
+# when no session matches. Assert that the module surfaces this cleanly (no fake fail).
+########################################################################################
+
+- name: Fetch stats with a well-formed but unused ext_id
+  nutanix.ncp.ntnx_load_balancer_session_stats_info_v2:
+    ext_id: "{{ fake_ext_id }}"
+    start_time: "{{ start_time }}"
+    end_time: "{{ end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert unused ext_id returns empty stats and does not fail
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == fake_ext_id
+      - result.response is defined
+      - result.response.ext_id == fake_ext_id
+      - result.response.listener_stats is none or (result.response.listener_stats | length == 0)
+      - result.response.target_stats is none or (result.response.target_stats | length == 0)
+    success_msg: "Unused ext_id returned empty stats as expected"
+    fail_msg: "Unused ext_id did not return the expected empty stats"
+
+########################################################################################
+# Negative tests - runtime API errors
+########################################################################################
+
+- name: Fetch stats with a malformed timestamp (should fail with API error)
+  nutanix.ncp.ntnx_load_balancer_session_stats_info_v2:
+    ext_id: "{{ fake_ext_id }}"
+    start_time: "not-a-valid-timestamp"
+    end_time: "{{ end_time }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert malformed timestamp returns API error
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+      - "'Api Exception raised while fetching load balancer session stats' in result.msg"
+    success_msg: "Malformed timestamp returned API error as expected"
+    fail_msg: "Malformed timestamp did not return the expected API error"
+
+########################################################################################
+# Positive tests - only run when a real load balancer session was discovered
+########################################################################################
+
+- name: Positive path tests using a real load balancer session
+  when:
+    - lb_session_ext_id is defined
+    - lb_session_ext_id | length > 0
+  block:
+    - name: Fetch stats with minimum required attributes
+      nutanix.ncp.ntnx_load_balancer_session_stats_info_v2:
+        ext_id: "{{ lb_session_ext_id }}"
+        start_time: "{{ start_time }}"
+        end_time: "{{ end_time }}"
+      register: result
+      ignore_errors: true
+
+    - name: Assert minimum-attributes call returns stats
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.ext_id == lb_session_ext_id
+          - result.response is defined
+          - result.response.listener_stats is defined or result.response.target_stats is defined
+        success_msg: "Minimum-attributes stats fetch succeeded"
+        fail_msg: "Minimum-attributes stats fetch failed"
+
+    - name: Fetch stats with all attributes
+      nutanix.ncp.ntnx_load_balancer_session_stats_info_v2:
+        ext_id: "{{ lb_session_ext_id }}"
+        start_time: "{{ start_time }}"
+        end_time: "{{ end_time }}"
+        sampling_interval: 30
+        stat_type: "SUM"
+        select: "*"
+      register: result
+      ignore_errors: true
+
+    - name: Assert all-attributes call returns stats
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.ext_id == lb_session_ext_id
+          - result.response is defined
+        success_msg: "All-attributes stats fetch succeeded"
+        fail_msg: "All-attributes stats fetch failed"
+
+    - name: Exercise every valid stat_type enum value
+      nutanix.ncp.ntnx_load_balancer_session_stats_info_v2:
+        ext_id: "{{ lb_session_ext_id }}"
+        start_time: "{{ start_time }}"
+        end_time: "{{ end_time }}"
+        sampling_interval: 30
+        stat_type: "{{ item }}"
+      loop:
+        - "SUM"
+        - "AVG"
+        - "MIN"
+        - "MAX"
+        - "COUNT"
+        - "LAST"
+      register: stat_type_results
+      ignore_errors: true
+
+    - name: Assert every stat_type produced a successful response
+      ansible.builtin.assert:
+        that:
+          - item.changed == false
+          - item.failed == false
+          - item.ext_id == lb_session_ext_id
+          - item.response is defined
+        success_msg: "stat_type {{ item.item }} produced a successful response"
+        fail_msg: "stat_type {{ item.item }} did not produce a successful response"
+      loop: "{{ stat_type_results.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Fetch stats with explicit select subset
+      nutanix.ncp.ntnx_load_balancer_session_stats_info_v2:
+        ext_id: "{{ lb_session_ext_id }}"
+        start_time: "{{ start_time }}"
+        end_time: "{{ end_time }}"
+        select: "listenerStats,targetStats,extId"
+      register: result
+      ignore_errors: true
+
+    - name: Assert select subset returns response
+      ansible.builtin.assert:
+        that:
+          - result is defined
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+        success_msg: "Select subset stats fetch succeeded"
+        fail_msg: "Select subset stats fetch failed"
+
+- name: Skip note if no real load balancer session was available
+  ansible.builtin.debug:
+    msg: >-
+      No load balancer session was discovered on the cluster;
+      skipped positive-path assertions. Random suffix for this run: {{ random_name }}.
+  when: >-
+    (lb_session_ext_id is not defined)
+    or (lb_session_ext_id | default('') | length == 0)

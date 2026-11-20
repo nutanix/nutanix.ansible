@@ -111,3 +111,39 @@ def get_objects_stats_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_objects_py_client.StatsApi(api_client)
+
+
+def get_buckets_api_instance(module):
+    """
+    This method will return api instance to be used for object store buckets api calls.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): BucketsApi instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_objects_py_client.BucketsApi(api_client)
+
+
+def get_data_movement_targets_api_instance(module):
+    """
+    This method will return api instance for object store data movement targets.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): DataMovementTargetsApi instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_objects_py_client.DataMovementTargetsApi(api_client)
+
+
+def get_storage_backends_api_instance(module):
+    """
+    This method will return api instance for object store storage backends.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): StorageBackendsApi instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_objects_py_client.StorageBackendsApi(api_client)

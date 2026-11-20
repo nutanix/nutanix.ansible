@@ -106,3 +106,76 @@ def get_kms_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_security_py_client.KeyManagementServersApi(client)
+
+
+def get_credentials_api_instance(module):
+    """
+    This method will return Credentials Api instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Credentials api instance
+    """
+    client = get_api_client(module)
+    return ntnx_security_py_client.CredentialsApi(client)
+
+
+def get_security_summaries_api_instance(module):
+    """
+    This method will return Security Summaries Api instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Security Summaries api instance
+    """
+    client = get_api_client(module)
+    return ntnx_security_py_client.SecuritySummariesApi(client)
+
+
+def get_vulnerabilities_api_instance(module):
+    """
+    This method will return Vulnerabilities Api instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Vulnerabilities api instance backed by the
+            Nutanix Vulnerability Database (NXVD).
+    """
+    client = get_api_client(module)
+    return ntnx_security_py_client.VulnerabilitiesApi(client)
+
+
+def get_security_configs_visibility_api_instance(module):
+    """
+    This method will return SecurityConfigsVisibilityApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Security configs visibility api instance
+    """
+    client = get_api_client(module)
+    return ntnx_security_py_client.SecurityConfigsVisibilityApi(client)
+
+
+def get_approval_policies_api_instance(module):
+    """
+    This method will return ApprovalPoliciesApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Approval policies api instance
+    """
+    client = get_api_client(module)
+    return ntnx_security_py_client.ApprovalPoliciesApi(client)
+
+
+def get_security_profiles_api_instance(module):
+    """
+    This method will return SecurityProfilesApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): Security profiles api instance
+    """
+    client = get_api_client(module)
+    return ntnx_security_py_client.SecurityProfilesApi(client)
