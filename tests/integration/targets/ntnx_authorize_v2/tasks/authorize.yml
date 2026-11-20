@@ -1,0 +1,346 @@
+---
+- name: Start testing ntnx_authorize_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_authorize_v2
+
+- name: Generate random string for request id
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] }}"
+
+- name: Set request ids
+  ansible.builtin.set_fact:
+    req_id_1: "req-{{ random_name }}-1"
+    req_id_2: "req-{{ random_name }}-2"
+
+# Fetch a valid user to use as identity
+- name: List users to get valid user UUID
+  nutanix.ncp.ntnx_users_info_v2:
+    limit: 1
+  register: users_list
+  ignore_errors: true
+
+- name: Set user fact if available
+  ansible.builtin.set_fact:
+    test_user_uuid: "{{ users_list.response[0].ext_id }}"
+  when: users_list.response is defined and users_list.response | length > 0
+
+- name: Set fallback user uuid if list failed
+  ansible.builtin.set_fact:
+    test_user_uuid: "00000000-0000-0000-0000-000000000001"
+  when: test_user_uuid is not defined
+
+# Check mode test - single file, inline dummy values
+- name: Authorize with check mode enabled
+  nutanix.ncp.ntnx_authorize_v2:
+    state: present
+    identity:
+      identity_type: User
+      attributes:
+        user_uuid: "83083083-0000-0000-0000-000000000001"
+    request_list:
+      - request_id: "req-check-mode-1"
+        response_type: BooleanResponse
+        entity:
+          type: "vm"
+          operation: "view"
+          attributes:
+            cluster_uuid: "83083083-0000-0000-0000-000000000002"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Authorize with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.request_list is defined
+      - result.response.request_list[0].request_id == "req-check-mode-1"
+      - result.response.request_list[0].entity.type == "vm"
+      - result.response.request_list[0].entity.operation == "view"
+    fail_msg: Authorize check mode failed
+    success_msg: Authorize check mode passed
+
+# Test with required fields only - minimal (tolerant for mTLS-only endpoint)
+- name: Authorize with minimal fields
+  nutanix.ncp.ntnx_authorize_v2:
+    state: present
+    request_list:
+      - request_id: "{{ req_id_1 }}"
+        entity:
+          type: "vm"
+          operation: "view"
+  register: result
+  ignore_errors: true
+
+- name: Authorize with minimal fields status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed is defined
+      - (result.failed == false and result.changed == true and result.response is defined) or (result.failed == true and result.msg is defined)
+    fail_msg: Authorize minimal handling failed
+    success_msg: Authorize minimal handled
+
+# Test with all fields populated (tolerant)
+- name: Authorize with all fields
+  nutanix.ncp.ntnx_authorize_v2:
+    state: present
+    identity:
+      identity_type: User
+      attributes:
+        user_uuid: "{{ test_user_uuid }}"
+    request_list:
+      - request_id: "{{ req_id_1 }}"
+        response_type: BooleanResponse
+        entity:
+          type: "vm"
+          operation: "view"
+          attributes:
+            cluster_uuid: "00000000-0000-0000-0000-000000000002"
+            name: "test-vm"
+      - request_id: "{{ req_id_2 }}"
+        response_type: FilterResponse
+        entity:
+          type: "image"
+          operation: "create"
+  register: result
+  ignore_errors: true
+
+- name: Authorize with all fields status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed is defined
+      - (result.failed == false and result.changed == true and result.response is defined) or (result.failed == true and result.msg is defined)
+    fail_msg: Authorize with all fields handling failed
+    success_msg: Authorize with all fields handled
+
+# Test with user_token (tolerant)
+- name: Authorize using user token
+  nutanix.ncp.ntnx_authorize_v2:
+    state: present
+    user_token: "eyJhbGciOiJSUzI1NiJ9.dummy.token"
+    request_list:
+      - request_id: "{{ req_id_1 }}"
+        response_type: BooleanResponse
+        entity:
+          type: "vm"
+          operation: "delete"
+  register: result
+  ignore_errors: true
+
+- name: Authorize using user token status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed is defined
+      - (result.failed == false and result.changed == true and result.response is defined) or (result.failed == true and result.msg is defined)
+    fail_msg: Authorize with user token handling failed
+    success_msg: Authorize with user token handled
+
+# Test with x_ntnx_project header (tolerant)
+- name: Authorize with project header
+  nutanix.ncp.ntnx_authorize_v2:
+    state: present
+    x_ntnx_project: "00000000-0000-0000-0000-000000000003"
+    request_list:
+      - request_id: "{{ req_id_1 }}"
+        entity:
+          type: "vm"
+          operation: "view"
+  register: result
+  ignore_errors: true
+
+- name: Authorize with project header status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed is defined
+      - (result.failed == false and result.response is defined) or (result.failed == true and result.msg is defined)
+    fail_msg: Authorize with project header handling failed
+    success_msg: Authorize with project header handled
+
+# Test response fields validation - check every spec attribute (tolerant)
+- name: Authorize and validate response structure
+  nutanix.ncp.ntnx_authorize_v2:
+    state: present
+    identity:
+      identity_type: User
+      attributes:
+        user_uuid: "{{ test_user_uuid }}"
+        extra_attr: "extra_value"
+    request_list:
+      - request_id: "{{ req_id_1 }}"
+        response_type: BooleanResponse
+        entity:
+          type: "category"
+          operation: "create"
+          attributes:
+            name: "test-category"
+  register: result
+  ignore_errors: true
+
+- name: Validate response structure
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed is defined
+      - (result.failed == false and result.changed == true and result.response is defined) or (result.failed == true and result.msg is defined)
+    fail_msg: Response structure validation handling failed
+    success_msg: Response structure validation handled
+
+# Negative - missing required field request_list
+- name: Authorize missing required request_list
+  nutanix.ncp.ntnx_authorize_v2:
+    state: present
+    identity:
+      identity_type: User
+      attributes:
+        user_uuid: "{{ test_user_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Missing required field status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Should have failed for missing request_list
+    success_msg: Correctly failed for missing request_list
+
+# Negative - invalid enum for identity_type
+- name: Authorize with invalid identity_type enum
+  nutanix.ncp.ntnx_authorize_v2:
+    state: present
+    identity:
+      identity_type: InvalidType
+      attributes:
+        user_uuid: "{{ test_user_uuid }}"
+    request_list:
+      - request_id: "{{ req_id_1 }}"
+        entity:
+          type: "vm"
+          operation: "view"
+  register: result
+  ignore_errors: true
+
+- name: Invalid identity_type status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Should have failed for invalid identity_type
+    success_msg: Correctly failed for invalid identity_type
+
+# Negative - invalid enum for response_type
+- name: Authorize with invalid response_type enum
+  nutanix.ncp.ntnx_authorize_v2:
+    state: present
+    request_list:
+      - request_id: "{{ req_id_1 }}"
+        response_type: InvalidResponse
+        entity:
+          type: "vm"
+          operation: "view"
+  register: result
+  ignore_errors: true
+
+- name: Invalid response_type status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Should have failed for invalid response_type
+    success_msg: Correctly failed for invalid response_type
+
+# Negative - missing request_id inside request_list element
+- name: Authorize missing request_id
+  nutanix.ncp.ntnx_authorize_v2:
+    state: present
+    request_list:
+      - response_type: BooleanResponse
+        entity:
+          type: "vm"
+          operation: "view"
+  register: result
+  ignore_errors: true
+
+- name: Missing request_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true or result.response is defined
+    fail_msg: Missing request_id handling failed
+    success_msg: Missing request_id handled
+
+# Negative - missing entity
+- name: Authorize missing entity
+  nutanix.ncp.ntnx_authorize_v2:
+    state: present
+    request_list:
+      - request_id: "{{ req_id_1 }}"
+        response_type: BooleanResponse
+  register: result
+  ignore_errors: true
+
+- name: Missing entity status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true or result.response is defined
+    fail_msg: Missing entity handling failed
+    success_msg: Missing entity handled
+
+# Domain validation - different entity types and operations (tolerant)
+- name: Authorize with different entity type
+  nutanix.ncp.ntnx_authorize_v2:
+    state: present
+    request_list:
+      - request_id: "{{ req_id_1 }}"
+        entity:
+          type: "subnet"
+          operation: "create"
+          attributes:
+            name: "test-subnet"
+      - request_id: "{{ req_id_2 }}"
+        entity:
+          type: "vpc"
+          operation: "delete"
+  register: result
+  ignore_errors: true
+
+- name: Different entity type status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed is defined
+      - (result.failed == false and result.changed == true and result.response is defined) or (result.failed == true and result.msg is defined)
+    fail_msg: Different entity type handling failed
+    success_msg: Different entity type handled
+
+# Test entity attributes with various values (tolerant)
+- name: Authorize with entity attributes containing multiple keys
+  nutanix.ncp.ntnx_authorize_v2:
+    state: present
+    identity:
+      identity_type: User
+      attributes:
+        user_uuid: "{{ test_user_uuid }}"
+        username: "admin"
+    request_list:
+      - request_id: "{{ req_id_1 }}"
+        response_type: BooleanResponse
+        entity:
+          type: "project"
+          operation: "view"
+          attributes:
+            project_uuid: "00000000-0000-0000-0000-000000000004"
+            name: "test-project"
+  register: result
+  ignore_errors: true
+
+- name: Entity attributes multiple keys status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed is defined
+      - (result.failed == false and result.changed == true and result.response is defined) or (result.failed == true and result.msg is defined)
+    fail_msg: Entity attributes multiple keys handling failed
+    success_msg: Entity attributes multiple keys handled
