@@ -1,0 +1,71 @@
+---
+- name: Roles migrate and scan migration impact playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "10.44.76.17"
+      nutanix_username: "admin"
+      nutanix_password: "Nutanix.123"
+      validate_certs: false
+  tasks:
+    - name: Get create operations for role creation
+      nutanix.ncp.ntnx_operations_info_v2:
+        filter: displayName startswith 'Create_'
+      register: op_result
+      ignore_errors: true
+
+    - name: Set operation facts
+      ansible.builtin.set_fact:
+        op1: "{{ op_result.response[0].ext_id }}"
+        op2: "{{ op_result.response[1].ext_id }}"
+      when:
+        - op_result is defined
+        - not op_result.failed
+        - op_result.response is defined
+        - op_result.response | length >= 2
+
+    - name: Create a role for migration demo
+      nutanix.ncp.ntnx_roles_v2:
+        state: present
+        display_name: "ansible-migrate-role-demo"
+        description: "role for migrate demo"
+        operations:
+          - "{{ op1 }}"
+          - "{{ op2 }}"
+      register: created_role
+      ignore_errors: true
+      when:
+        - op1 is defined
+
+    - name: Scan migration impact for the created role
+      nutanix.ncp.ntnx_scan_migration_impact_role_v2:
+        ext_id: "{{ created_role.ext_id }}"
+      register: scan_result
+      ignore_errors: true
+      when:
+        - created_role is defined
+        - not created_role.failed
+        - created_role.ext_id is defined
+
+    - name: Migrate the created role
+      nutanix.ncp.ntnx_migrate_role_by_id_v2:
+        ext_id: "{{ created_role.ext_id }}"
+        should_include_related_operations: true
+      register: migrate_result
+      ignore_errors: true
+      when:
+        - created_role is defined
+        - not created_role.failed
+        - created_role.ext_id is defined
+
+    - name: Delete role created for demo
+      nutanix.ncp.ntnx_roles_v2:
+        state: absent
+        ext_id: "{{ created_role.ext_id }}"
+      register: del_result
+      ignore_errors: true
+      when:
+        - created_role is defined
+        - not created_role.failed
+        - created_role.ext_id is defined

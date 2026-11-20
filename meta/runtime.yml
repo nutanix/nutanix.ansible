@@ -543,3 +543,5 @@ action_groups:
     - ntnx_security_profiles_v2
     - ntnx_security_profiles_advanced_config_info_v2
     - ntnx_security_profiles_advanced_config_v2
+    - ntnx_migrate_role_by_id_v2
+    - ntnx_scan_migration_impact_role_v2
