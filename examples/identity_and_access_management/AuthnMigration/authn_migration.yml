@@ -1,0 +1,30 @@
+---
+# Summary:
+# This playbook will perform IAM AuthN migration operations.
+# 1. Migrate AuthN data to hash OIDC client secret
+# 2. Migrate LDAP bind passwords
+
+- name: AuthN Migration playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') }}"
+      nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default(9440, true) }}"
+      validate_certs: false
+  tasks:
+    - name: Migrate AuthN data to hash OIDC client secret
+      nutanix.ncp.ntnx_authn_migration_v2:
+        state: present
+        migration_type: HASH_OIDC_CLIENT_SECRET
+      register: result_hash_secret
+      ignore_errors: true
+
+    - name: Migrate LDAP bind passwords
+      nutanix.ncp.ntnx_authn_migration_v2:
+        state: present
+        migration_type: MIGRATE_LDAP_BIND_PASSWORDS
+      register: result_ldap
+      ignore_errors: true

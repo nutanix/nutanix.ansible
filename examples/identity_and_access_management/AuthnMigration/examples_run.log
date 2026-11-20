@@ -1,0 +1,18 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [AuthN Migration playbook] ************************************************
+
+TASK [Migrate AuthN data to hash OIDC client secret] ***************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "FORBIDDEN", "msg": "Api Exception raised while migrating authn data", "response": "Unauthorized\n", "status": 403}
+...ignoring
+
+TASK [Migrate LDAP bind passwords] *********************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "FORBIDDEN", "msg": "Api Exception raised while migrating authn data", "response": "Unauthorized\n", "status": 403}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+
