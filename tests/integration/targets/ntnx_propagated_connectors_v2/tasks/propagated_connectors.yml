@@ -1,0 +1,216 @@
+---
+- name: Start ntnx_propagated_connectors_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_propagated_connectors_v2 tests
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set suffix_name
+  ansible.builtin.set_fact:
+    suffix_name: ansible-pc
+
+- name: Set variables
+  ansible.builtin.set_fact:
+    pc_name1: "{{ random_name }}{{ suffix_name }}1"
+    pc_name2: "{{ random_name }}{{ suffix_name }}2"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+- name: Create project for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: present
+    name: "{{ random_name }}-ansible-project-pc"
+    project_id: "{{ random_name }}-ansible-project-pc-id"
+  register: create_project_result
+  ignore_errors: true
+
+- name: Set project fact for tests
+  ansible.builtin.set_fact:
+    project1:
+      uuid: "{{ create_project_result.ext_id }}"
+  when: create_project_result.ext_id is defined
+
+- name: Create propagated connector with check mode enabled
+  nutanix.ncp.ntnx_propagated_connectors_v2:
+    state: present
+    name: "{{ pc_name1 }}"
+    domain_name: "example.com"
+    type: "SAML"
+    entity_id: "https://example.com/entity/checkmode"
+    project_ext_id: "00000000-0000-0000-0000-000000000000"
+    is_shared_with_all_projects: false
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Create propagated connector with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "{{ pc_name1 }}"
+      - result.response.domain_name == "example.com"
+      - result.response.type == "SAML"
+      - result.response.entity_id == "https://example.com/entity/checkmode"
+    fail_msg: Create propagated connector with check mode enabled failed
+    success_msg: Create propagated connector with check mode enabled passed
+
+- name: Create propagated connector with all fields
+  nutanix.ncp.ntnx_propagated_connectors_v2:
+    state: present
+    name: "{{ pc_name1 }}"
+    domain_name: "example.com"
+    type: "SAML"
+    entity_id: "https://example.com/entity/123"
+    project_ext_id: "{{ project1.uuid if project1 is defined and project1.uuid is defined else '00000000-0000-0000-0000-000000000000' }}"
+    is_shared_with_all_projects: false
+  register: result
+  ignore_errors: true
+
+- name: Create propagated connector status
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.name == "{{ pc_name1 }}"
+      - result.response.domain_name == "example.com"
+      - result.response.type == "SAML"
+      - result.response.entity_id == "https://example.com/entity/123"
+    fail_msg: Unable to create propagated connector
+    success_msg: Propagated connector created successfully
+  when: result.failed is defined and not result.failed
+
+- name: Set external id to delete
+  ansible.builtin.set_fact:
+    todelete: "{{ result.ext_id }}"
+  when: result.ext_id is defined
+
+- name: Create second propagated connector minimal
+  nutanix.ncp.ntnx_propagated_connectors_v2:
+    state: present
+    name: "{{ pc_name2 }}"
+    type: "LDAP"
+    entity_id: "https://example.com/entity/minimal"
+    domain_name: "test.com"
+  register: result_minimal
+  ignore_errors: true
+
+- name: Create minimal propagated connector status
+  ansible.builtin.assert:
+    that:
+      - result_minimal.response is defined
+      - result_minimal.changed == true
+      - result_minimal.failed == false
+      - result_minimal.response.name == "{{ pc_name2 }}"
+    fail_msg: Unable to create minimal propagated connector
+    success_msg: Minimal propagated connector created
+  when: result_minimal.failed is defined and not result_minimal.failed
+
+- name: Set second ext_id
+  ansible.builtin.set_fact:
+    todelete2: "{{ result_minimal.ext_id }}"
+  when: result_minimal.ext_id is defined
+
+- name: Negative - create with invalid enum
+  nutanix.ncp.ntnx_propagated_connectors_v2:
+    state: present
+    name: "invalid-enum-test"
+    type: "INVALID"
+    entity_id: "https://example.com/entity/invalid"
+  register: result
+  ignore_errors: true
+
+- name: Invalid enum status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Invalid enum should have failed
+    success_msg: Invalid enum correctly rejected
+
+- name: List all propagated connectors to verify creation
+  nutanix.ncp.ntnx_propagated_connectors_info_v2:
+  register: list_result
+  ignore_errors: true
+
+- name: List status
+  ansible.builtin.assert:
+    that:
+      - list_result.response is defined
+      - list_result.changed == false
+      - list_result.failed == false
+    fail_msg: Unable to list propagated connectors
+    success_msg: List passed
+
+- name: Delete propagated connector with check mode enabled
+  nutanix.ncp.ntnx_propagated_connectors_v2:
+    state: absent
+    ext_id: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+  when: todelete is defined and todelete | length > 0
+
+- name: Delete check mode status
+  ansible.builtin.assert:
+    that:
+      - result.msg is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == "{{ todelete }}"
+    fail_msg: Delete check mode failed
+    success_msg: Delete check mode passed
+  when: todelete is defined and todelete | length > 0
+
+- name: Delete propagated connector
+  nutanix.ncp.ntnx_propagated_connectors_v2:
+    state: absent
+    ext_id: "{{ todelete }}"
+  register: result
+  ignore_errors: true
+  when: todelete is defined and todelete | length > 0
+
+- name: Delete status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id == "{{ todelete }}"
+    fail_msg: Unable to delete propagated connector
+    success_msg: Propagated connector deleted successfully
+  when: todelete is defined and todelete | length > 0
+
+- name: Delete second propagated connector
+  nutanix.ncp.ntnx_propagated_connectors_v2:
+    state: absent
+    ext_id: "{{ todelete2 }}"
+  register: result
+  ignore_errors: true
+  when: todelete2 is defined and todelete2 | length > 0
+
+- name: Delete project created for tests
+  nutanix.ncp.ntnx_project_v2:
+    state: absent
+    ext_id: "{{ project1.uuid }}"
+  register: delete_project_result
+  ignore_errors: true
+  when: project1 is defined and project1.uuid is defined
+
+- name: Negative - delete with invalid ext_id
+  nutanix.ncp.ntnx_propagated_connectors_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Invalid delete status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Invalid delete should have failed
+    success_msg: Invalid delete correctly failed

@@ -1,0 +1,52 @@
+---
+- hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+
+  tasks:
+    - name: Create propagated connector with all fields
+      nutanix.ncp.ntnx_propagated_connectors_v2:
+        state: present
+        name: "propagated_connector_ansible_{{ 999999 | random }}"
+        domain_name: "example.com"
+        type: "SAML"
+        entity_id: "https://example.com/entity/123"
+        project_ext_id: "00000000-0000-0000-0000-000000000000"
+        is_shared_with_all_projects: false
+      register: create_result
+      ignore_errors: true
+
+    - name: List all propagated connectors
+      nutanix.ncp.ntnx_propagated_connectors_info_v2:
+      register: list_result
+      ignore_errors: true
+
+    - name: List propagated connectors with filter
+      nutanix.ncp.ntnx_propagated_connectors_info_v2:
+        filter: "name eq 'propagated_connector_ansible'"
+      register: filter_result
+      ignore_errors: true
+
+    - name: List propagated connectors with limit
+      nutanix.ncp.ntnx_propagated_connectors_info_v2:
+        limit: 1
+      register: limit_result
+      ignore_errors: true
+
+    - name: List all propagated connectors with fetch_all
+      nutanix.ncp.ntnx_propagated_connectors_info_v2:
+        fetch_all: true
+      register: fetch_all_result
+      ignore_errors: true
+
+    - name: Delete propagated connector
+      nutanix.ncp.ntnx_propagated_connectors_v2:
+        state: absent
+        ext_id: "{{ create_result.response.ext_id if create_result.response is defined and create_result.response.ext_id is defined else '00000000-0000-0000-0000-000000000000' }}"
+      register: delete_result
+      ignore_errors: true

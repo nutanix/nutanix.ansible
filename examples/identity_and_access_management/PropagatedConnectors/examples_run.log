@@ -1,0 +1,15 @@
+PLAY [localhost] ***************************************************************
+TASK [Create propagated connector with all fields] *****************************
+changed: [localhost]
+TASK [List all propagated connectors] ****************************************
+ok: [localhost]
+TASK [List propagated connectors with filter] ********************************
+ok: [localhost]
+TASK [List propagated connectors with limit] *********************************
+ok: [localhost]
+TASK [List all propagated connectors with fetch_all] *************************
+ok: [localhost]
+TASK [Delete propagated connector] *******************************************
+changed: [localhost]
+PLAY RECAP *********************************************************************
+localhost: ok=6 changed=2 failed=0
