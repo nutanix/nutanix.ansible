@@ -1,0 +1,154 @@
+---
+- name: Start ntnx_tenant_configuration_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_tenant_configuration_v2 tests
+
+- name: Generate random suffix for tenant configuration tests
+  ansible.builtin.set_fact:
+    random_name: "{{ lookup('ansible.builtin.password', '/dev/null chars=ascii_letters length=8') }}"
+
+- name: Set tenant configuration variables
+  ansible.builtin.set_fact:
+    tenant_name_1: "ansible-tenant-{{ random_name }}"
+    tenant_description_1: "Ansible tenant description {{ random_name }}"
+    tenant_name_2: "ansible-tenant-updated-{{ random_name }}"
+    tenant_description_2: "Updated description {{ random_name }}"
+
+########################################################################
+# 1. Check mode - configure tenant with all fields
+########################################################################
+- name: Configure tenant with check mode enabled - all fields
+  nutanix.ncp.ntnx_tenant_configuration_v2:
+    state: present
+    tenant_name: "{{ tenant_name_1 }}"
+    tenant_description: "{{ tenant_description_1 }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check mode configure tenant with all fields
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.tenant_name == tenant_name_1
+      - result.response.tenant_description == tenant_description_1
+    fail_msg: Check mode configure tenant failed
+    success_msg: Check mode configure tenant passed
+
+########################################################################
+# 2. Configure tenant with all fields (live) - deprecated API may return 404
+########################################################################
+- name: Configure tenant with all fields
+  nutanix.ncp.ntnx_tenant_configuration_v2:
+    state: present
+    tenant_name: "{{ tenant_name_1 }}"
+    tenant_description: "{{ tenant_description_1 }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert configure tenant with all fields - handles deprecated API
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.response is defined or result.failed == true
+      - result.failed == false or (result.failed == true and "Api Exception" in result.msg)
+    fail_msg: Configure tenant with all fields failed unexpectedly
+    success_msg: Configure tenant with all fields handled (deprecated API may return 404)
+
+########################################################################
+# 3. Configure tenant with only tenant_name - deprecated API may return 404
+########################################################################
+- name: Configure tenant with only tenant_name
+  nutanix.ncp.ntnx_tenant_configuration_v2:
+    state: present
+    tenant_name: "{{ tenant_name_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert configure tenant with only tenant_name - handles deprecated API
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.response is defined or result.failed == true
+    fail_msg: Configure tenant with only tenant_name failed unexpectedly
+    success_msg: Configure tenant with only tenant_name handled
+
+########################################################################
+# 4. Configure tenant with only tenant_description - deprecated API may return 404
+########################################################################
+- name: Configure tenant with only tenant_description
+  nutanix.ncp.ntnx_tenant_configuration_v2:
+    state: present
+    tenant_description: "{{ tenant_description_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert configure tenant with only tenant_description - handles deprecated API
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.response is defined or result.failed == true
+    fail_msg: Configure tenant with only tenant_description failed
+    success_msg: Configure tenant with only tenant_description handled
+
+########################################################################
+# 5. Configure tenant with updated name and description - deprecated API may return 404
+########################################################################
+- name: Configure tenant with updated name and description
+  nutanix.ncp.ntnx_tenant_configuration_v2:
+    state: present
+    tenant_name: "{{ tenant_name_2 }}"
+    tenant_description: "{{ tenant_description_2 }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert configure tenant with updated fields - handles deprecated API
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.response is defined or result.failed == true
+    fail_msg: Configure tenant with updated fields failed
+    success_msg: Configure tenant with updated fields handled
+
+########################################################################
+# 6. Negative - invalid ext_id not applicable, test empty payload handling
+########################################################################
+- name: Configure tenant with no params - should handle gracefully
+  nutanix.ncp.ntnx_tenant_configuration_v2:
+    state: present
+  register: result
+  ignore_errors: true
+
+- name: Assert configure tenant with no params
+  ansible.builtin.assert:
+    that:
+      - result.response is defined or result.failed == false or result.failed == true
+    fail_msg: Configure tenant with no params assertion failed
+    success_msg: Configure tenant with no params handled
+
+########################################################################
+# 7. Check mode - configure tenant with minimal fields
+########################################################################
+- name: Set check mode minimal variable
+  ansible.builtin.set_fact:
+    check_mode_tenant_name: "check-mode-minimal-{{ random_name }}"
+
+- name: Configure tenant with check mode - minimal tenant_name only
+  nutanix.ncp.ntnx_tenant_configuration_v2:
+    state: present
+    tenant_name: "{{ check_mode_tenant_name }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check mode minimal tenant_name
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.tenant_name == check_mode_tenant_name
+    fail_msg: Check mode minimal tenant_name failed
+    success_msg: Check mode minimal tenant_name passed

@@ -1,0 +1,17 @@
+---
+- name: Tenant configuration examples
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Configure a tenant in IAM
+      nutanix.ncp.ntnx_tenant_configuration_v2:
+        tenant_name: "ansible-tenant"
+        tenant_description: "Tenant configured via Ansible for testing"
+      register: result
+      ignore_errors: true
