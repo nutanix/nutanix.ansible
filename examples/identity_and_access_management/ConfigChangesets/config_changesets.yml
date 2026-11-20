@@ -1,0 +1,56 @@
+---
+# Summary:
+# This playbook will do:
+# 1. List all config changesets
+# 2. Get config changeset using ext_id
+# 3. List config changesets with filter
+# 4. List config changesets with limit
+# 5. List all config changesets with fetch_all
+
+- name: Config changesets playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: List all config changesets
+      nutanix.ncp.ntnx_config_changesets_info_v2:
+      register: list_result
+      ignore_errors: true
+
+    - name: Set config changeset ext_id
+      ansible.builtin.set_fact:
+        config_changeset_ext_id: "{{ list_result.response[0].ext_id }}"
+      when:
+        - list_result.response is defined
+        - list_result.response | length > 0
+        - list_result.response[0].ext_id is defined
+
+    - name: Get config changeset using ext_id
+      nutanix.ncp.ntnx_config_changesets_info_v2:
+        ext_id: "{{ config_changeset_ext_id }}"
+      register: result
+      ignore_errors: true
+      when: config_changeset_ext_id is defined
+
+    - name: List config changesets with filter
+      nutanix.ncp.ntnx_config_changesets_info_v2:
+        filter: "displayName eq 'test_entity'"
+      register: result
+      ignore_errors: true
+
+    - name: List config changesets with limit
+      nutanix.ncp.ntnx_config_changesets_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: List all config changesets with fetch_all
+      nutanix.ncp.ntnx_config_changesets_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true

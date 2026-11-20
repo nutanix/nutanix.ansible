@@ -1,0 +1,134 @@
+---
+# yamllint disable rule:line-length
+- name: Start ntnx_config_changesets_info_v2 tests
+  ansible.builtin.debug:
+    msg: "Starting ntnx_config_changesets_info_v2 tests"
+
+- name: List all config changesets
+  nutanix.ncp.ntnx_config_changesets_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Verify list all config changesets
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results is defined
+    fail_msg: "List all config changesets verification failed"
+    success_msg: "List all config changesets verification passed"
+
+- name: Set config changeset ext_id for get test
+  ansible.builtin.set_fact:
+    config_changeset_ext_id: "{{ result.response[0].ext_id }}"
+  when:
+    - result.response is defined
+    - result.response | length > 0
+    - result.response[0].ext_id is defined
+
+- name: Get config changeset using ext_id
+  nutanix.ncp.ntnx_config_changesets_info_v2:
+    ext_id: "{{ config_changeset_ext_id }}"
+  register: get_result
+  ignore_errors: true
+  when: config_changeset_ext_id is defined
+
+- name: Verify get config changeset using ext_id
+  ansible.builtin.assert:
+    that:
+      - get_result.changed == false
+      - get_result.failed == false
+      - get_result.response is defined
+      - get_result.response.ext_id is defined
+      - get_result.response.ext_id == config_changeset_ext_id
+      - get_result.ext_id == config_changeset_ext_id
+    fail_msg: "Get config changeset using ext_id verification failed"
+    success_msg: "Get config changeset using ext_id verification passed"
+  when: config_changeset_ext_id is defined
+
+- name: List config changesets with filter
+  nutanix.ncp.ntnx_config_changesets_info_v2:
+    filter: "displayName eq 'test_entity'"
+  register: filter_result
+  ignore_errors: true
+
+- name: Verify list config changesets with filter
+  ansible.builtin.assert:
+    that:
+      - filter_result.changed == false
+      - filter_result.failed == false
+      - filter_result.response is defined
+      - filter_result.total_available_results is defined
+    fail_msg: "List config changesets with filter verification failed"
+    success_msg: "List config changesets with filter verification passed"
+
+- name: List config changesets with limit
+  nutanix.ncp.ntnx_config_changesets_info_v2:
+    limit: 1
+  register: limit_result
+  ignore_errors: true
+
+- name: Verify list config changesets with limit
+  ansible.builtin.assert:
+    that:
+      - limit_result.changed == false
+      - limit_result.failed == false
+      - limit_result.response is defined
+      - limit_result.total_available_results is defined
+      - limit_result.response | length <= 1
+    fail_msg: "List config changesets with limit verification failed"
+    success_msg: "List config changesets with limit verification passed"
+
+- name: List all config changesets with fetch_all
+  nutanix.ncp.ntnx_config_changesets_info_v2:
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: Verify list all config changesets with fetch_all
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result.changed == false
+      - fetch_all_result.failed == false
+      - fetch_all_result.response is defined
+      - fetch_all_result.total_available_results is defined
+      - >-
+        (fetch_all_result.response | length) ==
+        (fetch_all_result.total_available_results | int)
+    fail_msg: "List all config changesets with fetch_all verification failed"
+    success_msg: "List all config changesets with fetch_all verification passed"
+
+- name: Get config changeset with invalid ext_id
+  nutanix.ncp.ntnx_config_changesets_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: invalid_ext_id_result
+  ignore_errors: true
+
+- name: Verify get config changeset with invalid ext_id
+  ansible.builtin.assert:
+    that:
+      - invalid_ext_id_result.changed == false
+      - invalid_ext_id_result.failed == false
+      - invalid_ext_id_result.response is defined
+      - invalid_ext_id_result.response == {}
+      - invalid_ext_id_result.msg is defined
+    fail_msg: "Get config changeset with invalid ext_id verification failed"
+    success_msg: "Get config changeset with invalid ext_id verification passed"
+
+- name: List config changesets with invalid filter property
+  nutanix.ncp.ntnx_config_changesets_info_v2:
+    filter: "invalidProperty eq 'test'"
+  register: invalid_filter_result
+  ignore_errors: true
+
+- name: Verify list config changesets with invalid filter
+  ansible.builtin.assert:
+    that:
+      - invalid_filter_result.changed == false
+      - invalid_filter_result.failed == true
+      - >-
+        invalid_filter_result.error is defined or
+        invalid_filter_result.msg is defined
+    fail_msg: "List config changesets with invalid filter verification failed"
+    success_msg: "List config changesets with invalid filter verification passed"

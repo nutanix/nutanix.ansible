@@ -1,0 +1,28 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Config changesets playbook] **********************************************
+
+TASK [List all config changesets] **********************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Set config changeset ext_id] *********************************************
+skipping: [localhost] => {"changed": false, "false_condition": "list_result.response | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [Get config changeset using ext_id] ***************************************
+skipping: [localhost] => {"changed": false, "false_condition": "config_changeset_ext_id is defined", "skip_reason": "Conditional result was False"}
+
+TASK [List config changesets with filter] **************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List config changesets with limit] ***************************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List all config changesets with fetch_all] *******************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
+
