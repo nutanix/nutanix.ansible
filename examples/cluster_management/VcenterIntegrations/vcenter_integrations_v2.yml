@@ -1,0 +1,95 @@
+---
+# Summary:
+# This playbook demonstrates end-to-end use of the vCenter server integration
+# modules under the cluster_management namespace:
+#   1. List all vCenter server integrations
+#   2. Get a specific vCenter server integration using ext_id
+#   3. List vCenter server integrations with filter
+#   4. List vCenter server integrations with limit
+#   5. List vCenter server integrations with fetch_all
+#   6. Register a vCenter server integration (create)
+#   7. Unregister a vCenter server integration with EXTENSION (delete)
+#   8. Unregister a vCenter server integration with SSO (delete)
+
+- name: VCenter server integration playbook
+  hosts: localhost
+  gather_facts: false
+  vars:
+    ip: "10.44.76.16"
+    username: "admin"
+    password: "Nutanix.123"
+    port: 9440
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      nutanix_port: "{{ port }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        vcenter_integration_ext_id: "00061c8b-2f6e-4a1c-8b41-abc123abc123"
+        vcenter_username: "administrator@vsphere.local"
+        vcenter_password: "vcenter-admin-password"
+        vcenter_port: 443
+
+    - name: List all vCenter server integrations
+      nutanix.ncp.ntnx_vcenter_integrations_info_v2:
+      register: list_result
+      ignore_errors: true
+
+    - name: Get vCenter server integration using ext_id
+      nutanix.ncp.ntnx_vcenter_integrations_info_v2:
+        ext_id: "{{ vcenter_integration_ext_id }}"
+      register: get_result
+      ignore_errors: true
+
+    - name: List vCenter server integrations with filter
+      nutanix.ncp.ntnx_vcenter_integrations_info_v2:
+        filter: "isRegistered eq true"
+      register: filter_result
+      ignore_errors: true
+
+    - name: List vCenter server integrations with limit
+      nutanix.ncp.ntnx_vcenter_integrations_info_v2:
+        limit: 1
+      register: limit_result
+      ignore_errors: true
+
+    - name: List all vCenter integrations with fetch_all
+      nutanix.ncp.ntnx_vcenter_integrations_info_v2:
+        fetch_all: true
+      register: fetch_all_result
+      ignore_errors: true
+
+    - name: Register vCenter server integration
+      nutanix.ncp.ntnx_vcenter_integration_v2:
+        state: present
+        ext_id: "{{ vcenter_integration_ext_id }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        port: "{{ vcenter_port }}"
+        authentication_method: "EXTENSION"
+      register: register_result
+      ignore_errors: true
+
+    - name: Unregister vCenter server integration with EXTENSION
+      nutanix.ncp.ntnx_vcenter_integration_v2:
+        state: absent
+        ext_id: "{{ vcenter_integration_ext_id }}"
+        config:
+          extension_config:
+            username: "{{ vcenter_username }}"
+            password: "{{ vcenter_password }}"
+      register: unregister_result
+      ignore_errors: true
+
+    - name: Unregister vCenter server integration with SSO
+      nutanix.ncp.ntnx_vcenter_integration_v2:
+        state: absent
+        ext_id: "{{ vcenter_integration_ext_id }}"
+        config:
+          sso_config: {}
+      register: unregister_sso_result
+      ignore_errors: true

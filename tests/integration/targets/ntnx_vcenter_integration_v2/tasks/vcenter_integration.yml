@@ -1,0 +1,451 @@
+---
+# Integration tests for the vCenter Server integration CRUD module
+# Test plan:
+# - CRUD module argument-spec / required-field validation.
+# - CRUD module check_mode for register and unregister (one each).
+# - CRUD module error paths: bogus ext_id triggers API not found.
+# - Register / unregister lifecycle against discovered integration when one exists;
+#   when PC has no discoverable vCenter integration, lifecycle block skipped.
+
+- name: Start VcenterIntegration tests
+  ansible.builtin.debug:
+    msg: Start VcenterIntegration tests
+
+- name: Generate random suffix and dummy uuid for negative cases
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    bogus_ext_id: "00000000-0000-0000-0000-000000000000"
+
+########################################################################################
+# Discover existing integrations for later use
+########################################################################################
+
+- name: List all vCenter server integrations to discover ext_id
+  nutanix.ncp.ntnx_vcenter_integrations_info_v2:
+  register: discovery_list
+  ignore_errors: true
+
+- name: Remember discovered integrations
+  ansible.builtin.set_fact:
+    discovered_integrations: "{{ discovery_list.response | default([]) }}"
+
+########################################################################################
+# CRUD module — argument spec / required field validation
+########################################################################################
+
+- name: Register vCenter integration without ext_id (should fail)  # noqa: args[module]
+  nutanix.ncp.ntnx_vcenter_integration_v2:
+    state: present
+    username: "administrator@vsphere.local"
+    password: "vcenter-admin-password"
+    port: 443
+    authentication_method: "EXTENSION"
+  register: missing_ext_id_register
+  ignore_errors: true
+
+- name: Register vCenter integration without ext_id status
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_register is defined
+      - missing_ext_id_register.changed == false
+      - missing_ext_id_register.failed == true
+      - "'missing required arguments: ext_id' in missing_ext_id_register.msg"
+    success_msg: "Register without ext_id failed as expected"
+    fail_msg: "Register without ext_id did not fail as expected"
+
+- name: Unregister vCenter integration without ext_id (should fail)  # noqa: args[module]
+  nutanix.ncp.ntnx_vcenter_integration_v2:
+    state: absent
+  register: missing_ext_id_unregister
+  ignore_errors: true
+
+- name: Unregister vCenter integration without ext_id status
+  ansible.builtin.assert:
+    that:
+      - missing_ext_id_unregister is defined
+      - missing_ext_id_unregister.changed == false
+      - missing_ext_id_unregister.failed == true
+      - "'missing required arguments: ext_id' in missing_ext_id_unregister.msg"
+    success_msg: "Unregister without ext_id failed as expected"
+    fail_msg: "Unregister without ext_id did not fail as expected"
+
+- name: Register vCenter integration with username only (missing password and auth method)  # noqa: args[module]
+  nutanix.ncp.ntnx_vcenter_integration_v2:
+    state: present
+    ext_id: "{{ bogus_ext_id }}"
+    username: "administrator@vsphere.local"
+    port: 443
+  register: missing_password_result
+  ignore_errors: true
+
+- name: Register vCenter integration missing password status
+  ansible.builtin.assert:
+    that:
+      - missing_password_result is defined
+      - missing_password_result.failed == true
+    success_msg: "Register with only username failed as expected"
+    fail_msg: "Register with only username did not fail as expected"
+
+- name: Register vCenter integration with invalid authentication_method (should fail spec validation)  # noqa: args[module]
+  nutanix.ncp.ntnx_vcenter_integration_v2:
+    state: present
+    ext_id: "{{ bogus_ext_id }}"
+    username: "administrator@vsphere.local"
+    password: "vcenter-admin-password"
+    port: 443
+    authentication_method: "INVALID_METHOD"
+  register: bad_auth_method_result
+  ignore_errors: true
+
+- name: Register vCenter integration with invalid authentication_method status
+  ansible.builtin.assert:
+    that:
+      - bad_auth_method_result is defined
+      - bad_auth_method_result.changed == false
+      - bad_auth_method_result.failed == true
+    success_msg: "Register with invalid auth method failed as expected"
+    fail_msg: "Register with invalid auth method did not fail as expected"
+
+- name: Register vCenter integration with non-integer port (should fail spec validation)  # noqa: args[module]
+  nutanix.ncp.ntnx_vcenter_integration_v2:
+    state: present
+    ext_id: "{{ bogus_ext_id }}"
+    username: "administrator@vsphere.local"
+    password: "vcenter-admin-password"
+    port: "not-an-int"
+    authentication_method: "EXTENSION"
+  register: bad_port_result
+  ignore_errors: true
+
+- name: Register vCenter integration with non-integer port status
+  ansible.builtin.assert:
+    that:
+      - bad_port_result is defined
+      - bad_port_result.changed == false
+      - bad_port_result.failed == true
+    success_msg: "Register with non-int port failed as expected"
+    fail_msg: "Register with non-int port did not fail as expected"
+
+########################################################################################
+# CRUD module — check_mode for register and delete (one each)
+########################################################################################
+
+- name: Determine ext_id to use for check_mode tests
+  ansible.builtin.set_fact:
+    check_mode_ext_id: >-
+      {{
+        (discovered_integrations | selectattr('is_registered', 'equalto', false) | list | first | default(
+          discovered_integrations | first | default({})
+        )).ext_id | default('')
+      }}
+
+- name: Generate spec for registering vCenter integration using check mode with all attributes
+  nutanix.ncp.ntnx_vcenter_integration_v2:
+    state: present
+    ext_id: "{{ check_mode_ext_id }}"
+    username: "check_mode_admin@vsphere.local"
+    password: "check_mode_password"
+    port: 8443
+    authentication_method: "EXTENSION"
+  check_mode: true
+  register: check_mode_register_result
+  ignore_errors: true
+  when: check_mode_ext_id | length > 0
+
+- name: Assert check_mode register result when discovered integration is available
+  ansible.builtin.assert:
+    that:
+      - check_mode_register_result is defined
+      - check_mode_register_result.changed == false
+      - check_mode_register_result.failed == false
+      - check_mode_register_result.ext_id == check_mode_ext_id
+      - check_mode_register_result.response is defined
+      - check_mode_register_result.response.username == "check_mode_admin@vsphere.local"
+      - check_mode_register_result.response.port == 8443
+      - check_mode_register_result.response.authentication_method == "EXTENSION"
+    success_msg: "Register check_mode produced the expected spec"
+    fail_msg: "Register check_mode did not produce the expected spec"
+  when: check_mode_ext_id | length > 0
+
+- name: Delete vCenter integration with check mode (SSO)
+  nutanix.ncp.ntnx_vcenter_integration_v2:
+    state: absent
+    ext_id: "{{ check_mode_ext_id }}"
+    config:
+      sso_config: {}
+  check_mode: true
+  register: check_mode_delete_result
+  ignore_errors: true
+  when: check_mode_ext_id | length > 0
+
+- name: Assert check_mode unregister result when discovered integration is available
+  ansible.builtin.assert:
+    that:
+      - check_mode_delete_result is defined
+      - check_mode_delete_result.changed == false
+      - check_mode_delete_result.failed == false
+      - check_mode_delete_result.ext_id == check_mode_ext_id
+      - "'will be unregistered' in check_mode_delete_result.msg"
+    success_msg: "Unregister check_mode reported the expected message"
+    fail_msg: "Unregister check_mode did not report the expected message"
+  when: check_mode_ext_id | length > 0
+
+- name: Delete vCenter integration with check mode (EXTENSION)
+  nutanix.ncp.ntnx_vcenter_integration_v2:
+    state: absent
+    ext_id: "{{ check_mode_ext_id }}"
+    config:
+      extension_config:
+        username: "check_mode_admin@vsphere.local"
+        password: "check_mode_password"
+  check_mode: true
+  register: check_mode_delete_ext_result
+  ignore_errors: true
+  when: check_mode_ext_id | length > 0
+
+- name: Assert check_mode unregister EXTENSION result
+  ansible.builtin.assert:
+    that:
+      - check_mode_delete_ext_result is defined
+      - check_mode_delete_ext_result.changed == false
+      - check_mode_delete_ext_result.failed == false
+      - check_mode_delete_ext_result.ext_id == check_mode_ext_id
+    success_msg: "Unregister EXTENSION check_mode passed"
+    fail_msg: "Unregister EXTENSION check_mode failed"
+  when: check_mode_ext_id | length > 0
+
+- name: Note when check_mode block is skipped
+  ansible.builtin.debug:
+    msg: >-
+      No discovered vCenter integrations on the target PC — the check_mode
+      register/unregister assertions are skipped for this run because the
+      idempotency pre-check requires an existing integration to look up.
+  when: check_mode_ext_id | length == 0
+
+########################################################################################
+# CRUD module — error paths that only need the API (not a live vCenter)
+########################################################################################
+
+- name: Register vCenter integration with bogus ext_id (should fail)
+  nutanix.ncp.ntnx_vcenter_integration_v2:
+    state: present
+    ext_id: "{{ bogus_ext_id }}"
+    username: "administrator@vsphere.local"
+    password: "vcenter-admin-password"
+    port: 443
+    authentication_method: "EXTENSION"
+  register: bogus_register_result
+  ignore_errors: true
+
+- name: Register vCenter integration with bogus ext_id status
+  ansible.builtin.assert:
+    that:
+      - bogus_register_result is defined
+      - bogus_register_result.changed == false
+      - bogus_register_result.failed == true
+      - bogus_register_result.msg == "Api Exception raised while fetching vCenter integration info using ext_id"
+    success_msg: "Register with bogus ext_id failed as expected"
+    fail_msg: "Register with bogus ext_id did not fail as expected"
+
+- name: Unregister vCenter integration with bogus ext_id (should fail)
+  nutanix.ncp.ntnx_vcenter_integration_v2:
+    state: absent
+    ext_id: "{{ bogus_ext_id }}"
+    config:
+      sso_config: {}
+  register: bogus_unregister_result
+  ignore_errors: true
+
+- name: Unregister vCenter integration with bogus ext_id status
+  ansible.builtin.assert:
+    that:
+      - bogus_unregister_result is defined
+      - bogus_unregister_result.changed == false
+      - bogus_unregister_result.failed == true
+      - bogus_unregister_result.msg == "Api Exception raised while fetching vCenter integration info using ext_id"
+    success_msg: "Unregister with bogus ext_id failed as expected"
+    fail_msg: "Unregister with bogus ext_id did not fail as expected"
+
+- name: Unregister with EXTENSION config and bogus ext_id (should fail)
+  nutanix.ncp.ntnx_vcenter_integration_v2:
+    state: absent
+    ext_id: "{{ bogus_ext_id }}"
+    config:
+      extension_config:
+        username: "administrator@vsphere.local"
+        password: "vcenter-admin-password"
+  register: bogus_unregister_ext_result
+  ignore_errors: true
+
+- name: Unregister EXTENSION with bogus ext_id status
+  ansible.builtin.assert:
+    that:
+      - bogus_unregister_ext_result is defined
+      - bogus_unregister_ext_result.failed == true
+    success_msg: "Unregister EXTENSION with bogus ext_id failed as expected"
+    fail_msg: "Unregister EXTENSION with bogus ext_id did not fail as expected"
+
+########################################################################################
+# CRUD module — live register / unregister lifecycle
+########################################################################################
+
+- name: Determine whether a live lifecycle test is possible
+  ansible.builtin.set_fact:
+    live_integration: "{{ discovered_integrations | first | default({}) }}"
+    have_live_credentials: "{{ vcenter_credentials is defined }}"
+
+- name: Report skipped lifecycle when no integration is discovered
+  ansible.builtin.debug:
+    msg: >-
+      No vCenter server integrations were discovered on the target PC. The
+      live register / unregister lifecycle block is skipped for this run —
+      see PR body for details.
+  when: (live_integration | default({})).ext_id is not defined
+
+- name: Report skipped lifecycle when no vcenter_credentials provided
+  ansible.builtin.debug:
+    msg: >-
+      vcenter_credentials not supplied via integration_config.yml — the
+      live register / unregister lifecycle block is skipped for this run.
+  when:
+    - (live_integration | default({})).ext_id is defined
+    - not have_live_credentials
+
+- name: Live register / unregister lifecycle
+  when:
+    - (live_integration | default({})).ext_id is defined
+    - have_live_credentials
+  block:
+    - name: Capture the initial registration state
+      ansible.builtin.set_fact:
+        live_ext_id: "{{ live_integration.ext_id }}"
+        initial_registered: "{{ live_integration.is_registered }}"
+
+    - name: Ensure baseline is unregistered before test (best effort SSO)
+      nutanix.ncp.ntnx_vcenter_integration_v2:
+        state: absent
+        ext_id: "{{ live_ext_id }}"
+        config:
+          sso_config: {}
+      register: baseline_unregister
+      ignore_errors: true
+
+    - name: Register vCenter integration (with all fields)
+      nutanix.ncp.ntnx_vcenter_integration_v2:
+        state: present
+        ext_id: "{{ live_ext_id }}"
+        username: "{{ vcenter_credentials.username }}"
+        password: "{{ vcenter_credentials.password }}"
+        port: "{{ vcenter_credentials.port | default(443) }}"
+        authentication_method: "{{ vcenter_credentials.authentication_method | default('EXTENSION') }}"
+      register: register_result
+
+    - name: Register vCenter integration status
+      ansible.builtin.assert:
+        that:
+          - register_result is defined
+          - register_result.changed == true
+          - register_result.failed == false
+          - register_result.ext_id == live_ext_id
+          - register_result.task_ext_id is defined
+          - register_result.response is defined
+        success_msg: "Live register passed"
+        fail_msg: "Live register failed"
+
+    - name: Register vCenter integration again (idempotency)
+      nutanix.ncp.ntnx_vcenter_integration_v2:
+        state: present
+        ext_id: "{{ live_ext_id }}"
+        username: "{{ vcenter_credentials.username }}"
+        password: "{{ vcenter_credentials.password }}"
+        port: "{{ vcenter_credentials.port | default(443) }}"
+        authentication_method: "{{ vcenter_credentials.authentication_method | default('EXTENSION') }}"
+      register: register_idempotent
+      ignore_errors: true
+
+    - name: Register vCenter integration idempotency status
+      ansible.builtin.assert:
+        that:
+          - register_idempotent is defined
+          - register_idempotent.changed == false
+          - register_idempotent.failed == false
+          - register_idempotent.skipped == true
+          - "'already registered' in register_idempotent.msg"
+        success_msg: "Register idempotency honoured (skipped as expected)"
+        fail_msg: "Register idempotency was not honoured"
+
+    - name: Get the registered vCenter integration via info module
+      nutanix.ncp.ntnx_vcenter_integrations_info_v2:
+        ext_id: "{{ live_ext_id }}"
+      register: get_after_register
+      ignore_errors: true
+
+    - name: Get after register status
+      ansible.builtin.assert:
+        that:
+          - get_after_register is defined
+          - get_after_register.failed == false
+          - get_after_register.response is defined
+          - get_after_register.response.ext_id == live_ext_id
+          - get_after_register.response.is_registered == true
+        success_msg: "Get after register passed"
+        fail_msg: "Get after register failed"
+
+    - name: Unregister vCenter integration with EXTENSION
+      nutanix.ncp.ntnx_vcenter_integration_v2:
+        state: absent
+        ext_id: "{{ live_ext_id }}"
+        config:
+          extension_config:
+            username: "{{ vcenter_credentials.username }}"
+            password: "{{ vcenter_credentials.password }}"
+      register: unregister_result
+      when: vcenter_credentials.authentication_method is not defined or vcenter_credentials.authentication_method == "EXTENSION"
+
+    - name: Unregister vCenter integration with SSO
+      nutanix.ncp.ntnx_vcenter_integration_v2:
+        state: absent
+        ext_id: "{{ live_ext_id }}"
+        config:
+          sso_config: {}
+      register: unregister_sso_result
+      when: vcenter_credentials.authentication_method is defined and vcenter_credentials.authentication_method == "SSO"
+
+    - name: Unregister vCenter integration status
+      ansible.builtin.assert:
+        that:
+          - (unregister_result is defined and unregister_result.changed == true) or (unregister_sso_result is defined and unregister_sso_result.changed == true)
+        success_msg: "Live unregister passed"
+        fail_msg: "Live unregister failed"
+      when: vcenter_credentials is defined
+
+    - name: Unregister again (idempotency SSO)
+      nutanix.ncp.ntnx_vcenter_integration_v2:
+        state: absent
+        ext_id: "{{ live_ext_id }}"
+        config:
+          sso_config: {}
+      register: unregister_idempotent
+      ignore_errors: true
+
+    - name: Unregister idempotency status
+      ansible.builtin.assert:
+        that:
+          - unregister_idempotent is defined
+          - unregister_idempotent.changed == false
+          - unregister_idempotent.failed == false
+          - unregister_idempotent.skipped == true
+          - "'already unregistered' in unregister_idempotent.msg"
+        success_msg: "Unregister idempotency honoured (skipped as expected)"
+        fail_msg: "Unregister idempotency was not honoured"
+
+    - name: Restore baseline registration state if it was originally registered
+      nutanix.ncp.ntnx_vcenter_integration_v2:
+        state: present
+        ext_id: "{{ live_ext_id }}"
+        username: "{{ vcenter_credentials.username }}"
+        password: "{{ vcenter_credentials.password }}"
+        port: "{{ vcenter_credentials.port | default(443) }}"
+        authentication_method: "{{ vcenter_credentials.authentication_method | default('EXTENSION') }}"
+      when: initial_registered | bool
+      failed_when: false

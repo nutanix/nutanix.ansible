@@ -277,6 +277,29 @@ def get_vcenter_extension(module, api_instance, ext_id):
         )
 
 
+def get_vcenter_integration(module, api_instance, ext_id):
+    """
+    Fetch vCenter server integration information for the given ext_id.
+
+    Args:
+        module: Ansible module
+        api_instance: VcenterIntegrationsApi instance from
+            ntnx_clustermgmt_py_client sdk
+        ext_id (str): The globally unique identifier of vCenter Server
+            integration instance (UUID).
+    Returns:
+        vcenter integration info (object): vCenter integration info
+    """
+    try:
+        return api_instance.get_vcenter_integration_by_ext_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching vCenter integration info using ext_id",
+        )
+
+
 def get_cluster_profile(module, api_instance, ext_id):
     """
     This method will return cluster profile info using external ID.
