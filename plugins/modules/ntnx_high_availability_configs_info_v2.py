@@ -23,10 +23,10 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get High Availability Config) -
-      Required Roles: Cluster Viewer, Prism Viewer, Prism Admin, Super Admin
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
     - >-
       B(List High Availability Configs) -
-      Required Roles: Cluster Viewer, Prism Viewer, Prism Admin, Super Admin
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
     cluster_ext_id:
@@ -48,29 +48,49 @@ author:
 EXAMPLES = r"""
 - name: Get high availability config using cluster_ext_id
   nutanix.ncp.ntnx_high_availability_configs_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
   register: result
   ignore_errors: true
 
 - name: List all high availability configs
   nutanix.ncp.ntnx_high_availability_configs_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
   register: result
   ignore_errors: true
 
 - name: List high availability configs with filter
   nutanix.ncp.ntnx_high_availability_configs_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     filter: "clusterExtId eq '00061fa4-ef93-7dd8-185b-ac1f6b6f97e2'"
   register: result
   ignore_errors: true
 
 - name: List high availability configs with limit
   nutanix.ncp.ntnx_high_availability_configs_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     limit: 1
   register: result
   ignore_errors: true
 
 - name: List all high availability configs with fetch_all
   nutanix.ncp.ntnx_high_availability_configs_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     fetch_all: true
   register: result
   ignore_errors: true
@@ -113,7 +133,7 @@ msg:
     description: This indicates the message if any message occurred
     returned: When there is an error
     type: str
-    sample: "Api Exception raised while fetching high availability config info"
+    sample: "Api Exception raised while fetching high availability configs info"
 
 error:
     description: This field typically holds information about if the task have errors that occurred during the task execution

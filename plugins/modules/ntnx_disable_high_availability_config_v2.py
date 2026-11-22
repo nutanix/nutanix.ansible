@@ -30,7 +30,6 @@ options:
     cluster_ext_id:
         description:
             - The external ID of the cluster.
-            - Indicates the UUID of a cluster.
         type: str
         required: true
 extends_documentation_fragment:
@@ -46,6 +45,10 @@ author:
 EXAMPLES = r"""
 - name: Disable high availability on a cluster
   nutanix.ncp.ntnx_disable_high_availability_config_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
   register: result
   ignore_errors: true
@@ -181,18 +184,12 @@ def disable_high_availability_config(module, result, api_instance):
             ),
         )
 
-    task_ext_id = None
-    if resp and getattr(resp, "data", None):
-        task_ext_id = getattr(resp.data, "ext_id", None)
-        result["task_ext_id"] = task_ext_id
-        result["response"] = strip_internal_attributes(resp.data.to_dict())
-    else:
-        result["response"] = strip_internal_attributes(resp.to_dict()) if resp else {}
-
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
         task = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task.to_dict())
-
     result["changed"] = True
 
 

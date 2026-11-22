@@ -20,21 +20,9 @@
       nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
       validate_certs: false
   tasks:
-    - name: List Prism Element clusters attached to this Prism Central
-      nutanix.ncp.ntnx_clusters_info_v2:
-        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
-      register: pe_clusters
-      ignore_errors: true
-
-    - name: Set the target cluster external ID
-      ansible.builtin.set_fact:
-        target_cluster_ext_id: "{{ pe_clusters.response[0].ext_id }}"
-      when: pe_clusters.response is defined and pe_clusters.response | length > 0
-
-    - name: Fallback cluster ext id when no cluster discovered
+    - name: Set Variables
       ansible.builtin.set_fact:
         target_cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
-      when: target_cluster_ext_id is not defined
 
     - name: Get high availability config for a cluster
       nutanix.ncp.ntnx_high_availability_configs_info_v2:

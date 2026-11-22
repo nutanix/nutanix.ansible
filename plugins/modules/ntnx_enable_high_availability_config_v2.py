@@ -31,7 +31,6 @@ options:
     cluster_ext_id:
         description:
             - The external ID of the cluster.
-            - Indicates the UUID of a cluster.
         type: str
         required: true
     host_failures_to_tolerate_count:
@@ -60,6 +59,10 @@ author:
 EXAMPLES = r"""
 - name: Enable high availability on a cluster
   nutanix.ncp.ntnx_enable_high_availability_config_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
     host_failures_to_tolerate_count: 1
   register: result
@@ -67,6 +70,10 @@ EXAMPLES = r"""
 
 - name: Enable high availability with dryrun validation
   nutanix.ncp.ntnx_enable_high_availability_config_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
     host_failures_to_tolerate_count: 2
     dryrun: true
@@ -208,18 +215,15 @@ def enable_high_availability_config(module, result, api_instance):
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
+    kwargs = {}
     dryrun = module.params.get("dryrun")
+    if dryrun is not None:
+        kwargs["_dryrun"] = dryrun
 
-    resp = None
     try:
-        if dryrun is not None:
-            resp = api_instance.enable_high_availability_config(
-                clusterExtId=cluster_ext_id, body=spec, _dryrun=dryrun
-            )
-        else:
-            resp = api_instance.enable_high_availability_config(
-                clusterExtId=cluster_ext_id, body=spec
-            )
+        resp = api_instance.enable_high_availability_config(
+            clusterExtId=cluster_ext_id, body=spec, **kwargs
+        )
     except Exception as e:
         raise_api_exception(
             module=module,
@@ -229,18 +233,12 @@ def enable_high_availability_config(module, result, api_instance):
             ),
         )
 
-    task_ext_id = None
-    if resp and getattr(resp, "data", None):
-        task_ext_id = getattr(resp.data, "ext_id", None)
-        result["task_ext_id"] = task_ext_id
-        result["response"] = strip_internal_attributes(resp.data.to_dict())
-    else:
-        result["response"] = strip_internal_attributes(resp.to_dict()) if resp else {}
-
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
         task = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task.to_dict())
-
     result["changed"] = True
 
 
