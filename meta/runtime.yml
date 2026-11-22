@@ -543,3 +543,23 @@ action_groups:
     - ntnx_security_profiles_v2
     - ntnx_security_profiles_advanced_config_info_v2
     - ntnx_security_profiles_advanced_config_v2
+    - ntnx_install_external_storage_driver_by_cluster_id_v2
+    - ntnx_rolling_reboot_v2
+    - ntnx_finalize_cluster_recovery_v2
+    - ntnx_initialize_cluster_recovery_v2
+    - ntnx_protect_cluster_v2
+    - ntnx_unprotect_cluster_v2
+    - ntnx_associate_categories_to_host_nic_v2
+    - ntnx_disassociate_categories_from_host_nic_v2
+    - ntnx_rename_host_v2
+    - ntnx_shutdown_host_v2
+    - ntnx_refresh_port_capability_by_cluster_id_v2
+    - ntnx_cluster_protection_info_v2
+    - ntnx_cluster_recovery_info_v2
+    - ntnx_cluster_config_credentials_info_v2
+    - ntnx_cluster_fault_tolerance_status_info_v2
+    - ntnx_host_gpus_info_v2
+    - ntnx_cluster_host_nic_stats_info_v2
+    - ntnx_cluster_port_capability_info_v2
+    - ntnx_aggregated_network_segments_info_v2
+    - ntnx_gpu_stats_info_v2

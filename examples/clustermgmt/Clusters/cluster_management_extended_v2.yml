@@ -1,0 +1,261 @@
+---
+# Summary:
+# Extended cluster management operations - covers newly added action/info modules
+# for cluster_management namespace entity=Clusters.
+#
+# Coverage:
+#   Action: InstallExternalStorageDriver, RollingReboot, Finalize/Initialize
+#           ClusterRecovery, Protect/Unprotect Cluster, Associate/Disassociate
+#           Categories to Host NIC, Rename Host, Shutdown Host, Refresh Port Capability
+#   Info: GetClusterProtectionInfo, GetClusterRecoveryInfo, GetConfigCredentials,
+#         GetFaultToleranceStatus, Host GPUs (get/list variants), Host NIC stats,
+#         Port Capability, Aggregated Network Segments, GPU stats
+#   CRUD extend: UpdateNetworkSegmentById
+#   Info extend: GetHostNicStats
+
+- name: Cluster management extended playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') }}"
+      nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default(9440, true) }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ cluster_ext_id | default('<cluster_ext_id>') }}"
+        host_ext_id: "{{ host_ext_id | default('<host_ext_id>') }}"
+        host_nic_ext_id: "{{ host_nic_ext_id | default('<host_nic_ext_id>') }}"
+        gpu_ext_id: "{{ gpu_ext_id | default('<gpu_ext_id>') }}"
+        network_segment_ext_id: "{{ network_segment_ext_id | default('<network_segment_ext_id>') }}"
+
+    ########################################################################
+    # CRUD extend - UpdateNetworkSegmentById
+    ########################################################################
+    - name: Update network segment
+      nutanix.ncp.ntnx_cluster_network_segments_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ network_segment_ext_id }}"
+        name: ansible-network-segment-updated
+        vlan_id: 200
+      register: updated_segment
+      ignore_errors: true
+
+    ########################################################################
+    # Action modules
+    ########################################################################
+    - name: Install external storage driver
+      nutanix.ncp.ntnx_install_external_storage_driver_by_cluster_id_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ cluster_ext_id }}"
+        provider_type: DELL_POWERFLEX
+        version: "1.0"
+      register: install_driver
+      ignore_errors: true
+
+    - name: Rolling reboot cluster
+      nutanix.ncp.ntnx_rolling_reboot_v2:
+        ext_id: "{{ cluster_ext_id }}"
+        reboot_type: NCC
+        target_reboot_domain:
+          cvm_restart: true
+      register: rolling_reboot
+      ignore_errors: true
+
+    - name: Initialize cluster recovery
+      nutanix.ncp.ntnx_initialize_cluster_recovery_v2:
+        ext_id: "{{ cluster_ext_id }}"
+        destination_cluster_ext_id: "{{ cluster_ext_id }}"
+      register: init_recovery
+      ignore_errors: true
+
+    - name: Finalize cluster recovery
+      nutanix.ncp.ntnx_finalize_cluster_recovery_v2:
+        ext_id: "{{ cluster_ext_id }}"
+      register: finalize_recovery
+      ignore_errors: true
+
+    - name: Protect cluster
+      nutanix.ncp.ntnx_protect_cluster_v2:
+        ext_id: "{{ cluster_ext_id }}"
+        replication_state: ENABLED
+      register: protect
+      ignore_errors: true
+
+    - name: Unprotect cluster
+      nutanix.ncp.ntnx_unprotect_cluster_v2:
+        ext_id: "{{ cluster_ext_id }}"
+      register: unprotect
+      ignore_errors: true
+
+    - name: Associate categories to host NIC
+      nutanix.ncp.ntnx_associate_categories_to_host_nic_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        ext_id: "{{ host_nic_ext_id }}"
+        categories:
+          - ext_id: "00000000-0000-0000-0000-000000000000"
+      register: assoc_cat
+      ignore_errors: true
+
+    - name: Disassociate categories from host NIC
+      nutanix.ncp.ntnx_disassociate_categories_from_host_nic_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        ext_id: "{{ host_nic_ext_id }}"
+        categories:
+          - ext_id: "00000000-0000-0000-0000-000000000000"
+      register: disassoc_cat
+      ignore_errors: true
+
+    - name: Rename host
+      nutanix.ncp.ntnx_rename_host_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ host_ext_id }}"
+        name: ansible-host-renamed
+      register: rename_host
+      ignore_errors: true
+
+    - name: Shutdown host
+      nutanix.ncp.ntnx_shutdown_host_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ host_ext_id }}"
+        should_shutdown_non_migratable_uvms: false
+      register: shutdown_host
+      ignore_errors: true
+
+    - name: Refresh port capability
+      nutanix.ncp.ntnx_refresh_port_capability_by_cluster_id_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: refresh_port
+      ignore_errors: true
+
+    ########################################################################
+    # Info modules - singleton protection/recovery/credentials
+    ########################################################################
+    - name: Get cluster protection info
+      nutanix.ncp.ntnx_cluster_protection_info_v2:
+        ext_id: "{{ cluster_ext_id }}"
+      register: protection_info
+      ignore_errors: true
+
+    - name: Get cluster recovery info
+      nutanix.ncp.ntnx_cluster_recovery_info_v2:
+        ext_id: "{{ cluster_ext_id }}"
+      register: recovery_info
+      ignore_errors: true
+
+    - name: Get config credentials by cluster id
+      nutanix.ncp.ntnx_cluster_config_credentials_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: creds_info
+      ignore_errors: true
+
+    - name: Get fault tolerance status
+      nutanix.ncp.ntnx_cluster_fault_tolerance_status_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: ft_status
+      ignore_errors: true
+
+    - name: Get port capability
+      nutanix.ncp.ntnx_cluster_port_capability_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: port_cap
+      ignore_errors: true
+
+    ########################################################################
+    # Info - Host GPUs (GetById + List variants)
+    ########################################################################
+    - name: List all host GPUs
+      nutanix.ncp.ntnx_host_gpus_info_v2:
+      register: gpus_all
+      ignore_errors: true
+
+    - name: List host GPUs by cluster
+      nutanix.ncp.ntnx_host_gpus_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: gpus_by_cluster
+      ignore_errors: true
+
+    - name: List host GPUs by host
+      nutanix.ncp.ntnx_host_gpus_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+      register: gpus_by_host
+      ignore_errors: true
+
+    - name: Get host GPU by ID
+      nutanix.ncp.ntnx_host_gpus_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        ext_id: "{{ gpu_ext_id }}"
+      register: gpu_by_id
+      ignore_errors: true
+
+    - name: List host GPUs with filter
+      nutanix.ncp.ntnx_host_gpus_info_v2:
+        filter: "extId eq '{{ gpu_ext_id }}'"
+      register: gpus_filtered
+      ignore_errors: true
+
+    - name: List host GPUs with fetch_all
+      nutanix.ncp.ntnx_host_gpus_info_v2:
+        fetch_all: true
+      register: gpus_fetch_all
+      ignore_errors: true
+
+    ########################################################################
+    # Stats info modules
+    ########################################################################
+    - name: List host NIC stats by host
+      nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        start_time: "2026-07-21T00:00:00.000Z"
+        end_time: "2026-07-21T01:00:00.000Z"
+      register: nic_stats
+      ignore_errors: true
+
+    - name: Get GPU stats
+      nutanix.ncp.ntnx_gpu_stats_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        ext_id: "{{ gpu_ext_id }}"
+        start_time: "2026-07-21T00:00:00.000Z"
+        end_time: "2026-07-21T01:00:00.000Z"
+      register: gpu_stats
+      ignore_errors: true
+
+    - name: Get host NIC stats (via extended module)
+      nutanix.ncp.ntnx_cluster_host_nics_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        ext_id: "{{ host_nic_ext_id }}"
+        start_time: "2026-07-21T00:00:00.000Z"
+        end_time: "2026-07-21T01:00:00.000Z"
+      register: host_nic_stats
+      ignore_errors: true
+
+    ########################################################################
+    # Aggregated network segments
+    ########################################################################
+    - name: List aggregated network segments
+      nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+      register: agg_segments
+      ignore_errors: true
+
+    - name: List aggregated network segments with filter
+      nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+        filter: "name eq 'ansible-network-segment-updated'"
+      register: agg_segments_filtered
+      ignore_errors: true
+
+    - name: List aggregated network segments with fetch_all
+      nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+        fetch_all: true
+      register: agg_segments_all
+      ignore_errors: true
