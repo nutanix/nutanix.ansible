@@ -28,10 +28,10 @@ notes:
     This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
   - >-
     B(Get device bundle profile by ext_id) -
-    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin
+    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Self-Service Admin (Deprecated), Super Admin
   - >-
     B(List device bundle profiles) -
-    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin
+    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Self-Service Admin (Deprecated), Super Admin
   - Refer to the SDK API documentation for the authoritative roles/permissions.
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
@@ -55,29 +55,49 @@ author:
 EXAMPLES = r"""
 - name: Get device bundle profile using ext_id
   nutanix.ncp.ntnx_device_bundle_profiles_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     ext_id: "b2c3d4e5-6789-0abc-def1-234567890bcd"
   register: result
   ignore_errors: true
 
 - name: List all device bundle profiles
   nutanix.ncp.ntnx_device_bundle_profiles_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
   register: result
   ignore_errors: true
 
 - name: List device bundle profiles with filter
   nutanix.ncp.ntnx_device_bundle_profiles_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     filter: "name eq 'test-profile'"
   register: result
   ignore_errors: true
 
 - name: List device bundle profiles with limit
   nutanix.ncp.ntnx_device_bundle_profiles_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     limit: 1
   register: result
   ignore_errors: true
 
 - name: List all device bundle profiles with fetch_all
   nutanix.ncp.ntnx_device_bundle_profiles_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     fetch_all: true
   register: result
   ignore_errors: true
@@ -86,7 +106,7 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - The response from the Nutanix device bundle profiles info v4 API. The host is Prism Central (PC).
+    - The response from the Nutanix device bundle profiles info v4 API.
     - It can be a single device bundle profile if external ID is provided.
     - List of multiple device bundle profiles if external ID is not provided with optional filter, limit, or fetch_all.
   returned: always
