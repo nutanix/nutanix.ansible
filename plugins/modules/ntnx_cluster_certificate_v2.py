@@ -113,6 +113,10 @@ author:
 EXAMPLES = r"""
 - name: Add a Certificate to a cluster
   nutanix.ncp.ntnx_cluster_certificate_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     state: present
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
     certificate: "{{ certificate_base64 }}"
@@ -126,6 +130,10 @@ EXAMPLES = r"""
 
 - name: Delete a Certificate
   nutanix.ncp.ntnx_cluster_certificate_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     state: absent
     cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
