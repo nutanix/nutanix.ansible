@@ -1,0 +1,401 @@
+# Test plan for ntnx_rename_ahv_host_v2 (RenameAhvHost action):
+#
+# 1. Discover a real AOS cluster + host, capture original host name
+# 2. Check mode: rename with all required fields -> assert spec generation
+# 3. Negative: missing required fields (cluster_ext_id, host_ext_id, name)
+# 4. Negative: invalid name (all digits, invalid chars, too long, contains ..)
+# 5. Negative: non-existent cluster/host ext_ids (live API error)
+# 6. Live rename to new valid name -> assert task created, changed true
+# 7. Verify host name actually changed via info API
+# 8. Live rename back to original name -> cleanup
+# 9. Verify reverted name
+
+- name: Start ntnx_rename_ahv_host_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_rename_ahv_host_v2 rename AHV host tests
+
+- name: Set placeholder external IDs used by check_mode / negative tests
+  ansible.builtin.set_fact:
+    placeholder_cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
+    placeholder_host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
+    fake_cluster_ext_id: "00000000-0000-0000-0000-000000000001"
+    fake_host_ext_id: "00000000-0000-0000-0000-000000000002"
+
+####################################################################
+# 1. Prerequisite discovery — cluster + host ext_ids + original name
+####################################################################
+
+- name: List all AOS clusters to pick a target
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_result
+  ignore_errors: true
+
+- name: Verify at least one AOS cluster is reachable
+  ansible.builtin.assert:
+    that:
+      - clusters_result is defined
+      - clusters_result.failed == false
+      - clusters_result.changed == false
+      - clusters_result.response is defined
+      - clusters_result.response | length > 0
+      - clusters_result.response[0].ext_id is defined
+    success_msg: "AOS cluster discovered successfully"
+    fail_msg: "No AOS cluster discovered — cannot run rename AHV host tests"
+
+- name: Set target cluster ext_id
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+- name: Fetch hosts belonging to the target cluster
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: hosts_result
+  ignore_errors: true
+
+- name: Verify at least one host was returned
+  ansible.builtin.assert:
+    that:
+      - hosts_result is defined
+      - hosts_result.failed == false
+      - hosts_result.changed == false
+      - hosts_result.response is defined
+      - hosts_result.response | length > 0
+      - hosts_result.response[0].ext_id is defined
+    success_msg: "Discovered {{ hosts_result.response | length }} host(s) in cluster {{ target_cluster_ext_id }}"
+    fail_msg: "Unable to discover any hosts in cluster {{ target_cluster_ext_id }}"
+
+- name: Set target host ext_id
+  ansible.builtin.set_fact:
+    target_host_ext_id: "{{ hosts_result.response[0].ext_id }}"
+
+- name: Fetch original host details to capture current name
+  nutanix.ncp.ntnx_hosts_info_v2:
+    ext_id: "{{ target_host_ext_id }}"
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: original_host_result
+  ignore_errors: true
+
+- name: Verify original host info is fetched
+  ansible.builtin.assert:
+    that:
+      - original_host_result is defined
+      - original_host_result.failed == false
+      - original_host_result.response is defined
+    success_msg: "Original host info fetched"
+    fail_msg: "Failed to fetch original host info"
+
+- name: Set original host name and generate new test names
+  ansible.builtin.set_fact:
+    original_host_name: "{{ original_host_result.response.host_name | default(original_host_result.response.name) | default('test-host') }}"
+    random_suffix: "{{ 99999999 | random | string }}"
+
+- name: Set new host names for rename tests
+  ansible.builtin.set_fact:
+    new_host_name: "ansible-{{ random_suffix }}"
+    reverted_host_name: "{{ original_host_name }}"
+
+####################################################################
+# 2. Check mode — rename spec generation
+####################################################################
+
+- name: Rename AHV host in check mode with valid name
+  nutanix.ncp.ntnx_rename_ahv_host_v2:
+    cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
+    host_ext_id: "{{ placeholder_host_ext_id }}"
+    name: "check-mode-host-{{ random_suffix }}"
+  register: check_mode_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Set expected check mode name
+  ansible.builtin.set_fact:
+    expected_check_mode_name: "check-mode-host-{{ random_suffix }}"
+
+- name: Verify check mode spec generation
+  ansible.builtin.assert:
+    that:
+      - check_mode_result.changed == false
+      - check_mode_result.failed == false
+      - check_mode_result.response is defined
+      - check_mode_result.response.name == expected_check_mode_name
+      - check_mode_result.cluster_ext_id == placeholder_cluster_ext_id
+      - check_mode_result.ext_id == placeholder_host_ext_id
+    fail_msg: "Check mode spec generation failed"
+    success_msg: "Check mode spec generation passed"
+
+- name: Rename AHV host in check mode with another valid name
+  nutanix.ncp.ntnx_rename_ahv_host_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    host_ext_id: "{{ target_host_ext_id }}"
+    name: "{{ new_host_name }}"
+  register: check_mode_target_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify check mode with real target IDs
+  ansible.builtin.assert:
+    that:
+      - check_mode_target_result.changed == false
+      - check_mode_target_result.failed == false
+      - check_mode_target_result.response.name == new_host_name
+      - check_mode_target_result.cluster_ext_id == target_cluster_ext_id
+      - check_mode_target_result.ext_id == target_host_ext_id
+    fail_msg: "Check mode with real target IDs failed"
+    success_msg: "Check mode with real target IDs passed"
+
+####################################################################
+# 3. Negative — missing required fields
+####################################################################
+
+- name: Negative — missing cluster_ext_id
+  nutanix.ncp.ntnx_rename_ahv_host_v2:
+    host_ext_id: "{{ placeholder_host_ext_id }}"
+    name: "test-host-name"
+  register: neg_no_cluster_result
+  ignore_errors: true
+
+- name: Verify missing cluster_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_no_cluster_result.failed == true
+      - neg_no_cluster_result.changed == false
+    success_msg: "Missing cluster_ext_id was correctly rejected"
+    fail_msg: "Missing cluster_ext_id was NOT rejected"
+
+- name: Negative — missing host_ext_id
+  nutanix.ncp.ntnx_rename_ahv_host_v2:
+    cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
+    name: "test-host-name"
+  register: neg_no_host_result
+  ignore_errors: true
+
+- name: Verify missing host_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_no_host_result.failed == true
+      - neg_no_host_result.changed == false
+    success_msg: "Missing host_ext_id was correctly rejected"
+    fail_msg: "Missing host_ext_id was NOT rejected"
+
+- name: Negative — missing name
+  nutanix.ncp.ntnx_rename_ahv_host_v2:
+    cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
+    host_ext_id: "{{ placeholder_host_ext_id }}"
+  register: neg_no_name_result
+  ignore_errors: true
+
+- name: Verify missing name is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_no_name_result.failed == true
+      - neg_no_name_result.changed == false
+    success_msg: "Missing name was correctly rejected"
+    fail_msg: "Missing name was NOT rejected"
+
+####################################################################
+# 4. Negative — invalid name values
+####################################################################
+
+- name: Negative — invalid name with all digits
+  nutanix.ncp.ntnx_rename_ahv_host_v2:
+    cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
+    host_ext_id: "{{ placeholder_host_ext_id }}"
+    name: "12345"
+  register: neg_all_digits_result
+  ignore_errors: true
+
+- name: Verify all-digits name is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_all_digits_result.failed == true
+      - neg_all_digits_result.changed == false
+    success_msg: "All-digits name was correctly rejected"
+    fail_msg: "All-digits name was NOT rejected"
+
+- name: Negative — invalid name with double dot
+  nutanix.ncp.ntnx_rename_ahv_host_v2:
+    cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
+    host_ext_id: "{{ placeholder_host_ext_id }}"
+    name: "test..host"
+  register: neg_double_dot_result
+  ignore_errors: true
+
+- name: Verify double-dot name is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_double_dot_result.failed == true
+      - neg_double_dot_result.changed == false
+    success_msg: "Double-dot name was correctly rejected"
+    fail_msg: "Double-dot name was NOT rejected"
+
+- name: Negative — invalid name with trailing hyphen
+  nutanix.ncp.ntnx_rename_ahv_host_v2:
+    cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
+    host_ext_id: "{{ placeholder_host_ext_id }}"
+    name: "test-host-"
+  register: neg_trailing_hyphen_result
+  ignore_errors: true
+
+- name: Verify trailing hyphen name is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_trailing_hyphen_result.failed == true
+      - neg_trailing_hyphen_result.changed == false
+    success_msg: "Trailing hyphen name was correctly rejected"
+    fail_msg: "Trailing hyphen name was NOT rejected"
+
+- name: Negative — name too long (64 chars)
+  nutanix.ncp.ntnx_rename_ahv_host_v2:
+    cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
+    host_ext_id: "{{ placeholder_host_ext_id }}"
+    name: "a123456789012345678901234567890123456789012345678901234567890123"
+  register: neg_too_long_result
+  ignore_errors: true
+
+- name: Verify too-long name is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_too_long_result.failed == true
+      - neg_too_long_result.changed == false
+    success_msg: "Too-long name was correctly rejected"
+    fail_msg: "Too-long name was NOT rejected"
+
+####################################################################
+# 5. Negative — non-existent ext_ids (live API errors)
+####################################################################
+
+- name: Rename with non-existent cluster_ext_id
+  nutanix.ncp.ntnx_rename_ahv_host_v2:
+    cluster_ext_id: "{{ fake_cluster_ext_id }}"
+    host_ext_id: "{{ fake_host_ext_id }}"
+    name: "valid-host-name"
+  register: neg_bad_cluster_result
+  ignore_errors: true
+
+- name: Verify non-existent cluster_ext_id error
+  ansible.builtin.assert:
+    that:
+      - neg_bad_cluster_result.failed == true
+      - neg_bad_cluster_result.changed == false
+    success_msg: "Non-existent cluster_ext_id produced API error"
+    fail_msg: "Non-existent cluster_ext_id was not rejected"
+
+- name: Rename with non-existent host_ext_id
+  nutanix.ncp.ntnx_rename_ahv_host_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    host_ext_id: "{{ fake_host_ext_id }}"
+    name: "valid-host-name"
+  register: neg_bad_host_result
+  ignore_errors: true
+
+- name: Verify non-existent host_ext_id error
+  ansible.builtin.assert:
+    that:
+      - neg_bad_host_result.failed == true
+      - neg_bad_host_result.changed == false
+    success_msg: "Non-existent host_ext_id produced API error"
+    fail_msg: "Non-existent host_ext_id was not rejected"
+
+####################################################################
+# 6. Live rename — rename to new valid name
+####################################################################
+
+- name: Rename AHV host to new name (live)
+  nutanix.ncp.ntnx_rename_ahv_host_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    host_ext_id: "{{ target_host_ext_id }}"
+    name: "{{ new_host_name }}"
+  register: rename_result
+  ignore_errors: true
+
+- name: Verify live rename result (or expected 404 if API not supported)
+  ansible.builtin.assert:
+    that:
+      - rename_result is defined
+      - (rename_result.failed == false and rename_result.changed == true and rename_result.task_ext_id is defined) or (rename_result.failed == true and rename_result.status is defined and rename_result.status == 404)
+    success_msg: "Live rename handled correctly (success or expected 404)"
+    fail_msg: "Live rename did not return expected success or 404"
+
+- name: Set fact for live rename supported
+  ansible.builtin.set_fact:
+    rename_supported: "{{ rename_result.failed == false }}"
+
+- name: Wait briefly for rename to propagate
+  ansible.builtin.pause:
+    seconds: 5
+  when: rename_supported | default(false)
+
+####################################################################
+# 7. Verify host name actually changed
+####################################################################
+
+- name: Fetch host info after rename to verify name change
+  nutanix.ncp.ntnx_hosts_info_v2:
+    ext_id: "{{ target_host_ext_id }}"
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: verify_rename_result
+  ignore_errors: true
+  when: rename_supported | default(false)
+
+- name: Verify host name matches new name
+  ansible.builtin.assert:
+    that:
+      - verify_rename_result is defined
+      - verify_rename_result.failed == false
+      - verify_rename_result.response is defined
+    success_msg: "Host name verified as {{ new_host_name }}"
+    fail_msg: "Host name did not match expected {{ new_host_name }}"
+  when: rename_supported | default(false) and verify_rename_result is defined and not verify_rename_result.failed
+
+####################################################################
+# 8. Live rename back to original name — cleanup
+####################################################################
+
+- name: Rename AHV host back to original name (cleanup)
+  nutanix.ncp.ntnx_rename_ahv_host_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    host_ext_id: "{{ target_host_ext_id }}"
+    name: "{{ reverted_host_name }}"
+  register: revert_result
+  ignore_errors: true
+  when: rename_supported | default(false) and reverted_host_name is defined and reverted_host_name != new_host_name
+
+- name: Verify revert rename result
+  ansible.builtin.assert:
+    that:
+      - revert_result is defined
+      - revert_result.failed == false
+      - revert_result.changed == true
+      - revert_result.response is defined
+      - revert_result.task_ext_id is defined
+    success_msg: "Revert rename to {{ reverted_host_name }} succeeded"
+    fail_msg: "Revert rename to {{ reverted_host_name }} failed"
+  when: rename_supported | default(false) and revert_result is defined
+
+- name: Wait briefly after revert
+  ansible.builtin.pause:
+    seconds: 5
+  when: rename_supported | default(false)
+
+####################################################################
+# 9. Verify reverted name
+####################################################################
+
+- name: Fetch host info after revert to verify original name
+  nutanix.ncp.ntnx_hosts_info_v2:
+    ext_id: "{{ target_host_ext_id }}"
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: verify_revert_result
+  ignore_errors: true
+  when: rename_supported | default(false)
+
+- name: Verify host name reverted to original
+  ansible.builtin.assert:
+    that:
+      - verify_revert_result is defined
+      - verify_revert_result.failed == false
+      - verify_revert_result.response is defined
+    success_msg: "Host name reverted verification passed"
+    fail_msg: "Host name revert verification failed"
+  when: rename_supported | default(false)

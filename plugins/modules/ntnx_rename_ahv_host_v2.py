@@ -1,0 +1,305 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+# Copyright: (c) 2027, Nutanix
+# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+from __future__ import absolute_import, division, print_function
+
+__metaclass__ = type
+
+DOCUMENTATION = r"""
+---
+module: ntnx_rename_ahv_host_v2
+short_description: Rename AHV host in Nutanix Prism Central
+version_added: "2.7.0"
+description:
+  - Rename an AHV host that belongs to a cluster registered with Nutanix Prism Central.
+  - Uses the v4 Hosts API C(rename_ahv_host) to rename the host.
+  - This module uses PC v4 APIs based SDKs.
+notes:
+  - >-
+    This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+  - >-
+    B(Rename AHV Host) -
+    Required Roles: Cluster Admin, Prism Admin, Super Admin
+  - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
+options:
+  state:
+    description:
+      - State of the module.
+      - If C(state) is C(present), the module will rename the AHV host.
+      - If C(state) is C(absent), the module will fail.
+    type: str
+    choices:
+      - present
+    default: present
+  cluster_ext_id:
+    description:
+      - The External ID of the cluster that owns the host.
+    type: str
+    required: true
+  host_ext_id:
+    description:
+      - The External ID of the host to rename.
+    type: str
+    required: true
+  name:
+    description:
+      - The desired new host name for the AHV host.
+      - >-
+        Constraints: Length 1 to 63 characters, Allowed characters letters
+        (a-z, A-Z), digits (0-9), dot ('.'), and hyphen ('-'), Must start
+        and end with a letter or digit, Must not be entirely digits, Must
+        not contain the sequences [..], [.-], or [-.].
+    type: str
+    required: true
+extends_documentation_fragment:
+  - nutanix.ncp.ntnx_credentials
+  - nutanix.ncp.ntnx_operations_v2
+  - nutanix.ncp.ntnx_logger
+  - nutanix.ncp.ntnx_proxy_v2
+author:
+  - Abhinav Bansal (@abhinavbansal29)
+  - George Ghawali (@george-ghawali)
+"""
+
+EXAMPLES = r"""
+- name: Rename AHV host
+  nutanix.ncp.ntnx_rename_ahv_host_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
+    host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
+    name: "new-ahv-host-name"
+  register: result
+  ignore_errors: true
+"""
+
+RETURN = r"""
+response:
+  description:
+    - Response for renaming AHV host
+    - If C(wait) is true, it will contain the final task payload after completion.
+    - If C(wait) is false, it will contain the initial task details.
+  returned: always
+  type: dict
+  sample:
+    {
+        "cluster_ext_ids": [
+            "0006361b-6855-3644-7458-2268f8ffb2bd"
+        ],
+        "completed_time": "2026-07-20T12:20:41.524581+00:00",
+        "created_time": "2026-07-20T12:19:47.167906+00:00",
+        "entities_affected": [
+            {
+                "ext_id": "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9",
+                "rel": "clustermgmt:config:host"
+            },
+            {
+                "ext_id": "0006361b-6855-3644-7458-2268f8ffb2bd",
+                "rel": "clustermgmt:config:cluster"
+            }
+        ],
+        "error_messages": null,
+        "ext_id": "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1",
+        "is_cancelable": false,
+        "last_updated_time": "2026-07-20T12:20:41.524581+00:00",
+        "legacy_error_message": null,
+        "operation": "RenameAhvHost",
+        "operation_description": "Rename AHV Host",
+        "owned_by": {
+            "ext_id": "00000000-0000-0000-0000-000000000000",
+            "name": "admin"
+        },
+        "parent_task": null,
+        "progress_percentage": 100,
+        "started_time": "2026-07-20T12:19:47.185754+00:00",
+        "status": "SUCCEEDED",
+        "sub_steps": null,
+        "sub_tasks": null,
+        "warnings": null
+    }
+
+changed:
+  description: This indicates whether the task resulted in any changes
+  returned: always
+  type: bool
+  sample: true
+
+msg:
+  description: This indicates the message if any message occurred
+  returned: When there is an error
+  type: str
+  sample: "Api Exception raised while renaming AHV host"
+
+error:
+  description: This field typically holds information about if the task have errors that occurred during the task execution
+  returned: when an error occurs
+  type: str
+  sample: "Failed generating spec for renaming AHV host"
+
+failed:
+  description: This field typically holds information about if the task have failed
+  returned: always
+  type: bool
+  sample: false
+
+task_ext_id:
+  description: The external ID of the task
+  returned: always
+  type: str
+  sample: "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1"
+
+ext_id:
+  description: The external ID of the host that was renamed
+  returned: always
+  type: str
+  sample: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
+
+cluster_ext_id:
+  description: The external ID of the cluster that owns the host
+  returned: always
+  type: str
+  sample: "0006361b-6855-3644-7458-2268f8ffb2bd"
+"""
+
+import traceback  # noqa: E402
+import warnings  # noqa: E402
+
+from ansible.module_utils.basic import missing_required_lib  # noqa: E402
+
+from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
+from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
+from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
+    get_hosts_api_instance,
+)
+from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
+from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
+from ..module_utils.v4.utils import (  # noqa: E402
+    raise_api_exception,
+    strip_internal_attributes,
+)
+
+SDK_IMP_ERROR = None
+try:
+    import ntnx_clustermgmt_py_client as cluster_management_sdk  # noqa: E402
+except ImportError:
+
+    from ..module_utils.v4.sdk_mock import mock_sdk as cluster_management_sdk  # noqa: E402  # fmt: skip
+
+    SDK_IMP_ERROR = traceback.format_exc()
+
+# Suppress the InsecureRequestWarning
+warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
+
+
+def get_module_spec():
+    module_args = dict(
+        state=dict(type="str", default="present", choices=["present"]),
+        cluster_ext_id=dict(type="str", required=True),
+        host_ext_id=dict(type="str", required=True),
+        name=dict(type="str", required=True),
+    )
+    return module_args
+
+
+def rename_ahv_host(module, result, api_instance):
+    cluster_ext_id = module.params.get("cluster_ext_id")
+    host_ext_id = module.params.get("host_ext_id")
+    result["cluster_ext_id"] = cluster_ext_id
+    result["ext_id"] = host_ext_id
+    result["host_ext_id"] = host_ext_id
+
+    sg = SpecGenerator(module)
+    default_spec = cluster_management_sdk.AhvHostRenameParams()
+    try:
+        spec, err = sg.generate_spec(obj=default_spec)
+    except Exception as e:
+        result["error"] = str(e)
+        module.fail_json(msg="Failed generating spec for renaming AHV host", **result)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating spec for renaming AHV host", **result)
+
+    if module.check_mode:
+        result["response"] = strip_internal_attributes(spec.to_dict())
+        return
+
+    resp = None
+    try:
+        resp = api_instance.rename_ahv_host(
+            clusterExtId=cluster_ext_id, hostExtId=host_ext_id, body=spec
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while renaming AHV host",
+        )
+
+    # Response is TaskReference wrapped in RenameAhvHostApiResponse
+    task_ext_id = None
+    if resp and getattr(resp, "data", None):
+        # data could be TaskReference or directly contain ext_id
+        data = resp.data
+        # Try to get ext_id from data
+        if hasattr(data, "ext_id"):
+            task_ext_id = data.ext_id
+        elif isinstance(data, dict) and "ext_id" in data:
+            task_ext_id = data["ext_id"]
+        # Fallback: check wrapped OneOf
+        if not task_ext_id and hasattr(data, "to_dict"):
+            d = strip_internal_attributes(data.to_dict())
+            task_ext_id = d.get("ext_id")
+
+    if task_ext_id:
+        result["task_ext_id"] = task_ext_id
+
+    # Store initial response
+    if resp and getattr(resp, "data", None):
+        try:
+            result["response"] = strip_internal_attributes(resp.data.to_dict())
+        except Exception:
+            result["response"] = strip_internal_attributes(resp.to_dict())
+    else:
+        result["response"] = strip_internal_attributes(resp.to_dict()) if resp else {}
+
+    if task_ext_id and module.params.get("wait"):
+        task = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(task.to_dict())
+
+    result["changed"] = True
+
+
+def run_module():
+    module = BaseModuleV4(
+        argument_spec=get_module_spec(),
+        supports_check_mode=True,
+    )
+    if SDK_IMP_ERROR:
+        module.fail_json(
+            msg=missing_required_lib("ntnx_clustermgmt_py_client"),
+            exception=SDK_IMP_ERROR,
+        )
+
+    remove_param_with_none_value(module.params)
+    result = {
+        "changed": False,
+        "failed": False,
+        "response": None,
+    }
+
+    api_instance = get_hosts_api_instance(module)
+    rename_ahv_host(module, result, api_instance)
+    module.exit_json(**result)
+
+
+def main():
+    run_module()
+
+
+if __name__ == "__main__":
+    main()

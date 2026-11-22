@@ -1,0 +1,209 @@
+Running ntnx_rename_ahv_host_v2 integration test role
+WARNING: Disabling unicode in the temp work dir is a temporary debugging feature that may be removed in the future without notice.
+[WARNING]: Found variable using reserved name: port
+
+PLAY [testhost] ****************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : Start ntnx_rename_ahv_host_v2 tests] ***********
+ok: [testhost] => {
+    "msg": "Start ntnx_rename_ahv_host_v2 rename AHV host tests"
+}
+
+TASK [ntnx_rename_ahv_host_v2 : Set placeholder external IDs used by check_mode / negative tests] ***
+ok: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : List all AOS clusters to pick a target] ********
+ok: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : Verify at least one AOS cluster is reachable] ***
+ok: [testhost] => {
+    "changed": false,
+    "msg": "AOS cluster discovered successfully"
+}
+
+TASK [ntnx_rename_ahv_host_v2 : Set target cluster ext_id] *********************
+ok: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : Fetch hosts belonging to the target cluster] ***
+ok: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : Verify at least one host was returned] *********
+ok: [testhost] => {
+    "changed": false,
+    "msg": "Discovered 1 host(s) in cluster 00065dc6-9144-09c1-4862-ac1f6b35f170"
+}
+
+TASK [ntnx_rename_ahv_host_v2 : Set target host ext_id] ************************
+ok: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : Fetch original host details to capture current name] ***
+ok: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : Verify original host info is fetched] **********
+ok: [testhost] => {
+    "changed": false,
+    "msg": "Original host info fetched"
+}
+
+TASK [ntnx_rename_ahv_host_v2 : Set original host name and generate new test names] ***
+ok: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : Set new host names for rename tests] ***********
+ok: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : Rename AHV host in check mode with valid name] ***
+ok: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : Set expected check mode name] ******************
+ok: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : Verify check mode spec generation] *************
+ok: [testhost] => {
+    "changed": false,
+    "msg": "Check mode spec generation passed"
+}
+
+TASK [ntnx_rename_ahv_host_v2 : Rename AHV host in check mode with another valid name] ***
+ok: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : Verify check mode with real target IDs] ********
+ok: [testhost] => {
+    "changed": false,
+    "msg": "Check mode with real target IDs passed"
+}
+
+TASK [ntnx_rename_ahv_host_v2 : Negative — missing cluster_ext_id] *************
+fatal: [testhost]: FAILED! => {"changed": false, "msg": "missing required arguments: cluster_ext_id"}
+...ignoring
+
+TASK [ntnx_rename_ahv_host_v2 : Verify missing cluster_ext_id is rejected] *****
+ok: [testhost] => {
+    "changed": false,
+    "msg": "Missing cluster_ext_id was correctly rejected"
+}
+
+TASK [ntnx_rename_ahv_host_v2 : Negative — missing host_ext_id] ****************
+fatal: [testhost]: FAILED! => {"changed": false, "msg": "missing required arguments: host_ext_id"}
+...ignoring
+
+TASK [ntnx_rename_ahv_host_v2 : Verify missing host_ext_id is rejected] ********
+ok: [testhost] => {
+    "changed": false,
+    "msg": "Missing host_ext_id was correctly rejected"
+}
+
+TASK [ntnx_rename_ahv_host_v2 : Negative — missing name] ***********************
+fatal: [testhost]: FAILED! => {"changed": false, "msg": "missing required arguments: name"}
+...ignoring
+
+TASK [ntnx_rename_ahv_host_v2 : Verify missing name is rejected] ***************
+ok: [testhost] => {
+    "changed": false,
+    "msg": "Missing name was correctly rejected"
+}
+
+TASK [ntnx_rename_ahv_host_v2 : Negative — invalid name with all digits] *******
+fatal: [testhost]: FAILED! => {"changed": false, "cluster_ext_id": "0006361b-6855-3644-7458-2268f8ffb2bd", "error": "Invalid value for `name`, must be a follow pattern or equal to `/^(?!.*\\\\.\\\\.)(?!.*\\\\.\\\\-)(?!.*\\\\-\\\\.)(?!^\\\\d+$)[a-zA-Z\\\\d]([a-zA-Z\\\\d.-]*[a-zA-Z\\\\d])?$/`", "ext_id": "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9", "host_ext_id": "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9", "msg": "Failed generating spec for renaming AHV host", "response": null}
+...ignoring
+
+TASK [ntnx_rename_ahv_host_v2 : Verify all-digits name is rejected] ************
+ok: [testhost] => {
+    "changed": false,
+    "msg": "All-digits name was correctly rejected"
+}
+
+TASK [ntnx_rename_ahv_host_v2 : Negative — invalid name with double dot] *******
+fatal: [testhost]: FAILED! => {"changed": false, "cluster_ext_id": "0006361b-6855-3644-7458-2268f8ffb2bd", "error": "Invalid value for `name`, must be a follow pattern or equal to `/^(?!.*\\\\.\\\\.)(?!.*\\\\.\\\\-)(?!.*\\\\-\\\\.)(?!^\\\\d+$)[a-zA-Z\\\\d]([a-zA-Z\\\\d.-]*[a-zA-Z\\\\d])?$/`", "ext_id": "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9", "host_ext_id": "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9", "msg": "Failed generating spec for renaming AHV host", "response": null}
+...ignoring
+
+TASK [ntnx_rename_ahv_host_v2 : Verify double-dot name is rejected] ************
+ok: [testhost] => {
+    "changed": false,
+    "msg": "Double-dot name was correctly rejected"
+}
+
+TASK [ntnx_rename_ahv_host_v2 : Negative — invalid name with trailing hyphen] ***
+fatal: [testhost]: FAILED! => {"changed": false, "cluster_ext_id": "0006361b-6855-3644-7458-2268f8ffb2bd", "error": "Invalid value for `name`, must be a follow pattern or equal to `/^(?!.*\\\\.\\\\.)(?!.*\\\\.\\\\-)(?!.*\\\\-\\\\.)(?!^\\\\d+$)[a-zA-Z\\\\d]([a-zA-Z\\\\d.-]*[a-zA-Z\\\\d])?$/`", "ext_id": "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9", "host_ext_id": "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9", "msg": "Failed generating spec for renaming AHV host", "response": null}
+...ignoring
+
+TASK [ntnx_rename_ahv_host_v2 : Verify trailing hyphen name is rejected] *******
+ok: [testhost] => {
+    "changed": false,
+    "msg": "Trailing hyphen name was correctly rejected"
+}
+
+TASK [ntnx_rename_ahv_host_v2 : Negative — name too long (64 chars)] ***********
+fatal: [testhost]: FAILED! => {"changed": false, "cluster_ext_id": "0006361b-6855-3644-7458-2268f8ffb2bd", "error": "Invalid value for `name`, length must be less than or equal to `63`", "ext_id": "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9", "host_ext_id": "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9", "msg": "Failed generating spec for renaming AHV host", "response": null}
+...ignoring
+
+TASK [ntnx_rename_ahv_host_v2 : Verify too-long name is rejected] **************
+ok: [testhost] => {
+    "changed": false,
+    "msg": "Too-long name was correctly rejected"
+}
+
+TASK [ntnx_rename_ahv_host_v2 : Rename with non-existent cluster_ext_id] *******
+fatal: [testhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while renaming AHV host", "response": {"error": "Not Found", "message": "Not Found", "path": "/api/clustermgmt/v4.2/config/clusters/00000000-0000-0000-0000-000000000001/hosts/00000000-0000-0000-0000-000000000002/ahv/$actions/rename", "status": 404, "timestamp": "2026-11-22T08:31:22.030+00:00"}, "status": 404}
+...ignoring
+
+TASK [ntnx_rename_ahv_host_v2 : Verify non-existent cluster_ext_id error] ******
+ok: [testhost] => {
+    "changed": false,
+    "msg": "Non-existent cluster_ext_id produced API error"
+}
+
+TASK [ntnx_rename_ahv_host_v2 : Rename with non-existent host_ext_id] **********
+fatal: [testhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while renaming AHV host", "response": {"error": "Not Found", "message": "Not Found", "path": "/api/clustermgmt/v4.2/config/clusters/00065dc6-9144-09c1-4862-ac1f6b35f170/hosts/00000000-0000-0000-0000-000000000002/ahv/$actions/rename", "status": 404, "timestamp": "2026-11-22T08:31:22.937+00:00"}, "status": 404}
+...ignoring
+
+TASK [ntnx_rename_ahv_host_v2 : Verify non-existent host_ext_id error] *********
+ok: [testhost] => {
+    "changed": false,
+    "msg": "Non-existent host_ext_id produced API error"
+}
+
+TASK [ntnx_rename_ahv_host_v2 : Rename AHV host to new name (live)] ************
+fatal: [testhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while renaming AHV host", "response": {"error": "Not Found", "message": "Not Found", "path": "/api/clustermgmt/v4.2/config/clusters/00065dc6-9144-09c1-4862-ac1f6b35f170/hosts/a85b5f8e-0972-40bc-9cbe-8331efe812f6/ahv/$actions/rename", "status": 404, "timestamp": "2026-11-22T08:31:23.833+00:00"}, "status": 404}
+...ignoring
+
+TASK [ntnx_rename_ahv_host_v2 : Verify live rename result (or expected 404 if API not supported)] ***
+ok: [testhost] => {
+    "changed": false,
+    "msg": "Live rename handled correctly (success or expected 404)"
+}
+
+TASK [ntnx_rename_ahv_host_v2 : Set fact for live rename supported] ************
+ok: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : Wait briefly for rename to propagate] **********
+skipping: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : Fetch host info after rename to verify name change] ***
+skipping: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : Verify host name matches new name] *************
+skipping: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : Rename AHV host back to original name (cleanup)] ***
+skipping: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : Verify revert rename result] *******************
+skipping: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : Wait briefly after revert] *********************
+skipping: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : Fetch host info after revert to verify original name] ***
+skipping: [testhost]
+
+TASK [ntnx_rename_ahv_host_v2 : Verify host name reverted to original] *********
+skipping: [testhost]
+
+PLAY RECAP *********************************************************************
+testhost                   : ok=39   changed=0    unreachable=0    failed=0    skipped=8    rescued=0    ignored=10  
+
+WARNING: Reviewing previous 1 warning(s):
+WARNING: Disabling unicode in the temp work dir is a temporary debugging feature that may be removed in the future without notice.

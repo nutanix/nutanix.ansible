@@ -281,3 +281,15 @@ def get_network_segments_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.NetworkSegmentsApi(client)
+
+
+def get_hosts_api_instance(module):
+    """
+    This method will return Hosts API instance from SDK.
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        HostsApi: HostsApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.HostsApi(client)
