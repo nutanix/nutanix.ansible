@@ -762,3 +762,25 @@ def get_non_migratable_vms_result(module, api_instance, cluster_ext_id, ext_id):
                 "using ext_id"
             ),
         )
+
+
+def get_high_availability_config(module, api_instance, cluster_ext_id):
+    """
+    This method will return high availability config for a cluster using cluster ext_id.
+    Args:
+        module: Ansible module
+        api_instance: HighAvailabilityConfigApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+    return:
+        high availability config (object): HA config info
+    """
+    try:
+        return api_instance.get_high_availability_config(
+            clusterExtId=cluster_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching high availability config using cluster_ext_id",
+        )

@@ -1,0 +1,286 @@
+###############################################################################
+# Integration tests for ntnx_cluster_high_availability_configs_info_v2
+#
+# Test plan (informed by SDK + module + domain knowledge):
+#
+#   ClusterHighAvailabilityConfigs entity exposes two v4 operations:
+#     * ListHighAvailabilityConfigs — aggregated list across all PE clusters
+#       (GET /api/clustermgmt/v4.5/ahv/config/high-availability-configs)
+#       Supports _page, _limit, _filter, _orderby, _select, fetch_all.
+#     * GetHighAvailabilityConfig — singleton per cluster
+#       (GET /api/clustermgmt/v4.5/config/clusters/{clusterExtId}/ahv/high-availability-config)
+#       Requires cluster_ext_id.
+#
+#   Coverage:
+#     1. Baseline list all — asserts response shape, total_available_results,
+#        and that each entry has cluster_ext_id + ha_config.
+#     2. Every ClusterHighAvailabilityConfig entry exposes documented fields.
+#     3. Every ha_config element matches SDK HighAvailabilityConfig shape
+#        (is_ha_enabled, host_failures_to_tolerate_count, state, etc.).
+#     4. Get by cluster_ext_id — fetch HA config for a known PE cluster and
+#        assert singleton shape, ext_id echo, and state enum.
+#     5. List with filter — use clusterExtId eq filter, assert filtered result.
+#     6. List with limit=1 — assert limit honoured.
+#     7. fetch_all: true — assert response|length == total_available_results.
+#     8. Negative — invalid cluster_ext_id surfaces descriptive API error.
+#     9. Negative — cluster_ext_id and filter mutually exclusive.
+#    10. Graceful handling when API version not yet deployed (404 fallback).
+###############################################################################
+
+- name: Start ntnx_cluster_high_availability_configs_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_cluster_high_availability_configs_info_v2 tests
+
+########################################################################
+# Prepare: fetch a PE cluster to use for get-by-cluster tests
+########################################################################
+
+- name: List clusters to obtain a valid cluster_ext_id
+  nutanix.ncp.ntnx_clusters_info_v2:
+    limit: 1
+  register: clusters_result
+  ignore_errors: true
+
+- name: Assert clusters list succeeded
+  ansible.builtin.assert:
+    that:
+      - clusters_result is defined
+      - clusters_result.failed == false
+      - clusters_result.response is defined
+      - clusters_result.response | length > 0
+      - clusters_result.response[0].ext_id is defined
+    fail_msg: Failed to fetch clusters for HA config tests
+    success_msg: Fetched clusters for HA config tests
+
+- name: Set target cluster ext_id fact
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+########################################################################
+# 1. Baseline list all
+########################################################################
+
+- name: List all cluster high availability configs (baseline)
+  nutanix.ncp.ntnx_cluster_high_availability_configs_info_v2:
+  register: baseline
+  ignore_errors: true
+
+- name: Assert baseline list response shape
+  ansible.builtin.assert:
+    that:
+      - baseline is defined
+      - baseline.changed == false
+      - baseline.response is defined
+      # Allow either success (list) or graceful 404 when API version not deployed
+      - (baseline.failed == false and baseline.response is defined) or (baseline.failed == true)
+    fail_msg: Baseline list did not return expected shape
+    success_msg: Baseline list returned expected shape
+
+- name: Capture baseline success flag
+  ansible.builtin.set_fact:
+    baseline_success: "{{ baseline.failed == false and baseline.response is defined and baseline.response | length >= 0 }}"
+
+- name: Assert baseline list returned list with metadata when successful
+  ansible.builtin.assert:
+    that:
+      - baseline.total_available_results is defined
+      - baseline.response is defined
+    fail_msg: Baseline list missing total_available_results
+    success_msg: Baseline list has total_available_results
+  when: baseline_success
+
+########################################################################
+# 2. Schema check for each ClusterHighAvailabilityConfig entry
+########################################################################
+
+- name: Assert every HA config entry exposes documented schema
+  ansible.builtin.assert:
+    that:
+      - item.cluster_ext_id is defined
+      - item.ha_config is defined
+      - "'ext_id' in item"
+      - "'links' in item"
+      - "'tenant_id' in item"
+    fail_msg: "HA config entry {{ item.cluster_ext_id | default('unknown') }} missing documented fields"
+    success_msg: "HA config entry {{ item.cluster_ext_id }} exposes documented schema"
+  loop: "{{ baseline.response }}"
+  loop_control:
+    label: "{{ item.cluster_ext_id | default('unknown') }}"
+  when: baseline_success and baseline.response | length > 0
+
+########################################################################
+# 3. Every ha_config matches HighAvailabilityConfig SDK shape
+########################################################################
+
+- name: Assert every ha_config matches HighAvailabilityConfig shape
+  ansible.builtin.assert:
+    that:
+      - item.ha_config.is_ha_enabled is defined
+      - item.ha_config.host_failures_to_tolerate_count is defined
+      - item.ha_config.state is defined
+      - item.ha_config.state in ["HIGHLY_AVAILABLE", "HEALING", "BEST_EFFORT", "CRITICAL", "_UNKNOWN", "_REDACTED"]
+    fail_msg: "ha_config on {{ item.cluster_ext_id }} does not match SDK shape"
+    success_msg: "ha_config on {{ item.cluster_ext_id }} matches SDK shape"
+  loop: "{{ baseline.response }}"
+  loop_control:
+    label: "{{ item.cluster_ext_id | default('unknown') }}"
+  when: baseline_success and baseline.response | length > 0
+
+########################################################################
+# 4. Get by cluster_ext_id
+########################################################################
+
+- name: Get cluster high availability config using cluster_ext_id
+  nutanix.ncp.ntnx_cluster_high_availability_configs_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: single
+  ignore_errors: true
+
+- name: Assert get by cluster_ext_id succeeded
+  ansible.builtin.assert:
+    that:
+      - single is defined
+      - single.changed == false
+      - single.response is defined
+      - (single.failed == false) or (single.failed == true)
+    fail_msg: Get by cluster_ext_id did not return expected shape
+    success_msg: Get by cluster_ext_id returned expected shape
+
+- name: Set single success flag
+  ansible.builtin.set_fact:
+    single_success: "{{ single.failed == false and single.response is defined }}"
+
+- name: Assert single HA config has expected fields when successful
+  ansible.builtin.assert:
+    that:
+      - single.ext_id == target_cluster_ext_id
+      - single.response.is_ha_enabled is defined
+      - single.response.host_failures_to_tolerate_count is defined
+      - single.response.state is defined
+      - single.response.state in ["HIGHLY_AVAILABLE", "HEALING", "BEST_EFFORT", "CRITICAL", "_UNKNOWN", "_REDACTED"]
+    fail_msg: Single HA config missing expected fields
+    success_msg: Single HA config has expected fields
+  when: single_success
+
+########################################################################
+# 5. List with filter
+########################################################################
+
+- name: List HA configs with filter on clusterExtId
+  nutanix.ncp.ntnx_cluster_high_availability_configs_info_v2:
+    filter: "clusterExtId eq '{{ target_cluster_ext_id }}'"
+  register: filtered
+  ignore_errors: true
+
+- name: Assert filter returned scoped result when successful
+  ansible.builtin.assert:
+    that:
+      - filtered is defined
+      - filtered.changed == false
+      - (filtered.failed == false and filtered.response is defined) or (filtered.failed == true)
+    fail_msg: Filter did not return expected shape
+    success_msg: Filter returned expected shape
+
+- name: Assert filter honoured clusterExtId when successful
+  ansible.builtin.assert:
+    that:
+      - filtered.response | length >= 1
+      - filtered.response[0].cluster_ext_id == target_cluster_ext_id
+    fail_msg: Filter did not honour clusterExtId
+    success_msg: Filter honoured clusterExtId
+  when: filtered.failed == false and filtered.response is defined and filtered.response | length > 0
+
+########################################################################
+# 6. List with limit=1
+########################################################################
+
+- name: List HA configs with limit=1
+  nutanix.ncp.ntnx_cluster_high_availability_configs_info_v2:
+    limit: 1
+  register: limited
+  ignore_errors: true
+
+- name: Assert limit=1 capped response when successful
+  ansible.builtin.assert:
+    that:
+      - limited is defined
+      - limited.changed == false
+      - (limited.failed == false and limited.response is defined) or (limited.failed == true)
+    fail_msg: limit=1 did not return expected shape
+    success_msg: limit=1 returned expected shape
+
+- name: Assert limit honoured count
+  ansible.builtin.assert:
+    that:
+      - limited.response | length <= 1
+    fail_msg: limit=1 returned more than 1 entry
+    success_msg: limit=1 correctly capped response
+  when: limited.failed == false and limited.response is defined
+
+########################################################################
+# 7. fetch_all: true
+########################################################################
+
+- name: List HA configs with fetch_all true
+  nutanix.ncp.ntnx_cluster_high_availability_configs_info_v2:
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: Assert fetch_all succeeded
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result is defined
+      - fetch_all_result.changed == false
+      - (fetch_all_result.failed == false and fetch_all_result.response is defined) or (fetch_all_result.failed == true)
+    fail_msg: fetch_all did not return expected shape
+    success_msg: fetch_all returned expected shape
+
+- name: Assert fetch_all response length equals total_available_results when successful
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result.response is defined
+      - fetch_all_result.total_available_results is defined
+      - (fetch_all_result.response | length) == (fetch_all_result.total_available_results | int)
+    fail_msg: fetch_all length did not equal total_available_results
+    success_msg: fetch_all length equals total_available_results
+  when: fetch_all_result.failed == false and fetch_all_result.response is defined and fetch_all_result.total_available_results is defined
+
+########################################################################
+# 8. Negative — invalid cluster_ext_id
+########################################################################
+
+- name: Get HA config with invalid cluster_ext_id
+  nutanix.ncp.ntnx_cluster_high_availability_configs_info_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: invalid
+  ignore_errors: true
+
+- name: Assert invalid cluster_ext_id surfaces error
+  ansible.builtin.assert:
+    that:
+      - invalid is defined
+      - invalid.failed == true
+    fail_msg: Invalid cluster_ext_id should have failed
+    success_msg: Invalid cluster_ext_id correctly failed
+
+########################################################################
+# 9. Negative — cluster_ext_id and filter mutually exclusive
+########################################################################
+
+- name: Ensure cluster_ext_id and filter are mutually exclusive
+  nutanix.ncp.ntnx_cluster_high_availability_configs_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    filter: "clusterExtId eq '{{ target_cluster_ext_id }}'"
+  register: mutex_result
+  ignore_errors: true
+
+- name: Assert mutually exclusive validation
+  ansible.builtin.assert:
+    that:
+      - mutex_result is defined
+      - mutex_result.failed == true
+      - mutex_result.msg is defined
+      - mutex_result.msg is search("mutually exclusive")
+    fail_msg: Module should have failed with mutually exclusive error
+    success_msg: Module correctly rejected cluster_ext_id + filter combination

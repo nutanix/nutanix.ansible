@@ -1,0 +1,64 @@
+# Summary:
+# This playbook demonstrates fetching cluster high availability config
+# from Nutanix Prism Central using the v4 cluster_management API.
+# It covers get by cluster_ext_id, list all, filter, limit and fetch_all.
+# The HA config is a singleton per cluster; list aggregates across all
+# registered PE clusters.
+
+- name: Cluster high availability configs playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.17', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      nutanix_port: "{{ lookup('env', 'NUTANIX_PORT') | default('9440', true) }}"
+      validate_certs: false
+  tasks:
+    - name: List all clusters registered to PC (pick a cluster for HA get)
+      nutanix.ncp.ntnx_clusters_info_v2:
+        limit: 1
+      register: clusters_result
+
+    - name: Set cluster ext_id fact
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+    - name: Get cluster high availability config using cluster_ext_id
+      nutanix.ncp.ntnx_cluster_high_availability_configs_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: ha_single
+      ignore_errors: true
+
+    - name: List all cluster high availability configs
+      nutanix.ncp.ntnx_cluster_high_availability_configs_info_v2:
+      register: ha_list
+      ignore_errors: true
+
+    - name: List cluster high availability configs with filter
+      nutanix.ncp.ntnx_cluster_high_availability_configs_info_v2:
+        filter: "clusterExtId eq '{{ cluster_ext_id }}'"
+      register: ha_filtered
+      ignore_errors: true
+
+    - name: List cluster high availability configs with limit
+      nutanix.ncp.ntnx_cluster_high_availability_configs_info_v2:
+        limit: 1
+      register: ha_limited
+      ignore_errors: true
+
+    - name: List all cluster high availability configs with fetch_all
+      nutanix.ncp.ntnx_cluster_high_availability_configs_info_v2:
+        fetch_all: true
+      register: ha_fetch_all
+      ignore_errors: true
+
+    - name: Display HA config results
+      ansible.builtin.debug:
+        msg:
+          - "Single HA config: {{ ha_single }}"
+          - "List HA configs: {{ ha_list }}"
+          - "Filtered: {{ ha_filtered }}"
+          - "Limited: {{ ha_limited }}"
+          - "Fetch all: {{ ha_fetch_all }}"
