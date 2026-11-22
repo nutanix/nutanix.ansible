@@ -1,0 +1,87 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create OIDC client
+# 2. List OIDC clients
+# 3. Get OIDC client by ext_id
+# 4. Get OIDC well-known configuration
+# 5. Get OIDC user info
+# 6. List OIDC keys
+# 7. Create OIDC token
+# 8. Delete OIDC client
+
+- name: OIDC playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Create OIDC client
+      nutanix.ncp.ntnx_oidc_clients_v2:
+        state: present
+        client_name: "test-oidc-client-ansible"
+        redirect_uris:
+          - "https://example.com/callback"
+        application_type: "web"
+        sha256_thumbprint_list:
+          - "abc123thumbprint"
+      register: oidc_client_create
+      ignore_errors: true
+
+    - name: Set OIDC client ext_id
+      ansible.builtin.set_fact:
+        oidc_client_ext_id: "{{ oidc_client_create.response.client_id | default(oidc_client_create.ext_id) }}"
+
+    - name: List OIDC clients
+      nutanix.ncp.ntnx_oidc_clients_info_v2:
+      register: oidc_clients_list
+      ignore_errors: true
+
+    - name: List OIDC clients with limit
+      nutanix.ncp.ntnx_oidc_clients_info_v2:
+        limit: 1
+      register: oidc_clients_limit
+      ignore_errors: true
+
+    - name: Get OIDC client by ext_id
+      nutanix.ncp.ntnx_oidc_client_info_v2:
+        ext_id: "{{ oidc_client_ext_id }}"
+      register: oidc_client_info
+      ignore_errors: true
+      when: oidc_client_ext_id is defined and oidc_client_ext_id != ""
+
+    - name: Get OIDC well-known configuration
+      nutanix.ncp.ntnx_oidc_well_known_config_info_v2:
+      register: well_known_config
+      ignore_errors: true
+
+    - name: Get OIDC user info
+      nutanix.ncp.ntnx_oidc_user_info_v2:
+      register: user_info
+      ignore_errors: true
+
+    - name: List OIDC keys
+      nutanix.ncp.ntnx_oidc_keys_info_v2:
+      register: oidc_keys
+      ignore_errors: true
+
+    - name: Create OIDC token with client credentials
+      nutanix.ncp.ntnx_oidc_token_v2:
+        grant_type: "CLIENT_CREDENTIALS"
+        client_id: "{{ oidc_client_ext_id }}"
+        scope: "openid"
+      register: oidc_token
+      ignore_errors: true
+      when: oidc_client_ext_id is defined and oidc_client_ext_id != ""
+
+    - name: Delete OIDC client
+      nutanix.ncp.ntnx_oidc_clients_v2:
+        state: absent
+        ext_id: "{{ oidc_client_ext_id }}"
+      register: oidc_client_delete
+      ignore_errors: true
+      when: oidc_client_ext_id is defined and oidc_client_ext_id != ""

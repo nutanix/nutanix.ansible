@@ -307,3 +307,23 @@ def get_welcome_banner(module, api_instance):
             exception=e,
             msg="Api Exception raised while fetching welcome banner",
         )
+
+
+def get_oidc_client(module, api_instance, ext_id):
+    """
+    This method will return OIDC client info using ext_id.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): OIDC api instance
+        ext_id (str): External id of OIDC client
+    Returns:
+        oidc_client_info (dict): OIDC client info
+    """
+    try:
+        return api_instance.get_oidc_client_service_by_id(extId=ext_id)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching OIDC client info using ext_id",
+        )

@@ -543,3 +543,10 @@ action_groups:
     - ntnx_security_profiles_v2
     - ntnx_security_profiles_advanced_config_info_v2
     - ntnx_security_profiles_advanced_config_v2
+    - ntnx_oidc_clients_v2
+    - ntnx_oidc_token_v2
+    - ntnx_oidc_client_info_v2
+    - ntnx_oidc_well_known_config_info_v2
+    - ntnx_oidc_user_info_v2
+    - ntnx_oidc_clients_info_v2
+    - ntnx_oidc_keys_info_v2
