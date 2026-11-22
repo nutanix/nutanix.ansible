@@ -103,7 +103,7 @@
       - "'tenant_id' in item"
     fail_msg: "HA config entry {{ item.cluster_ext_id | default('unknown') }} missing documented fields"
     success_msg: "HA config entry {{ item.cluster_ext_id }} exposes documented schema"
-  loop: "{{ baseline.response }}"
+  loop: "{{ baseline.response if baseline_success else [] }}"
   loop_control:
     label: "{{ item.cluster_ext_id | default('unknown') }}"
   when: baseline_success and baseline.response | length > 0
@@ -121,7 +121,7 @@
       - item.ha_config.state in ["HIGHLY_AVAILABLE", "HEALING", "BEST_EFFORT", "CRITICAL", "_UNKNOWN", "_REDACTED"]
     fail_msg: "ha_config on {{ item.cluster_ext_id }} does not match SDK shape"
     success_msg: "ha_config on {{ item.cluster_ext_id }} matches SDK shape"
-  loop: "{{ baseline.response }}"
+  loop: "{{ baseline.response if baseline_success else [] }}"
   loop_control:
     label: "{{ item.cluster_ext_id | default('unknown') }}"
   when: baseline_success and baseline.response | length > 0
