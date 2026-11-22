@@ -1,0 +1,55 @@
+---
+- name: CPU models info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: List all CPU models
+      nutanix.ncp.ntnx_cpu_models_info_v2:
+      register: cpu_models_list
+      ignore_errors: true
+
+    - name: Display CPU models response
+      ansible.builtin.debug:
+        var: cpu_models_list.response
+
+    - name: Set cpu_model ext_id from list
+      ansible.builtin.set_fact:
+        cpu_model_ext_id: "{{ cpu_models_list.response[0].ext_id }}"
+      when:
+        - cpu_models_list.failed is defined
+        - not cpu_models_list.failed
+        - cpu_models_list.response is defined
+        - cpu_models_list.response is iterable
+        - cpu_models_list.response | length > 0
+        - cpu_models_list.response[0].ext_id is defined
+
+    - name: Get CPU model using ext_id
+      nutanix.ncp.ntnx_cpu_models_info_v2:
+        ext_id: "{{ cpu_model_ext_id }}"
+      register: cpu_model_info
+      ignore_errors: true
+      when: cpu_model_ext_id is defined
+
+    - name: List CPU models with filter
+      nutanix.ncp.ntnx_cpu_models_info_v2:
+        filter: "isDefault eq true"
+      register: cpu_models_filtered
+      ignore_errors: true
+
+    - name: List CPU models with limit
+      nutanix.ncp.ntnx_cpu_models_info_v2:
+        limit: 1
+      register: cpu_models_limited
+      ignore_errors: true
+
+    - name: List all CPU models with fetch_all
+      nutanix.ncp.ntnx_cpu_models_info_v2:
+        fetch_all: true
+      register: cpu_models_all
+      ignore_errors: true

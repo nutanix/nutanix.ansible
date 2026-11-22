@@ -1,0 +1,43 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [CPU models info playbook] ************************************************
+
+TASK [List all CPU models] *****************************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching cpu models info", "response": {"error": "Not Found", "message": "Not Found", "path": "/api/clustermgmt/v4.2/ahv/config/cpu-models", "status": 404, "timestamp": "2026-11-22T08:23:19.247+00:00"}, "status": 404}
+...ignoring
+
+TASK [Display CPU models response] *********************************************
+ok: [localhost] => {
+    "cpu_models_list.response": {
+        "error": "Not Found",
+        "message": "Not Found",
+        "path": "/api/clustermgmt/v4.2/ahv/config/cpu-models",
+        "status": 404,
+        "timestamp": "2026-11-22T08:23:19.247+00:00"
+    }
+}
+
+TASK [Set cpu_model ext_id from list] ******************************************
+skipping: [localhost] => {"changed": false, "false_condition": "not cpu_models_list.failed", "skip_reason": "Conditional result was False"}
+
+TASK [Get CPU model using ext_id] **********************************************
+skipping: [localhost] => {"changed": false, "false_condition": "cpu_model_ext_id is defined", "skip_reason": "Conditional result was False"}
+
+TASK [List CPU models with filter] *********************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching cpu models info", "response": {"error": "Not Found", "message": "Not Found", "path": "/api/clustermgmt/v4.2/ahv/config/cpu-models", "status": 404, "timestamp": "2026-11-22T08:23:20.395+00:00"}, "status": 404}
+...ignoring
+
+TASK [List CPU models with limit] **********************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching cpu models info", "response": {"error": "Not Found", "message": "Not Found", "path": "/api/clustermgmt/v4.2/ahv/config/cpu-models", "status": 404, "timestamp": "2026-11-22T08:23:21.273+00:00"}, "status": 404}
+...ignoring
+
+TASK [List all CPU models with fetch_all] **************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching cpu models info", "response": {"error": "Not Found", "message": "Not Found", "path": "/api/clustermgmt/v4.2/ahv/config/cpu-models", "status": 404, "timestamp": "2026-11-22T08:23:22.332+00:00"}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=5    changed=0    unreachable=0    failed=0    skipped=2    rescued=0    ignored=4   
+
