@@ -33,7 +33,7 @@
     target_cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
   when:
     - clusters_result is defined
-    - clusters_result.failed == false
+    - not clusters_result.failed
     - clusters_result.response is defined
     - clusters_result.response | length > 0
 
@@ -182,4 +182,4 @@
       - result.task_ext_id is defined
     success_msg: "Live enable HA changed correctly"
     fail_msg: "Live enable HA did not report changed"
-  when: result.failed == false
+  when: not result.failed

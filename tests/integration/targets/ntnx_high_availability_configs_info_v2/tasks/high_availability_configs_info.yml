@@ -32,7 +32,7 @@
     target_cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
   when:
     - clusters_result is defined
-    - clusters_result.failed == false
+    - not clusters_result.failed
     - clusters_result.response is defined
     - clusters_result.response | length > 0
 
@@ -155,4 +155,4 @@
       - (fetch_all_result.response | length) == (fetch_all_result.total_available_results | int)
     success_msg: "Fetch_all length matches total"
     fail_msg: "Fetch_all length mismatch"
-  when: fetch_all_result.failed == false
+  when: not fetch_all_result.failed
