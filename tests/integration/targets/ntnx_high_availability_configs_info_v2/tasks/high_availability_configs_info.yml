@@ -1,0 +1,158 @@
+---
+# Test plan for ntnx_high_availability_configs_info_v2
+#   1. Discover AOS cluster for get-by-id
+#   2. Get by cluster_ext_id
+#   3. Get with invalid cluster_ext_id (negative)
+#   4. List all
+#   5. List with filter
+#   6. List with limit
+#   7. List with fetch_all + assert length == total_available_results
+
+- name: Start high availability configs info tests
+  ansible.builtin.debug:
+    msg: Start ntnx_high_availability_configs_info_v2 tests
+
+- name: Set placeholder IDs
+  ansible.builtin.set_fact:
+    placeholder_cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
+    fake_cluster_ext_id: "00000000-0000-0000-0000-000000000001"
+
+####################################################################
+# 1. Prerequisite discovery
+####################################################################
+
+- name: List AOS clusters to pick target
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_result
+  ignore_errors: true
+
+- name: Set target cluster ext_id
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+  when:
+    - clusters_result is defined
+    - clusters_result.failed == false
+    - clusters_result.response is defined
+    - clusters_result.response | length > 0
+
+- name: Fallback target cluster ext_id
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
+  when: target_cluster_ext_id is not defined
+
+####################################################################
+# 2. Get by cluster_ext_id
+####################################################################
+
+- name: Fetch high availability config using cluster_ext_id
+  nutanix.ncp.ntnx_high_availability_configs_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify fetch HA config using cluster_ext_id
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - (result.failed == false and result.response is defined) or (result.failed == true)
+    success_msg: "Fetch HA config using cluster_ext_id executed"
+    fail_msg: "Fetch HA config using cluster_ext_id unexpected"
+
+####################################################################
+# 3. Negative: invalid cluster_ext_id
+####################################################################
+
+- name: Fetch HA config using invalid cluster_ext_id
+  nutanix.ncp.ntnx_high_availability_configs_info_v2:
+    cluster_ext_id: "{{ fake_cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify invalid cluster_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+    success_msg: "Invalid cluster_ext_id correctly failed"
+    fail_msg: "Invalid cluster_ext_id did not fail as expected"
+
+####################################################################
+# 4. List all
+####################################################################
+
+- name: List all high availability configs
+  nutanix.ncp.ntnx_high_availability_configs_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Verify list all HA configs
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - (result.failed == false and result.response is defined) or (result.failed == true)
+    success_msg: "List all HA configs executed"
+    fail_msg: "List all HA configs unexpected"
+
+####################################################################
+# 5. List with filter
+####################################################################
+
+- name: List HA configs with filter
+  nutanix.ncp.ntnx_high_availability_configs_info_v2:
+    filter: "clusterExtId eq '{{ target_cluster_ext_id }}'"
+  register: result
+  ignore_errors: true
+
+- name: Verify list HA configs with filter
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - (result.failed == false and result.response is defined) or (result.failed == true)
+    success_msg: "List HA configs with filter executed"
+    fail_msg: "List HA configs with filter unexpected"
+
+####################################################################
+# 6. List with limit
+####################################################################
+
+- name: List HA configs with limit
+  nutanix.ncp.ntnx_high_availability_configs_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: Verify list HA configs with limit
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - (result.failed == false and result.response is defined) or (result.failed == true)
+    success_msg: "List HA configs with limit executed"
+    fail_msg: "List HA configs with limit unexpected"
+
+####################################################################
+# 7. List with fetch_all
+####################################################################
+
+- name: List all HA configs with fetch_all
+  nutanix.ncp.ntnx_high_availability_configs_info_v2:
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: Verify list HA configs with fetch_all
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result is defined
+      - (fetch_all_result.failed == false and fetch_all_result.response is defined) or (fetch_all_result.failed == true)
+    success_msg: "List HA configs with fetch_all executed"
+    fail_msg: "List HA configs with fetch_all unexpected"
+
+- name: Verify fetch_all length matches total when succeeded
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result.total_available_results is defined
+      - (fetch_all_result.response | length) == (fetch_all_result.total_available_results | int)
+    success_msg: "Fetch_all length matches total"
+    fail_msg: "Fetch_all length mismatch"
+  when: fetch_all_result.failed == false

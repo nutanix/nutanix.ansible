@@ -1,0 +1,87 @@
+---
+# Summary:
+# Demonstrates high availability configuration operations for clusters
+# using Nutanix Prism Central v4 APIs.
+#
+# High level flow:
+#   1. Discover a Prism Element (AOS) cluster.
+#   2. Fetch HA config for a specific cluster (Get).
+#   3. List all HA configs with various filters.
+#   4. Enable HA on a cluster.
+#   5. Disable HA on a cluster.
+#
+- name: High availability config playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('env', 'NUTANIX_HOST') | default('10.44.76.17', true) }}"
+      nutanix_username: "{{ lookup('env', 'NUTANIX_USERNAME') | default('admin', true) }}"
+      nutanix_password: "{{ lookup('env', 'NUTANIX_PASSWORD') | default('Nutanix.123', true) }}"
+      validate_certs: false
+  tasks:
+    - name: List Prism Element clusters attached to this Prism Central
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: pe_clusters
+      ignore_errors: true
+
+    - name: Set the target cluster external ID
+      ansible.builtin.set_fact:
+        target_cluster_ext_id: "{{ pe_clusters.response[0].ext_id }}"
+      when: pe_clusters.response is defined and pe_clusters.response | length > 0
+
+    - name: Fallback cluster ext id when no cluster discovered
+      ansible.builtin.set_fact:
+        target_cluster_ext_id: "00061fa4-ef93-7dd8-185b-ac1f6b6f97e2"
+      when: target_cluster_ext_id is not defined
+
+    - name: Get high availability config for a cluster
+      nutanix.ncp.ntnx_high_availability_configs_info_v2:
+        cluster_ext_id: "{{ target_cluster_ext_id }}"
+      register: ha_get
+      ignore_errors: true
+
+    - name: List all high availability configs
+      nutanix.ncp.ntnx_high_availability_configs_info_v2:
+      register: ha_list
+      ignore_errors: true
+
+    - name: List high availability configs with filter
+      nutanix.ncp.ntnx_high_availability_configs_info_v2:
+        filter: "clusterExtId eq '{{ target_cluster_ext_id }}'"
+      register: ha_filter
+      ignore_errors: true
+
+    - name: List high availability configs with limit
+      nutanix.ncp.ntnx_high_availability_configs_info_v2:
+        limit: 1
+      register: ha_limit
+      ignore_errors: true
+
+    - name: List all high availability configs with fetch_all
+      nutanix.ncp.ntnx_high_availability_configs_info_v2:
+        fetch_all: true
+      register: ha_fetch_all
+      ignore_errors: true
+
+    - name: Enable high availability on a cluster
+      nutanix.ncp.ntnx_enable_high_availability_config_v2:
+        cluster_ext_id: "{{ target_cluster_ext_id }}"
+        host_failures_to_tolerate_count: 1
+      register: ha_enable
+      ignore_errors: true
+
+    - name: Enable high availability with dryrun validation
+      nutanix.ncp.ntnx_enable_high_availability_config_v2:
+        cluster_ext_id: "{{ target_cluster_ext_id }}"
+        host_failures_to_tolerate_count: 1
+        dryrun: true
+      register: ha_enable_dryrun
+      ignore_errors: true
+
+    - name: Disable high availability on a cluster
+      nutanix.ncp.ntnx_disable_high_availability_config_v2:
+        cluster_ext_id: "{{ target_cluster_ext_id }}"
+      register: ha_disable
+      ignore_errors: true

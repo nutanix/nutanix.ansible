@@ -543,3 +543,6 @@ action_groups:
     - ntnx_security_profiles_v2
     - ntnx_security_profiles_advanced_config_info_v2
     - ntnx_security_profiles_advanced_config_v2
+    - ntnx_disable_high_availability_config_v2
+    - ntnx_enable_high_availability_config_v2
+    - ntnx_high_availability_configs_info_v2
