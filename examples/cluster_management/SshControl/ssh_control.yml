@@ -1,0 +1,60 @@
+# Summary:
+# External SSH Access Control playbook - demonstrates the two operations
+# the v4 clustermgmt SSH Control API exposes:
+#   1. Fetch external SSH access control for a cluster
+#   2. Update external SSH access control for the same cluster
+#
+# SSH access control is a singleton resource per cluster. There is no
+# create, delete, or list operation; the resource always exists on a
+# cluster and is only manipulated via Get and Update.
+
+- name: SshControl playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Discover a cluster to work with
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(f:f eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: clusters_info
+
+    - name: Pick the first AOS cluster
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters_info.response[0].ext_id }}"
+
+    - name: Get external SSH access control of the cluster
+      nutanix.ncp.ntnx_cluster_ssh_access_control_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: ssh_info
+      ignore_errors: true
+
+    - name: Print SSH access control
+      ansible.builtin.debug:
+        var: ssh_info
+
+    - name: Update external SSH access control - enable SSH
+      nutanix.ncp.ntnx_cluster_ssh_access_control_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        is_ssh_enabled: true
+        is_password_login_enabled: false
+      register: ssh_update
+      ignore_errors: true
+
+    - name: Print SSH update result
+      ansible.builtin.debug:
+        var: ssh_update
+
+    - name: Get external SSH access control after update
+      nutanix.ncp.ntnx_cluster_ssh_access_control_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: ssh_info_after
+      ignore_errors: true
+
+    - name: Print SSH access control after update
+      ansible.builtin.debug:
+        var: ssh_info_after

@@ -1,0 +1,80 @@
+# Test plan for clustermgmt SshControl info module
+# ===================================================
+# Covers get-by-cluster-id for external SSH access control.
+
+- name: Start SshControl info tests
+  ansible.builtin.debug:
+    msg: Start SshControl info tests
+
+- name: Set info test facts
+  ansible.builtin.set_fact:
+    invalid_cluster_ext_id: "12345678-0000-6524-9856-123456789854"
+
+- name: List clusters to discover a valid cluster ext_id
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: >-
+      config/clusterFunction/any(t:t eq
+      Clustermgmt.Config.ClusterFunctionRef'AOS')
+  register: clusters_result
+  ignore_errors: true
+
+- name: Set discovered cluster ext_ids list
+  ansible.builtin.set_fact:
+    discovered_cluster_ext_ids: >-
+      {{ clusters_result.response | default([])
+      | selectattr('ext_id', 'defined')
+      | map(attribute='ext_id') | list }}
+
+- name: Set target cluster ext_id
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: >-
+      {{ discovered_cluster_ext_ids
+      | first | default('') }}
+
+- name: Assert a target cluster was discovered
+  ansible.builtin.assert:
+    that:
+      - target_cluster_ext_id | length > 0
+    fail_msg: Could not discover a valid cluster ext_id for info tests
+    success_msg: Discovered target cluster ext_id {{ target_cluster_ext_id }}
+
+- name: Get SSH access control using valid cluster ext_id
+  nutanix.ncp.ntnx_cluster_ssh_access_control_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert get SSH access control succeeded
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == target_cluster_ext_id
+    fail_msg: Failed to get SSH access control for cluster
+    success_msg: Get SSH access control passed
+
+- name: Get SSH access control using invalid cluster ext_id
+  nutanix.ncp.ntnx_cluster_ssh_access_control_info_v2:
+    cluster_ext_id: "{{ invalid_cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert get SSH access control with invalid ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Get SSH access control with invalid ext_id should fail
+    success_msg: Get SSH access control with invalid ext_id correctly failed
+
+- name: Get SSH access control without cluster_ext_id (negative)
+  nutanix.ncp.ntnx_cluster_ssh_access_control_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Assert missing required field fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Missing required field should cause failure
+    success_msg: Missing required field correctly failed

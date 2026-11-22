@@ -762,3 +762,26 @@ def get_non_migratable_vms_result(module, api_instance, cluster_ext_id, ext_id):
                 "using ext_id"
             ),
         )
+
+
+def get_external_ssh_access_control(module, api_instance, cluster_ext_id):
+    """
+    This method will return external SSH access control info using cluster ID.
+    Args:
+        module: Ansible module
+        api_instance: SshControlApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+    return:
+        external SSH access control info (object)
+    """
+    try:
+        return api_instance.get_external_ssh_access_control_by_cluster_id(
+            clusterExtId=cluster_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching external SSH access control "
+            "using cluster ext_id",
+        )

@@ -281,3 +281,16 @@ def get_network_segments_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.NetworkSegmentsApi(client)
+
+
+def get_ssh_control_api_instance(module):
+    """
+    This method will return SSH Control api instance from sdk.
+    Used for External SSH Access Control operations.
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        SshControlApi: SshControlApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.SshControlApi(client)
