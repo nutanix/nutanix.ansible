@@ -1,4 +1,13 @@
 ---
+# Summary:
+# This playbook will do:
+# 1. List all CPU models
+# 2. Get CPU model using ext_id
+# 3. List CPU models with filter
+# 4. List CPU models with limit
+# 5. List all CPU models with fetch_all
+# 6. List CPU models with apply
+
 - name: CPU models info playbook
   hosts: localhost
   gather_facts: false
@@ -52,4 +61,10 @@
       nutanix.ncp.ntnx_cpu_models_info_v2:
         fetch_all: true
       register: cpu_models_all
+      ignore_errors: true
+
+    - name: List CPU models with apply
+      nutanix.ncp.ntnx_cpu_models_info_v2:
+        apply: "groupby((isDefault))"
+      register: cpu_models_applied
       ignore_errors: true

@@ -23,10 +23,13 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get CPU model by ext_id) -
-      Required Roles: Cluster Viewer, Prism Viewer, Super Admin
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer,
+      Project Admin, Project Manager, Self-Service Admin (Deprecated), Super Admin
     - >-
       B(List CPU models) -
-      Required Roles: Cluster Viewer, Prism Viewer, Super Admin
+      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Project Admin,
+      Project Manager, Self-Service Admin (Deprecated), Super Admin, Virtual Machine Admin,
+      Virtual Machine Operator, Virtual Machine Viewer
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
     ext_id:
@@ -34,6 +37,14 @@ options:
             - The external ID of the CPU model.
         type: str
         required: false
+    apply:
+    description:
+      - A URL query parameter that allows clients to specify a sequence of transformations to the
+        entity set, such as groupby, orderby, aggregate etc.
+      - For example C(groupby((property))) will get the entity set grouped by "property".
+      - The sequence must start with groupby, which may include multiple nested aggregates.
+        It may optionally be followed by orderby and/or pagination parameters.
+    type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
@@ -47,30 +58,60 @@ author:
 EXAMPLES = r"""
 - name: Get CPU model using ext_id
   nutanix.ncp.ntnx_cpu_models_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     ext_id: "00000000-0000-0000-0000-000000000000"
   register: result
   ignore_errors: true
 
 - name: List all CPU models
   nutanix.ncp.ntnx_cpu_models_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
   register: result
   ignore_errors: true
 
 - name: List CPU models with filter
   nutanix.ncp.ntnx_cpu_models_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     filter: "isDefault eq true"
   register: result
   ignore_errors: true
 
 - name: List CPU models with limit
   nutanix.ncp.ntnx_cpu_models_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     limit: 1
   register: result
   ignore_errors: true
 
 - name: List all CPU models with fetch_all
   nutanix.ncp.ntnx_cpu_models_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     fetch_all: true
+  register: result
+  ignore_errors: true
+
+- name: List CPU models with apply
+  nutanix.ncp.ntnx_cpu_models_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    apply: "groupby((isDefault))"
   register: result
   ignore_errors: true
 """
@@ -163,6 +204,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
+        apply=dict(type="str"),
     )
 
     return module_args
@@ -178,7 +220,7 @@ def get_cpu_model_using_ext_id(module, api_instance, result):
 def get_cpu_models(module, api_instance, result):
 
     sg = SpecGenerator(module)
-    kwargs, err = sg.get_info_spec(attr=module.params)
+    kwargs, err = sg.get_info_spec(attr=module.params, extra_params=["apply"])
 
     if err:
         result["error"] = err
@@ -212,6 +254,7 @@ def run_module():
         supports_check_mode=False,
         mutually_exclusive=[
             ("ext_id", "filter"),
+            ("ext_id", "apply"),
         ],
     )
     remove_param_with_none_value(module.params)
