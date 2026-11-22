@@ -38,13 +38,13 @@ options:
         type: str
         required: false
     apply:
-    description:
-      - A URL query parameter that allows clients to specify a sequence of transformations to the
-        entity set, such as groupby, orderby, aggregate etc.
-      - For example C(groupby((property))) will get the entity set grouped by "property".
-      - The sequence must start with groupby, which may include multiple nested aggregates.
-        It may optionally be followed by orderby and/or pagination parameters.
-    type: str
+        description:
+            - A URL query parameter that allows clients to specify a sequence of transformations to the
+              entity set, such as groupby, orderby, aggregate etc.
+            - For example C(groupby((property))) will get the entity set grouped by "property".
+            - The sequence must start with groupby, which may include multiple nested aggregates.
+              It may optionally be followed by orderby and/or pagination parameters.
+        type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
