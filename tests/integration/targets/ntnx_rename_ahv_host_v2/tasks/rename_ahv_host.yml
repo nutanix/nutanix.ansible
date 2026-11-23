@@ -313,7 +313,8 @@
   ansible.builtin.assert:
     that:
       - rename_result is defined
-      - (rename_result.failed == false and rename_result.changed == true and rename_result.task_ext_id is defined) or (rename_result.failed == true and rename_result.status is defined and rename_result.status == 404)
+      - (rename_result.failed == false and rename_result.changed == true and rename_result.task_ext_id is defined)
+        or (rename_result.failed == true and rename_result.status is defined and rename_result.status == 404)
     success_msg: "Live rename handled correctly (success or expected 404)"
     fail_msg: "Live rename did not return expected success or 404"
 
