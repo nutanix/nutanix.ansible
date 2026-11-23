@@ -283,6 +283,28 @@ def get_network_segments_api_instance(module):
     return ntnx_clustermgmt_py_client.NetworkSegmentsApi(client)
 
 
+def get_high_availability_config_api_instance(module):
+    """
+    This method will return HighAvailabilityConfig api instance from sdk.
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        HighAvailabilityConfigApi: HighAvailabilityConfigApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.HighAvailabilityConfigApi(client)
+
+
+def get_cluster_high_availability_configs_api_instance(module):
+    """
+    This method will return ClusterHighAvailabilityConfigs api instance from sdk.
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        ClusterHighAvailabilityConfigsApi: ClusterHighAvailabilityConfigsApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.ClusterHighAvailabilityConfigsApi(client)
 def get_cpu_models_api_instance(module):
     """
     This method will return CPU models api instance from sdk

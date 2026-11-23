@@ -822,3 +822,26 @@ def get_cpu_model(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching CPU model info using ext_id",
         )
+
+
+def get_high_availability_config(module, api_instance, cluster_ext_id):
+    """
+    This method will return high availability config using cluster external ID.
+    Args:
+        module: Ansible module
+        api_instance: HighAvailabilityConfigApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+    return:
+        high availability config (object): high availability config info
+    """
+    try:
+        return api_instance.get_high_availability_config(
+            clusterExtId=cluster_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching high availability config "
+            "using cluster_ext_id: {0}".format(cluster_ext_id),
+        )
