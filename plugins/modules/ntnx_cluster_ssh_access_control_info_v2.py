@@ -55,6 +55,10 @@ author:
 EXAMPLES = r"""
 - name: Get external SSH access control of a cluster
   nutanix.ncp.ntnx_cluster_ssh_access_control_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     cluster_ext_id: "00062db3-c8a6-4b3d-8b9a-7f4d9b2c1a55"
   register: result
   ignore_errors: true
@@ -73,12 +77,12 @@ response:
   type: dict
   sample:
     {
-      "ext_id": null,
-      "is_password_login_enabled": null,
+      "ext_id": "00065ffe-0266-379f-0000-000000028f57",
+      "is_password_login_enabled": true,
       "is_ssh_enabled": true,
-      "links": null,
-      "ssh_access_inconsistency_details": null,
-      "tenant_id": null
+      "links": [],
+      "ssh_access_inconsistency_details": [],
+      "tenant_id": "00065ffe-0266-379f-0000-000000028f57"
     }
 
 changed:
@@ -103,12 +107,6 @@ failed:
   returned: always
   type: bool
   sample: false
-
-msg:
-  description: This indicates the status/error message if any occurred.
-  returned: when there is an error
-  type: str
-  sample: "Api Exception raised while fetching external SSH access control using cluster ext_id"
 """
 
 import warnings  # noqa: E402
