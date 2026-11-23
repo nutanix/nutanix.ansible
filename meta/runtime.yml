@@ -549,8 +549,6 @@ action_groups:
     - ntnx_initialize_cluster_recovery_v2
     - ntnx_protect_cluster_v2
     - ntnx_unprotect_cluster_v2
-    - ntnx_associate_categories_to_host_nic_v2
-    - ntnx_disassociate_categories_from_host_nic_v2
     - ntnx_rename_host_v2
     - ntnx_shutdown_host_v2
     - ntnx_refresh_port_capability_by_cluster_id_v2
@@ -573,3 +571,4 @@ action_groups:
     - ntnx_cpu_models_info_v2
     - ntnx_device_bundle_instances_info_v2
     - ntnx_device_bundle_profiles_info_v2
+    - ntnx_cluster_host_nics_categories_v2
