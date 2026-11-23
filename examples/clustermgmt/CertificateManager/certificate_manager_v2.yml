@@ -11,8 +11,9 @@
 # 6. List all Certificate Authorities on a cluster
 # 7. List all Certificates on a cluster
 # 8. List all Certificate Signing Requests on a cluster
-# 9. Delete a Certificate Authority
-# 10. Delete a Certificate Signing Request
+# 9. Delete a Certificate
+# 10. Delete a Certificate Authority
+# 11. Delete a Certificate Signing Request
 
 - name: Certificate Manager playbook
   hosts: localhost
@@ -92,6 +93,7 @@
 
     - name: Add a Certificate to a cluster
       nutanix.ncp.ntnx_cluster_certificate_v2:
+        state: present
         cluster_ext_id: "{{ cluster_ext_id }}"
         certificate: "{{ certificate_base64 }}"
         certificate_chain: "{{ certificate_chain_base64 }}"
@@ -101,6 +103,13 @@
         purpose: "SERVER_AUTH"
       register: certificate_result
       ignore_errors: true
+
+    - name: Set Certificate ext_id
+      ansible.builtin.set_fact:
+        certificate_ext_id: "{{ certificate_result.ext_id }}"
+      when:
+        - certificate_result.ext_id is defined
+        - certificate_result.ext_id
 
     - name: Get a Certificate Authority using ext_id
       nutanix.ncp.ntnx_certificate_authority_info_v2:
@@ -127,6 +136,15 @@
         cluster_ext_id: "{{ cluster_ext_id }}"
       register: result
       ignore_errors: true
+
+    - name: Delete a Certificate
+      nutanix.ncp.ntnx_cluster_certificate_v2:
+        state: absent
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ certificate_ext_id }}"
+      register: result
+      ignore_errors: true
+      when: certificate_ext_id is defined
 
     - name: Delete a Certificate Authority
       nutanix.ncp.ntnx_certificate_authority_v2:
