@@ -2,8 +2,8 @@
 # =============================================================================
 # TEST PLAN — ntnx_external_storages_v2 / ntnx_external_storages_info_v2
 # =============================================================================
-# The clustermgmt v4.3 ExternalStorages API supports Create, Get, List and
-# Update only (no Delete). External storage represents a third-party storage
+# The clustermgmt v4.5 ExternalStorages API supports Create, Get, List,
+# Update and Delete. External storage represents a third-party storage
 # provider (Dell PowerFlex, Everpure FlashArray, Dell PowerStore) attached to
 # an AOS cluster on Prism Central. Provider type is inferred from the config
 # discriminator key; it is not a module input.
@@ -14,16 +14,18 @@
 #   2. check_mode create with ALL fields (Everpure FlashArray) — enum/config coverage
 #   3. check_mode create with ALL fields (Dell PowerStore) — enum/config coverage
 #   4. check_mode update with ALL fields — spec built, no API call (best effort)
-#   5. check_mode delete — reports delete is unsupported, no API call
+#   5. check_mode delete — spec built, no API call, msg will be deleted
 #   6. Negative: missing required create fields (name/config/cluster_ext_id)
 #   7. Negative: create without a provider config sub-key (required_one_of)
-#   8. Negative: get / update with a non-existent ext_id -> descriptive error
-#   9. Info: list all external storages (list may be empty on a fresh cluster)
-#  10. Info: list with limit
-#  11. Info: list with fetch_all (paginated full list)
-#  12. Real create (best effort): attempted against the discovered cluster; if
+#   8. Negative: get with a non-existent ext_id -> descriptive error
+#   9. Negative: delete with a non-existent ext_id -> descriptive error
+#  10. Info: list all external storages (list may be empty on a fresh cluster)
+#  11. Info: list with limit
+#  12. Info: list with fetch_all (paginated full list)
+#  13. Real create (best effort): attempted against the discovered cluster; if
 #      no backend exists the API error is asserted to be a clean failure and the
 #      created entity is tracked for potential follow-up.
+#  14. Real delete (best effort): if real create succeeded, delete it and verify
 #
 # Every check asserts `changed` and `failed` first, then field-level values.
 # =============================================================================
@@ -167,7 +169,7 @@
     success_msg: "Dell PowerStore external storage create spec generated successfully in check mode"
 
 # ---------------------------------------------------------------------------
-# 5. check_mode delete — delete unsupported by the API
+# 5. check_mode delete — delete with all fields
 # ---------------------------------------------------------------------------
 - name: Delete external storage with check mode enabled
   nutanix.ncp.ntnx_external_storages_v2:
@@ -177,15 +179,15 @@
   register: result
   ignore_errors: true
 
-- name: Verify delete reports unsupported operation
+- name: Verify delete in check mode
   ansible.builtin.assert:
     that:
       - result.changed == false
-      - result.failed == true
+      - result.failed == false
       - result.ext_id == "12345678-1234-1234-1234-123456789012"
-      - "'Delete operation is not supported' in result.msg"
-    fail_msg: "Delete external storage did not report unsupported operation as expected"
-    success_msg: "Delete external storage correctly reported unsupported operation"
+      - "'will be deleted' in result.msg"
+    fail_msg: "Delete external storage check mode did not report will be deleted as expected"
+    success_msg: "Delete external storage check mode correctly reported will be deleted"
 
 # ---------------------------------------------------------------------------
 # 6. Negative: missing required create fields
@@ -346,3 +348,63 @@
       - real_create_result.changed is defined
     fail_msg: "Real external storage create returned a malformed result"
     success_msg: "Real external storage create returned a well-formed result"
+
+# ---------------------------------------------------------------------------
+# 12. Negative: delete with a non-existent ext_id
+# ---------------------------------------------------------------------------
+- name: Delete external storage with non-existent ext_id
+  nutanix.ncp.ntnx_external_storages_v2:
+    state: absent
+    ext_id: "12345678-1234-1234-1234-123456789012"
+  register: result
+  ignore_errors: true
+
+- name: Verify delete with non-existent ext_id fails cleanly
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == true
+      - result.msg is defined
+    fail_msg: "Delete with non-existent ext_id did not fail as expected"
+    success_msg: "Delete with non-existent ext_id failed with a descriptive error as expected"
+
+# ---------------------------------------------------------------------------
+# 13. Real delete (best effort) if create succeeded
+# ---------------------------------------------------------------------------
+- name: Delete created external storage with check mode enabled
+  nutanix.ncp.ntnx_external_storages_v2:
+    state: absent
+    ext_id: "{{ created_ext_ids[0] }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+  when: created_ext_ids | length > 0
+
+- name: Verify delete created external storage in check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - "'will be deleted' in result.msg"
+    fail_msg: "Delete created external storage check mode failed"
+    success_msg: "Delete created external storage check mode succeeded"
+  when: created_ext_ids | length > 0
+
+- name: Delete created external storage
+  nutanix.ncp.ntnx_external_storages_v2:
+    state: absent
+    ext_id: "{{ created_ext_ids[0] }}"
+  register: result
+  ignore_errors: true
+  when: created_ext_ids | length > 0
+
+- name: Verify delete created external storage
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined
+      - result.response is defined
+    fail_msg: "Unable to delete created external storage"
+    success_msg: "Deleted created external storage successfully"
+  when: created_ext_ids | length > 0
