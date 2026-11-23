@@ -283,6 +283,18 @@ def get_network_segments_api_instance(module):
     return ntnx_clustermgmt_py_client.NetworkSegmentsApi(client)
 
 
+def get_cpu_models_api_instance(module):
+    """
+    This method will return CPU models api instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        CpuModelsApi: CpuModelsApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.CpuModelsApi(client)
+
+
 def get_device_bundles_api_instance(module):
     """
     This method will return Device Bundles api instance from sdk.
