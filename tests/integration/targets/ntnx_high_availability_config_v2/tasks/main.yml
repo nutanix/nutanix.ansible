@@ -10,5 +10,5 @@
       nutanix_debug: "{{ nutanix_debug | default(omit) }}"
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
   block:
-    - name: Import enable_high_availability_config tasks
-      ansible.builtin.import_tasks: enable_high_availability_config.yml
+    - name: Import high_availability_config tasks
+      ansible.builtin.import_tasks: high_availability_config.yml

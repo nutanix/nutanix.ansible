@@ -7,8 +7,8 @@
 #   1. Discover a Prism Element (AOS) cluster.
 #   2. Fetch HA config for a specific cluster (Get).
 #   3. List all HA configs with various filters.
-#   4. Enable HA on a cluster.
-#   5. Disable HA on a cluster.
+#   4. Enable HA on a cluster (state=present).
+#   5. Disable HA on a cluster (state=absent).
 #
 - name: High availability config playbook
   hosts: localhost
@@ -54,14 +54,16 @@
       ignore_errors: true
 
     - name: Enable high availability on a cluster
-      nutanix.ncp.ntnx_enable_high_availability_config_v2:
+      nutanix.ncp.ntnx_high_availability_config_v2:
+        state: present
         cluster_ext_id: "{{ target_cluster_ext_id }}"
         host_failures_to_tolerate_count: 1
       register: ha_enable
       ignore_errors: true
 
     - name: Enable high availability with dryrun validation
-      nutanix.ncp.ntnx_enable_high_availability_config_v2:
+      nutanix.ncp.ntnx_high_availability_config_v2:
+        state: present
         cluster_ext_id: "{{ target_cluster_ext_id }}"
         host_failures_to_tolerate_count: 1
         dryrun: true
@@ -69,7 +71,8 @@
       ignore_errors: true
 
     - name: Disable high availability on a cluster
-      nutanix.ncp.ntnx_disable_high_availability_config_v2:
+      nutanix.ncp.ntnx_high_availability_config_v2:
+        state: absent
         cluster_ext_id: "{{ target_cluster_ext_id }}"
       register: ha_disable
       ignore_errors: true
