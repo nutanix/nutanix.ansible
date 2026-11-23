@@ -1,4 +1,7 @@
 ---
+# Summary:
+# This playbook will rename the AHV host
+
 - name: Rename AHV host example playbook
   hosts: localhost
   gather_facts: false

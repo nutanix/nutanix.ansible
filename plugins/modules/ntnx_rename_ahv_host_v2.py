@@ -15,7 +15,6 @@ short_description: Rename AHV host in Nutanix Prism Central
 version_added: "2.7.0"
 description:
   - Rename an AHV host that belongs to a cluster registered with Nutanix Prism Central.
-  - Uses the v4 Hosts API C(rename_ahv_host) to rename the host.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -158,12 +157,6 @@ ext_id:
   returned: always
   type: str
   sample: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
-
-cluster_ext_id:
-  description: The external ID of the cluster that owns the host
-  returned: always
-  type: str
-  sample: "0006361b-6855-3644-7458-2268f8ffb2bd"
 """
 
 import traceback  # noqa: E402
@@ -209,9 +202,7 @@ def get_module_spec():
 def rename_ahv_host(module, result, api_instance):
     cluster_ext_id = module.params.get("cluster_ext_id")
     host_ext_id = module.params.get("host_ext_id")
-    result["cluster_ext_id"] = cluster_ext_id
     result["ext_id"] = host_ext_id
-    result["host_ext_id"] = host_ext_id
 
     sg = SpecGenerator(module)
     default_spec = cluster_management_sdk.AhvHostRenameParams()
@@ -240,37 +231,12 @@ def rename_ahv_host(module, result, api_instance):
             msg="Api Exception raised while renaming AHV host",
         )
 
-    # Response is TaskReference wrapped in RenameAhvHostApiResponse
-    task_ext_id = None
-    if resp and getattr(resp, "data", None):
-        # data could be TaskReference or directly contain ext_id
-        data = resp.data
-        # Try to get ext_id from data
-        if hasattr(data, "ext_id"):
-            task_ext_id = data.ext_id
-        elif isinstance(data, dict) and "ext_id" in data:
-            task_ext_id = data["ext_id"]
-        # Fallback: check wrapped OneOf
-        if not task_ext_id and hasattr(data, "to_dict"):
-            d = strip_internal_attributes(data.to_dict())
-            task_ext_id = d.get("ext_id")
-
-    if task_ext_id:
-        result["task_ext_id"] = task_ext_id
-
-    # Store initial response
-    if resp and getattr(resp, "data", None):
-        try:
-            result["response"] = strip_internal_attributes(resp.data.to_dict())
-        except Exception:
-            result["response"] = strip_internal_attributes(resp.to_dict())
-    else:
-        result["response"] = strip_internal_attributes(resp.to_dict()) if resp else {}
-
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
         task = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task.to_dict())
-
     result["changed"] = True
 
 
