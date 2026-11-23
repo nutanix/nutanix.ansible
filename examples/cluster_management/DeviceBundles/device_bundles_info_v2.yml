@@ -1,0 +1,108 @@
+---
+# Summary:
+# This playbook demonstrates fetching device bundle instances and
+# device bundle profiles information from Nutanix Prism Central using
+# the ntnx_device_bundle_instances_info_v2 and
+# ntnx_device_bundle_profiles_info_v2 modules. It covers:
+# 1. List all device bundle instances
+# 2. Fetch a specific device bundle instance using ext_id
+# 3. List device bundle instances with a filter
+# 4. List device bundle instances with a limit
+# 5. List all device bundle instances with fetch_all
+# 6. List all device bundle profiles
+# 7. Fetch a specific device bundle profile using ext_id
+# 8. List device bundle profiles with a filter
+# 9. List device bundle profiles with a limit
+# 10. List all device bundle profiles with fetch_all
+#
+# Device bundles are served by Prism Central (PC).
+
+- name: Device bundles info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ nutanix_username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ nutanix_password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      validate_certs: false
+  tasks:
+    - name: List all device bundle instances
+      nutanix.ncp.ntnx_device_bundle_instances_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Set device bundle instance ext_id from the list
+      ansible.builtin.set_fact:
+        device_bundle_instance_ext_id: "{{ result.response[0].ext_id }}"
+      when:
+        - result.failed is defined and not result.failed
+        - result.response is defined
+        - result.response is iterable
+        - result.response | length > 0
+
+    - name: Fetch a specific device bundle instance using ext_id
+      nutanix.ncp.ntnx_device_bundle_instances_info_v2:
+        ext_id: "{{ device_bundle_instance_ext_id }}"
+      register: result
+      ignore_errors: true
+      when: device_bundle_instance_ext_id is defined
+
+    - name: List device bundle instances with a filter
+      nutanix.ncp.ntnx_device_bundle_instances_info_v2:
+        filter: "extId eq '{{ device_bundle_instance_ext_id }}'"
+      register: result
+      ignore_errors: true
+      when: device_bundle_instance_ext_id is defined
+
+    - name: List device bundle instances with a limit
+      nutanix.ncp.ntnx_device_bundle_instances_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: List all device bundle instances with fetch_all
+      nutanix.ncp.ntnx_device_bundle_instances_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
+
+    - name: List all device bundle profiles
+      nutanix.ncp.ntnx_device_bundle_profiles_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Set device bundle profile ext_id from the list
+      ansible.builtin.set_fact:
+        device_bundle_profile_ext_id: "{{ result.response[0].ext_id }}"
+      when:
+        - result.failed is defined and not result.failed
+        - result.response is defined
+        - result.response is iterable
+        - result.response | length > 0
+
+    - name: Fetch a specific device bundle profile using ext_id
+      nutanix.ncp.ntnx_device_bundle_profiles_info_v2:
+        ext_id: "{{ device_bundle_profile_ext_id }}"
+      register: result
+      ignore_errors: true
+      when: device_bundle_profile_ext_id is defined
+
+    - name: List device bundle profiles with a filter
+      nutanix.ncp.ntnx_device_bundle_profiles_info_v2:
+        filter: "name eq '{{ result.response.name }}'"
+      register: result
+      ignore_errors: true
+      when: device_bundle_profile_ext_id is defined
+
+    - name: List device bundle profiles with a limit
+      nutanix.ncp.ntnx_device_bundle_profiles_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: List all device bundle profiles with fetch_all
+      nutanix.ncp.ntnx_device_bundle_profiles_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
