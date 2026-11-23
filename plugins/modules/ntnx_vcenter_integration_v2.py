@@ -83,7 +83,9 @@ options:
     description:
       - Unregister payload. EXTENSION requires username and password. SSO does not
         require credentials.
-      - Provide exactly one of the following: extension_config or sso_config.
+      - >-
+          Provide exactly one of the following - C(extension_config) or
+          C(sso_config).
     type: dict
     required: false
     suboptions:
@@ -108,8 +110,10 @@ options:
       sso_config:
         description:
           - Unregister an SSO integration. No credentials are required.
-          - This branch has no fields; supply it as an empty mapping
-            (for example C(sso_config:) which is YAML null, or an explicit empty dict).
+          - >-
+              This branch has no fields; supply it as an empty mapping
+              (for example C(sso_config) with no value, which is YAML null,
+              or an explicit empty dict).
         type: dict
         required: false
 extends_documentation_fragment:
