@@ -1,0 +1,182 @@
+---
+############################################################################################
+# Test plan for ntnx_device_bundle_instances_info_v2
+#
+# DeviceBundleInstances is a read-only entity representing a specific instance
+# of one or more device bundle profiles on a host. The SDK exposes
+# GetDeviceBundleInstanceById and ListDeviceBundleInstances.
+#
+# Scenarios covered:
+#   1. List all device bundle instances -> changed=false, failed=false,
+#      response is a list, total_available_results is populated.
+#   2. List with limit -> response length is bounded by the limit.
+#   3. List with fetch_all -> response length equals total_available_results.
+#   4. Fetch a single instance by ext_id -> single dict response, ext_id echoed.
+#   5. List with filter on extId -> exactly one matching.
+#   6. Fetch with a non-existent ext_id -> graceful error handling.
+#   7. Mutually exclusive ext_id + filter -> module rejects.
+############################################################################################
+
+- name: Start ntnx_device_bundle_instances_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_device_bundle_instances_info_v2 tests
+
+############################################################################################
+# List all device bundle instances
+############################################################################################
+
+- name: List all device bundle instances
+  nutanix.ncp.ntnx_device_bundle_instances_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all device bundle instances status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response is iterable
+      - result.total_available_results is defined
+    success_msg: "List all device bundle instances passed"
+    fail_msg: "List all device bundle instances failed"
+
+- name: Set has_device_bundle_instances flag
+  ansible.builtin.set_fact:
+    has_device_bundle_instances: "{{ (result.response | length) > 0 }}"
+    all_device_bundle_instances: "{{ result.response }}"
+
+############################################################################################
+# List device bundle instances with limit
+############################################################################################
+
+- name: List device bundle instances with limit
+  nutanix.ncp.ntnx_device_bundle_instances_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List device bundle instances with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length <= 1
+    success_msg: "List device bundle instances with limit passed"
+    fail_msg: "List device bundle instances with limit failed"
+
+############################################################################################
+# List all device bundle instances with fetch_all
+############################################################################################
+
+- name: List all device bundle instances with fetch_all
+  nutanix.ncp.ntnx_device_bundle_instances_info_v2:
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: List all device bundle instances with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result.changed == false
+      - fetch_all_result.failed == false
+      - fetch_all_result.response is defined
+      - fetch_all_result.total_available_results is defined
+      - (fetch_all_result.response | default([]) | length) ==
+        (fetch_all_result.total_available_results | int)
+    success_msg: "Listed all device bundle instances with fetch_all successfully"
+    fail_msg: "Unable to list all device bundle instances with fetch_all"
+
+############################################################################################
+# Fetch a single device bundle instance using ext_id
+############################################################################################
+
+- name: Set first device bundle instance ext_id
+  ansible.builtin.set_fact:
+    device_bundle_instance_ext_id: "{{ all_device_bundle_instances[0].ext_id }}"
+  when: has_device_bundle_instances | bool
+
+- name: Fetch a specific device bundle instance using ext_id
+  nutanix.ncp.ntnx_device_bundle_instances_info_v2:
+    ext_id: "{{ device_bundle_instance_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: has_device_bundle_instances | bool
+
+- name: Fetch a specific device bundle instance using ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == device_bundle_instance_ext_id
+      - result.response is defined
+      - result.response.ext_id == device_bundle_instance_ext_id
+    success_msg: "Fetch a specific device bundle instance using ext_id passed"
+    fail_msg: "Fetch a specific device bundle instance using ext_id failed"
+  when: has_device_bundle_instances | bool
+
+############################################################################################
+# List device bundle instances with a filter on extId
+############################################################################################
+
+- name: List device bundle instances with filter on extId
+  nutanix.ncp.ntnx_device_bundle_instances_info_v2:
+    filter: "extId eq '{{ device_bundle_instance_ext_id }}'"
+  register: result
+  ignore_errors: true
+  when: has_device_bundle_instances | bool
+
+- name: List device bundle instances with filter on extId status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length == 1
+      - result.response[0].ext_id == device_bundle_instance_ext_id
+    success_msg: "List device bundle instances with filter on extId passed"
+    fail_msg: "List device bundle instances with filter on extId failed"
+  when: has_device_bundle_instances | bool
+
+############################################################################################
+# Fetch device bundle instance with a non-existent ext_id (graceful error handling)
+############################################################################################
+
+- name: Fetch device bundle instance with a non-existent ext_id
+  nutanix.ncp.ntnx_device_bundle_instances_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Fetch device bundle instance with a non-existent ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+    success_msg: "Fetch device bundle instance with a non-existent ext_id handled gracefully"
+    fail_msg: "Fetch device bundle instance with a non-existent ext_id was not handled gracefully"
+
+############################################################################################
+# Negative: ext_id and filter are mutually exclusive
+############################################################################################
+
+- name: Fetch device bundle instance with both ext_id and filter (should fail)
+  nutanix.ncp.ntnx_device_bundle_instances_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    filter: "extId eq '00000000-0000-0000-0000-000000000000'"
+  register: result
+  ignore_errors: true
+
+- name: Fetch device bundle instance with both ext_id and filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    success_msg: "Providing both ext_id and filter failed as expected"
+    fail_msg: "Providing both ext_id and filter did not fail as expected"
