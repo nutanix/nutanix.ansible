@@ -319,9 +319,38 @@ def get_cluster_protection_api_instance(module):
     return ntnx_clustermgmt_py_client.ClusterProtectionApi(client)
 
 
+def get_vcenter_integrations_api_instance(module):
+    """
+    This method will return vCenter Integrations api instance from sdk.
+
+    The vCenter Integrations API is used to manage vCenter server
+    integrations for clusters registered to Prism Central.
+
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        VcenterIntegrationsApi: VcenterIntegrationsApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.VcenterIntegrationsApi(client)
+
+
+def get_ssh_control_api_instance(module):
+    """
+    This method will return SSH Control api instance from sdk.
+    Used for External SSH Access Control operations.
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        SshControlApi: SshControlApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.SshControlApi(client)
+
+
 def get_hosts_api_instance(module):
     """
-    This method will return Hosts api instance from sdk.
+    This method will return Hosts API instance from SDK.
     Args:
         module (AnsibleModule): AnsibleModule instance
     Returns:
@@ -341,3 +370,52 @@ def get_clusters_stats_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.ClustersApi(client)
+
+
+def get_high_availability_config_api_instance(module):
+    """
+    This method will return HighAvailabilityConfig api instance from sdk.
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        HighAvailabilityConfigApi: HighAvailabilityConfigApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.HighAvailabilityConfigApi(client)
+
+
+def get_cluster_high_availability_configs_api_instance(module):
+    """
+    This method will return ClusterHighAvailabilityConfigs api instance from sdk.
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        ClusterHighAvailabilityConfigsApi: ClusterHighAvailabilityConfigsApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.ClusterHighAvailabilityConfigsApi(client)
+
+
+def get_cpu_models_api_instance(module):
+    """
+    This method will return CPU models api instance from sdk
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        CpuModelsApi: CpuModelsApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.CpuModelsApi(client)
+
+
+def get_device_bundles_api_instance(module):
+    """
+    This method will return Device Bundles api instance from sdk.
+    Used for Device Bundle Instance and Device Bundle Profile operations.
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        DeviceBundlesApi: DeviceBundlesApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.DeviceBundlesApi(client)

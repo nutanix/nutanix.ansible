@@ -1,0 +1,232 @@
+# Test plan for clustermgmt SshControl v4 modules
+# ======================================================
+# SshControl manages external SSH access control per cluster.
+# It is a singleton resource per cluster: Get by clusterExtId and
+# Update by clusterExtId (PUT returning TaskReference).
+#
+# Scenarios covered:
+#   1. Discover a valid cluster ext_id from live PC.
+#   2. Info: get SSH access control by valid cluster ext_id.
+#   3. Info: get SSH access control with invalid cluster ext_id (negative).
+#   4. Check_mode: update SSH access control (assert spec, no API call).
+#   5. Negative: missing required field cluster_ext_id.
+#   6. Negative: invalid cluster ext_id (API not-found).
+#   7. Live update: toggle SSH access control settings.
+#   8. Idempotency: same update again -> skipped.
+#   9. Restore original state.
+
+- name: Start SshControl tests
+  ansible.builtin.debug:
+    msg: Start SshControl tests
+
+- name: Set SshControl test facts
+  ansible.builtin.set_fact:
+    invalid_cluster_ext_id: "12345678-0000-6524-9856-123456789854"
+    ssh_original_is_ssh_enabled: ""
+    ssh_original_is_password_login_enabled: ""
+
+##############################################################################
+# 1. Discover a valid cluster ext_id
+##############################################################################
+- name: List clusters to discover a valid PE cluster ext_id
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: >-
+      config/clusterFunction/any(t:t eq
+      Clustermgmt.Config.ClusterFunctionRef'AOS')
+  register: clusters_result
+  ignore_errors: true
+
+- name: Set discovered cluster ext_ids list
+  ansible.builtin.set_fact:
+    discovered_cluster_ext_ids: >-
+      {{ clusters_result.response | default([])
+      | selectattr('ext_id', 'defined')
+      | map(attribute='ext_id') | list }}
+
+- name: Set target cluster ext_id
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: >-
+      {{ discovered_cluster_ext_ids
+      | first | default('') }}
+
+- name: Assert a target cluster was discovered
+  ansible.builtin.assert:
+    that:
+      - target_cluster_ext_id | length > 0
+    fail_msg: Could not discover a valid cluster ext_id for SshControl tests
+    success_msg: Discovered target cluster ext_id {{ target_cluster_ext_id }}
+
+##############################################################################
+# 2. Info: get SSH access control by valid cluster ext_id
+##############################################################################
+- name: Get SSH access control using valid cluster ext_id
+  nutanix.ncp.ntnx_cluster_ssh_access_control_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert get SSH access control succeeded
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == target_cluster_ext_id
+    fail_msg: Failed to get SSH access control for cluster
+    success_msg: Get SSH access control passed
+
+- name: Store original SSH access control state
+  ansible.builtin.set_fact:
+    ssh_original_is_ssh_enabled: "{{ result.response.is_ssh_enabled }}"
+    ssh_original_is_password_login_enabled: >-
+      {{ result.response.is_password_login_enabled }}
+  when: not result.failed and result.response is defined
+
+##############################################################################
+# 3. Info: get SSH access control with invalid cluster ext_id (negative)
+##############################################################################
+- name: Get SSH access control using invalid cluster ext_id
+  nutanix.ncp.ntnx_cluster_ssh_access_control_info_v2:
+    cluster_ext_id: "{{ invalid_cluster_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert get SSH access control with invalid ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Get SSH access control with invalid ext_id should fail
+    success_msg: Get SSH access control with invalid ext_id correctly failed
+
+##############################################################################
+# 4. Check_mode: update SSH access control
+##############################################################################
+- name: Update SSH access control with check mode enabled
+  nutanix.ncp.ntnx_cluster_ssh_access_control_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    is_ssh_enabled: true
+    is_password_login_enabled: false
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode update SSH access control
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.response is defined
+    fail_msg: Check mode update SSH access control failed
+    success_msg: Check mode update SSH access control passed
+
+##############################################################################
+# 5. Negative: missing required field cluster_ext_id
+##############################################################################
+- name: Update SSH access control without cluster_ext_id (negative)
+  nutanix.ncp.ntnx_cluster_ssh_access_control_v2:
+    is_ssh_enabled: true
+  register: result
+  ignore_errors: true
+
+- name: Assert missing required field fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Missing required field should cause failure
+    success_msg: Missing required field correctly failed
+
+##############################################################################
+# 6. Negative: invalid cluster ext_id (API not-found)
+##############################################################################
+- name: Update SSH access control with invalid cluster ext_id
+  nutanix.ncp.ntnx_cluster_ssh_access_control_v2:
+    cluster_ext_id: "{{ invalid_cluster_ext_id }}"
+    is_ssh_enabled: false
+  register: result
+  ignore_errors: true
+
+- name: Assert update with invalid ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Update with invalid cluster ext_id should fail
+    success_msg: Update with invalid cluster ext_id correctly failed
+
+##############################################################################
+# 7. Live update: toggle SSH access control settings
+##############################################################################
+- name: Determine toggled SSH enabled value
+  ansible.builtin.set_fact:
+    ssh_toggled_enabled: "{{ not (ssh_original_is_ssh_enabled | bool) }}"
+
+- name: Update SSH access control with toggled value
+  nutanix.ncp.ntnx_cluster_ssh_access_control_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    is_ssh_enabled: "{{ ssh_toggled_enabled }}"
+  register: ssh_update_result
+  ignore_errors: true
+
+- name: Assert update SSH access control succeeded
+  ansible.builtin.assert:
+    that:
+      - ssh_update_result.changed == true
+      - ssh_update_result.failed == false
+      - ssh_update_result.response is defined
+      - ssh_update_result.ext_id == target_cluster_ext_id
+      - ssh_update_result.task_ext_id is defined
+    fail_msg: Update SSH access control failed
+    success_msg: Update SSH access control passed
+
+- name: Verify SSH access control after update
+  nutanix.ncp.ntnx_cluster_ssh_access_control_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: ssh_verify_result
+  ignore_errors: true
+
+- name: Assert SSH access control reflects toggled value
+  ansible.builtin.assert:
+    that:
+      - ssh_verify_result.failed == false
+      - ssh_verify_result.response.is_ssh_enabled == ssh_toggled_enabled | bool
+    fail_msg: SSH access control toggle verification failed
+    success_msg: SSH access control toggle verified
+
+##############################################################################
+# 8. Idempotency: same update again -> skipped
+##############################################################################
+- name: Update SSH access control again with same values (idempotency)
+  nutanix.ncp.ntnx_cluster_ssh_access_control_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    is_ssh_enabled: "{{ ssh_toggled_enabled }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert idempotency check
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+    fail_msg: Idempotency check failed
+    success_msg: Idempotency check passed
+
+##############################################################################
+# 9. Restore original state
+##############################################################################
+- name: Restore original SSH access control state
+  nutanix.ncp.ntnx_cluster_ssh_access_control_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    is_ssh_enabled: "{{ ssh_original_is_ssh_enabled }}"
+    is_password_login_enabled: "{{ ssh_original_is_password_login_enabled }}"
+  register: restore_result
+  ignore_errors: true
+  when: ssh_original_is_ssh_enabled != ""
+
+- name: Assert restore original state
+  ansible.builtin.assert:
+    that:
+      - restore_result.changed == true or restore_result.skipped is defined
+      - restore_result.failed == false
+    fail_msg: Restore original SSH access control state failed
+    success_msg: Restore original SSH access control state passed
+  when: ssh_original_is_ssh_enabled != ""

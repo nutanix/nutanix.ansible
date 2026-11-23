@@ -563,3 +563,13 @@ action_groups:
     - ntnx_cluster_port_capability_info_v2
     - ntnx_aggregated_network_segments_info_v2
     - ntnx_gpu_stats_info_v2
+    - ntnx_vcenter_integration_v2
+    - ntnx_vcenter_integrations_info_v2
+    - ntnx_cluster_ssh_access_control_v2
+    - ntnx_cluster_ssh_access_control_info_v2
+    - ntnx_rename_ahv_host_v2
+    - ntnx_high_availability_config_v2
+    - ntnx_high_availability_configs_info_v2
+    - ntnx_cpu_models_info_v2
+    - ntnx_device_bundle_instances_info_v2
+    - ntnx_device_bundle_profiles_info_v2

@@ -1,0 +1,164 @@
+---
+# Integration tests for the vCenter Server integrations info module
+# Test plan:
+# - Info module (get by ext_id, list-all, filter, limit, fetch_all, invalid ext_id).
+# - Mutually exclusive checks.
+# - Fetch_all pagination assertion.
+
+- name: Start VcenterIntegrations info tests
+  ansible.builtin.debug:
+    msg: Start VcenterIntegrations info tests
+
+- name: Generate random suffix and dummy uuid for negative cases
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    bogus_ext_id: "00000000-0000-0000-0000-000000000000"
+
+########################################################################################
+# Info module — list, filter, limit, fetch_all, get-by-id, invalid ext_id
+########################################################################################
+
+- name: List all vCenter server integrations
+  nutanix.ncp.ntnx_vcenter_integrations_info_v2:
+  register: list_result
+  ignore_errors: true
+
+- name: List all vCenter server integrations status
+  ansible.builtin.assert:
+    that:
+      - list_result is defined
+      - list_result.changed == false
+      - list_result.failed == false
+      - list_result.response is defined
+      - list_result.total_available_results is defined
+      - list_result.response is iterable
+    success_msg: "List all vCenter integrations passed"
+    fail_msg: "List all vCenter integrations failed"
+
+- name: Remember the current list of discovered integrations
+  ansible.builtin.set_fact:
+    discovered_integrations: "{{ list_result.response | default([]) }}"
+
+- name: List vCenter server integrations with limit
+  nutanix.ncp.ntnx_vcenter_integrations_info_v2:
+    limit: 1
+  register: limit_result
+  ignore_errors: true
+
+- name: List vCenter server integrations with limit status
+  ansible.builtin.assert:
+    that:
+      - limit_result is defined
+      - limit_result.changed == false
+      - limit_result.failed == false
+      - limit_result.response is defined
+      - limit_result.response is iterable
+      - (limit_result.response | length) <= 1
+    success_msg: "List vCenter integrations with limit passed"
+    fail_msg: "List vCenter integrations with limit failed"
+
+- name: List vCenter server integrations with filter on isRegistered
+  nutanix.ncp.ntnx_vcenter_integrations_info_v2:
+    filter: "isRegistered eq true"
+  register: filter_result
+  ignore_errors: true
+
+- name: List vCenter server integrations with filter status
+  ansible.builtin.assert:
+    that:
+      - filter_result is defined
+      - filter_result.changed == false
+      - filter_result.failed == false
+      - filter_result.response is defined
+      - filter_result.response is iterable
+    success_msg: "List vCenter integrations with filter passed"
+    fail_msg: "List vCenter integrations with filter failed"
+
+- name: Assert every filtered vCenter integration has is_registered=true
+  ansible.builtin.assert:
+    that:
+      - item.is_registered == true
+    success_msg: "Filter isRegistered eq true honoured for {{ item.ext_id }}"
+    fail_msg: "Filter isRegistered eq true violated for {{ item.ext_id }}"
+  loop: "{{ filter_result.response }}"
+  loop_control:
+    label: "{{ item.ext_id | default('unknown') }}"
+  when: filter_result.response | length > 0
+
+- name: List all vCenter server integrations with fetch_all
+  nutanix.ncp.ntnx_vcenter_integrations_info_v2:
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: List all vCenter integrations with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result is defined
+      - fetch_all_result.changed == false
+      - fetch_all_result.failed == false
+      - fetch_all_result.response is defined
+      - fetch_all_result.response is iterable
+      - (fetch_all_result.response | length) == (fetch_all_result.total_available_results | int)
+    success_msg: "List vCenter integrations with fetch_all passed"
+    fail_msg: "List vCenter integrations with fetch_all failed"
+
+- name: Get vCenter server integration using a bogus ext_id
+  nutanix.ncp.ntnx_vcenter_integrations_info_v2:
+    ext_id: "{{ bogus_ext_id }}"
+  register: invalid_get_result
+  ignore_errors: true
+
+- name: Get vCenter server integration using a bogus ext_id status
+  ansible.builtin.assert:
+    that:
+      - invalid_get_result is defined
+      - invalid_get_result.changed == false
+      - invalid_get_result.failed == true
+      - invalid_get_result.msg == "Api Exception raised while fetching vCenter integration info using ext_id"
+    success_msg: "Get vCenter integration with bogus ext_id failed as expected"
+    fail_msg: "Get vCenter integration with bogus ext_id did not fail as expected"
+
+- name: Info module — reject ext_id + filter combination
+  nutanix.ncp.ntnx_vcenter_integrations_info_v2:
+    ext_id: "{{ bogus_ext_id }}"
+    filter: "isRegistered eq true"
+  register: mutually_exclusive_info
+  ignore_errors: true
+
+- name: Info module mutually-exclusive status
+  ansible.builtin.assert:
+    that:
+      - mutually_exclusive_info is defined
+      - mutually_exclusive_info.changed == false
+      - mutually_exclusive_info.failed == true
+      - "'parameters are mutually exclusive: ext_id|filter' in mutually_exclusive_info.msg"
+    success_msg: "Info module rejects ext_id+filter as expected"
+    fail_msg: "Info module did not reject ext_id+filter"
+
+- name: Get vCenter server integration using valid ext_id when available
+  nutanix.ncp.ntnx_vcenter_integrations_info_v2:
+    ext_id: "{{ discovered_integrations[0].ext_id }}"
+  register: valid_get_result
+  ignore_errors: true
+  when: discovered_integrations | length > 0
+
+- name: Get vCenter server integration using valid ext_id status
+  ansible.builtin.assert:
+    that:
+      - valid_get_result is defined
+      - valid_get_result.changed == false
+      - valid_get_result.failed == false
+      - valid_get_result.response is defined
+      - valid_get_result.response.ext_id == discovered_integrations[0].ext_id
+      - valid_get_result.ext_id == discovered_integrations[0].ext_id
+    success_msg: "Get vCenter integration with valid ext_id passed"
+    fail_msg: "Get vCenter integration with valid ext_id failed"
+  when: discovered_integrations | length > 0
+
+- name: Note when no integrations discovered
+  ansible.builtin.debug:
+    msg: >-
+      No vCenter server integrations were discovered on the target PC. The
+      valid ext_id get test is skipped for this run.
+  when: discovered_integrations | length == 0
