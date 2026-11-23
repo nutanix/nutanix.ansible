@@ -27,13 +27,13 @@ notes:
     The required roles depend on the operation being performed.
   - >-
     B(Create an External Storage) -
-    Required Roles: Cluster Admin, Internal Super Admin, Prism Admin, Storage Admin, Super Admin
+    Required Roles: Cluster Admin, Prism Admin, Storage Admin, Super Admin
   - >-
     B(Delete an External Storage) -
-    Required Roles: Cluster Admin, Internal Super Admin, Prism Admin, Storage Admin, Super Admin
+    Required Roles: Cluster Admin, Prism Admin, Storage Admin, Super Admin
   - >-
     B(Update an External Storage) -
-    Required Roles: Cluster Admin, Internal Super Admin, Prism Admin, Storage Admin, Super Admin
+    Required Roles: Cluster Admin, Prism Admin, Storage Admin, Super Admin
   - This module talks to B(Prism Central) (PC). It does not target FCVM/Foundation.
   - The referenced AOS cluster (C(cluster_ext_id)) must already exist and be registered to Prism Central
     before creating an external storage against it.
@@ -226,6 +226,10 @@ author:
 EXAMPLES = r"""
 - name: Create external storage with Dell PowerFlex provider
   nutanix.ncp.ntnx_external_storages_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     state: present
     name: "external_storage_ansible"
     cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
@@ -243,6 +247,10 @@ EXAMPLES = r"""
 
 - name: Update external storage credentials
   nutanix.ncp.ntnx_external_storages_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     state: present
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
     name: "external_storage_ansible_updated"
@@ -261,6 +269,10 @@ EXAMPLES = r"""
 
 - name: Delete external storage
   nutanix.ncp.ntnx_external_storages_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     state: absent
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
   register: result

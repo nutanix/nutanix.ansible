@@ -8,7 +8,8 @@
 # 4. List all external storages
 # 5. List external storages with a filter
 # 6. List external storages with a limit
-# 7. Delete the external storage
+# 7. List all external storages with fetch_all
+# 8. Delete the external storage
 #
 # NOTE: External storages talk to Prism Central. Creating an external storage requires a
 # reachable third-party storage backend (Dell PowerFlex / Everpure FlashArray / Dell PowerStore)
@@ -19,9 +20,9 @@
   gather_facts: false
   module_defaults:
     group/nutanix.ncp.ntnx:
-      nutanix_host: "10.44.76.17"
-      nutanix_username: "admin"
-      nutanix_password: "Nutanix.123"
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
       validate_certs: false
   tasks:
     - name: Fetch a cluster to attach the external storage to
