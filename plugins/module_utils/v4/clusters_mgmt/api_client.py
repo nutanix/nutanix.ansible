@@ -283,6 +283,22 @@ def get_network_segments_api_instance(module):
     return ntnx_clustermgmt_py_client.NetworkSegmentsApi(client)
 
 
+def get_vcenter_integrations_api_instance(module):
+    """
+    This method will return vCenter Integrations api instance from sdk.
+
+    The vCenter Integrations API is used to manage vCenter server
+    integrations for clusters registered to Prism Central.
+
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        VcenterIntegrationsApi: VcenterIntegrationsApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.VcenterIntegrationsApi(client)
+
+
 def get_ssh_control_api_instance(module):
     """
     This method will return SSH Control api instance from sdk.
