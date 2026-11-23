@@ -1,0 +1,189 @@
+---
+# Summary:
+# Clusters entity examples covering all generated modules for
+# cluster_management/Clusters namespace.
+
+- name: Clusters playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host }}"
+      nutanix_username: "{{ nutanix_username }}"
+      nutanix_password: "{{ nutanix_password }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ cluster_ext_id | default('00061de6-4a87-6b06-185b-ac1f6b6f97e2') }}"
+        host_ext_id: "{{ host_ext_id | default('af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9') }}"
+
+    - name: Fetch clusters to resolve parent ids
+      nutanix.ncp.ntnx_clusters_info_v2:
+      register: clusters_result
+      ignore_errors: true
+
+    - name: Fetch hosts in cluster
+      nutanix.ncp.ntnx_hosts_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: hosts_result
+      ignore_errors: true
+
+    - name: Fetch host NICs to resolve NIC ext_id
+      nutanix.ncp.ntnx_cluster_host_nics_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+      register: host_nics_result
+      ignore_errors: true
+
+    ########################################################################
+    # Network segments CRUD
+    ########################################################################
+    - name: Create a backplane network segment
+      nutanix.ncp.ntnx_cluster_network_segments_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        name: "ansible-backplane-segment"
+        vlan_id: 100
+        mtu: 1500
+        network_segment_info:
+          backplane_info:
+            ahv_network_backing:
+              hypervisor_interface_backing: "vs0"
+      register: ns_create
+      ignore_errors: true
+
+    - name: Update a network segment
+      nutanix.ncp.ntnx_cluster_network_segments_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ ns_create.ext_id | default('63311404-8b2e-4dbf-9e33-7848cc88d330') }}"
+        name: "ansible-backplane-segment-updated"
+        vlan_id: 150
+        mtu: 1500
+        network_segment_info:
+          backplane_info:
+            ahv_network_backing:
+              hypervisor_interface_backing: "vs0"
+      register: ns_update
+      ignore_errors: true
+
+    - name: Delete a network segment
+      nutanix.ncp.ntnx_cluster_network_segments_v2:
+        state: absent
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ ns_create.ext_id | default('63311404-8b2e-4dbf-9e33-7848cc88d330') }}"
+      register: ns_delete
+      ignore_errors: true
+
+    ########################################################################
+    # Action modules
+    ########################################################################
+    - name: Install external storage driver on cluster
+      nutanix.ncp.ntnx_cluster_external_storage_driver_install_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        key: "driver-package-key"
+        version: "1.0.0"
+        provider_type: "DELL_POWERFLEX"
+      register: install_driver
+      ignore_errors: true
+
+    - name: Shutdown a host
+      nutanix.ncp.ntnx_cluster_host_shutdown_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        should_shutdown_non_migratable_uvms: false
+      register: shutdown_host
+      ignore_errors: true
+
+    - name: Refresh port capability of a cluster
+      nutanix.ncp.ntnx_cluster_port_capability_refresh_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: refresh_port
+      ignore_errors: true
+
+    ########################################################################
+    # Info modules
+    ########################################################################
+    - name: Fetch host NIC using ext_id
+      nutanix.ncp.ntnx_cluster_host_nics_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        ext_id: "{{ host_nics_result.response[0].ext_id | default('d6e2eec2-8d68-4b9c-a3f5-cfc9f9b7a821') }}"
+      register: host_nic_info
+      ignore_errors: true
+
+    - name: Fetch host NIC stats
+      nutanix.ncp.ntnx_cluster_host_nics_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        ext_id: "{{ host_nics_result.response[0].ext_id | default('d6e2eec2-8d68-4b9c-a3f5-cfc9f9b7a821') }}"
+        start_time: "2024-07-31T12:41:56.955Z"
+        end_time: "2024-08-01T12:41:56.955Z"
+      register: host_nic_stats
+      ignore_errors: true
+
+    - name: List host NICs
+      nutanix.ncp.ntnx_cluster_host_nics_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+      register: host_nics_list
+      ignore_errors: true
+
+    - name: List host NIC stats by host
+      nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        start_time: "2024-07-31T12:41:56.955Z"
+        end_time: "2024-08-01T12:41:56.955Z"
+      register: host_nic_stats_list
+      ignore_errors: true
+
+    - name: List host NIC stats with limit
+      nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        start_time: "2024-07-31T12:41:56.955Z"
+        end_time: "2024-08-01T12:41:56.955Z"
+        limit: 1
+      register: host_nic_stats_limit
+      ignore_errors: true
+
+    - name: List host NIC stats with fetch_all
+      nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        start_time: "2024-07-31T12:41:56.955Z"
+        end_time: "2024-08-01T12:41:56.955Z"
+        fetch_all: true
+      register: host_nic_stats_fetchall
+      ignore_errors: true
+
+    - name: Get port capability by cluster
+      nutanix.ncp.ntnx_cluster_port_capability_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: port_capability
+      ignore_errors: true
+
+    - name: List aggregated network segments
+      nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+      register: aggregated_segments
+      ignore_errors: true
+
+    - name: List aggregated network segments with filter
+      nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+        filter: "name eq 'ansible-backplane-segment'"
+      register: aggregated_filtered
+      ignore_errors: true
+
+    - name: List aggregated network segments with limit
+      nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+        limit: 1
+      register: aggregated_limit
+      ignore_errors: true
+
+    - name: List aggregated network segments with fetch_all
+      nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+        fetch_all: true
+      register: aggregated_fetchall
+      ignore_errors: true

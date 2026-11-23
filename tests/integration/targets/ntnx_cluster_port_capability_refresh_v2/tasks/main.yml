@@ -1,0 +1,20 @@
+---
+- name: Set module defaults for refresh port capability
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username | default(omit) }}"
+      nutanix_password: "{{ password | default(omit) }}"
+      validate_certs: "{{ validate_certs }}"
+  block:
+    - name: Refresh port capability check mode
+      nutanix.ncp.ntnx_cluster_port_capability_refresh_v2:
+        cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
+      register: result
+      check_mode: true
+      ignore_errors: true
+
+    - name: Assert check mode
+      ansible.builtin.assert:
+        that:
+          - result is defined

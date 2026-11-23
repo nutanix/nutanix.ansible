@@ -371,3 +371,16 @@ def get_device_bundles_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.DeviceBundlesApi(client)
+
+
+def get_cluster_config_api_instance(module):
+    """
+    This method will return ClusterConfigApi instance from sdk.
+    Used for external storage driver operations.
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        ClusterConfigApi: ClusterConfigApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.ClusterConfigApi(client)

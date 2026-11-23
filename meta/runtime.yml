@@ -553,3 +553,9 @@ action_groups:
     - ntnx_cpu_models_info_v2
     - ntnx_device_bundle_instances_info_v2
     - ntnx_device_bundle_profiles_info_v2
+    - ntnx_cluster_external_storage_driver_install_v2
+    - ntnx_cluster_host_shutdown_v2
+    - ntnx_cluster_port_capability_refresh_v2
+    - ntnx_cluster_host_nic_stats_info_v2
+    - ntnx_cluster_port_capability_info_v2
+    - ntnx_aggregated_network_segments_info_v2

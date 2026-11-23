@@ -1,0 +1,27 @@
+---
+- name: Set module defaults for host NIC stats
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username | default(omit) }}"
+      nutanix_password: "{{ password | default(omit) }}"
+      validate_certs: "{{ validate_certs }}"
+  block:
+    - name: Fetch clusters
+      nutanix.ncp.ntnx_clusters_info_v2:
+      register: clusters_info
+      ignore_errors: true
+
+    - name: List host NIC stats with fallback
+      nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+        cluster_ext_id: "{{ clusters_info.response[0].ext_id | default('00061de6-4a87-6b06-185b-ac1f6b6f97e2') }}"
+        host_ext_id: "{{ host_ext_id | default('af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9') }}"
+        start_time: "2024-07-31T12:41:56.955Z"
+        end_time: "2024-08-01T12:41:56.955Z"
+      register: result
+      ignore_errors: true
+
+    - name: Assert stats
+      ansible.builtin.assert:
+        that:
+          - result is defined

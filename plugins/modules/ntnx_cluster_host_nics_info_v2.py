@@ -21,6 +21,8 @@ description:
   - When C(cluster_ext_id) and C(host_ext_id) are both provided without C(ext_id),
     host NICs are listed for that host; otherwise a global list across Prism Central
     is returned.
+  - If C(ext_id), C(cluster_ext_id), C(host_ext_id), C(start_time) and C(end_time) are
+    provided, fetch host NIC stats for the given time interval.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -32,6 +34,10 @@ notes:
     Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)
   - >-
     B(View Host Nic) -
+    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin,
+    Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)
+  - >-
+    B(View Host Nic Stats) -
     Required Roles: Cluster Admin, Cluster Viewer, Prism Admin,
     Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
@@ -59,6 +65,47 @@ options:
       - Required together with C(cluster_ext_id) when listing host NICs scoped to a specific host.
     type: str
     required: false
+  start_time:
+    description:
+      - The start time of the period for which stats should be reported.
+      - The value should be in extended ISO-8601 format.
+      - >-
+        For example, start time of C(2022-04-23T01:23:45.678+09:00) would consider
+        all stats starting at 1:23:45.678 on the 23rd of April 2022.
+      - Details around ISO-8601 format can be found at U(https://www.iso.org/standard/70907.html)
+      - Required when fetching host NIC stats together with C(end_time).
+    type: str
+  end_time:
+    description:
+      - The end time of the period for which stats should be reported.
+      - The value should be in extended ISO-8601 format.
+      - >-
+        For example, end time of C(2022-04-23T13:23:45.678+09:00) would consider
+        all stats till 13:23:45.678 on the 23rd of April 2022.
+      - Details around ISO-8601 format can be found at U(https://www.iso.org/standard/70907.html)
+      - Required when fetching host NIC stats together with C(start_time).
+    type: str
+  sampling_interval:
+    description:
+      - The sampling interval in seconds at which statistical data should be collected.
+      - For example, if you want performance statistics every 30 seconds, then provide the value as 30.
+    type: int
+  stat_type:
+    description:
+      - The operator to use while performing down-sampling on stats data.
+      - Allowed values are SUM, MIN, MAX, AVG, COUNT and LAST.
+    type: str
+    choices:
+      - SUM
+      - MIN
+      - MAX
+      - AVG
+      - COUNT
+      - LAST
+  select:
+    description:
+      - A URL query parameter that allows clients to request a specific set of properties for each entity or complex type.
+    type: str
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
@@ -117,6 +164,29 @@ EXAMPLES = r"""
 - name: List all host NICs with fetch_all
   nutanix.ncp.ntnx_cluster_host_nics_info_v2:
     fetch_all: true
+  register: result
+  ignore_errors: true
+
+- name: Fetch host NIC stats for a time interval
+  nutanix.ncp.ntnx_cluster_host_nics_info_v2:
+    cluster_ext_id: "0005b3f7-1234-4321-abcd-0123456789ab"
+    host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
+    ext_id: "d6e2eec2-8d68-4b9c-a3f5-cfc9f9b7a821"
+    start_time: "2024-07-31T12:41:56.955Z"
+    end_time: "2024-08-01T12:41:56.955Z"
+  register: result
+  ignore_errors: true
+
+- name: Fetch host NIC stats with sampling interval and stat type
+  nutanix.ncp.ntnx_cluster_host_nics_info_v2:
+    cluster_ext_id: "0005b3f7-1234-4321-abcd-0123456789ab"
+    host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
+    ext_id: "d6e2eec2-8d68-4b9c-a3f5-cfc9f9b7a821"
+    start_time: "2024-07-31T12:41:56.955Z"
+    end_time: "2024-08-01T12:41:56.955Z"
+    sampling_interval: 30
+    stat_type: "AVG"
+    select: "receivedBytes,transmittedBytes"
   register: result
   ignore_errors: true
 """
@@ -227,12 +297,58 @@ def get_module_spec():
         ext_id=dict(type="str"),
         cluster_ext_id=dict(type="str"),
         host_ext_id=dict(type="str"),
+        start_time=dict(type="str"),
+        end_time=dict(type="str"),
+        sampling_interval=dict(type="int"),
+        stat_type=dict(
+            type="str", choices=["SUM", "MIN", "MAX", "AVG", "COUNT", "LAST"]
+        ),
+        select=dict(type="str"),
     )
 
     return module_args
 
 
+def get_host_nic_stats(module, api_instance, result):
+    ext_id = module.params.get("ext_id")
+    cluster_ext_id = module.params.get("cluster_ext_id")
+    host_ext_id = module.params.get("host_ext_id")
+    start_time = module.params.get("start_time")
+    end_time = module.params.get("end_time")
+    sampling_interval = module.params.get("sampling_interval")
+    stat_type = module.params.get("stat_type")
+    select = module.params.get("select")
+    result["ext_id"] = ext_id
+    try:
+        resp = api_instance.get_host_nic_stats(
+            clusterExtId=cluster_ext_id,
+            hostExtId=host_ext_id,
+            extId=ext_id,
+            _startTime=start_time,
+            _endTime=end_time,
+            _samplingInterval=sampling_interval,
+            _statType=stat_type,
+            _select=select,
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching host NIC stats",
+        )
+    if getattr(resp, "data", None):
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+        if isinstance(result["response"], dict):
+            result["response"] = strip_internal_attributes(resp.data.to_dict())
+        else:
+            result["response"] = strip_internal_attributes(resp.data.to_dict())
+    else:
+        result["response"] = strip_internal_attributes(resp.to_dict()).get("data")
+
+
 def get_host_nic_using_ext_id(module, api_instance, result):
+    if module.params.get("start_time") and module.params.get("end_time"):
+        return get_host_nic_stats(module, api_instance, result)
     ext_id = module.params.get("ext_id")
     cluster_ext_id = module.params.get("cluster_ext_id")
     host_ext_id = module.params.get("host_ext_id")
