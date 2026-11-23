@@ -80,7 +80,7 @@
     ssh_original_is_ssh_enabled: "{{ result.response.is_ssh_enabled }}"
     ssh_original_is_password_login_enabled: >-
       {{ result.response.is_password_login_enabled }}
-  when: result.failed == false and result.response is defined
+  when: not result.failed and result.response is defined
 
 ##############################################################################
 # 3. Info: get SSH access control with invalid cluster ext_id (negative)
