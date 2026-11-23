@@ -158,11 +158,8 @@ msg:
   sample: "Nothing to change."
 """
 
-import traceback  # noqa: E402
 import warnings  # noqa: E402
 from copy import deepcopy  # noqa: E402
-
-from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
@@ -180,15 +177,6 @@ from ..module_utils.v4.utils import (  # noqa: E402
     strip_internal_attributes,
     strip_read_only_fields,
 )
-
-SDK_IMP_ERROR = None
-try:
-    import ntnx_clustermgmt_py_client as clustermgmt_sdk  # noqa: E402
-except ImportError:
-
-    from ..module_utils.v4.sdk_mock import mock_sdk as clustermgmt_sdk  # noqa: E402
-
-    SDK_IMP_ERROR = traceback.format_exc()
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
@@ -278,12 +266,6 @@ def run_module():
         argument_spec=get_module_spec(),
         supports_check_mode=True,
     )
-    if SDK_IMP_ERROR:
-        module.fail_json(
-            msg=missing_required_lib("ntnx_clustermgmt_py_client"),
-            exception=SDK_IMP_ERROR,
-        )
-
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
