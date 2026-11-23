@@ -46,25 +46,45 @@ author:
 EXAMPLES = r"""
 - name: Get vCenter server integration using ext_id
   nutanix.ncp.ntnx_vcenter_integrations_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     ext_id: "00061c8b-2f6e-4a1c-8b41-abc123abc123"
   register: result
 
 - name: List all vCenter server integrations
   nutanix.ncp.ntnx_vcenter_integrations_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
   register: result
 
 - name: List vCenter server integrations with filter
   nutanix.ncp.ntnx_vcenter_integrations_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     filter: "isRegistered eq true"
   register: result
 
 - name: List vCenter server integrations with limit
   nutanix.ncp.ntnx_vcenter_integrations_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     limit: 1
   register: result
 
 - name: List all vCenter integrations with fetch_all
   nutanix.ncp.ntnx_vcenter_integrations_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     fetch_all: true
   register: result
 """
@@ -123,7 +143,7 @@ total_available_results:
   description: The total number of available vCenter server integrations in PC.
   type: int
   returned: when all vCenter server integrations are fetched
-  sample: 0
+  sample: 1
 """
 
 import warnings  # noqa: E402
@@ -196,10 +216,6 @@ def run_module():
         supports_check_mode=False,
         mutually_exclusive=[
             ("ext_id", "filter"),
-            ("ext_id", "limit"),
-            ("ext_id", "page"),
-            ("ext_id", "orderby"),
-            ("ext_id", "select"),
         ],
     )
     remove_param_with_none_value(module.params)

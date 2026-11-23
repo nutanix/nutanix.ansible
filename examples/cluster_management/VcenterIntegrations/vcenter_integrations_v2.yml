@@ -11,20 +11,14 @@
 #   7. Unregister a vCenter server integration with EXTENSION (delete)
 #   8. Unregister a vCenter server integration with SSO (delete)
 
-- name: VCenter server integration playbook
+- name: VCenter Integrations CRUD playbook
   hosts: localhost
   gather_facts: false
-  vars:
-    ip: "10.44.76.16"
-    username: "admin"
-    password: "Nutanix.123"
-    port: 9440
   module_defaults:
     group/nutanix.ncp.ntnx:
-      nutanix_host: "{{ ip }}"
-      nutanix_username: "{{ username }}"
-      nutanix_password: "{{ password }}"
-      nutanix_port: "{{ port }}"
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
       validate_certs: false
   tasks:
     - name: Set variables
@@ -90,6 +84,6 @@
         state: absent
         ext_id: "{{ vcenter_integration_ext_id }}"
         config:
-          sso_config: {}
+          sso_config:
       register: unregister_sso_result
       ignore_errors: true

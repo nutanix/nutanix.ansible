@@ -17,11 +17,6 @@ description:
   - This module allows you to register (C(state=present)) or unregister
     (C(state=absent)) a vCenter server integration for a cluster registered to
     Nutanix Prism Central.
-  - The vCenter server integration objects are discovered by Prism Central for
-    every cluster it manages. An C(ext_id) that identifies the integration must
-    be supplied for every register / unregister call; you can obtain the
-    C(ext_id) using M(nutanix.ncp.ntnx_vcenter_integrations_info_v2).
-  - Update is not supported by the vCenter server integration API.
   - This module uses PC v4 APIs based SDKs.
 notes:
     - >-
@@ -41,7 +36,6 @@ options:
         by C(ext_id) will be registered using the supplied credentials.
       - If C(state) is set to C(absent), the vCenter server integration identified
         by C(ext_id) will be unregistered.
-      - Update is not supported by the vCenter server integration API.
     type: str
     required: false
     choices:
@@ -50,9 +44,8 @@ options:
     default: present
   ext_id:
     description:
-      - The globally unique identifier of the vCenter server integration instance
-        (UUID). It should match the C(ext_id) returned by the
-        M(nutanix.ncp.ntnx_vcenter_integrations_info_v2) list operation.
+      - The globally unique identifier of the vCenter server integration instance.
+      - It should be of type UUID.
     type: str
     required: true
   username:
@@ -80,6 +73,7 @@ options:
     description:
       - Authentication method used for the vCenter server integration, such as SSO
         or EXTENSION.
+      - Required for registration.
     type: str
     required: false
     choices:
@@ -89,7 +83,7 @@ options:
     description:
       - Unregister payload. EXTENSION requires username and password. SSO does not
         require credentials.
-      - Provide exactly one of the oneOf variants.
+      - Provide exactly one of the following: extension_config or sso_config.
     type: dict
     required: false
     suboptions:
@@ -114,6 +108,8 @@ options:
       sso_config:
         description:
           - Unregister an SSO integration. No credentials are required.
+          - This branch has no fields; supply it as an empty mapping
+            (for example C(sso_config:) which is YAML null, or an explicit empty dict).
         type: dict
         required: false
 extends_documentation_fragment:
@@ -129,6 +125,10 @@ author:
 EXAMPLES = r"""
 - name: Register vCenter server integration
   nutanix.ncp.ntnx_vcenter_integration_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     state: present
     ext_id: "00061c8b-2f6e-4a1c-8b41-abc123abc123"
     username: "administrator@vsphere.local"
@@ -139,6 +139,10 @@ EXAMPLES = r"""
 
 - name: Unregister vCenter server integration with EXTENSION
   nutanix.ncp.ntnx_vcenter_integration_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     state: absent
     ext_id: "00061c8b-2f6e-4a1c-8b41-abc123abc123"
     config:
@@ -149,10 +153,14 @@ EXAMPLES = r"""
 
 - name: Unregister vCenter server integration with SSO
   nutanix.ncp.ntnx_vcenter_integration_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     state: absent
     ext_id: "00061c8b-2f6e-4a1c-8b41-abc123abc123"
     config:
-      sso_config: {}
+      sso_config:
   register: unregister_sso_result
 """
 
@@ -160,11 +168,8 @@ RETURN = r"""
 response:
   description:
     - Response for registering or unregistering a vCenter server integration.
-    - If the operation is register and C(wait) is true, it will return the
-      refreshed vCenter server integration details.
-    - If the operation is register and C(wait) is false, it will return the
-      task details.
-    - If the operation is unregister, it will return the task details.
+    - If C(wait) is true, it will contain the vCenter server integration details after registration/unregistration operations.
+    - If C(wait) is false, it will contain the task details.
   returned: always
   type: dict
   sample:
@@ -232,7 +237,6 @@ from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
-    get_etag,
     get_vcenter_integrations_api_instance,
 )
 from ..module_utils.v4.clusters_mgmt.helpers import (  # noqa: E402
@@ -241,8 +245,10 @@ from ..module_utils.v4.clusters_mgmt.helpers import (  # noqa: E402
 from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    normalize_oneof_marker_values,
     raise_api_exception,
     strip_internal_attributes,
+    validate_required_params,
 )
 
 SDK_IMP_ERROR = None
@@ -299,38 +305,19 @@ def get_module_spec():
                 "extension_config": cluster_management_sdk.VcenterExtensionUnregisterParams,  # noqa: E501
                 "sso_config": cluster_management_sdk.VcenterSsoUnregisterParams,  # noqa: E501
             },
+            mutually_exclusive=[("extension_config", "sso_config")],
+            required_one_of=[("extension_config", "sso_config")],
             required=False,
         ),
     )
     return module_args
 
 
-def create_vcenter_integration(module, result, api_instance):
+def register_vcenter_integration(module, result, api_instance):
     """Register a vCenter server integration."""
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-
-    # Validate required params for register before fetching current
-    for field in ["username", "password", "authentication_method"]:
-        if not module.params.get(field):
-            module.fail_json(
-                msg="missing required arguments: {0}".format(field), **result
-            )
-
-    current = get_vcenter_integration(module, api_instance, ext_id)
-    etag = get_etag(data=current)
-
-    if getattr(current, "is_registered", False):
-        result["skipped"] = True
-        result["response"] = strip_internal_attributes(current.to_dict())
-        module.exit_json(
-            msg=(
-                "vCenter integration with ext_id '{0}' is already registered. "
-                "Skipping registration."
-            ).format(ext_id),
-            **result,
-        )
-
+    validate_required_params(module, ["username", "password", "authentication_method"])
     sg = SpecGenerator(module)
     default_spec = cluster_management_sdk.VcenterIntegrationRegisterParams()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -344,10 +331,11 @@ def create_vcenter_integration(module, result, api_instance):
         result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
-    kwargs = {"if_match": etag} if etag else {}
+    resp = None
     try:
         resp = api_instance.register_vcenter_integration(
-            extId=ext_id, body=spec, **kwargs
+            extId=ext_id,
+            body=spec,
         )
     except Exception as e:
         raise_api_exception(
@@ -367,53 +355,29 @@ def create_vcenter_integration(module, result, api_instance):
     result["changed"] = True
 
 
-def delete_vcenter_integration(module, result, api_instance):
+def unregister_vcenter_integration(module, result, api_instance):
     """Unregister a vCenter server integration."""
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-
-    current = get_vcenter_integration(module, api_instance, ext_id)
-    etag = get_etag(data=current)
-
-    if not getattr(current, "is_registered", True):
-        result["skipped"] = True
-        result["response"] = strip_internal_attributes(current.to_dict())
-        module.exit_json(
-            msg=(
-                "vCenter integration with ext_id '{0}' is already unregistered. "
-                "Skipping unregistration."
-            ).format(ext_id),
-            **result,
+    validate_required_params(module, ["config"])
+    sg = SpecGenerator(module)
+    default_spec = cluster_management_sdk.VcenterIntegrationUnregisterParams()
+    spec, err = sg.generate_spec(obj=default_spec)
+    if err:
+        result["error"] = err
+        module.fail_json(
+            msg="Failed generating unregister vCenter integration spec", **result
         )
 
     if module.check_mode:
-        result["msg"] = (
-            "vCenter integration with ext_id:{0} will be unregistered.".format(ext_id)
-        )
+        result["response"] = strip_internal_attributes(spec.to_dict())
         return
 
-    # Build unregister spec
-    sg = SpecGenerator(module)
-    # If config is provided, use it; otherwise default to SSO (empty)
-    if module.params.get("config"):
-        default_spec = cluster_management_sdk.VcenterIntegrationUnregisterParams()
-        spec, err = sg.generate_spec(obj=default_spec)
-        if err:
-            result["error"] = err
-            module.fail_json(
-                msg="Failed generating unregister vCenter integration spec", **result
-            )
-    else:
-        # Default to SSO when no config supplied
-        default_spec = cluster_management_sdk.VcenterIntegrationUnregisterParams(
-            config=cluster_management_sdk.VcenterSsoUnregisterParams()
-        )
-        spec = default_spec
-
-    kwargs = {"if_match": etag} if etag else {}
+    resp = None
     try:
         resp = api_instance.unregister_vcenter_integration(
-            extId=ext_id, body=spec, **kwargs
+            extId=ext_id,
+            body=spec,
         )
     except Exception as e:
         raise_api_exception(
@@ -426,8 +390,9 @@ def delete_vcenter_integration(module, result, api_instance):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id)
-        result["response"] = strip_internal_attributes(task_status.to_dict())
+        wait_for_completion(module, task_ext_id)
+        refreshed = get_vcenter_integration(module, api_instance, ext_id)
+        result["response"] = strip_internal_attributes(refreshed.to_dict())
     result["changed"] = True
 
 
@@ -442,19 +407,20 @@ def run_module():
             exception=SDK_IMP_ERROR,
         )
 
+    # Treat `sso_config:` (YAML null) as a shorthand for `sso_config: {}`.
+    normalize_oneof_marker_values(module.params, ["sso_config"])
     remove_param_with_none_value(module.params)
     result = {
         "changed": False,
         "response": None,
         "failed": False,
-        "ext_id": None,
     }
     api_instance = get_vcenter_integrations_api_instance(module)
     state = module.params.get("state")
     if state == "present":
-        create_vcenter_integration(module, result, api_instance)
+        register_vcenter_integration(module, result, api_instance)
     else:
-        delete_vcenter_integration(module, result, api_instance)
+        unregister_vcenter_integration(module, result, api_instance)
     module.exit_json(**result)
 
 
