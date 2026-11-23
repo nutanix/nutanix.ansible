@@ -11,14 +11,15 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_external_storages_v2
-short_description: Create and update external storages in Nutanix Prism Central
+short_description: Create, update and delete external storages in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module allows you to create and update external storages in Nutanix Prism Central.
+  - This module allows you to create, update and delete external storages in Nutanix Prism Central.
   - An external storage represents a third-party storage provider (for example Dell PowerFlex,
     Everpure FlashArray or Dell PowerStore) that is connected to an AOS cluster.
   - If C(state) is C(present) and C(ext_id) is not provided, an external storage is created.
   - If C(state) is C(present) and C(ext_id) is provided, the external storage is updated.
+  - If C(state) is C(absent) and C(ext_id) is provided, the external storage is deleted.
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -26,10 +27,13 @@ notes:
     The required roles depend on the operation being performed.
   - >-
     B(Create an External Storage) -
-    Required Roles: Cluster Admin, Internal Super Admin, Prism Admin, Storage Admin, Super Admin
+    Required Roles: Cluster Admin, Prism Admin, Storage Admin, Super Admin
+  - >-
+    B(Delete an External Storage) -
+    Required Roles: Cluster Admin, Prism Admin, Storage Admin, Super Admin
   - >-
     B(Update an External Storage) -
-    Required Roles: Cluster Admin, Internal Super Admin, Prism Admin, Storage Admin, Super Admin
+    Required Roles: Cluster Admin, Prism Admin, Storage Admin, Super Admin
   - This module talks to B(Prism Central) (PC). It does not target FCVM/Foundation.
   - The referenced AOS cluster (C(cluster_ext_id)) must already exist and be registered to Prism Central
     before creating an external storage against it.
@@ -41,7 +45,7 @@ options:
     description:
       - If C(state) is set to C(present) and C(ext_id) is not provided then the operation will be create external storage.
       - If C(state) is set to C(present) and C(ext_id) is provided then the operation will be update external storage.
-      - If C(state) is set to C(absent) then the module will report that delete is not supported by the API.
+      - If C(state) is set to C(absent) and C(ext_id) is provided then the operation will be delete external storage.
     type: str
     required: false
     choices:
@@ -51,7 +55,7 @@ options:
   ext_id:
     description:
       - The external ID (UUID) of the external storage.
-      - Required for the update operation.
+      - Required for the update and delete operations.
     type: str
     required: false
   name:
@@ -222,6 +226,10 @@ author:
 EXAMPLES = r"""
 - name: Create external storage with Dell PowerFlex provider
   nutanix.ncp.ntnx_external_storages_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     state: present
     name: "external_storage_ansible"
     cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
@@ -239,6 +247,10 @@ EXAMPLES = r"""
 
 - name: Update external storage credentials
   nutanix.ncp.ntnx_external_storages_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     state: present
     ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
     name: "external_storage_ansible_updated"
@@ -254,14 +266,26 @@ EXAMPLES = r"""
         storage_pool_name: "sp-01"
   register: result
   ignore_errors: true
+
+- name: Delete external storage
+  nutanix.ncp.ntnx_external_storages_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: absent
+    ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
+  register: result
+  ignore_errors: true
 """
 
 RETURN = r"""
 response:
   description:
-    - Response for creating or updating external storage.
+    - Response for creating, updating, or deleting external storage.
     - If the operation is create or update and C(wait) is true, it will return the external storage details.
     - If the operation is create or update and C(wait) is false, it will return the task details.
+    - If the operation is delete, it will return the task details.
   returned: always
   type: dict
   sample:
@@ -312,10 +336,10 @@ changed:
   sample: true
 
 skipped:
-  description: This indicates whether the task was skipped, for example during idempotency checks.
-  returned: when applicable
+  description: This indicates whether the task was skipped.
+  returned: when module is idempotent
   type: bool
-  sample: true
+  sample: false
 
 error:
   description: This indicates the error message if any error occurred.
@@ -330,7 +354,7 @@ failed:
 
 msg:
   description: This indicates the message if any message occurred.
-  returned: When there is an error, module is idempotent, check mode, or an unsupported operation is requested.
+  returned: When there is an error, module is idempotent or check mode (in delete operation)
   type: str
   sample: "Api Exception raised while creating external storage"
 """
@@ -530,6 +554,8 @@ def create_external_storage(module, api_instance, result):
 
 def check_idempotency(old_spec, update_spec):
     """Return True if the update spec matches the current spec (nothing to change)."""
+    old_spec = strip_internal_attributes(old_spec.to_dict())
+    update_spec = strip_internal_attributes(update_spec.to_dict())
     return old_spec == update_spec
 
 
@@ -550,6 +576,9 @@ def update_external_storage(module, api_instance, result):
         result["error"] = err
         module.fail_json(msg="Failed generating update external storage spec", **result)
 
+    # Clear GET-populated fields the update API rejects.
+    _remove_read_only_attributes(update_spec)
+
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
@@ -557,9 +586,6 @@ def update_external_storage(module, api_instance, result):
     if check_idempotency(current_spec, update_spec):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
-
-    # Clear GET-populated fields the update API rejects.
-    _remove_read_only_attributes(update_spec)
 
     kwargs = {"if_match": etag}
     resp = None
@@ -585,21 +611,32 @@ def update_external_storage(module, api_instance, result):
 
 
 def delete_external_storage(module, api_instance, result):
-    """External storage does not support delete via the v4 API.
-
-    The clustermgmt v4.3 ExternalStorages API exposes only Create, Get, List and
-    Update operations. There is no delete endpoint, so we fail with a clear message
-    instead of silently succeeding.
-    """
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
-    module.fail_json(
-        msg=(
-            "Delete operation is not supported for external storages by the "
-            "clustermgmt v4 API."
-        ),
-        **result,
-    )
+
+    if module.check_mode:
+        result["msg"] = "External storage with ext_id:{0} will be deleted.".format(
+            ext_id
+        )
+        return
+
+    resp = None
+    try:
+        resp = api_instance.delete_external_storage_by_id(extId=ext_id)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while deleting external storage",
+        )
+
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if task_ext_id and module.params.get("wait"):
+        task_status = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(task_status.to_dict())
+    result["changed"] = True
 
 
 def run_module():
