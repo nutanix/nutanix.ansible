@@ -21,9 +21,16 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(List Aggregated Network Segments) -
-      Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin
+      Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, DR Admin, DR Viewer, Prism Admin,
+      Prism Viewer, Project Manager, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
+  expand:
+    description:
+      - A URL query parameter that allows clients to request related resources when a
+        resource that satisfies a particular request is retrieved.
+    type: str
+    required: false
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_info_v2
@@ -37,24 +44,50 @@ author:
 EXAMPLES = r"""
 - name: List aggregated network segments
   nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
   register: result
   ignore_errors: true
 
 - name: List aggregated network segments with filter
   nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     filter: "name eq 'test-segment'"
   register: result
   ignore_errors: true
 
 - name: List aggregated network segments with limit
   nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     limit: 5
   register: result
   ignore_errors: true
 
 - name: List all aggregated network segments with fetch_all
   nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     fetch_all: true
+  register: result
+  ignore_errors: true
+
+- name: List aggregated network segments with expand
+  nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    expand: "ipPool"
   register: result
   ignore_errors: true
 """
@@ -69,10 +102,45 @@ response:
   sample:
     [
         {
+            "cluster_ext_id": "0005a0f1-8f0e-a0f1-0000-000000009876",
+            "cvm_network_segment_interface_name": "ntnx0",
             "ext_id": "227df340-85b1-4450-a4b5-4ac206122b5c",
-            "name": "test-segment",
-            "vlan_id": 100,
-            "mtu": 1500
+            "ip_pool_ext_id": "9c1e537d-013e-4c3b-9c1e-22ad7d8549e1",
+            "links": null,
+            "mtu": 1500,
+            "name": "Test Network Segment Name",
+            "network_segment_info": {
+                "ahv_network_backing": {
+                    "hypervisor_interface_backing": "vs0"
+                },
+                "esxi_network_backing": {
+                    "cvm_interface_backing": "Physical CVM Backplane Network",
+                    "hypervisor_interface_backing": "Physical Backplane Network"
+                }
+            },
+            "network_segmented_ip_info": [
+                {
+                    "cvm_interface_ip": {
+                        "ipv4": {
+                            "prefix_length": 32,
+                            "value": "180.178.15.134"
+                        },
+                        "ipv6": null
+                    },
+                    "hypervisor_interface_ip": {
+                        "ipv4": {
+                            "prefix_length": 32,
+                            "value": "180.178.15.135"
+                        },
+                        "ipv6": null
+                    },
+                    "node_uuid": "7164102a-6542-45be-84cc-9aef496e0c6a"
+                }
+            ],
+            "protocol": "TCP_IP",
+            "service_name": "BACKPLANE",
+            "tenant_id": null,
+            "vlan_id": 603
         }
     ]
 
@@ -125,13 +193,15 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 
 def get_module_spec():
-    module_args = dict()
+    module_args = dict(
+        expand=dict(type="str"),
+    )
     return module_args
 
 
 def get_aggregated_network_segments(module, api_instance, result):
     sg = SpecGenerator(module)
-    kwargs, err = sg.get_info_spec(attr=module.params)
+    kwargs, err = sg.get_info_spec(attr=module.params, extra_params=["expand"])
     if err:
         result["error"] = err
         module.fail_json(
@@ -150,11 +220,12 @@ def get_aggregated_network_segments(module, api_instance, result):
             msg="Api Exception raised while fetching aggregated network segments",
         )
 
-    resp = strip_internal_attributes(resp.to_dict())
-    total_available_results = resp.get("metadata", {}).get("total_available_results")
+    total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    data = resp.get("data") or []
-    result["response"] = data
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        resp = []
+    result["response"] = resp
 
 
 def run_module():
@@ -163,7 +234,7 @@ def run_module():
         supports_check_mode=False,
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None, "failed": False}
+    result = {"changed": False, "response": None, "failed": False}
     api_instance = get_network_segments_api_instance(module)
     get_aggregated_network_segments(module, api_instance, result)
     module.exit_json(**result)

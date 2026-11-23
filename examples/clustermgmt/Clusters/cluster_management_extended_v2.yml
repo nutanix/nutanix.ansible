@@ -254,8 +254,20 @@
       register: agg_segments_filtered
       ignore_errors: true
 
+    - name: List aggregated network segments with limit
+      nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+        limit: 1
+      register: agg_segments_limit
+      ignore_errors: true
+
     - name: List aggregated network segments with fetch_all
       nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
         fetch_all: true
       register: agg_segments_all
+      ignore_errors: true
+
+    - name: List aggregated network segments with expand
+      nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+        expand: "ipPool"
+      register: agg_segments_expand
       ignore_errors: true
