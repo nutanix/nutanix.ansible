@@ -1,4 +1,7 @@
 ---
+# Summary:
+# Generate an OVA download URL for a given OVA.
+
 - name: Generate OVA download URL playbook
   hosts: localhost
   gather_facts: false
@@ -11,8 +14,8 @@
   tasks:
     - name: Set variables
       ansible.builtin.set_fact:
-        ova_ext_id: "<ova_ext_id>"
-        cluster_ext_id: "<cluster_ext_id>"
+        ova_ext_id: "d18644b6-9890-456b-9514-034569179608"
+        cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
 
     - name: Generate OVA download URL with default expiry
       nutanix.ncp.ntnx_generate_ova_download_url_v2:
@@ -33,7 +36,3 @@
           cluster_reference:
             ext_id: "{{ cluster_ext_id }}"
       register: result
-
-    - name: Display result
-      ansible.builtin.debug:
-        var: result

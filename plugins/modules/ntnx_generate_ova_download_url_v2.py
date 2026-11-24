@@ -21,7 +21,7 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Generate OVA download URL) -
-      Required Roles: Prism Admin, Prism Viewer, Super Admin
+      Required Roles: Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Tenant Admin, Tenant Consumer
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=virtual_machine_management)"
 options:
     state:
@@ -257,20 +257,12 @@ def generate_ova_download_url(module, result, api_instance):
             msg="Api Exception raised while generating OVA download URL",
         )
 
-    if resp and resp.data:
-        try:
-            task_ext_id = resp.data.ext_id
-        except Exception:
-            task_ext_id = None
-        if task_ext_id:
-            result["task_ext_id"] = task_ext_id
-        result["response"] = strip_internal_attributes(resp.data.to_dict())
-        if result.get("task_ext_id") and module.params.get("wait"):
-            task = wait_for_completion(module, result["task_ext_id"])
-            result["response"] = strip_internal_attributes(task.to_dict())
-    else:
-        result["response"] = strip_internal_attributes(resp.to_dict()) if resp else {}
-
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if task_ext_id and module.params.get("wait"):
+        task = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(task.to_dict())
     result["changed"] = True
 
 
