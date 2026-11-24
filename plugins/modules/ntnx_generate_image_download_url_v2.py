@@ -144,7 +144,7 @@ response:
             "completion_details": [
                 {
                     "name": "downloadUrl",
-                    "value": "https://10.46.137.37:9440/entity_download/93fb157a-7efb-4a6d-8bc0-b3a6f70c069c?expires=1795523486&userid=00000000-0000-0000-0000-000000000000&username=admin&cluster=00066101-9650-faa8-0000-000000028f57&sig=CzqM58ddYOvnRqRGBqiiqdXRclc2p0qLmYHgGZVeLo0"
+                    "value": "<value>"
                 }
             ],
             "created_time": "2026-11-24T12:21:26.358451+00:00",
@@ -296,22 +296,12 @@ def generate_image_download_url(module, result, api_instance):
             msg="Api Exception raised while generating image download URL",
         )
 
-    # data is TaskReference or error, handle success case
-    if resp and resp.data:
-        # TaskReference case
-        try:
-            task_ext_id = resp.data.ext_id
-        except Exception:
-            task_ext_id = None
-        if task_ext_id:
-            result["task_ext_id"] = task_ext_id
-        result["response"] = strip_internal_attributes(resp.data.to_dict())
-        if result.get("task_ext_id") and module.params.get("wait"):
-            task = wait_for_completion(module, result["task_ext_id"])
-            result["response"] = strip_internal_attributes(task.to_dict())
-    else:
-        result["response"] = strip_internal_attributes(resp.to_dict()) if resp else {}
-
+    task_ext_id = resp.data.ext_id
+    result["task_ext_id"] = task_ext_id
+    result["response"] = strip_internal_attributes(resp.data.to_dict())
+    if task_ext_id and module.params.get("wait"):
+        task = wait_for_completion(module, task_ext_id)
+        result["response"] = strip_internal_attributes(task.to_dict())
     result["changed"] = True
 
 
