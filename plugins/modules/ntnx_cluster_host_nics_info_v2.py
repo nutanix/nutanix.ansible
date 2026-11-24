@@ -21,7 +21,6 @@ description:
   - When C(cluster_ext_id) and C(host_ext_id) are both provided without C(ext_id),
     host NICs are listed for that host; otherwise a global list across Prism Central
     is returned.
-  - This module can also fetch host NIC stats when C(start_time) and C(end_time) are provided together with C(ext_id).
   - This module uses PC v4 APIs based SDKs.
 notes:
   - >-
@@ -33,10 +32,6 @@ notes:
     Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)
   - >-
     B(View Host Nic) -
-    Required Roles: Cluster Admin, Cluster Viewer, Prism Admin,
-    Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)
-  - >-
-    B(Get Host NIC Stats) -
     Required Roles: Cluster Admin, Cluster Viewer, Prism Admin,
     Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)
   - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
@@ -62,40 +57,6 @@ options:
       - The external ID (UUID) of the host that owns the host NIC.
       - Required together with C(cluster_ext_id) when fetching a single host NIC by C(ext_id).
       - Required together with C(cluster_ext_id) when listing host NICs scoped to a specific host.
-    type: str
-    required: false
-  start_time:
-    description:
-      - The start time of the period for which stats should be reported.
-      - The value should be in extended ISO-8601 format.
-    type: str
-    required: false
-  end_time:
-    description:
-      - The end time of the period for which stats should be reported.
-      - The value should be in extended ISO-8601 format.
-    type: str
-    required: false
-  sampling_interval:
-    description:
-      - The sampling interval in seconds at which statistical data should be collected.
-    type: int
-    required: false
-  stat_type:
-    description:
-      - The operator to use while performing down-sampling on stats data.
-    type: str
-    required: false
-    choices:
-      - SUM
-      - MIN
-      - MAX
-      - AVG
-      - COUNT
-      - LAST
-  select:
-    description:
-      - A URL query parameter that allows clients to request a specific set of properties.
     type: str
     required: false
 extends_documentation_fragment:
@@ -156,16 +117,6 @@ EXAMPLES = r"""
 - name: List all host NICs with fetch_all
   nutanix.ncp.ntnx_cluster_host_nics_info_v2:
     fetch_all: true
-  register: result
-  ignore_errors: true
-
-- name: Get host NIC stats
-  nutanix.ncp.ntnx_cluster_host_nics_info_v2:
-    cluster_ext_id: "0005b3f7-1234-4321-abcd-0123456789ab"
-    host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
-    ext_id: "d6e2eec2-8d68-4b9c-a3f5-cfc9f9b7a821"
-    start_time: "2026-07-21T00:00:00.000Z"
-    end_time: "2026-07-21T01:00:00.000Z"
   register: result
   ignore_errors: true
 """
@@ -258,10 +209,7 @@ from ..module_utils.v4.base_info_module import BaseInfoModule  # noqa: E402
 from ..module_utils.v4.clusters_mgmt.api_client import (  # noqa: E402
     get_clusters_api_instance,
 )
-from ..module_utils.v4.clusters_mgmt.helpers import (  # noqa: E402
-    get_host_nic,
-    get_host_nic_stats,
-)
+from ..module_utils.v4.clusters_mgmt.helpers import get_host_nic  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     list_entities,
@@ -279,35 +227,9 @@ def get_module_spec():
         ext_id=dict(type="str"),
         cluster_ext_id=dict(type="str"),
         host_ext_id=dict(type="str"),
-        start_time=dict(type="str"),
-        end_time=dict(type="str"),
-        sampling_interval=dict(type="int"),
-        stat_type=dict(
-            type="str",
-            choices=["SUM", "MIN", "MAX", "AVG", "COUNT", "LAST"],
-        ),
-        select=dict(type="str"),
     )
 
     return module_args
-
-
-def get_host_nic_stats_wrapper(module, api_instance, result):
-    ext_id = module.params.get("ext_id")
-    cluster_ext_id = module.params.get("cluster_ext_id")
-    host_ext_id = module.params.get("host_ext_id")
-    result["ext_id"] = ext_id
-    sg = SpecGenerator(module)
-    kwargs, err = sg.get_stats_spec(attr=module.params)
-    if err:
-        result["error"] = err
-        module.fail_json(msg="Failed generating host NIC stats spec", **result)
-    if module.params.get("select") is not None:
-        kwargs["_select"] = module.params.get("select")
-    resp = get_host_nic_stats(
-        module, api_instance, cluster_ext_id, host_ext_id, ext_id, **kwargs
-    )
-    result["response"] = strip_internal_attributes(resp.to_dict())
 
 
 def get_host_nic_using_ext_id(module, api_instance, result):
@@ -387,10 +309,7 @@ def run_module():
     result = {"changed": False, "error": None, "response": None, "failed": False}
     api_instance = get_clusters_api_instance(module)
     if module.params.get("ext_id"):
-        if module.params.get("start_time") and module.params.get("end_time"):
-            get_host_nic_stats_wrapper(module, api_instance, result)
-        else:
-            get_host_nic_using_ext_id(module, api_instance, result)
+        get_host_nic_using_ext_id(module, api_instance, result)
     else:
         get_host_nics(module, api_instance, result)
     module.exit_json(**result)
