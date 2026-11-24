@@ -462,15 +462,7 @@ response:
   type: dict
   sample:
     {
-        "ext_id": "63311404-8b2e-4dbf-9e33-7848cc88d330",
-        "name": "ansible-backplane-segment-updated",
-        "vlan_id": 200,
-        "mtu": 1500,
-        "network_segment_info": {
-            "ahv_network_backing": {
-                "hypervisor_interface_backing": "vs0"
-            }
-        }
+        "ext_id": "ZXJnb24=:fc0f5074-4da9-5593-bfdc-a08c13df963d"
     }
 task_ext_id:
   description:
@@ -809,14 +801,6 @@ def update_network_segment(module, result, api_instance):
     if check_network_segment_idempotency(old_spec.to_dict(), update_spec.to_dict()):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
-
-    # Remove read-only fields before update
-    if hasattr(update_spec, "ext_id"):
-        update_spec.ext_id = None
-    if hasattr(update_spec, "links"):
-        update_spec.links = None
-    if hasattr(update_spec, "tenant_id"):
-        update_spec.tenant_id = None
 
     resp = None
     try:
