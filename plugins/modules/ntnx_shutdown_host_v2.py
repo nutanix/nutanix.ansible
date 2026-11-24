@@ -27,7 +27,7 @@ options:
   state:
     description:
       - State of the module.
-      - If C(state) is C(present), shutdown the host.
+      - If C(state) is C(present), it will shutdown the host.
       - If C(state) is C(absent), the module will fail.
     type: str
     choices:
@@ -65,6 +65,10 @@ author:
 EXAMPLES = r"""
 - name: Shutdown host
   nutanix.ncp.ntnx_shutdown_host_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
     host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
     should_shutdown_non_migratable_uvms: false
@@ -129,7 +133,6 @@ error:
     description: This indicates the error message if any error occurred
     returned: When an error occurs
     type: str
-    sample: "Failed to shutdown host"
 
 failed:
     description: This indicates whether the task failed
@@ -144,7 +147,7 @@ task_ext_id:
     sample: "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1"
 
 ext_id:
-    description: The external ID of the resource.
+    description: The external ID of the host.
     returned: always
     type: str
     sample: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
@@ -242,8 +245,6 @@ def run_module():
         "changed": False,
         "failed": False,
         "response": None,
-        "ext_id": None,
-        "task_ext_id": None,
     }
     api_instance = get_hosts_api_instance(module)
     shutdown_host(module, result, api_instance)
