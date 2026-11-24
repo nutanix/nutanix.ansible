@@ -553,3 +553,7 @@ action_groups:
     - ntnx_cpu_models_info_v2
     - ntnx_device_bundle_instances_info_v2
     - ntnx_device_bundle_profiles_info_v2
+    - ntnx_vm_device_bundle_v2
+    - ntnx_vm_device_bundles_info_v2
+    - ntnx_vm_ads_config_v2
+    - ntnx_vm_ads_config_info_v2

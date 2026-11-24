@@ -1,0 +1,110 @@
+---
+- name: VM Device Bundle and ADS Config playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host }}"
+      nutanix_username: "{{ nutanix_username }}"
+      nutanix_password: "{{ nutanix_password }}"
+      validate_certs: false
+  tasks:
+
+    - name: Set variables
+      ansible.builtin.set_fact:
+        vm_ext_id: "<vm_ext_id>"
+        device_bundle_profile_ext_id: "<device_bundle_profile_ext_id>"
+        device_bundle_ext_id: "<device_bundle_ext_id>"
+
+    - name: Create a device bundle for a VM
+      nutanix.ncp.ntnx_vm_device_bundle_v2:
+        state: present
+        vm_ext_id: "{{ vm_ext_id }}"
+        backing_info:
+          device_bundle_profile:
+            ext_id: "{{ device_bundle_profile_ext_id }}"
+      register: create_result
+
+    - name: Print create device bundle result
+      ansible.builtin.debug:
+        msg: "{{ create_result }}"
+
+    - name: Get a specific device bundle attached to a VM
+      nutanix.ncp.ntnx_vm_device_bundles_info_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        ext_id: "{{ device_bundle_ext_id }}"
+      register: get_result
+
+    - name: Print get device bundle result
+      ansible.builtin.debug:
+        msg: "{{ get_result }}"
+
+    - name: List all device bundles attached to a VM
+      nutanix.ncp.ntnx_vm_device_bundles_info_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+      register: list_result
+
+    - name: Print list device bundles result
+      ansible.builtin.debug:
+        msg: "{{ list_result }}"
+
+    - name: List device bundles attached to a VM with filter
+      nutanix.ncp.ntnx_vm_device_bundles_info_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        filter: "extId eq '00000000-0000-0000-0000-000000000001'"
+      register: list_result
+
+    - name: Print list device bundles with filter result
+      ansible.builtin.debug:
+        msg: "{{ list_result }}"
+
+    - name: List device bundles attached to a VM with limit
+      nutanix.ncp.ntnx_vm_device_bundles_info_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        limit: 1
+      register: list_result
+
+    - name: Print list device bundles with limit result
+      ansible.builtin.debug:
+        msg: "{{ list_result }}"
+
+    - name: List all device bundles attached to a VM with fetch_all
+      nutanix.ncp.ntnx_vm_device_bundles_info_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        fetch_all: true
+      register: list_result
+
+    - name: Print list device bundles with fetch_all result
+      ansible.builtin.debug:
+        msg: "{{ list_result }}"
+
+    - name: Delete a device bundle from a VM
+      nutanix.ncp.ntnx_vm_device_bundle_v2:
+        state: absent
+        vm_ext_id: "{{ vm_ext_id }}"
+        ext_id: "{{ device_bundle_ext_id }}"
+      register: delete_result
+
+    - name: Print delete device bundle result
+      ansible.builtin.debug:
+        msg: "{{ delete_result }}"
+
+    - name: Get ADS config of a VM
+      nutanix.ncp.ntnx_vm_ads_config_info_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+      register: ads_get_result
+
+    - name: Print get ADS config result
+      ansible.builtin.debug:
+        msg: "{{ ads_get_result }}"
+
+    - name: Update VM ADS config
+      nutanix.ncp.ntnx_vm_ads_config_v2:
+        state: present
+        vm_ext_id: "{{ vm_ext_id }}"
+        auto_migration: "INCLUDE"
+      register: ads_update_result
+
+    - name: Print update ADS config result
+      ansible.builtin.debug:
+        msg: "{{ ads_update_result }}"

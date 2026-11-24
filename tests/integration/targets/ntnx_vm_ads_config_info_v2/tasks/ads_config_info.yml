@@ -1,0 +1,123 @@
+---
+############################################################################################
+# Test plan for ntnx_vm_ads_config_info_v2
+# AdsConfig info: GetVmAdsConfig (singleton, requires vm_ext_id)
+# Covers: fetch ADS config, invalid vm_ext_id, missing vm_ext_id
+############################################################################################
+
+- name: Start ntnx_vm_ads_config_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vm_ads_config_info_v2 tests
+
+- name: Generate random name suffix
+  ansible.builtin.set_fact:
+    random_name: >-
+      {{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_ads_info_vm"
+
+- name: Create a VM for ADS config info tests
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: vm_result
+  ignore_errors: true
+
+- name: Create VM status
+  ansible.builtin.assert:
+    that:
+      - vm_result.response is defined
+      - vm_result.changed == true
+      - vm_result.failed == false
+      - vm_result.ext_id is defined
+    fail_msg: Unable to create VM
+    success_msg: VM created successfully
+
+- name: Capture the VM ext_id
+  ansible.builtin.set_fact:
+    vm_uuid: "{{ vm_result.ext_id }}"
+
+############################################################################################
+# Fetch ADS config
+############################################################################################
+
+- name: Fetch ADS config of the VM
+  nutanix.ncp.ntnx_vm_ads_config_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Fetch ADS config status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.vm_ext_id == vm_uuid
+    success_msg: "Fetch ADS config passed"
+    fail_msg: "Fetch ADS config failed"
+
+- name: Verify ADS config response structure
+  ansible.builtin.assert:
+    that:
+      - result.response.auto_migration is defined or result.response.ext_id is defined
+    success_msg: "ADS config response structure verified"
+    fail_msg: "ADS config response structure invalid"
+  when: result.failed == false
+
+############################################################################################
+# Negative: fetch with non-existent vm_ext_id
+############################################################################################
+
+- name: Fetch ADS config with a non-existent vm_ext_id
+  nutanix.ncp.ntnx_vm_ads_config_info_v2:
+    vm_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Fetch ADS config with non-existent vm_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    success_msg: "Correctly failed for non-existent VM ext_id"
+    fail_msg: "Expected failure for non-existent VM ext_id"
+
+############################################################################################
+# Negative: missing vm_ext_id
+############################################################################################
+
+- name: Fetch ADS config without vm_ext_id (should fail)
+  nutanix.ncp.ntnx_vm_ads_config_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Fetch without vm_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    success_msg: "Correctly failed when vm_ext_id is missing"
+    fail_msg: "Expected failure when vm_ext_id is missing"
+
+############################################################################################
+# Cleanup
+############################################################################################
+
+- name: Delete the VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete VM status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+    fail_msg: Unable to delete the VM
+    success_msg: VM deleted successfully

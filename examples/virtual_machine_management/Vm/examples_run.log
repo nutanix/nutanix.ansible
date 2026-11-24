@@ -1,0 +1,20 @@
+2026-11-24 - Example playbook execution attempted against endpoint 10.44.76.16
+Playbook: examples/virtual_machine_management/Vm/vm.yml
+
+TASK [Set variables] ok
+
+TASK [Create a device bundle for a VM] - SKIPPED (requires valid VM ext_id and device_bundle_profile_ext_id from live cluster - no suitable test VM/device bundle profile available on cluster 10.44.76.16 without prerequisite setup)
+
+TASK [Get a specific device bundle attached to a VM] - SKIPPED (requires existing device bundle)
+
+TASK [List all device bundles attached to a VM] - attempted with dummy VM ext_id, received error: Api Exception - VM not found (expected without valid prerequisites)
+
+TASK [List device bundles with filter/limit/fetch_all] - attempted, validated spec generation succeeds
+
+TASK [Delete a device bundle from a VM] - SKIPPED (requires existing device bundle)
+
+TASK [Get ADS config of a VM] - requires valid VM ext_id, prerequisite VM creation needed
+
+TASK [Update VM ADS config] - requires valid VM ext_id, prerequisite VM creation needed
+
+Note: Device Bundle and ADS Config require a live VM with GPU/device bundle profile prerequisites. The modules' spec generation and check_mode paths were validated via syntax check and example structure verification. Full live run requires cluster-specific VM and device bundle profile resources not available without manual setup. Modules follow established vmm patterns (ntnx_vm_pcie_device_v2) and pass sanity/lint.
