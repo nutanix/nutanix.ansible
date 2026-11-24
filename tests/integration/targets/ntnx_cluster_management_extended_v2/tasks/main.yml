@@ -1,7 +1,5 @@
 ---
-# Integration tests for ntnx_cluster_host_nic_stats_info_v2.
-
-- name: Set module defaults for Host NIC Stats info tests
+- name: Set module defaults
   module_defaults:
     group/nutanix.ncp.ntnx:
       nutanix_host: "{{ ip }}"
@@ -12,5 +10,5 @@
       nutanix_debug: "{{ nutanix_debug | default(omit) }}"
       nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
   block:
-    - name: Import host_nic_stats_info.yml
-      ansible.builtin.import_tasks: host_nic_stats_info.yml
+    - name: Import cluster_management_extended.yml
+      ansible.builtin.import_tasks: cluster_management_extended.yml
