@@ -1026,9 +1026,6 @@
     fail_msg: "Upgrade gateway with check mode failed"
   when: gateway_all_ext_id | default('') | length > 0
 
-
-# Upgrade currently fails with NETWORKING-10056:
-# "Authorization should happen in Atlas only if metadata updates happen in Atlas as well."
 - name: Upgrade gateway
   nutanix.ncp.ntnx_gateway_v2:
     state: present
@@ -1043,17 +1040,19 @@
     var: result
   when: gateway_all_ext_id | default('') | length > 0
 
-# - name: Upgrade gateway status
-#   ansible.builtin.assert:
-#     that:
-#       - result is defined
-#       - result.failed == false
-#       - result.changed == true
-#       - result.ext_id == gateway_all_ext_id
-#       - result.task_ext_id is defined
-#     success_msg: "Upgrade gateway passed"
-#     fail_msg: "Upgrade gateway failed"
-#   when: gateway_all_ext_id | default('') | length > 0
+- name: Upgrade gateway status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == true
+      - result.ext_id == gateway_all_ext_id
+      - result.task_ext_id is defined
+      - result.response is defined
+      - result.response.status == "SUCCEEDED"
+    success_msg: "Upgrade gateway passed"
+    fail_msg: "Upgrade gateway failed"
+  when: gateway_all_ext_id | default('') | length > 0
 
 ########################################################################################
 # Delete / negative tests
