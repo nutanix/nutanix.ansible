@@ -29,6 +29,11 @@ options:
       - Indicates the UUID of a cluster.
     type: str
     required: true
+  read_timeout:
+    description: Read timeout in milliseconds for API calls.
+    type: int
+    required: false
+    default: 30000
 extends_documentation_fragment:
   - nutanix.ncp.ntnx_credentials
   - nutanix.ncp.ntnx_logger
@@ -119,6 +124,7 @@ def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
+        skip_info_args=True,
     )
     remove_param_with_none_value(module.params)
     result = {"changed": False, "response": None, "failed": False}

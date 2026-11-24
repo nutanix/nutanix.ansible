@@ -194,9 +194,9 @@
         vlan_id: 201
         mtu: 1500
         network_segment_info:
-      backplane_info:
-        ahv_network_backing:
-          hypervisor_interface_backing: "vs0"
+          backplane_info:
+            ahv_network_backing:
+              hypervisor_interface_backing: "vs0"
       register: network_segment_updated
       ignore_errors: true
 
@@ -364,5 +364,3 @@
       nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
         expand: "ipPool"
       register: agg_segments_expand
-
-

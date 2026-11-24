@@ -198,7 +198,7 @@ def get_module_spec():
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
         cluster_ext_id=dict(type="str", required=True),
-        key=dict(type="str", required=True),
+        key=dict(type="str", required=True, no_log=True),
         version=dict(type="str"),
         provider_type=dict(
             type="str",

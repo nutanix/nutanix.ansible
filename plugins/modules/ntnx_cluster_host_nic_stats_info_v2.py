@@ -76,12 +76,9 @@ options:
       - AVG
       - COUNT
       - LAST
-  select:
-    description:
-      - A URL query parameter that allows clients to request a specific set of properties.
-    type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
+    - nutanix.ncp.ntnx_info_v2
     - nutanix.ncp.ntnx_logger
     - nutanix.ncp.ntnx_proxy_v2
 author:
@@ -111,6 +108,8 @@ EXAMPLES = r"""
     validate_certs: false
     cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
     host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
+    start_time: "2026-07-21T00:00:00.000Z"
+    end_time: "2026-07-21T01:00:00.000Z"
     filter: "extId eq 'ac59fb6b-4085-40f6-94dc-c79ff0e25390'"
   register: result
   ignore_errors: true
@@ -123,6 +122,8 @@ EXAMPLES = r"""
     validate_certs: false
     cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
     host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
+    start_time: "2026-07-21T00:00:00.000Z"
+    end_time: "2026-07-21T01:00:00.000Z"
     limit: 1
   register: result
   ignore_errors: true
@@ -135,6 +136,8 @@ EXAMPLES = r"""
     validate_certs: false
     cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
     host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
+    start_time: "2026-07-21T00:00:00.000Z"
+    end_time: "2026-07-21T01:00:00.000Z"
     fetch_all: true
   register: result
   ignore_errors: true
@@ -266,16 +269,21 @@ def get_host_nic_stats_using_ext_id(module, api_instance, result):
 def get_host_nic_stats_list(module, api_instance, result):
     cluster_ext_id = module.params.get("cluster_ext_id")
     host_ext_id = module.params.get("host_ext_id")
-
     sg = SpecGenerator(module)
-    kwargs, err = sg.get_stats_spec(attr=module.params)
 
+    info_kwargs, err = sg.get_info_spec(attr=module.params)
+    if err:
+        result["error"] = err
+        module.fail_json(msg="Failed generating host NIC stats info spec", **result)
+
+    stats_kwargs, err = sg.get_stats_spec(attr=module.params)
     if err:
         result["error"] = err
         module.fail_json(msg="Failed generating host NIC stats spec", **result)
 
-    if module.params.get("select") is not None:
-        kwargs["_select"] = module.params.get("select")
+    kwargs = {}
+    kwargs.update(stats_kwargs)
+    kwargs.update(info_kwargs)
 
     try:
         resp = list_entities(
@@ -302,7 +310,7 @@ def run_module():
     module = BaseInfoModule(
         argument_spec=get_module_spec(),
         supports_check_mode=False,
-        skip_info_args=True,
+        mutually_exclusive=[("ext_id", "filter")],
         required_by={
             "ext_id": ["cluster_ext_id", "host_ext_id", "start_time", "end_time"],
         },
