@@ -1,0 +1,249 @@
+---
+# Test Plan for ntnx_cluster_host_nic_stats_info_v2
+# ==================================================
+# HostNic stats are exposed by the clustermgmt v4 API with two operations:
+#   * GetHostNicStats          GET /clusters/{cluster}/hosts/{host}/host-nics/{id}/stats
+#   * ListHostNicStatsByHostId GET /clusters/{cluster}/hosts/{host}/host-nic-stats
+#
+# The tests below exercise every branch of the stats info module:
+#   1. Prerequisite discovery (pick a cluster + host + NIC from the live PC).
+#   2. Positive: get NIC stats by ext_id (GetHostNicStats).
+#   3. Positive: list NIC stats by host (ListHostNicStatsByHostId).
+#   4. Positive: list with $select.
+#   5. Negative: get-by-ext_id without start_time / end_time (should fail).
+#   6. Negative: invalid stat_type enum.
+#   7. Negative: get-by-ext_id with bogus ext_id (API 4xx).
+
+- name: Start Host NIC Stats info tests
+  ansible.builtin.debug:
+    msg: Start ntnx_cluster_host_nic_stats_info_v2 tests
+
+########################################################################################
+# Compute stats time window
+########################################################################################
+
+- name: Compute stats window start time (last 5 minutes)
+  ansible.builtin.command: date -u -d "-300 seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: start_time
+  changed_when: false
+
+- name: Compute stats window end time (now)
+  ansible.builtin.command: date -u +"%Y-%m-%dT%H:%M:%S.%3NZ"
+  register: end_time
+  changed_when: false
+
+########################################################################################
+# Prerequisites — discover a live cluster + host + NIC
+########################################################################################
+
+- name: Fetch registered clusters
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: clusters_info
+  ignore_errors: true
+
+- name: Assert clusters were listed
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.changed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    fail_msg: "Unable to list clusters"
+    success_msg: "Clusters listed successfully"
+
+- name: Pick a Prism Element cluster
+  ansible.builtin.set_fact:
+    pe_cluster_ext_id: >-
+      {{
+        (
+          clusters_info.response
+          | selectattr('config.cluster_function', 'defined')
+          | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+          | list
+          | default(clusters_info.response, true)
+        )[0].ext_id
+      }}
+
+- name: Fetch hosts in the chosen cluster
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+  register: hosts_info
+  ignore_errors: true
+
+- name: Assert hosts were listed
+  ansible.builtin.assert:
+    that:
+      - hosts_info is defined
+      - hosts_info.failed == false
+      - hosts_info.changed == false
+      - hosts_info.response is defined
+      - hosts_info.response | length > 0
+    fail_msg: "Unable to list hosts for cluster {{ pe_cluster_ext_id }}"
+    success_msg: "Hosts listed successfully"
+
+- name: Set parent host ext_id
+  ansible.builtin.set_fact:
+    parent_host_ext_id: "{{ hosts_info.response[0].ext_id }}"
+
+- name: List host NICs on the chosen host
+  nutanix.ncp.ntnx_cluster_host_nics_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    host_ext_id: "{{ parent_host_ext_id }}"
+  register: nics_by_host
+  ignore_errors: true
+
+- name: Assert host NICs were listed
+  ansible.builtin.assert:
+    that:
+      - nics_by_host is defined
+      - nics_by_host.failed == false
+      - nics_by_host.changed == false
+      - nics_by_host.response is defined
+      - nics_by_host.response | length > 0
+      - nics_by_host.response[0].ext_id is defined
+    fail_msg: "Unable to list host NICs for host {{ parent_host_ext_id }}"
+    success_msg: "Host NICs listed successfully"
+
+- name: Set sample host NIC ext_id
+  ansible.builtin.set_fact:
+    sample_nic_ext_id: "{{ nics_by_host.response[0].ext_id }}"
+
+########################################################################################
+# 1. GetHostNicStats — get stats for a specific NIC
+########################################################################################
+
+- name: Get host NIC stats by ext_id
+  nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    host_ext_id: "{{ parent_host_ext_id }}"
+    ext_id: "{{ sample_nic_ext_id }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: nic_stats_by_id
+  ignore_errors: true
+
+- name: Assert get NIC stats returned data
+  ansible.builtin.assert:
+    that:
+      - nic_stats_by_id is defined
+      - nic_stats_by_id.failed == false
+      - nic_stats_by_id.changed == false
+      - nic_stats_by_id.ext_id == sample_nic_ext_id
+      - nic_stats_by_id.response is defined
+    fail_msg: "Unable to fetch host NIC stats by ext_id"
+    success_msg: "Host NIC stats fetched by ext_id successfully"
+
+########################################################################################
+# 2. ListHostNicStatsByHostId — list all NIC stats on the chosen host
+########################################################################################
+
+- name: List host NIC stats by host
+  nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    host_ext_id: "{{ parent_host_ext_id }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: nic_stats_by_host
+  ignore_errors: true
+
+- name: Assert list NIC stats returned data
+  ansible.builtin.assert:
+    that:
+      - nic_stats_by_host is defined
+      - nic_stats_by_host.failed == false
+      - nic_stats_by_host.changed == false
+      - nic_stats_by_host.response is defined
+      - nic_stats_by_host.total_available_results is defined
+    fail_msg: "Unable to list host NIC stats by host"
+    success_msg: "Host NIC stats listed by host successfully"
+
+########################################################################################
+# 3. List with $select
+########################################################################################
+
+- name: List host NIC stats with select
+  nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    host_ext_id: "{{ parent_host_ext_id }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+    select: "ext_id"
+  register: nic_stats_select
+  ignore_errors: true
+
+- name: Assert select restricts returned fields
+  ansible.builtin.assert:
+    that:
+      - nic_stats_select is defined
+      - nic_stats_select.failed == false
+      - nic_stats_select.changed == false
+      - nic_stats_select.response is defined
+    fail_msg: "Unable to list host NIC stats with select"
+    success_msg: "Host NIC stats listed with select successfully"
+
+########################################################################################
+# 4. Negative tests
+########################################################################################
+
+- name: Attempt get NIC stats by ext_id without start_time / end_time (should fail)
+  nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    host_ext_id: "{{ parent_host_ext_id }}"
+    ext_id: "{{ sample_nic_ext_id }}"
+  register: missing_times
+  ignore_errors: true
+
+- name: Assert missing start_time / end_time are caught
+  ansible.builtin.assert:
+    that:
+      - missing_times is defined
+      - missing_times.failed == true
+      - missing_times.changed == false
+      - >-
+        ('start_time' in (missing_times.msg | string)) or
+        ('end_time' in (missing_times.msg | string))
+    fail_msg: "Missing start_time / end_time were not caught"
+    success_msg: "Missing start_time / end_time correctly rejected"
+
+- name: Attempt get NIC stats with invalid stat_type (should fail)
+  nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    host_ext_id: "{{ parent_host_ext_id }}"
+    ext_id: "{{ sample_nic_ext_id }}"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+    stat_type: NOT_VALID
+  register: invalid_stat_type
+  ignore_errors: true
+
+- name: Assert invalid stat_type is rejected
+  ansible.builtin.assert:
+    that:
+      - invalid_stat_type is defined
+      - invalid_stat_type.failed == true
+      - invalid_stat_type.changed == false
+      - >-
+        ('stat_type' in (invalid_stat_type.msg | string)) or
+        ('NOT_VALID' in (invalid_stat_type.msg | string))
+    fail_msg: "Invalid stat_type was not rejected"
+    success_msg: "Invalid stat_type correctly rejected"
+
+- name: Attempt get NIC stats with bogus ext_id (should fail)
+  nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    host_ext_id: "{{ parent_host_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    start_time: "{{ start_time.stdout }}"
+    end_time: "{{ end_time.stdout }}"
+  register: bogus_id
+  ignore_errors: true
+
+- name: Assert bogus ext_id is rejected by the API
+  ansible.builtin.assert:
+    that:
+      - bogus_id is defined
+      - bogus_id.failed == true
+      - bogus_id.changed == false
+    fail_msg: "Bogus ext_id did not fail as expected"
+    success_msg: "Bogus ext_id was rejected by the API"

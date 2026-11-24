@@ -1,11 +1,13 @@
 ---
 # Summary:
-# Cluster IP pools, network segments, CVM update, compute non-migratable VMs,
-# and related info modules (clustermgmt v4).
+# Cluster management operations - covers action and info modules for
+# clustermgmt v4.
 #   1. Create / update / delete IP pool (+ info get/list)
 #   2. Create / delete network segment (+ info get/list/expand)
 #   3. Update CVM name
 #   4. Compute non-migratable VMs (+ get result by id)
+#   5. Action: Install external storage driver, Shutdown host, Refresh port capability
+#   6. Info: Port capability, Host NIC stats, Aggregated network segments
 #
 # Note: CreateIpPool / CreateNetworkSegment tasks currently report only the
 # parent cluster in entities_affected, so create uses wait=false and ext_id is
@@ -27,6 +29,7 @@
         cluster_ext_id: "{{ cluster_ext_id | default('<cluster_ext_id>') }}"
         cvm_ext_id: "{{ cvm_ext_id | default('<cvm_ext_id>') }}"
         host_ext_id: "{{ host_ext_id | default('<host_ext_id>') }}"
+        host_nic_ext_id: "{{ host_nic_ext_id | default('<host_nic_ext_id>') }}"
         hypervisor_interface_backing: >-
           {{ hypervisor_interface_backing | default('<hypervisor_interface_backing>') }}
 
@@ -182,6 +185,21 @@
         fetch_all: true
       register: network_segments_fetch_all
 
+    - name: Update cluster network segment
+      nutanix.ncp.ntnx_cluster_network_segments_v2:
+        state: present
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        ext_id: "{{ network_segment_lookup.response[0].ext_id }}"
+        name: ansible-volumes-segment-updated
+        vlan_id: 201
+        mtu: 1500
+        network_segment_info:
+      backplane_info:
+        ahv_network_backing:
+          hypervisor_interface_backing: "vs0"
+      register: network_segment_updated
+      ignore_errors: true
+
     - name: Delete cluster network segment
       nutanix.ncp.ntnx_cluster_network_segments_v2:
         state: absent
@@ -230,3 +248,121 @@
         ext_id: "{{ compute_nmv.ext_id }}"
       register: nmv_info
       when: compute_nmv.ext_id is defined
+
+    ########################################################################
+    # Action modules
+    ########################################################################
+    - name: Install external storage driver
+      nutanix.ncp.ntnx_install_external_storage_driver_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        key: "driver-package-key"
+        version: "1.0.0"
+        provider_type: "DELL_POWERFLEX"
+      register: install_driver
+      ignore_errors: true
+
+    - name: Shutdown host
+      nutanix.ncp.ntnx_shutdown_host_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        should_shutdown_non_migratable_uvms: false
+        wait: false
+      register: shutdown_host
+      ignore_errors: true
+
+    - name: Refresh port capability
+      nutanix.ncp.ntnx_refresh_port_capability_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: refresh_port
+      ignore_errors: true
+
+    ########################################################################
+    # Info modules
+    ########################################################################
+    - name: Get port capability
+      nutanix.ncp.ntnx_cluster_port_capability_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: port_cap
+      ignore_errors: true
+
+    ########################################################################
+    # Host NIC stats info modules
+    ########################################################################
+
+    - name: List host NIC stats by host
+      nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        start_time: "2026-07-21T00:00:00.000Z"
+        end_time: "2026-07-21T01:00:00.000Z"
+      register: nic_stats
+      ignore_errors: true
+
+    - name: List host NIC stats by host with filter
+      nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        start_time: "2026-07-21T00:00:00.000Z"
+        end_time: "2026-07-21T01:00:00.000Z"
+        filter: "extId eq 'ac59fb6b-4085-40f6-94dc-c79ff0e25390'"
+      register: nic_stats_filtered
+      ignore_errors: true
+
+    - name: List host NIC stats by host with limit
+      nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        start_time: "2026-07-21T00:00:00.000Z"
+        end_time: "2026-07-21T01:00:00.000Z"
+        limit: 1
+      register: nic_stats_limited
+      ignore_errors: true
+
+    - name: List host NIC stats by host with fetch all
+      nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        start_time: "2026-07-21T00:00:00.000Z"
+        end_time: "2026-07-21T01:00:00.000Z"
+        fetch_all: true
+      register: nic_stats_fetch_all
+      ignore_errors: true
+
+    - name: Get host NIC stats by ext_id
+      nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        ext_id: "{{ host_nic_ext_id }}"
+        start_time: "2026-07-21T00:00:00.000Z"
+        end_time: "2026-07-21T01:00:00.000Z"
+      register: nic_stats_by_id
+      ignore_errors: true
+
+    ########################################################################
+    # Aggregated network segments
+    ########################################################################
+    - name: List aggregated network segments
+      nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+      register: agg_segments
+
+    - name: List aggregated network segments with filter
+      nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+        filter: "name eq 'test-segment'"
+      register: agg_segments_filtered
+
+    - name: List aggregated network segments with limit
+      nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+        limit: 1
+      register: agg_segments_limit
+
+    - name: List aggregated network segments with fetch_all
+      nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+        fetch_all: true
+      register: agg_segments_all
+
+    - name: List aggregated network segments with expand
+      nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+        expand: "ipPool"
+      register: agg_segments_expand
+
+
