@@ -10,7 +10,7 @@ __metaclass__ = type
 
 DOCUMENTATION = r"""
 ---
-module: ntnx_refresh_port_capability_by_cluster_id_v2
+module: ntnx_refresh_port_capability_v2
 short_description: Refresh port capability of a cluster
 version_added: "2.7.0"
 description:
@@ -21,13 +21,13 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Refresh Port Capability) -
-      Required Roles: Cluster Admin, Prism Admin, Super Admin
+      Required Roles: Backup Admin, Cluster Admin, Prism Admin, Project Manager, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   state:
     description:
       - State of the module.
-      - If C(state) is C(present), refresh port capability.
+      - If C(state) is C(present), it will refresh port capability.
       - If C(state) is C(absent), the module will fail.
     type: str
     choices:
@@ -55,7 +55,11 @@ author:
 
 EXAMPLES = r"""
 - name: Refresh port capability
-  nutanix.ncp.ntnx_refresh_port_capability_by_cluster_id_v2:
+  nutanix.ncp.ntnx_refresh_port_capability_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
   register: result
   ignore_errors: true
@@ -118,7 +122,6 @@ error:
     description: This indicates the error message if any error occurred
     returned: When an error occurs
     type: str
-    sample: "Failed to refresh port capability"
 
 failed:
     description: This indicates whether the task failed
@@ -133,7 +136,7 @@ task_ext_id:
     sample: "ZXJnb24=:0e040d14-5dcf-5302-8b48-d3c6cf115cd1"
 
 ext_id:
-    description: The external ID of the resource.
+    description: The external ID of the cluster.
     returned: always
     type: str
     sample: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
@@ -220,8 +223,6 @@ def run_module():
         "changed": False,
         "failed": False,
         "response": None,
-        "ext_id": None,
-        "task_ext_id": None,
     }
     api_instance = get_network_segments_api_instance(module)
     refresh_port_capability(module, result, api_instance)

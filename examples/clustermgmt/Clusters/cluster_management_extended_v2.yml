@@ -62,7 +62,7 @@
       ignore_errors: true
 
     - name: Refresh port capability
-      nutanix.ncp.ntnx_refresh_port_capability_by_cluster_id_v2:
+      nutanix.ncp.ntnx_refresh_port_capability_v2:
         cluster_ext_id: "{{ cluster_ext_id }}"
       register: refresh_port
       ignore_errors: true

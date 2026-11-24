@@ -545,7 +545,7 @@ action_groups:
     - ntnx_security_profiles_advanced_config_v2
     - ntnx_install_external_storage_driver_v2
     - ntnx_shutdown_host_v2
-    - ntnx_refresh_port_capability_by_cluster_id_v2
+    - ntnx_refresh_port_capability_v2
     - ntnx_cluster_host_nic_stats_info_v2
     - ntnx_cluster_port_capability_info_v2
     - ntnx_aggregated_network_segments_info_v2
