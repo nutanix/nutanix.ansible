@@ -1,0 +1,448 @@
+---
+# Test Plan for SmtpServer CRUD
+# Coverage:
+# - Prerequisites: discover domain_manager_ext_id via ntnx_pc_config_info_v2
+# - check_mode create with all attributes (basic_auth)
+# - create with required fields only (minimal)
+# - create with all fields (full)
+# - update with check_mode
+# - update live (change security_mode, port, email_address, is_active)
+# - idempotency (update again with same values -> changed false, msg Nothing to change)
+# - negative: missing required fields, invalid enum, invalid ext_id
+# - info: get by ext_id, list, list with filter, limit, fetch_all
+# - delete with check_mode
+# - delete live
+# - cleanup
+
+- name: Start SmtpServer tests
+  ansible.builtin.debug:
+    msg: Start SmtpServer tests
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] | lower }}"
+    todelete: []
+
+- name: Set SMTP test variables
+  ansible.builtin.set_fact:
+    smtp_email: "ansible-test-{{ random_suffix }}@example.com"
+    smtp_email_updated: "ansible-test-{{ random_suffix }}-updated@example.com"
+    smtp_username: "user_{{ random_suffix }}"
+    smtp_host_fqdn: "smtp-{{ random_suffix }}.example.com"
+
+# Discover domain manager ext_id
+- name: Discover domain managers
+  nutanix.ncp.ntnx_pc_config_info_v2:
+  register: pc_info
+  ignore_errors: true
+
+- name: Assert domain manager discovery
+  ansible.builtin.assert:
+    that:
+      - pc_info is defined
+      - pc_info.failed == false
+      - pc_info.response is defined
+    fail_msg: Failed to discover domain manager
+    success_msg: Domain manager discovered
+
+- name: Set domain_manager_ext_id
+  ansible.builtin.set_fact:
+    domain_manager_ext_id: "{{ pc_info.response[0].ext_id | default(pc_info.response.ext_id) }}"
+
+- name: List existing SMTP servers to check pre-existing
+  nutanix.ncp.ntnx_smtp_servers_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+  register: pre_existing_smtp
+  ignore_errors: true
+
+- name: Assert list pre-existing
+  ansible.builtin.assert:
+    that:
+      - pre_existing_smtp is defined
+      - pre_existing_smtp.failed == false
+    fail_msg: Failed to list existing SMTP servers
+    success_msg: Listed existing SMTP servers
+
+# Check mode create with all attributes
+- name: Create SMTP server with check mode enabled
+  nutanix.ncp.ntnx_smtp_server_v2:
+    state: present
+    domain_manager_ext_id: "00000000-0000-0000-0000-000000000000"
+    is_active: true
+    config:
+      basic_auth:
+        security_mode: "NONE"
+        host:
+          fqdn:
+            value: "smtp.example.com"
+        port: 25
+        email_address: "checkmode@example.com"
+        username: "check_user"
+        password: "check_pass"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Create SMTP server with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.config is defined
+    fail_msg: Create SMTP check_mode failed
+    success_msg: Create SMTP check_mode passed
+
+# Create with required fields only (minimal)
+- name: Create SMTP server with minimal attributes
+  nutanix.ncp.ntnx_smtp_server_v2:
+    state: present
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    config:
+      basic_auth:
+        security_mode: "NONE"
+        host:
+          fqdn:
+            value: "{{ smtp_host_fqdn }}"
+  register: result
+  ignore_errors: true
+
+- name: Create SMTP server with minimal attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.task_ext_id is defined
+    fail_msg: Create minimal SMTP server failed
+    success_msg: Create minimal SMTP server passed
+
+- name: Capture ext_id from minimal create if created
+  ansible.builtin.set_fact:
+    smtp_ext_id_min: "{{ result.ext_id | default(result.response.ext_id | default('')) }}"
+    todelete: "{{ todelete + [result.ext_id] if result.ext_id is defined else todelete }}"
+
+- name: Cleanup minimal SMTP if created
+  nutanix.ncp.ntnx_smtp_server_v2:
+    state: absent
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ smtp_ext_id_min }}"
+  register: cleanup_min
+  ignore_errors: true
+  when: smtp_ext_id_min | length > 0
+
+# Create with all fields (full)
+- name: Create SMTP server with all attributes
+  nutanix.ncp.ntnx_smtp_server_v2:
+    state: present
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    is_active: true
+    config:
+      basic_auth:
+        security_mode: "NONE"
+        host:
+          fqdn:
+            value: "{{ smtp_host_fqdn }}"
+        port: 25
+        email_address: "{{ smtp_email }}"
+        username: "{{ smtp_username }}"
+        password: "Nutanix.123"
+  register: result
+  ignore_errors: true
+
+- name: Create SMTP server with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.task_ext_id is defined
+    fail_msg: Create SMTP server with all attributes failed
+    success_msg: Create SMTP server with all attributes passed
+
+- name: Set created ext_id
+  ansible.builtin.set_fact:
+    smtp_ext_id: "{{ result.ext_id | default(result.response.ext_id) }}"
+    todelete: "{{ todelete + [result.ext_id] if result.ext_id is defined else todelete }}"
+
+# Update with check_mode
+- name: Update SMTP server with check mode enabled
+  nutanix.ncp.ntnx_smtp_server_v2:
+    state: present
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ smtp_ext_id }}"
+    is_active: true
+    config:
+      basic_auth:
+        security_mode: "STARTTLS"
+        host:
+          fqdn:
+            value: "{{ smtp_host_fqdn }}"
+        port: 587
+        email_address: "{{ smtp_email_updated }}"
+        username: "{{ smtp_username }}"
+        password: "Nutanix.123Updated"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update SMTP server with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: Update SMTP check_mode failed
+    success_msg: Update SMTP check_mode passed
+
+# Update live
+- name: Update SMTP server
+  nutanix.ncp.ntnx_smtp_server_v2:
+    state: present
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ smtp_ext_id }}"
+    is_active: true
+    config:
+      basic_auth:
+        security_mode: "STARTTLS"
+        host:
+          fqdn:
+            value: "{{ smtp_host_fqdn }}"
+        port: 587
+        email_address: "{{ smtp_email_updated }}"
+        username: "{{ smtp_username }}"
+        password: "Nutanix.123Updated"
+  register: result
+  ignore_errors: true
+
+- name: Update SMTP server status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.task_ext_id is defined
+    fail_msg: Update SMTP server failed
+    success_msg: Update SMTP server passed
+
+# Idempotency
+- name: Test idempotency by updating SMTP with same values
+  nutanix.ncp.ntnx_smtp_server_v2:
+    state: present
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ smtp_ext_id }}"
+    is_active: true
+    config:
+      basic_auth:
+        security_mode: "STARTTLS"
+        host:
+          fqdn:
+            value: "{{ smtp_host_fqdn }}"
+        port: 587
+        email_address: "{{ smtp_email_updated }}"
+        username: "{{ smtp_username }}"
+        password: "Nutanix.123Updated"
+  register: result
+  ignore_errors: true
+
+- name: Idempotency check status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.msg == "Nothing to change."
+    fail_msg: Idempotency check failed
+    success_msg: Idempotency check passed
+
+# Negative: missing required fields
+- name: Create SMTP server without config (negative)
+  nutanix.ncp.ntnx_smtp_server_v2:
+    state: present
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Create SMTP without config status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+    fail_msg: Negative test for missing config should fail but passed
+    success_msg: Negative test for missing config correctly failed
+
+# Negative: invalid enum
+- name: Create SMTP server with invalid security_mode (negative)
+  nutanix.ncp.ntnx_smtp_server_v2:
+    state: present
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    config:
+      basic_auth:
+        security_mode: "INVALID_MODE"
+        host:
+          fqdn:
+            value: "{{ smtp_host_fqdn }}"
+  register: result
+  ignore_errors: true
+
+- name: Create SMTP with invalid enum status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+    fail_msg: Invalid enum test should fail but passed
+    success_msg: Invalid enum test correctly failed
+
+# Negative: invalid ext_id for get
+- name: Get SMTP server with invalid ext_id (negative)
+  nutanix.ncp.ntnx_smtp_servers_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Get SMTP with invalid ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+    fail_msg: Get with invalid ext_id should fail but passed
+    success_msg: Get with invalid ext_id correctly failed
+
+# Info tests
+- name: Get SMTP server using ext_id
+  nutanix.ncp.ntnx_smtp_servers_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ smtp_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Get SMTP server using ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == smtp_ext_id
+    fail_msg: Get SMTP server failed
+    success_msg: Get SMTP server passed
+
+- name: List all SMTP servers
+  nutanix.ncp.ntnx_smtp_servers_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: List all SMTP servers status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+    fail_msg: List SMTP servers failed
+    success_msg: List SMTP servers passed
+
+- name: List SMTP servers with filter
+  nutanix.ncp.ntnx_smtp_servers_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    filter: "isActive eq true"
+  register: result
+  ignore_errors: true
+
+- name: List SMTP servers with filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+    fail_msg: List SMTP with filter failed
+    success_msg: List SMTP with filter passed
+
+- name: List SMTP servers with limit
+  nutanix.ncp.ntnx_smtp_servers_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List SMTP servers with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.response | length <= 1
+    fail_msg: List SMTP with limit failed
+    success_msg: List SMTP with limit passed
+
+- name: List all SMTP servers with fetch_all
+  nutanix.ncp.ntnx_smtp_servers_info_v2:
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    fetch_all: true
+  register: fetch_result
+  ignore_errors: true
+
+- name: List all SMTP servers with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_result is defined
+      - fetch_result.failed == false
+      - fetch_result.response is defined
+      - fetch_result.total_available_results is defined
+      - (fetch_result.response | length) == (fetch_result.total_available_results | int)
+    fail_msg: Fetch_all SMTP servers failed
+    success_msg: Fetch_all SMTP servers passed
+
+# Delete with check_mode
+- name: Delete SMTP server with check mode enabled
+  nutanix.ncp.ntnx_smtp_server_v2:
+    state: absent
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ smtp_ext_id }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Delete SMTP server with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.msg is defined
+    fail_msg: Delete check_mode failed
+    success_msg: Delete check_mode passed
+
+# Delete live
+- name: Delete SMTP server
+  nutanix.ncp.ntnx_smtp_server_v2:
+    state: absent
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ smtp_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete SMTP server status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true
+      - result.failed == false
+      - result.task_ext_id is defined
+    fail_msg: Delete SMTP server failed
+    success_msg: Delete SMTP server passed
+
+# Cleanup any leftovers
+- name: Cleanup SMTP servers
+  nutanix.ncp.ntnx_smtp_server_v2:
+    state: absent
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    ext_id: "{{ item }}"
+  register: result
+  ignore_errors: true
+  loop: "{{ todelete }}"
+  when: todelete is defined and todelete | length > 0
