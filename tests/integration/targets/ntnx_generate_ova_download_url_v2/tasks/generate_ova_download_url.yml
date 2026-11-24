@@ -1,0 +1,272 @@
+# Test plan for ntnx_generate_ova_download_url_v2
+# Domain: OVA - Generate OVA download URL
+# SDK: OvaGenerateDownloadUrlConfig with expiry_seconds (1-86400, default 600)
+#      and preferred_location ClusterReference
+# Module: generate_ova_download_url via OvasApi, returns TaskReference
+#
+# Scenarios covered:
+# 1. Check mode with required ext_id only
+# 2. Check mode with expiry_seconds
+# 3. Check mode with preferred_location cluster_reference
+# 4. Live generate with default expiry (required only)
+# 5. Live generate with custom expiry_seconds
+# 6. Live generate with preferred_location cluster_reference
+# 7. Negative: missing required ext_id
+# 8. Negative: invalid expiry_seconds (0, out of range)
+# 9. Negative: invalid ext_id non-existent
+
+- name: Start testing ntnx_generate_ova_download_url_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_generate_ova_download_url_v2
+
+- name: Generate random name for uniqueness
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+##############################################################################
+# Prerequisite: discover an existing OVA for testing
+##############################################################################
+
+- name: List Ovas to discover test OVA
+  nutanix.ncp.ntnx_ova_info_v2:
+    limit: 5
+  register: ovas_result
+  ignore_errors: true
+
+- name: Set ova_uuid fact if Ovas available
+  ansible.builtin.set_fact:
+    ova_uuid: "{{ ovas_result.response[0].ext_id }}"
+  when:
+    - ovas_result.response is defined
+    - ovas_result.response | length > 0
+    - ovas_result.response[0].ext_id is defined
+
+- name: Set cluster fact if available
+  ansible.builtin.set_fact:
+    cluster_uuid: "{{ ovas_result.response[0].cluster_location_ext_ids[0] }}"
+  when:
+    - ovas_result.response is defined
+    - ovas_result.response | length > 0
+    - ovas_result.response[0].cluster_location_ext_ids is defined
+    - ovas_result.response[0].cluster_location_ext_ids | length > 0
+
+- name: Debug OVA discovery result
+  ansible.builtin.debug:
+    msg: "OVA discovery: {{ ovas_result.response | default([]) | length }} Ovas found, ova_uuid={{ ova_uuid | default('none') }}"
+
+##############################################################################
+# Check mode tests - inline dummy values, do not use vars
+##############################################################################
+
+- name: Generate OVA download URL with check mode enabled (required only)
+  nutanix.ncp.ntnx_generate_ova_download_url_v2:
+    ext_id: "83083083-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate download URL check mode status (required only)
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: Generate OVA download URL with check mode failed
+    success_msg: Generate OVA download URL with check mode passed
+
+- name: Generate OVA download URL with expiry check mode enabled
+  nutanix.ncp.ntnx_generate_ova_download_url_v2:
+    ext_id: "83083083-0000-0000-0000-000000000001"
+    expiry_seconds: 900
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate download URL with expiry check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.expiry_seconds == 900
+    fail_msg: Generate download URL with expiry check mode failed
+    success_msg: Generate download URL with expiry check mode passed
+
+- name: Generate OVA download URL with cluster preferred location check mode
+  nutanix.ncp.ntnx_generate_ova_download_url_v2:
+    ext_id: "83083083-0000-0000-0000-000000000001"
+    expiry_seconds: 600
+    preferred_location:
+      cluster_reference:
+        ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Generate download URL with cluster location check mode status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.preferred_location is defined
+    fail_msg: Generate URL with cluster location check mode failed
+    success_msg: Generate URL with cluster location check mode passed
+
+##############################################################################
+# Live generate tests with real OVA
+##############################################################################
+
+- name: Generate OVA download URL with default expiry (live)
+  nutanix.ncp.ntnx_generate_ova_download_url_v2:
+    ext_id: "{{ ova_uuid }}"
+  register: result
+  ignore_errors: true
+  when: ova_uuid is defined
+
+- name: Generate download URL default expiry status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == ova_uuid
+      - result.task_ext_id is defined
+      - result.task_ext_id | length > 0
+      - result.response.ext_id == result.task_ext_id
+    fail_msg: Generate OVA download URL live default failed
+    success_msg: Generate OVA download URL live default passed
+  when: ova_uuid is defined
+
+- name: Generate OVA download URL with custom expiry 900 (live)
+  nutanix.ncp.ntnx_generate_ova_download_url_v2:
+    ext_id: "{{ ova_uuid }}"
+    expiry_seconds: 900
+  register: result
+  ignore_errors: true
+  when: ova_uuid is defined
+
+- name: Generate download URL with custom expiry status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == ova_uuid
+      - result.task_ext_id is defined
+      - result.response.status is defined
+    fail_msg: Generate download URL with custom expiry live failed
+    success_msg: Generate download URL with custom expiry live passed
+  when: ova_uuid is defined
+
+- name: Generate OVA download URL with preferred cluster location (live)
+  nutanix.ncp.ntnx_generate_ova_download_url_v2:
+    ext_id: "{{ ova_uuid }}"
+    expiry_seconds: 1200
+    preferred_location:
+      cluster_reference:
+        ext_id: "{{ cluster_uuid }}"
+  register: result
+  ignore_errors: true
+  when: cluster_uuid is defined
+
+- name: Generate download URL with cluster location live status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == ova_uuid
+      - result.task_ext_id is defined
+    fail_msg: Generate URL with cluster location live failed
+    success_msg: Generate URL with cluster location live passed
+  when: cluster_uuid is defined
+
+- name: Generate OVA download URL with long expiry 86400 (live)
+  nutanix.ncp.ntnx_generate_ova_download_url_v2:
+    ext_id: "{{ ova_uuid }}"
+    expiry_seconds: 86400
+  register: result
+  ignore_errors: true
+  when: ova_uuid is defined
+
+- name: Generate download URL with max expiry status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+      - result.task_ext_id is defined
+    fail_msg: Generate download URL with max expiry failed
+    success_msg: Generate download URL with max expiry passed
+  when: ova_uuid is defined
+
+- name: Debug skipped live tests when no OVA
+  ansible.builtin.debug:
+    msg: "Skipped live OVA tests - no OVA available on cluster"
+  when: ova_uuid is not defined
+
+##############################################################################
+# Negative / Error tests
+##############################################################################
+
+- name: Generate OVA download URL missing required ext_id (negative)
+  nutanix.ncp.ntnx_generate_ova_download_url_v2:
+    expiry_seconds: 600
+  register: result
+  ignore_errors: true
+
+- name: Missing required ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.msg is defined
+    fail_msg: Missing required ext_id negative test failed - should have errored
+    success_msg: Missing required ext_id negative test passed
+
+- name: Generate OVA download URL with invalid expiry 0 (negative)
+  nutanix.ncp.ntnx_generate_ova_download_url_v2:
+    ext_id: "83083083-0000-0000-0000-000000000001"
+    expiry_seconds: 0
+  register: result
+  ignore_errors: true
+
+- name: Invalid expiry 0 status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Invalid expiry 0 should have failed
+    success_msg: Invalid expiry 0 correctly failed
+
+- name: Generate OVA download URL with invalid expiry 86401 (negative)
+  nutanix.ncp.ntnx_generate_ova_download_url_v2:
+    ext_id: "83083083-0000-0000-0000-000000000001"
+    expiry_seconds: 86401
+  register: result
+  ignore_errors: true
+
+- name: Invalid expiry 86401 status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Invalid expiry 86401 should have failed
+    success_msg: Invalid expiry 86401 correctly failed
+
+- name: Generate OVA download URL with non-existent ext_id (negative)
+  nutanix.ncp.ntnx_generate_ova_download_url_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    expiry_seconds: 600
+  register: result
+  ignore_errors: true
+
+- name: Non-existent ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.msg is defined or result.error is defined
+    fail_msg: Non-existent ext_id should have failed
+    success_msg: Non-existent ext_id correctly failed
