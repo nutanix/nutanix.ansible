@@ -553,3 +553,5 @@ action_groups:
     - ntnx_cpu_models_info_v2
     - ntnx_device_bundle_instances_info_v2
     - ntnx_device_bundle_profiles_info_v2
+    - ntnx_connected_domain_managers_info_v2
+    - ntnx_domain_manager_size_config_info_v2
