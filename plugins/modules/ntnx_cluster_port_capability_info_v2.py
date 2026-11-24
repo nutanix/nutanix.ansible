@@ -21,7 +21,7 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get Port Capability By Cluster Id) -
-      Required Roles: Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin, Self-Service Admin (deprecated)
+      Required Roles: Backup Admin, Cluster Admin, Cluster Viewer, Prism Admin, Prism Viewer, Project Manager, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=clustermgmt)"
 options:
   cluster_ext_id:
@@ -41,6 +41,10 @@ author:
 EXAMPLES = r"""
 - name: Get port capability
   nutanix.ncp.ntnx_cluster_port_capability_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     cluster_ext_id: "00061de6-4a87-6b06-185b-ac1f6b6f97e2"
   register: result
   ignore_errors: true
@@ -64,12 +68,6 @@ changed:
   returned: always
   type: bool
   sample: false
-
-msg:
-  description: This indicates the message if any message occurred.
-  returned: When there is an error
-  type: str
-  sample: "Api Exception raised while fetching port capability"
 
 error:
   description: This field typically holds information about if the task have errors that occurred during the task execution.
@@ -123,7 +121,7 @@ def run_module():
         supports_check_mode=False,
     )
     remove_param_with_none_value(module.params)
-    result = {"changed": False, "error": None, "response": None, "failed": False}
+    result = {"changed": False, "response": None, "failed": False}
     api_instance = get_network_segments_api_instance(module)
     get_port_capability_info(module, api_instance, result)
     module.exit_json(**result)
