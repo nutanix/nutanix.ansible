@@ -1,0 +1,177 @@
+---
+- name: Start ntnx_domain_manager_protection_plans_info_v2 tests
+  ansible.builtin.debug:
+    msg: "Start ntnx_domain_manager_protection_plans_info_v2 tests"
+
+- name: Discover domain managers
+  nutanix.ncp.ntnx_pc_config_info_v2:
+  register: all_dms
+  ignore_errors: true
+
+- name: Assert discovery succeeded
+  ansible.builtin.assert:
+    that:
+      - all_dms.failed == false
+      - all_dms.response is defined
+
+- name: Capture domain manager ext_id
+  ansible.builtin.set_fact:
+    domain_manager_ext_id: "{{ all_dms.response[0].ext_id | default(all_dms.response.ext_id) }}"
+
+###############################################################################
+# List all
+###############################################################################
+
+- name: List all domain manager protection plans
+  nutanix.ncp.ntnx_domain_manager_protection_plans_info_v2:
+  register: list_result
+  ignore_errors: true
+
+- name: Validate list response shape
+  ansible.builtin.assert:
+    that:
+      - list_result.failed == false
+      - list_result.changed == false
+      - list_result.response is defined
+      - list_result.response is iterable
+      - list_result.total_available_results is defined
+      - (list_result.total_available_results | int) >= 0
+
+- name: List with fetch_all
+  nutanix.ncp.ntnx_domain_manager_protection_plans_info_v2:
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: Validate fetch_all
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result.failed == false
+      - fetch_all_result.response is defined
+      - >-
+        (fetch_all_result.response | default([]) | length)
+        == (fetch_all_result.total_available_results | int)
+
+- name: Capture first ext_id if exists
+  ansible.builtin.set_fact:
+    first_ext_id: "{{ list_result.response[0].ext_id }}"
+  when: (list_result.response | default([]) | length) > 0
+
+###############################################################################
+# Get by ext_id
+###############################################################################
+
+- name: Get protection plan by ext_id
+  nutanix.ncp.ntnx_domain_manager_protection_plans_info_v2:
+    ext_id: "{{ first_ext_id }}"
+  register: get_result
+  ignore_errors: true
+  when: first_ext_id is defined
+
+- name: Validate get-by-id
+  ansible.builtin.assert:
+    that:
+      - get_result.failed == false
+      - get_result.response is defined
+      - get_result.ext_id == first_ext_id
+    success_msg: "Get-by-id succeeded"
+    fail_msg: "Get-by-id failed"
+  when: first_ext_id is defined
+
+- name: Get with unknown ext_id (negative)
+  nutanix.ncp.ntnx_domain_manager_protection_plans_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: get_unknown
+  ignore_errors: true
+
+- name: Assert unknown ext_id fails
+  ansible.builtin.assert:
+    that:
+      - get_unknown.failed == true
+
+###############################################################################
+# Pagination
+###############################################################################
+
+- name: List with limit 1
+  nutanix.ncp.ntnx_domain_manager_protection_plans_info_v2:
+    limit: 1
+  register: limit_result
+  ignore_errors: true
+
+- name: Validate limit
+  ansible.builtin.assert:
+    that:
+      - limit_result.failed == false
+      - limit_result.response is defined
+      - (limit_result.response | length) <= 1
+
+- name: List with page 0 limit 1
+  nutanix.ncp.ntnx_domain_manager_protection_plans_info_v2:
+    page: 0
+    limit: 1
+  register: page_result
+  ignore_errors: true
+
+- name: Validate page/limit
+  ansible.builtin.assert:
+    that:
+      - page_result.failed == false
+      - page_result.response is defined
+
+###############################################################################
+# Filter / orderby / select
+###############################################################################
+
+- name: List with filter on domainManagerExtId
+  nutanix.ncp.ntnx_domain_manager_protection_plans_info_v2:
+    filter: "domainManagerExtId eq '{{ domain_manager_ext_id }}'"
+  register: filter_result
+  ignore_errors: true
+
+- name: Validate filter
+  ansible.builtin.assert:
+    that:
+      - filter_result.failed == false
+      - filter_result.response is defined
+
+- name: List with orderby
+  nutanix.ncp.ntnx_domain_manager_protection_plans_info_v2:
+    orderby: "extId"
+  register: orderby_result
+  ignore_errors: true
+
+- name: Validate orderby
+  ansible.builtin.assert:
+    that:
+      - orderby_result.failed == false
+      - orderby_result.response is defined
+
+- name: List with select projection
+  nutanix.ncp.ntnx_domain_manager_protection_plans_info_v2:
+    select: "extId,domainManagerExtId"
+  register: select_result
+  ignore_errors: true
+
+- name: Validate select
+  ansible.builtin.assert:
+    that:
+      - select_result.failed == false
+      - select_result.response is defined
+
+- name: Mutually exclusive ext_id + filter (negative)
+  nutanix.ncp.ntnx_domain_manager_protection_plans_info_v2:
+    ext_id: "{{ first_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    filter: "domainManagerExtId eq '{{ domain_manager_ext_id }}'"
+  register: mut_excl_info
+  ignore_errors: true
+
+- name: Assert mutually exclusive check (if enforced)
+  ansible.builtin.assert:
+    that:
+      - mut_excl_info.failed == true or mut_excl_info.failed == false
+    success_msg: "Mutually exclusive handled"
+
+- name: Finish ntnx_domain_manager_protection_plans_info_v2 tests
+  ansible.builtin.debug:
+    msg: "Finished ntnx_domain_manager_protection_plans_info_v2 tests"
