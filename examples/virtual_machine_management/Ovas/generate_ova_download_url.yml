@@ -1,0 +1,39 @@
+---
+- name: Generate OVA download URL playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        ova_ext_id: "<ova_ext_id>"
+        cluster_ext_id: "<cluster_ext_id>"
+
+    - name: Generate OVA download URL with default expiry
+      nutanix.ncp.ntnx_generate_ova_download_url_v2:
+        ext_id: "{{ ova_ext_id }}"
+      register: result
+
+    - name: Generate OVA download URL with custom expiry
+      nutanix.ncp.ntnx_generate_ova_download_url_v2:
+        ext_id: "{{ ova_ext_id }}"
+        expiry_seconds: 900
+      register: result
+
+    - name: Generate OVA download URL with preferred cluster location
+      nutanix.ncp.ntnx_generate_ova_download_url_v2:
+        ext_id: "{{ ova_ext_id }}"
+        expiry_seconds: 1200
+        preferred_location:
+          cluster_reference:
+            ext_id: "{{ cluster_ext_id }}"
+      register: result
+
+    - name: Display result
+      ansible.builtin.debug:
+        var: result
