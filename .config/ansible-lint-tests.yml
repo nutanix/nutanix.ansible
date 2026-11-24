@@ -1,0 +1,22 @@
+---
+# Relaxed ansible-lint configuration for the SHIPPED test content
+# (tests/integration and tests/unit).
+#
+# Why this exists:
+# The certification .ansible-lint (profile: production) intentionally EXCLUDES
+# tests/ because test playbooks legitimately use patterns that the production
+# profile rejects (unnamed tasks, debug, hardcoded vars, etc.). However, these
+# test files DO ship in the collection tarball, so we still give them a lighter
+# gate here that catches real problems (broken/unloadable content, bad syntax,
+# deprecated/removed syntax) without the full production-profile strictness.
+#
+# The "basic" profile is applied as-is, with no per-rule skips, so every finding
+# at that level is reported.
+#
+# This config is NOT used by the certification workflow or the Automation Hub
+# import; it is only used by the dedicated "tests" step in ansible-lint.yml.
+profile: basic
+
+exclude_paths:
+  - .ansible
+  - tests/unit/compat # vendored compat shims (kept as-is from upstream)

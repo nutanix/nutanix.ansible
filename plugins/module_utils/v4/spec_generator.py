@@ -56,7 +56,7 @@ class SpecGenerator(object):
                 _obj = schema.get("obj")
 
                 # for attributes with dynamic obj
-                if type(_obj) is dict:
+                if isinstance(_obj, dict):
 
                     for dynamic_obj_key, dynamic_obj_value in attr[key].items():
 
