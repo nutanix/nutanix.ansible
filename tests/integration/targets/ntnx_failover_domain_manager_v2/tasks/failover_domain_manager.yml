@@ -1,0 +1,140 @@
+---
+- name: Start ntnx_failover_domain_manager_v2 tests
+  ansible.builtin.debug:
+    msg: "Start ntnx_failover_domain_manager_v2 tests"
+
+- name: Discover domain managers
+  nutanix.ncp.ntnx_pc_config_info_v2:
+  register: all_dms
+  ignore_errors: true
+
+- name: Assert discovery
+  ansible.builtin.assert:
+    that:
+      - all_dms.failed == false
+      - all_dms.response is defined
+
+- name: Capture domain manager ext_id
+  ansible.builtin.set_fact:
+    domain_manager_ext_id: "{{ all_dms.response[0].ext_id | default(all_dms.response.ext_id) }}"
+
+- name: List protection plans to find a candidate for failover
+  nutanix.ncp.ntnx_domain_manager_protection_plans_info_v2:
+  register: pp_list
+  ignore_errors: true
+
+- name: Capture first protection plan ext_id if exists
+  ansible.builtin.set_fact:
+    pp_ext_id: "{{ pp_list.response[0].ext_id }}"
+  when:
+    - pp_list is defined
+    - not pp_list.failed
+    - pp_list.response is defined
+    - pp_list.response | length > 0
+
+###############################################################################
+# check_mode
+###############################################################################
+
+- name: Failover check_mode with all attributes
+  nutanix.ncp.ntnx_failover_domain_manager_v2:
+    ext_id: "{{ pp_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    failover_type: "UNPLANNED"
+    network_spec:
+      network_ext_id: "00000000-0000-0000-0000-000000000001"
+      external_address:
+        ipv4:
+          value: "10.0.0.20"
+      default_gateway:
+        ipv4:
+          value: "10.0.0.1"
+  register: failover_check_mode
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode spec
+  ansible.builtin.assert:
+    that:
+      - failover_check_mode.failed == false
+      - failover_check_mode.response is defined
+      - failover_check_mode.response.failover_type == "UNPLANNED"
+
+- name: Failover check_mode minimal (only required)
+  nutanix.ncp.ntnx_failover_domain_manager_v2:
+    ext_id: "{{ pp_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    failover_type: "UNPLANNED"
+  register: failover_min_check
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert minimal check_mode
+  ansible.builtin.assert:
+    that:
+      - failover_min_check.failed == false
+      - failover_min_check.response is defined
+
+###############################################################################
+# Negative
+###############################################################################
+
+- name: Missing ext_id must be rejected
+  nutanix.ncp.ntnx_failover_domain_manager_v2:
+    failover_type: "UNPLANNED"
+  register: missing_ext
+  ignore_errors: true
+
+- name: Assert missing ext_id rejected
+  ansible.builtin.assert:
+    that:
+      - missing_ext.failed == true
+      - "'missing required arguments: ext_id' in missing_ext.msg"
+
+- name: Missing failover_type must be rejected
+  nutanix.ncp.ntnx_failover_domain_manager_v2:
+    ext_id: "{{ pp_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+  register: missing_type
+  ignore_errors: true
+
+- name: Assert missing failover_type rejected
+  ansible.builtin.assert:
+    that:
+      - missing_type.failed == true
+      - "'missing required arguments: failover_type' in missing_type.msg"
+
+- name: Invalid failover_type enum must be rejected
+  nutanix.ncp.ntnx_failover_domain_manager_v2:
+    ext_id: "{{ pp_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    failover_type: "INVALID"
+  register: bad_enum
+  ignore_errors: true
+
+- name: Assert invalid enum rejected
+  ansible.builtin.assert:
+    that:
+      - bad_enum.failed == true
+      - "'value of failover_type must be one of' in bad_enum.msg"
+
+- name: Unknown ext_id surfaces error (live, wait false)
+  nutanix.ncp.ntnx_failover_domain_manager_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    failover_type: "UNPLANNED"
+    wait: false
+  register: unknown_ext
+  ignore_errors: true
+
+- name: Assert unknown ext_id fails gracefully
+  ansible.builtin.assert:
+    that:
+      - unknown_ext.failed == true
+
+###############################################################################
+# Live failover (only if protection plan exists - otherwise skip destructive)
+###############################################################################
+
+- name: Failover live (dry-run via check_mode already covered, live skipped to avoid destructive)
+  ansible.builtin.debug:
+    msg: "Skipping live failover to avoid destructive operation on shared endpoint. Check_mode validated spec."
+
+- name: Finish ntnx_failover_domain_manager_v2 tests
+  ansible.builtin.debug:
+    msg: "Finished ntnx_failover_domain_manager_v2 tests"

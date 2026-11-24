@@ -1,0 +1,42 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Domain Manager Protection Plan examples] *********************************
+
+TASK [Create domain manager protection plan] ***********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while creating domain manager protection plan", "response": {"$objectType": "prism.v4.management.CreateDomainManagerProtectionPlanApiResponse", "$reserved": {"$fv": "v4.r5"}, "data": {"$objectType": "prism.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r5"}, "error": [{"$objectType": "prism.v4.error.AppMessage", "$reserved": {"$fv": "v4.r5"}, "code": "PRI-40909", "locale": "en_US", "message": "Failed to create domain manager protection plan as given payload is invalid due to prism central with given extId 00000000-0000-0000-0000-000000000001 not found.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 400}
+...ignoring
+
+TASK [Update domain manager protection plan] ***********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching domain manager protection plan info using ext_id", "response": {"$objectType": "prism.v4.management.GetDomainManagerProtectionPlanApiResponse", "$reserved": {"$fv": "v4.r5"}, "data": {"$objectType": "prism.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r5"}, "error": [{"$objectType": "prism.v4.error.AppMessage", "$reserved": {"$fv": "v4.r5"}, "code": "PRI-40911", "locale": "en_US", "message": "Failed to get domain manager protection plan as domain manager protection plan with extId 11111111-1111-1111-1111-111111111111 not found.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+TASK [Failover domain manager] *************************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT IMPLEMENTED", "msg": "Api Exception raised while failing over domain manager", "response": {"$objectType": "prism.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r5"}, "error": [{"$objectType": "prism.v4.error.AppMessage", "$reserved": {"$fv": "v4.r5"}, "code": "PRI-40602", "locale": "en_US", "message": "Failed to failover prism central as this api is implemented on cluster and is not accessible on prism central.", "severity": "ERROR"}]}, "status": 501}
+...ignoring
+
+TASK [Get domain manager protection plan using ext_id] *************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching domain manager protection plan info using ext_id", "response": {"$objectType": "prism.v4.management.GetDomainManagerProtectionPlanApiResponse", "$reserved": {"$fv": "v4.r5"}, "data": {"$objectType": "prism.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r5"}, "error": [{"$objectType": "prism.v4.error.AppMessage", "$reserved": {"$fv": "v4.r5"}, "code": "PRI-40911", "locale": "en_US", "message": "Failed to get domain manager protection plan as domain manager protection plan with extId 11111111-1111-1111-1111-111111111111 not found.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+TASK [List all domain manager protection plans] ********************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List domain manager protection plans with filter] ************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List domain manager protection plans with limit] *************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List all domain manager protection plans with fetch_all] *****************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Delete domain manager protection plan] ***********************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching domain manager protection plan info using ext_id", "response": {"$objectType": "prism.v4.management.GetDomainManagerProtectionPlanApiResponse", "$reserved": {"$fv": "v4.r5"}, "data": {"$objectType": "prism.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r5"}, "error": [{"$objectType": "prism.v4.error.AppMessage", "$reserved": {"$fv": "v4.r5"}, "code": "PRI-40911", "locale": "en_US", "message": "Failed to get domain manager protection plan as domain manager protection plan with extId 11111111-1111-1111-1111-111111111111 not found.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}]}}, "status": 404}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=9    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=5   
+

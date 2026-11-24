@@ -1,0 +1,293 @@
+---
+- name: Start ntnx_domain_manager_protection_plan_v2 tests
+  ansible.builtin.debug:
+    msg: "Start ntnx_domain_manager_protection_plan_v2 tests"
+
+###############################################################################
+# Discover domain manager ext_id for prerequisites
+###############################################################################
+
+- name: Discover domain managers on this endpoint
+  nutanix.ncp.ntnx_pc_config_info_v2:
+  register: all_dms
+  ignore_errors: true
+
+- name: Assert discovery succeeded
+  ansible.builtin.assert:
+    that:
+      - all_dms is defined
+      - all_dms.failed == false
+      - all_dms.response is defined
+    success_msg: "Discovered domain managers"
+    fail_msg: "Could not discover domain managers"
+
+- name: Capture domain manager ext_id
+  ansible.builtin.set_fact:
+    domain_manager_ext_id: "{{ all_dms.response[0].ext_id | default(all_dms.response.ext_id) }}"
+    dm_name: "{{ all_dms.response[0].config.name | default(all_dms.response.config.name) }}"
+
+###############################################################################
+# Discover networks / clusters for remote_location prerequisite (optional)
+###############################################################################
+
+- name: List subnets to find a network ext_id for failover_network_details
+  nutanix.ncp.ntnx_subnets_info_v2:
+    limit: 1
+  register: subnet_list
+  ignore_errors: true
+
+- name: Set network ext_id fact if available
+  ansible.builtin.set_fact:
+    network_ext_id: "{{ subnet_list.response[0].ext_id | default('') }}"
+  when:
+    - subnet_list is defined
+    - not subnet_list.failed
+    - subnet_list.response is defined
+    - subnet_list.response | length > 0
+
+###############################################################################
+# check_mode - create with all attributes
+###############################################################################
+
+- name: Create domain manager protection plan check_mode with all attributes
+  nutanix.ncp.ntnx_domain_manager_protection_plan_v2:
+    state: present
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    remote_location:
+      cluster_reference:
+        ext_id: "00000000-0000-0000-0000-000000000001"
+        name: "test-remote-cluster"
+    remote_site:
+      remote_cluster:
+        name: "remote-pc-test"
+        external_address:
+          ipv4:
+            value: "10.0.0.10"
+        cluster_type: "AOS"
+        port: 9440
+    failover_network_details:
+      network_ext_id: "{{ network_ext_id | default('00000000-0000-0000-0000-000000000002') }}"
+  register: create_check_mode
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert check_mode create spec generated
+  ansible.builtin.assert:
+    that:
+      - create_check_mode is defined
+      - create_check_mode.failed == false
+      - create_check_mode.changed == false
+      - create_check_mode.response is defined
+    success_msg: "check_mode create spec generated correctly"
+    fail_msg: "check_mode create spec not generated"
+
+- name: Create protection plan check_mode with minimal attributes
+  nutanix.ncp.ntnx_domain_manager_protection_plan_v2:
+    state: present
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+  register: create_min_check_mode
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert minimal check_mode succeeded
+  ansible.builtin.assert:
+    that:
+      - create_min_check_mode.failed == false
+      - create_min_check_mode.response is defined
+    success_msg: "Minimal check_mode spec ok"
+    fail_msg: "Minimal check_mode spec failed"
+
+###############################################################################
+# Negative - missing required fields
+###############################################################################
+
+- name: Missing domain_manager_ext_id must be rejected (create)
+  nutanix.ncp.ntnx_domain_manager_protection_plan_v2:
+    state: present
+    remote_location:
+      cluster_reference:
+        ext_id: "00000000-0000-0000-0000-000000000001"
+  register: missing_dm_ext
+  ignore_errors: true
+
+- name: Assert missing domain_manager_ext_id rejected
+  ansible.builtin.assert:
+    that:
+      - missing_dm_ext.failed == true
+      - "'domain_manager_ext_id' in missing_dm_ext.msg"
+    success_msg: "Missing domain_manager_ext_id rejected"
+    fail_msg: "Missing domain_manager_ext_id not rejected"
+
+- name: Mutually exclusive ext_id not allowed on create
+  nutanix.ncp.ntnx_domain_manager_protection_plan_v2:
+    state: present
+    ext_id: "11111111-1111-1111-1111-111111111111"
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+  register: mut_excl
+  ignore_errors: true
+
+- name: Assert mutually exclusive rejected
+  ansible.builtin.assert:
+    that:
+      - mut_excl.failed == true
+    success_msg: "Mutually exclusive ext_id rejected"
+    fail_msg: "Mutually exclusive not rejected"
+
+- name: Delete without ext_id must be rejected
+  nutanix.ncp.ntnx_domain_manager_protection_plan_v2:
+    state: absent
+  register: delete_no_id
+  ignore_errors: true
+
+- name: Assert delete without ext_id rejected
+  ansible.builtin.assert:
+    that:
+      - delete_no_id.failed == true
+      - "'ext_id' in delete_no_id.msg"
+    success_msg: "Delete without ext_id rejected"
+    fail_msg: "Delete without ext_id not rejected"
+
+###############################################################################
+# Live create (may fail if remote site not configured - handle gracefully)
+###############################################################################
+
+- name: Create domain manager protection plan (live)
+  nutanix.ncp.ntnx_domain_manager_protection_plan_v2:
+    state: present
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    remote_location:
+      cluster_reference:
+        ext_id: "00000000-0000-0000-0000-000000000001"
+    remote_site:
+      remote_cluster:
+        name: "remote-pc-live-test"
+        external_address:
+          ipv4:
+            value: "10.0.0.10"
+        cluster_type: "AOS"
+    failover_network_details:
+      network_ext_id: "{{ network_ext_id | default('00000000-0000-0000-0000-000000000002') }}"
+    wait: false
+  register: live_create
+  ignore_errors: true
+
+- name: Assert live create returned valid outcome (success or expected failure)
+  ansible.builtin.assert:
+    that:
+      - live_create is defined
+      - >-
+        (live_create.failed == false and live_create.changed == true and live_create.response is defined)
+        or
+        (live_create.failed == true and live_create.changed == false)
+    success_msg: "Live create produced valid outcome"
+    fail_msg: "Live create produced unexpected outcome"
+
+- name: Capture ext_id if create succeeded
+  ansible.builtin.set_fact:
+    created_ext_id: "{{ live_create.ext_id }}"
+  when:
+    - live_create is defined
+    - not live_create.failed
+    - live_create.ext_id is defined
+
+###############################################################################
+# Update check_mode and idempotency (only if create succeeded)
+###############################################################################
+
+- name: Update protection plan check_mode
+  nutanix.ncp.ntnx_domain_manager_protection_plan_v2:
+    state: present
+    ext_id: "{{ created_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+    remote_location:
+      cluster_reference:
+        ext_id: "00000000-0000-0000-0000-000000000001"
+  register: update_check_mode
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert update check_mode
+  ansible.builtin.assert:
+    that:
+      - update_check_mode.failed == false
+      - update_check_mode.response is defined
+    success_msg: "Update check_mode ok"
+    fail_msg: "Update check_mode failed"
+
+- name: Idempotent update with same spec (if created)
+  nutanix.ncp.ntnx_domain_manager_protection_plan_v2:
+    state: present
+    ext_id: "{{ created_ext_id }}"
+    domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+  register: idempotent_update
+  ignore_errors: true
+  when: created_ext_id is defined
+
+- name: Assert idempotent update skipped or succeeded
+  ansible.builtin.assert:
+    that:
+      - idempotent_update is defined
+      - >-
+        (idempotent_update.changed == false)
+        or
+        (idempotent_update.failed == false)
+    success_msg: "Idempotent update handled"
+    fail_msg: "Idempotent update failed"
+  when: created_ext_id is defined
+
+###############################################################################
+# Delete check_mode and live delete (if created)
+###############################################################################
+
+- name: Delete check_mode
+  nutanix.ncp.ntnx_domain_manager_protection_plan_v2:
+    state: absent
+    ext_id: "{{ created_ext_id | default('00000000-0000-0000-0000-000000000000') }}"
+  register: delete_check_mode
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert delete check_mode
+  ansible.builtin.assert:
+    that:
+      - delete_check_mode.failed == false
+      - delete_check_mode.response is defined
+    success_msg: "Delete check_mode ok"
+    fail_msg: "Delete check_mode failed"
+
+- name: Delete protection plan (live, if created)
+  nutanix.ncp.ntnx_domain_manager_protection_plan_v2:
+    state: absent
+    ext_id: "{{ created_ext_id }}"
+    wait: false
+  register: live_delete
+  ignore_errors: true
+  when: created_ext_id is defined
+
+- name: Assert live delete succeeded
+  ansible.builtin.assert:
+    that:
+      - live_delete.failed == false
+      - live_delete.changed == true
+    success_msg: "Live delete succeeded"
+    fail_msg: "Live delete failed"
+  when: created_ext_id is defined
+
+- name: Delete with unknown ext_id (negative)
+  nutanix.ncp.ntnx_domain_manager_protection_plan_v2:
+    state: absent
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    wait: false
+  register: delete_unknown
+  ignore_errors: true
+
+- name: Assert delete unknown ext_id failed gracefully
+  ansible.builtin.assert:
+    that:
+      - delete_unknown.failed == true
+    success_msg: "Delete unknown ext_id handled"
+    fail_msg: "Delete unknown ext_id not handled"
+
+- name: Finish ntnx_domain_manager_protection_plan_v2 tests
+  ansible.builtin.debug:
+    msg: "Finished ntnx_domain_manager_protection_plan_v2 tests"

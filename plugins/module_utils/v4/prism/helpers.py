@@ -238,3 +238,23 @@ def get_registration(module, api_instance, domain_manager_ext_id, ext_id):
             exception=e,
             msg="Api Exception raised while fetching registration info using ext_id and domain_manager_ext_id",
         )
+
+
+def get_domain_manager_protection_plan(module, api_instance, ext_id):
+    """
+    This method will return domain manager protection plan info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: DomainManagerProtectionPlanApi instance from ntnx_prism_py_client sdk
+        ext_id (str): domain manager protection plan external ID
+    return:
+        domain_manager_protection_plan_info (object): domain manager protection plan info
+    """
+    try:
+        return api_instance.get_domain_manager_protection_plan_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching domain manager protection plan info using ext_id",
+        )
