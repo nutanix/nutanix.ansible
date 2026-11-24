@@ -283,6 +283,42 @@ def get_network_segments_api_instance(module):
     return ntnx_clustermgmt_py_client.NetworkSegmentsApi(client)
 
 
+def get_cluster_config_api_instance(module):
+    """
+    This method will return ClusterConfig api instance from sdk.
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        ClusterConfigApi: ClusterConfigApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.ClusterConfigApi(client)
+
+
+def get_cluster_operations_api_instance(module):
+    """
+    This method will return ClusterOperations api instance from sdk.
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        ClusterOperationsApi: ClusterOperationsApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.ClusterOperationsApi(client)
+
+
+def get_cluster_protection_api_instance(module):
+    """
+    This method will return ClusterProtection api instance from sdk.
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        ClusterProtectionApi: ClusterProtectionApi instance
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.ClusterProtectionApi(client)
+
+
 def get_vcenter_integrations_api_instance(module):
     """
     This method will return vCenter Integrations api instance from sdk.
@@ -322,6 +358,18 @@ def get_hosts_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_clustermgmt_py_client.HostsApi(client)
+
+
+def get_clusters_stats_api_instance(module):
+    """
+    This method will return Clusters api instance for stats operations.
+    Args:
+        module (AnsibleModule): AnsibleModule instance
+    Returns:
+        ClustersApi: ClustersApi instance for stats
+    """
+    client = get_api_client(module)
+    return ntnx_clustermgmt_py_client.ClustersApi(client)
 
 
 def get_high_availability_config_api_instance(module):

@@ -891,3 +891,191 @@ def get_external_ssh_access_control(module, api_instance, cluster_ext_id):
             msg="Api Exception raised while fetching external SSH access control "
             "using cluster ext_id",
         )
+
+
+def get_host_gpu(module, api_instance, cluster_ext_id, host_ext_id, ext_id):
+    """
+    This method will return host GPU info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        host_ext_id (str): host external ID
+        ext_id (str): host GPU external ID
+    return:
+        host GPU info (object)
+    """
+    try:
+        return api_instance.get_host_gpu_by_id(
+            clusterExtId=cluster_ext_id, hostExtId=host_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching host GPU info using ext_id",
+        )
+
+
+def get_host_nic_stats(
+    module, api_instance, cluster_ext_id, host_ext_id, ext_id, **kwargs
+):
+    """
+    This method will return host NIC stats using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        host_ext_id (str): host external ID
+        ext_id (str): host NIC external ID
+        kwargs: additional query params (_startTime, _endTime, etc.)
+    return:
+        host NIC stats info (object)
+    """
+    try:
+        return api_instance.get_host_nic_stats(
+            clusterExtId=cluster_ext_id,
+            hostExtId=host_ext_id,
+            extId=ext_id,
+            **kwargs,
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching host NIC stats using ext_id",
+        )
+
+
+def get_cluster_protection_info(module, api_instance, ext_id):
+    """
+    This method will return cluster protection info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClusterProtectionApi instance
+        ext_id (str): cluster external ID
+    return:
+        cluster protection info (object)
+    """
+    try:
+        return api_instance.get_cluster_protection_info(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching cluster protection info",
+        )
+
+
+def get_cluster_recovery_info(module, api_instance, ext_id):
+    """
+    This method will return cluster recovery info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClusterProtectionApi instance
+        ext_id (str): cluster external ID
+    return:
+        cluster recovery info (object)
+    """
+    try:
+        return api_instance.get_cluster_recovery_info(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching cluster recovery info",
+        )
+
+
+def get_config_credentials(module, api_instance, cluster_ext_id):
+    """
+    This method will return config credentials for a cluster.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance
+        cluster_ext_id (str): cluster external ID
+    return:
+        config credentials info (object)
+    """
+    try:
+        return api_instance.get_config_credentials_by_cluster_id(
+            clusterExtId=cluster_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching config credentials",
+        )
+
+
+def get_fault_tolerance_status(module, api_instance, cluster_ext_id):
+    """
+    This method will return fault tolerance status for a cluster.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance
+        cluster_ext_id (str): cluster external ID
+    return:
+        fault tolerance status (object)
+    """
+    try:
+        return api_instance.get_fault_tolerance_status_by_cluster_id(
+            clusterExtId=cluster_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching fault tolerance status",
+        )
+
+
+def get_port_capability(module, api_instance, cluster_ext_id):
+    """
+    This method will return port capability for a cluster.
+    Args:
+        module: Ansible module
+        api_instance: NetworkSegmentsApi instance
+        cluster_ext_id (str): cluster external ID
+    return:
+        port capability info (object)
+    """
+    try:
+        return api_instance.get_port_capability_by_cluster_id(
+            clusterExtId=cluster_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching port capability info",
+        )
+
+
+def get_gpu_stats(module, api_instance, cluster_ext_id, host_ext_id, ext_id, **kwargs):
+    """
+    This method will return GPU stats using external ID.
+    Args:
+        module: Ansible module
+        api_instance: PcieDevicesApi instance
+        cluster_ext_id (str): cluster external ID
+        host_ext_id (str): host external ID
+        ext_id (str): GPU external ID
+        kwargs: additional query params (_startTime, _endTime, etc.)
+    return:
+        GPU stats info (object)
+    """
+    try:
+        return api_instance.get_gpu_stats(
+            clusterExtId=cluster_ext_id,
+            hostExtId=host_ext_id,
+            extId=ext_id,
+            **kwargs,
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching GPU stats",
+        )
