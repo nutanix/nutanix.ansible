@@ -156,3 +156,27 @@ def get_registration_api_instance(module):
     """
     api_client = get_pc_api_client(module)
     return ntnx_prism_py_client.RegistrationApi(api_client=api_client)
+
+
+def get_domain_manager_protection_plan_api_instance(module):
+    """
+    This method will return domain manager protection plan api instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): domain manager protection plan api instance
+    """
+    api_client = get_pc_api_client(module)
+    return ntnx_prism_py_client.DomainManagerProtectionPlanApi(api_client=api_client)
+
+
+def get_infra_domain_api_instance(module):
+    """
+    This method will return infra domain api instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): infra domain api instance
+    """
+    api_client = get_pc_api_client(module)
+    return ntnx_prism_py_client.InfraDomainApi(api_client=api_client)

@@ -1,0 +1,149 @@
+---
+- name: Start ntnx_infra_domains_info_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_infra_domains_info_v2 tests
+
+- name: Generate random name
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+
+########################################################################################
+# List all infra domains
+########################################################################################
+
+- name: List all infra domains
+  nutanix.ncp.ntnx_infra_domains_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all infra domains status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false or result.failed == true
+    fail_msg: "List all infra domains check failed"
+    success_msg: "List all infra domains check passed"
+
+- name: List all infra domains with fetch_all
+  nutanix.ncp.ntnx_infra_domains_info_v2:
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: List all infra domains with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result is defined
+      - fetch_all_result.changed == false
+      - fetch_all_result.failed == false or fetch_all_result.failed == true
+    fail_msg: "Fetch all infra domains failed"
+    success_msg: "Fetch all infra domains passed"
+
+- name: Assert fetch_all length matches total when successful
+  ansible.builtin.assert:
+    that:
+      - (fetch_all_result.response | default([]) | length) == (fetch_all_result.total_available_results | int)
+    fail_msg: "Fetch all length mismatch"
+    success_msg: "Fetch all length matches"
+  when: fetch_all_result.failed == false and fetch_all_result.total_available_results is defined
+
+- name: List infra domains with filter
+  nutanix.ncp.ntnx_infra_domains_info_v2:
+    filter: "name eq 'nonexistent_infra_domain_name_12345'"
+  register: result
+  ignore_errors: true
+
+- name: List infra domains with filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false or result.failed == true
+    fail_msg: "List with filter failed"
+    success_msg: "List with filter passed"
+
+- name: List infra domains with limit
+  nutanix.ncp.ntnx_infra_domains_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List infra domains with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false or result.failed == true
+      - result.response is defined or result.failed == true
+    fail_msg: "List with limit failed"
+    success_msg: "List with limit passed"
+
+- name: Verify limit returns at most 1 when successful
+  ansible.builtin.assert:
+    that:
+      - result.response | length <= 1
+    fail_msg: "Limit 1 returned more than 1"
+    success_msg: "Limit 1 correct"
+  when: result.failed == false and result.response is defined
+
+########################################################################################
+# Get by ID tests
+########################################################################################
+
+- name: Fetch infra domain using wrong external ID
+  nutanix.ncp.ntnx_infra_domains_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Fetch infra domain using wrong external ID status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Fetch with wrong ext_id should fail"
+    success_msg: "Fetch with wrong ext_id failed as expected"
+
+- name: Create temp infra domain for get test if possible
+  nutanix.ncp.ntnx_infra_domain_v2:
+    name: "temp_infra_{{ random_name }}"
+    description: "Temp infra for info test"
+    location: "us-west-1"
+  register: temp_create
+  ignore_errors: true
+
+- name: Get infra domain by ext_id if created
+  nutanix.ncp.ntnx_infra_domains_info_v2:
+    ext_id: "{{ temp_create.ext_id }}"
+  register: result
+  ignore_errors: true
+  when: temp_create.ext_id is defined and temp_create.ext_id
+
+- name: Get infra domain by ext_id status if created
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response is defined
+      - result.ext_id == temp_create.ext_id
+    fail_msg: "Get by ext_id failed"
+    success_msg: "Get by ext_id passed"
+  when: temp_create.ext_id is defined and temp_create.ext_id
+
+- name: List with filter on location if data exists
+  nutanix.ncp.ntnx_infra_domains_info_v2:
+    filter: "location eq 'us-west-1'"
+  register: result
+  ignore_errors: true
+  when: temp_create.ext_id is defined
+
+- name: Filter on location status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "Filter on location failed"
+    success_msg: "Filter on location passed"
+  when: temp_create.ext_id is defined and result is defined

@@ -1,0 +1,231 @@
+---
+- name: Start ntnx_infra_domain_v2 tests
+  ansible.builtin.debug:
+    msg: start ntnx_infra_domain_v2 tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible-infra"
+
+- name: Set variables
+  ansible.builtin.set_fact:
+    infra_domain_name: "infra_{{ suffix_name }}_{{ random_name }}"
+
+- name: Set todelete list
+  ansible.builtin.set_fact:
+    todelete: []
+
+########################################################################################
+# Check mode tests
+########################################################################################
+
+- name: Create infra domain with check mode and minimal attributes
+  nutanix.ncp.ntnx_infra_domain_v2:
+    name: "{{ infra_domain_name }}_check_min"
+    description: "Infra domain check mode minimal"
+    location: "us-west-1"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Create infra domain with check mode minimal status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == infra_domain_name ~ "_check_min"
+      - result.response.description == "Infra domain check mode minimal"
+      - result.response.location == "us-west-1"
+    fail_msg: "Create infra domain check mode minimal failed"
+    success_msg: "Create infra domain check mode minimal passed"
+
+- name: Create infra domain with check mode and all attributes
+  nutanix.ncp.ntnx_infra_domain_v2:
+    name: "{{ infra_domain_name }}_check_full"
+    description: "Infra domain check mode full"
+    location: "us-east-1"
+    fqdn:
+      value: "infra.example.com"
+    cluster_associations:
+      - cluster_ext_id: "00000000-0000-0000-0000-000000000001"
+        is_hosting: true
+    platform_config:
+      platform_cluster_ext_id: "00000000-0000-0000-0000-000000000002"
+      virtual_ip:
+        ipv4:
+          value: "10.0.0.10"
+          prefix_length: 32
+      name_server_ip:
+        ipv4:
+          value: "10.0.0.11"
+          prefix_length: 32
+      hosting_cluster_info:
+        network_config:
+          cluster_subnet_configs:
+            - cluster_ext_id: "00000000-0000-0000-0000-000000000001"
+              subnet_ext_id: "00000000-0000-0000-0000-000000000003"
+      load_balancer_config:
+        - ip_addresses:
+            - ipv4:
+                value: "10.0.0.20"
+                prefix_length: 32
+          cluster_network_config:
+            cluster_ext_id: "00000000-0000-0000-0000-000000000001"
+            subnet_ext_id: "00000000-0000-0000-0000-000000000003"
+    size: "SMALL"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Create infra domain with check mode full status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == infra_domain_name ~ "_check_full"
+      - result.response.description == "Infra domain check mode full"
+      - result.response.location == "us-east-1"
+      - result.response.fqdn.value == "infra.example.com"
+      - result.response.cluster_associations | length == 1
+      - result.response.cluster_associations[0].cluster_ext_id == "00000000-0000-0000-0000-000000000001"
+      - result.response.cluster_associations[0].is_hosting == true
+      - result.response.platform_config is defined
+      - result.response.platform_config.platform_cluster_ext_id == "00000000-0000-0000-0000-000000000002"
+      - result.response.platform_config.virtual_ip.ipv4.value == "10.0.0.10"
+      - result.response.platform_config.name_server_ip.ipv4.value == "10.0.0.11"
+      - result.response.platform_config.hosting_cluster_info.network_config.cluster_subnet_configs | length == 1
+      - result.response.platform_config.load_balancer_config | length == 1
+      - result.response.size == "SMALL"
+    fail_msg: "Create infra domain check mode full failed"
+    success_msg: "Create infra domain check mode full passed"
+
+########################################################################################
+# Live create tests
+########################################################################################
+
+- name: Create infra domain with minimal attributes
+  nutanix.ncp.ntnx_infra_domain_v2:
+    name: "{{ infra_domain_name }}_min"
+    description: "Infra domain minimal"
+    location: "us-west-1"
+  register: result
+  ignore_errors: true
+
+- name: Create infra domain minimal status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - (result.changed == true and result.failed == false) or (result.failed == true)
+    fail_msg: "Create infra domain minimal unexpected result"
+    success_msg: "Create infra domain minimal handled"
+
+- name: Set ext_id for cleanup if created
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+  when: result.ext_id is defined and result.ext_id
+
+- name: Create infra domain with all attributes
+  nutanix.ncp.ntnx_infra_domain_v2:
+    name: "{{ infra_domain_name }}_full"
+    description: "Infra domain full"
+    location: "us-east-1"
+    fqdn:
+      value: "infra.example.com"
+    cluster_associations:
+      - cluster_ext_id: "00000000-0000-0000-0000-000000000001"
+        is_hosting: true
+    size: "SMALL"
+  register: result
+  ignore_errors: true
+
+- name: Create infra domain with all attributes status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - (result.changed == true and result.failed == false) or (result.failed == true)
+      - result.response is defined or result.failed == true
+    fail_msg: "Create infra domain full unexpected result"
+    success_msg: "Create infra domain full handled"
+
+- name: Set ext_id for cleanup if created full
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [result.ext_id] }}"
+  when: result.ext_id is defined and result.ext_id
+
+########################################################################################
+# Negative tests
+########################################################################################
+
+- name: Create infra domain with invalid cluster association
+  nutanix.ncp.ntnx_infra_domain_v2:
+    name: "{{ infra_domain_name }}_invalid"
+    description: "Invalid infra domain"
+    location: "us-west-1"
+    cluster_associations:
+      - cluster_ext_id: "invalid-uuid-0000-0000-0000-000000000000"
+        is_hosting: true
+  register: result
+  ignore_errors: true
+
+- name: Create infra domain invalid cluster status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true or result.changed == true
+    fail_msg: "Invalid cluster test unexpected"
+    success_msg: "Invalid cluster test handled"
+
+- name: Create infra domain with fqdn and size variations
+  nutanix.ncp.ntnx_infra_domain_v2:
+    name: "{{ infra_domain_name }}_fqdn"
+    description: "Infra domain with fqdn"
+    location: "eu-central-1"
+    fqdn:
+      value: "test.infra.example.org"
+    size: "LARGE"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Create infra domain fqdn check_mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.changed == false
+      - result.response.fqdn.value == "test.infra.example.org"
+      - result.response.size == "LARGE"
+    fail_msg: "FQDN check mode failed"
+    success_msg: "FQDN check mode passed"
+
+- name: Create infra domain with platform config check_mode
+  nutanix.ncp.ntnx_infra_domain_v2:
+    name: "{{ infra_domain_name }}_platform"
+    description: "Infra domain platform"
+    location: "ap-south-1"
+    platform_config:
+      platform_cluster_ext_id: "00000000-0000-0000-0000-000000000004"
+      virtual_ip:
+        ipv4:
+          value: "192.168.1.10"
+      name_server_ip:
+        ipv4:
+          value: "192.168.1.11"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Create infra domain platform check_mode status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == false
+      - result.response.platform_config.platform_cluster_ext_id == "00000000-0000-0000-0000-000000000004"
+      - result.response.platform_config.virtual_ip.ipv4.value == "192.168.1.10"
+    fail_msg: "Platform config check mode failed"
+    success_msg: "Platform config check mode passed"

@@ -1,0 +1,94 @@
+---
+- name: Infra Domain playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        cluster_uuid: "00066101-9650-faa8-0000-000000028f57"
+        subnet_uuid: "00000000-0000-0000-0000-000000000001"
+        infra_domain_name: "infra_domain_ansible_test"
+
+    - name: Create infra domain with minimal attributes
+      nutanix.ncp.ntnx_infra_domain_v2:
+        name: "{{ infra_domain_name }}_min"
+        description: "Infra domain created by Ansible with minimal attributes"
+        location: "us-west-1"
+      register: result
+      ignore_errors: true
+
+    - name: Set infra domain ext_id
+      ansible.builtin.set_fact:
+        infra_domain_ext_id: "{{ result.response.ext_id | default(result.ext_id) }}"
+
+    - name: Create infra domain with all attributes
+      nutanix.ncp.ntnx_infra_domain_v2:
+        name: "{{ infra_domain_name }}_full"
+        description: "Infra domain created by Ansible with all attributes"
+        location: "us-east-1"
+        fqdn:
+          value: "infra.example.com"
+        cluster_associations:
+          - cluster_ext_id: "{{ cluster_uuid }}"
+            is_hosting: true
+        platform_config:
+          platform_cluster_ext_id: "{{ cluster_uuid }}"
+          virtual_ip:
+            ipv4:
+              value: "10.0.0.10"
+              prefix_length: 32
+          name_server_ip:
+            ipv4:
+              value: "10.0.0.11"
+              prefix_length: 32
+          hosting_cluster_info:
+            network_config:
+              cluster_subnet_configs:
+                - cluster_ext_id: "{{ cluster_uuid }}"
+                  subnet_ext_id: "{{ subnet_uuid }}"
+          load_balancer_config:
+            - ip_addresses:
+                - ipv4:
+                    value: "10.0.0.20"
+                    prefix_length: 32
+              cluster_network_config:
+                cluster_ext_id: "{{ cluster_uuid }}"
+                subnet_ext_id: "{{ subnet_uuid }}"
+        size: "SMALL"
+      register: result
+      ignore_errors: true
+
+    - name: Get infra domain using ext_id
+      nutanix.ncp.ntnx_infra_domains_info_v2:
+        ext_id: "{{ infra_domain_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all infra domains
+      nutanix.ncp.ntnx_infra_domains_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List infra domains with filter
+      nutanix.ncp.ntnx_infra_domains_info_v2:
+        filter: "name eq '{{ infra_domain_name }}_min'"
+      register: result
+      ignore_errors: true
+
+    - name: List infra domains with limit
+      nutanix.ncp.ntnx_infra_domains_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: List all infra domains with fetch_all
+      nutanix.ncp.ntnx_infra_domains_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
