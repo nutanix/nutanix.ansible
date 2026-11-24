@@ -560,3 +560,4 @@ action_groups:
     - ntnx_cpu_models_info_v2
     - ntnx_device_bundle_instances_info_v2
     - ntnx_device_bundle_profiles_info_v2
+    - ntnx_generate_image_download_url_v2
