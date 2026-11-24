@@ -1,0 +1,32 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Domain Manager playbook] *************************************************
+
+TASK [List all connected domain managers] **************************************
+ok: [localhost] => {"changed": false, "response": [{"connectivity_status": "CONNECTED", "domain_manager_uuid": "e0df8d6c-cca8-4c58-a48b-8f161cd373cb", "ext_id": "e0df8d6c-cca8-4c58-a48b-8f161cd373cb", "is_shared_with_all_projects": true, "links": null, "name": "PC_10.37.160.52", "tenant_id": null, "type": "PC", "version": "pc.7.5.1"}, {"connectivity_status": "CONNECTED", "domain_manager_uuid": "d8496dc4-31e7-44e4-8b09-9e95576c1aa5", "ext_id": "ec6f90fd-e448-43cd-b238-c87986419a31", "is_shared_with_all_projects": true, "links": null, "name": "PC_10.44.76.16", "tenant_id": null, "type": "LOCAL", "version": "pc.7.7"}], "total_available_results": 2}
+
+TASK [Set connected domain manager ext_id] *************************************
+ok: [localhost] => {"ansible_facts": {"connected_dm_ext_id": "e0df8d6c-cca8-4c58-a48b-8f161cd373cb"}, "changed": false}
+
+TASK [Get connected domain manager using ext_id] *******************************
+ok: [localhost] => {"changed": false, "ext_id": "e0df8d6c-cca8-4c58-a48b-8f161cd373cb", "response": {"connectivity_status": "CONNECTED", "domain_manager_uuid": "e0df8d6c-cca8-4c58-a48b-8f161cd373cb", "ext_id": "e0df8d6c-cca8-4c58-a48b-8f161cd373cb", "is_shared_with_all_projects": true, "links": null, "name": "PC_10.37.160.52", "tenant_id": null, "type": "PC", "version": "pc.7.5.1"}}
+
+TASK [List connected domain managers with filter] ******************************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [List connected domain managers with limit] *******************************
+ok: [localhost] => {"changed": false, "response": [{"connectivity_status": "CONNECTED", "domain_manager_uuid": "e0df8d6c-cca8-4c58-a48b-8f161cd373cb", "ext_id": "e0df8d6c-cca8-4c58-a48b-8f161cd373cb", "is_shared_with_all_projects": true, "links": null, "name": "PC_10.37.160.52", "tenant_id": null, "type": "PC", "version": "pc.7.5.1"}], "total_available_results": 2}
+
+TASK [List all connected domain managers with fetch_all] ***********************
+ok: [localhost] => {"changed": false, "response": [{"connectivity_status": "CONNECTED", "domain_manager_uuid": "e0df8d6c-cca8-4c58-a48b-8f161cd373cb", "ext_id": "e0df8d6c-cca8-4c58-a48b-8f161cd373cb", "is_shared_with_all_projects": true, "links": null, "name": "PC_10.37.160.52", "tenant_id": null, "type": "PC", "version": "pc.7.5.1"}, {"connectivity_status": "CONNECTED", "domain_manager_uuid": "d8496dc4-31e7-44e4-8b09-9e95576c1aa5", "ext_id": "ec6f90fd-e448-43cd-b238-c87986419a31", "is_shared_with_all_projects": true, "links": null, "name": "PC_10.44.76.16", "tenant_id": null, "type": "LOCAL", "version": "pc.7.7"}], "total_available_results": 2}
+
+TASK [Get domain manager size config] ******************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT IMPLEMENTED", "msg": "Api Exception raised while fetching domain manager size config info", "response": {"$dataItemDiscriminator": "prism.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<prism.v4.error.AppMessage>", "$objectType": "prism.v4.error.ErrorResponse", "error": [{"$objectType": "prism.v4.error.AppMessage", "message": "requested feature or functionality is not yet implemented on the server", "severity": "ERROR"}]}}, "status": 501}
+...ignoring
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+

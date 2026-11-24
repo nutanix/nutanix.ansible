@@ -1,0 +1,197 @@
+---
+###############################################################################
+# Integration tests for ntnx_connected_domain_managers_info_v2
+#
+# Test plan (informed by SDK + module + domain):
+#
+# This endpoint is READ-ONLY and exposes GET-by-ID + LIST.
+# LIST supports filter, orderby, select, page, limit, fetch_all.
+# Coverage focuses on:
+#   1. Baseline list (no args) — asserts response shape + total_available_results
+#   2. Every field returned by ConnectedDomainManager model is present
+#   3. Get by ext_id — fetch single entity using captured ext_id
+#   4. Limit — asserts limit is honoured
+#   5. Filter — using name or extId
+#   6. Fetch_all — paginate and assert length equals total_available_results
+#   7. Negative — invalid ext_id surfaces error
+#   8. Negative — invalid filter surfaces error
+###############################################################################
+
+- name: Start ntnx_connected_domain_managers_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_connected_domain_managers_info_v2 tests
+
+########################################################################
+# 1. Baseline list
+########################################################################
+
+- name: List all connected domain managers (baseline)
+  nutanix.ncp.ntnx_connected_domain_managers_info_v2:
+  register: baseline
+  ignore_errors: true
+
+- name: Assert baseline list succeeded
+  ansible.builtin.assert:
+    that:
+      - baseline is defined
+      - baseline.changed == false
+      - baseline.failed == false
+      - baseline.response is defined
+      - baseline.response | length >= 0
+      - "'total_available_results' in baseline"
+    fail_msg: "Baseline list of connected domain managers failed"
+    success_msg: "Baseline list of connected domain managers succeeded"
+
+- name: Capture first ext_id for get-by-ID
+  ansible.builtin.set_fact:
+    target_ext_id: "{{ baseline.response[0].ext_id }}"
+  when: baseline.response is defined and baseline.response | length > 0
+
+- name: Capture first name for filter test
+  ansible.builtin.set_fact:
+    target_name: "{{ baseline.response[0].name }}"
+  when: baseline.response is defined and baseline.response | length > 0
+
+########################################################################
+# 2. Response schema check
+########################################################################
+
+- name: Assert every ConnectedDomainManager entry exposes documented schema
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - item.ext_id is defined
+      - item.ext_id is string
+      - "'connectivity_status' in item"
+      - "'type' in item"
+      - "'version' in item"
+      - "'tenant_id' in item"
+    fail_msg: "ConnectedDomainManager {{ item.ext_id | default('unknown') }} missing fields"
+    success_msg: "ConnectedDomainManager {{ item.ext_id }} schema OK"
+  loop: "{{ baseline.response }}"
+  loop_control:
+    label: "{{ item.ext_id | default('unknown') }}"
+  when: baseline.response is defined and baseline.response | length > 0
+
+########################################################################
+# 3. Get by ext_id
+########################################################################
+
+- name: Get connected domain manager by ext_id
+  nutanix.ncp.ntnx_connected_domain_managers_info_v2:
+    ext_id: "{{ target_ext_id }}"
+  register: get_result
+  ignore_errors: true
+  when: target_ext_id is defined
+
+- name: Assert get by ext_id succeeded
+  ansible.builtin.assert:
+    that:
+      - get_result.changed == false
+      - get_result.failed == false
+      - get_result.response is defined
+      - get_result.response.ext_id == target_ext_id
+      - get_result.ext_id == target_ext_id
+    fail_msg: "Get connected domain manager by ext_id failed"
+    success_msg: "Get connected domain manager by ext_id succeeded"
+  when: target_ext_id is defined
+
+########################################################################
+# 4. List with limit
+########################################################################
+
+- name: List connected domain managers with limit 1
+  nutanix.ncp.ntnx_connected_domain_managers_info_v2:
+    limit: 1
+  register: limited
+  ignore_errors: true
+
+- name: Assert limit=1 returns at most one entry
+  ansible.builtin.assert:
+    that:
+      - limited.changed == false
+      - limited.failed == false
+      - limited.response is defined
+      - limited.response | length <= 1
+    fail_msg: "limit=1 returned more than one entry"
+    success_msg: "limit=1 correctly capped response"
+
+########################################################################
+# 5. List with filter
+########################################################################
+
+- name: List connected domain managers with filter on name
+  nutanix.ncp.ntnx_connected_domain_managers_info_v2:
+    filter: "name eq '{{ target_name }}'"
+  register: by_filter
+  ignore_errors: true
+  when: target_name is defined
+
+- name: Assert filter on name returned expected result
+  ansible.builtin.assert:
+    that:
+      - by_filter.changed == false
+      - by_filter.failed == false
+      - by_filter.response is defined
+      - by_filter.response | length >= 1
+      - by_filter.response[0].name == target_name
+    fail_msg: "Filter on name did not return expected result"
+    success_msg: "Filter on name correctly returned expected result"
+  when: target_name is defined
+
+########################################################################
+# 6. Fetch_all
+########################################################################
+
+- name: List all connected domain managers with fetch_all
+  nutanix.ncp.ntnx_connected_domain_managers_info_v2:
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: Assert fetch_all returns all entities
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result.changed == false
+      - fetch_all_result.failed == false
+      - fetch_all_result.response is defined
+      - fetch_all_result.total_available_results is defined
+      - (fetch_all_result.response | length) == (fetch_all_result.total_available_results | int)
+    fail_msg: "fetch_all did not return all entities"
+    success_msg: "fetch_all correctly returned all entities"
+
+########################################################################
+# 7. Negative — invalid ext_id
+########################################################################
+
+- name: Get connected domain manager with invalid ext_id
+  nutanix.ncp.ntnx_connected_domain_managers_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: invalid_ext
+  ignore_errors: true
+
+- name: Assert invalid ext_id surfaces error
+  ansible.builtin.assert:
+    that:
+      - invalid_ext.failed == true
+      - invalid_ext.msg is defined
+    fail_msg: "Invalid ext_id should have surfaced an error"
+    success_msg: "Invalid ext_id correctly surfaced an error"
+
+########################################################################
+# 8. Negative — invalid filter
+########################################################################
+
+- name: List connected domain managers with invalid filter
+  nutanix.ncp.ntnx_connected_domain_managers_info_v2:
+    filter: "invalidField eq 'value'"
+  register: bad_filter
+  ignore_errors: true
+
+- name: Assert invalid filter surfaces error
+  ansible.builtin.assert:
+    that:
+      - bad_filter.failed == true
+      - bad_filter.msg is defined
+    fail_msg: "Invalid filter should have surfaced an error"
+    success_msg: "Invalid filter correctly surfaced an error"

@@ -238,3 +238,42 @@ def get_registration(module, api_instance, domain_manager_ext_id, ext_id):
             exception=e,
             msg="Api Exception raised while fetching registration info using ext_id and domain_manager_ext_id",
         )
+
+
+def get_connected_domain_manager(module, api_instance, ext_id):
+    """
+    This method will return connected domain manager info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: DomainManagerApi instance from ntnx_prism_py_client sdk
+        ext_id (str): connected domain manager external ID
+    return:
+        connected_domain_manager_info (object): connected domain manager info
+    """
+    try:
+        return api_instance.get_connected_domain_manager_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching connected domain manager info using ext_id",
+        )
+
+
+def get_domain_manager_size_config(module, api_instance):
+    """
+    This method will return domain manager size config info.
+    Args:
+        module: Ansible module
+        api_instance: DomainManagerApi instance from ntnx_prism_py_client sdk
+    return:
+        domain_manager_size_config (object): domain manager size config info
+    """
+    try:
+        return api_instance.get_domain_manager_size_config().data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching domain manager size config info",
+        )

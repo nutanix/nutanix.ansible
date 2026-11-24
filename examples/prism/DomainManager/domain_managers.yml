@@ -1,0 +1,59 @@
+---
+# Summary:
+# This playbook will do:
+# 1. List all connected domain managers
+# 2. Get connected domain manager using ext_id
+# 3. List connected domain managers with filter
+# 4. List connected domain managers with limit
+# 5. List all connected domain managers with fetch_all
+# 6. Get domain manager size config
+
+- name: Domain Manager playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: List all connected domain managers
+      nutanix.ncp.ntnx_connected_domain_managers_info_v2:
+      register: list_result
+      ignore_errors: true
+
+    - name: Set connected domain manager ext_id
+      ansible.builtin.set_fact:
+        connected_dm_ext_id: "{{ list_result.response[0].ext_id }}"
+      when: list_result.response is defined and list_result.response | length > 0
+
+    - name: Get connected domain manager using ext_id
+      nutanix.ncp.ntnx_connected_domain_managers_info_v2:
+        ext_id: "{{ connected_dm_ext_id }}"
+      register: result
+      ignore_errors: true
+      when: connected_dm_ext_id is defined
+
+    - name: List connected domain managers with filter
+      nutanix.ncp.ntnx_connected_domain_managers_info_v2:
+        filter: "name eq 'PC_10.44.76.25'"
+      register: result
+      ignore_errors: true
+
+    - name: List connected domain managers with limit
+      nutanix.ncp.ntnx_connected_domain_managers_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: List all connected domain managers with fetch_all
+      nutanix.ncp.ntnx_connected_domain_managers_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true
+
+    - name: Get domain manager size config
+      nutanix.ncp.ntnx_domain_manager_size_config_info_v2:
+      register: result
+      ignore_errors: true

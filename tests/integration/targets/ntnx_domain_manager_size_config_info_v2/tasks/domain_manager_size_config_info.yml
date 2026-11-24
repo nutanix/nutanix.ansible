@@ -1,0 +1,92 @@
+---
+###############################################################################
+# Integration tests for ntnx_domain_manager_size_config_info_v2
+#
+# Test plan:
+# This is a singleton GET endpoint with no params, no pagination.
+# Coverage focuses on:
+#   1. Baseline get — asserts response shape and specs list
+#   2. Every spec entry has required fields (size, num_vcpus, memory, disk, scale_limits)
+#   3. Scale limits shape validation
+#   4. Domain check — at least SMALL size exists
+###############################################################################
+
+- name: Start ntnx_domain_manager_size_config_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_domain_manager_size_config_info_v2 tests
+
+########################################################################
+# 1. Baseline get
+########################################################################
+
+- name: Get domain manager size config
+  nutanix.ncp.ntnx_domain_manager_size_config_info_v2:
+  register: baseline
+  ignore_errors: true
+
+- name: Assert baseline get succeeded or not-implemented gracefully handled
+  ansible.builtin.assert:
+    that:
+      - baseline is defined
+      - >-
+        (baseline.failed == false and baseline.response is defined and baseline.response.specs is defined and (baseline.response.specs | length > 0))
+        or
+        (baseline.failed == true and baseline.error is defined and baseline.status is defined and baseline.status == 501)
+    fail_msg: "Baseline get domain manager size config failed unexpectedly"
+    success_msg: "Baseline get handled (success or 501 not-implemented)"
+
+########################################################################
+# 2. Spec schema
+########################################################################
+
+- name: Assert every DomainManagerSizeSpec entry exposes documented schema
+  ansible.builtin.assert:
+    that:
+      - item.size is defined
+      - item.size is string
+      - item.num_vcpus is defined
+      - item.memory_size_bytes is defined
+      - item.data_disk_size_bytes is defined
+      - item.scale_limits is defined
+    fail_msg: "DomainManagerSizeSpec {{ item.size | default('unknown') }} missing fields"
+    success_msg: "DomainManagerSizeSpec {{ item.size }} schema OK"
+  loop: "{{ baseline.response.specs | default([]) }}"
+  loop_control:
+    label: "{{ item.size | default('unknown') }}"
+  when: baseline.failed == false
+
+########################################################################
+# 3. Scale limits shape
+########################################################################
+
+- name: Assert scale_limits has required fields
+  ansible.builtin.assert:
+    that:
+      - item.scale_limits.max_vms is defined
+      - item.scale_limits.max_clusters is defined
+      - item.scale_limits.max_hosts is defined
+    fail_msg: "Scale limits missing fields for {{ item.size }}"
+    success_msg: "Scale limits OK for {{ item.size }}"
+  loop: "{{ baseline.response.specs | default([]) }}"
+  loop_control:
+    label: "{{ item.size }}"
+  when: baseline.failed == false
+
+########################################################################
+# 4. Domain check — SMALL size exists
+########################################################################
+
+- name: Extract SMALL size entries
+  ansible.builtin.set_fact:
+    small_entries: "{{ baseline.response.specs | selectattr('size', 'equalto', 'SMALL') | list }}"
+  when: baseline.failed == false
+
+- name: Assert SMALL size is reported
+  ansible.builtin.assert:
+    that:
+      - small_entries | length >= 1
+      - small_entries[0].num_vcpus is defined
+      - small_entries[0].memory_size_bytes is defined
+    fail_msg: "SMALL size should be reported"
+    success_msg: "SMALL size correctly reported"
+  when: baseline.failed == false
