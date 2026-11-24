@@ -238,3 +238,23 @@ def get_registration(module, api_instance, domain_manager_ext_id, ext_id):
             exception=e,
             msg="Api Exception raised while fetching registration info using ext_id and domain_manager_ext_id",
         )
+
+
+def get_external_storage(module, api_instance, ext_id):
+    """
+    This method will return external storage info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ExternalStoragesApi instance from ntnx_prism_py_client sdk
+        ext_id (str): external storage external ID
+    return:
+        external storage info (object): external storage info
+    """
+    try:
+        return api_instance.get_external_storage_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching external storage info using ext_id",
+        )

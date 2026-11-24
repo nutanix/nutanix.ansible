@@ -1,0 +1,89 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [External storage info examples (prism v4.5)] *****************************
+
+TASK [Set external storage ext_id for live lookup] *****************************
+ok: [localhost] => {"ansible_facts": {"external_storage_ext_id": "00000000-0000-0000-0000-000000000000"}, "changed": false}
+
+TASK [Discover external storages via clustermgmt (best-effort)] ****************
+ok: [localhost] => {"changed": false, "response": [], "total_available_results": 0}
+
+TASK [Use discovered ext_id if available] **************************************
+skipping: [localhost] => {"changed": false, "false_condition": "discover.response | length > 0", "skip_reason": "Conditional result was False"}
+
+TASK [Get external storage using ext_id (prism deprecated API)] ****************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching external storage info using ext_id", "response": {"$dataItemDiscriminator": "prism.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<prism.v4.error.AppMessage>", "$objectType": "prism.v4.error.ErrorResponse", "error": [{"$objectType": "prism.v4.error.AppMessage", "argumentsMap": {"reason": "External storage with ID 00000000-0000-0000-0000-000000000000 not found"}, "code": "PRI-45003", "errorGroup": "EXTERNAL_STORAGE_UNKNOWN_ENTITY_ERROR", "locale": "en-US", "message": "Failed to perform the operation as an unknown entity exception occurred due to - External storage with ID 00000000-0000-0000-0000-000000000000 not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Show external storage result] ********************************************
+ok: [localhost] => {
+    "result": {
+        "changed": false,
+        "error": "NOT FOUND",
+        "failed": true,
+        "msg": "Api Exception raised while fetching external storage info using ext_id",
+        "response": {
+            "$dataItemDiscriminator": "prism.v4.error.ErrorResponse",
+            "data": {
+                "$errorItemDiscriminator": "List<prism.v4.error.AppMessage>",
+                "$objectType": "prism.v4.error.ErrorResponse",
+                "error": [
+                    {
+                        "$objectType": "prism.v4.error.AppMessage",
+                        "argumentsMap": {
+                            "reason": "External storage with ID 00000000-0000-0000-0000-000000000000 not found"
+                        },
+                        "code": "PRI-45003",
+                        "errorGroup": "EXTERNAL_STORAGE_UNKNOWN_ENTITY_ERROR",
+                        "locale": "en-US",
+                        "message": "Failed to perform the operation as an unknown entity exception occurred due to - External storage with ID 00000000-0000-0000-0000-000000000000 not found.",
+                        "severity": "ERROR"
+                    }
+                ]
+            }
+        },
+        "status": 404
+    }
+}
+
+TASK [Get external storage with invalid ext_id (negative)] *********************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "NOT FOUND", "msg": "Api Exception raised while fetching external storage info using ext_id", "response": {"$dataItemDiscriminator": "prism.v4.error.ErrorResponse", "data": {"$errorItemDiscriminator": "List<prism.v4.error.AppMessage>", "$objectType": "prism.v4.error.ErrorResponse", "error": [{"$objectType": "prism.v4.error.AppMessage", "argumentsMap": {"reason": "External storage with ID 00000000-0000-0000-0000-000000000000 not found"}, "code": "PRI-45003", "errorGroup": "EXTERNAL_STORAGE_UNKNOWN_ENTITY_ERROR", "locale": "en-US", "message": "Failed to perform the operation as an unknown entity exception occurred due to - External storage with ID 00000000-0000-0000-0000-000000000000 not found.", "severity": "ERROR"}]}}, "status": 404}
+...ignoring
+
+TASK [Show negative result] ****************************************************
+ok: [localhost] => {
+    "result_negative": {
+        "changed": false,
+        "error": "NOT FOUND",
+        "failed": true,
+        "msg": "Api Exception raised while fetching external storage info using ext_id",
+        "response": {
+            "$dataItemDiscriminator": "prism.v4.error.ErrorResponse",
+            "data": {
+                "$errorItemDiscriminator": "List<prism.v4.error.AppMessage>",
+                "$objectType": "prism.v4.error.ErrorResponse",
+                "error": [
+                    {
+                        "$objectType": "prism.v4.error.AppMessage",
+                        "argumentsMap": {
+                            "reason": "External storage with ID 00000000-0000-0000-0000-000000000000 not found"
+                        },
+                        "code": "PRI-45003",
+                        "errorGroup": "EXTERNAL_STORAGE_UNKNOWN_ENTITY_ERROR",
+                        "locale": "en-US",
+                        "message": "Failed to perform the operation as an unknown entity exception occurred due to - External storage with ID 00000000-0000-0000-0000-000000000000 not found.",
+                        "severity": "ERROR"
+                    }
+                ]
+            }
+        },
+        "status": 404
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=2   
+

@@ -1,0 +1,50 @@
+---
+- name: External storage info examples (prism v4.5)
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      nutanix_port: "{{ port | default(lookup('env', 'NUTANIX_PORT')) | default(9440) }}"
+      validate_certs: false
+  vars:
+    external_storage_ext_id: "00000000-0000-0000-0000-000000000000"
+  tasks:
+    - name: Set external storage ext_id for live lookup
+      ansible.builtin.set_fact:
+        external_storage_ext_id: "{{ external_storage_ext_id }}"
+
+    - name: Discover external storages via clustermgmt (best-effort)
+      nutanix.ncp.ntnx_external_storages_info_v2:
+      register: discover
+      ignore_errors: true
+
+    - name: Use discovered ext_id if available
+      ansible.builtin.set_fact:
+        external_storage_ext_id: "{{ discover.response[0].ext_id }}"
+      when:
+        - discover.response is defined
+        - discover.response | length > 0
+        - discover.failed == false
+
+    - name: Get external storage using ext_id (prism deprecated API)
+      nutanix.ncp.ntnx_external_storage_info_v2:
+        ext_id: "{{ external_storage_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Show external storage result
+      ansible.builtin.debug:
+        var: result
+
+    - name: Get external storage with invalid ext_id (negative)
+      nutanix.ncp.ntnx_external_storage_info_v2:
+        ext_id: "00000000-0000-0000-0000-000000000000"
+      register: result_negative
+      ignore_errors: true
+
+    - name: Show negative result
+      ansible.builtin.debug:
+        var: result_negative
