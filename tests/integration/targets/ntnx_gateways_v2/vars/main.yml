@@ -1,0 +1,18 @@
+---
+# Hardcoded fixture values for ntnx_gateways_v2.
+# Dedicated fixture networks (not prepare_env vpc/overlay 192.168.1.x / Ext-Nat VLAN 113).
+# External NAT uses underlay VLAN 206 / 10.44.3.224/27 (distinct from prepare_env 10.44.3.192/27).
+wrong_ext_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+gw_ext_nat:
+  vlan_id: 206
+  network_ip: "10.44.3.224"
+  network_prefix: 27
+  gateway_ip: "10.44.3.225"
+  pool_start: "10.44.3.230"
+  pool_end: "10.44.3.239"
+gw_overlay_net:
+  network_ip: "192.168.50.0"
+  network_prefix: 24
+  gateway_ip: "192.168.50.1"
+  pool_start: "192.168.50.20"
+  pool_end: "192.168.50.80"

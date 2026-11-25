@@ -61,6 +61,7 @@ class Tasks:
         PROJECT = "multidomain:config:Project"
         RESOURCE_GROUP = "multidomain:config:nutanix-resource-group"
         CONTENT_REPOSITORY = "multidomain:content:content-repository"
+        GATEWAY = "networking:config:gateway"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
