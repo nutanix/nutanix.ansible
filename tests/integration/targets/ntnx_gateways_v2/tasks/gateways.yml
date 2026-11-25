@@ -54,10 +54,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug create gateway with missing name result
-  ansible.builtin.debug:
-    var: result
-
 - name: Create gateway with missing name status
   ansible.builtin.assert:
     that:
@@ -73,10 +69,6 @@
     state: absent
   register: result
   ignore_errors: true
-
-- name: Debug delete gateway with missing ext_id result
-  ansible.builtin.debug:
-    var: result
 
 - name: Delete gateway with missing ext_id status
   ansible.builtin.assert:
@@ -96,10 +88,6 @@
     cloud_network_reference: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
   register: result
   ignore_errors: true
-
-- name: Debug create gateway with vpc/cloud mutually exclusive result
-  ansible.builtin.debug:
-    var: result
 
 - name: Create gateway with vpc_reference and cloud_network_reference together status
   ansible.builtin.assert:
@@ -129,10 +117,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug create gateway with local/remote services mutually exclusive result
-  ansible.builtin.debug:
-    var: result
-
 - name: Create gateway with local_services and remote_services together status
   ansible.builtin.assert:
     that:
@@ -148,10 +132,6 @@
     state: present
   register: result
   ignore_errors: true
-
-- name: Debug upgrade gateway without ext_id result
-  ansible.builtin.debug:
-    var: result
 
 - name: Upgrade gateway without ext_id status
   ansible.builtin.assert:
@@ -239,10 +219,6 @@
   check_mode: true
   register: result
   ignore_errors: true
-
-- name: Debug check mode create with all attributes result
-  ansible.builtin.debug:
-    var: result
 
 - name: Generate spec for creating gateway using check mode with all attributes status
   ansible.builtin.assert:
@@ -422,9 +398,6 @@
   when: gw_vpc_ext_id | default('') | length > 0
   ignore_errors: true
 
-- debug:
-    var: result
-
 - name: Create overlay subnet in gateway VPC status
   ansible.builtin.assert:
     that:
@@ -504,10 +477,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug create gateway with minimum attributes result
-  ansible.builtin.debug:
-    var: result
-
 - name: Create gateway with minimum attributes status
   ansible.builtin.assert:
     that:
@@ -539,8 +508,6 @@
     gateway_device_vendor: "GENERIC"
     vpc_reference: "{{ gw_vpc_ext_id }}"
     project_ext_id: "{{ default_project.uuid }}"
-    # Omit category_ids: Atlas must authorize metadata it owns; categories cause
-    # NETWORKING-10056 on later upgrade ("Authorization should happen in Atlas...").
     metadata:
       owner_reference_id: "{{ users[0] }}"
       owner_user_name: "admin"
@@ -548,7 +515,6 @@
       project_name: "{{ default_project.name }}"
     deployment:
       cluster_reference: "{{ cluster.uuid }}"
-      # false so custom NTP/DNS are kept; true replaces them with PC system servers
       should_synchronize_system_ntp_servers: false
       should_synchronize_system_dns_servers: false
       ntp_servers:
@@ -592,10 +558,6 @@
     - gw_overlay_ext_id | default('') | length > 0
     - gateway_fip1_ip | default('') | length > 0
   ignore_errors: true
-
-- name: Debug create gateway with all attributes result
-  ansible.builtin.debug:
-    var: result
 
 - name: Create gateway with all attributes status
   ansible.builtin.assert:
@@ -667,10 +629,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug list all gateways result
-  ansible.builtin.debug:
-    var: result
-
 - name: List all gateways status
   ansible.builtin.assert:
     that:
@@ -691,10 +649,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug list gateways with limit result
-  ansible.builtin.debug:
-    var: result
-
 - name: List gateways with limit status
   ansible.builtin.assert:
     that:
@@ -711,10 +665,6 @@
     filter: "name eq '{{ gw_name }}_min'"
   register: result
   ignore_errors: true
-
-- name: Debug list gateways with filter result
-  ansible.builtin.debug:
-    var: result
 
 - name: List gateways with filter status
   ansible.builtin.assert:
@@ -739,11 +689,6 @@
   when: todelete | length > 0
   ignore_errors: true
 
-- name: Debug get gateway using ext_id result
-  ansible.builtin.debug:
-    var: result
-  when: todelete | length > 0
-
 - name: Get gateway using ext_id status
   ansible.builtin.assert:
     that:
@@ -765,10 +710,6 @@
     ext_id: "{{ wrong_ext_id }}"
   register: result
   ignore_errors: true
-
-- name: Debug fetch gateway by wrong ext_id result
-  ansible.builtin.debug:
-    var: result
 
 - name: Fetch gateway by a wrong ext_id status
   ansible.builtin.assert:
@@ -860,11 +801,6 @@
   when: gateway_all_ext_id | default('') | length > 0
   ignore_errors: true
 
-- name: Debug update gateway check mode result
-  ansible.builtin.debug:
-    var: result
-  when: gateway_all_ext_id | default('') | length > 0
-
 - name: Generate spec for updating gateway using check mode with all attributes status
   ansible.builtin.assert:
     that:
@@ -910,11 +846,6 @@
   when: gateway_all_ext_id | default('') | length > 0
   ignore_errors: true
 
-- name: Debug update gateway name and description result
-  ansible.builtin.debug:
-    var: result
-  when: gateway_all_ext_id | default('') | length > 0
-
 - name: Update gateway name and description status
   ansible.builtin.assert:
     that:
@@ -945,11 +876,6 @@
   register: result
   when: gateway_all_ext_id | default('') | length > 0
   ignore_errors: true
-
-- name: Debug update gateway name and description idempotency result
-  ansible.builtin.debug:
-    var: result
-  when: gateway_all_ext_id | default('') | length > 0
 
 - name: Update gateway name and description idempotency status
   ansible.builtin.assert:
@@ -985,11 +911,6 @@
   when: gateway_all_ext_id | default('') | length > 0
   ignore_errors: true
 
-- name: Debug update gateway NTP and DNS result
-  ansible.builtin.debug:
-    var: result
-  when: gateway_all_ext_id | default('') | length > 0
-
 - name: Update gateway NTP and DNS status
   ansible.builtin.assert:
     that:
@@ -1020,11 +941,6 @@
   when: gateway_all_ext_id | default('') | length > 0
   ignore_errors: true
 
-- name: Debug upgrade gateway with check mode result
-  ansible.builtin.debug:
-    var: result
-  when: gateway_all_ext_id | default('') | length > 0
-
 - name: Upgrade gateway with check mode status
   ansible.builtin.assert:
     that:
@@ -1037,9 +953,6 @@
     fail_msg: "Upgrade gateway with check mode failed"
   when: gateway_all_ext_id | default('') | length > 0
 
-
-# Upgrade currently fails with NETWORKING-10056:
-# "Authorization should happen in Atlas only if metadata updates happen in Atlas as well."
 - name: Upgrade gateway
   nutanix.ncp.ntnx_gateway_upgrade_v2:
     state: present
@@ -1074,10 +987,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug delete gateway check mode result
-  ansible.builtin.debug:
-    var: result
-
 - name: Delete gateway with check mode status
   ansible.builtin.assert:
     that:
@@ -1095,10 +1004,6 @@
     ext_id: "{{ wrong_ext_id }}"
   register: result
   ignore_errors: true
-
-- name: Debug upgrade non-existent gateway result
-  ansible.builtin.debug:
-    var: result
 
 - name: Upgrade non-existent gateway status
   ansible.builtin.assert:
@@ -1120,10 +1025,6 @@
   register: result
   ignore_errors: true
 
-- name: Debug update non-existent gateway result
-  ansible.builtin.debug:
-    var: result
-
 - name: Update non-existent gateway status
   ansible.builtin.assert:
     that:
@@ -1141,10 +1042,6 @@
     ext_id: "{{ wrong_ext_id }}"
   register: result
   ignore_errors: true
-
-- name: Debug delete non-existent gateway result
-  ansible.builtin.debug:
-    var: result
 
 - name: Delete non-existent gateway status
   ansible.builtin.assert:
@@ -1168,10 +1065,6 @@
   loop: "{{ todelete }}"
   register: result
   ignore_errors: true
-
-- name: Debug delete all created gateways result
-  ansible.builtin.debug:
-    var: result
 
 - name: Delete all created gateways status
   ansible.builtin.assert:
@@ -1289,10 +1182,6 @@
   register: result
   when: category_ext_id is defined and category_ext_id | length > 0
   ignore_errors: true
-
-- name: Debug delete created category result
-  ansible.builtin.debug:
-    var: result
 
 - name: Delete created category status
   ansible.builtin.assert:
