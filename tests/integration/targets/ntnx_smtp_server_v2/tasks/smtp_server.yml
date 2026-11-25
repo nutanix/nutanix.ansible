@@ -1,4 +1,3 @@
----
 # Test Plan for SmtpServer CRUD
 # Coverage:
 # - Prerequisites: discover domain_manager_ext_id via ntnx_pc_config_info_v2
@@ -20,7 +19,8 @@
 
 - name: Generate random suffix
   ansible.builtin.set_fact:
-    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false, length=8)[0] | lower }}"
+    random_suffix: "{{ query('community.general.random_string', numbers=false, special=false,
+      length=8)[0] | lower }}"
     todelete: []
 
 - name: Set SMTP test variables
@@ -39,15 +39,16 @@
 - name: Assert domain manager discovery
   ansible.builtin.assert:
     that:
-      - pc_info is defined
-      - pc_info.failed == false
-      - pc_info.response is defined
+    - pc_info is defined
+    - pc_info.failed == false
+    - pc_info.response is defined
     fail_msg: Failed to discover domain manager
     success_msg: Domain manager discovered
 
 - name: Set domain_manager_ext_id
   ansible.builtin.set_fact:
-    domain_manager_ext_id: "{{ pc_info.response[0].ext_id | default(pc_info.response.ext_id) }}"
+    domain_manager_ext_id: "{{ pc_info.response[0].ext_id | default(pc_info.response.ext_id)
+      }}"
 
 - name: List existing SMTP servers to check pre-existing
   nutanix.ncp.ntnx_smtp_servers_info_v2:
@@ -58,8 +59,8 @@
 - name: Assert list pre-existing
   ansible.builtin.assert:
     that:
-      - pre_existing_smtp is defined
-      - pre_existing_smtp.failed == false
+    - pre_existing_smtp is defined
+    - pre_existing_smtp.failed == false
     fail_msg: Failed to list existing SMTP servers
     success_msg: Listed existing SMTP servers
 
@@ -70,15 +71,16 @@
     domain_manager_ext_id: "00000000-0000-0000-0000-000000000000"
     is_active: true
     config:
-      basic_auth:
-        security_mode: "NONE"
-        host:
-          fqdn:
-            value: "smtp.example.com"
-        port: 25
-        email_address: "checkmode@example.com"
-        username: "check_user"
-        password: "check_pass"
+      config_details:
+        basic_auth:
+          security_mode: "NONE"
+          host:
+            fqdn:
+              value: "smtp.example.com"
+          port: 25
+          email_address: "checkmode@example.com"
+          username: "check_user"
+          password: "check_pass"
   register: result
   ignore_errors: true
   check_mode: true
@@ -86,11 +88,11 @@
 - name: Create SMTP server with check mode enabled status
   ansible.builtin.assert:
     that:
-      - result is defined
-      - result.changed == false
-      - result.failed == false
-      - result.response is defined
-      - result.response.config is defined
+    - result is defined
+    - result.changed == false
+    - result.failed == false
+    - result.response is defined
+    - result.response.config is defined
     fail_msg: Create SMTP check_mode failed
     success_msg: Create SMTP check_mode passed
 
@@ -100,29 +102,32 @@
     state: present
     domain_manager_ext_id: "{{ domain_manager_ext_id }}"
     config:
-      basic_auth:
-        security_mode: "NONE"
-        host:
-          fqdn:
-            value: "{{ smtp_host_fqdn }}"
+      config_details:
+        basic_auth:
+          security_mode: "NONE"
+          host:
+            fqdn:
+              value: "{{ smtp_host_fqdn }}"
   register: result
   ignore_errors: true
 
 - name: Create SMTP server with minimal attributes status
   ansible.builtin.assert:
     that:
-      - result is defined
-      - result.changed == true
-      - result.failed == false
-      - result.response is defined
-      - result.task_ext_id is defined
+    - result is defined
+    - result.changed == true
+    - result.failed == false
+    - result.response is defined
+    - result.task_ext_id is defined
     fail_msg: Create minimal SMTP server failed
     success_msg: Create minimal SMTP server passed
 
 - name: Capture ext_id from minimal create if created
   ansible.builtin.set_fact:
-    smtp_ext_id_min: "{{ result.ext_id | default(result.response.ext_id | default('')) }}"
-    todelete: "{{ todelete + [result.ext_id] if result.ext_id is defined else todelete }}"
+    smtp_ext_id_min: "{{ result.ext_id | default(result.response.ext_id | default(''))
+      }}"
+    todelete: "{{ todelete + [result.ext_id] if result.ext_id is defined else todelete
+      }}"
 
 - name: Cleanup minimal SMTP if created
   nutanix.ncp.ntnx_smtp_server_v2:
@@ -140,33 +145,35 @@
     domain_manager_ext_id: "{{ domain_manager_ext_id }}"
     is_active: true
     config:
-      basic_auth:
-        security_mode: "NONE"
-        host:
-          fqdn:
-            value: "{{ smtp_host_fqdn }}"
-        port: 25
-        email_address: "{{ smtp_email }}"
-        username: "{{ smtp_username }}"
-        password: "Nutanix.123"
+      config_details:
+        basic_auth:
+          security_mode: "NONE"
+          host:
+            fqdn:
+              value: "{{ smtp_host_fqdn }}"
+          port: 25
+          email_address: "{{ smtp_email }}"
+          username: "{{ smtp_username }}"
+          password: "Nutanix.123"
   register: result
   ignore_errors: true
 
 - name: Create SMTP server with all attributes status
   ansible.builtin.assert:
     that:
-      - result is defined
-      - result.changed == true
-      - result.failed == false
-      - result.response is defined
-      - result.task_ext_id is defined
+    - result is defined
+    - result.changed == true
+    - result.failed == false
+    - result.response is defined
+    - result.task_ext_id is defined
     fail_msg: Create SMTP server with all attributes failed
     success_msg: Create SMTP server with all attributes passed
 
 - name: Set created ext_id
   ansible.builtin.set_fact:
     smtp_ext_id: "{{ result.ext_id | default(result.response.ext_id) }}"
-    todelete: "{{ todelete + [result.ext_id] if result.ext_id is defined else todelete }}"
+    todelete: "{{ todelete + [result.ext_id] if result.ext_id is defined else todelete
+      }}"
 
 # Update with check_mode
 - name: Update SMTP server with check mode enabled
@@ -176,15 +183,16 @@
     ext_id: "{{ smtp_ext_id }}"
     is_active: true
     config:
-      basic_auth:
-        security_mode: "STARTTLS"
-        host:
-          fqdn:
-            value: "{{ smtp_host_fqdn }}"
-        port: 587
-        email_address: "{{ smtp_email_updated }}"
-        username: "{{ smtp_username }}"
-        password: "Nutanix.123Updated"
+      config_details:
+        basic_auth:
+          security_mode: "STARTTLS"
+          host:
+            fqdn:
+              value: "{{ smtp_host_fqdn }}"
+          port: 587
+          email_address: "{{ smtp_email_updated }}"
+          username: "{{ smtp_username }}"
+          password: "Nutanix.123Updated"
   register: result
   ignore_errors: true
   check_mode: true
@@ -192,10 +200,10 @@
 - name: Update SMTP server with check mode enabled status
   ansible.builtin.assert:
     that:
-      - result is defined
-      - result.changed == false
-      - result.failed == false
-      - result.response is defined
+    - result is defined
+    - result.changed == false
+    - result.failed == false
+    - result.response is defined
     fail_msg: Update SMTP check_mode failed
     success_msg: Update SMTP check_mode passed
 
@@ -207,26 +215,27 @@
     ext_id: "{{ smtp_ext_id }}"
     is_active: true
     config:
-      basic_auth:
-        security_mode: "STARTTLS"
-        host:
-          fqdn:
-            value: "{{ smtp_host_fqdn }}"
-        port: 587
-        email_address: "{{ smtp_email_updated }}"
-        username: "{{ smtp_username }}"
-        password: "Nutanix.123Updated"
+      config_details:
+        basic_auth:
+          security_mode: "STARTTLS"
+          host:
+            fqdn:
+              value: "{{ smtp_host_fqdn }}"
+          port: 587
+          email_address: "{{ smtp_email_updated }}"
+          username: "{{ smtp_username }}"
+          password: "Nutanix.123Updated"
   register: result
   ignore_errors: true
 
 - name: Update SMTP server status
   ansible.builtin.assert:
     that:
-      - result is defined
-      - result.changed == true
-      - result.failed == false
-      - result.response is defined
-      - result.task_ext_id is defined
+    - result is defined
+    - result.changed == true
+    - result.failed == false
+    - result.response is defined
+    - result.task_ext_id is defined
     fail_msg: Update SMTP server failed
     success_msg: Update SMTP server passed
 
@@ -238,24 +247,25 @@
     ext_id: "{{ smtp_ext_id }}"
     is_active: true
     config:
-      basic_auth:
-        security_mode: "STARTTLS"
-        host:
-          fqdn:
-            value: "{{ smtp_host_fqdn }}"
-        port: 587
-        email_address: "{{ smtp_email_updated }}"
-        username: "{{ smtp_username }}"
-        password: "Nutanix.123Updated"
+      config_details:
+        basic_auth:
+          security_mode: "STARTTLS"
+          host:
+            fqdn:
+              value: "{{ smtp_host_fqdn }}"
+          port: 587
+          email_address: "{{ smtp_email_updated }}"
+          username: "{{ smtp_username }}"
+          password: "Nutanix.123Updated"
   register: result
   ignore_errors: true
 
 - name: Idempotency check status
   ansible.builtin.assert:
     that:
-      - result.changed == false
-      - result.failed == false
-      - result.msg == "Nothing to change."
+    - result.changed == false
+    - result.failed == false
+    - result.msg == "Nothing to change."
     fail_msg: Idempotency check failed
     success_msg: Idempotency check passed
 
@@ -270,8 +280,8 @@
 - name: Create SMTP without config status
   ansible.builtin.assert:
     that:
-      - result is defined
-      - result.failed == true
+    - result is defined
+    - result.failed == true
     fail_msg: Negative test for missing config should fail but passed
     success_msg: Negative test for missing config correctly failed
 
@@ -281,19 +291,20 @@
     state: present
     domain_manager_ext_id: "{{ domain_manager_ext_id }}"
     config:
-      basic_auth:
-        security_mode: "INVALID_MODE"
-        host:
-          fqdn:
-            value: "{{ smtp_host_fqdn }}"
+      config_details:
+        basic_auth:
+          security_mode: "INVALID_MODE"
+          host:
+            fqdn:
+              value: "{{ smtp_host_fqdn }}"
   register: result
   ignore_errors: true
 
 - name: Create SMTP with invalid enum status
   ansible.builtin.assert:
     that:
-      - result is defined
-      - result.failed == true
+    - result is defined
+    - result.failed == true
     fail_msg: Invalid enum test should fail but passed
     success_msg: Invalid enum test correctly failed
 
@@ -308,8 +319,8 @@
 - name: Get SMTP with invalid ext_id status
   ansible.builtin.assert:
     that:
-      - result is defined
-      - result.failed == true
+    - result is defined
+    - result.failed == true
     fail_msg: Get with invalid ext_id should fail but passed
     success_msg: Get with invalid ext_id correctly failed
 
@@ -324,10 +335,10 @@
 - name: Get SMTP server using ext_id status
   ansible.builtin.assert:
     that:
-      - result is defined
-      - result.failed == false
-      - result.response is defined
-      - result.ext_id == smtp_ext_id
+    - result is defined
+    - result.failed == false
+    - result.response is defined
+    - result.ext_id == smtp_ext_id
     fail_msg: Get SMTP server failed
     success_msg: Get SMTP server passed
 
@@ -340,9 +351,9 @@
 - name: List all SMTP servers status
   ansible.builtin.assert:
     that:
-      - result is defined
-      - result.failed == false
-      - result.response is defined
+    - result is defined
+    - result.failed == false
+    - result.response is defined
     fail_msg: List SMTP servers failed
     success_msg: List SMTP servers passed
 
@@ -356,9 +367,9 @@
 - name: List SMTP servers with filter status
   ansible.builtin.assert:
     that:
-      - result is defined
-      - result.failed == false
-      - result.response is defined
+    - result is defined
+    - result.failed == false
+    - result.response is defined
     fail_msg: List SMTP with filter failed
     success_msg: List SMTP with filter passed
 
@@ -372,10 +383,10 @@
 - name: List SMTP servers with limit status
   ansible.builtin.assert:
     that:
-      - result is defined
-      - result.failed == false
-      - result.response is defined
-      - result.response | length <= 1
+    - result is defined
+    - result.failed == false
+    - result.response is defined
+    - result.response | length <= 1
     fail_msg: List SMTP with limit failed
     success_msg: List SMTP with limit passed
 
@@ -389,11 +400,12 @@
 - name: List all SMTP servers with fetch_all status
   ansible.builtin.assert:
     that:
-      - fetch_result is defined
-      - fetch_result.failed == false
-      - fetch_result.response is defined
-      - fetch_result.total_available_results is defined
-      - (fetch_result.response | length) == (fetch_result.total_available_results | int)
+    - fetch_result is defined
+    - fetch_result.failed == false
+    - fetch_result.response is defined
+    - fetch_result.total_available_results is defined
+    - (fetch_result.response | length) == (fetch_result.total_available_results 
+      | int)
     fail_msg: Fetch_all SMTP servers failed
     success_msg: Fetch_all SMTP servers passed
 
@@ -410,10 +422,10 @@
 - name: Delete SMTP server with check mode enabled status
   ansible.builtin.assert:
     that:
-      - result is defined
-      - result.changed == false
-      - result.failed == false
-      - result.msg is defined
+    - result is defined
+    - result.changed == false
+    - result.failed == false
+    - result.msg is defined
     fail_msg: Delete check_mode failed
     success_msg: Delete check_mode passed
 
@@ -429,10 +441,10 @@
 - name: Delete SMTP server status
   ansible.builtin.assert:
     that:
-      - result is defined
-      - result.changed == true
-      - result.failed == false
-      - result.task_ext_id is defined
+    - result is defined
+    - result.changed == true
+    - result.failed == false
+    - result.task_ext_id is defined
     fail_msg: Delete SMTP server failed
     success_msg: Delete SMTP server passed
 
