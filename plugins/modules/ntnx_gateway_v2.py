@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2026, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -64,6 +64,7 @@ options:
   name:
     description:
       - Name of the gateway.
+      - Required for create operation.
     type: str
     required: false
   description:
@@ -73,7 +74,7 @@ options:
     required: false
   vpc_reference:
     description:
-      - VPC.
+      - External ID of the VPC.
     type: str
     required: false
   cloud_network_reference:
@@ -258,11 +259,6 @@ options:
               - The on-prem VLAN to deploy the gateway on.
             type: int
             required: false
-          mtu:
-            description:
-              - MTU of management interface.
-            type: int
-            required: false
           address:
             description:
               - IP address.
@@ -359,11 +355,6 @@ options:
             description:
               - MAC address of this gateway interface.
             type: str
-            required: false
-          mtu:
-            description:
-              - MTU of this gateway interface.
-            type: int
             required: false
           ip_address:
             description:
@@ -565,19 +556,17 @@ options:
                       - Redistribute routes over eBGP.
                     type: bool
                     required: false
+                    default: false
               peer_igp_config:
                 description:
-                  - Internal routing configuration (Static, OSPF, or iBGP).
-                  - Supported only for VLAN-attached gateways; not supported for VPC-attached gateways
-                    (use external Static or eBGP instead).
-                  - Exactly one of C(ospf_config), C(ibgp_config_list), or C(local_prefix_list) must be specified.
+                  - Describes the routing protocol configuration spec needed by this gateway to peer
+                    and learn routes from internal routers using either iBGP or OSPF.
                 type: dict
                 required: false
                 suboptions:
                   ospf_config:
                     description:
-                      - OSPF configuration.
-                      - Mutually exclusive with C(ibgp_config_list) and C(local_prefix_list).
+                      - OSPF configuration for route peering with internal routers.
                     type: dict
                     required: false
                     suboptions:
@@ -602,7 +591,6 @@ options:
                   ibgp_config_list:
                     description:
                       - iBGP configuration.
-                      - Mutually exclusive with C(ospf_config) and C(local_prefix_list).
                     type: list
                     elements: dict
                     required: false
@@ -662,10 +650,10 @@ options:
                           - Redistribute routes over eBGP.
                         type: bool
                         required: false
+                        default: false
                   local_prefix_list:
                     description:
-                      - Static local prefixes (static internal routing).
-                      - Mutually exclusive with C(ospf_config) and C(ibgp_config_list).
+                      - List of local prefixes to be advertised over eBGP.
                     type: list
                     elements: dict
                     required: false
@@ -815,6 +803,7 @@ options:
                   - Boolean flag indicating user opt-in for installing Xi LB route in on-prem Prism Central and Prism Element CVMs.
                 type: bool
                 required: false
+                default: false
               ebgp_config:
                 description:
                   - BGP configuration.
@@ -836,19 +825,17 @@ options:
                       - Redistribute routes over eBGP.
                     type: bool
                     required: false
+                    default: false
               peer_igp_config:
                 description:
-                  - Internal routing configuration (Static, OSPF, or iBGP).
-                  - Supported only for VLAN-attached gateways; not supported for VPC-attached gateways
-                    (use external Static or eBGP instead).
-                  - Exactly one of C(ospf_config), C(ibgp_config_list), or C(local_prefix_list) must be specified.
+                  - Describes the routing protocol configuration spec needed by this gateway to peer
+                    and learn routes from internal routers using either iBGP or OSPF.
                 type: dict
                 required: false
                 suboptions:
                   ospf_config:
                     description:
-                      - OSPF configuration.
-                      - Mutually exclusive with C(ibgp_config_list) and C(local_prefix_list).
+                      - OSPF configuration for route peering with internal routers.
                     type: dict
                     required: false
                     suboptions:
@@ -873,7 +860,6 @@ options:
                   ibgp_config_list:
                     description:
                       - iBGP configuration.
-                      - Mutually exclusive with C(ospf_config) and C(local_prefix_list).
                     type: list
                     elements: dict
                     required: false
@@ -933,10 +919,10 @@ options:
                           - Redistribute routes over eBGP.
                         type: bool
                         required: false
+                        default: false
                   local_prefix_list:
                     description:
-                      - Static local prefixes (static internal routing).
-                      - Mutually exclusive with C(ospf_config) and C(ibgp_config_list).
+                      - List of local prefixes to be advertised over eBGP.
                     type: list
                     elements: dict
                     required: false
@@ -1008,6 +994,7 @@ options:
                   - VXLAN port.
                 type: int
                 required: false
+                default: 4789
               vteps:
                 description:
                   - Remote VXLAN Tunnel Endpoints configuration.

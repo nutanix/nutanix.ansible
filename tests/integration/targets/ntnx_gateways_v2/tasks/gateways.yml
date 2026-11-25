@@ -14,27 +14,11 @@
   ansible.builtin.set_fact:
     gw_name: "gw_{{ suffix_name }}_{{ random_name }}"
     gw_fip1_name: "fip1_{{ suffix_name }}_{{ random_name }}"
-    wrong_ext_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
     category_key: "{{ random_name }}{{ suffix_name }}gw_key"
     category_value: "{{ random_name }}{{ suffix_name }}gw_value"
-    # Dedicated fixture networks (not prepare_env vpc/overlay 192.168.1.x / Ext-Nat VLAN 113).
-    # External NAT uses underlay VLAN 206 / 10.44.3.224/27 (distinct from prepare_env 10.44.3.192/27).
-    gw_ext_nat:
-      name: "gw_ext_nat_{{ suffix_name }}_{{ random_name }}"
-      vlan_id: 206
-      network_ip: "10.44.3.224"
-      network_prefix: 27
-      gateway_ip: "10.44.3.225"
-      pool_start: "10.44.3.230"
-      pool_end: "10.44.3.239"
-    gw_overlay_net:
-      name: "gw_overlay_{{ suffix_name }}_{{ random_name }}"
-      network_ip: "192.168.50.0"
-      network_prefix: 24
-      gateway_ip: "192.168.50.1"
-      pool_start: "192.168.50.20"
-      pool_end: "192.168.50.80"
     gw_vpc_name: "gw_vpc_{{ suffix_name }}_{{ random_name }}"
+    gw_ext_nat: "{{ gw_ext_nat | combine({'name': 'gw_ext_nat_' ~ suffix_name ~ '_' ~ random_name}) }}"
+    gw_overlay_net: "{{ gw_overlay_net | combine({'name': 'gw_overlay_' ~ suffix_name ~ '_' ~ random_name}) }}"
 
 - name: Create category for gateway tests
   nutanix.ncp.ntnx_categories_v2:
@@ -295,6 +279,18 @@
   nutanix.ncp.ntnx_categories_info_v2:
   register: result
 
+- name: Fetch categories for floating ip assignment status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length > 0
+      - result.response[0].ext_id is defined
+    success_msg: "Categories for floating ip assignment fetched successfully"
+    fail_msg: "Unable to fetch categories for floating ip assignment"
+
 - name: Define floating ip category
   ansible.builtin.set_fact:
     fip_category_ext_id: "{{ result.response[0].ext_id }}"
@@ -330,10 +326,17 @@
       - result.failed == false
       - result.changed == true
       - result.ext_id is defined
-      - result.response.is_external == true
-      - result.response.is_nat_enabled == true
+      - result.response.name == gw_ext_nat.name
+      - result.response.subnet_type == "VLAN"
+      - result.response.cluster_reference == cluster.uuid
       - result.response.network_id == gw_ext_nat.vlan_id
       - result.response.ip_config[0].ipv4.ip_subnet.ip.value == gw_ext_nat.network_ip
+      - result.response.ip_config[0].ipv4.ip_subnet.prefix_length == gw_ext_nat.network_prefix
+      - result.response.ip_config[0].ipv4.default_gateway_ip.value == gw_ext_nat.gateway_ip
+      - result.response.ip_config[0].ipv4.pool_list[0].start_ip.value == gw_ext_nat.pool_start
+      - result.response.ip_config[0].ipv4.pool_list[0].end_ip.value == gw_ext_nat.pool_end
+      - result.response.is_external == true
+      - result.response.is_nat_enabled == true
     success_msg: "Gateway external NAT subnet created successfully"
     fail_msg: "Unable to create gateway external NAT subnet"
 
@@ -360,8 +363,10 @@
       - result.failed == false
       - result.changed == true
       - result.ext_id is defined
-      - result.response.external_subnets[0].subnet_reference == gw_ext_nat_ext_id
+      - result.response.name == gw_vpc_name
       - result.response.project_ext_id == default_project.uuid
+      - result.response.external_subnets | length == 1
+      - result.response.external_subnets[0].subnet_reference == gw_ext_nat_ext_id
     success_msg: "Gateway VPC with NAT external subnet created successfully"
     fail_msg: "Unable to create gateway VPC with NAT external subnet"
   when: gw_ext_nat_ext_id | default('') | length > 0
@@ -402,10 +407,17 @@
       - result.failed == false
       - result.changed == true
       - result.ext_id is defined
+      - result.response.name == gw_overlay_net.name
       - result.response.subnet_type == "OVERLAY"
       - result.response.vpc_reference == gw_vpc_ext_id
+      - result.response.project_ext_id == default_project.uuid
+      - result.response.ip_config[0].ipv4.ip_subnet.ip.value == gw_overlay_net.network_ip
+      - result.response.ip_config[0].ipv4.ip_subnet.prefix_length == gw_overlay_net.network_prefix
       - result.response.ip_config[0].ipv4.default_gateway_ip.value == gw_overlay_net.gateway_ip
+      - result.response.ip_config[0].ipv4.default_gateway_ip.prefix_length == gw_overlay_net.network_prefix
       - result.response.ip_config[0].ipv4.pool_list | length >= 1
+      - result.response.ip_config[0].ipv4.pool_list[0].start_ip.value == gw_overlay_net.pool_start
+      - result.response.ip_config[0].ipv4.pool_list[0].end_ip.value == gw_overlay_net.pool_end
     success_msg: "Gateway overlay subnet created successfully"
     fail_msg: "Unable to create gateway overlay subnet"
   when: gw_vpc_ext_id | default('') | length > 0
@@ -436,10 +448,13 @@
       - result.response is defined
       - result.changed == true
       - result.failed == false
-      - result.response.name == "{{ gw_fip1_name }}"
+      - result.response.name == gw_fip1_name
       - result.response.external_subnet_reference == gw_ext_nat_ext_id
-      - result.response.floating_ip.ipv4.value is defined
       - result.response.project_ext_id == default_project.uuid
+      - result.response.metadata.project_reference_id == default_project.uuid
+      - result.response.metadata.owner_reference_id == users[0]
+      - result.response.metadata.category_ids | length == 1
+      - result.response.metadata.category_ids[0] == fip_category_ext_id
     fail_msg: "Unable to create floating ip for gateway create service address"
     success_msg: "Floating ip for gateway create service address created successfully"
   when: gw_ext_nat_ext_id | default('') | length > 0
