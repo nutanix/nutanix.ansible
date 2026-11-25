@@ -577,3 +577,48 @@ def get_esxi_ngt(module, api_instance, vm_ext_id):
             exception=e,
             msg="Api Exception raised while fetching ESXi VM NGT info for given vm",
         )
+
+
+def get_device_bundle(module, api_instance, vm_ext_id, ext_id):
+    """
+    Get Device Bundle by ext_id.
+
+    Args:
+        module: Ansible module
+        api_instance: VmApi instance from ntnx_vmm_py_client sdk
+        vm_ext_id: ext_id of the parent VM
+        ext_id: ext_id of the Device Bundle
+    Returns:
+        device_bundle (obj): DeviceBundle info object
+    """
+    try:
+        return api_instance.get_device_bundle_by_id(
+            vmExtId=vm_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM device bundle info using ext_id",
+        )
+
+
+def get_vm_ads_config(module, api_instance, vm_ext_id):
+    """
+    Get VM ADS config by VM ext_id.
+
+    Args:
+        module: Ansible module
+        api_instance: VmApi instance from ntnx_vmm_py_client sdk
+        vm_ext_id: ext_id of the VM
+    Returns:
+        ads_config (obj): AdsConfig info object
+    """
+    try:
+        return api_instance.get_vm_ads_config(vmExtId=vm_ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching VM ADS config using vm_ext_id",
+        )

@@ -1,0 +1,258 @@
+---
+############################################################################################
+# Test plan for ntnx_vm_ads_config_v2
+# AdsConfig: Update ADS configuration of a VM
+# SDK method: UpdateVmAdsConfig (PUT)
+# Requires: VM ext_id, auto_migration (INCLUDE/EXCLUDE)
+#
+# Scenarios covered:
+#   1. Update with check_mode (INCLUDE/EXCLUDE)
+#   2. Missing required vm_ext_id
+#   3. Invalid enum value
+#   4. Invalid VM ext_id
+#   5. Live: Create VM, get ads config, update, idempotency, restore, delete VM
+############################################################################################
+
+- name: Start testing ntnx_vm_ads_config_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_vm_ads_config_v2
+
+- name: Generate random name suffix
+  ansible.builtin.set_fact:
+    random_name: >-
+      {{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_ads_vm"
+
+############################################################################################
+# Check mode tests
+############################################################################################
+
+- name: Update VM ADS config with check mode enabled - INCLUDE
+  nutanix.ncp.ntnx_vm_ads_config_v2:
+    state: present
+    vm_ext_id: "83083083-0000-0000-0000-000000000001"
+    auto_migration: "INCLUDE"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update VM ADS config with check mode INCLUDE status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.auto_migration == "INCLUDE"
+    fail_msg: Update VM ADS config check mode INCLUDE failed
+    success_msg: Update VM ADS config check mode INCLUDE passed
+
+- name: Update VM ADS config with check mode enabled - EXCLUDE
+  nutanix.ncp.ntnx_vm_ads_config_v2:
+    state: present
+    vm_ext_id: "83083083-0000-0000-0000-000000000001"
+    auto_migration: "EXCLUDE"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Update VM ADS config with check mode EXCLUDE status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.auto_migration == "EXCLUDE"
+    fail_msg: Update VM ADS config check mode EXCLUDE failed
+    success_msg: Update VM ADS config check mode EXCLUDE passed
+
+############################################################################################
+# Negative tests
+############################################################################################
+
+- name: Update VM ADS config without vm_ext_id (should fail)
+  nutanix.ncp.ntnx_vm_ads_config_v2:
+    state: present
+    auto_migration: "INCLUDE"
+  register: result
+  ignore_errors: true
+
+- name: Update without vm_ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Expected failure when vm_ext_id is missing
+    success_msg: Correctly failed when vm_ext_id is missing
+
+- name: Update VM ADS config with invalid enum value (should fail spec validation)
+  nutanix.ncp.ntnx_vm_ads_config_v2:
+    state: present
+    vm_ext_id: "83083083-0000-0000-0000-000000000001"
+    auto_migration: "INVALID_ENUM"
+  register: result
+  ignore_errors: true
+
+- name: Update with invalid enum status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Expected failure with invalid enum value
+    success_msg: Correctly failed with invalid enum value
+
+- name: Update VM ADS config with invalid VM ext_id
+  nutanix.ncp.ntnx_vm_ads_config_v2:
+    state: present
+    vm_ext_id: "00000000-0000-0000-0000-000000000000"
+    auto_migration: "INCLUDE"
+  register: result
+  ignore_errors: true
+
+- name: Update with invalid VM ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Expected failure with invalid VM ext_id
+    success_msg: Correctly failed with invalid VM ext_id
+
+############################################################################################
+# Live tests
+############################################################################################
+
+- name: Create a VM for ADS config tests
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: vm_result
+  ignore_errors: true
+
+- name: Create VM status
+  ansible.builtin.assert:
+    that:
+      - vm_result.response is defined
+      - vm_result.changed == true
+      - vm_result.failed == false
+      - vm_result.ext_id is defined
+    fail_msg: Unable to create VM
+    success_msg: VM created successfully
+
+- name: Capture the VM ext_id
+  ansible.builtin.set_fact:
+    vm_uuid: "{{ vm_result.ext_id }}"
+
+- name: Get VM ADS config before update
+  nutanix.ncp.ntnx_vm_ads_config_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+  register: ads_before
+  ignore_errors: true
+
+- name: Get VM ADS config before update status
+  ansible.builtin.assert:
+    that:
+      - ads_before.failed == false
+      - ads_before.changed == false
+      - ads_before.response is defined
+    fail_msg: Failed to fetch VM ADS config before update
+    success_msg: Fetched VM ADS config before update
+
+- name: Save original auto_migration value
+  ansible.builtin.set_fact:
+    original_auto_migration: "{{ ads_before.response.auto_migration | default('INCLUDE') }}"
+
+- name: Update VM ADS config to EXCLUDE
+  nutanix.ncp.ntnx_vm_ads_config_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    auto_migration: "EXCLUDE"
+  register: result
+  ignore_errors: true
+
+- name: Update VM ADS config to EXCLUDE status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+    fail_msg: Update VM ADS config to EXCLUDE failed
+    success_msg: Update VM ADS config to EXCLUDE passed
+
+- name: Get VM ADS config after update to EXCLUDE
+  nutanix.ncp.ntnx_vm_ads_config_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+  register: ads_after
+  ignore_errors: true
+
+- name: Get ADS config after update status
+  ansible.builtin.assert:
+    that:
+      - ads_after.failed == false
+      - ads_after.response.auto_migration == "EXCLUDE"
+    fail_msg: ADS config not updated to EXCLUDE
+    success_msg: ADS config updated to EXCLUDE verified
+
+- name: Update VM ADS config idempotently (same value)
+  nutanix.ncp.ntnx_vm_ads_config_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    auto_migration: "EXCLUDE"
+  register: result
+  ignore_errors: true
+
+- name: Update idempotently status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: Idempotency check failed
+    success_msg: Idempotency check passed
+
+- name: Update VM ADS config to INCLUDE
+  nutanix.ncp.ntnx_vm_ads_config_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    auto_migration: "INCLUDE"
+  register: result
+  ignore_errors: true
+
+- name: Update to INCLUDE status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+    fail_msg: Update VM ADS config to INCLUDE failed
+    success_msg: Update VM ADS config to INCLUDE passed
+
+- name: Restore original ADS config
+  nutanix.ncp.ntnx_vm_ads_config_v2:
+    state: present
+    vm_ext_id: "{{ vm_uuid }}"
+    auto_migration: "{{ original_auto_migration }}"
+  register: result
+  ignore_errors: true
+
+- name: Restore original ADS config status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+    fail_msg: Failed to restore original ADS config
+    success_msg: Original ADS config restored
+
+- name: Delete the VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete VM status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+    fail_msg: Unable to delete the VM
+    success_msg: VM deleted successfully
