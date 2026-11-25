@@ -66,12 +66,13 @@ options:
             - Supports Basic Auth, XOAUTH2, and Microsoft Graph protocols.
         type: dict
         required: false
-        config_details:
-            description:
-                - Exactly one of the protocol configurations must be provided.
-            type: dict
-            required: true
-            suboptions:
+        suboptions:
+            config_details:
+                description:
+                    - Exactly one of the protocol configurations must be provided.
+                type: dict
+                required: true
+                suboptions:
                     basic_auth:
                         description:
                             - SMTP configuration for Basic Auth protocol, requiring username and password for authentication.
@@ -249,7 +250,7 @@ options:
                                 description:
                                     - TCP port number of the SMTP server.
                                 type: int
-                                required: true
+                                required: false
                                 default: 25
                             email_address:
                                 description:
@@ -267,43 +268,49 @@ options:
                                 type: dict
                                 required: true
                                 suboptions:
-                                    client_secret:
+                                    credentials_details:
                                         description:
-                                            - OAuth 2.0 client secret credentials for token acquisition.
+                                            - The credentials details for OAuth 2.0 authentication.
                                         type: dict
-                                        required: false
+                                        required: true
                                         suboptions:
                                             client_secret:
                                                 description:
-                                                    - The client secret value.
-                                                type: str
-                                                required: true
-                                    certificate:
-                                        description:
-                                            - Certificate-based OAuth 2.0 credentials.
-                                        type: dict
-                                        required: false
-                                        suboptions:
-                                            private_key:
-                                                description:
-                                                    - The private key used for certificate-based OAuth 2.0 authentication.
-                                                type: str
-                                                required: true
-                                            public_cert:
-                                                description:
-                                                    - The public certificate used for certificate-based OAuth 2.0 authentication.
-                                                type: str
-                                                required: true
-                                            private_key_passphrase:
-                                                description:
-                                                    - Passphrase to decrypt the private key.
-                                                type: str
+                                                    - OAuth 2.0 client secret credentials for token acquisition.
+                                                type: dict
                                                 required: false
-                                            thumbprint:
+                                                suboptions:
+                                                    client_secret:
+                                                        description:
+                                                            - The client secret value.
+                                                        type: str
+                                                        required: true
+                                            certificate:
                                                 description:
-                                                    - The certificate thumbprint.
-                                                type: str
+                                                    - Certificate-based OAuth 2.0 credentials.
+                                                type: dict
                                                 required: false
+                                                suboptions:
+                                                    private_key:
+                                                        description:
+                                                            - The private key used for certificate-based OAuth 2.0 authentication.
+                                                        type: str
+                                                        required: true
+                                                    public_cert:
+                                                        description:
+                                                            - The public certificate used for certificate-based OAuth 2.0 authentication.
+                                                        type: str
+                                                        required: true
+                                                    private_key_passphrase:
+                                                        description:
+                                                            - Passphrase to decrypt the private key.
+                                                        type: str
+                                                        required: false
+                                                    thumbprint:
+                                                        description:
+                                                            - The certificate thumbprint.
+                                                        type: str
+                                                        required: false
                     graph:
                         description:
                             - Configuration for sending emails via Microsoft Graph API.
@@ -347,43 +354,49 @@ options:
                                 type: dict
                                 required: true
                                 suboptions:
-                                    client_secret:
+                                    credentials_details:
                                         description:
-                                            - OAuth 2.0 client secret credentials for token acquisition.
+                                            - The credentials details for OAuth 2.0 authentication.
                                         type: dict
-                                        required: false
+                                        required: true
                                         suboptions:
                                             client_secret:
                                                 description:
-                                                    - The client secret value.
-                                                type: str
-                                                required: true
-                                    certificate:
-                                        description:
-                                            - Certificate-based OAuth 2.0 credentials.
-                                        type: dict
-                                        required: false
-                                        suboptions:
-                                            private_key:
-                                                description:
-                                                    - The private key used for certificate-based OAuth 2.0 authentication.
-                                                type: str
-                                                required: true
-                                            public_cert:
-                                                description:
-                                                    - The public certificate used for certificate-based OAuth 2.0 authentication.
-                                                type: str
-                                                required: true
-                                            private_key_passphrase:
-                                                description:
-                                                    - Passphrase to decrypt the private key.
-                                                type: str
+                                                    - OAuth 2.0 client secret credentials for token acquisition.
+                                                type: dict
                                                 required: false
-                                            thumbprint:
+                                                suboptions:
+                                                    client_secret:
+                                                        description:
+                                                            - The client secret value.
+                                                        type: str
+                                                        required: true
+                                            certificate:
                                                 description:
-                                                    - The certificate thumbprint.
-                                                type: str
+                                                    - Certificate-based OAuth 2.0 credentials.
+                                                type: dict
                                                 required: false
+                                                suboptions:
+                                                    private_key:
+                                                        description:
+                                                            - The private key used for certificate-based OAuth 2.0 authentication.
+                                                        type: str
+                                                        required: true
+                                                    public_cert:
+                                                        description:
+                                                            - The public certificate used for certificate-based OAuth 2.0 authentication.
+                                                        type: str
+                                                        required: true
+                                                    private_key_passphrase:
+                                                        description:
+                                                            - Passphrase to decrypt the private key.
+                                                        type: str
+                                                        required: false
+                                                    thumbprint:
+                                                        description:
+                                                            - The certificate thumbprint.
+                                                        type: str
+                                                        required: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -405,15 +418,16 @@ EXAMPLES = r"""
     domain_manager_ext_id: "00000000-0000-0000-0000-000000000000"
     is_active: true
     config:
-      basic_auth:
-        security_mode: "NONE"
-        host:
-          fqdn:
-            value: "smtp.example.com"
-        port: 25
-        email_address: "nutanix@example.com"
-        username: "smtp_user"
-        password: "smtp_pass"
+      config_details:
+        basic_auth:
+          security_mode: "NONE"
+          host:
+            fqdn:
+              value: "smtp.example.com"
+          port: 25
+          email_address: "nutanix@example.com"
+          username: "smtp_user"
+          password: "smtp_pass"
   register: result
   ignore_errors: true
 
@@ -428,15 +442,16 @@ EXAMPLES = r"""
     ext_id: "11111111-1111-1111-1111-111111111111"
     is_active: true
     config:
-      basic_auth:
-        security_mode: "STARTTLS"
-        host:
-          fqdn:
-            value: "smtp.example.com"
-        port: 587
-        email_address: "nutanix@example.com"
-        username: "smtp_user"
-        password: "smtp_pass_updated"
+      config_details:
+        basic_auth:
+          security_mode: "STARTTLS"
+          host:
+            fqdn:
+              value: "smtp.example.com"
+          port: 587
+          email_address: "nutanix@example.com"
+          username: "smtp_user"
+          password: "smtp_pass_updated"
   register: result
   ignore_errors: true
 
@@ -608,18 +623,23 @@ def get_module_spec():
             type="dict",
             options=client_secret_spec,
             obj=prism_sdk.ClientSecretCredentials,
+            no_log=True,
         ),
         certificate=dict(
             type="dict",
             options=certificate_spec,
             obj=prism_sdk.CertificateCredentials,
+            no_log=True,
         ),
     )
 
     oauth_wrapper_spec = dict(
         credentials_details=dict(
             type="dict",
+            required=True,
             options=oauth_credentials_spec,
+            mutually_exclusive=[("client_secret", "certificate")],
+            required_one_of=[("client_secret", "certificate")],
             obj={
                 "client_secret": prism_sdk.ClientSecretCredentials,
                 "certificate": prism_sdk.CertificateCredentials,
@@ -639,8 +659,9 @@ def get_module_spec():
             required=True,
             options=ip_address_or_fqdn_spec,
             obj=prism_sdk.IPAddressOrFQDN,
+            required_one_of=[("ipv4", "ipv6", "fqdn")],
         ),
-        port=dict(type="int", required=False),
+        port=dict(type="int", required=False, default=25),
         email_address=dict(type="str", required=False),
         username=dict(type="str", required=False),
         password=dict(type="str", required=False, no_log=True),
@@ -655,15 +676,16 @@ def get_module_spec():
         ),
         tenant_id=dict(type="str", required=True),
         client_id=dict(type="str", required=True),
-        token_endpoint=dict(type="str", required=True),
+        token_endpoint=dict(type="str", required=True, no_log=True),
         scope=dict(type="str", required=True),
         host=dict(
             type="dict",
             required=True,
             options=ip_address_or_fqdn_spec,
             obj=prism_sdk.IPAddressOrFQDN,
+            required_one_of=[("ipv4", "ipv6", "fqdn")],
         ),
-        port=dict(type="int", required=True),
+        port=dict(type="int", required=False, default=25),
         email_address=dict(type="str", required=True),
         expiry_time=dict(type="str", required=False),
         oauth_credentials=dict(
@@ -677,8 +699,10 @@ def get_module_spec():
     graph_spec = dict(
         tenant_id=dict(type="str", required=True),
         client_id=dict(type="str", required=True),
-        token_endpoint=dict(type="str", required=False),
-        scope=dict(type="str", required=False),
+        token_endpoint=dict(type="str", required=False, no_log=True),
+        scope=dict(
+            type="str", required=False, default="https://graph.microsoft.com/.default"
+        ),
         email_address=dict(type="str", required=True),
         expiry_time=dict(type="str", required=False),
         oauth_credentials=dict(
@@ -710,7 +734,10 @@ def get_module_spec():
     smtp_config_spec = dict(
         config_details=dict(
             type="dict",
+            required=True,
             options=smtp_config_details_spec,
+            mutually_exclusive=[("basic_auth", "xoauth2", "graph")],
+            required_one_of=[("basic_auth", "xoauth2", "graph")],
             obj={
                 "basic_auth": prism_sdk.BasicAuthSmtpConfig,
                 "xoauth2": prism_sdk.Xoauth2SmtpConfig,
