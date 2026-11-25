@@ -1,0 +1,38 @@
+---
+# Summary:
+# Generate an image download URL for a given image.
+
+- name: Generate image download URL playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "<pc_ip>"
+      nutanix_username: "<user>"
+      nutanix_password: "<pass>"
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        image_ext_id: "3d345082-9634-46d5-a037-6b428425888e"
+        cluster_location_ext_id: "00000000-0000-0000-0000-000000000000"
+
+    - name: Generate image download URL with default expiry
+      nutanix.ncp.ntnx_generate_image_download_url_v2:
+        ext_id: "{{ image_ext_id }}"
+      register: result
+
+    - name: Generate image download URL with custom expiry
+      nutanix.ncp.ntnx_generate_image_download_url_v2:
+        ext_id: "{{ image_ext_id }}"
+        expiry_seconds: 900
+      register: result
+
+    - name: Generate image download URL with preferred cluster location
+      nutanix.ncp.ntnx_generate_image_download_url_v2:
+        ext_id: "{{ image_ext_id }}"
+        expiry_seconds: 1200
+        preferred_location:
+          cluster_reference:
+            ext_id: "{{ cluster_location_ext_id }}"
+      register: result
