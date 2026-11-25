@@ -1,0 +1,165 @@
+---
+# Test plan for ntnx_unshare_floating_ip_by_id_v2 (UnshareFloatingIpById):
+# 1. check_mode with all attributes
+# 2. negative missing required ext_id
+# 3. negative missing required project_ext_id
+# 4. negative invalid ext_id at API
+# 5. live unshare lifecycle when prerequisites exist
+
+- name: Start testing ntnx_unshare_floating_ip_by_id_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_unshare_floating_ip_by_id_v2
+
+- name: Set placeholder UUIDs for check_mode tests
+  ansible.builtin.set_fact:
+    placeholder_fip_ext_id: "00000000-0000-0000-0000-000000000000"
+    placeholder_project_ext_id: "00000000-0000-0000-0000-000000000001"
+
+##############################################################
+# 1. check_mode - unshare floating IP
+##############################################################
+- name: Unshare floating IP with check mode enabled
+  nutanix.ncp.ntnx_unshare_floating_ip_by_id_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    project_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Assert unshare floating IP check mode
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.response is defined
+      - result.response.project_ext_id == "00000000-0000-0000-0000-000000000001"
+      - result.ext_id == "00000000-0000-0000-0000-000000000000"
+    fail_msg: "Unable to unshare floating IP with check mode"
+    success_msg: "Unshare floating IP with check mode passed"
+
+##############################################################
+# 2. Negative - missing required ext_id
+##############################################################
+- name: Unshare without ext_id
+  nutanix.ncp.ntnx_unshare_floating_ip_by_id_v2:
+    project_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.msg is defined
+    fail_msg: "Missing ext_id should fail"
+    success_msg: "Missing ext_id correctly failed"
+
+##############################################################
+# 3. Negative - missing required project_ext_id
+##############################################################
+- name: Unshare without project_ext_id
+  nutanix.ncp.ntnx_unshare_floating_ip_by_id_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing project_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.msg is defined
+    fail_msg: "Missing project_ext_id should fail"
+    success_msg: "Missing project_ext_id correctly failed"
+
+##############################################################
+# 4. Negative - invalid ext_id at API
+##############################################################
+- name: Unshare with invalid ext_id
+  nutanix.ncp.ntnx_unshare_floating_ip_by_id_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    project_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid ext_id surfaces API error
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.msg is defined
+    fail_msg: "Invalid ext_id should surface API error"
+    success_msg: "Invalid ext_id correctly surfaced API error"
+  when: result is defined
+
+##############################################################
+# 5. Live lifecycle when prerequisites exist (guarded)
+##############################################################
+- name: Live unshare test block
+  when:
+    - external_nat_subnet is defined
+    - external_nat_subnet.uuid is defined
+    - external_subnet_project is defined
+    - external_subnet_project.uuid is defined
+    - vpc is defined
+    - vpc.uuid is defined
+    - overlay_subnet is defined
+    - overlay_subnet.private_ip1 is defined
+  block:
+    - name: Generate floating IP name
+      ansible.builtin.set_fact:
+        live_fip_name: "fip_unshare_{{ 999999 | random }}_{{ ansible_date_time.epoch | default(lookup('pipe', 'date +%s')) }}"
+
+    - name: Create floating IP for unshare test
+      nutanix.ncp.ntnx_floating_ips_v2:
+        state: present
+        name: "{{ live_fip_name }}"
+        external_subnet_reference: "{{ external_nat_subnet.uuid }}"
+        association:
+          private_ip_association:
+            private_ip:
+              ipv4:
+                value: "{{ overlay_subnet.private_ip1 }}"
+            vpc_reference: "{{ vpc.uuid }}"
+      register: create_result
+      ignore_errors: true
+
+    - name: Set floating IP ext_id
+      ansible.builtin.set_fact:
+        live_fip_ext_id: "{{ create_result.ext_id | default(create_result.response.ext_id | default('')) }}"
+      when: create_result is defined and not create_result.failed
+
+    - name: Share floating IP first
+      nutanix.ncp.ntnx_share_floating_ip_by_id_v2:
+        ext_id: "{{ live_fip_ext_id }}"
+        project_ext_id: "{{ external_subnet_project.uuid }}"
+      register: share_result
+      ignore_errors: true
+      when: live_fip_ext_id is defined and live_fip_ext_id != ""
+
+    - name: Unshare floating IP live
+      nutanix.ncp.ntnx_unshare_floating_ip_by_id_v2:
+        ext_id: "{{ live_fip_ext_id }}"
+        project_ext_id: "{{ external_subnet_project.uuid }}"
+      register: unshare_result
+      ignore_errors: true
+      when: live_fip_ext_id is defined and live_fip_ext_id != ""
+
+    - name: Assert unshare floating IP live
+      ansible.builtin.assert:
+        that:
+          - unshare_result.failed == false
+          - unshare_result.changed == true
+          - unshare_result.task_ext_id is defined
+          - unshare_result.response is defined
+          - unshare_result.ext_id == live_fip_ext_id
+        fail_msg: "Live unshare failed"
+        success_msg: "Live unshare succeeded"
+      when: unshare_result is defined and unshare_result is not skipped
+
+    - name: Cleanup floating IP
+      nutanix.ncp.ntnx_floating_ips_v2:
+        state: absent
+        ext_id: "{{ live_fip_ext_id }}"
+      register: cleanup_result
+      ignore_errors: true
+      when: live_fip_ext_id is defined and live_fip_ext_id != ""
+

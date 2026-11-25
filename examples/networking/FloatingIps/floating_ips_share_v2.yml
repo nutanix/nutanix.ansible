@@ -1,0 +1,32 @@
+---
+# Summary:
+# This playbook demonstrates sharing and unsharing floating IPs with projects.
+
+- name: Floating IP share playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default('10.44.76.16') }}"
+      nutanix_username: "{{ nutanix_username | default('admin') }}"
+      nutanix_password: "{{ nutanix_password | default('Nutanix.123') }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        floating_ip_ext_id: "00000000-0000-0000-0000-000000000000"
+        project_ext_id: "00000000-0000-0000-0000-000000000001"
+
+    - name: Share floating IP with project
+      nutanix.ncp.ntnx_share_floating_ip_by_id_v2:
+        ext_id: "{{ floating_ip_ext_id }}"
+        project_ext_id: "{{ project_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Unshare floating IP from project
+      nutanix.ncp.ntnx_unshare_floating_ip_by_id_v2:
+        ext_id: "{{ floating_ip_ext_id }}"
+        project_ext_id: "{{ project_ext_id }}"
+      register: result
+      ignore_errors: true
