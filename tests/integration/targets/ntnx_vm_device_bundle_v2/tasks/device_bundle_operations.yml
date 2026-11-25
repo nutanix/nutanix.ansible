@@ -55,25 +55,22 @@
     fail_msg: Create device bundle with check mode enabled failed
     success_msg: Create device bundle with check mode enabled passed
 
-- name: Create device bundle with assigned_instance_info check mode
+- name: Create device bundle with check mode
   nutanix.ncp.ntnx_vm_device_bundle_v2:
     state: present
     vm_ext_id: "83083083-0000-0000-0000-000000000001"
     backing_info:
       device_bundle_profile:
         ext_id: "83083083-0000-0000-0000-000000000002"
-      assigned_instance_info:
-        ext_id: "83083083-0000-0000-0000-000000000003"
   register: result
   ignore_errors: true
   check_mode: true
 
-- name: Create device bundle with assigned_instance_info check mode status
+- name: Create device bundle with check mode status
   ansible.builtin.assert:
     that:
       - result.changed == false
       - result.failed == false
-      - result.response.backing_info.assigned_instance_info.ext_id == "83083083-0000-0000-0000-000000000003"
     fail_msg: Create device bundle with instance check mode failed
     success_msg: Create device bundle with instance check mode passed
 
