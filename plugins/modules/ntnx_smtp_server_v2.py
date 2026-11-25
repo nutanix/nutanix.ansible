@@ -22,13 +22,13 @@ notes:
       The required roles depend on the operation being performed.
     - >-
       B(Create SMTP server) -
-      Required Roles: Prism Admin, Super Admin
+      Required Roles: Cluster Admin, Domain Manager Admin, Internal Super Admin, Prism Admin, Super Admin
     - >-
       B(Update SMTP server) -
-      Required Roles: Prism Admin, Super Admin
+      Required Roles: Cluster Admin, Domain Manager Admin, Internal Super Admin, Prism Admin, Super Admin
     - >-
       B(Delete SMTP server) -
-      Required Roles: Prism Admin, Super Admin
+      Required Roles: Cluster Admin, Domain Manager Admin, Internal Super Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
     state:
@@ -64,319 +64,326 @@ options:
         description:
             - Configuration for the SMTP server used to send alert emails.
             - Supports Basic Auth, XOAUTH2, and Microsoft Graph protocols.
-            - Exactly one of the protocol configurations must be provided.
         type: dict
         required: false
-        suboptions:
-            basic_auth:
-                description:
-                    - SMTP configuration for Basic Auth protocol, requiring username and password for authentication.
-                type: dict
-                required: false
-                suboptions:
-                    security_mode:
+        config_details:
+            description:
+                - Exactly one of the protocol configurations must be provided.
+            type: dict
+            required: true
+            suboptions:
+                    basic_auth:
                         description:
-                            - The transport-layer security mode for the SMTP connection.
-                        type: str
-                        required: true
-                        choices:
-                            - NONE
-                            - SSL
-                            - STARTTLS
-                    host:
-                        description:
-                            - SMTP host address. Can be IP or FQDN.
+                            - SMTP configuration for Basic Auth protocol, requiring username and password for authentication.
                         type: dict
-                        required: true
+                        required: false
                         suboptions:
-                            ipv4:
+                            security_mode:
                                 description:
-                                    - An IPv4 address.
+                                    - The transport-layer security mode for the SMTP connection.
+                                type: str
+                                required: true
+                                choices:
+                                    - NONE
+                                    - SSL
+                                    - STARTTLS
+                            host:
+                                description:
+                                    - SMTP host address. Can be IP or FQDN.
                                 type: dict
-                                required: false
+                                required: true
                                 suboptions:
-                                    value:
+                                    ipv4:
                                         description:
-                                            - The IPv4 address value.
-                                        type: str
-                                        required: true
-                                    prefix_length:
-                                        description:
-                                            - The prefix length of the network.
-                                        type: int
+                                            - An IPv4 address.
+                                        type: dict
                                         required: false
-                                        default: 32
-                            ipv6:
-                                description:
-                                    - An IPv6 address.
-                                type: dict
-                                required: false
-                                suboptions:
-                                    value:
+                                        suboptions:
+                                            value:
+                                                description:
+                                                    - The IPv4 address value.
+                                                type: str
+                                                required: true
+                                            prefix_length:
+                                                description:
+                                                    - The prefix length of the network.
+                                                type: int
+                                                required: false
+                                                default: 32
+                                    ipv6:
                                         description:
-                                            - The IPv6 address value.
-                                        type: str
-                                        required: true
-                                    prefix_length:
-                                        description:
-                                            - The prefix length of the network.
-                                        type: int
+                                            - An IPv6 address.
+                                        type: dict
                                         required: false
-                                        default: 128
-                            fqdn:
-                                description:
-                                    - A fully qualified domain name.
-                                type: dict
-                                required: false
-                                suboptions:
-                                    value:
+                                        suboptions:
+                                            value:
+                                                description:
+                                                    - The IPv6 address value.
+                                                type: str
+                                                required: true
+                                            prefix_length:
+                                                description:
+                                                    - The prefix length of the network.
+                                                type: int
+                                                required: false
+                                                default: 128
+                                    fqdn:
                                         description:
-                                            - The fully qualified domain name value.
-                                        type: str
-                                        required: true
-                    port:
+                                            - A fully qualified domain name.
+                                        type: dict
+                                        required: false
+                                        suboptions:
+                                            value:
+                                                description:
+                                                    - The fully qualified domain name value.
+                                                type: str
+                                                required: true
+                            port:
+                                description:
+                                    - TCP port number of the SMTP server.
+                                type: int
+                                required: false
+                                default: 25
+                            email_address:
+                                description:
+                                    - The email address that appears as the sender in alert emails.
+                                type: str
+                                required: false
+                            username:
+                                description:
+                                    - Username for authenticating with the SMTP server using Basic Auth.
+                                type: str
+                                required: false
+                            password:
+                                description:
+                                    - Password for authenticating with the SMTP server using Basic Auth.
+                                type: str
+                                required: false
+                    xoauth2:
                         description:
-                            - TCP port number of the SMTP server.
-                        type: int
-                        required: false
-                    email_address:
-                        description:
-                            - The email address that appears as the sender in alert emails.
-                        type: str
-                        required: false
-                    username:
-                        description:
-                            - Username for authenticating with the SMTP server using Basic Auth.
-                        type: str
-                        required: false
-                    password:
-                        description:
-                            - Password for authenticating with the SMTP server using Basic Auth.
-                        type: str
-                        required: false
-            xoauth2:
-                description:
-                    - SMTP configuration for the XOAUTH2 protocol, using OAuth 2.0 for token-based SMTP authentication.
-                type: dict
-                required: false
-                suboptions:
-                    security_mode:
-                        description:
-                            - The transport-layer security mode for the SMTP connection.
-                        type: str
-                        required: true
-                        choices:
-                            - NONE
-                            - SSL
-                            - STARTTLS
-                    tenant_id:
-                        description:
-                            - The Azure AD tenant identifier for OAuth 2.0 authentication.
-                        type: str
-                        required: true
-                    client_id:
-                        description:
-                            - The application client ID registered in the identity provider.
-                        type: str
-                        required: true
-                    token_endpoint:
-                        description:
-                            - The OAuth 2.0 token endpoint URL used to obtain an access token.
-                        type: str
-                        required: true
-                    scope:
-                        description:
-                            - The OAuth 2.0 scope requested when acquiring an access token.
-                        type: str
-                        required: true
-                    host:
-                        description:
-                            - SMTP host address.
+                            - SMTP configuration for the XOAUTH2 protocol, using OAuth 2.0 for token-based SMTP authentication.
                         type: dict
-                        required: true
-                        suboptions:
-                            ipv4:
-                                description:
-                                    - An IPv4 address.
-                                type: dict
-                                required: false
-                                suboptions:
-                                    value:
-                                        description:
-                                            - The IPv4 address value.
-                                        type: str
-                                        required: true
-                                    prefix_length:
-                                        description:
-                                            - The prefix length of the network.
-                                        type: int
-                                        required: false
-                                        default: 32
-                            ipv6:
-                                description:
-                                    - An IPv6 address.
-                                type: dict
-                                required: false
-                                suboptions:
-                                    value:
-                                        description:
-                                            - The IPv6 address value.
-                                        type: str
-                                        required: true
-                                    prefix_length:
-                                        description:
-                                            - The prefix length of the network.
-                                        type: int
-                                        required: false
-                                        default: 128
-                            fqdn:
-                                description:
-                                    - A fully qualified domain name.
-                                type: dict
-                                required: false
-                                suboptions:
-                                    value:
-                                        description:
-                                            - The fully qualified domain name value.
-                                        type: str
-                                        required: true
-                    port:
-                        description:
-                            - TCP port number of the SMTP server.
-                        type: int
-                        required: true
-                    email_address:
-                        description:
-                            - The email address that appears as the sender in alert emails.
-                        type: str
-                        required: true
-                    expiry_time:
-                        description:
-                            - The expiry date-time of the client credentials.
-                        type: str
                         required: false
-                    oauth_credentials:
-                        description:
-                            - OAuth 2.0 credentials used for token acquisition.
-                        type: dict
-                        required: true
                         suboptions:
-                            client_secret:
+                            security_mode:
                                 description:
-                                    - OAuth 2.0 client secret credentials for token acquisition.
+                                    - The transport-layer security mode for the SMTP connection.
+                                type: str
+                                required: true
+                                choices:
+                                    - NONE
+                                    - SSL
+                                    - STARTTLS
+                            tenant_id:
+                                description:
+                                    - The Azure AD tenant identifier for OAuth 2.0 authentication.
+                                type: str
+                                required: true
+                            client_id:
+                                description:
+                                    - The application client ID registered in the identity provider.
+                                type: str
+                                required: true
+                            token_endpoint:
+                                description:
+                                    - The OAuth 2.0 token endpoint URL used to obtain an access token.
+                                type: str
+                                required: true
+                            scope:
+                                description:
+                                    - The OAuth 2.0 scope requested when acquiring an access token.
+                                type: str
+                                required: true
+                            host:
+                                description:
+                                    - SMTP host address.
                                 type: dict
+                                required: true
+                                suboptions:
+                                    ipv4:
+                                        description:
+                                            - An IPv4 address.
+                                        type: dict
+                                        required: false
+                                        suboptions:
+                                            value:
+                                                description:
+                                                    - The IPv4 address value.
+                                                type: str
+                                                required: true
+                                            prefix_length:
+                                                description:
+                                                    - The prefix length of the network.
+                                                type: int
+                                                required: false
+                                                default: 32
+                                    ipv6:
+                                        description:
+                                            - An IPv6 address.
+                                        type: dict
+                                        required: false
+                                        suboptions:
+                                            value:
+                                                description:
+                                                    - The IPv6 address value.
+                                                type: str
+                                                required: true
+                                            prefix_length:
+                                                description:
+                                                    - The prefix length of the network.
+                                                type: int
+                                                required: false
+                                                default: 128
+                                    fqdn:
+                                        description:
+                                            - A fully qualified domain name.
+                                        type: dict
+                                        required: false
+                                        suboptions:
+                                            value:
+                                                description:
+                                                    - The fully qualified domain name value.
+                                                type: str
+                                                required: true
+                            port:
+                                description:
+                                    - TCP port number of the SMTP server.
+                                type: int
+                                required: true
+                                default: 25
+                            email_address:
+                                description:
+                                    - The email address that appears as the sender in alert emails.
+                                type: str
+                                required: true
+                            expiry_time:
+                                description:
+                                    - The expiry date-time of the client credentials.
+                                type: str
                                 required: false
+                            oauth_credentials:
+                                description:
+                                    - OAuth 2.0 credentials used for token acquisition.
+                                type: dict
+                                required: true
                                 suboptions:
                                     client_secret:
                                         description:
-                                            - The client secret value.
-                                        type: str
-                                        required: true
-                            certificate:
-                                description:
-                                    - Certificate-based OAuth 2.0 credentials.
-                                type: dict
-                                required: false
-                                suboptions:
-                                    private_key:
-                                        description:
-                                            - The private key used for certificate-based OAuth 2.0 authentication.
-                                        type: str
-                                        required: true
-                                    public_cert:
-                                        description:
-                                            - The public certificate used for certificate-based OAuth 2.0 authentication.
-                                        type: str
-                                        required: true
-                                    private_key_passphrase:
-                                        description:
-                                            - Passphrase to decrypt the private key.
-                                        type: str
+                                            - OAuth 2.0 client secret credentials for token acquisition.
+                                        type: dict
                                         required: false
-                                    thumbprint:
+                                        suboptions:
+                                            client_secret:
+                                                description:
+                                                    - The client secret value.
+                                                type: str
+                                                required: true
+                                    certificate:
                                         description:
-                                            - The certificate thumbprint.
-                                        type: str
+                                            - Certificate-based OAuth 2.0 credentials.
+                                        type: dict
                                         required: false
-            graph:
-                description:
-                    - Configuration for sending emails via the Microsoft Graph API using OAuth 2.0 authentication.
-                type: dict
-                required: false
-                suboptions:
-                    tenant_id:
+                                        suboptions:
+                                            private_key:
+                                                description:
+                                                    - The private key used for certificate-based OAuth 2.0 authentication.
+                                                type: str
+                                                required: true
+                                            public_cert:
+                                                description:
+                                                    - The public certificate used for certificate-based OAuth 2.0 authentication.
+                                                type: str
+                                                required: true
+                                            private_key_passphrase:
+                                                description:
+                                                    - Passphrase to decrypt the private key.
+                                                type: str
+                                                required: false
+                                            thumbprint:
+                                                description:
+                                                    - The certificate thumbprint.
+                                                type: str
+                                                required: false
+                    graph:
                         description:
-                            - The Azure AD tenant identifier for OAuth 2.0 authentication.
-                        type: str
-                        required: true
-                    client_id:
-                        description:
-                            - The application client ID registered in the identity provider.
-                        type: str
-                        required: true
-                    token_endpoint:
-                        description:
-                            - The OAuth 2.0 token endpoint URL used to obtain an access token.
-                        type: str
-                        required: false
-                    scope:
-                        description:
-                            - The OAuth 2.0 scope requested when acquiring an access token.
-                        type: str
-                        required: false
-                    email_address:
-                        description:
-                            - The email address that appears as the sender in alert emails.
-                        type: str
-                        required: true
-                    expiry_time:
-                        description:
-                            - The expiry date-time of the client credentials.
-                        type: str
-                        required: false
-                    oauth_credentials:
-                        description:
-                            - OAuth 2.0 credentials used for token acquisition.
+                            - Configuration for sending emails via Microsoft Graph API.
                         type: dict
-                        required: true
+                        required: false
                         suboptions:
-                            client_secret:
+                            tenant_id:
                                 description:
-                                    - OAuth 2.0 client secret credentials for token acquisition.
-                                type: dict
+                                    - The Azure AD tenant identifier for OAuth 2.0 authentication.
+                                type: str
+                                required: true
+                            client_id:
+                                description:
+                                    - The application client ID registered in the identity provider.
+                                type: str
+                                required: true
+                            token_endpoint:
+                                description:
+                                    - The OAuth 2.0 token endpoint URL used to obtain an access token.
+                                type: str
                                 required: false
+                            scope:
+                                description:
+                                    - The OAuth 2.0 scope requested when acquiring an access token.
+                                type: str
+                                required: false
+                                default: "https://graph.microsoft.com/.default"
+                            email_address:
+                                description:
+                                    - The email address that appears as the sender in alert emails.
+                                type: str
+                                required: true
+                            expiry_time:
+                                description:
+                                    - The expiry date-time of the client credentials.
+                                type: str
+                                required: false
+                            oauth_credentials:
+                                description:
+                                    - OAuth 2.0 credentials used for token acquisition.
+                                type: dict
+                                required: true
                                 suboptions:
                                     client_secret:
                                         description:
-                                            - The client secret value.
-                                        type: str
-                                        required: true
-                            certificate:
-                                description:
-                                    - Certificate-based OAuth 2.0 credentials.
-                                type: dict
-                                required: false
-                                suboptions:
-                                    private_key:
-                                        description:
-                                            - The private key used for certificate-based OAuth 2.0 authentication.
-                                        type: str
-                                        required: true
-                                    public_cert:
-                                        description:
-                                            - The public certificate used for certificate-based OAuth 2.0 authentication.
-                                        type: str
-                                        required: true
-                                    private_key_passphrase:
-                                        description:
-                                            - Passphrase to decrypt the private key.
-                                        type: str
+                                            - OAuth 2.0 client secret credentials for token acquisition.
+                                        type: dict
                                         required: false
-                                    thumbprint:
+                                        suboptions:
+                                            client_secret:
+                                                description:
+                                                    - The client secret value.
+                                                type: str
+                                                required: true
+                                    certificate:
                                         description:
-                                            - The certificate thumbprint.
-                                        type: str
+                                            - Certificate-based OAuth 2.0 credentials.
+                                        type: dict
                                         required: false
+                                        suboptions:
+                                            private_key:
+                                                description:
+                                                    - The private key used for certificate-based OAuth 2.0 authentication.
+                                                type: str
+                                                required: true
+                                            public_cert:
+                                                description:
+                                                    - The public certificate used for certificate-based OAuth 2.0 authentication.
+                                                type: str
+                                                required: true
+                                            private_key_passphrase:
+                                                description:
+                                                    - Passphrase to decrypt the private key.
+                                                type: str
+                                                required: false
+                                            thumbprint:
+                                                description:
+                                                    - The certificate thumbprint.
+                                                type: str
+                                                required: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -526,6 +533,7 @@ msg:
 import traceback  # noqa: E402
 import warnings  # noqa: E402
 from copy import deepcopy  # noqa: E402
+from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
 
@@ -558,6 +566,8 @@ except ImportError:
 
 # Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
+
+READ_ONLY_FIELDS = ["email_notification_status", "links", "tenant_id"]
 
 
 def get_module_spec():
@@ -751,21 +761,23 @@ def create_smtp_server(module, result, api_instance):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        resp = wait_for_completion(module, task_ext_id)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
-        ext_id = get_entity_ext_id_from_task(resp)
+        ext_id = get_entity_ext_id_from_task(
+            task_status, rel=TASK_CONSTANTS.RelEntityType.SMTP_SERVER
+        )
         if ext_id:
             result["ext_id"] = ext_id
-            try:
-                fetched = get_smtp_server(
-                    module, api_instance, domain_manager_ext_id, ext_id
-                )
-                result["response"] = strip_internal_attributes(fetched.to_dict())
-            except Exception:
-                pass
+            resp = get_smtp_server(module, api_instance, domain_manager_ext_id, ext_id)
+            result["response"] = strip_internal_attributes(resp.to_dict())
         else:
-            # fallback to keep task response if ext_id not found
-            pass
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for SMTP Server"
+                ),
+                msg="Failed to get entity ext_id from task for SMTP Server",
+            )
     result["changed"] = True
 
 
@@ -773,7 +785,7 @@ def check_smtp_server_idempotency(old_spec_dict, update_spec_dict):
     old_spec_dict = strip_internal_attributes(old_spec_dict)
     update_spec_dict = strip_internal_attributes(update_spec_dict)
     # remove read-only fields that may differ
-    for key in ["email_notification_status", "links", "tenant_id"]:
+    for key in READ_ONLY_FIELDS:
         old_spec_dict.pop(key, None)
         update_spec_dict.pop(key, None)
     return old_spec_dict == update_spec_dict
@@ -821,15 +833,9 @@ def update_smtp_server(module, result, api_instance):
     result["task_ext_id"] = task_ext_id
     result["response"] = strip_internal_attributes(resp.data.to_dict())
     if task_ext_id and module.params.get("wait"):
-        resp = wait_for_completion(module, task_ext_id)
+        wait_for_completion(module, task_ext_id)
+        resp = get_smtp_server(module, api_instance, domain_manager_ext_id, ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
-        try:
-            fetched = get_smtp_server(
-                module, api_instance, domain_manager_ext_id, ext_id
-            )
-            result["response"] = strip_internal_attributes(fetched.to_dict())
-        except Exception:
-            pass
     result["changed"] = True
 
 
@@ -842,21 +848,11 @@ def delete_smtp_server(module, result, api_instance):
         result["msg"] = "SMTP server with ext_id:{0} will be deleted.".format(ext_id)
         return
 
-    # try to get etag if available
-    try:
-        old_spec = get_smtp_server(module, api_instance, domain_manager_ext_id, ext_id)
-        etag = get_etag(data=old_spec)
-    except Exception:
-        etag = None
-
-    kwargs = {}
-    if etag:
-        kwargs["if_match"] = etag
-
     resp = None
     try:
         resp = api_instance.delete_smtp_server_by_id(
-            domainManagerExtId=domain_manager_ext_id, extId=ext_id, **kwargs
+            domainManagerExtId=domain_manager_ext_id,
+            extId=ext_id,
         )
     except Exception as e:
         raise_api_exception(

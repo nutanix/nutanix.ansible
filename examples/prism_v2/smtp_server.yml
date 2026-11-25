@@ -1,4 +1,16 @@
-- name: SmtpServer CRUD playbook. Create, update, read and delete SmtpServer.
+---
+# Summary:
+# 1. Create SMTP server with Basic Auth
+# 2. Update SMTP server
+# 3. Get SMTP server using ext_id
+# 4. List all SMTP servers
+# 5. List SMTP servers with filter
+# 6. List SMTP servers with limit
+# 7. List all SMTP servers with fetch_all
+# 8. Delete SMTP server
+
+
+- name: SMTP server CRUD playbook. Create, update, read and delete SMTP server.
   hosts: localhost
   gather_facts: false
   module_defaults:
@@ -35,7 +47,7 @@
       nutanix.ncp.ntnx_smtp_server_v2:
         state: present
         domain_manager_ext_id: "{{ domain_manager_ext_id }}"
-        ext_id: "{{ created.ext_id if created.ext_id is defined else smtp_ext_id }}"
+        ext_id: "{{ smtp_ext_id }}"
         is_active: true
         config:
           basic_auth:
@@ -53,7 +65,7 @@
     - name: Get SMTP server using ext_id
       nutanix.ncp.ntnx_smtp_servers_info_v2:
         domain_manager_ext_id: "{{ domain_manager_ext_id }}"
-        ext_id: "{{ updated.ext_id if updated.ext_id is defined else smtp_ext_id }}"
+        ext_id: "{{ smtp_ext_id }}"
       register: get_result
       ignore_errors: true
 
@@ -88,6 +100,6 @@
       nutanix.ncp.ntnx_smtp_server_v2:
         state: absent
         domain_manager_ext_id: "{{ domain_manager_ext_id }}"
-        ext_id: "{{ updated.ext_id if updated.ext_id is defined else smtp_ext_id }}"
+        ext_id: "{{ smtp_ext_id }}"
       register: deleted
       ignore_errors: true

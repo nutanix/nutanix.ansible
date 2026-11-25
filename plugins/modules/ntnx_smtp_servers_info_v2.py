@@ -23,10 +23,12 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get SMTP server by ext_id) -
-      Required Roles: Prism Viewer, Prism Admin, Super Admin
+      Required Roles: Cluster Admin, Cluster Viewer, Domain Manager Admin, Domain Manager Viewer, Flow Admin, Flow Policy Author,
+      Flow Viewer, Internal Super Admin, NCM Connector, Prism Admin, Prism Viewer, Super Admin
     - >-
       B(List SMTP servers) -
-      Required Roles: Prism Viewer, Prism Admin, Super Admin
+      Required Roles: Cluster Admin, Cluster Viewer, Domain Manager Admin, Domain Manager Viewer, Flow Admin, Flow Policy Author,
+      Flow Viewer, Internal Super Admin, NCM Connector, Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
     ext_id:
@@ -53,6 +55,10 @@ author:
 EXAMPLES = r"""
 - name: Get SMTP server using ext_id
   nutanix.ncp.ntnx_smtp_servers_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     domain_manager_ext_id: "00000000-0000-0000-0000-000000000000"
     ext_id: "11111111-1111-1111-1111-111111111111"
   register: result
@@ -60,12 +66,20 @@ EXAMPLES = r"""
 
 - name: List all SMTP servers
   nutanix.ncp.ntnx_smtp_servers_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     domain_manager_ext_id: "00000000-0000-0000-0000-000000000000"
   register: result
   ignore_errors: true
 
 - name: List SMTP servers with filter
   nutanix.ncp.ntnx_smtp_servers_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     domain_manager_ext_id: "00000000-0000-0000-0000-000000000000"
     filter: "isActive eq true"
   register: result
@@ -73,6 +87,10 @@ EXAMPLES = r"""
 
 - name: List SMTP servers with limit
   nutanix.ncp.ntnx_smtp_servers_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     domain_manager_ext_id: "00000000-0000-0000-0000-000000000000"
     limit: 1
   register: result
@@ -80,6 +98,10 @@ EXAMPLES = r"""
 
 - name: List all SMTP servers with fetch_all
   nutanix.ncp.ntnx_smtp_servers_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     domain_manager_ext_id: "00000000-0000-0000-0000-000000000000"
     fetch_all: true
   register: result
@@ -214,11 +236,13 @@ def get_smtp_servers(module, api_instance, result):
             msg="Api Exception raised while fetching SMTP servers info",
         )
 
-    resp = strip_internal_attributes(resp.to_dict())
-    total_available_results = resp.get("metadata", {}).get("total_available_results")
+    total_available_results = resp.metadata.total_available_results
     result["total_available_results"] = total_available_results
-    data = resp.get("data") or []
-    result["response"] = data
+
+    resp = strip_internal_attributes(resp.to_dict()).get("data")
+    if not resp:
+        resp = []
+    result["response"] = resp
 
 
 def run_module():
