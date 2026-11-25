@@ -22,8 +22,12 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get the ADS configuration of a Virtual Machine) -
-      Required Roles: Prism Admin, Prism Viewer, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=virtual_machine_management)"
+      Required Roles: Account Owner, Administrator, Backup Admin, Consumer, CSI System, Developer,
+      Disaster Recovery Admin, Disaster Recovery Viewer, Flow Admin, Flow Policy Author, Flow Viewer,
+      NCM Connector, Network Infra Admin, Operator, Prism Admin, Prism Viewer, Project Admin, Project Manager,
+      Self-Service Admin (Deprecated), Storage Admin, Super Admin, Tenant Admin, Tenant Consumer, User,
+      Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     vm_ext_id:
         description:
@@ -74,11 +78,6 @@ changed:
     returned: always
     type: bool
     sample: false
-msg:
-    description: This indicates the message if any message occurred.
-    returned: When there is an error
-    type: str
-    sample: "Api Exception raised while fetching VM ADS config info"
 error:
     description: This field typically holds information about if the task have errors that occurred during the task execution.
     returned: when an error occurs
@@ -88,13 +87,8 @@ failed:
     returned: always
     type: bool
     sample: false
-vm_ext_id:
-    description: The external ID of the VM.
-    returned: always
-    type: str
-    sample: "00000000-0000-0000-0000-000000000001"
 ext_id:
-    description: The external ID of the ADS config.
+    description: The external ID of the VM
     returned: when VM external ID is provided
     type: str
     sample: "00000000-0000-0000-0000-000000000001"
@@ -120,7 +114,6 @@ def get_module_spec():
 
 def get_vm_ads_config_info(module, api_instance, result):
     vm_ext_id = module.params.get("vm_ext_id")
-    result["vm_ext_id"] = vm_ext_id
     result["ext_id"] = vm_ext_id
     ads_config = get_vm_ads_config(module, api_instance, vm_ext_id)
     result["response"] = strip_internal_attributes(ads_config.to_dict())

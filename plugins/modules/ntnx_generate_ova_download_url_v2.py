@@ -22,7 +22,7 @@ notes:
     - >-
       B(Generate OVA download URL) -
       Required Roles: Prism Admin, Prism Viewer, Project Admin, Project Manager, Super Admin, Tenant Admin, Tenant Consumer
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=virtual_machine_management)"
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     state:
         description:

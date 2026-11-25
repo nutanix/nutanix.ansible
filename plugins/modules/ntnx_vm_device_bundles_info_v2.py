@@ -23,11 +23,15 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get a Device Bundle attached to a VM) -
-      Required Roles: Prism Admin, Prism Viewer, Super Admin
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Network Infra Admin, Operator, Prism Admin,
+      Prism Viewer, Project Admin, Project Manager, Self-Service Admin (Deprecated), Storage Admin, Super Admin, Tenant Admin,
+      Tenant Consumer, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
     - >-
       B(List Device Bundles attached to a VM) -
-      Required Roles: Prism Admin, Prism Viewer, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=virtual_machine_management)"
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Network Infra Admin, Operator, Prism Admin,
+      Prism Viewer, Project Admin, Project Manager, Self-Service Admin (Deprecated), Storage Admin, Super Admin, Tenant Admin,
+      Tenant Consumer, User, Virtual Machine Admin, Virtual Machine Operator, Virtual Machine Viewer, VPC Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     ext_id:
         description:
@@ -119,7 +123,7 @@ EXAMPLES = r"""
     nutanix_password: "{{ password }}"
     validate_certs: false
     vm_ext_id: "00000000-0000-0000-0000-000000000001"
-    filter: "extId eq '00000000-0000-0000-0000-000000000002'"
+    filter: "backingInfo/assignedInstanceInfo/extId eq '78177620-ddf4-43f2-8ede-8790e92ae3fa'"
   register: result
 
 - name: List device bundles attached to a VM with limit
@@ -154,7 +158,6 @@ response:
     sample:
         {
             "backing_info": {
-                "assigned_instance_info": null,
                 "device_bundle_profile": {
                     "ext_id": "b2c3d4e5-6789-0abc-def1-234567890bcd"
                 }
@@ -187,11 +190,6 @@ ext_id:
     returned: when external ID is provided
     type: str
     sample: "c3d4e5f6-7890-abcd-ef12-34567890cdef"
-vm_ext_id:
-    description: The external ID of the VM.
-    returned: always
-    type: str
-    sample: "00000000-0000-0000-0000-000000000001"
 total_available_results:
     description: The total number of available device bundles attached to the VM.
     returned: when all device bundles are fetched
@@ -232,14 +230,12 @@ def get_device_bundle_using_ext_id(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     vm_ext_id = module.params.get("vm_ext_id")
     result["ext_id"] = ext_id
-    result["vm_ext_id"] = vm_ext_id
     bundle = get_device_bundle(module, api_instance, vm_ext_id, ext_id)
     result["response"] = strip_internal_attributes(bundle.to_dict())
 
 
 def get_device_bundles(module, api_instance, result):
     vm_ext_id = module.params.get("vm_ext_id")
-    result["vm_ext_id"] = vm_ext_id
 
     sg = SpecGenerator(module)
     kwargs, err = sg.get_info_spec(attr=module.params)

@@ -11,10 +11,9 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_vm_device_bundle_v2
-short_description: Create or delete a device bundle for a VM
+short_description: Attach or remove a device bundle for a VM
 version_added: "2.7.0"
 description:
-    - Create or delete a device bundle for a VM.
     - Attach a device bundle to a VM.
     - Remove a device bundle from a VM.
     - This module uses PC v4 APIs based SDKs
@@ -23,16 +22,18 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Attach a Device Bundle to a VM) -
-      Required Roles: Prism Admin, Super Admin
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin,
+      Project Manager, Self-Service AdminDeprecated, Super Admin, Tenant Admin, Tenant Consumer, User, Virtual Machine Admin
     - >-
       B(Remove a Device Bundle from a VM) -
-      Required Roles: Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=virtual_machine_management)"
+      Required Roles: Account Owner, Administrator, Consumer, Developer, Operator, Prism Admin, Project Admin,
+      Project Manager, Self-Service AdminDeprecated, Super Admin, Tenant Admin, Tenant Consumer, User, Virtual Machine Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     state:
         description:
             - Specify state.
-            - If C(state) is C(present), create and attach a device bundle to the VM.
+            - If C(state) is C(present), attach a device bundle to the VM.
             - If C(state) is C(absent), remove the device bundle from the VM.
         type: str
         choices:
@@ -42,7 +43,7 @@ options:
     ext_id:
         description:
             - The external ID of the device bundle of type UUID.
-            - Required for delete operation.
+            - Required for remove operation.
         type: str
     vm_ext_id:
         description:
@@ -52,13 +53,13 @@ options:
     backing_info:
         description:
             - Backing information for the device bundle.
-            - Required for create operation.
+            - Required for attach operation.
         type: dict
         suboptions:
             device_bundle_profile:
                 description:
                     - Reference to a device bundle profile.
-                    - Required for create operation.
+                    - Required for attach operation.
                 type: dict
                 required: true
                 suboptions:
@@ -67,15 +68,6 @@ options:
                             - A globally unique identifier of a device bundle profile of type UUID.
                         type: str
                         required: true
-            assigned_instance_info:
-                description:
-                    - Reference to a device bundle instance.
-                type: dict
-                suboptions:
-                    ext_id:
-                        description:
-                            - A globally unique identifier of a device bundle instance of type UUID.
-                        type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -115,16 +107,14 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
     description:
-        - Response for creating or deleting a device bundle for a VM.
-        - If the operation is create and C(wait) is true, it will return the task details after completion.
-        - If the operation is create and C(wait) is false, it will return the task details.
-        - If the operation is delete, it will return the task details.
+        - Response for attaching or removing a device bundle for a VM.
+        - If C(wait) is true, it will return the task details after completion.
+        - If C(wait) is false, it will return the task details.
     returned: always
     type: dict
     sample:
         {
             "backing_info": {
-                "assigned_instance_info": null,
                 "device_bundle_profile": {
                     "ext_id": "b2c3d4e5-6789-0abc-def1-234567890bcd"
                 }
@@ -143,11 +133,6 @@ ext_id:
     returned: always
     type: str
     sample: "c3d4e5f6-7890-abcd-ef12-34567890cdef"
-vm_ext_id:
-    description: The external ID of the VM.
-    returned: always
-    type: str
-    sample: "00000000-0000-0000-0000-000000000001"
 changed:
     description: This indicates whether the task resulted in any changes
     returned: always
@@ -203,22 +188,12 @@ def get_module_spec():
         ext_id=dict(type="str", required=True),
     )
 
-    assigned_instance_spec = dict(
-        ext_id=dict(type="str"),
-    )
-
     backing_info_spec = dict(
         device_bundle_profile=dict(
             type="dict",
             options=device_bundle_profile_spec,
             required=True,
             obj=vmm_sdk.DeviceBundleProfileReference,
-        ),
-        assigned_instance_info=dict(
-            type="dict",
-            options=assigned_instance_spec,
-            required=False,
-            obj=vmm_sdk.DeviceBundleInstanceReference,
         ),
     )
 
@@ -244,14 +219,13 @@ def create_device_bundle(module, result, api_instance):
     validate_required_params(module, ["backing_info"])
 
     vm_ext_id = module.params.get("vm_ext_id")
-    result["vm_ext_id"] = vm_ext_id
 
     sg = SpecGenerator(module)
     default_spec = vmm_sdk.DeviceBundle()
     spec, err = sg.generate_spec(obj=default_spec)
     if err:
         result["error"] = err
-        module.fail_json(msg="Failed generating create device bundle spec", **result)
+        module.fail_json(msg="Failed generating attach device bundle spec", **result)
 
     if module.check_mode:
         result["response"] = strip_internal_attributes(spec.to_dict())
@@ -264,7 +238,7 @@ def create_device_bundle(module, result, api_instance):
         raise_api_exception(
             module=module,
             exception=e,
-            msg="Api Exception raised while creating device bundle",
+            msg="Api Exception raised while attaching device bundle",
         )
 
     task_ext_id = resp.data.ext_id
@@ -280,7 +254,6 @@ def delete_device_bundle(module, result, api_instance):
     ext_id = module.params.get("ext_id")
     vm_ext_id = module.params.get("vm_ext_id")
     result["ext_id"] = ext_id
-    result["vm_ext_id"] = vm_ext_id
 
     if module.check_mode:
         result["msg"] = "Device bundle with ext_id:{0} will be deleted.".format(ext_id)
@@ -311,7 +284,6 @@ def run_module():
         supports_check_mode=True,
         required_if=[
             ("state", "absent", ("ext_id",)),
-            ("state", "present", ("backing_info",)),
         ],
     )
     if SDK_IMP_ERROR:
@@ -325,7 +297,6 @@ def run_module():
         "changed": False,
         "response": None,
         "failed": False,
-        "ext_id": None,
     }
     api_instance = get_vm_api_instance(module)
     state = module.params.get("state")

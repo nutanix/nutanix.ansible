@@ -22,8 +22,8 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Update the ADS configuration of a Virtual Machine) -
-      Required Roles: Prism Admin, Super Admin
-    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=virtual_machine_management)"
+      Required Roles: Prism Admin, Project Admin, Super Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=vmm)"
 options:
     state:
         description:
@@ -46,8 +46,6 @@ options:
         choices:
             - INCLUDE
             - EXCLUDE
-            - UNKNOWN
-            - REDACTED
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_operations_v2
@@ -101,12 +99,7 @@ task_ext_id:
     type: str
     sample: "ZXJnb24=:05b0b0c4-c1a2-5630-9db5-460e5239eef5"
 ext_id:
-    description: The external ID of the VM ADS config.
-    returned: always
-    type: str
-    sample: "00000000-0000-0000-0000-000000000001"
-vm_ext_id:
-    description: The external ID of the VM.
+    description: The external ID of the VM
     returned: always
     type: str
     sample: "00000000-0000-0000-0000-000000000001"
@@ -164,6 +157,7 @@ except ImportError:
 
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
+READ_ONLY_FIELDS = ["ext_id", "links", "tenant_id"]
 
 def get_module_spec():
     module_args = dict(
@@ -182,7 +176,7 @@ def check_vm_ads_config_idempotency(current_spec, update_spec):
     current_dict = strip_internal_attributes(current_spec.to_dict())
     update_dict = strip_internal_attributes(update_spec.to_dict())
     # Remove read-only fields before comparison
-    for key in ["ext_id", "links", "tenant_id"]:
+    for key in READ_ONLY_FIELDS:
         current_dict.pop(key, None)
         update_dict.pop(key, None)
     return current_dict == update_dict
@@ -190,7 +184,6 @@ def check_vm_ads_config_idempotency(current_spec, update_spec):
 
 def update_vm_ads_config(module, result, api_instance):
     vm_ext_id = module.params.get("vm_ext_id")
-    result["vm_ext_id"] = vm_ext_id
     result["ext_id"] = vm_ext_id
 
     current_spec = get_vm_ads_config(module, api_instance, vm_ext_id)
@@ -207,7 +200,6 @@ def update_vm_ads_config(module, result, api_instance):
 
     if check_vm_ads_config_idempotency(current_spec, update_spec):
         result["skipped"] = True
-        result["response"] = strip_internal_attributes(current_spec.to_dict())
         module.exit_json(msg="Nothing to change.", **result)
 
     etag_value = get_etag(data=current_spec)
