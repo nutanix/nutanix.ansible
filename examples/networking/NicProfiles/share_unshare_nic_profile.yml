@@ -1,0 +1,58 @@
+---
+- name: Share and unshare NIC profile with project
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Get available projects to share NIC profile
+      nutanix.ncp.ntnx_projects_info_v2:
+        nutanix_host: "{{ ip }}"
+        nutanix_username: "{{ username }}"
+        nutanix_password: "{{ password }}"
+        nutanix_port: 9440
+        validate_certs: false
+      register: projects
+      ignore_errors: true
+
+    - name: Set project variable from discovered projects
+      ansible.builtin.set_fact:
+        project_uuid: "{{ projects.response | selectattr('is_default', 'equalto', false) | map(attribute='ext_id') | first | default(projects.response[0].ext_id) if projects.response is defined and projects.response | length > 0 else (project.uuid | default('b95be731-eef6-4800-b651-b747021add76')) }}"
+
+    - name: Create NIC profile to share
+      nutanix.ncp.ntnx_nic_profiles_v2:
+        name: "nic_profile_share_example"
+        description: "NIC profile for share example"
+        capability_config:
+          capability_type: "SRIOV"
+        nic_family: "15b3:101d"
+      register: nic_profile
+
+    - name: Set NIC profile ext_id
+      ansible.builtin.set_fact:
+        nic_profile_ext_id: "{{ nic_profile.response.ext_id }}"
+
+    - name: Share NIC profile with project
+      nutanix.ncp.ntnx_share_nic_profile_by_id_v2:
+        ext_id: "{{ nic_profile_ext_id }}"
+        project_ext_id: "{{ project_uuid }}"
+      register: share_result
+      ignore_errors: true
+
+    - name: Unshare NIC profile from project
+      nutanix.ncp.ntnx_unshare_nic_profile_by_id_v2:
+        ext_id: "{{ nic_profile_ext_id }}"
+        project_ext_id: "{{ project_uuid }}"
+      register: unshare_result
+      ignore_errors: true
+
+    - name: Delete NIC profile
+      nutanix.ncp.ntnx_nic_profiles_v2:
+        ext_id: "{{ nic_profile_ext_id }}"
+        state: absent
+      register: delete_result
+      ignore_errors: true

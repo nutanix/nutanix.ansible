@@ -179,6 +179,7 @@
 ip: "10.44.76.16"
 username: "admin"
 password: "Nutanix.123"
+port: 9440
 recovery_site_ip: "recovery_site_ip"
 validate_certs: false
 # # END ANSIBLE MANAGED BLOCK insertion 0
