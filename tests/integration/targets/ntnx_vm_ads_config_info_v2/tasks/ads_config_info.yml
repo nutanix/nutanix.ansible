@@ -68,7 +68,7 @@
       - result.response.auto_migration is defined or result.response.ext_id is defined
     success_msg: "ADS config response structure verified"
     fail_msg: "ADS config response structure invalid"
-  when: result.failed == false
+  when: not result.failed
 
 ############################################################################################
 # Negative: fetch with non-existent vm_ext_id

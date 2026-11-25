@@ -166,7 +166,7 @@ def get_module_spec():
         vm_ext_id=dict(type="str", required=True),
         auto_migration=dict(
             type="str",
-            choices=["INCLUDE", "EXCLUDE", "UNKNOWN", "REDACTED"],
+            choices=["INCLUDE", "EXCLUDE"],
             obj=vmm_sdk.AutoMigration,
         ),
     )
