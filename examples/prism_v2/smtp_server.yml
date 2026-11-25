@@ -1,0 +1,105 @@
+---
+# Summary:
+# 1. Create SMTP server with Basic Auth
+# 2. Update SMTP server
+# 3. Get SMTP server using ext_id
+# 4. List all SMTP servers
+# 5. List SMTP servers with filter
+# 6. List SMTP servers with limit
+# 7. List all SMTP servers with fetch_all
+# 8. Delete SMTP server
+
+
+- name: SMTP server CRUD playbook. Create, update, read and delete SMTP server.
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        domain_manager_ext_id: "00000000-0000-0000-0000-000000000000"
+        smtp_ext_id: "11111111-1111-1111-1111-111111111111"
+
+    - name: Create SMTP server with Basic Auth
+      nutanix.ncp.ntnx_smtp_server_v2:
+        state: present
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        is_active: true
+        config:
+          basic_auth:
+            security_mode: "NONE"
+            host:
+              fqdn:
+                value: "smtp.example.com"
+            port: 25
+            email_address: "nutanix@example.com"
+            username: "smtp_user"
+            password: "smtp_pass"
+      register: created
+      ignore_errors: true
+
+    - name: Update SMTP server
+      nutanix.ncp.ntnx_smtp_server_v2:
+        state: present
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        ext_id: "{{ smtp_ext_id }}"
+        is_active: true
+        config:
+          basic_auth:
+            security_mode: "STARTTLS"
+            host:
+              fqdn:
+                value: "smtp.example.com"
+            port: 587
+            email_address: "nutanix-updated@example.com"
+            username: "smtp_user_updated"
+            password: "smtp_pass_updated"
+      register: updated
+      ignore_errors: true
+
+    - name: Get SMTP server using ext_id
+      nutanix.ncp.ntnx_smtp_servers_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        ext_id: "{{ smtp_ext_id }}"
+      register: get_result
+      ignore_errors: true
+
+    - name: List all SMTP servers
+      nutanix.ncp.ntnx_smtp_servers_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+      register: list_result
+      ignore_errors: true
+
+    - name: List SMTP servers with filter
+      nutanix.ncp.ntnx_smtp_servers_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        filter: "isActive eq true"
+      register: filter_result
+      ignore_errors: true
+
+    - name: List SMTP servers with limit
+      nutanix.ncp.ntnx_smtp_servers_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        limit: 1
+      register: limit_result
+      ignore_errors: true
+
+    - name: List all SMTP servers with fetch_all
+      nutanix.ncp.ntnx_smtp_servers_info_v2:
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        fetch_all: true
+      register: fetch_all_result
+      ignore_errors: true
+
+    - name: Delete SMTP server
+      nutanix.ncp.ntnx_smtp_server_v2:
+        state: absent
+        domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+        ext_id: "{{ smtp_ext_id }}"
+      register: deleted
+      ignore_errors: true
