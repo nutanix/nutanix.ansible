@@ -410,6 +410,7 @@
           ip_subnet:
             ip:
               value: "{{ gw_overlay_net.network_ip }}"
+            prefix_length: "{{ gw_overlay_net.network_prefix }}"
           default_gateway_ip:
             value: "{{ gw_overlay_net.gateway_ip }}"
           pool_list:

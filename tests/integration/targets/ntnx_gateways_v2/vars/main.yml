@@ -12,6 +12,7 @@ gw_ext_nat:
   pool_end: "10.44.3.239"
 gw_overlay_net:
   network_ip: "192.168.50.0"
+  network_prefix: 24
   gateway_ip: "192.168.50.1"
   pool_start: "192.168.50.20"
   pool_end: "192.168.50.80"
