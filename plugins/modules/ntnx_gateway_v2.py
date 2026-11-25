@@ -1554,7 +1554,7 @@ def _get_bgp_config_spec():
     return dict(
         asn=dict(type="int", required=False),
         password=dict(type="str", required=False, no_log=True),
-        should_redistribute_routes=dict(type="bool", required=False),
+        should_redistribute_routes=dict(type="bool", required=False, default=False),
     )
 
 
@@ -1710,7 +1710,9 @@ def _get_remote_services_spec():
                     required=False,
                     obj=networking_sdk.IPAddress,
                 ),
-                should_install_xi_route=dict(type="bool", required=False),
+                should_install_xi_route=dict(
+                    type="bool", required=False, default=False
+                ),
                 ebgp_config=dict(
                     type="dict",
                     options=_get_bgp_config_spec(),
@@ -1733,7 +1735,7 @@ def _get_remote_services_spec():
             type="dict",
             required=False,
             options=dict(
-                vxlan_port=dict(type="int", required=False),
+                vxlan_port=dict(type="int", required=False, default=4789),
                 vteps=dict(
                     type="list",
                     elements="dict",
