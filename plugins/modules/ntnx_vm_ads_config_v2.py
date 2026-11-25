@@ -159,6 +159,7 @@ warnings.filterwarnings("ignore", message="Unverified HTTPS request is being mad
 
 READ_ONLY_FIELDS = ["ext_id", "links", "tenant_id"]
 
+
 def get_module_spec():
     module_args = dict(
         state=dict(type="str", default="present", choices=["present"]),
