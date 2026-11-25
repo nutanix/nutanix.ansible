@@ -3,18 +3,18 @@ Official Nutanix Ansible Collection
 
 ## Requirements
 
-To run any Nutanix Ansible module, the host must have the Python dependencies listed in [requirements.txt](https://github.com/nutanix/nutanix.ansible/blob/v2.6.1/requirements.txt)
+To run any Nutanix Ansible module, the host must have the Python dependencies listed in [requirements.txt](https://github.com/nutanix/nutanix.ansible/blob/v2.6.1/requirements.txt).
 Once the collection is installed, install these dependencies into your Python environment using pip: `pip install -r ~/.ansible/collections/ansible_collections/nutanix/ncp/requirements.txt`
-This collection requires ansible-core>=2.16.0. This should be installed explicitly if ansible-core version is not installed previously or is below the specified version.
+This collection requires ansible-core>=2.16.0. The minimum supported version is enforced automatically through the `requires_ansible` constraint in `meta/runtime.yml`. Red Hat customers run `ansible-core` inside an execution environment, so it does not need to be installed separately.
 
 # About
-Nutanix ansible collection nutanix.ncp is the official Nutanix ansible collection to automate Nutanix Cloud Platform (ncp).
+The `nutanix.ncp` collection is the official Nutanix Ansible collection to automate Nutanix Cloud Platform (NCP).
 
 It is designed keeping simplicity as the core value. Hence it is
 1. Easy to use
 2. Easy to develop
 
-Checkout this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the-nutanix-ansible-module/) for getting started with nutanix ansible module.
+Check out this [blog](https://www.nutanix.dev/2022/08/05/getting-started-with-the-nutanix-ansible-module/) for getting started with Nutanix Ansible modules.
 
 NOTE: The latest version of the Nutanix Ansible collection is [v2.6.1](https://github.com/nutanix/nutanix.ansible/releases/tag/v2.6.1).
 
@@ -81,24 +81,36 @@ Upgrade now to take advantage of these powerful features and streamline your Nut
 Upcoming Deprecation of Legacy Nutanix Ansible Modules. Starting with the Nutanix Ansible Collection release planned for Q4-CY2026, legacy modules which are based on v0.8,v1,v2 and v3 APIs will be deprecated and no longer supported. For more information, visit
 [Legacy API Deprecation Announcement](https://portal.nutanix.com/page/documents/eol/list?type=announcement)
 [Legacy API Deprecation - FAQs](https://portal.nutanix.com/page/documents/kbs/details?targetId=kA0VO0000005rgP0AQ)
-Nutanix strongly encourages you to migrate your scripts and applications to the latest v2 version of the Nutanix Ansible modules, which are built on our v4 APIs/SDKs. By adopting the latest v2 version based on v4 APIs and SDKs, our users can leverage the enhanced capabilities and latest innovations from Nutanix.
+Nutanix strongly encourages you to migrate your scripts and applications to the `_v2` Nutanix Ansible modules, which are built on v4 APIs/SDKs. By adopting these modules, you can leverage the enhanced capabilities and latest innovations from Nutanix.
 We understand that this transition may require some effort, and we are committed to supporting you throughout the process. Please refer to our documentation and support channels for guidance and assistance.
-Version Suffix: To easily distinguish resources and data sources specific to version 2.0.0 and later, they are marked with the *_v2 suffix.
+
+**Module naming:** Modules built on Nutanix v4 APIs/SDKs use a `_v2` suffix (for example `ntnx_vms_v2`). Legacy modules based on older Prism APIs (v0.8, v1, v2, and v3) have no `_v2` suffix. Prefer the `_v2` modules for new automation.
 
 ## Support
 
-As Red Hat Ansible Certified Content, this collection is entitled to support through the Ansible Automation Platform (AAP) using the **Create issue** button on the top right corner. If a support case cannot be opened with Red Hat and the collection has been obtained either from Galaxy or GitHub, there may community help available on the [Ansible Forum](https://forum.ansible.com/).
+As Red Hat Ansible Certified Content, this collection is entitled to support through Ansible Automation Platform (AAP). Prefer opening issues on [GitHub](https://github.com/nutanix/nutanix.ansible/issues). Red Hat customers can also use the **Create issue** button on the collection page in [Red Hat Ansible Automation Hub](https://console.redhat.com/ansible/automation-hub). If a support case cannot be opened with Red Hat and the collection has been obtained either from Galaxy or GitHub, there may be community help available on the [Ansible Forum](https://forum.ansible.com/).
 
-Update!!
+**Update:**
 We now have a brand new developer-centric Support Program designed for organizations that require a deeper level of developer support to manage their Nutanix environment and build applications quickly and efficiently. As part of this new Advanced API/SDK Support Program, you will get access to trusted technical advisors who specialize in developer tools including Nutanix Ansible Collections and receive support for your unique development needs and custom integration queries.
-[Visit our Support Portal - Premium Add-On Support Programs](https://www.nutanix.com/support-services/product-support/premium-support-programs)  to learn more about this program.<br /><br />
-Customers not taking advantage of the [Advanced API/SDK Support Program](https://www.nutanix.com/support-services/product-support/premium-support-programs) will continue to receive the support through our standard, community-supported model. This community model also provides support for contributions to the open-source Nutanix Ansible Collections repository.Visit [Nutanix Portal KB](https://portal.nutanix.com/kb/13424) for more details.
+[Visit our Support Portal - Premium Add-On Support Programs](https://www.nutanix.com/support-services/product-support/premium-support-programs) to learn more about this program.
+
+Customers not taking advantage of the [Advanced API/SDK Support Program](https://www.nutanix.com/support-services/product-support/premium-support-programs) will continue to receive the support through our standard, community-supported model. This community model also provides support for contributions to the open-source Nutanix Ansible Collections repository. Visit [Nutanix Portal KB](https://portal.nutanix.com/kb/13424) for more details.
+
+
+# Changelog
+
+Release notes for every version of the collection are maintained in the changelog. Review it to assess new features, bug fixes, deprecations, and breaking changes before upgrading.
+
+- Release notes (rendered): [CHANGELOG.rst](https://github.com/nutanix/nutanix.ansible/blob/v2.6.1/CHANGELOG.rst) (also available as [CHANGELOG.md](https://github.com/nutanix/nutanix.ansible/blob/v2.6.1/CHANGELOG.md))
+- Release notes (structured data): [changelogs/changelog.yaml](https://github.com/nutanix/nutanix.ansible/blob/v2.6.1/changelogs/changelog.yaml)
+
+All three files are also included in the collection tarball distributed on Ansible Galaxy and Red Hat Ansible Automation Hub.
 
 
 # Version compatibility
 
 ## Ansible
-This collection requires ansible-core>=2.16.0. This should be installed explicitly if ansible-core version is not installed previously or is below the specified version.
+This collection requires `ansible-core >= 2.16.0` (`requires_ansible` in `meta/runtime.yml`). Ensure a compatible `ansible-core` is available in your environment before using the collection. On Ansible Automation Platform, that usually comes from the execution environment; for Galaxy or local installs, install a supported `ansible-core` yourself.
 
 ## Python
 This collection requires Python 3.12 or greater
@@ -161,30 +173,54 @@ This collection requires Python 3.12 or greater
 5. [NDB](https://github.com/nutanix/nutanix.ansible/tree/main/examples/ndb)
 
 # Installing the collection
-**Prerequisite**
 
-Ansible should be pre-installed. If not, please follow official ansible [install guide](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) .
+This collection is published as `nutanix.ncp` and can be installed through the methods below. Red Hat customers should install it from Red Hat Ansible Automation Hub.
 
-Installation can be done as per usage using below methods:
+## **1. Install from Red Hat Ansible Automation Hub (recommended for Red Hat customers):**
 
-## **1. Install from Ansible Galaxy Portal:**
+As Red Hat Ansible Certified Content, this collection is distributed through [Red Hat Ansible Automation Hub](https://console.redhat.com/ansible/automation-hub). Installing from Automation Hub entitles you to Red Hat support and delivers the certified build that runs inside supported execution environments. For the full procedure, see the [Red Hat Ansible Automation Platform documentation](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform).
 
-Published at : [Ansible Galaxy](https://galaxy.ansible.com/ui/repo/published/nutanix/ncp/)
+Configure Ansible to pull content from Automation Hub by adding it as a Galaxy server in your `ansible.cfg`. Obtain an offline token from the [Automation Hub API token management page](https://console.redhat.com/ansible/automation-hub/token):
 
-Installation:
+```ini
+[galaxy]
+server_list = automation_hub
+
+[galaxy_server.automation_hub]
+url = https://console.redhat.com/api/automation-hub/content/published/
+auth_url = https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token
+token = <your-automation-hub-token>
+```
+
+Then install the collection:
 
 ```ansible-galaxy collection install nutanix.ncp```
 
-Install [requirements](https://github.com/nutanix/nutanix.ansible/blob/v2.6.1/requirements.txt) from repository if dependencies are missing in environment (Ref: [GitHub Issue](https://github.com/nutanix/nutanix.ansible/issues/600)):
+To install a specific version:
 
-```pip install -r requirements.txt```
+```ansible-galaxy collection install nutanix.ncp:==2.6.1```
 
-This collection requires ansible-core>=2.16.0. This should be installed explicitly if ansible-core version is not installed previously or is below the specified version.
+You can also pin the collection in a `requirements.yml` file in your project and install it with `ansible-galaxy collection install -r requirements.yml`:
 
+```yaml
+collections:
+  - name: nutanix.ncp
+    version: 2.6.1
+```
 
-## **2. Build and install from code:**
+## **2. Install from Ansible Galaxy (upstream / community):**
 
-For Developers, please follow [this install guide](https://docs.ansible.com/ansible/latest/dev_guide/developing_modules_general.html) for setting up dev environment.
+The collection is also published at [Ansible Galaxy](https://galaxy.ansible.com/ui/repo/published/nutanix/ncp/) for upstream and community users.
+
+```ansible-galaxy collection install nutanix.ncp```
+
+When installing from Galaxy, install the Python [requirements](https://github.com/nutanix/nutanix.ansible/blob/v2.6.1/requirements.txt) if the dependencies are missing in your environment (Ref: [GitHub Issue](https://github.com/nutanix/nutanix.ansible/issues/600)):
+
+```pip install -r ~/.ansible/collections/ansible_collections/nutanix/ncp/requirements.txt```
+
+## **3. Build and install from code:**
+
+For developers, follow the Ansible [Developing collections](https://docs.ansible.com/ansible/latest/dev_guide/developing_collections.html) guide when setting up a collection development environment.
 
 **1. Clone the GitHub repository to a local directory**
 
@@ -198,11 +234,11 @@ For Developers, please follow [this install guide](https://docs.ansible.com/ansi
 
 ```pip install -r requirements.txt```
 
-**3. Build the collection**
+**4. Build the collection**
 
 ```ansible-galaxy collection build```
 
-**4. Install the collection**
+**5. Install the collection**
 
 ```ansible-galaxy collection install nutanix-ncp-<version>.tar.gz```
 
@@ -253,7 +289,7 @@ Note: v1 are based on legacy APIs (v0.8,v1,v2 and v3 APIs) and v2 are based on p
 |  :--- |  :--- |
 | ntnx_acps | ntnx_authorization_policies_v2 |
 | ntnx_address_groups *(unsupported on PC 7.6+)* | ntnx_address_groups_v2 |
-| ntnx_categories | ntnx_categories_v2
+| ntnx_categories | ntnx_categories_v2 |
 | ntnx_floating_ips | ntnx_floating_ips_v2 |
 | ntnx_images | ntnx_images_v2 |
 | ntnx_image_placement_policy | ntnx_image_placement_policies_v2 |
@@ -527,7 +563,7 @@ ansible-doc nutanix.ncp.<module_name>
 
 # How to contribute
 
-We glady welcome contributions from the community. From updating the documentation to adding more functions for Ansible, all ideas are welcome. Thank you in advance for all of your issues, pull requests, and comments!
+We gladly welcome contributions from the community. From updating the documentation to adding more functions for Ansible, all ideas are welcome. Thank you in advance for all of your issues, pull requests, and comments!
 
 * [Contributing Guide](https://github.com/nutanix/nutanix.ansible/blob/main/CONTRIBUTING.md)
 * [Contributing Guide for v4 modules](https://github.com/nutanix/nutanix.ansible/blob/main/CONTRIBUTING-v4.md) — for modules built on Nutanix v4 APIs/SDKs (recommended for all new contributions)
