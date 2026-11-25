@@ -622,7 +622,7 @@ By following these steps, you can perform comprehensive integration testing for 
 # Examples
 ## Playbook for IaaS provisioning on Nutanix
 
-**Refer to [`examples/iaas`](https://github.com/nutanix/nutanix.ansible/tree/v2.6.1/examples/iaas) for full implementation**
+**Refer to [`examples/iaas`](https://github.com/nutanix/nutanix.ansible/tree/main/examples/iaas) for full implementation**
 
 ```yaml
 ---
