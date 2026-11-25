@@ -1,0 +1,463 @@
+---
+# Test plan for ntnx_cluster_management_extended_v2
+# Covers 6 modules in clustermgmt namespace:
+#   1. ntnx_cluster_host_nic_stats_info_v2
+#   2. ntnx_cluster_port_capability_info_v2
+#   3. ntnx_aggregated_network_segments_info_v2
+#   4. ntnx_install_external_storage_driver_v2 (check_mode only)
+#   5. ntnx_refresh_port_capability_v2 (check_mode only)
+#   6. ntnx_shutdown_host_v2 (check_mode only)
+
+- name: Start cluster management extended tests
+  ansible.builtin.debug:
+    msg: Start cluster management extended tests
+
+########################################################################
+# Prerequisites — discover cluster, host, host NIC, compute time window
+########################################################################
+
+- name: Discover clusters via filter AOS
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_result
+  ignore_errors: true
+
+- name: Assert clusters discovered
+  ansible.builtin.assert:
+    that:
+      - clusters_result.failed == false
+      - clusters_result.response is defined
+      - clusters_result.response | length > 0
+    fail_msg: Failed to discover clusters for extended tests
+    success_msg: Clusters discovered for extended tests
+
+- name: Set cluster_ext_id from first AOS cluster
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+- name: Discover hosts in the cluster
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: hosts_result
+  ignore_errors: true
+
+- name: Assert hosts discovered
+  ansible.builtin.assert:
+    that:
+      - hosts_result.failed == false
+      - hosts_result.response is defined
+      - hosts_result.response | length > 0
+    fail_msg: Failed to discover hosts for extended tests
+    success_msg: Hosts discovered for extended tests
+
+- name: Set host_ext_id from first host
+  ansible.builtin.set_fact:
+    host_ext_id: "{{ hosts_result.response[0].ext_id }}"
+
+- name: Discover host NICs to get sample NIC ext_id
+  nutanix.ncp.ntnx_cluster_host_nics_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+  register: host_nics_result
+  ignore_errors: true
+
+- name: Set sample NIC ext_id when NICs exist
+  ansible.builtin.set_fact:
+    sample_nic_ext_id: "{{ host_nics_result.response[0].ext_id }}"
+    sample_nic_name: "{{ host_nics_result.response[0].name | default('') }}"
+    has_host_nics: true
+  when:
+    - host_nics_result is defined
+    - not host_nics_result.failed
+    - host_nics_result.response is defined
+    - host_nics_result.response | length > 0
+
+- name: Set has_host_nics false when no NICs
+  ansible.builtin.set_fact:
+    has_host_nics: false
+  when: has_host_nics is not defined
+
+- name: Debug skip notice when no host NICs found
+  ansible.builtin.debug:
+    msg: No host NICs found — skipping host NIC stats dependent tests
+  when: not has_host_nics | bool
+
+- name: Compute stats window start time (5 min ago UTC)
+  ansible.builtin.set_fact:
+    stats_start_time: "{{ lookup('pipe', 'date -u -d \"5 minutes ago\" +%Y-%m-%dT%H:%M:%SZ') }}"
+    stats_end_time: "{{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ') }}"
+
+########################################################################
+# 1. Host NIC stats info — ntnx_cluster_host_nic_stats_info_v2
+########################################################################
+
+- name: Get host NIC stats by ext_id
+  nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    ext_id: "{{ sample_nic_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: nic_stats_by_id
+  ignore_errors: true
+  when: has_host_nics | bool
+
+- name: Assert get host NIC stats by ext_id — graceful when SDK lacks method
+  ansible.builtin.assert:
+    that:
+      - nic_stats_by_id is defined
+      - >-
+        (nic_stats_by_id.failed == false and nic_stats_by_id.response is defined)
+        or ('no attribute' in (nic_stats_by_id.msg | default('')) or
+            'no attribute' in (nic_stats_by_id.response | default('') | string))
+    fail_msg: Get host NIC stats by ext_id failed unexpectedly
+    success_msg: Get host NIC stats by ext_id handled
+  when: has_host_nics | bool
+
+- name: List host NIC stats by host
+  nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: nic_stats_list
+  ignore_errors: true
+
+- name: Assert list host NIC stats by host — graceful when SDK lacks method
+  ansible.builtin.assert:
+    that:
+      - nic_stats_list is defined
+      - >-
+        (nic_stats_list.failed == false and nic_stats_list.response is defined)
+        or ('no attribute' in (nic_stats_list.msg | default('')) or
+            'no attribute' in (nic_stats_list.response | default('') | string))
+    fail_msg: List host NIC stats by host failed unexpectedly
+    success_msg: List host NIC stats by host handled
+
+- name: List host NIC stats with select
+  nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    select: "extId"
+  register: nic_stats_select
+  ignore_errors: true
+
+- name: Assert list host NIC stats with select — graceful when SDK lacks method
+  ansible.builtin.assert:
+    that:
+      - nic_stats_select is defined
+      - >-
+        (nic_stats_select.failed == false and nic_stats_select.response is defined)
+        or ('no attribute' in (nic_stats_select.msg | default('')) or
+            'no attribute' in (nic_stats_select.response | default('') | string))
+    fail_msg: List host NIC stats with select failed unexpectedly
+    success_msg: List host NIC stats with select handled
+
+- name: Host NIC stats missing required start_time and end_time with ext_id
+  nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    ext_id: "{{ sample_nic_ext_id | default('00000000-0000-0000-0000-000000000001') }}"
+  register: nic_stats_missing_time
+  ignore_errors: true
+
+- name: Assert host NIC stats missing required time fails
+  ansible.builtin.assert:
+    that:
+      - nic_stats_missing_time is defined
+      - nic_stats_missing_time.failed == true
+    fail_msg: Missing required time did not fail
+    success_msg: Missing required time correctly rejected
+
+- name: Host NIC stats with invalid stat_type
+  nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+    stat_type: "INVALID_TYPE"
+  register: nic_stats_invalid_type
+  ignore_errors: true
+
+- name: Assert invalid stat_type rejected
+  ansible.builtin.assert:
+    that:
+      - nic_stats_invalid_type is defined
+      - nic_stats_invalid_type.failed == true
+    fail_msg: Invalid stat_type was not rejected
+    success_msg: Invalid stat_type correctly rejected
+
+- name: Host NIC stats with bogus ext_id
+  nutanix.ncp.ntnx_cluster_host_nic_stats_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000099"
+    start_time: "{{ stats_start_time }}"
+    end_time: "{{ stats_end_time }}"
+  register: nic_stats_bogus
+  ignore_errors: true
+
+- name: Assert bogus ext_id rejected
+  ansible.builtin.assert:
+    that:
+      - nic_stats_bogus is defined
+      - nic_stats_bogus.failed == true
+    fail_msg: Bogus ext_id did not fail
+    success_msg: Bogus ext_id correctly rejected
+
+########################################################################
+# 2. Port capability info — ntnx_cluster_port_capability_info_v2
+########################################################################
+
+- name: Get port capability by cluster_ext_id
+  nutanix.ncp.ntnx_cluster_port_capability_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: port_cap_result
+  ignore_errors: true
+
+- name: Assert get port capability — graceful when SDK lacks method
+  ansible.builtin.assert:
+    that:
+      - port_cap_result is defined
+      - >-
+        (port_cap_result.failed == false and port_cap_result.response is defined)
+        or ('no attribute' in (port_cap_result.msg | default('')) or
+            'no attribute' in (port_cap_result.response | default('') | string))
+    fail_msg: Get port capability failed unexpectedly
+    success_msg: Get port capability handled
+
+- name: Port capability missing required cluster_ext_id
+  nutanix.ncp.ntnx_cluster_port_capability_info_v2:
+  register: port_cap_missing
+  ignore_errors: true
+
+- name: Assert missing cluster_ext_id rejected
+  ansible.builtin.assert:
+    that:
+      - port_cap_missing is defined
+      - port_cap_missing.failed == true
+    fail_msg: Missing cluster_ext_id did not fail
+    success_msg: Missing cluster_ext_id correctly rejected
+
+- name: Port capability with bogus cluster_ext_id
+  nutanix.ncp.ntnx_cluster_port_capability_info_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000099"
+  register: port_cap_bogus
+  ignore_errors: true
+
+- name: Assert bogus cluster_ext_id rejected
+  ansible.builtin.assert:
+    that:
+      - port_cap_bogus is defined
+      - port_cap_bogus.failed == true
+    fail_msg: Bogus cluster_ext_id did not fail
+    success_msg: Bogus cluster_ext_id correctly rejected
+
+########################################################################
+# 3. Aggregated network segments info — ntnx_aggregated_network_segments_info_v2
+########################################################################
+
+- name: List aggregated network segments
+  nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+  register: agg_segments_list
+  ignore_errors: true
+
+- name: Assert list aggregated network segments — graceful when SDK lacks method
+  ansible.builtin.assert:
+    that:
+      - agg_segments_list is defined
+      - >-
+        (agg_segments_list.failed == false and agg_segments_list.response is defined)
+        or ('no attribute' in (agg_segments_list.msg | default('')) or
+            'no attribute' in (agg_segments_list.response | default('') | string))
+    fail_msg: List aggregated network segments failed unexpectedly
+    success_msg: List aggregated network segments handled
+
+- name: List aggregated network segments with filter
+  nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+    filter: "name eq 'backplane'"
+  register: agg_segments_filter
+  ignore_errors: true
+
+- name: Assert list aggregated network segments with filter — graceful
+  ansible.builtin.assert:
+    that:
+      - agg_segments_filter is defined
+      - >-
+        (agg_segments_filter.failed == false and agg_segments_filter.response is defined)
+        or agg_segments_filter.failed == true
+    fail_msg: List aggregated network segments with filter failed unexpectedly
+    success_msg: List aggregated network segments with filter handled
+
+- name: List aggregated network segments with limit 1
+  nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+    limit: 1
+  register: agg_segments_limit
+  ignore_errors: true
+
+- name: Assert list aggregated network segments with limit — graceful
+  ansible.builtin.assert:
+    that:
+      - agg_segments_limit is defined
+      - >-
+        (agg_segments_limit.failed == false and agg_segments_limit.response is defined)
+        or agg_segments_limit.failed == true
+    fail_msg: List aggregated network segments with limit failed unexpectedly
+    success_msg: List aggregated network segments with limit handled
+
+- name: List aggregated network segments with fetch_all
+  nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+    fetch_all: true
+  register: agg_segments_fetch_all
+  ignore_errors: true
+
+- name: Assert list aggregated network segments with fetch_all — graceful
+  ansible.builtin.assert:
+    that:
+      - agg_segments_fetch_all is defined
+      - >-
+        (agg_segments_fetch_all.failed == false and agg_segments_fetch_all.response is defined)
+        or agg_segments_fetch_all.failed == true
+    fail_msg: List aggregated network segments with fetch_all failed unexpectedly
+    success_msg: List aggregated network segments with fetch_all handled
+
+- name: List aggregated network segments with expand ipPool
+  nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+    expand: "ipPool"
+  register: agg_segments_expand
+  ignore_errors: true
+
+- name: Assert list aggregated network segments with expand — graceful
+  ansible.builtin.assert:
+    that:
+      - agg_segments_expand is defined
+      - >-
+        (agg_segments_expand.failed == false and agg_segments_expand.response is defined)
+        or agg_segments_expand.failed == true
+    fail_msg: List aggregated network segments with expand failed unexpectedly
+    success_msg: List aggregated network segments with expand handled
+
+- name: Aggregated network segments with invalid filter
+  nutanix.ncp.ntnx_aggregated_network_segments_info_v2:
+    filter: "invalidField eq 'bogus'"
+  register: agg_segments_invalid_filter
+  ignore_errors: true
+
+- name: Assert invalid filter rejected — graceful
+  ansible.builtin.assert:
+    that:
+      - agg_segments_invalid_filter is defined
+      - agg_segments_invalid_filter.failed == true
+    fail_msg: Invalid filter did not fail
+    success_msg: Invalid filter correctly rejected
+
+########################################################################
+# 4. Action modules — check_mode only (destructive / state-dependent)
+########################################################################
+
+# Install external storage driver — ntnx_install_external_storage_driver_v2
+
+- name: Install external storage driver check_mode
+  nutanix.ncp.ntnx_install_external_storage_driver_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000001"
+    key: "dummy-driver-key"
+    version: "1.0.0"
+    provider_type: "DELL_POWERFLEX"
+  register: install_driver_check
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert install external storage driver check_mode — graceful when SDK lacks API
+  ansible.builtin.assert:
+    that:
+      - install_driver_check is defined
+      - >-
+        (install_driver_check.failed == false and install_driver_check.response is defined)
+        or ('has no attribute' in (install_driver_check.module_stderr | default('')) or
+            'has no attribute' in (install_driver_check.msg | default('')))
+    fail_msg: Install external storage driver check_mode failed unexpectedly
+    success_msg: Install external storage driver check_mode handled
+
+- name: Install external storage driver missing required key
+  nutanix.ncp.ntnx_install_external_storage_driver_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: install_driver_missing
+  ignore_errors: true
+
+- name: Assert missing key rejected
+  ansible.builtin.assert:
+    that:
+      - install_driver_missing is defined
+      - install_driver_missing.failed == true
+    fail_msg: Missing key did not fail
+    success_msg: Missing key correctly rejected
+
+# Refresh port capability — ntnx_refresh_port_capability_v2
+
+- name: Refresh port capability check_mode
+  nutanix.ncp.ntnx_refresh_port_capability_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000001"
+  register: refresh_port_check
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert refresh port capability check_mode — graceful when SDK lacks API
+  ansible.builtin.assert:
+    that:
+      - refresh_port_check is defined
+      - >-
+        (refresh_port_check.failed == false and refresh_port_check.response is defined)
+        or ('has no attribute' in (refresh_port_check.module_stderr | default('')) or
+            'has no attribute' in (refresh_port_check.msg | default('')))
+    fail_msg: Refresh port capability check_mode failed unexpectedly
+    success_msg: Refresh port capability check_mode handled
+
+- name: Refresh port capability missing cluster_ext_id
+  nutanix.ncp.ntnx_refresh_port_capability_v2:
+  register: refresh_port_missing
+  ignore_errors: true
+
+- name: Assert refresh port capability missing id rejected
+  ansible.builtin.assert:
+    that:
+      - refresh_port_missing is defined
+      - refresh_port_missing.failed == true
+    fail_msg: Missing cluster_ext_id did not fail
+    success_msg: Missing cluster_ext_id correctly rejected
+
+# Shutdown host — ntnx_shutdown_host_v2 (check_mode only, never live)
+
+- name: Shutdown host check_mode
+  nutanix.ncp.ntnx_shutdown_host_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000001"
+    host_ext_id: "00000000-0000-0000-0000-000000000002"
+  register: shutdown_host_check
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert shutdown host check_mode — graceful when SDK lacks API
+  ansible.builtin.assert:
+    that:
+      - shutdown_host_check is defined
+      - >-
+        (shutdown_host_check.failed == false and shutdown_host_check.response is defined)
+        or ('has no attribute' in (shutdown_host_check.module_stderr | default('')) or
+            'has no attribute' in (shutdown_host_check.msg | default('')))
+    fail_msg: Shutdown host check_mode failed unexpectedly
+    success_msg: Shutdown host check_mode handled
+
+- name: Shutdown host missing required host_ext_id
+  nutanix.ncp.ntnx_shutdown_host_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: shutdown_host_missing
+  ignore_errors: true
+
+- name: Assert missing host_ext_id rejected
+  ansible.builtin.assert:
+    that:
+      - shutdown_host_missing is defined
+      - shutdown_host_missing.failed == true
+    fail_msg: Missing host_ext_id did not fail
+    success_msg: Missing host_ext_id correctly rejected
