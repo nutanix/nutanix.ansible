@@ -1,0 +1,190 @@
+[WARNING]: No inventory was parsed, only implicit localhost is available
+[WARNING]: provided hosts list is empty, only localhost is available. Note that
+the implicit localhost does not match 'all'
+No config file found; using defaults
+
+PLAY [Flow Controller config playbook] *****************************************
+
+TASK [Get Flow Controller configuration] ***************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while fetching Flow Controller config info", "response": {"$objectType": "networking.v4.config.GetFlowControllerConfigApiResponse", "$reserved": {"$fv": "v4.r5"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r5"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r5"}, "code": "NETWORKING-10056", "locale": "en_US", "message": "Failed to get flow controller configuration due to an invalid input parameter - Application error kInvalidArgument raised: Failed FlowControllerConfigGetPrechecks  \nFlow Controller Configuration not found.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.16:9440/api/networking/v4.5/config/flow-controller-config", "rel": "self"}], "totalAvailableResults": 0}}, "status": 400}
+...ignoring
+
+TASK [Print Flow Controller configuration] *************************************
+ok: [localhost] => {
+    "msg": {
+        "changed": false,
+        "error": "BAD REQUEST",
+        "failed": true,
+        "msg": "Api Exception raised while fetching Flow Controller config info",
+        "response": {
+            "$objectType": "networking.v4.config.GetFlowControllerConfigApiResponse",
+            "$reserved": {
+                "$fv": "v4.r5"
+            },
+            "data": {
+                "$objectType": "networking.v4.error.ErrorResponse",
+                "$reserved": {
+                    "$fv": "v4.r5"
+                },
+                "error": [
+                    {
+                        "$objectType": "networking.v4.error.AppMessage",
+                        "$reserved": {
+                            "$fv": "v4.r5"
+                        },
+                        "code": "NETWORKING-10056",
+                        "locale": "en_US",
+                        "message": "Failed to get flow controller configuration due to an invalid input parameter - Application error kInvalidArgument raised: Failed FlowControllerConfigGetPrechecks  \nFlow Controller Configuration not found.",
+                        "severity": "ERROR"
+                    }
+                ]
+            },
+            "metadata": {
+                "$objectType": "common.v1.response.ApiResponseMetadata",
+                "$reserved": {
+                    "$fv": "v1.r0"
+                },
+                "flags": [
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "hasError",
+                        "value": true
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isPaginated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isTruncated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isExpandRestricted",
+                        "value": false
+                    }
+                ],
+                "links": [
+                    {
+                        "$objectType": "common.v1.response.ApiLink",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "href": "https://10.44.76.16:9440/api/networking/v4.5/config/flow-controller-config",
+                        "rel": "self"
+                    }
+                ],
+                "totalAvailableResults": 0
+            }
+        },
+        "status": 400
+    }
+}
+
+TASK [Update Flow Controller configuration] ************************************
+fatal: [localhost]: FAILED! => {"changed": false, "error": "BAD REQUEST", "msg": "Api Exception raised while fetching Flow Controller config info", "response": {"$objectType": "networking.v4.config.GetFlowControllerConfigApiResponse", "$reserved": {"$fv": "v4.r5"}, "data": {"$objectType": "networking.v4.error.ErrorResponse", "$reserved": {"$fv": "v4.r5"}, "error": [{"$objectType": "networking.v4.error.AppMessage", "$reserved": {"$fv": "v4.r5"}, "code": "NETWORKING-10056", "locale": "en_US", "message": "Failed to get flow controller configuration due to an invalid input parameter - Application error kInvalidArgument raised: Failed FlowControllerConfigGetPrechecks  \nFlow Controller Configuration not found.", "severity": "ERROR"}]}, "metadata": {"$objectType": "common.v1.response.ApiResponseMetadata", "$reserved": {"$fv": "v1.r0"}, "flags": [{"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "hasError", "value": true}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isPaginated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isTruncated", "value": false}, {"$objectType": "common.v1.config.Flag", "$reserved": {"$fv": "v1.r0"}, "name": "isExpandRestricted", "value": false}], "links": [{"$objectType": "common.v1.response.ApiLink", "$reserved": {"$fv": "v1.r0"}, "href": "https://10.44.76.16:9440/api/networking/v4.5/config/flow-controller-config", "rel": "self"}], "totalAvailableResults": 0}}, "status": 400}
+...ignoring
+
+TASK [Print updated Flow Controller configuration] *****************************
+ok: [localhost] => {
+    "msg": {
+        "changed": false,
+        "error": "BAD REQUEST",
+        "failed": true,
+        "msg": "Api Exception raised while fetching Flow Controller config info",
+        "response": {
+            "$objectType": "networking.v4.config.GetFlowControllerConfigApiResponse",
+            "$reserved": {
+                "$fv": "v4.r5"
+            },
+            "data": {
+                "$objectType": "networking.v4.error.ErrorResponse",
+                "$reserved": {
+                    "$fv": "v4.r5"
+                },
+                "error": [
+                    {
+                        "$objectType": "networking.v4.error.AppMessage",
+                        "$reserved": {
+                            "$fv": "v4.r5"
+                        },
+                        "code": "NETWORKING-10056",
+                        "locale": "en_US",
+                        "message": "Failed to get flow controller configuration due to an invalid input parameter - Application error kInvalidArgument raised: Failed FlowControllerConfigGetPrechecks  \nFlow Controller Configuration not found.",
+                        "severity": "ERROR"
+                    }
+                ]
+            },
+            "metadata": {
+                "$objectType": "common.v1.response.ApiResponseMetadata",
+                "$reserved": {
+                    "$fv": "v1.r0"
+                },
+                "flags": [
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "hasError",
+                        "value": true
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isPaginated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isTruncated",
+                        "value": false
+                    },
+                    {
+                        "$objectType": "common.v1.config.Flag",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "name": "isExpandRestricted",
+                        "value": false
+                    }
+                ],
+                "links": [
+                    {
+                        "$objectType": "common.v1.response.ApiLink",
+                        "$reserved": {
+                            "$fv": "v1.r0"
+                        },
+                        "href": "https://10.44.76.16:9440/api/networking/v4.5/config/flow-controller-config",
+                        "rel": "self"
+                    }
+                ],
+                "totalAvailableResults": 0
+            }
+        },
+        "status": 400
+    }
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=4    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+

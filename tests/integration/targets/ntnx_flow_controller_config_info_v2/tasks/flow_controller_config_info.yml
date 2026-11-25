@@ -1,0 +1,38 @@
+---
+- name: Start testing ntnx_flow_controller_config_info_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_flow_controller_config_info_v2
+
+- name: Get Flow Controller configuration
+  nutanix.ncp.ntnx_flow_controller_config_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Get Flow Controller configuration status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.vm_count is defined
+      - result.response.subnet_count is defined
+      - result.response.capabilities is defined
+    fail_msg: Failed to fetch Flow Controller configuration
+    success_msg: Flow Controller configuration fetched successfully
+
+- name: Verify capabilities structure
+  ansible.builtin.assert:
+    that:
+      - result.response.capabilities.vlan_networking is defined
+      - result.response.capabilities.virtual_networking is defined or result.response.capabilities.virtual_networking is none
+      - result.response.required_resources is defined
+    fail_msg: Capabilities structure invalid
+    success_msg: Capabilities structure valid
+
+- name: Verify response contains expected top-level fields
+  ansible.builtin.assert:
+    that:
+      - result.response.vm_count | int >= 500
+      - result.response.subnet_count | int >= 100
+    fail_msg: vm_count or subnet_count out of expected range
+    success_msg: vm_count and subnet_count in valid range

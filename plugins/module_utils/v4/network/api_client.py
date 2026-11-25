@@ -509,3 +509,15 @@ def get_gateways_api_instance(module):
     """
     api_client = get_api_client(module)
     return ntnx_networking_py_client.GatewaysApi(api_client=api_client)
+
+
+def get_flow_controller_config_api_instance(module):
+    """
+    This method will return FlowControllerConfigApi instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): FlowControllerConfigApi instance
+    """
+    api_client = get_api_client(module)
+    return ntnx_networking_py_client.FlowControllerConfigApi(api_client=api_client)

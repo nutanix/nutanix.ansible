@@ -1,0 +1,254 @@
+---
+- name: Start testing ntnx_flow_controller_config_v2
+  ansible.builtin.debug:
+    msg: Start testing ntnx_flow_controller_config_v2
+
+- name: Get Flow Controller configuration
+  nutanix.ncp.ntnx_flow_controller_config_info_v2:
+  register: fc_info
+  ignore_errors: true
+
+- name: Get Flow Controller configuration status
+  ansible.builtin.assert:
+    that:
+      - fc_info.changed == false
+      - fc_info.failed == false
+      - fc_info.response is defined
+      - fc_info.response.vm_count is defined
+      - fc_info.response.subnet_count is defined
+    fail_msg: Failed to fetch Flow Controller configuration
+    success_msg: Flow Controller configuration fetched
+
+- name: Save original Flow Controller configuration
+  ansible.builtin.set_fact:
+    original_vm_count: "{{ fc_info.response.vm_count }}"
+    original_subnet_count: "{{ fc_info.response.subnet_count }}"
+    original_capabilities: "{{ fc_info.response.capabilities }}"
+
+- name: Update Flow Controller configuration with check mode enabled
+  nutanix.ncp.ntnx_flow_controller_config_v2:
+    vm_count: 1200
+    subnet_count: 600
+    capabilities:
+      vlan_networking:
+        is_enabled: true
+      virtual_networking:
+        is_enabled: true
+        scale:
+          vpc_count: 15
+          load_balancer_count: 8
+          gateway_node_count: 3
+      network_security_app_centric:
+        is_enabled: true
+        scale:
+          security_policy_count: 120
+          address_group_count: 60
+          service_group_count: 60
+          entity_group_count: 25
+      security_analytics:
+        is_enabled: false
+      containers:
+        is_enabled: false
+      network_security_rule_centric:
+        is_enabled: false
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Update Flow Controller configuration with check mode enabled status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.vm_count == 1200
+      - result.response.subnet_count == 600
+      - result.response.capabilities is defined
+    fail_msg: Flow Controller config check mode failed
+    success_msg: Flow Controller config check mode passed
+
+- name: Update Flow Controller configuration
+  nutanix.ncp.ntnx_flow_controller_config_v2:
+    vm_count: 1500
+    subnet_count: 700
+    capabilities:
+      vlan_networking:
+        is_enabled: true
+      virtual_networking:
+        is_enabled: true
+        scale:
+          vpc_count: 20
+          load_balancer_count: 10
+          gateway_node_count: 4
+      network_security_app_centric:
+        is_enabled: true
+        scale:
+          security_policy_count: 150
+          address_group_count: 70
+          service_group_count: 70
+          entity_group_count: 30
+      security_analytics:
+        is_enabled: true
+        scale:
+          analytics_retention_days: 30
+          analytics_storage_gib: 500
+      containers:
+        is_enabled: true
+        scale:
+          kubernetes_cluster_count: 5
+      network_security_rule_centric:
+        is_enabled: true
+        scale:
+          security_policy_count: 80
+          address_group_count: 40
+          service_group_count: 40
+          entity_group_count: 15
+  register: result
+  ignore_errors: true
+
+- name: Update Flow Controller configuration status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+      - result.response is defined
+    fail_msg: Flow Controller config update failed
+    success_msg: Flow Controller config update passed
+
+- name: Get Flow Controller configuration after update
+  nutanix.ncp.ntnx_flow_controller_config_info_v2:
+  register: fc_info_after_update
+  ignore_errors: true
+
+- name: Get Flow Controller configuration after update status
+  ansible.builtin.assert:
+    that:
+      - fc_info_after_update.failed == false
+      - fc_info_after_update.response.vm_count == 1500
+      - fc_info_after_update.response.subnet_count == 700
+      - fc_info_after_update.response.capabilities is defined
+      - fc_info_after_update.response.capabilities.virtual_networking.scale.vpc_count == 20
+      - fc_info_after_update.response.capabilities.network_security_app_centric.scale.security_policy_count == 150
+      - fc_info_after_update.response.capabilities.containers.is_enabled == true
+    fail_msg: Info did not reflect updated Flow Controller configuration
+    success_msg: Info reflects updated Flow Controller configuration
+
+- name: Update Flow Controller configuration idempotently
+  nutanix.ncp.ntnx_flow_controller_config_v2:
+    vm_count: 1500
+    subnet_count: 700
+    capabilities:
+      vlan_networking:
+        is_enabled: true
+      virtual_networking:
+        is_enabled: true
+        scale:
+          vpc_count: 20
+          load_balancer_count: 10
+          gateway_node_count: 4
+      network_security_app_centric:
+        is_enabled: true
+        scale:
+          security_policy_count: 150
+          address_group_count: 70
+          service_group_count: 70
+          entity_group_count: 30
+      security_analytics:
+        is_enabled: true
+        scale:
+          analytics_retention_days: 30
+          analytics_storage_gib: 500
+      containers:
+        is_enabled: true
+        scale:
+          kubernetes_cluster_count: 5
+      network_security_rule_centric:
+        is_enabled: true
+        scale:
+          security_policy_count: 80
+          address_group_count: 40
+          service_group_count: 40
+          entity_group_count: 15
+  register: result
+  ignore_errors: true
+
+- name: Update Flow Controller configuration idempotently status
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: Flow Controller config idempotency failed
+    success_msg: Flow Controller config idempotency passed
+
+- name: Update Flow Controller configuration with minimal fields
+  nutanix.ncp.ntnx_flow_controller_config_v2:
+    vm_count: 1000
+    subnet_count: 500
+    capabilities:
+      vlan_networking:
+        is_enabled: true
+      virtual_networking:
+        is_enabled: false
+      network_security_app_centric:
+        is_enabled: false
+      security_analytics:
+        is_enabled: false
+      containers:
+        is_enabled: false
+      network_security_rule_centric:
+        is_enabled: false
+  register: result
+  ignore_errors: true
+
+- name: Update with minimal fields status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true or result.skipped == true
+      - result.failed == false
+    fail_msg: Minimal update failed
+    success_msg: Minimal update passed
+
+- name: Restore original Flow Controller configuration
+  nutanix.ncp.ntnx_flow_controller_config_v2:
+    vm_count: "{{ original_vm_count | int }}"
+    subnet_count: "{{ original_subnet_count | int }}"
+    capabilities: "{{ original_capabilities }}"
+  register: result
+  ignore_errors: true
+
+- name: Restore original Flow Controller configuration status
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+    fail_msg: Failed to restore Flow Controller configuration
+    success_msg: Flow Controller configuration restored
+
+- name: Test invalid vm_count below minimum
+  nutanix.ncp.ntnx_flow_controller_config_v2:
+    vm_count: 100
+    subnet_count: 500
+  register: result
+  ignore_errors: true
+
+- name: Test invalid vm_count status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Invalid vm_count should have failed
+    success_msg: Invalid vm_count correctly failed
+
+- name: Test invalid subnet_count below minimum
+  nutanix.ncp.ntnx_flow_controller_config_v2:
+    vm_count: 1000
+    subnet_count: 10
+  register: result
+  ignore_errors: true
+
+- name: Test invalid subnet_count status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Invalid subnet_count should have failed
+    success_msg: Invalid subnet_count correctly failed

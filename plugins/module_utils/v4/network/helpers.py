@@ -520,3 +520,22 @@ def get_vpn_appliance_config(module, api_instance, vpn_connection_ext_id, ext_id
                 )
             ),
         )
+
+
+def get_flow_controller_config(module, api_instance):
+    """
+    This method will return the Flow Controller configuration.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): FlowControllerConfigApi instance
+    Returns:
+        flow_controller_config (object): Flow Controller config data
+    """
+    try:
+        return api_instance.get_flow_controller_config().data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Flow Controller config info",
+        )

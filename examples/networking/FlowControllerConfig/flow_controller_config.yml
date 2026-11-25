@@ -1,0 +1,56 @@
+---
+# Summary:
+# Get and update Flow Controller configuration.
+
+- name: Flow Controller config playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ nutanix_host | default('10.44.76.16') }}"
+      nutanix_username: "{{ nutanix_username | default('admin') }}"
+      nutanix_password: "{{ nutanix_password | default('Nutanix.123') }}"
+      nutanix_port: "{{ nutanix_port | default('9440') }}"
+      validate_certs: false
+  tasks:
+    - name: Get Flow Controller configuration
+      nutanix.ncp.ntnx_flow_controller_config_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Print Flow Controller configuration
+      ansible.builtin.debug:
+        msg: "{{ result }}"
+
+    - name: Update Flow Controller configuration
+      nutanix.ncp.ntnx_flow_controller_config_v2:
+        vm_count: 1000
+        subnet_count: 500
+        capabilities:
+          vlan_networking:
+            is_enabled: true
+          virtual_networking:
+            is_enabled: true
+            scale:
+              vpc_count: 10
+              load_balancer_count: 5
+              gateway_node_count: 2
+          network_security_app_centric:
+            is_enabled: true
+            scale:
+              security_policy_count: 100
+              address_group_count: 50
+              service_group_count: 50
+              entity_group_count: 20
+          security_analytics:
+            is_enabled: false
+          containers:
+            is_enabled: false
+          network_security_rule_centric:
+            is_enabled: false
+      register: result
+      ignore_errors: true
+
+    - name: Print updated Flow Controller configuration
+      ansible.builtin.debug:
+        msg: "{{ result }}"
