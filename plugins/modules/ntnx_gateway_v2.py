@@ -11,12 +11,13 @@ __metaclass__ = type
 DOCUMENTATION = r"""
 ---
 module: ntnx_gateway_v2
-short_description: Create, Update, Delete, Upgrade network gateways in Nutanix Prism Central
+short_description: Create, Update, Delete network gateways in Nutanix Prism Central
 version_added: 2.7.0
 description:
-  - This module allows you to create, update, delete and upgrade network gateways in Nutanix Prism Central.
+  - This module allows you to create, update and delete network gateways in Nutanix Prism Central.
   - A Network Gateway is a VyOS-based VM that connects VPC networks to external or remote networks using VPN, VTEP, or BGP.
   - This module uses PC v4 APIs based SDKs.
+  - Use M(nutanix.ncp.ntnx_gateway_upgrade_v2) to upgrade a network gateway.
 notes:
     - >-
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
@@ -31,10 +32,6 @@ notes:
       Tenant Admin, VPC Admin
     - >-
       B(Delete a Network Gateway) -
-      Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin, Super Admin,
-      Tenant Admin, VPC Admin
-    - >-
-      B(Upgrade a Network Gateway) -
       Required Roles: Account Owner, Administrator, Network Infra Admin, Prism Admin, Project Admin, Super Admin,
       Tenant Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
@@ -55,12 +52,6 @@ options:
       - The external ID of the gateway.
     type: str
     required: false
-  upgrade:
-    description:
-      - When true and ext_id is provided, upgrades the gateway to the latest supported version.
-    type: bool
-    required: false
-    default: false
   name:
     description:
       - Name of the gateway.
@@ -1203,17 +1194,6 @@ EXAMPLES = r"""
     description: "Updated description for gateway with all attributes"
   register: result
 
-- name: Upgrade an existing gateway to the latest supported version
-  nutanix.ncp.ntnx_gateway_v2:
-    nutanix_host: "{{ ip }}"
-    nutanix_username: "{{ username }}"
-    nutanix_password: "{{ password }}"
-    validate_certs: false
-    state: present
-    ext_id: "2e40ff57-20aa-4d2b-b179-298db969c20d"
-    upgrade: true
-  register: result
-
 - name: Delete a gateway
   nutanix.ncp.ntnx_gateway_v2:
     nutanix_host: "{{ ip }}"
@@ -1228,10 +1208,10 @@ EXAMPLES = r"""
 RETURN = r"""
 response:
   description:
-    - Response for creating, updating, upgrading or deleting a network gateway.
+    - Response for creating, updating or deleting a network gateway.
     - If the operation is create or update and C(wait) is true, it will return the gateway details.
     - If the operation is create or update and C(wait) is false, it will return the task details.
-    - If the operation is delete or upgrade, it will return the task details.
+    - If the operation is delete, it will return the task details.
   returned: always
   type: dict
   sample:
@@ -1372,30 +1352,30 @@ ext_id:
   sample: "c13bf194-4017-4efb-abbf-d44c837818a9"
 
 changed:
-  description: This indicates whether the task resulted in any changes
+  description: This indicates whether the task resulted in any changes.
   returned: always
   type: bool
   sample: true
 
 skipped:
-  description: This indicates whether the task was skipped
-  returned: always
+  description: This indicates whether the task was skipped, for example during idempotency checks.
+  returned: when applicable
   type: bool
   sample: true
 
 error:
-  description: This indicates the error message if any error occurred
+  description: This indicates the error message if any error occurred.
   returned: When an error occurs
   type: str
 
 failed:
-  description: This indicates whether the task failed
+  description: This indicates whether the task failed.
   returned: always
   type: bool
   sample: false
 
 msg:
-  description: This indicates the message if any message occurred
+  description: This indicates the message if any message occurred.
   returned: When there is an error, module is idempotent or check mode (in delete operation)
   type: str
   sample: "Api Exception raised while creating gateway"
@@ -1436,6 +1416,7 @@ except ImportError:
 
     SDK_IMP_ERROR = traceback.format_exc()
 
+# Suppress the InsecureRequestWarning
 warnings.filterwarnings("ignore", message="Unverified HTTPS request is being made")
 
 
@@ -1445,6 +1426,8 @@ READ_ONLY_FIELDS = (
     "status",
     "vpc",
     "vm",
+    "vm_reference",
+    "is_active",
     "links",
     "ext_id",
     "tenant_id",
@@ -1497,7 +1480,6 @@ def _get_management_interface_spec():
     return dict(
         subnet_reference=dict(type="str", required=False),
         vlan_id=dict(type="int", required=False),
-        mtu=dict(type="int", required=False),
         address=dict(
             type="dict",
             options=_get_ip_address_spec(),
@@ -1517,7 +1499,6 @@ def _get_gateway_interface_spec():
     return dict(
         subnet_reference=dict(type="str", required=False),
         mac_address=dict(type="str", required=False),
-        mtu=dict(type="int", required=False),
         ip_address=dict(
             type="dict",
             options=_get_ip_address_spec(),
@@ -1834,7 +1815,6 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str"),
-        upgrade=dict(type="bool", default=False),
         name=dict(type="str"),
         description=dict(type="str"),
         vpc_reference=dict(type="str"),
@@ -1872,7 +1852,7 @@ def get_module_spec():
     return module_args
 
 
-def create_Gateway(module, api_instance, result):
+def create_gateway(module, api_instance, result):
     validate_required_params(module, ["name"])
     sg = SpecGenerator(module)
     default_spec = networking_sdk.Gateway()
@@ -1929,13 +1909,15 @@ def check_for_idempotency(old_spec_dict, update_spec_dict):
     return old == new
 
 
-def update_Gateway(module, api_instance, result):
+def update_gateway(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
     old_spec = get_gateway(module, api_instance, ext_id)
     etag = get_etag(data=old_spec)
     if not etag:
-        return module.fail_json("Unable to fetch etag for updating gateway", **result)
+        return module.fail_json(
+            msg="Unable to fetch etag for updating gateway", **result
+        )
     kwargs = {"if_match": etag}
 
     # Clear existing OneOf services so SpecGenerator instantiates the correct
@@ -1981,33 +1963,7 @@ def update_Gateway(module, api_instance, result):
     result["changed"] = True
 
 
-def upgrade_Gateway(module, api_instance, result):
-    ext_id = module.params.get("ext_id")
-    result["ext_id"] = ext_id
-
-    if module.check_mode:
-        result["msg"] = "Gateway with ext_id:{0} will be upgraded.".format(ext_id)
-        return
-
-    resp = None
-    try:
-        resp = api_instance.upgrade_gateway_by_id(extId=ext_id)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while upgrading gateway",
-        )
-    task_ext_id = resp.data.ext_id
-    result["task_ext_id"] = task_ext_id
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
-    if task_ext_id and module.params.get("wait"):
-        task_resp = wait_for_completion(module, task_ext_id, True)
-        result["response"] = strip_internal_attributes(task_resp.to_dict())
-    result["changed"] = True
-
-
-def delete_Gateway(module, api_instance, result):
+def delete_gateway(module, api_instance, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
 
@@ -2033,7 +1989,7 @@ def delete_Gateway(module, api_instance, result):
     task_ext_id = resp.data.ext_id
     result["task_ext_id"] = task_ext_id
     if task_ext_id and module.params.get("wait"):
-        task_status = wait_for_completion(module, task_ext_id, True)
+        task_status = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(task_status.to_dict())
     result["changed"] = True
 
@@ -2061,22 +2017,17 @@ def run_module():
         "changed": False,
         "response": None,
         "failed": False,
-        "ext_id": None,
     }
     api_instance = get_gateways_api_instance(module)
     state = module.params.get("state")
 
     if state == "present":
-        if module.params.get("upgrade"):
-            if not module.params.get("ext_id"):
-                module.fail_json(msg="ext_id is required when upgrade=true", **result)
-            upgrade_Gateway(module, api_instance, result)
-        elif module.params.get("ext_id"):
-            update_Gateway(module, api_instance, result)
+        if module.params.get("ext_id"):
+            update_gateway(module, api_instance, result)
         else:
-            create_Gateway(module, api_instance, result)
+            create_gateway(module, api_instance, result)
     else:
-        delete_Gateway(module, api_instance, result)
+        delete_gateway(module, api_instance, result)
     module.exit_json(**result)
 
 

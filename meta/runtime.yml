@@ -299,3 +299,4 @@ action_groups:
     - ntnx_images_migrate_v2
     - ntnx_gateway_v2
     - ntnx_gateways_info_v2
+    - ntnx_gateway_upgrade_v2

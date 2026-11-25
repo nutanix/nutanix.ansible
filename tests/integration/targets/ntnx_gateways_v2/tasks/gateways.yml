@@ -54,6 +54,10 @@
   register: result
   ignore_errors: true
 
+- name: Debug create gateway with missing name result
+  ansible.builtin.debug:
+    var: result
+
 - name: Create gateway with missing name status
   ansible.builtin.assert:
     that:
@@ -69,6 +73,10 @@
     state: absent
   register: result
   ignore_errors: true
+
+- name: Debug delete gateway with missing ext_id result
+  ansible.builtin.debug:
+    var: result
 
 - name: Delete gateway with missing ext_id status
   ansible.builtin.assert:
@@ -88,6 +96,10 @@
     cloud_network_reference: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
   register: result
   ignore_errors: true
+
+- name: Debug create gateway with vpc/cloud mutually exclusive result
+  ansible.builtin.debug:
+    var: result
 
 - name: Create gateway with vpc_reference and cloud_network_reference together status
   ansible.builtin.assert:
@@ -117,6 +129,10 @@
   register: result
   ignore_errors: true
 
+- name: Debug create gateway with local/remote services mutually exclusive result
+  ansible.builtin.debug:
+    var: result
+
 - name: Create gateway with local_services and remote_services together status
   ansible.builtin.assert:
     that:
@@ -128,12 +144,14 @@
     fail_msg: "local_services + remote_services was NOT flagged as mutually exclusive"
 
 - name: Upgrade gateway without ext_id
-  nutanix.ncp.ntnx_gateway_v2:
+  nutanix.ncp.ntnx_gateway_upgrade_v2:
     state: present
-    name: "{{ gw_name }}_upg"
-    upgrade: true
   register: result
   ignore_errors: true
+
+- name: Debug upgrade gateway without ext_id result
+  ansible.builtin.debug:
+    var: result
 
 - name: Upgrade gateway without ext_id status
   ansible.builtin.assert:
@@ -141,9 +159,9 @@
       - result is defined
       - result.changed == false
       - result.failed == true
-      - result.msg == "ext_id is required when upgrade=true"
-    success_msg: "upgrade=true without ext_id correctly rejected"
-    fail_msg: "upgrade=true without ext_id was NOT rejected"
+      - "'missing required arguments: ext_id' in result.msg"
+    success_msg: "upgrade without ext_id correctly rejected"
+    fail_msg: "upgrade without ext_id was NOT rejected"
 
 ########################################################################################
 # Create Gateway Tests
@@ -182,7 +200,6 @@
       management_interface:
         subnet_reference: "d3333333-3333-3333-3333-333333333333"
         vlan_id: 113
-        mtu: 1500
         address:
           ipv4:
             value: "10.30.30.230"
@@ -194,7 +211,6 @@
       interfaces:
         - subnet_reference: "d3333333-3333-3333-3333-333333333333"
           mac_address: "00:11:22:33:44:55"
-          mtu: 1500
           ip_address:
             ipv4:
               value: "10.30.30.231"
@@ -223,6 +239,10 @@
   check_mode: true
   register: result
   ignore_errors: true
+
+- name: Debug check mode create with all attributes result
+  ansible.builtin.debug:
+    var: result
 
 - name: Generate spec for creating gateway using check mode with all attributes status
   ansible.builtin.assert:
@@ -253,7 +273,6 @@
       - result.response.deployment.dns_servers[0].ipv4.value == "8.8.8.8"
       - result.response.deployment.management_interface.subnet_reference == "d3333333-3333-3333-3333-333333333333"
       - result.response.deployment.management_interface.vlan_id == 113
-      - result.response.deployment.management_interface.mtu == 1500
       - result.response.deployment.management_interface.address.ipv4.value == "10.30.30.230"
       - result.response.deployment.management_interface.default_gateway.ipv4.value == "10.30.30.254"
       - result.response.deployment.interfaces | length == 1
@@ -337,6 +356,8 @@
       - result.response.ip_config[0].ipv4.pool_list[0].end_ip.value == gw_ext_nat.pool_end
       - result.response.is_external == true
       - result.response.is_nat_enabled == true
+      - result.response.network_id == gw_ext_nat.vlan_id
+      - result.response.ip_config[0].ipv4.ip_subnet.ip.value == gw_ext_nat.network_ip
     success_msg: "Gateway external NAT subnet created successfully"
     fail_msg: "Unable to create gateway external NAT subnet"
 
@@ -367,6 +388,7 @@
       - result.response.project_ext_id == default_project.uuid
       - result.response.external_subnets | length == 1
       - result.response.external_subnets[0].subnet_reference == gw_ext_nat_ext_id
+      - result.response.project_ext_id == default_project.uuid
     success_msg: "Gateway VPC with NAT external subnet created successfully"
     fail_msg: "Unable to create gateway VPC with NAT external subnet"
   when: gw_ext_nat_ext_id | default('') | length > 0
@@ -481,6 +503,10 @@
   register: result
   ignore_errors: true
 
+- name: Debug create gateway with minimum attributes result
+  ansible.builtin.debug:
+    var: result
+
 - name: Create gateway with minimum attributes status
   ansible.builtin.assert:
     that:
@@ -566,6 +592,10 @@
     - gateway_fip1_ip | default('') | length > 0
   ignore_errors: true
 
+- name: Debug create gateway with all attributes result
+  ansible.builtin.debug:
+    var: result
+
 - name: Create gateway with all attributes status
   ansible.builtin.assert:
     that:
@@ -636,6 +666,10 @@
   register: result
   ignore_errors: true
 
+- name: Debug list all gateways result
+  ansible.builtin.debug:
+    var: result
+
 - name: List all gateways status
   ansible.builtin.assert:
     that:
@@ -656,6 +690,10 @@
   register: result
   ignore_errors: true
 
+- name: Debug list gateways with limit result
+  ansible.builtin.debug:
+    var: result
+
 - name: List gateways with limit status
   ansible.builtin.assert:
     that:
@@ -672,6 +710,10 @@
     filter: "name eq '{{ gw_name }}_min'"
   register: result
   ignore_errors: true
+
+- name: Debug list gateways with filter result
+  ansible.builtin.debug:
+    var: result
 
 - name: List gateways with filter status
   ansible.builtin.assert:
@@ -696,6 +738,11 @@
   when: todelete | length > 0
   ignore_errors: true
 
+- name: Debug get gateway using ext_id result
+  ansible.builtin.debug:
+    var: result
+  when: todelete | length > 0
+
 - name: Get gateway using ext_id status
   ansible.builtin.assert:
     that:
@@ -717,6 +764,10 @@
     ext_id: "{{ wrong_ext_id }}"
   register: result
   ignore_errors: true
+
+- name: Debug fetch gateway by wrong ext_id result
+  ansible.builtin.debug:
+    var: result
 
 - name: Fetch gateway by a wrong ext_id status
   ansible.builtin.assert:
@@ -767,7 +818,6 @@
       management_interface:
         subnet_reference: "d3333333-3333-3333-3333-333333333333"
         vlan_id: 113
-        mtu: 1500
         address:
           ipv4:
             value: "10.30.30.230"
@@ -779,7 +829,6 @@
       interfaces:
         - subnet_reference: "d3333333-3333-3333-3333-333333333333"
           mac_address: "00:11:22:33:44:55"
-          mtu: 1500
           ip_address:
             ipv4:
               value: "10.30.30.231"
@@ -809,6 +858,11 @@
   register: result
   when: gateway_all_ext_id | default('') | length > 0
   ignore_errors: true
+
+- name: Debug update gateway check mode result
+  ansible.builtin.debug:
+    var: result
+  when: gateway_all_ext_id | default('') | length > 0
 
 - name: Generate spec for updating gateway using check mode with all attributes status
   ansible.builtin.assert:
@@ -855,6 +909,11 @@
   when: gateway_all_ext_id | default('') | length > 0
   ignore_errors: true
 
+- name: Debug update gateway name and description result
+  ansible.builtin.debug:
+    var: result
+  when: gateway_all_ext_id | default('') | length > 0
+
 - name: Update gateway name and description status
   ansible.builtin.assert:
     that:
@@ -885,6 +944,11 @@
   register: result
   when: gateway_all_ext_id | default('') | length > 0
   ignore_errors: true
+
+- name: Debug update gateway name and description idempotency result
+  ansible.builtin.debug:
+    var: result
+  when: gateway_all_ext_id | default('') | length > 0
 
 - name: Update gateway name and description idempotency status
   ansible.builtin.assert:
@@ -920,6 +984,11 @@
   when: gateway_all_ext_id | default('') | length > 0
   ignore_errors: true
 
+- name: Debug update gateway NTP and DNS result
+  ansible.builtin.debug:
+    var: result
+  when: gateway_all_ext_id | default('') | length > 0
+
 - name: Update gateway NTP and DNS status
   ansible.builtin.assert:
     that:
@@ -942,14 +1011,18 @@
 ########################################################################################
 
 - name: Upgrade gateway with check mode
-  nutanix.ncp.ntnx_gateway_v2:
+  nutanix.ncp.ntnx_gateway_upgrade_v2:
     state: present
     ext_id: "{{ gateway_all_ext_id }}"
-    upgrade: true
   check_mode: true
   register: result
   when: gateway_all_ext_id | default('') | length > 0
   ignore_errors: true
+
+- name: Debug upgrade gateway with check mode result
+  ansible.builtin.debug:
+    var: result
+  when: gateway_all_ext_id | default('') | length > 0
 
 - name: Upgrade gateway with check mode status
   ansible.builtin.assert:
@@ -963,11 +1036,13 @@
     fail_msg: "Upgrade gateway with check mode failed"
   when: gateway_all_ext_id | default('') | length > 0
 
+
+# Upgrade currently fails with NETWORKING-10056:
+# "Authorization should happen in Atlas only if metadata updates happen in Atlas as well."
 - name: Upgrade gateway
-  nutanix.ncp.ntnx_gateway_v2:
+  nutanix.ncp.ntnx_gateway_upgrade_v2:
     state: present
     ext_id: "{{ gateway_all_ext_id }}"
-    upgrade: true
   register: result
   when: gateway_all_ext_id | default('') | length > 0
   ignore_errors: true
@@ -998,6 +1073,10 @@
   register: result
   ignore_errors: true
 
+- name: Debug delete gateway check mode result
+  ansible.builtin.debug:
+    var: result
+
 - name: Delete gateway with check mode status
   ansible.builtin.assert:
     that:
@@ -1010,12 +1089,15 @@
     fail_msg: "Delete gateway with check mode failed"
 
 - name: Upgrade non-existent gateway
-  nutanix.ncp.ntnx_gateway_v2:
+  nutanix.ncp.ntnx_gateway_upgrade_v2:
     state: present
     ext_id: "{{ wrong_ext_id }}"
-    upgrade: true
   register: result
   ignore_errors: true
+
+- name: Debug upgrade non-existent gateway result
+  ansible.builtin.debug:
+    var: result
 
 - name: Upgrade non-existent gateway status
   ansible.builtin.assert:
@@ -1037,6 +1119,10 @@
   register: result
   ignore_errors: true
 
+- name: Debug update non-existent gateway result
+  ansible.builtin.debug:
+    var: result
+
 - name: Update non-existent gateway status
   ansible.builtin.assert:
     that:
@@ -1054,6 +1140,10 @@
     ext_id: "{{ wrong_ext_id }}"
   register: result
   ignore_errors: true
+
+- name: Debug delete non-existent gateway result
+  ansible.builtin.debug:
+    var: result
 
 - name: Delete non-existent gateway status
   ansible.builtin.assert:
@@ -1077,6 +1167,10 @@
   loop: "{{ todelete }}"
   register: result
   ignore_errors: true
+
+- name: Debug delete all created gateways result
+  ansible.builtin.debug:
+    var: result
 
 - name: Delete all created gateways status
   ansible.builtin.assert:
@@ -1194,6 +1288,10 @@
   register: result
   when: category_ext_id is defined and category_ext_id | length > 0
   ignore_errors: true
+
+- name: Debug delete created category result
+  ansible.builtin.debug:
+    var: result
 
 - name: Delete created category status
   ansible.builtin.assert:
