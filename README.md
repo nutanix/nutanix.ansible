@@ -162,15 +162,15 @@ This collection requires Python 3.12 or greater
 6. **Karbon (NKE) modules are deprecated** — Prism Central versions later than 7.3 no longer support Karbon. Karbon modules (`ntnx_karbon_clusters`, `ntnx_karbon_clusters_node_pools`, `ntnx_karbon_registries`, `ntnx_karbon_clusters_info`, `ntnx_karbon_registries_info`) will not be supported on PC versions later than 7.3 and will be removed in a future release.
 
 ### Examples:
-1. [Prism Central](https://github.com/nutanix/nutanix.ansible/tree/v2.6.1/examples/)
+1. [Prism Central](https://github.com/nutanix/nutanix.ansible/tree/main/examples/)
 
-2. [Foundation](https://github.com/nutanix/nutanix.ansible/tree/v2.6.1/examples/foundation)
+2. [Foundation](https://github.com/nutanix/nutanix.ansible/tree/main/examples/foundation)
 
-3. [Foundation Central](https://github.com/nutanix/nutanix.ansible/tree/v2.6.1/examples/fc)
+3. [Foundation Central](https://github.com/nutanix/nutanix.ansible/tree/main/examples/fc)
 
-4. [Karbon](https://github.com/nutanix/nutanix.ansible/tree/v2.6.1/examples/karbon)
+4. [Karbon](https://github.com/nutanix/nutanix.ansible/tree/main/examples/karbon)
 
-5. [NDB](https://github.com/nutanix/nutanix.ansible/tree/v2.6.1/examples/ndb)
+5. [NDB](https://github.com/nutanix/nutanix.ansible/tree/main/examples/ndb)
 
 # Installing the collection
 
