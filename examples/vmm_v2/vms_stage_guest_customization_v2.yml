@@ -1,7 +1,7 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Update guest script (cloud-init)
+# 1. Update guest script
 # 2. Update guest script (Windows sysprep)
 
 - name: VM guest guest customization playbook

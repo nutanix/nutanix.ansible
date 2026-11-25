@@ -1,0 +1,41 @@
+---
+- name: Start ntnx_alert_email_configuration_info_v2 tests
+  ansible.builtin.debug:
+    msg: "Starting ntnx_alert_email_configuration_info_v2 tests"
+
+- name: Get alert email configuration
+  nutanix.ncp.ntnx_alert_email_configuration_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Verify get alert email configuration
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "Failed to get alert email configuration"
+    success_msg: "Got alert email configuration successfully"
+
+- name: Verify response contains expected fields
+  ansible.builtin.assert:
+    that:
+      - result.response.is_enabled is defined
+    fail_msg: "Response missing expected fields"
+    success_msg: "Response contains expected fields"
+  when: not result.failed
+
+- name: Get alert email configuration with read timeout
+  nutanix.ncp.ntnx_alert_email_configuration_info_v2:
+    read_timeout: 30000
+  register: result
+  ignore_errors: true
+
+- name: Verify get with read_timeout
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    fail_msg: "Failed to get alert email configuration with read_timeout"
+    success_msg: "Got alert email configuration with read_timeout successfully"

@@ -1,0 +1,202 @@
+---
+############################################################################################
+# Test plan for ntnx_vm_device_bundles_info_v2
+# DeviceBundle info: GetDeviceBundleById, ListDeviceBundlesByVmId
+# Covers: list all, limit, fetch_all, get by ext_id, filter, invalid ext_id
+############################################################################################
+
+- name: Start ntnx_vm_device_bundles_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_vm_device_bundles_info_v2 tests
+
+- name: Generate random name suffix
+  ansible.builtin.set_fact:
+    random_name: >-
+      {{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}
+
+- name: Set VM name
+  ansible.builtin.set_fact:
+    vm_name: "{{ random_name }}_db_info_vm"
+
+- name: Create a VM for info tests
+  nutanix.ncp.ntnx_vms_v2:
+    state: present
+    name: "{{ vm_name }}"
+    cluster:
+      ext_id: "{{ cluster.uuid }}"
+  register: vm_result
+  ignore_errors: true
+
+- name: Create VM status
+  ansible.builtin.assert:
+    that:
+      - vm_result.response is defined
+      - vm_result.changed == true
+      - vm_result.failed == false
+      - vm_result.ext_id is defined
+    fail_msg: Unable to create VM
+    success_msg: VM created successfully
+
+- name: Capture the VM ext_id
+  ansible.builtin.set_fact:
+    vm_uuid: "{{ vm_result.ext_id }}"
+
+############################################################################################
+# List all device bundles
+############################################################################################
+
+- name: List all device bundles attached to a VM
+  nutanix.ncp.ntnx_vm_device_bundles_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: List all device bundles status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response is iterable
+      - result.total_available_results is defined
+    success_msg: "List all device bundles passed"
+    fail_msg: "List all device bundles failed"
+
+- name: Set has_device_bundles flag
+  ansible.builtin.set_fact:
+    has_device_bundles: "{{ (result.response | length) > 0 }}"
+    all_device_bundles: "{{ result.response }}"
+
+############################################################################################
+# List with limit
+############################################################################################
+
+- name: List device bundles with limit
+  nutanix.ncp.ntnx_vm_device_bundles_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List device bundles with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response | length <= 1
+    success_msg: "List device bundles with limit passed"
+    fail_msg: "List device bundles with limit failed"
+
+############################################################################################
+# List with filter
+############################################################################################
+
+- name: List device bundles with filter (using extId)
+  nutanix.ncp.ntnx_vm_device_bundles_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    filter: "extId eq '00000000-0000-0000-0000-000000000001'"
+  register: result
+  ignore_errors: true
+
+- name: List device bundles with filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+    success_msg: "List device bundles with filter passed"
+    fail_msg: "List device bundles with filter failed"
+
+############################################################################################
+# List with fetch_all
+############################################################################################
+
+- name: List all device bundles with fetch_all
+  nutanix.ncp.ntnx_vm_device_bundles_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: List all device bundles with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result.changed == false
+      - fetch_all_result.failed == false
+      - fetch_all_result.response is defined
+      - fetch_all_result.total_available_results is defined
+      - (fetch_all_result.response | default([]) | length) ==
+        (fetch_all_result.total_available_results | int)
+    success_msg: "Listed all device bundles with fetch_all successfully"
+    fail_msg: "Unable to list all device bundles with fetch_all"
+
+############################################################################################
+# Get by ext_id (if bundles exist, otherwise test invalid)
+############################################################################################
+
+- name: Set first device bundle ext_id
+  ansible.builtin.set_fact:
+    device_bundle_ext_id: "{{ all_device_bundles[0].ext_id }}"
+  when: has_device_bundles | bool
+
+- name: Fetch a specific device bundle using ext_id
+  nutanix.ncp.ntnx_vm_device_bundles_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "{{ device_bundle_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: has_device_bundles | bool
+
+- name: Fetch a specific device bundle using ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == device_bundle_ext_id
+      - result.response is defined
+      - result.response.ext_id == device_bundle_ext_id
+    success_msg: "Fetch a specific device bundle using ext_id passed"
+    fail_msg: "Fetch a specific device bundle using ext_id failed"
+  when: has_device_bundles | bool
+
+############################################################################################
+# Negative: fetch with non-existent ext_id
+############################################################################################
+
+- name: Fetch device bundle with a non-existent ext_id
+  nutanix.ncp.ntnx_vm_device_bundles_info_v2:
+    vm_ext_id: "{{ vm_uuid }}"
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Fetch device bundle with non-existent ext_id status
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    success_msg: "Correctly failed for non-existent device bundle ext_id"
+    fail_msg: "Expected failure for non-existent device bundle ext_id"
+
+############################################################################################
+# Cleanup
+############################################################################################
+
+- name: Delete the VM
+  nutanix.ncp.ntnx_vms_v2:
+    state: absent
+    ext_id: "{{ vm_uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Delete VM status
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+    fail_msg: Unable to delete the VM
+    success_msg: VM deleted successfully

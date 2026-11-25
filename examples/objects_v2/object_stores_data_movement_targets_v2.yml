@@ -1,0 +1,78 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Create a data movement target for an object store
+# 2. Get details of the created data movement target using external ID
+# 3. List data movement targets for an object store
+# 4. List data movement targets with filter
+# 5. List data movement targets with limit
+# 6. List all data movement targets with fetch_all
+
+- name: Object store data movement targets playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        object_store_ext_id: "<object_store_ext_id>"
+        remote_object_store_ext_id: "<remote_object_store_ext_id>"
+        remote_object_store_fqdn: "<remote_object_store_fqdn>"
+        domain_manager_ext_id: "<domain_manager_ext_id>"
+        remote_public_ip: "<remote_public_ip>"
+
+    - name: Create a data movement target
+      nutanix.ncp.ntnx_object_stores_data_movement_targets_v2:
+        state: present
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        name: "data-movement-target-1"
+        type: "NTNX_OBJECTS"
+        details:
+          ntnx_objects:
+            object_store_ext_id: "{{ remote_object_store_ext_id }}"
+            object_store_fqdn:
+              value: "{{ remote_object_store_fqdn }}"
+            domain_manager_ext_id: "{{ domain_manager_ext_id }}"
+            object_store_public_network_ips:
+              - ipv4:
+                  value: "{{ remote_public_ip }}"
+      register: dmt_create
+
+    - name: Set the data movement target external ID
+      ansible.builtin.set_fact:
+        dmt_ext_id: "{{ dmt_create.ext_id }}"
+
+    - name: Get details of the created data movement target
+      nutanix.ncp.ntnx_object_stores_data_movement_targets_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        ext_id: "{{ dmt_ext_id }}"
+      register: dmt_get
+
+    - name: List data movement targets
+      nutanix.ncp.ntnx_object_stores_data_movement_targets_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+      register: dmt_list
+
+    - name: List data movement targets with filter
+      nutanix.ncp.ntnx_object_stores_data_movement_targets_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        filter: "name eq 'data-movement-target-1'"
+      register: dmt_filter
+
+    - name: List data movement targets with limit
+      nutanix.ncp.ntnx_object_stores_data_movement_targets_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        limit: 1
+      register: dmt_limit
+
+    - name: List all data movement targets with fetch_all
+      nutanix.ncp.ntnx_object_stores_data_movement_targets_info_v2:
+        object_store_ext_id: "{{ object_store_ext_id }}"
+        fetch_all: true
+      register: dmt_fetch_all

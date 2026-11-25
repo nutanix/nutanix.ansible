@@ -2,14 +2,19 @@
 # Summary:
 # This playbook will do:
 # 1. Create SAML identity provider shared with all projects
-# 2. Fetch SAML identity providers using filters
-# 3. Update SAML identity provider to share with specific projects
-# 4. Update SAML identity provider to unshare from all projects
-# 5. Update SAML identity provider to unshare from specific projects
-# 6. Update SAML identity provider
-# 7. Get specific SAML identity provider
-# 8. List all SAML identity providers
-# 9. Delete created SAML identity provider
+# 2. Get SAML identity provider using filter name
+# 3. List all SAML identity providers with fetch_all
+# 4. Update SAML identity provider to share with specific projects
+# 5. Update SAML identity provider to unshare from all projects
+# 6. Update SAML identity provider to unshare from specific projects
+# 7. Update SAML identity provider
+# 8. Get SAML identity provider using ext id
+# 9. List all SAML identity providers
+# 10. Get SAML SP metadata
+# 11. Get SAML SP metadata to a destination path
+# 12. Download SAML IdP SP metadata
+# 13. Download SAML IdP SP metadata to a destination path
+# 14. Delete the created SAML identity provider
 
 - name: SAML identity provider playbook
   hosts: localhost
@@ -49,6 +54,12 @@
     - name: Get saml using filter name
       nutanix.ncp.ntnx_saml_identity_providers_info_v2:
         filter: name eq  '{{ saml_name }}'
+      register: result
+      ignore_errors: true
+
+    - name: List all SAML identity providers with fetch_all
+      nutanix.ncp.ntnx_saml_identity_providers_info_v2:
+        fetch_all: true
       register: result
       ignore_errors: true
 
@@ -97,6 +108,30 @@
 
     - name: List all identity providers
       nutanix.ncp.ntnx_saml_identity_providers_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Get SAML SP metadata
+      nutanix.ncp.ntnx_saml_sp_metadata_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Get SAML SP metadata to a destination path
+      nutanix.ncp.ntnx_saml_sp_metadata_info_v2:
+        dest: "/tmp/saml_sp_metadata.xml"
+      register: result
+      ignore_errors: true
+
+    - name: Download SAML IdP SP metadata
+      nutanix.ncp.ntnx_saml_identity_providers_sp_metadata_download_v2:
+        ext_id: "{{ saml_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Download SAML IdP SP metadata to a destination path
+      nutanix.ncp.ntnx_saml_identity_providers_sp_metadata_download_v2:
+        ext_id: "{{ saml_ext_id }}"
+        dest: "/tmp/saml_idp_sp_metadata.xml"
       register: result
       ignore_errors: true
 

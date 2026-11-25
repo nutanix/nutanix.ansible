@@ -1,11 +1,12 @@
 ---
 # Summary:
 # This playbook will do:
-# 1. Create an SNMP V2 trap
-# 2. Create an SNMP V3 trap
-# 3. Fetch SNMP trap by ext_id
-# 4. Update SNMP trap port
-# 5. Delete SNMP trap
+# 1. Create SNMP V2 trap
+# 2. Create SNMP V3 trap
+# 3. Fetch SNMP trap by ext id
+# 4. Update SNMP V2 trap port
+# 5. Delete SNMP V2 trap
+# 6. Delete SNMP V3 trap
 
 - name: SNMP traps playbook
   hosts: localhost

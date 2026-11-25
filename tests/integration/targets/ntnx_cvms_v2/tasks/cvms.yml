@@ -1,0 +1,176 @@
+---
+# Test plan for ntnx_cvms_v2:
+# 1. Discover cluster_ext_id and an existing CVM
+# 2. Update check_mode with a valid SDK-pattern name
+# 3. Live update when the platform allows it; otherwise accept the
+#    single/two-node rejection as an expected environment constraint
+# 4. Idempotency against the current name (Nothing to change.)
+# 5. Negatives (missing args, bad ext_id, invalid name pattern)
+
+- name: Start CVM update tests
+  ansible.builtin.debug:
+    msg: Start CVM update tests
+
+- name: Generate random suffix
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false,
+      special=false, length=8)[0] }}"
+
+- name: List clusters to discover cluster_ext_id
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(e:e eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_result
+  ignore_errors: true
+
+- name: Assert clusters listed
+  ansible.builtin.assert:
+    that:
+      - clusters_result.failed == false
+      - clusters_result.response | length > 0
+    fail_msg: Failed to list clusters for CVM tests
+    success_msg: Clusters listed for CVM tests
+
+- name: Set cluster_ext_id
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+- name: List CVMs for cluster
+  nutanix.ncp.ntnx_cluster_cvms_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: cvms_result
+  ignore_errors: true
+
+- name: Assert CVMs listed
+  ansible.builtin.assert:
+    that:
+      - cvms_result.failed == false
+      - cvms_result.response | length > 0
+    fail_msg: Failed to list CVMs for update tests
+    success_msg: CVMs listed for update tests
+
+- name: Capture original CVM details
+  ansible.builtin.set_fact:
+    cvm_ext_id: "{{ cvms_result.response[0].ext_id }}"
+    original_cvm_name: "{{ cvms_result.response[0].name }}"
+    # SDK enforces /^NTNX-(?=.*[A-Za-z0-9])[A-Za-z0-9_-]+-CVM$/
+    updated_cvm_name: "NTNX-ansible-{{ random_name }}-CVM"
+
+- name: Update CVM with check mode enabled
+  nutanix.ncp.ntnx_cvms_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ cvm_ext_id }}"
+    name: "{{ updated_cvm_name }}"
+  register: result
+  ignore_errors: true
+  check_mode: true
+
+- name: Assert update CVM check mode
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.name == updated_cvm_name
+    fail_msg: Update CVM check mode failed
+    success_msg: Update CVM check mode passed
+
+- name: Update CVM name
+  nutanix.ncp.ntnx_cvms_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ cvm_ext_id }}"
+    name: "{{ updated_cvm_name }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert update CVM live result
+  ansible.builtin.assert:
+    that:
+      - >
+          (result.failed == false and result.changed == true and
+           result.response.name == updated_cvm_name) or
+          (result.failed == true and result.response is defined and
+           'single and two node' in
+           (result.response.legacy_error_message | default('')) | lower)
+    fail_msg: Update CVM failed unexpectedly
+    success_msg: Update CVM live path behaved as expected
+
+- name: Set fact when live update succeeded
+  ansible.builtin.set_fact:
+    cvm_live_update_succeeded: true
+  when: not result.failed
+
+- name: Test CVM update idempotency with current name
+  nutanix.ncp.ntnx_cvms_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ cvm_ext_id }}"
+    name: "{{ updated_cvm_name if (cvm_live_update_succeeded | default(false))
+      else original_cvm_name }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert CVM update idempotency
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.msg == "Nothing to change."
+    fail_msg: CVM update idempotency failed
+    success_msg: CVM update idempotency passed
+
+- name: Restore original CVM name
+  nutanix.ncp.ntnx_cvms_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ cvm_ext_id }}"
+    name: "{{ original_cvm_name }}"
+  register: result
+  ignore_errors: true
+  when: cvm_live_update_succeeded | default(false)
+
+- name: Assert restore original CVM name
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+      - result.response.name == original_cvm_name
+    fail_msg: Restore original CVM name failed
+    success_msg: Restore original CVM name passed
+  when: cvm_live_update_succeeded | default(false)
+
+########################################################################
+# Negatives
+########################################################################
+
+- name: Update CVM missing required name
+  nutanix.ncp.ntnx_cvms_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "{{ cvm_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert update CVM missing name
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Missing name negative failed
+    success_msg: Missing name negative passed
+
+- name: Update CVM with invalid ext_id
+  nutanix.ncp.ntnx_cvms_v2:
+    state: present
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    ext_id: "00000000-0000-0000-0000-000000000099"
+    name: "NTNX-invalid-extid-CVM"
+  register: result
+  ignore_errors: true
+
+- name: Assert update CVM invalid ext_id
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+    fail_msg: Invalid ext_id negative failed
+    success_msg: Invalid ext_id negative passed

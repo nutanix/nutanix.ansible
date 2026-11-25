@@ -1,0 +1,16 @@
+---
+# Hardware Provider connections are served by Foundation Central (FCVM), not PC.
+# Point the connection at the FCVM endpoint (foundation_host), falling back to ip
+# if foundation_host is not defined in the integration config.
+- name: Set module defaults
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ foundation_host | default(ip) }}"
+      nutanix_username: "{{ foundation_username | default(username) | default(omit) }}"
+      nutanix_password: "{{ foundation_password | default(password) | default(omit) }}"
+      validate_certs: "{{ validate_certs }}"
+      nutanix_debug: "{{ nutanix_debug | default(omit) }}"
+      nutanix_log_file: "{{ nutanix_log_file | default(omit) }}"
+  block:
+    - name: Import hardware_providers.yml
+      ansible.builtin.import_tasks: hardware_providers.yml

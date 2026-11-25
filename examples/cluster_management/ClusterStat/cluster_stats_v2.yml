@@ -1,0 +1,49 @@
+---
+# Summary:
+# This playbook demonstrates using ntnx_cluster_stats_info_v2 to fetch
+# cluster performance and capacity statistics from Nutanix Prism Central
+# using the v4 cluster_management API.
+#
+# ClusterStat is a read-only entity — the SDK only exposes
+# GET /api/clustermgmt/v4.2/stats/clusters/{extId}.
+
+- name: ClusterStat playbook
+  hosts: localhost
+  gather_facts: true
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ lookup('ansible.builtin.env', 'NUTANIX_HOST') | default('<pc_ip>', true) }}"
+      nutanix_username: "{{ lookup('ansible.builtin.env', 'NUTANIX_USERNAME') | default('<user>', true) }}"
+      nutanix_password: "{{ lookup('ansible.builtin.env', 'NUTANIX_PASSWORD') | default('<pass>', true) }}"
+      validate_certs: false
+  tasks:
+    - name: Fetch a cluster to use for the stats calls
+      nutanix.ncp.ntnx_clusters_info_v2:
+        limit: 1
+      register: clusters_result
+
+    - name: Set cluster_ext_id fact
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+    - name: Compute stat window (last 1 hour, minute-resolution)
+      ansible.builtin.set_fact:
+        stats_end_time: "{{ ('%Y-%m-%dT%H:%M:%SZ' | strftime(ansible_date_time.epoch | int)) }}"
+        stats_start_time: "{{ ('%Y-%m-%dT%H:%M:%SZ' | strftime((ansible_date_time.epoch | int) - 3600)) }}"
+
+    - name: Fetch cluster stats info (minimum required attributes)
+      nutanix.ncp.ntnx_cluster_stats_info_v2:
+        ext_id: "{{ cluster_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+      register: cluster_stats_info_min
+
+    - name: Fetch cluster stats info with all attributes
+      nutanix.ncp.ntnx_cluster_stats_info_v2:
+        ext_id: "{{ cluster_ext_id }}"
+        start_time: "{{ stats_start_time }}"
+        end_time: "{{ stats_end_time }}"
+        sampling_interval: 60
+        stat_type: "AVG"
+        select: "hypervisorCpuUsagePpm,aggregateHypervisorMemoryUsagePpm,ioBandwidthKbps"
+      register: cluster_stats_info_full

@@ -1,0 +1,382 @@
+---
+# ##########################################################################
+# Test plan for ntnx_recovery_stage_v2 / ntnx_recovery_stages_info_v2
+# --------------------------------------------------------------------------
+# Recovery stages are sub-resources of a Recovery Plan. Provisioning a real
+# multi-cluster Recovery Plan requires a paired Availability Zone (two PCs)
+# with mirrored clusters, which is out of scope for a single-PC test cluster.
+# Therefore the test suite exercises:
+#   * check_mode spec generation for Create, Update and Delete (all attrs)
+#   * required-field validation (recovery_plan_ext_id, entity_type)
+#   * required_if enforcement for delete (state=absent needs ext_id)
+#   * choices validation for entity_type
+#   * negative API behaviour when the parent Recovery Plan is missing
+#     (Create/Update/Delete should surface DPO-10400 NOT FOUND cleanly)
+#   * info module: get-by-id + list against a non-existent Recovery Plan
+#     (should also surface the same DPO-10400 error)
+# ##########################################################################
+
+- name: Start ntnx_recovery_stage_v2 integration tests
+  ansible.builtin.debug:
+    msg: Start ntnx_recovery_stage_v2 integration tests
+
+- name: Generate random names / fake ext_ids used only for negative + check_mode paths
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=10)[0] }}"
+    fake_recovery_plan_ext_id: "00000000-0000-0000-0000-000000000001"
+    fake_recovery_stage_ext_id: "00000000-0000-0000-0000-000000000002"
+    fake_vm_ext_id: "9e9c7f6a-4b28-4d5f-a1d9-1f1b3a92aa11"
+    fake_category_ext_id: "bbc3555a-133b-5348-9764-bfff196e84e4"
+
+##############################################################################
+# Check mode: Create (all attributes)
+##############################################################################
+
+- name: Generate spec for creating recovery stage using check mode with all attributes
+  nutanix.ncp.ntnx_recovery_stage_v2:
+    state: present
+    recovery_plan_ext_id: "{{ fake_recovery_plan_ext_id }}"
+    entity_type: "VM"
+    entities:
+      - ext_id: "{{ fake_vm_ext_id }}"
+        name: "webserver-vm"
+    category_ext_ids:
+      - "{{ fake_category_ext_id }}"
+    priority: 1
+    post_actions:
+      - config:
+          delay_action:
+            delay_secs: 30
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert create-check_mode generated a valid spec with all attributes
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.entity_type == "VM"
+      - result.response.entities | length == 1
+      - result.response.entities[0].ext_id == fake_vm_ext_id
+      - result.response.entities[0].name == "webserver-vm"
+      - result.response.category_ext_ids | length == 1
+      - result.response.category_ext_ids[0] == fake_category_ext_id
+      - result.response.priority == 1
+      - result.response.post_actions | length == 1
+      - result.response.post_actions[0].config.delay_secs == 30
+    success_msg: "Check-mode Create spec generated successfully with all attributes"
+    fail_msg: "Check-mode Create spec is missing expected attributes"
+
+##############################################################################
+# Negative: Missing required field (entity_type) on Create
+##############################################################################
+
+- name: Create recovery stage without entity_type must fail
+  nutanix.ncp.ntnx_recovery_stage_v2:
+    state: present
+    recovery_plan_ext_id: "{{ fake_recovery_plan_ext_id }}"
+    priority: 1
+  register: result
+  ignore_errors: true
+
+- name: Assert Create without entity_type fails with clear message
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'Missing required parameter(s): entity_type' in result.msg"
+    success_msg: "Create without entity_type failed as expected"
+    fail_msg: "Create without entity_type did not fail as expected"
+
+##############################################################################
+# Negative: Missing required field (recovery_plan_ext_id) on Create
+##############################################################################
+
+- name: Create recovery stage without recovery_plan_ext_id must fail
+  nutanix.ncp.ntnx_recovery_stage_v2:
+    state: present
+    entity_type: "VM"
+    entities:
+      - ext_id: "{{ fake_vm_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Create without recovery_plan_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'recovery_plan_ext_id' in result.msg"
+    success_msg: "Create without recovery_plan_ext_id failed as expected"
+    fail_msg: "Create without recovery_plan_ext_id did not fail as expected"
+
+##############################################################################
+# Negative: Invalid enum value for entity_type
+##############################################################################
+
+- name: Create recovery stage with invalid entity_type must fail
+  nutanix.ncp.ntnx_recovery_stage_v2:
+    state: present
+    recovery_plan_ext_id: "{{ fake_recovery_plan_ext_id }}"
+    entity_type: "CONTAINER"
+    entities:
+      - ext_id: "{{ fake_vm_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Create with invalid entity_type fails at spec validation
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'entity_type' in result.msg"
+      - "'value of entity_type must be one of' in result.msg or 'CONTAINER' in result.msg"
+    success_msg: "Create with invalid entity_type failed as expected"
+    fail_msg: "Create with invalid entity_type did not fail as expected"
+
+##############################################################################
+# Negative: real Create call against a non-existent Recovery Plan (API 404)
+##############################################################################
+
+- name: Create recovery stage under non-existent Recovery Plan (real API call)
+  nutanix.ncp.ntnx_recovery_stage_v2:
+    state: present
+    recovery_plan_ext_id: "{{ fake_recovery_plan_ext_id }}"
+    entity_type: "VM"
+    entities:
+      - ext_id: "{{ fake_vm_ext_id }}"
+    priority: 1
+    post_actions:
+      - config:
+          delay_action:
+            delay_secs: 30
+  register: result
+  ignore_errors: true
+
+- name: Assert Create against non-existent Recovery Plan surfaces DPO-10400
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while creating recovery stage"
+      - result.response is defined
+    success_msg: "Create against non-existent Recovery Plan correctly returned an API error"
+    fail_msg: "Create against non-existent Recovery Plan did not surface expected API error"
+
+##############################################################################
+# Check mode: Update (all attributes)
+##############################################################################
+
+- name: Generate spec for updating recovery stage using check mode with all attributes
+  nutanix.ncp.ntnx_recovery_stage_v2:
+    state: present
+    recovery_plan_ext_id: "{{ fake_recovery_plan_ext_id }}"
+    ext_id: "{{ fake_recovery_stage_ext_id }}"
+    entity_type: "VM"
+    entities:
+      - ext_id: "{{ fake_vm_ext_id }}"
+        name: "webserver-vm-updated"
+    category_ext_ids:
+      - "{{ fake_category_ext_id }}"
+    priority: 2
+    post_actions:
+      - config:
+          delay_action:
+            delay_secs: 60
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+# Note: update check_mode has to fetch the entity first so it will fail on
+# non-existent parent. We still assert the API surfaced a clean error.
+- name: Assert Update-check_mode against non-existent Recovery Plan fails cleanly
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching recovery stage info using ext_id"
+    success_msg: "Update-check_mode against non-existent Recovery Plan correctly failed"
+    fail_msg: "Update-check_mode against non-existent Recovery Plan did not fail as expected"
+
+##############################################################################
+# Negative: Update call against non-existent Recovery Plan (real API call)
+##############################################################################
+
+- name: Update recovery stage against non-existent Recovery Plan
+  nutanix.ncp.ntnx_recovery_stage_v2:
+    state: present
+    recovery_plan_ext_id: "{{ fake_recovery_plan_ext_id }}"
+    ext_id: "{{ fake_recovery_stage_ext_id }}"
+    entity_type: "VM"
+    entities:
+      - ext_id: "{{ fake_vm_ext_id }}"
+    priority: 2
+  register: result
+  ignore_errors: true
+
+- name: Assert Update surfaces DPO-10400
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching recovery stage info using ext_id"
+    success_msg: "Update against non-existent Recovery Plan correctly returned an API error"
+    fail_msg: "Update against non-existent Recovery Plan did not surface expected API error"
+
+##############################################################################
+# Check mode: Delete
+##############################################################################
+
+- name: Delete recovery stage using check mode
+  nutanix.ncp.ntnx_recovery_stage_v2:
+    state: absent
+    recovery_plan_ext_id: "{{ fake_recovery_plan_ext_id }}"
+    ext_id: "{{ fake_recovery_stage_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert Delete-check_mode reports intent without calling API
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == fake_recovery_stage_ext_id
+      - "'will be deleted' in result.msg"
+    success_msg: "Delete-check_mode reported intent successfully"
+    fail_msg: "Delete-check_mode did not report intent as expected"
+
+##############################################################################
+# Negative: Delete without ext_id (required_if enforcement)
+##############################################################################
+
+- name: Delete recovery stage without ext_id must fail
+  nutanix.ncp.ntnx_recovery_stage_v2:
+    state: absent
+    recovery_plan_ext_id: "{{ fake_recovery_plan_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Delete without ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'state is absent but all of the following are missing: ext_id' in result.msg"
+    success_msg: "Delete without ext_id failed as expected"
+    fail_msg: "Delete without ext_id did not fail as expected"
+
+##############################################################################
+# Negative: real Delete against non-existent Recovery Plan
+##############################################################################
+
+- name: Delete recovery stage against non-existent Recovery Plan (real API call)
+  nutanix.ncp.ntnx_recovery_stage_v2:
+    state: absent
+    recovery_plan_ext_id: "{{ fake_recovery_plan_ext_id }}"
+    ext_id: "{{ fake_recovery_stage_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert Delete against non-existent Recovery Plan surfaces DPO-10400
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching recovery stage info using ext_id"
+    success_msg: "Delete against non-existent Recovery Plan correctly returned an API error"
+    fail_msg: "Delete against non-existent Recovery Plan did not surface expected API error"
+
+##############################################################################
+# Info module: get-by-id against non-existent parent (must fail cleanly)
+##############################################################################
+
+- name: "Info - get recovery stage by ext_id (non-existent parent)"
+  nutanix.ncp.ntnx_recovery_stages_info_v2:
+    recovery_plan_ext_id: "{{ fake_recovery_plan_ext_id }}"
+    ext_id: "{{ fake_recovery_stage_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert info get-by-id surfaces DPO-10400
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching recovery stage info using ext_id"
+    success_msg: "Info get-by-id correctly returned an API error"
+    fail_msg: "Info get-by-id did not surface expected API error"
+
+##############################################################################
+# Info module: list against non-existent parent (must fail cleanly)
+##############################################################################
+
+- name: "Info - list recovery stages of non-existent parent"
+  nutanix.ncp.ntnx_recovery_stages_info_v2:
+    recovery_plan_ext_id: "{{ fake_recovery_plan_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert info list surfaces DPO-10400
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - result.msg == "Api Exception raised while fetching recovery stages info"
+    success_msg: "Info list correctly returned an API error"
+    fail_msg: "Info list did not surface expected API error"
+
+##############################################################################
+# Info module: missing recovery_plan_ext_id must fail
+##############################################################################
+
+- name: "Info - list without recovery_plan_ext_id must fail"
+  nutanix.ncp.ntnx_recovery_stages_info_v2: {}
+  register: result
+  ignore_errors: true
+
+- name: Assert info without recovery_plan_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'recovery_plan_ext_id' in result.msg"
+    success_msg: "Info without recovery_plan_ext_id failed as expected"
+    fail_msg: "Info without recovery_plan_ext_id did not fail as expected"
+
+##############################################################################
+# Info module: mutually_exclusive ext_id + filter must fail
+##############################################################################
+
+- name: "Info - mutually_exclusive ext_id + filter must fail"
+  nutanix.ncp.ntnx_recovery_stages_info_v2:
+    recovery_plan_ext_id: "{{ fake_recovery_plan_ext_id }}"
+    ext_id: "{{ fake_recovery_stage_ext_id }}"
+    filter: "entityType eq Datapolicies.Config.RecoverableEntityType'VM'"
+  register: result
+  ignore_errors: true
+
+- name: Assert info mutually_exclusive ext_id + filter fails
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    success_msg: "Info mutually_exclusive check enforced"
+    fail_msg: "Info mutually_exclusive check not enforced"

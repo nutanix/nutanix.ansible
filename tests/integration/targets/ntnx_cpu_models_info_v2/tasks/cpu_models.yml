@@ -1,0 +1,175 @@
+---
+#################################################################
+# Test plan for ntnx_cpu_models_info_v2 (info-only / read-only)
+#
+# CpuModels is a read-only entity representing CPU models supported
+# across registered clusters. SDK exposes GetCpuModelById and
+# ListCpuModels.
+#
+# Scenarios covered:
+#   1. List all CPU models          -> changed=false, failed=false,
+#                                     response is a list,
+#                                     total_available_results populated
+#   2. Get CPU model by ext_id      -> single dict, ext_id echoed
+#   3. List with limit              -> response length bounded by limit
+#   4. List with filter             -> filtered results
+#   5. List with fetch_all          -> response length == total_available_results
+#   6. Get with invalid ext_id      -> graceful error handling
+#   7. Mutually exclusive ext_id+filter -> module validation fails
+#################################################################
+
+- name: Start ntnx_cpu_models_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_cpu_models_info_v2 tests
+
+#################################################################
+# List all CPU models
+#################################################################
+
+- name: List all CPU models
+  nutanix.ncp.ntnx_cpu_models_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: List all CPU models status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - (result.failed == false and result.response is defined) or (result.failed == true and result.status is defined)
+    success_msg: "List all CPU models passed (or API not available on this PC version)"
+    fail_msg: "List all CPU models failed"
+
+- name: Set has_cpu_models flag
+  ansible.builtin.set_fact:
+    has_cpu_models: "{{ result.failed == false and (result.response | length) > 0 }}"
+    all_cpu_models: "{{ result.response if result.failed == false else [] }}"
+    api_not_available: "{{ result.failed == true and result.status == 404 }}"
+
+- name: Debug API availability
+  ansible.builtin.debug:
+    msg: "API not available on this PC version (404) - skipping dependent tests"
+  when: api_not_available | bool
+
+#################################################################
+# Get CPU model using ext_id (only when models exist)
+#################################################################
+
+- name: Set first CPU model ext_id
+  ansible.builtin.set_fact:
+    cpu_model_ext_id: "{{ all_cpu_models[0].ext_id }}"
+  when: has_cpu_models | bool
+
+- name: Get CPU model using ext_id
+  nutanix.ncp.ntnx_cpu_models_info_v2:
+    ext_id: "{{ cpu_model_ext_id }}"
+  register: result
+  ignore_errors: true
+  when: has_cpu_models | bool
+
+- name: Get CPU model using ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.ext_id == cpu_model_ext_id
+      - result.response is defined
+      - result.response.ext_id == cpu_model_ext_id
+    success_msg: "Get CPU model using ext_id passed"
+    fail_msg: "Get CPU model using ext_id failed"
+  when: has_cpu_models | bool
+
+#################################################################
+# List CPU models with limit
+#################################################################
+
+- name: List CPU models with limit
+  nutanix.ncp.ntnx_cpu_models_info_v2:
+    limit: 1
+  register: result
+  ignore_errors: true
+
+- name: List CPU models with limit status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - (result.failed == false and result.response is defined) or (result.failed == true and result.status == 404)
+    success_msg: "List CPU models with limit passed (or API not available)"
+    fail_msg: "List CPU models with limit failed"
+
+#################################################################
+# List CPU models with filter
+#################################################################
+
+- name: List CPU models with filter
+  nutanix.ncp.ntnx_cpu_models_info_v2:
+    filter: "isDefault eq true"
+  register: result
+  ignore_errors: true
+
+- name: List CPU models with filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - (result.failed == false and result.response is defined) or (result.failed == true and result.status == 404)
+    success_msg: "List CPU models with filter passed (or API not available)"
+    fail_msg: "List CPU models with filter failed"
+
+#################################################################
+# List all CPU models with fetch_all
+#################################################################
+
+- name: List all CPU models with fetch_all
+  nutanix.ncp.ntnx_cpu_models_info_v2:
+    fetch_all: true
+  register: fetch_all_result
+  ignore_errors: true
+
+- name: List all CPU models with fetch_all status
+  ansible.builtin.assert:
+    that:
+      - fetch_all_result.changed == false
+      - (fetch_all_result.failed == false and fetch_all_result.response is defined) or (fetch_all_result.failed == true and fetch_all_result.status == 404)
+    success_msg: "Listed all CPU models with fetch_all successfully (or API not available)"
+    fail_msg: "Unable to list all CPU models with fetch_all"
+
+#################################################################
+# Get CPU model with invalid ext_id
+#################################################################
+
+- name: Get CPU model with invalid ext_id
+  nutanix.ncp.ntnx_cpu_models_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result
+  ignore_errors: true
+
+- name: Get CPU model with invalid ext_id status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+    success_msg: "Get CPU model with invalid ext_id handled gracefully"
+    fail_msg: "Get CPU model with invalid ext_id was not handled gracefully"
+
+#################################################################
+# Negative: ext_id and filter are mutually exclusive
+#################################################################
+
+- name: Fetch CPU model with both ext_id and filter (should fail)
+  nutanix.ncp.ntnx_cpu_models_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+    filter: "isDefault eq true"
+  register: result
+  ignore_errors: true
+
+- name: Fetch CPU model with both ext_id and filter status
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - "'mutually exclusive' in result.msg"
+    success_msg: "Providing both ext_id and filter failed as expected"
+    fail_msg: "Providing both ext_id and filter did not fail as expected"

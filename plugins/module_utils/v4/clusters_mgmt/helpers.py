@@ -1,4 +1,4 @@
-# Copyright: (c) 2024, Nutanix
+# Copyright: (c) 2027, Nutanix
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -51,6 +51,32 @@ def get_host(module, api_instance, ext_id, cluster_ext_id):
         )
 
 
+def get_host_nic(module, api_instance, ext_id, cluster_ext_id, host_ext_id):
+    """
+    This method will return host NIC info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        ext_id (str): host NIC external ID
+        cluster_ext_id (str): cluster external ID
+        host_ext_id (str): host external ID
+    return:
+        host NIC info (object): host NIC info
+    """
+    try:
+        return api_instance.get_host_nic_by_id(
+            clusterExtId=cluster_ext_id,
+            hostExtId=host_ext_id,
+            extId=ext_id,
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching host NIC info using ext_id",
+        )
+
+
 def get_storage_container(module, api_instance, ext_id):
     """
     This method will return storage container info using external ID.
@@ -68,6 +94,76 @@ def get_storage_container(module, api_instance, ext_id):
             module=module,
             exception=e,
             msg="Api Exception raised while fetching storage container info using ext_id",
+        )
+
+
+def list_data_stores_by_cluster_id(module, api_instance, cluster_ext_id, **kwargs):
+    """
+    This method will return the list of datastores associated with a cluster.
+    Args:
+        module: Ansible module
+        api_instance: StorageContainersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        kwargs (dict): additional query parameters (_page, _limit, _filter, _orderby)
+    return:
+        datastores list API response (object)
+    """
+    try:
+        return api_instance.list_data_stores_by_cluster_id(
+            clusterExtId=cluster_ext_id, **kwargs
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while listing datastores for cluster with ext_id: {0}".format(
+                cluster_ext_id
+            ),
+        )
+
+
+def find_data_store_by_name(module, api_instance, cluster_ext_id, datastore_name):
+    """
+    This method will return the datastore matching ``datastore_name`` inside
+    the cluster identified by ``cluster_ext_id``.
+    Args:
+        module: Ansible module
+        api_instance: StorageContainersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        datastore_name (str): datastore name to look up
+    return:
+        datastore info (object) or None if not found
+    """
+    resp = list_data_stores_by_cluster_id(
+        module,
+        api_instance,
+        cluster_ext_id,
+        _filter="datastoreName eq '{0}'".format(datastore_name),
+    )
+    data_stores = getattr(resp, "data", None) or []
+    if data_stores:
+        return data_stores[0]
+    return None
+
+
+def get_storage_config(module, api_instance, cluster_ext_id):
+    """
+    This method will return the storage configuration of a cluster using
+    the cluster external ID.
+    Args:
+        module: Ansible module
+        api_instance: StorageConfigApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+    return:
+        storage config info (object): storage configuration info
+    """
+    try:
+        return api_instance.get_storage_config(clusterExtId=cluster_ext_id)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching storage config using cluster ext_id",
         )
 
 
@@ -91,6 +187,119 @@ def get_ssl_certificates(module, api_instance, ext_id):
         )
 
 
+def get_encryption_config(module, api_instance, cluster_ext_id):
+    """
+    This method will return the encryption configuration of a cluster
+    using the cluster external ID.
+    Args:
+        module: Ansible module
+        api_instance: EncryptionApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+    return:
+        encryption config API response (object): full get encryption config API response
+    """
+    try:
+        return api_instance.get_encryption_config(clusterExtId=cluster_ext_id)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching encryption config using cluster ext_id",
+        )
+
+
+def download_encryption_keys_backup(module, api_instance, ext_id):
+    """
+    This method will download the encryption keys backup identified by ext_id.
+    Args:
+        module: Ansible module
+        api_instance: EncryptionApi instance from sdk
+        ext_id (str): encryption keys backup external ID
+    return:
+        download response (object): SDK download encryption keys backup API response
+    """
+    try:
+        return api_instance.download_encryption_keys_backup(extId=ext_id)
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while downloading encryption keys backup",
+        )
+
+
+def get_cvm(module, api_instance, ext_id, cluster_ext_id):
+    """
+    This method will return CVM info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: CvmsApi instance from sdk
+        ext_id (str): CVM external ID
+        cluster_ext_id (str): parent cluster external ID
+    return:
+        cvm info (object): CVM info
+    """
+    try:
+        return api_instance.get_cvm_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching CVM info using ext_id",
+        )
+
+
+def get_vcenter_extension(module, api_instance, ext_id):
+    """
+    Fetch vCenter server extension information for the given ext_id.
+
+    The vCenter server extension identifies the Nutanix Prism registration
+    on a vCenter Server that manages an ESXi cluster attached to Prism Central.
+
+    Args:
+        module: Ansible module
+        api_instance: VcenterExtensionsApi instance from
+            ntnx_clustermgmt_py_client sdk
+        ext_id (str): The globally unique identifier of vCenter Server
+            extension instance (UUID).
+    Returns:
+        vcenter extension info (object): vCenter extension info
+    """
+    try:
+        return api_instance.get_vcenter_extension_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching vCenter extension info using ext_id",
+        )
+
+
+def get_vcenter_integration(module, api_instance, ext_id):
+    """
+    Fetch vCenter server integration information for the given ext_id.
+
+    Args:
+        module: Ansible module
+        api_instance: VcenterIntegrationsApi instance from
+            ntnx_clustermgmt_py_client sdk
+        ext_id (str): The globally unique identifier of vCenter Server
+            integration instance (UUID).
+    Returns:
+        vcenter integration info (object): vCenter integration info
+    """
+    try:
+        return api_instance.get_vcenter_integration_by_ext_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching vCenter integration info using ext_id",
+        )
+
+
 def get_cluster_profile(module, api_instance, ext_id):
     """
     This method will return cluster profile info using external ID.
@@ -108,6 +317,288 @@ def get_cluster_profile(module, api_instance, ext_id):
             module=module,
             exception=e,
             msg="Api Exception raised while fetching cluster profile info using ext_id",
+        )
+
+
+def get_certificate_authority(module, api_instance, ext_id, cluster_ext_id):
+    """
+    This method will return Certificate Authority (CA) info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: CertificateManagerApi instance from sdk
+        ext_id (str): Certificate Authority external ID
+        cluster_ext_id (str): cluster external ID
+    return:
+        certificate authority info (object): certificate authority info
+    """
+    try:
+        return api_instance.get_certificate_authority_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching certificate authority info using ext_id",
+        )
+
+
+def get_certificate(module, api_instance, ext_id, cluster_ext_id):
+    """
+    This method will return Certificate info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: CertificateManagerApi instance from sdk
+        ext_id (str): Certificate external ID
+        cluster_ext_id (str): cluster external ID
+    return:
+        certificate info (object): certificate info
+    """
+    try:
+        return api_instance.get_certificate_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching certificate info using ext_id",
+        )
+
+
+def get_csr(module, api_instance, ext_id, cluster_ext_id):
+    """
+    This method will return Certificate Signing Request (CSR) info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: CertificateManagerApi instance from sdk
+        ext_id (str): CSR external ID
+        cluster_ext_id (str): cluster external ID
+    return:
+        csr info (object): csr info
+    """
+    try:
+        return api_instance.get_csr_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching CSR info using ext_id",
+        )
+
+
+def download_csr(module, api_instance, cluster_ext_id, csr_ext_id):
+    """
+    This method will download a Certificate Signing Request (CSR) file.
+    Args:
+        module: Ansible module
+        api_instance: CertificateManagerApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        csr_ext_id (str): CSR external ID
+    return:
+        download response (object): SDK download CSR API response
+    """
+    try:
+        return api_instance.download_csr_by_id(
+            clusterExtId=cluster_ext_id, csrExtId=csr_ext_id
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while downloading CSR with ext_id: {0}".format(
+                csr_ext_id
+            ),
+        )
+
+
+def get_cluster_stats(module, api_instance, ext_id, **kwargs):
+    """
+    This method will return cluster stats using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        ext_id (str): cluster external ID
+        kwargs (dict): additional query parameters
+            (_startTime, _endTime, _samplingInterval, _statType, _select)
+    return:
+        cluster stats info (object): cluster stats info
+    """
+    try:
+        return api_instance.get_cluster_stats(extId=ext_id, **kwargs).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching cluster stats using ext_id",
+        )
+
+
+def get_bmc_info(module, api_instance, cluster_ext_id, host_ext_id):
+    """
+    This method will return BMC info for a specific host in a cluster.
+    Args:
+        module: Ansible module
+        api_instance: BmcApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        host_ext_id (str): host external ID
+    return:
+        bmc info (object): BMC info entity
+    """
+    try:
+        return api_instance.get_bmc_info(
+            clusterExtId=cluster_ext_id, extId=host_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching BMC info using cluster and host ext_id",
+        )
+
+
+def get_rackable_unit(module, api_instance, ext_id, cluster_ext_id):
+    """
+    This method will return rackable unit info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        ext_id (str): rackable unit external ID
+        cluster_ext_id (str): parent cluster external ID
+    return:
+        rackable unit info (object): rackable unit info
+    """
+    try:
+        return api_instance.get_rackable_unit_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching rackable unit info using ext_id",
+        )
+
+
+def get_virtual_nic(module, api_instance, ext_id, cluster_ext_id, host_ext_id):
+    """
+    This method will return virtual NIC info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        ext_id (str): virtual NIC external ID
+        cluster_ext_id (str): parent cluster external ID
+        host_ext_id (str): parent host external ID
+    return:
+        virtual NIC info (object): virtual NIC info
+    """
+    try:
+        return api_instance.get_virtual_nic_by_id(
+            clusterExtId=cluster_ext_id,
+            hostExtId=host_ext_id,
+            extId=ext_id,
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching virtual NIC info using ext_id",
+        )
+
+
+def get_disk(module, api_instance, ext_id):
+    """
+    This method will return Disk info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: DisksApi instance from sdk
+        ext_id (str): Disk external ID
+    return:
+        Disk info (object): Disk info
+    """
+    try:
+        return api_instance.get_disk_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Disk info using ext_id: {0}".format(
+                ext_id
+            ),
+        )
+
+
+def get_external_storage(module, api_instance, ext_id):
+    """
+    This method will return external storage info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ExternalStoragesApi instance from sdk
+        ext_id (str): external storage external ID
+    return:
+        external storage info (object): external storage info
+    """
+    try:
+        return api_instance.get_external_storage_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching external storage info using ext_id",
+        )
+
+
+def list_physical_gpu_profiles(module, api_instance, cluster_ext_id, **kwargs):
+    """
+    This method will return the list of physical GPU profiles for a cluster.
+    Physical GPU profiles are automatically discovered from the installed GPU
+    hardware across the registered clusters and are attached to virtual machines
+    in passthrough mode.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): UUID of the cluster
+        kwargs (dict): additional query parameters (_page, _limit, _filter, _orderby)
+    return:
+        physical GPU profiles list API response (object)
+    """
+    try:
+        return api_instance.list_physical_gpu_profiles(
+            clusterExtId=cluster_ext_id, **kwargs
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching physical GPU profiles info",
+        )
+
+
+def list_virtual_gpu_profiles(module, api_instance, cluster_ext_id, **kwargs):
+    """
+    This method will return the list of virtual GPU profiles for a cluster.
+    Virtual GPU profiles define the resource allocation (frame buffer, display
+    heads, resolution, licensing) available to virtual machines across the
+    registered clusters.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): UUID of the cluster
+        kwargs (dict): additional query parameters (_page, _limit, _filter, _orderby)
+    return:
+        virtual GPU profiles list API response (object)
+    """
+    try:
+        return api_instance.list_virtual_gpu_profiles(
+            clusterExtId=cluster_ext_id, **kwargs
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching virtual GPU profiles info",
         )
 
 
@@ -176,4 +667,415 @@ def get_snmp_config(module, api_instance, cluster_ext_id):
             module=module,
             exception=e,
             msg="Api Exception raised while fetching snmp config info using cluster ext_id",
+        )
+
+
+def get_rsyslog_server(module, api_instance, cluster_ext_id, ext_id):
+    """
+    This method will return rsyslog server info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        ext_id (str): rsyslog server external ID
+    return:
+        rsyslog server info (object): rsyslog server info
+    """
+    try:
+        return api_instance.get_rsyslog_server_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching rsyslog server info using ext_id",
+        )
+
+
+def list_rsyslog_servers(module, api_instance, cluster_ext_id):
+    """
+    List RSYSLOG servers for a cluster.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+    return:
+        ListRsyslogServersByClusterIdApiResponse instance
+    """
+    try:
+        return api_instance.list_rsyslog_servers_by_cluster_id(
+            clusterExtId=cluster_ext_id
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching RSYSLOG servers info",
+        )
+
+
+def get_ip_pool(module, api_instance, cluster_ext_id, ext_id):
+    """
+    This method will return IP Pool info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: NetworkSegmentsApi instance from sdk
+        cluster_ext_id (str): parent cluster external ID
+        ext_id (str): IP Pool external ID
+    return:
+        ip pool info (object): IP Pool info
+    """
+    try:
+        return api_instance.get_ip_pool_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching IP Pool info using ext_id",
+        )
+
+
+def get_network_segment(module, api_instance, cluster_ext_id, ext_id):
+    """
+    This method will return Network Segment info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: NetworkSegmentsApi instance from sdk
+        cluster_ext_id (str): parent cluster external ID
+        ext_id (str): Network Segment external ID
+    return:
+        network segment info (object): Network Segment info
+    """
+    try:
+        return api_instance.get_network_segment_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching Network Segment info using ext_id",
+        )
+
+
+def get_non_migratable_vms_result(module, api_instance, cluster_ext_id, ext_id):
+    """
+    This method will return non-migratable VMs result using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): parent cluster external ID
+        ext_id (str): non-migratable VMs result external ID
+    return:
+        non-migratable VMs result (object)
+    """
+    try:
+        return api_instance.get_non_migratable_vms_result_by_id(
+            clusterExtId=cluster_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching non-migratable VMs result "
+                "using ext_id"
+            ),
+        )
+
+
+def get_device_bundle_instance(module, api_instance, ext_id):
+    """
+    This method will return device bundle instance info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: DeviceBundlesApi instance from sdk
+        ext_id (str): device bundle instance external ID
+    return:
+        device bundle instance info (object): device bundle instance info
+    """
+    try:
+        return api_instance.get_device_bundle_instance_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching device bundle instance info using ext_id",
+        )
+
+
+def get_device_bundle_profile(module, api_instance, ext_id):
+    """
+    This method will return device bundle profile info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: DeviceBundlesApi instance from sdk
+        ext_id (str): device bundle profile external ID
+    return:
+        device bundle profile info (object): device bundle profile info
+    """
+    try:
+        return api_instance.get_device_bundle_profile_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching device bundle profile info using ext_id",
+        )
+
+
+def get_cpu_model(module, api_instance, ext_id):
+    """
+    This method will return CPU model info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: CpuModelsApi instance from sdk
+        ext_id (str): CPU model external ID
+    return:
+        CPU model info (object): CPU model info
+    """
+    try:
+        return api_instance.get_cpu_model_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching CPU model info using ext_id",
+        )
+
+
+def get_high_availability_config(module, api_instance, cluster_ext_id):
+    """
+    This method will return high availability config using cluster external ID.
+    Args:
+        module: Ansible module
+        api_instance: HighAvailabilityConfigApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+    return:
+        high availability config (object): high availability config info
+    """
+    try:
+        return api_instance.get_high_availability_config(
+            clusterExtId=cluster_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching high availability config "
+            "using cluster_ext_id: {0}".format(cluster_ext_id),
+        )
+
+
+def get_external_ssh_access_control(module, api_instance, cluster_ext_id):
+    """
+    This method will return external SSH access control info using cluster ID.
+    Args:
+        module: Ansible module
+        api_instance: SshControlApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+    return:
+        external SSH access control info (object)
+    """
+    try:
+        return api_instance.get_external_ssh_access_control_by_cluster_id(
+            clusterExtId=cluster_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching external SSH access control "
+            "using cluster ext_id",
+        )
+
+
+def get_host_gpu(module, api_instance, cluster_ext_id, host_ext_id, ext_id):
+    """
+    This method will return host GPU info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        host_ext_id (str): host external ID
+        ext_id (str): host GPU external ID
+    return:
+        host GPU info (object)
+    """
+    try:
+        return api_instance.get_host_gpu_by_id(
+            clusterExtId=cluster_ext_id, hostExtId=host_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching host GPU info using ext_id",
+        )
+
+
+def get_host_nic_stats(
+    module, api_instance, cluster_ext_id, host_ext_id, ext_id, **kwargs
+):
+    """
+    This method will return host NIC stats using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance from sdk
+        cluster_ext_id (str): cluster external ID
+        host_ext_id (str): host external ID
+        ext_id (str): host NIC external ID
+        kwargs: additional query params (_startTime, _endTime, etc.)
+    return:
+        host NIC stats info (object)
+    """
+    try:
+        return api_instance.get_host_nic_stats(
+            clusterExtId=cluster_ext_id,
+            hostExtId=host_ext_id,
+            extId=ext_id,
+            **kwargs,
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching host NIC stats using ext_id",
+        )
+
+
+def get_cluster_protection_info(module, api_instance, ext_id):
+    """
+    This method will return cluster protection info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClusterProtectionApi instance
+        ext_id (str): cluster external ID
+    return:
+        cluster protection info (object)
+    """
+    try:
+        return api_instance.get_cluster_protection_info(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching cluster protection info",
+        )
+
+
+def get_cluster_recovery_info(module, api_instance, ext_id):
+    """
+    This method will return cluster recovery info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: ClusterProtectionApi instance
+        ext_id (str): cluster external ID
+    return:
+        cluster recovery info (object)
+    """
+    try:
+        return api_instance.get_cluster_recovery_info(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching cluster recovery info",
+        )
+
+
+def get_config_credentials(module, api_instance, cluster_ext_id):
+    """
+    This method will return config credentials for a cluster.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance
+        cluster_ext_id (str): cluster external ID
+    return:
+        config credentials info (object)
+    """
+    try:
+        return api_instance.get_config_credentials_by_cluster_id(
+            clusterExtId=cluster_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching config credentials",
+        )
+
+
+def get_fault_tolerance_status(module, api_instance, cluster_ext_id):
+    """
+    This method will return fault tolerance status for a cluster.
+    Args:
+        module: Ansible module
+        api_instance: ClustersApi instance
+        cluster_ext_id (str): cluster external ID
+    return:
+        fault tolerance status (object)
+    """
+    try:
+        return api_instance.get_fault_tolerance_status_by_cluster_id(
+            clusterExtId=cluster_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching fault tolerance status",
+        )
+
+
+def get_port_capability(module, api_instance, cluster_ext_id):
+    """
+    This method will return port capability for a cluster.
+    Args:
+        module: Ansible module
+        api_instance: NetworkSegmentsApi instance
+        cluster_ext_id (str): cluster external ID
+    return:
+        port capability info (object)
+    """
+    try:
+        return api_instance.get_port_capability_by_cluster_id(
+            clusterExtId=cluster_ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching port capability info",
+        )
+
+
+def get_gpu_stats(module, api_instance, cluster_ext_id, host_ext_id, ext_id, **kwargs):
+    """
+    This method will return GPU stats using external ID.
+    Args:
+        module: Ansible module
+        api_instance: PcieDevicesApi instance
+        cluster_ext_id (str): cluster external ID
+        host_ext_id (str): host external ID
+        ext_id (str): GPU external ID
+        kwargs: additional query params (_startTime, _endTime, etc.)
+    return:
+        GPU stats info (object)
+    """
+    try:
+        return api_instance.get_gpu_stats(
+            clusterExtId=cluster_ext_id,
+            hostExtId=host_ext_id,
+            extId=ext_id,
+            **kwargs,
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching GPU stats",
         )
