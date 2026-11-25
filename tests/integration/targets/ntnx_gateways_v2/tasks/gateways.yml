@@ -436,6 +436,7 @@
       - result.response.vpc_reference == gw_vpc_ext_id
       - result.response.project_ext_id == default_project.uuid
       - result.response.ip_config[0].ipv4.ip_subnet.ip.value == gw_overlay_net.network_ip
+      - result.response.ip_config[0].ipv4.ip_subnet.prefix_length == gw_overlay_net.network_prefix
       - result.response.ip_config[0].ipv4.default_gateway_ip.value == gw_overlay_net.gateway_ip
       - result.response.ip_config[0].ipv4.pool_list | length >= 1
       - result.response.ip_config[0].ipv4.pool_list[0].start_ip.value == gw_overlay_net.pool_start
