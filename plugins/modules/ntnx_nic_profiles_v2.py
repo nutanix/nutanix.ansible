@@ -17,6 +17,26 @@ description:
   - This module allows you to create, update, and delete NIC profiles in Nutanix Prism Central.
   - Use ntnx_nic_profiles_association_v2 module to associate or disassociate host NICs.
   - This module uses PC v4 APIs based SDKs
+notes:
+    - >-
+      This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
+      The required roles depend on the operation being performed.
+    - >-
+      B(Create a NIC profile) -
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
+    - >-
+      B(Update the specified NIC profile) -
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
+    - >-
+      B(Delete the specified NIC profile) -
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
+    - >-
+      B(Share the NIC profile with project, specified by ID) -
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
+    - >-
+      B(Unshare the NIC profile from project, specified by ID) -
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
+    - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
 options:
   state:
     description:
@@ -74,6 +94,13 @@ options:
       - Required for create and update operations.
     type: str
     required: false
+  shared_with_projects:
+    description:
+      - List of project external IDs to share the NIC profile with.
+      - Projects not in the list will be unshared during update.
+      - During create operations, this parameter requires C(wait) to be C(true) (default). If C(wait) is set to C(false), this parameter will be ignored.
+    type: list
+    elements: str
   metadata:
     description:
       - Metadata associated with the NIC profile resource.
@@ -133,6 +160,28 @@ EXAMPLES = r"""
     ext_id: "ad2c7c4e-4694-4c95-82f4-eadc761a4d17"
     name: "nic_profile_sriov_updated"
     description: "Updated NIC profile description"
+  register: result
+  ignore_errors: true
+
+- name: Create NIC profile shared with projects
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    state: present
+    name: "nic_profile_sriov_shared"
+    capability_config:
+      capability_type: "SRIOV"
+    nic_family: "15b3:101d"
+    shared_with_projects:
+      - "12345678-1234-1234-1234-123456789012"
+  register: result
+  ignore_errors: true
+
+- name: Update NIC profile sharing
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    state: present
+    ext_id: "ad2c7c4e-4694-4c95-82f4-eadc761a4d17"
+    shared_with_projects:
+      - "12345678-1234-1234-1234-123456789012"
+      - "87654321-4321-4321-4321-210987654321"
   register: result
   ignore_errors: true
 
@@ -231,7 +280,9 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    get_task_ext_id_from_response,
     raise_api_exception,
+    reconcile_sharing,
     strip_internal_attributes,
 )
 
@@ -276,6 +327,7 @@ def get_module_spec():
             required=False,
         ),
         nic_family=dict(type="str", required=False),
+        shared_with_projects=dict(type="list", elements="str", required=False),
         metadata=dict(
             type="dict",
             options=metadata_spec,
@@ -292,7 +344,81 @@ def check_for_idempotency(old_spec_dict, update_spec_dict):
     return old_spec_dict == update_spec_dict
 
 
+def _get_etag_for_sharing(module, nic_profile):
+    etag = get_etag(data=nic_profile)
+    if not etag:
+        module.fail_json(msg="Unable to fetch etag for NIC profile sharing operation")
+    return etag
+
+
+def _share_nic_profile_with_project(module, nic_profiles, ext_id, project_ext_id):
+    nic_profile = get_nic_profile(module, nic_profiles, ext_id)
+    etag = _get_etag_for_sharing(module, nic_profile)
+    try:
+        project_ref = networking_sdk.ProjectReference()
+        project_ref.project_ext_id = project_ext_id
+        resp = nic_profiles.share_nic_profile_by_id(
+            extId=ext_id, body=project_ref, if_match=etag
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while sharing NIC profile with project {0}".format(
+                project_ext_id
+            ),
+        )
+    task_ext_id = get_task_ext_id_from_response(resp)
+    wait_for_completion(module, task_ext_id)
+
+
+def _unshare_nic_profile_from_project(module, nic_profiles, ext_id, project_ext_id):
+    nic_profile = get_nic_profile(module, nic_profiles, ext_id)
+    etag = _get_etag_for_sharing(module, nic_profile)
+    try:
+        project_ref = networking_sdk.ProjectReference()
+        project_ref.project_ext_id = project_ext_id
+        resp = nic_profiles.unshare_nic_profile_by_id(
+            extId=ext_id, body=project_ref, if_match=etag
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while unsharing NIC profile from project {0}".format(
+                project_ext_id
+            ),
+        )
+    task_ext_id = get_task_ext_id_from_response(resp)
+    wait_for_completion(module, task_ext_id)
+
+
+def _reconcile_sharing(module, nic_profiles, ext_id, shared_with_projects):
+    """Drive the NIC profile's project sharing towards the desired state.
+
+    Delegates to the shared ``reconcile_sharing`` helper, which diffs once and
+    applies each share/unshare one by one; every call blocks on its task via
+    ``wait_for_completion``, so a single pass reaches the desired state.
+    """
+
+    def read_current(current_module, current_ext_id):
+        return get_nic_profile(current_module, nic_profiles, current_ext_id)
+
+    return reconcile_sharing(
+        module=module,
+        api_instance=nic_profiles,
+        ext_id=ext_id,
+        read_fn=read_current,
+        share_fn=_share_nic_profile_with_project,
+        unshare_fn=_unshare_nic_profile_from_project,
+        shared_with_projects=shared_with_projects,
+        resource_label="NIC profile",
+    )
+
+
 def create_nic_profile(module, nic_profiles, result):
+    shared_with_projects = module.params.pop("shared_with_projects", None)
+
     sg = SpecGenerator(module)
     default_spec = networking_sdk.NicProfile()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -301,7 +427,13 @@ def create_nic_profile(module, nic_profiles, result):
         module.fail_json(msg="Failed generating create NIC profile Spec", **result)
 
     if module.check_mode:
-        result["response"] = strip_internal_attributes(spec.to_dict())
+        response = strip_internal_attributes(spec.to_dict())
+        # shared_with_projects is applied via a separate share API (not the create
+        # body), so it is popped before spec generation. Reflect the requested
+        # value here so check mode does not mislead about the resulting sharing.
+        if shared_with_projects is not None:
+            response["shared_with_projects"] = shared_with_projects
+        result["response"] = response
         return
 
     resp = None
@@ -324,6 +456,8 @@ def create_nic_profile(module, nic_profiles, result):
             resp, rel=TASK_CONSTANTS.RelEntityType.NIC_PROFILE
         )
         if ext_id:
+            if shared_with_projects:
+                _reconcile_sharing(module, nic_profiles, ext_id, shared_with_projects)
             result["ext_id"] = ext_id
             resp = get_nic_profile(module, nic_profiles, ext_id)
             result["response"] = strip_internal_attributes(resp.to_dict())
@@ -333,6 +467,7 @@ def create_nic_profile(module, nic_profiles, result):
 def update_nic_profile(module, nic_profiles, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+    shared_with_projects = module.params.pop("shared_with_projects", None)
     current_spec = get_nic_profile(module, nic_profiles, ext_id)
     etag = get_etag(data=current_spec)
     if not etag:
@@ -347,31 +482,51 @@ def update_nic_profile(module, nic_profiles, result):
         module.fail_json(msg="Failed generating update NIC profile Spec", **result)
 
     if module.check_mode:
-        result["response"] = strip_internal_attributes(update_spec.to_dict())
+        response = strip_internal_attributes(update_spec.to_dict())
+        # shared_with_projects is reconciled via a separate share API, so it is
+        # popped before spec generation and update_spec still carries the current
+        # value. Reflect the requested value so check mode shows the intended
+        # sharing rather than the existing one.
+        if shared_with_projects is not None:
+            response["shared_with_projects"] = shared_with_projects
+        result["response"] = response
         return
 
-    if check_for_idempotency(current_spec.to_dict(), update_spec.to_dict()):
+    spec_changed = not check_for_idempotency(
+        current_spec.to_dict(), update_spec.to_dict()
+    )
+    sharing_changed = False
+    if shared_with_projects is not None:
+        sharing_changed = _reconcile_sharing(
+            module, nic_profiles, ext_id, shared_with_projects
+        )
+
+    if not spec_changed and not sharing_changed:
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
-    kwargs = {"if_match": etag}
-    resp = None
-    try:
-        resp = nic_profiles.update_nic_profile_by_id(
-            extId=ext_id, body=update_spec, **kwargs
-        )
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while updating NIC profile",
-        )
+    if spec_changed:
+        kwargs = {"if_match": etag}
+        resp = None
+        try:
+            resp = nic_profiles.update_nic_profile_by_id(
+                extId=ext_id, body=update_spec, **kwargs
+            )
+        except Exception as e:
+            raise_api_exception(
+                module=module,
+                exception=e,
+                msg="Api Exception raised while updating NIC profile",
+            )
 
-    task_ext_id = resp.data.ext_id
-    result["task_ext_id"] = task_ext_id
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
-    if task_ext_id and module.params.get("wait"):
-        wait_for_completion(module, task_ext_id)
+        task_ext_id = resp.data.ext_id
+        result["task_ext_id"] = task_ext_id
+        result["response"] = strip_internal_attributes(resp.data.to_dict())
+        if task_ext_id and module.params.get("wait"):
+            wait_for_completion(module, task_ext_id)
+            resp = get_nic_profile(module, nic_profiles, ext_id)
+            result["response"] = strip_internal_attributes(resp.to_dict())
+    elif sharing_changed:
         resp = get_nic_profile(module, nic_profiles, ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
     result["changed"] = True

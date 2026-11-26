@@ -454,6 +454,274 @@
     success_msg: "Listed all NIC profiles with fetch_all successfully"
     fail_msg: "Unable to list all NIC profiles with fetch_all"
 
+###########################################################
+# Tests for shared_with_projects
+###########################################################
+
+- name: Create projects for sharing tests
+  nutanix.ncp.ntnx_project_v2:
+    state: present
+    name: "{{ nic_profile_name }}-ansible-project-{{ item }}"
+    project_id: "{{ nic_profile_name }}-ansible-project-id-{{ item }}"
+  register: create_projects_result
+  loop: "{{ range(1, 4) | list }}"
+  ignore_errors: true
+
+- name: Status of projects creation for sharing tests
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response is defined
+      - item.ext_id is defined
+      - item.ext_id | length > 0
+      - item.task_ext_id is defined
+      - item.response.state == "ACTIVE"
+    fail_msg: "Unable to create project for sharing tests"
+    success_msg: "Project for sharing tests created successfully"
+  loop: "{{ create_projects_result.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Set project facts for sharing tests
+  ansible.builtin.set_fact:
+    share_project1:
+      uuid: "{{ create_projects_result.results[0].ext_id }}"
+    share_project2:
+      uuid: "{{ create_projects_result.results[1].ext_id }}"
+    share_project3:
+      uuid: "{{ create_projects_result.results[2].ext_id }}"
+
+###########################################################
+# Check mode: sharing reflected in response
+###########################################################
+- name: Create NIC profile with sharing in check mode
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    name: "{{ nic_profile_name }}_shared_check"
+    description: "NIC profile sharing check mode"
+    capability_config:
+      capability_type: "SRIOV"
+    nic_family: "{{ nic_profile.first_nic_profile_family }}"
+    shared_with_projects:
+      - "{{ share_project1.uuid }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Status of NIC profile sharing check mode
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "{{ nic_profile_name }}_shared_check"
+      - result.response.shared_with_projects == [share_project1.uuid]
+    fail_msg: "NIC profile sharing check mode failed"
+    success_msg: "NIC profile sharing check mode passed"
+
+###########################################################
+# Create NIC profile shared with two projects
+###########################################################
+- name: Create NIC profile shared with two projects
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    name: "{{ nic_profile_name }}_shared"
+    description: "NIC profile shared with two projects"
+    capability_config:
+      capability_type: "SRIOV"
+    nic_family: "{{ nic_profile.first_nic_profile_family }}"
+    shared_with_projects:
+      - "{{ share_project1.uuid }}"
+      - "{{ share_project2.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of create NIC profile shared with two projects
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.shared_with_projects is defined
+      - result.response.shared_with_projects | length == 2
+      - (result.response.shared_with_projects | sort) == ([share_project1.uuid, share_project2.uuid] | sort)
+    fail_msg: "Create NIC profile shared with two projects failed"
+    success_msg: "Created NIC profile shared with two projects"
+
+- name: Set shared NIC profile ext_id
+  ansible.builtin.set_fact:
+    shared_nic_profile_ext_id: "{{ result.ext_id }}"
+
+- name: Add shared NIC profile to todelete
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [shared_nic_profile_ext_id] }}"
+
+###########################################################
+# Scenario: share with all three projects (add a project)
+###########################################################
+- name: Update NIC profile to share with all three projects
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    state: present
+    ext_id: "{{ shared_nic_profile_ext_id }}"
+    shared_with_projects:
+      - "{{ share_project1.uuid }}"
+      - "{{ share_project2.uuid }}"
+      - "{{ share_project3.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of NIC profile share with all three projects
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.shared_with_projects is not none
+      - result.response.shared_with_projects | length == 3
+      - (result.response.shared_with_projects | sort) == ([share_project1.uuid, share_project2.uuid, share_project3.uuid] | sort)
+    fail_msg: "NIC profile share with all three projects failed"
+    success_msg: "NIC profile shared with all three projects successfully"
+
+###########################################################
+# Scenario: sharing idempotency (same three projects again)
+###########################################################
+- name: Update NIC profile sharing with same projects (idempotency)
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    state: present
+    ext_id: "{{ shared_nic_profile_ext_id }}"
+    shared_with_projects:
+      - "{{ share_project1.uuid }}"
+      - "{{ share_project2.uuid }}"
+      - "{{ share_project3.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of NIC profile sharing idempotency
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: "NIC profile sharing idempotency failed"
+    success_msg: "NIC profile sharing idempotency passed"
+
+###########################################################
+# Scenario: reconcile to a subset (drop one, keep two)
+###########################################################
+- name: Update NIC profile to reconcile shared projects to a subset
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    state: present
+    ext_id: "{{ shared_nic_profile_ext_id }}"
+    shared_with_projects:
+      - "{{ share_project2.uuid }}"
+      - "{{ share_project3.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of NIC profile reconcile to a subset
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.shared_with_projects is not none
+      - result.response.shared_with_projects | length == 2
+      - (result.response.shared_with_projects | sort) == ([share_project2.uuid, share_project3.uuid] | sort)
+      - share_project1.uuid not in result.response.shared_with_projects
+    fail_msg: "NIC profile reconcile to a subset failed"
+    success_msg: "NIC profile reconciled to a subset successfully"
+
+###########################################################
+# Scenario: update sharing via check_mode
+###########################################################
+- name: Update NIC profile sharing via check_mode
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    state: present
+    ext_id: "{{ shared_nic_profile_ext_id }}"
+    shared_with_projects:
+      - "{{ share_project1.uuid }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Status of NIC profile sharing update check_mode
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.shared_with_projects == [share_project1.uuid]
+    fail_msg: "NIC profile sharing update check_mode failed"
+    success_msg: "NIC profile sharing update check_mode passed"
+
+###########################################################
+# Scenario: unshare from all projects
+###########################################################
+- name: Update NIC profile to unshare from all projects
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    state: present
+    ext_id: "{{ shared_nic_profile_ext_id }}"
+    shared_with_projects: []
+  register: result
+  ignore_errors: true
+
+- name: Status of NIC profile unshare from all projects
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+      - result.response.shared_with_projects is none or result.response.shared_with_projects | length == 0
+    fail_msg: "NIC profile unshare from all projects failed"
+    success_msg: "NIC profile unshared from all projects"
+
+###########################################################
+# Cleanup shared NIC profile and projects
+###########################################################
+- name: Delete shared NIC profile
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    state: absent
+    ext_id: "{{ shared_nic_profile_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of shared NIC profile deletion
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+    fail_msg: "Unable to delete shared NIC profile"
+    success_msg: "Shared NIC profile deleted successfully"
+
+- name: Remove shared NIC profile from todelete
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete | reject('equalto', shared_nic_profile_ext_id) | list }}"
+
+- name: Delete projects created for sharing tests
+  nutanix.ncp.ntnx_project_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: delete_projects_result
+  loop:
+    - "{{ share_project1.uuid }}"
+    - "{{ share_project2.uuid }}"
+    - "{{ share_project3.uuid }}"
+  ignore_errors: true
+
+- name: Status of sharing projects deletion
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.ext_id == item.item
+      - item.task_ext_id is defined
+      - item.response.status == "SUCCEEDED"
+    fail_msg: "Unable to delete sharing project"
+    success_msg: "Sharing project deleted successfully"
+  loop: "{{ delete_projects_result.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
 ########################################################################################
 # Delete NIC profiles
 ########################################################################################
