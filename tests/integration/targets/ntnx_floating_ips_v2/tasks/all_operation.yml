@@ -494,4 +494,274 @@
 - name: Define variable
   ansible.builtin.set_fact:
     todelete: []
+
+###########################################################
+# Tests for shared_with_projects
+###########################################################
+
+- name: Create projects for sharing tests
+  nutanix.ncp.ntnx_project_v2:
+    state: present
+    name: "{{ fip1_name }}-ansible-project-{{ item }}"
+    project_id: "{{ fip1_name }}-ansible-project-id-{{ item }}"
+  register: create_projects_result
+  loop: "{{ range(1, 4) | list }}"
+  ignore_errors: true
+
+- name: Status of projects creation for sharing tests
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.response is defined
+      - item.ext_id is defined
+      - item.ext_id | length > 0
+      - item.task_ext_id is defined
+      - item.response.state == "ACTIVE"
+    fail_msg: "Unable to create project for sharing tests"
+    success_msg: "Project for sharing tests created successfully"
+  loop: "{{ create_projects_result.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Set project facts for sharing tests
+  ansible.builtin.set_fact:
+    share_project1:
+      uuid: "{{ create_projects_result.results[0].ext_id }}"
+    share_project2:
+      uuid: "{{ create_projects_result.results[1].ext_id }}"
+    share_project3:
+      uuid: "{{ create_projects_result.results[2].ext_id }}"
+
+###########################################################
+# Check mode: sharing reflected in response
+###########################################################
+- name: Create floating IP with sharing in check mode
+  nutanix.ncp.ntnx_floating_ips_v2:
+    state: present
+    name: "{{ fip1_name }}_shared_check"
+    external_subnet_reference: "{{ external_nat_subnet.uuid }}"
+    floating_ip:
+      ipv4:
+        value: "{{ external_nat_subnets[1].floating_ip }}"
+    shared_with_projects:
+      - "{{ share_project1.uuid }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Status of floating IP sharing check mode
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.name == "{{ fip1_name }}_shared_check"
+      - result.response.shared_with_projects == [share_project1.uuid]
+    fail_msg: "Floating IP sharing check mode failed"
+    success_msg: "Floating IP sharing check mode passed"
+
+###########################################################
+# Create floating IP shared with two projects
+###########################################################
+- name: Create floating IP shared with two projects
+  nutanix.ncp.ntnx_floating_ips_v2:
+    state: present
+    name: "{{ fip1_name }}_shared"
+    external_subnet_reference: "{{ external_nat_subnet.uuid }}"
+    floating_ip:
+      ipv4:
+        value: "{{ external_nat_subnets[1].floating_ip }}"
+    shared_with_projects:
+      - "{{ share_project1.uuid }}"
+      - "{{ share_project2.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of create floating IP shared with two projects
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.ext_id is defined
+      - result.response.shared_with_projects is defined
+      - result.response.shared_with_projects | length == 2
+      - (result.response.shared_with_projects | sort) == ([share_project1.uuid, share_project2.uuid] | sort)
+    fail_msg: "Create floating IP shared with two projects failed"
+    success_msg: "Created floating IP shared with two projects"
+
+- name: Set shared FIP ext_id
+  ansible.builtin.set_fact:
+    shared_fip_ext_id: "{{ result.ext_id }}"
+
+- name: Add shared FIP to todelete
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete + [shared_fip_ext_id] }}"
+
+###########################################################
+# Scenario: share with all three projects (add a project)
+###########################################################
+- name: Update floating IP to share with all three projects
+  nutanix.ncp.ntnx_floating_ips_v2:
+    state: present
+    ext_id: "{{ shared_fip_ext_id }}"
+    shared_with_projects:
+      - "{{ share_project1.uuid }}"
+      - "{{ share_project2.uuid }}"
+      - "{{ share_project3.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of floating IP share with all three projects
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.shared_with_projects is not none
+      - result.response.shared_with_projects | length == 3
+      - (result.response.shared_with_projects | sort) == ([share_project1.uuid, share_project2.uuid, share_project3.uuid] | sort)
+    fail_msg: "Floating IP share with all three projects failed"
+    success_msg: "Floating IP shared with all three projects successfully"
+
+###########################################################
+# Scenario: sharing idempotency (same three projects again)
+###########################################################
+- name: Update floating IP sharing with same projects (idempotency)
+  nutanix.ncp.ntnx_floating_ips_v2:
+    state: present
+    ext_id: "{{ shared_fip_ext_id }}"
+    shared_with_projects:
+      - "{{ share_project1.uuid }}"
+      - "{{ share_project2.uuid }}"
+      - "{{ share_project3.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of floating IP sharing idempotency
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == false
+      - result.skipped == true
+      - result.msg == "Nothing to change."
+    fail_msg: "Floating IP sharing idempotency failed"
+    success_msg: "Floating IP sharing idempotency passed"
+
+###########################################################
+# Scenario: reconcile to a subset (drop one, keep two)
+###########################################################
+- name: Update floating IP to reconcile shared projects to a subset
+  nutanix.ncp.ntnx_floating_ips_v2:
+    state: present
+    ext_id: "{{ shared_fip_ext_id }}"
+    shared_with_projects:
+      - "{{ share_project2.uuid }}"
+      - "{{ share_project3.uuid }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of floating IP reconcile to a subset
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == true
+      - result.failed == false
+      - result.response.shared_with_projects is not none
+      - result.response.shared_with_projects | length == 2
+      - (result.response.shared_with_projects | sort) == ([share_project2.uuid, share_project3.uuid] | sort)
+      - share_project1.uuid not in result.response.shared_with_projects
+    fail_msg: "Floating IP reconcile to a subset failed"
+    success_msg: "Floating IP reconciled to a subset successfully"
+
+###########################################################
+# Scenario: update sharing via check_mode
+###########################################################
+- name: Update floating IP sharing via check_mode
+  nutanix.ncp.ntnx_floating_ips_v2:
+    state: present
+    ext_id: "{{ shared_fip_ext_id }}"
+    shared_with_projects:
+      - "{{ share_project1.uuid }}"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Status of floating IP sharing update check_mode
+  ansible.builtin.assert:
+    that:
+      - result.response is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response.shared_with_projects == [share_project1.uuid]
+    fail_msg: "Floating IP sharing update check_mode failed"
+    success_msg: "Floating IP sharing update check_mode passed"
+
+###########################################################
+# Scenario: unshare from all projects
+###########################################################
+- name: Update floating IP to unshare from all projects
+  nutanix.ncp.ntnx_floating_ips_v2:
+    state: present
+    ext_id: "{{ shared_fip_ext_id }}"
+    shared_with_projects: []
+  register: result
+  ignore_errors: true
+
+- name: Status of floating IP unshare from all projects
+  ansible.builtin.assert:
+    that:
+      - result.failed == false
+      - result.changed == true
+      - result.response.shared_with_projects is none or result.response.shared_with_projects | length == 0
+    fail_msg: "Floating IP unshare from all projects failed"
+    success_msg: "Floating IP unshared from all projects"
+
+###########################################################
+# Cleanup shared FIP and projects
+###########################################################
+- name: Delete shared floating IP
+  nutanix.ncp.ntnx_floating_ips_v2:
+    state: absent
+    ext_id: "{{ shared_fip_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Status of shared floating IP deletion
+  ansible.builtin.assert:
+    that:
+      - result.changed == true
+      - result.failed == false
+    fail_msg: "Unable to delete shared floating IP"
+    success_msg: "Shared floating IP deleted successfully"
+
+- name: Remove shared FIP from todelete
+  ansible.builtin.set_fact:
+    todelete: "{{ todelete | reject('equalto', shared_fip_ext_id) | list }}"
+
+- name: Delete projects created for sharing tests
+  nutanix.ncp.ntnx_project_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  register: delete_projects_result
+  loop:
+    - "{{ share_project1.uuid }}"
+    - "{{ share_project2.uuid }}"
+    - "{{ share_project3.uuid }}"
+  ignore_errors: true
+
+- name: Status of sharing projects deletion
+  ansible.builtin.assert:
+    that:
+      - item.changed == true
+      - item.failed == false
+      - item.ext_id == item.item
+      - item.task_ext_id is defined
+      - item.response.status == "SUCCEEDED"
+    fail_msg: "Unable to delete sharing project"
+    success_msg: "Sharing project deleted successfully"
+  loop: "{{ delete_projects_result.results }}"
+  loop_control:
+    label: "{{ item.item }}"
 #########################################################
