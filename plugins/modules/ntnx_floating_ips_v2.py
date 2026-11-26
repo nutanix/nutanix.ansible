@@ -29,6 +29,12 @@ notes:
       B(Delete the floating IP corresponding to the extId) -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - >-
+      B(Share the floating IP with project, specified by ID) -
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
+    - >-
+      B(Unshare the floating IP from project, specified by ID) -
+      Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
+    - >-
       B(Update the floating IP for this extId) -
       Required Roles: Account Owner, Administrator, Prism Admin, Super Admin, VPC Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=networking)"
@@ -129,6 +135,13 @@ options:
           value:
             description: IP address value.
             type: str
+  shared_with_projects:
+    description:
+      - List of project external IDs to share the floating IP with.
+      - Projects not in the list will be unshared during update.
+      - During create operations, this parameter requires C(wait) to be C(true) (default). If C(wait) is set to C(false), this parameter will be ignored.
+    type: list
+    elements: str
   metadata:
     description: Metadata for the floating ip.
     type: dict
@@ -190,6 +203,33 @@ EXAMPLES = r"""
     validate_certs: false
     state: absent
     ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
+
+- name: Create floating ip shared with projects
+  nutanix.ncp.ntnx_floating_ips_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: present
+    name: "test-shared"
+    external_subnet_reference: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
+    association:
+      vm_nic_association:
+        vm_nic_reference: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
+    shared_with_projects:
+      - "12345678-1234-1234-1234-123456789012"
+
+- name: Update floating ip sharing
+  nutanix.ncp.ntnx_floating_ips_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    state: present
+    ext_id: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
+    shared_with_projects:
+      - "12345678-1234-1234-1234-123456789012"
+      - "87654321-4321-4321-4321-210987654321"
 
 - name: Create floating ip with external subnet and vm nic reference
   nutanix.ncp.ntnx_floating_ips_v2:
@@ -285,8 +325,10 @@ from ..module_utils.v4.prism.tasks import (  # noqa: E402
 )
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
+    get_task_ext_id_from_response,
     raise_api_exception,
     raise_unsupported_update_fields,
+    reconcile_sharing,
     strip_internal_attributes,
 )
 
@@ -368,14 +410,88 @@ def get_module_spec():
             type="dict", options=floating_ip_spec, obj=net_sdk.FloatingIPAddress
         ),
         external_subnet_reference=dict(type="str"),
+        shared_with_projects=dict(type="list", elements="str"),
         metadata=dict(type="dict", options=metadata_spec, obj=net_sdk.Metadata),
     )
 
     return module_args
 
 
+def _get_etag_for_sharing(module, floating_ip):
+    etag = get_etag(data=floating_ip)
+    if not etag:
+        module.fail_json(msg="Unable to fetch etag for floating IP sharing operation")
+    return etag
+
+
+def _share_floating_ip_with_project(module, floating_ips, ext_id, project_ext_id):
+    floating_ip = get_floating_ip(module, floating_ips, ext_id)
+    etag = _get_etag_for_sharing(module, floating_ip)
+    try:
+        project_ref = net_sdk.ProjectReference()
+        project_ref.project_ext_id = project_ext_id
+        resp = floating_ips.share_floating_ip_by_id(
+            extId=ext_id, body=project_ref, if_match=etag
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while sharing floating IP with project {0}".format(
+                project_ext_id
+            ),
+        )
+    task_ext_id = get_task_ext_id_from_response(resp)
+    wait_for_completion(module, task_ext_id)
+
+
+def _unshare_floating_ip_from_project(module, floating_ips, ext_id, project_ext_id):
+    floating_ip = get_floating_ip(module, floating_ips, ext_id)
+    etag = _get_etag_for_sharing(module, floating_ip)
+    try:
+        project_ref = net_sdk.ProjectReference()
+        project_ref.project_ext_id = project_ext_id
+        resp = floating_ips.unshare_floating_ip_by_id(
+            extId=ext_id, body=project_ref, if_match=etag
+        )
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while unsharing floating IP from project {0}".format(
+                project_ext_id
+            ),
+        )
+    task_ext_id = get_task_ext_id_from_response(resp)
+    wait_for_completion(module, task_ext_id)
+
+
+def _reconcile_sharing(module, floating_ips, ext_id, shared_with_projects):
+    """Drive the floating IP's project sharing towards the desired state.
+
+    Delegates to the shared ``reconcile_sharing`` helper, which diffs once and
+    applies each share/unshare one by one; every call blocks on its task via
+    ``wait_for_completion``, so a single pass reaches the desired state.
+    """
+
+    def read_current(current_module, current_ext_id):
+        return get_floating_ip(current_module, floating_ips, current_ext_id)
+
+    return reconcile_sharing(
+        module=module,
+        api_instance=floating_ips,
+        ext_id=ext_id,
+        read_fn=read_current,
+        share_fn=_share_floating_ip_with_project,
+        unshare_fn=_unshare_floating_ip_from_project,
+        shared_with_projects=shared_with_projects,
+        resource_label="Floating IP",
+    )
+
+
 def create_floating_ip(module, result):
     floating_ips = get_floating_ip_api_instance(module)
+    shared_with_projects = module.params.pop("shared_with_projects", None)
 
     sg = SpecGenerator(module)
     default_spec = net_sdk.FloatingIp()
@@ -386,7 +502,13 @@ def create_floating_ip(module, result):
         module.fail_json(msg="Failed generating create floating_ips Spec", **result)
 
     if module.check_mode:
-        result["response"] = strip_internal_attributes(spec.to_dict())
+        response = strip_internal_attributes(spec.to_dict())
+        # shared_with_projects is applied via a separate share API (not the create
+        # body), so it is popped before spec generation. Reflect the requested
+        # value here so check mode does not mislead about the resulting sharing.
+        if shared_with_projects is not None:
+            response["shared_with_projects"] = shared_with_projects
+        result["response"] = response
         return
 
     resp = None
@@ -409,6 +531,8 @@ def create_floating_ip(module, result):
             task_status, TASK_CONSTANTS.RelEntityType.FLOATING_IP
         )
         if ext_id:
+            if shared_with_projects:
+                _reconcile_sharing(module, floating_ips, ext_id, shared_with_projects)
             resp = get_floating_ip(module, floating_ips, ext_id)
             result["ext_id"] = ext_id
             result["response"] = strip_internal_attributes(resp.to_dict())
@@ -432,6 +556,7 @@ def check_floating_ips_idempotency(old_spec, update_spec):
 def update_floating_ip(module, result):
     ext_id = module.params.get("ext_id")
     result["ext_id"] = ext_id
+    shared_with_projects = module.params.pop("shared_with_projects", None)
     floating_ips = get_floating_ip_api_instance(module)
 
     current_spec = get_floating_ip(module, floating_ips, ext_id=ext_id)
@@ -463,31 +588,51 @@ def update_floating_ip(module, result):
                 params = module.params.get("association").get("vm_nic_association")
                 update_spec.association, err = sg.generate_spec(associationSpec, params)
 
-    # check for idempotency
-    if check_floating_ips_idempotency(current_spec.to_dict(), update_spec.to_dict()):
+    if module.check_mode:
+        response = strip_internal_attributes(update_spec.to_dict())
+        # shared_with_projects is reconciled via a separate share API, so it is
+        # popped before spec generation and update_spec still carries the current
+        # value. Reflect the requested value so check mode shows the intended
+        # sharing rather than the existing one.
+        if shared_with_projects is not None:
+            response["shared_with_projects"] = shared_with_projects
+        result["response"] = response
+        return
+
+    spec_changed = not check_floating_ips_idempotency(
+        current_spec.to_dict(), update_spec.to_dict()
+    )
+    sharing_changed = False
+    if shared_with_projects is not None:
+        sharing_changed = _reconcile_sharing(
+            module, floating_ips, ext_id, shared_with_projects
+        )
+
+    if not spec_changed and not sharing_changed:
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
-    if module.check_mode:
-        result["response"] = strip_internal_attributes(update_spec.to_dict())
-        return
+    if spec_changed:
+        resp = None
+        try:
+            resp = floating_ips.update_floating_ip_by_id(extId=ext_id, body=update_spec)
+        except Exception as e:
+            raise_api_exception(
+                module=module,
+                exception=e,
+                msg="Api Exception raised while updating floating_ip",
+            )
 
-    resp = None
-    try:
-        resp = floating_ips.update_floating_ip_by_id(extId=ext_id, body=update_spec)
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while updating floating_ip",
-        )
+        task_ext_id = resp.data.ext_id
+        result["task_ext_id"] = task_ext_id
+        result["response"] = strip_internal_attributes(resp.data.to_dict())
 
-    task_ext_id = resp.data.ext_id
-    result["task_ext_id"] = task_ext_id
-    result["response"] = strip_internal_attributes(resp.data.to_dict())
-
-    if task_ext_id and module.params.get("wait"):
-        wait_for_completion(module, task_ext_id)
+        if task_ext_id and module.params.get("wait"):
+            wait_for_completion(module, task_ext_id)
+            resp = get_floating_ip(module, floating_ips, ext_id)
+            result["ext_id"] = ext_id
+            result["response"] = strip_internal_attributes(resp.to_dict())
+    elif sharing_changed:
         resp = get_floating_ip(module, floating_ips, ext_id)
         result["ext_id"] = ext_id
         result["response"] = strip_internal_attributes(resp.to_dict())
