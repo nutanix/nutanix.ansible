@@ -24,7 +24,6 @@
         cluster_uuid: "00066101-9650-faa8-0000-000000028f57"
         subnet_uuid: "00000000-0000-0000-0000-000000000001"
         infra_domain_name: "infra_domain_ansible_test"
-        infra_domain_ext_id: "00000000-0000-0000-0000-000000000001"
 
     - name: Create infra domain with all attributes
       nutanix.ncp.ntnx_infra_domain_v2:
