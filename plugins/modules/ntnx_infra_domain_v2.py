@@ -430,23 +430,23 @@ import traceback  # noqa: E402
 import warnings  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
-from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
-from ..module_utils.v4.prism.helpers import get_infra_domain  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
+from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
+from ..module_utils.v4.prism.helpers import get_infra_domain  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
     get_infra_domain_api_instance,
 )
-from ..module_utils.v4.prism.tasks import (
+from ..module_utils.v4.prism.tasks import (  # noqa: E402
     get_entity_ext_id_from_task,
     wait_for_completion,
-)  # noqa: E402
+)
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
-    validate_required_params,
     strip_internal_attributes,
+    validate_required_params,
 )
 
 SDK_IMP_ERROR = None

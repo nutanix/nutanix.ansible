@@ -239,6 +239,7 @@ def get_registration(module, api_instance, domain_manager_ext_id, ext_id):
             msg="Api Exception raised while fetching registration info using ext_id and domain_manager_ext_id",
         )
 
+
 def get_infra_domain(module, api_instance, ext_id):
     """
     This method will return infra domain info using external ID.
