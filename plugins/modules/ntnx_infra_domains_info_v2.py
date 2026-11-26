@@ -37,11 +37,12 @@ options:
         type: str
         required: false
     expand:
-    description:
-      - A URL query parameter that allows clients to request related resources
-        when a resource that satisfies a particular request is retrieved.
-      - Supported expand value is C(clusterAssociations).
-    type: str
+        description:
+            - A URL query parameter that allows clients to request related resources
+              when a resource that satisfies a particular request is retrieved.
+            - Supported expand value is C(clusterAssociations).
+        type: str
+        required: false
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2

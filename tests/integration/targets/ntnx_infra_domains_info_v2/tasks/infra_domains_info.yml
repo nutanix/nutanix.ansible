@@ -46,7 +46,7 @@
       - (fetch_all_result.response | default([]) | length) == (fetch_all_result.total_available_results | int)
     fail_msg: "Fetch all length mismatch"
     success_msg: "Fetch all length matches"
-  when: fetch_all_result.failed == false and fetch_all_result.total_available_results is defined
+  when: not fetch_all_result.failed and fetch_all_result.total_available_results is defined
 
 - name: List infra domains with filter
   nutanix.ncp.ntnx_infra_domains_info_v2:
@@ -85,7 +85,7 @@
       - result.response | length <= 1
     fail_msg: "Limit 1 returned more than 1"
     success_msg: "Limit 1 correct"
-  when: result.failed == false and result.response is defined
+  when: not result.failed and result.response is defined
 
 ########################################################################################
 # Get by ID tests
