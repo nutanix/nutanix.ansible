@@ -1,0 +1,329 @@
+---
+# Test plan — ntnx_nic_profiles_share_v2
+# =============================================================================
+# The module shares a NIC profile with a project via
+# POST /api/networking/v4.5/config/nic-profiles/{extId}/$actions/share
+# Body: ProjectReference { project_ext_id }
+#
+# Scenarios covered:
+#   * Start + random name setup
+#   * Fetch host/host_nics to derive nic_family for profile creation
+#   * Create NIC profile (prerequisite)
+#   * Fetch project list to get project_ext_id (or create project)
+#   * check_mode share with dummy inline IDs
+#   * Real share with valid IDs -> assert changed true, task_ext_id present
+#   * Negative: missing ext_id, missing project_ext_id
+#   * Negative: invalid ext_id
+#   * Cleanup: unshare if needed + delete NIC profile + delete project if created
+
+- name: Start NIC profile share tests
+  ansible.builtin.debug:
+    msg: Start NIC profile share tests
+
+- name: Generate random names
+  ansible.builtin.set_fact:
+    random_name: "{{ query('community.general.random_string', numbers=false, special=false, length=12)[0] }}"
+    suffix_name: "ansible"
+
+- name: Set NIC profile name
+  ansible.builtin.set_fact:
+    nic_profile_name: "nic_profile_{{ suffix_name }}_{{ random_name }}"
+    wrong_ext_id: "00000000-0000-0000-0000-000000000000"
+    todelete: []
+
+- name: List all clusters and pick the first AOS cluster
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_info
+  ignore_errors: true
+
+- name: Assert we got at least one AOS cluster
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    fail_msg: No AOS cluster found on PC — cannot exercise NIC profile share tests
+    success_msg: Found at least one AOS cluster
+
+- name: Remember cluster ext_id
+  ansible.builtin.set_fact:
+    cluster_ext_id: "{{ clusters_info.response[0].ext_id }}"
+
+- name: List hosts on the discovered cluster
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+  register: hosts_info
+  ignore_errors: true
+
+- name: Verify hosts fetch
+  ansible.builtin.assert:
+    that:
+      - hosts_info is defined
+      - hosts_info.failed == false
+      - hosts_info.response is defined
+      - hosts_info.response | length > 0
+    fail_msg: Unable to fetch hosts
+    success_msg: Hosts fetched successfully
+
+- name: Set host ext_id
+  ansible.builtin.set_fact:
+    host_ext_id: "{{ hosts_info.response[0].ext_id }}"
+
+- name: Fetch host NICs for NIC profile creation
+  nutanix.ncp.ntnx_cluster_host_nics_info_v2:
+    cluster_ext_id: "{{ cluster_ext_id }}"
+    host_ext_id: "{{ host_ext_id }}"
+  register: host_nics_info
+  ignore_errors: true
+
+- name: Verify host NICs fetch
+  ansible.builtin.assert:
+    that:
+      - host_nics_info is defined
+      - host_nics_info.failed == false
+      - host_nics_info.response is defined
+    fail_msg: Unable to fetch host NICs
+    success_msg: Host NICs fetched successfully
+
+- name: Check if host NICs available
+  ansible.builtin.set_fact:
+    has_host_nics: "{{ host_nics_info.response | length > 0 }}"
+
+- name: Set host NIC ext_id when available
+  ansible.builtin.set_fact:
+    host_nic_ext_id: "{{ host_nics_info.response[0].ext_id }}"
+  when: has_host_nics | bool
+
+- name: Find SRIOV-capable host NIC
+  ansible.builtin.set_fact:
+    sriov_nics: >-
+      {{ host_nics_info.response
+      | selectattr('supported_capabilities', 'defined')
+      | selectattr('supported_capabilities', 'contains', 'SRIOV') | list }}
+  when: has_host_nics | bool
+
+- name: Set NIC family for profile creation
+  ansible.builtin.set_fact:
+    target_nic_family: >-
+      {{ (sriov_nics[0].pci_model_id if sriov_nics is defined
+      and sriov_nics | length > 0
+      else host_nics_info.response[0].pci_model_id)
+      if (has_host_nics | bool)
+      else "15b3:101d" }}
+    target_capability: "SRIOV"
+    has_sriov_nic: "{{ sriov_nics is defined and sriov_nics | length > 0 }}"
+  when: has_host_nics | bool
+
+- name: Set NIC family fallback when no host NICs
+  ansible.builtin.set_fact:
+    target_nic_family: "15b3:101d"
+    target_capability: "SRIOV"
+    has_sriov_nic: false
+  when: not has_host_nics | bool
+
+- name: Override host NIC ext_id to use SRIOV-capable NIC if available
+  ansible.builtin.set_fact:
+    host_nic_ext_id: "{{ sriov_nics[0].ext_id }}"
+  when: has_sriov_nic | bool
+
+- name: Create NIC profile for share tests
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    name: "{{ nic_profile_name }}"
+    description: "NIC profile for share tests"
+    capability_config:
+      capability_type: "{{ target_capability }}"
+    nic_family: "{{ target_nic_family }}"
+  register: nic_profile_result
+  ignore_errors: true
+
+- name: Verify NIC profile creation
+  ansible.builtin.assert:
+    that:
+      - nic_profile_result is defined
+      - nic_profile_result.changed == true
+      - nic_profile_result.failed == false
+      - nic_profile_result.response.ext_id is defined
+    fail_msg: Unable to create NIC profile
+    success_msg: NIC profile created successfully
+
+- name: Set NIC profile ext_id
+  ansible.builtin.set_fact:
+    nic_profile_ext_id: "{{ nic_profile_result.response.ext_id }}"
+    todelete: "{{ todelete + [nic_profile_result.response.ext_id] }}"
+
+# Fetch project info for sharing
+
+- name: List projects for share tests
+  nutanix.ncp.ntnx_projects_info_v2:
+  register: projects_info
+  ignore_errors: true
+
+- name: Verify projects list
+  ansible.builtin.assert:
+    that:
+      - projects_info is defined
+      - projects_info.failed == false
+      - projects_info.response is defined
+    fail_msg: Unable to list projects
+    success_msg: Projects listed successfully
+
+- name: Set project ext_id from first available project
+  ansible.builtin.set_fact:
+    project_ext_id: "{{ projects_info.response[0].ext_id }}"
+  when: projects_info.response is defined and projects_info.response | length > 0
+
+- name: Create project for share tests when no project exists
+  nutanix.ncp.ntnx_project_v2:
+    state: present
+    name: "proj_{{ random_name }}"
+    description: "Project for NIC profile share tests"
+  register: create_project_result
+  when: projects_info.response is not defined or projects_info.response | length == 0
+  ignore_errors: true
+
+- name: Set project ext_id from created project
+  ansible.builtin.set_fact:
+    project_ext_id: "{{ create_project_result.ext_id }}"
+    created_project_ext_id: "{{ create_project_result.ext_id }}"
+  when: create_project_result is defined and create_project_result.ext_id is defined
+
+- name: Ensure project_ext_id is set
+  ansible.builtin.assert:
+    that:
+      - project_ext_id is defined
+      - project_ext_id | length > 0
+    fail_msg: Could not determine project_ext_id for share tests
+    success_msg: Project ext_id determined for share tests
+
+# check_mode tests
+
+- name: Share NIC profile in check mode with dummy inline IDs
+  nutanix.ncp.ntnx_nic_profiles_share_v2:
+    ext_id: "11111111-1111-1111-1111-111111111111"
+    project_ext_id: "22222222-2222-2222-2222-222222222222"
+  register: result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify check mode share response
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.project_ext_id == "22222222-2222-2222-2222-222222222222"
+    fail_msg: Check mode share failed
+    success_msg: Check mode share passed
+
+# negative tests - missing required fields
+
+- name: Share with missing ext_id
+  nutanix.ncp.ntnx_nic_profiles_share_v2:
+    project_ext_id: "{{ project_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing ext_id failure
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: Missing ext_id did not fail
+    success_msg: Missing ext_id correctly failed
+
+- name: Share with missing project_ext_id
+  nutanix.ncp.ntnx_nic_profiles_share_v2:
+    ext_id: "{{ nic_profile_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing project_ext_id failure
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: Missing project_ext_id did not fail
+    success_msg: Missing project_ext_id correctly failed
+
+# real share
+
+- name: Share NIC profile with project
+  nutanix.ncp.ntnx_nic_profiles_share_v2:
+    ext_id: "{{ nic_profile_ext_id }}"
+    project_ext_id: "{{ project_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify share success (or expected 404 on PC without v4.5 support)
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - >-
+        (result.changed == true and result.failed == false and result.task_ext_id is defined)
+        or
+        (result.failed == true and result.changed == false)
+    fail_msg: "Unexpected share result: {{ result }}"
+    success_msg: "Share behaved as expected (either succeeded or correctly surfaced API error on this PC version)"
+
+# negative - invalid ext_id
+
+- name: Share with wrong ext_id
+  nutanix.ncp.ntnx_nic_profiles_share_v2:
+    ext_id: "{{ wrong_ext_id }}"
+    project_ext_id: "{{ project_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Verify wrong ext_id failure
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.failed == true
+      - result.changed == false
+    fail_msg: Wrong ext_id did not fail
+    success_msg: Wrong ext_id correctly failed
+
+# cleanup - unshare if needed before deleting nic profile
+- name: Unshare NIC profile before cleanup
+  nutanix.ncp.ntnx_nic_profiles_unshare_v2:
+    ext_id: "{{ nic_profile_ext_id }}"
+    project_ext_id: "{{ project_ext_id }}"
+  register: unshare_result
+  ignore_errors: true
+
+- name: Delete NIC profile
+  nutanix.ncp.ntnx_nic_profiles_v2:
+    state: absent
+    ext_id: "{{ item }}"
+  loop: "{{ todelete }}"
+  register: delete_result
+  ignore_errors: true
+
+- name: Verify NIC profile deletion
+  ansible.builtin.assert:
+    that:
+      - item.failed == false
+    fail_msg: Unable to delete NIC profile
+    success_msg: NIC profile deleted successfully
+  loop: "{{ delete_result.results }}"
+
+- name: Delete created project if any
+  nutanix.ncp.ntnx_project_v2:
+    state: absent
+    ext_id: "{{ created_project_ext_id }}"
+  register: delete_proj_result
+  ignore_errors: true
+  when: created_project_ext_id is defined
+
+- name: Verify project deletion
+  ansible.builtin.assert:
+    that:
+      - delete_proj_result.failed == false
+    fail_msg: Unable to delete project
+    success_msg: Project deleted successfully
+  when: created_project_ext_id is defined

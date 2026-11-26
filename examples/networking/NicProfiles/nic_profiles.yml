@@ -1,0 +1,29 @@
+---
+- name: NIC Profiles share and unshare playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        nic_profile_ext_id: "ad2c7c4e-4694-4c95-82f4-eadc761a4d17"
+        project_ext_id: "26ff200c-e24c-47f7-809b-00a571fe7ecc"
+
+    - name: Share NIC profile with a project
+      nutanix.ncp.ntnx_nic_profiles_share_v2:
+        ext_id: "{{ nic_profile_ext_id }}"
+        project_ext_id: "{{ project_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: Unshare NIC profile from a project
+      nutanix.ncp.ntnx_nic_profiles_unshare_v2:
+        ext_id: "{{ nic_profile_ext_id }}"
+        project_ext_id: "{{ project_ext_id }}"
+      register: result
+      ignore_errors: true
