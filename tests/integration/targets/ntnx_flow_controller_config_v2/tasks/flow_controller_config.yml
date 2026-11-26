@@ -1,0 +1,333 @@
+---
+# Test plan for ntnx_flow_controller_config_v2 and info
+# FlowControllerConfig is a SINGLETON resource (global config).
+# SDK exposes GetFlowControllerConfig and UpdateFlowControllerConfig.
+# No create/delete, only update. Tests cover:
+# 1. Get original config via info module (for restore)
+# 2. Update check_mode with all fields
+# 3. Update with all fields live
+# 4. Info after update verifies persistence
+# 5. Idempotency (same update again)
+# 6. Update transition with different values
+# 7. Boundary/minimal update
+# 8. Negative: invalid vm_count below minimum
+# 9. Negative: invalid subnet_count below minimum
+# 10. Restore original config (always)
+
+- name: Start ntnx_flow_controller_config_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_flow_controller_config_v2 tests
+
+########################### Capture original config ###########################
+
+- name: Get original Flow Controller configuration
+  nutanix.ncp.ntnx_flow_controller_config_info_v2:
+  register: original_config
+  ignore_errors: true
+
+- name: Assert original Flow Controller config fetched
+  ansible.builtin.assert:
+    that:
+      - original_config.changed == false
+      - original_config.failed == false
+      - original_config.response is defined
+      - original_config.response.vm_count is defined
+      - original_config.response.subnet_count is defined
+    fail_msg: Failed to fetch original Flow Controller configuration
+    success_msg: Original Flow Controller configuration fetched
+
+- name: Save original values for restore
+  ansible.builtin.set_fact:
+    original_vm_count: "{{ original_config.response.vm_count }}"
+    original_subnet_count: "{{ original_config.response.subnet_count }}"
+    original_capabilities: "{{ original_config.response.capabilities | default({}) }}"
+
+- name: Run Flow Controller config tests and always restore
+  block:
+
+    ########################### Update check_mode (all fields) ###########################
+
+    - name: Update Flow Controller config with check mode enabled (all fields)
+      nutanix.ncp.ntnx_flow_controller_config_v2:
+        state: present
+        vm_count: 1200
+        subnet_count: 250
+        capabilities:
+          vlan_networking:
+            is_enabled: true
+          virtual_networking:
+            is_enabled: true
+            scale:
+              vpc_count: 20
+          network_security_app_centric:
+            is_enabled: true
+            scale:
+              security_policy_count: 100
+          security_analytics:
+            is_enabled: true
+            scale:
+              analytics_retention_days: 7
+              analytics_storage_gib: 100
+          containers:
+            is_enabled: true
+            scale:
+              kubernetes_cluster_count: 5
+          network_security_rule_centric:
+            is_enabled: true
+            scale:
+              security_policy_count: 50
+      check_mode: true
+      register: result
+      ignore_errors: true
+
+    - name: Assert check mode update spec
+      ansible.builtin.assert:
+        that:
+          - result.changed == false
+          - result.failed == false
+          - result.response is defined
+          - result.response.vm_count == 1200
+          - result.response.subnet_count == 250
+          - result.response.capabilities.vlan_networking.is_enabled == true
+          - result.response.capabilities.virtual_networking.scale.vpc_count == 20
+        fail_msg: Failed to generate check mode spec for Flow Controller config
+        success_msg: Check mode spec generated successfully
+
+    ########################### Update with all fields ###########################
+
+    - name: Update Flow Controller config with all fields
+      nutanix.ncp.ntnx_flow_controller_config_v2:
+        state: present
+        vm_count: 1000
+        subnet_count: 200
+        capabilities:
+          vlan_networking:
+            is_enabled: true
+          virtual_networking:
+            is_enabled: true
+            scale:
+              vpc_count: 25
+          network_security_app_centric:
+            is_enabled: true
+            scale:
+              security_policy_count: 150
+          security_analytics:
+            is_enabled: true
+            scale:
+              analytics_retention_days: 10
+              analytics_storage_gib: 120
+          containers:
+            is_enabled: true
+            scale:
+              kubernetes_cluster_count: 6
+          network_security_rule_centric:
+            is_enabled: true
+            scale:
+              security_policy_count: 60
+      register: result
+      ignore_errors: true
+
+    - name: Assert Flow Controller config updated with all fields
+      ansible.builtin.assert:
+        that:
+          - result.changed == true
+          - result.failed == false
+          - result.response is defined
+          - result.response.vm_count == 1000
+          - result.response.subnet_count == 200
+          - result.response.capabilities.virtual_networking.scale.vpc_count == 25
+          - result.response.capabilities.network_security_app_centric.scale.security_policy_count == 150
+          - result.response.capabilities.security_analytics.scale.analytics_retention_days == 10
+          - result.response.capabilities.containers.scale.kubernetes_cluster_count == 6
+        fail_msg: Failed to update Flow Controller config with all fields
+        success_msg: Flow Controller config updated with all fields
+
+    ########################### Info after update ###########################
+
+    - name: Get Flow Controller config after update
+      nutanix.ncp.ntnx_flow_controller_config_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Assert persisted values after update
+      ansible.builtin.assert:
+        that:
+          - result.changed == false
+          - result.failed == false
+          - result.response.vm_count == 1000
+          - result.response.subnet_count == 200
+          - result.response.capabilities.virtual_networking.scale.vpc_count == 25
+          - result.response.capabilities.security_analytics.scale.analytics_storage_gib == 120
+        fail_msg: Persisted Flow Controller config does not match update
+        success_msg: Persisted config matches update
+
+    ########################### Idempotency ###########################
+
+    - name: Update Flow Controller config again with same values (idempotency)
+      nutanix.ncp.ntnx_flow_controller_config_v2:
+        state: present
+        vm_count: 1000
+        subnet_count: 200
+        capabilities:
+          vlan_networking:
+            is_enabled: true
+          virtual_networking:
+            is_enabled: true
+            scale:
+              vpc_count: 25
+          network_security_app_centric:
+            is_enabled: true
+            scale:
+              security_policy_count: 150
+          security_analytics:
+            is_enabled: true
+            scale:
+              analytics_retention_days: 10
+              analytics_storage_gib: 120
+          containers:
+            is_enabled: true
+            scale:
+              kubernetes_cluster_count: 6
+          network_security_rule_centric:
+            is_enabled: true
+            scale:
+              security_policy_count: 60
+      register: result
+      ignore_errors: true
+
+    - name: Assert idempotency (no change)
+      ansible.builtin.assert:
+        that:
+          - result.changed == false
+          - result.failed == false
+          - result.skipped == true
+          - result.msg == "Nothing to change."
+        fail_msg: Idempotency check failed for Flow Controller config
+        success_msg: Idempotency check passed
+
+    ########################### Update transition (flip values) ###########################
+
+    - name: Update Flow Controller config with different values (transition)
+      nutanix.ncp.ntnx_flow_controller_config_v2:
+        state: present
+        vm_count: 800
+        subnet_count: 180
+        capabilities:
+          vlan_networking:
+            is_enabled: false
+          virtual_networking:
+            is_enabled: true
+            scale:
+              vpc_count: 15
+          network_security_app_centric:
+            is_enabled: false
+          security_analytics:
+            is_enabled: true
+            scale:
+              analytics_retention_days: 5
+              analytics_storage_gib: 80
+          containers:
+            is_enabled: false
+          network_security_rule_centric:
+            is_enabled: false
+      register: result
+      ignore_errors: true
+
+    - name: Assert transition update
+      ansible.builtin.assert:
+        that:
+          - result.changed == true
+          - result.failed == false
+          - result.response.vm_count == 800
+          - result.response.subnet_count == 180
+          - result.response.capabilities.vlan_networking.is_enabled == false
+          - result.response.capabilities.virtual_networking.scale.vpc_count == 15
+        fail_msg: Failed to transition update Flow Controller config
+        success_msg: Transition update succeeded
+
+    ########################### Minimal update ###########################
+
+    - name: Update Flow Controller config with minimal fields
+      nutanix.ncp.ntnx_flow_controller_config_v2:
+        state: present
+        vm_count: 600
+        subnet_count: 120
+      register: result
+      ignore_errors: true
+
+    - name: Assert minimal update
+      ansible.builtin.assert:
+        that:
+          - result.changed == true
+          - result.failed == false
+          - result.response.vm_count == 600
+          - result.response.subnet_count == 120
+        fail_msg: Failed to update with minimal fields
+        success_msg: Minimal update succeeded
+
+    ########################### Negative tests ###########################
+
+    - name: Update Flow Controller config with invalid vm_count below minimum
+      nutanix.ncp.ntnx_flow_controller_config_v2:
+        state: present
+        vm_count: 100
+        subnet_count: 200
+      register: result
+      ignore_errors: true
+
+    - name: Assert invalid vm_count is rejected
+      ansible.builtin.assert:
+        that:
+          - result.failed == true
+          - result.changed == false
+        fail_msg: Update did not fail on invalid vm_count below minimum
+        success_msg: Invalid vm_count correctly rejected
+
+    - name: Update Flow Controller config with invalid subnet_count below minimum
+      nutanix.ncp.ntnx_flow_controller_config_v2:
+        state: present
+        vm_count: 600
+        subnet_count: 10
+      register: result
+      ignore_errors: true
+
+    - name: Assert invalid subnet_count is rejected
+      ansible.builtin.assert:
+        that:
+          - result.failed == true
+          - result.changed == false
+        fail_msg: Update did not fail on invalid subnet_count
+        success_msg: Invalid subnet_count correctly rejected
+
+    - name: Get Flow Controller config after negative tests
+      nutanix.ncp.ntnx_flow_controller_config_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Assert info still works after negatives
+      ansible.builtin.assert:
+        that:
+          - result.failed == false
+          - result.response.vm_count is defined
+          - result.response.subnet_count is defined
+        fail_msg: Info failed after negative tests
+        success_msg: Info still works
+
+  always:
+    ########################### Restore original config ###########################
+
+    - name: Restore original Flow Controller configuration
+      nutanix.ncp.ntnx_flow_controller_config_v2:
+        state: present
+        vm_count: "{{ original_vm_count | int }}"
+        subnet_count: "{{ original_subnet_count | int }}"
+        capabilities: "{{ original_capabilities | default(omit) }}"
+      register: restore_result
+      ignore_errors: true
+      when:
+        - original_vm_count is defined
+        - original_subnet_count is defined
+
+    - name: Report restore status
+      ansible.builtin.debug:
+        msg: "Flow Controller config restore: changed={{ restore_result.changed | default('n/a') }}"
