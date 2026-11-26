@@ -261,3 +261,23 @@ def get_smtp_server(module, api_instance, domain_manager_ext_id, ext_id):
             exception=e,
             msg="Api Exception raised while fetching SMTP server info using ext_id",
         )
+
+
+def get_infra_domain(module, api_instance, ext_id):
+    """
+    This method will return infra domain info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: InfraDomainApi instance from ntnx_prism_py_client sdk
+        ext_id (str): infra domain external ID
+    return:
+        infra_domain_info (object): infra domain info
+    """
+    try:
+        return api_instance.get_infra_domain_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching infra domain info using ext_id",
+        )
