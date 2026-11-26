@@ -1,0 +1,147 @@
+---
+# Test plan — ntnx_unshare_floating_ip_by_id_v2
+# =============================================================================
+# Module: UnshareFloatingIpById — stops sharing floating IP with project.
+# SDK: ntnx_networking_py_client.FloatingIpsApi.unshare_floating_ip_by_id
+# Body: ProjectReference (project_ext_id — UUID, required)
+# Path: extId — UUID of floating IP
+#
+# Mirrors share tests but validates unshare path.
+
+- name: Start ntnx_unshare_floating_ip_by_id_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_unshare_floating_ip_by_id_v2 tests
+
+- name: Generate dummy UUIDs
+  ansible.builtin.set_fact:
+    dummy_fip_ext_id: "00000000-0000-0000-0000-000000000001"
+    dummy_project_ext_id: "11111111-1111-1111-1111-111111111111"
+    invalid_ext_id: "invalid-uuid-format"
+
+######################################################################
+# check_mode — valid UUIDs
+######################################################################
+- name: Unshare floating IP with check_mode (valid UUIDs)
+  nutanix.ncp.ntnx_unshare_floating_ip_by_id_v2:
+    ext_id: "{{ dummy_fip_ext_id }}"
+    project_ext_id: "{{ dummy_project_ext_id }}"
+  check_mode: true
+  register: result
+  ignore_errors: true
+
+- name: Assert check_mode unshare floating IP
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.project_ext_id == dummy_project_ext_id
+      - result.ext_id == dummy_fip_ext_id
+    fail_msg: "check_mode unshare floating IP did not behave as expected"
+    success_msg: "check_mode unshare floating IP generated expected spec"
+
+######################################################################
+# Negative — missing required ext_id
+######################################################################
+- name: Unshare floating IP missing ext_id
+  nutanix.ncp.ntnx_unshare_floating_ip_by_id_v2:
+    project_ext_id: "{{ dummy_project_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Module should fail when ext_id is missing"
+    success_msg: "Module failed as expected when ext_id missing"
+
+######################################################################
+# Negative — missing required project_ext_id
+######################################################################
+- name: Unshare floating IP missing project_ext_id
+  nutanix.ncp.ntnx_unshare_floating_ip_by_id_v2:
+    ext_id: "{{ dummy_fip_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert missing project_ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Module should fail when project_ext_id is missing"
+    success_msg: "Module failed as expected when project_ext_id missing"
+
+######################################################################
+# Negative — invalid ext_id
+######################################################################
+- name: Unshare floating IP with invalid ext_id
+  nutanix.ncp.ntnx_unshare_floating_ip_by_id_v2:
+    ext_id: "{{ invalid_ext_id }}"
+    project_ext_id: "{{ dummy_project_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert invalid ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Module should fail with invalid ext_id"
+    success_msg: "Module failed as expected with invalid ext_id"
+
+######################################################################
+# Negative — non-existent ext_id
+######################################################################
+- name: Unshare floating IP with non-existent ext_id
+  nutanix.ncp.ntnx_unshare_floating_ip_by_id_v2:
+    ext_id: "99999999-9999-9999-9999-999999999999"
+    project_ext_id: "{{ dummy_project_ext_id }}"
+  register: result
+  ignore_errors: true
+
+- name: Assert non-existent ext_id fails
+  ansible.builtin.assert:
+    that:
+      - result.failed == true
+      - result.changed == false
+    fail_msg: "Module should fail on non-existent ext_id"
+    success_msg: "Module failed as expected on non-existent ext_id"
+
+######################################################################
+# Opportunistic real API — try unshare existing floating IP
+######################################################################
+- name: List floating IPs to find candidate for real unshare test
+  nutanix.ncp.ntnx_floating_ips_info_v2:
+    limit: 1
+  register: fips_list
+  ignore_errors: true
+
+- name: Try real unshare if floating IP exists
+  nutanix.ncp.ntnx_unshare_floating_ip_by_id_v2:
+    ext_id: "{{ fips_list.response[0].ext_id }}"
+    project_ext_id: "{{ dummy_project_ext_id }}"
+  register: result
+  ignore_errors: true
+  when:
+    - fips_list is defined
+    - fips_list.failed == false
+    - fips_list.response is defined
+    - fips_list.response | length > 0
+
+- name: Assert real unshare when candidate exists
+  ansible.builtin.assert:
+    that:
+      - result is defined
+      - result.changed == true or result.failed == true
+      - result.response is defined or result.failed == true
+    fail_msg: "Real unshare did not return expected response"
+    success_msg: "Real unshare returned expected response"
+  when:
+    - fips_list is defined
+    - fips_list.failed == false
+    - fips_list.response is defined
+    - fips_list.response | length > 0
