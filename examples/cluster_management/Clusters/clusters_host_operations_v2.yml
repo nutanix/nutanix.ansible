@@ -1,0 +1,147 @@
+---
+# Summary:
+# This playbook demonstrates host-level operations exposed by the
+# clustermgmt v4 API for the Clusters entity:
+#   1. Discover a cluster, its host, and a host NIC to derive parent IDs
+#   2. Associate categories to a host NIC
+#   3. Disassociate categories from a host NIC
+#   4. Rename a host
+#   5. List host GPUs globally, by cluster, and by host with filter/limit/fetch_all
+
+- name: Clusters host operations playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    ####################################################################
+    # Discover prerequisite IDs — cluster, host, host NIC
+    ####################################################################
+    - name: Fetch clusters registered to Prism Central
+      nutanix.ncp.ntnx_clusters_info_v2:
+      register: clusters_result
+
+    - name: Pick a Prism Element cluster
+      ansible.builtin.set_fact:
+        cluster_ext_id: >-
+          {{
+            (
+              clusters_result.response
+              | selectattr('config.cluster_function', 'defined')
+              | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+              | list
+              | default(clusters_result.response, true)
+            )[0].ext_id
+          }}
+
+    - name: Fetch hosts in the chosen cluster
+      nutanix.ncp.ntnx_hosts_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: hosts_result
+
+    - name: Pick the first host
+      ansible.builtin.set_fact:
+        host_ext_id: "{{ hosts_result.response[0].ext_id }}"
+
+    - name: List host NICs on the chosen host
+      nutanix.ncp.ntnx_cluster_host_nics_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+      register: host_nics_result
+
+    - name: Pick a host NIC ext_id
+      ansible.builtin.set_fact:
+        host_nic_ext_id: "{{ host_nics_result.response[0].ext_id }}"
+
+    ####################################################################
+    # 1. Associate categories to host NIC
+    ####################################################################
+    - name: Associate categories to host NIC
+      nutanix.ncp.ntnx_cluster_host_nic_associate_categories_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        ext_id: "{{ host_nic_ext_id }}"
+        categories:
+          - "f7c8a907-b7ec-409d-b626-3b69ac3a0e4e"
+      register: associate_result
+      ignore_errors: true
+
+    ####################################################################
+    # 2. Disassociate categories from host NIC
+    ####################################################################
+    - name: Disassociate categories from host NIC
+      nutanix.ncp.ntnx_cluster_host_nic_disassociate_categories_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        ext_id: "{{ host_nic_ext_id }}"
+        categories:
+          - "f7c8a907-b7ec-409d-b626-3b69ac3a0e4e"
+      register: disassociate_result
+      ignore_errors: true
+
+    ####################################################################
+    # 3. Rename host
+    ####################################################################
+    - name: Rename host
+      nutanix.ncp.ntnx_cluster_host_rename_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+        name: "ansible-host-rename-01"
+      register: rename_result
+      ignore_errors: true
+
+    ####################################################################
+    # 4. List host GPUs — global
+    ####################################################################
+    - name: List all host GPUs across Prism Central
+      nutanix.ncp.ntnx_cluster_host_gpus_info_v2:
+      register: all_host_gpus
+
+    ####################################################################
+    # 5. List host GPUs by cluster
+    ####################################################################
+    - name: List host GPUs for a specific cluster
+      nutanix.ncp.ntnx_cluster_host_gpus_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: cluster_host_gpus
+
+    ####################################################################
+    # 6. List host GPUs by host
+    ####################################################################
+    - name: List host GPUs for a specific host
+      nutanix.ncp.ntnx_cluster_host_gpus_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        host_ext_id: "{{ host_ext_id }}"
+      register: host_gpus_by_host
+
+    ####################################################################
+    # 7. List host GPUs with filter
+    ####################################################################
+    - name: List host GPUs with filter
+      nutanix.ncp.ntnx_cluster_host_gpus_info_v2:
+        filter: "extId eq '{{ all_host_gpus.response[0].ext_id }}'"
+      register: filtered_host_gpus
+      ignore_errors: true
+      when: all_host_gpus.response is defined and all_host_gpus.response | length > 0
+
+    ####################################################################
+    # 8. List host GPUs with limit
+    ####################################################################
+    - name: List host GPUs with limit
+      nutanix.ncp.ntnx_cluster_host_gpus_info_v2:
+        limit: 1
+      register: limited_host_gpus
+      ignore_errors: true
+
+    ####################################################################
+    # 9. List host GPUs with fetch_all
+    ####################################################################
+    - name: List all host GPUs with fetch_all
+      nutanix.ncp.ntnx_cluster_host_gpus_info_v2:
+        fetch_all: true
+      register: all_host_gpus_fetch
+      ignore_errors: true
