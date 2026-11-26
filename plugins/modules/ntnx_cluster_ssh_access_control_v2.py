@@ -213,6 +213,7 @@ def check_for_idempotency(old_spec_dict, update_spec_dict):
 def update_external_ssh_access_control(module, result, api_instance):
     cluster_ext_id = module.params.get("cluster_ext_id")
 
+    result["ext_id"] = cluster_ext_id
     result["cluster_ext_id"] = cluster_ext_id
     old_spec = get_external_ssh_access_control(module, api_instance, cluster_ext_id)
     etag = get_etag(data=old_spec)
@@ -229,6 +230,10 @@ def update_external_ssh_access_control(module, result, api_instance):
             msg="Failed generating update external SSH access control spec", **result
         )
 
+    strip_read_only_fields(
+        update_spec, fields=_EXTERNAL_SSH_ACCESS_CONTROL_READ_ONLY_FIELDS
+    )
+
     if module.check_mode:
         result["response"] = strip_internal_attributes(update_spec.to_dict())
         return
@@ -237,12 +242,9 @@ def update_external_ssh_access_control(module, result, api_instance):
         result["skipped"] = True
         module.exit_json(msg="Nothing to change.", **result)
 
-    strip_read_only_fields(
-        update_spec, fields=_EXTERNAL_SSH_ACCESS_CONTROL_READ_ONLY_FIELDS
-    )
     resp = None
     try:
-        resp = api_instance.update_external_ssh_access_control(
+        resp = api_instance.update_external_ssh_access_control_by_cluster_id(
             clusterExtId=cluster_ext_id, body=update_spec, **kwargs
         )
     except Exception as e:
