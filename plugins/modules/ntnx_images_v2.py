@@ -330,6 +330,7 @@ from ..module_utils.v4.vmm.api_client import (  # noqa: E402
     get_etag,
     get_image_api_instance,
 )
+from ..module_utils.v4.vmm.helpers import get_image  # noqa: E402
 
 SDK_IMP_ERROR = None
 try:
@@ -403,17 +404,6 @@ def get_module_spec():
         tenant_id=dict(type="str"),
     )
     return module_args
-
-
-def get_image(module, api_instance, ext_id):
-    try:
-        return api_instance.get_image_by_id(extId=ext_id).data
-    except Exception as e:
-        raise_api_exception(
-            module=module,
-            exception=e,
-            msg="Api Exception raised while fetching image info using ext_id",
-        )
 
 
 def create_image(module, result):
