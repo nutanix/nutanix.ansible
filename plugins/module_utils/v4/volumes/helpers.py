@@ -89,3 +89,26 @@ def get_iscsi_client(module, api_instance, ext_id):
             exception=e,
             msg="Api Exception raised while fetching iSCSI client info using ext_id",
         )
+
+
+def get_volume_group_recovery_point(module, api_instance, ext_id):
+    """
+    Get volume group recovery point by ext_id
+    Args:
+        module: Ansible module
+        api_instance: VolumeGroupRecoveryPointsApi instance
+        ext_id: ext_id of volume group recovery point
+    Returns:
+        rp (obj): VolumeGroupRecoveryPoint info object
+    """
+    try:
+        return api_instance.get_volume_group_recovery_point_by_id(extId=ext_id).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg=(
+                "Api Exception raised while fetching "
+                "volume group recovery point info using ext_id"
+            ),
+        )

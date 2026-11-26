@@ -106,3 +106,11 @@ def get_nvmf_client_api_instance(module):
     """
     client = get_api_client(module)
     return ntnx_volumes_py_client.NvmfClientsApi(api_client=client)
+
+
+def get_volume_group_recovery_points_api_instance(module):
+    """
+    This method will return VolumeGroupRecoveryPointsApi instance.
+    """
+    client = get_api_client(module)
+    return ntnx_volumes_py_client.VolumeGroupRecoveryPointsApi(api_client=client)
