@@ -493,12 +493,11 @@ def get_module_spec():
 
     cluster_association_spec = dict(
         cluster_ext_id=dict(type="str", required=True),
-        is_hosting=dict(type="bool", required=False),
     )
 
     cluster_subnet_config_spec = dict(
         cluster_ext_id=dict(type="str", required=True),
-        subnet_ext_id=dict(type="str", required=False),
+        subnet_ext_id=dict(type="str", required=True),
     )
 
     subnet_config_spec = dict(
@@ -507,6 +506,7 @@ def get_module_spec():
             elements="dict",
             options=cluster_subnet_config_spec,
             obj=prism_sdk.ClusterSubnetConfig,
+            required=True,
         ),
     )
 
@@ -533,27 +533,30 @@ def get_module_spec():
     )
 
     platform_config_spec = dict(
-        platform_cluster_ext_id=dict(type="str", required=False),
         virtual_ip=dict(
             type="dict",
             options=ip_address_spec,
             obj=prism_sdk.IPAddress,
+            required=True,
         ),
         name_server_ip=dict(
             type="dict",
             options=ip_address_spec,
             obj=prism_sdk.IPAddress,
+            required=True,
         ),
         hosting_cluster_info=dict(
             type="dict",
             options=hosting_cluster_info_spec,
             obj=prism_sdk.HostingClusterInfo,
+            required=True,
         ),
         load_balancer_config=dict(
             type="list",
             elements="dict",
             options=load_balancer_config_spec,
             obj=prism_sdk.LoadBalancerConfig,
+            required=True,
         ),
     )
 
