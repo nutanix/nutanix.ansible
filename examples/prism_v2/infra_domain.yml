@@ -1,4 +1,14 @@
 ---
+# Summary:
+# This playbook will do:
+# 1. Create an infrastructure domain with all attributes.
+# 2. Get the infrastructure domain using its ext_id.
+# 3. List all infrastructure domains.
+# 4. List infrastructure domains with a filter.
+# 5. List infrastructure domains with a limit.
+# 6. List all infrastructure domains with fetch_all.
+# 7. List infra domains with expand.
+
 - name: Infra Domain playbook
   hosts: localhost
   gather_facts: false
@@ -14,22 +24,11 @@
         cluster_uuid: "00066101-9650-faa8-0000-000000028f57"
         subnet_uuid: "00000000-0000-0000-0000-000000000001"
         infra_domain_name: "infra_domain_ansible_test"
-
-    - name: Create infra domain with minimal attributes
-      nutanix.ncp.ntnx_infra_domain_v2:
-        name: "{{ infra_domain_name }}_min"
-        description: "Infra domain created by Ansible with minimal attributes"
-        location: "us-west-1"
-      register: result
-      ignore_errors: true
-
-    - name: Set infra domain ext_id
-      ansible.builtin.set_fact:
-        infra_domain_ext_id: "{{ result.response.ext_id | default(result.ext_id) }}"
+        infra_domain_ext_id: "00000000-0000-0000-0000-000000000001"
 
     - name: Create infra domain with all attributes
       nutanix.ncp.ntnx_infra_domain_v2:
-        name: "{{ infra_domain_name }}_full"
+        name: "{{ infra_domain_name }}"
         description: "Infra domain created by Ansible with all attributes"
         location: "us-east-1"
         fqdn:
@@ -38,7 +37,6 @@
           - cluster_ext_id: "{{ cluster_uuid }}"
             is_hosting: true
         platform_config:
-          platform_cluster_ext_id: "{{ cluster_uuid }}"
           virtual_ip:
             ipv4:
               value: "10.0.0.10"
@@ -64,6 +62,12 @@
       register: result
       ignore_errors: true
 
+    - name: Set infra domain ext_id
+      ansible.builtin.set_fact:
+        infra_domain_ext_id: "{{ result.response.ext_id }}"
+      register: result
+      ignore_errors: true
+
     - name: Get infra domain using ext_id
       nutanix.ncp.ntnx_infra_domains_info_v2:
         ext_id: "{{ infra_domain_ext_id }}"
@@ -77,7 +81,7 @@
 
     - name: List infra domains with filter
       nutanix.ncp.ntnx_infra_domains_info_v2:
-        filter: "name eq '{{ infra_domain_name }}_min'"
+        filter: "name eq '{{ infra_domain_name }}'"
       register: result
       ignore_errors: true
 
@@ -90,5 +94,11 @@
     - name: List all infra domains with fetch_all
       nutanix.ncp.ntnx_infra_domains_info_v2:
         fetch_all: true
+      register: result
+      ignore_errors: true
+
+    - name: List infra domains with expand
+      nutanix.ncp.ntnx_infra_domains_info_v2:
+        expand: "clusterAssociations"
       register: result
       ignore_errors: true

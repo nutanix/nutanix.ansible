@@ -23,10 +23,12 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Get infrastructure domain by ext_id) -
-      Required Roles: Prism Viewer, Prism Admin, Super Admin
+      Required Roles: Cluster Admin, Cluster Viewer, Domain Manager Admin, Domain Manager Viewer,
+      Internal Super Admin, Prism Admin, Prism Viewer, Super Admin
     - >-
       B(List all the infrastructure domains) -
-      Required Roles: Prism Viewer, Prism Admin, Super Admin
+      Required Roles: Cluster Admin, Cluster Viewer, Domain Manager Admin, Domain Manager Viewer,
+      Internal Super Admin, Prism Admin, Prism Viewer, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
     ext_id:
@@ -34,6 +36,12 @@ options:
             - The external ID of the infrastructure domain.
         type: str
         required: false
+    expand:
+    description:
+      - A URL query parameter that allows clients to request related resources
+        when a resource that satisfies a particular request is retrieved.
+      - Supported expand value is C(clusterAssociations).
+    type: str
 extends_documentation_fragment:
     - nutanix.ncp.ntnx_credentials
     - nutanix.ncp.ntnx_info_v2
@@ -47,30 +55,60 @@ author:
 EXAMPLES = r"""
 - name: Get infra domain using ext_id
   nutanix.ncp.ntnx_infra_domains_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     ext_id: "00000000-0000-0000-0000-000000000001"
   register: result
   ignore_errors: true
 
 - name: List all infra domains
   nutanix.ncp.ntnx_infra_domains_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
   register: result
   ignore_errors: true
 
 - name: List infra domains with filter
   nutanix.ncp.ntnx_infra_domains_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     filter: "name eq 'test-infra-domain'"
   register: result
   ignore_errors: true
 
 - name: List infra domains with limit
   nutanix.ncp.ntnx_infra_domains_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     limit: 1
   register: result
   ignore_errors: true
 
 - name: List all infra domains with fetch_all
   nutanix.ncp.ntnx_infra_domains_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     fetch_all: true
+  register: result
+  ignore_errors: true
+
+- name: List infra domains with expand
+  nutanix.ncp.ntnx_infra_domains_info_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
+    expand: "clusterAssociations"
   register: result
   ignore_errors: true
 """
@@ -210,6 +248,7 @@ def get_module_spec():
 
     module_args = dict(
         ext_id=dict(type="str", required=False),
+        expand=dict(type="str", required=False),
     )
 
     return module_args
@@ -225,7 +264,7 @@ def get_infra_domain_using_ext_id(module, api_instance, result):
 def get_infra_domains(module, api_instance, result):
 
     sg = SpecGenerator(module)
-    kwargs, err = sg.get_info_spec(attr=module.params)
+    kwargs, err = sg.get_info_spec(attr=module.params, extra_params=["expand"])
 
     if err:
         result["error"] = err

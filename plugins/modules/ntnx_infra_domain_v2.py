@@ -21,7 +21,7 @@ notes:
       This module requires the following Nutanix IAM roles to be assigned to the user performing the operation.
     - >-
       B(Create an infrastructure domain) -
-      Required Roles: Prism Admin, Super Admin
+      Required Roles: Cluster Admin, Domain Manager Admin, Internal Super Admin, Prism Admin, Super Admin
     - "Ref: U(https://developers.nutanix.com/api-reference?namespace=prism)"
 options:
     state:
@@ -45,7 +45,7 @@ options:
         required: false
     location:
         description:
-            - Location of the infrastructure domain.
+            - Location tag for the infrastructure domain, used as a domain reference during deployment of virtual entities.
         type: str
         required: false
     fqdn:
@@ -61,7 +61,8 @@ options:
                 required: false
     cluster_associations:
         description:
-            - Association between a cluster and the infrastructure domain.
+            - List of cluster associations for this infrastructure domain.
+            - Each entry specifies a cluster and whether it is a hosting cluster.
         type: list
         elements: dict
         required: false
@@ -71,27 +72,19 @@ options:
                     - External identifier of the cluster to associate with the infrastructure domain.
                 type: str
                 required: true
-            is_hosting:
-                description:
-                    - Indicates whether the cluster is hosting the infrastructure domain.
-                type: bool
-                required: false
     platform_config:
         description:
-            - Per-cluster configuration of the deployed infrastructure domain control plane.
+            - Per-cluster configuration of the deployed infrastructure domain control plane,
+              including the virtual and DNS Ip addresses, allocated resources, hosting cluster information,
+              and load balancer network configuration.
         type: dict
         required: false
         suboptions:
-            platform_cluster_ext_id:
-                description:
-                    - External identifier of the Platform cluster associated with the infrastructure domain cluster.
-                type: str
-                required: false
             virtual_ip:
                 description:
-                    - Virtual IP address for the platform cluster.
+                    - Virtual Ip address of the control plane cluster.
                 type: dict
-                required: false
+                required: true
                 suboptions:
                     ipv4:
                         description:
@@ -129,9 +122,9 @@ options:
                                 default: 128
             name_server_ip:
                 description:
-                    - Name server IP address for the platform cluster.
+                    - Name server Ip address configured for the control plane cluster.
                 type: dict
-                required: false
+                required: true
                 suboptions:
                     ipv4:
                         description:
@@ -169,22 +162,24 @@ options:
                                 default: 128
             hosting_cluster_info:
                 description:
-                    - Hosting cluster information for the infrastructure domain.
+                    - Hosting cluster information for the infrastructure domain,
+                      including per-cluster hosting details and the network configuration used to deploy hosting VMs.
                 type: dict
-                required: false
+                required: true
                 suboptions:
                     network_config:
                         description:
-                            - Configuration for mapping each hosting cluster to an existing subnet.
+                            - Network configuration for hosting VM communication across control plane services.
+                            - Maps each hosting cluster to an existing subnet.
                         type: dict
                         required: false
                         suboptions:
                             cluster_subnet_configs:
                                 description:
-                                    - Per-cluster subnet configuration.
+                                    - Per-cluster subnet configuration mapping each hosting cluster to an existing subnet.
                                 type: list
                                 elements: dict
-                                required: false
+                                required: true
                                 suboptions:
                                     cluster_ext_id:
                                         description:
@@ -193,15 +188,16 @@ options:
                                         required: true
                                     subnet_ext_id:
                                         description:
-                                            - External identifier of the subnet.
+                                            - External identifier of the existing subnet to use for hosting VMs on this cluster.
                                         type: str
-                                        required: false
+                                        required: true
             load_balancer_config:
                 description:
-                    - Network configuration for the load balancer fronting the infrastructure domain.
+                    - List of load balancer configurations fronting the infrastructure domain.
+                    - Each entry specifies the Ip addresses to expose and the per-cluster network mapping.
                 type: list
                 elements: dict
-                required: false
+                required: true
                 suboptions:
                     ip_addresses:
                         description:
@@ -246,7 +242,7 @@ options:
                                         default: 128
                     cluster_network_config:
                         description:
-                            - Maps a hosting cluster to an existing subnet.
+                            - Per-cluster subnet configuration that maps the load balancer to an existing subnet on the hosting cluster.
                         type: dict
                         required: false
                         suboptions:
@@ -257,12 +253,13 @@ options:
                                 required: true
                             subnet_ext_id:
                                 description:
-                                    - External identifier of the subnet.
+                                    - External identifier of the existing subnet to use for load balancer on this cluster.
                                 type: str
-                                required: false
+                                required: true
     size:
         description:
-            - Deployment size for the infrastructure domain.
+            - Size of the infrastructure domain deployment.
+            - The allocated vCPUs, memory, and disk are derived from the chosen size.
         type: str
         required: false
 extends_documentation_fragment:
@@ -276,16 +273,12 @@ author:
 """
 
 EXAMPLES = r"""
-- name: Create infrastructure domain with minimal attributes
+- name: Create infrastructure domain
   nutanix.ncp.ntnx_infra_domain_v2:
-    name: "test-infra-domain"
-    description: "Test infra domain via Ansible"
-    location: "us-west-1"
-  register: result
-  ignore_errors: true
-
-- name: Create infrastructure domain with cluster associations
-  nutanix.ncp.ntnx_infra_domain_v2:
+    nutanix_host: "{{ ip }}"
+    nutanix_username: "{{ username }}"
+    nutanix_password: "{{ password }}"
+    validate_certs: false
     name: "test-infra-domain-full"
     description: "Test infra domain with clusters"
     location: "us-east-1"
@@ -293,18 +286,7 @@ EXAMPLES = r"""
       value: "infra.example.com"
     cluster_associations:
       - cluster_ext_id: "00000000-0000-0000-0000-000000000001"
-        is_hosting: true
-    size: "SMALL"
-  register: result
-  ignore_errors: true
-
-- name: Create infrastructure domain with platform config
-  nutanix.ncp.ntnx_infra_domain_v2:
-    name: "test-infra-domain-platform"
-    description: "Test infra domain with platform config"
-    location: "eu-central-1"
     platform_config:
-      platform_cluster_ext_id: "00000000-0000-0000-0000-000000000002"
       virtual_ip:
         ipv4:
           value: "10.0.0.10"
@@ -326,58 +308,84 @@ EXAMPLES = r"""
           cluster_network_config:
             cluster_ext_id: "00000000-0000-0000-0000-000000000001"
             subnet_ext_id: "00000000-0000-0000-0000-000000000003"
+    size: "SMALL"
   register: result
-  ignore_errors: true
 """
 
 RETURN = r"""
 response:
   description:
       - Response for creating infrastructure domain.
-      - If C(wait) is true, it will contain the final task payload after completion.
+      - If C(wait) is true, it will contain infrastructure domain details after completion.
       - If C(wait) is false, it will contain the initial task details.
   returned: always
   type: dict
   sample:
     {
-      "cluster_ext_ids": [
-        "00066101-9650-faa8-0000-000000028f57"
+      "cluster_associations": [
+        {
+          "cluster_ext_id": "00066101-9650-faa8-0000-000000028f57",
+          "is_hosting": true
+        }
       ],
-      "completed_time": "2025-02-09T15:34:15.092891+00:00",
-      "completion_details": null,
+      "created_by": "admin",
       "created_time": "2025-02-09T14:44:52.593544+00:00",
-      "entities_affected": [
-        {
-          "ext_id": "00066101-9650-faa8-0000-000000028f57",
-          "name": null,
-          "rel": "prism:config:infra-domain"
+      "description": "Test infra domain via Ansible",
+      "ext_id": "a1b2c3d4-e5f6-7890-abcd-ef0123456789",
+      "fqdn": {
+        "value": "infra.example.com"
+      },
+      "last_updated_by": "admin",
+      "last_updated_time": "2025-02-09T14:44:52.593544+00:00",
+      "links": null,
+      "location": "us-west-1",
+      "name": "test-infra-domain",
+      "platform_config": {
+        "hosting_cluster_info": {
+          "hosting_cluster_details": null,
+          "network_config": {
+            "cluster_subnet_configs": [
+              {
+                "cluster_ext_id": "00066101-9650-faa8-0000-000000028f57",
+                "subnet_ext_id": "b2c3d4e5-f6a7-8901-bcde-f01234567890"
+              }
+            ]
+          }
+        },
+        "load_balancer_config": [
+          {
+            "cluster_network_config": {
+              "cluster_ext_id": "00066101-9650-faa8-0000-000000028f57",
+              "subnet_ext_id": "b2c3d4e5-f6a7-8901-bcde-f01234567890"
+            },
+            "ip_addresses": [
+              {
+                "ipv4": {
+                  "prefix_length": 32,
+                  "value": "10.0.0.20"
+                }
+              }
+            ]
+          }
+        ],
+        "name_server_ip": {
+          "ipv4": {
+            "prefix_length": 32,
+            "value": "10.0.0.11"
+          }
+        },
+        "platform_cluster_ext_id": "c3d4e5f6-a7b8-9012-cdef-012345678901",
+        "virtual_ip": {
+          "ipv4": {
+            "prefix_length": 32,
+            "value": "10.0.0.10"
+          }
         }
-      ],
-      "error_messages": null,
-      "ext_id": "ZXJnb24=:a6c95b0b-4a97-4165-6619-f09ba156bea1",
-      "is_background_task": false,
-      "is_cancelable": false,
-      "last_updated_time": "2025-02-09T15:34:15.092888+00:00",
-      "legacy_error_message": null,
-      "number_of_entities_affected": 1,
-      "number_of_subtasks": 1,
-      "operation": "CreateInfraDomain",
-      "operation_description": "Create infrastructure domain",
-      "owned_by": null,
-      "parent_task": null,
-      "progress_percentage": 100,
-      "root_task": null,
-      "started_time": "2025-02-09T14:44:52.602785+00:00",
-      "status": "SUCCEEDED",
-      "sub_steps": null,
-      "sub_tasks": [
-        {
-          "ext_id": "ZXJnb24=:f9856c8f-d619-42d6-65b3-5651e8825a6c",
-          "href": "https://10.44.76.16:9440/api/prism/v4.5/config/tasks/ZXJnb24=:f9856c8f-d619-42d6-65b3-5651e8825a6c",
-          "rel": "subtask"
-        }
-      ],
-      "warnings": null
+      },
+      "size": "SMALL",
+      "status": "DEPLOYED",
+      "tenant_id": null,
+      "version": "6.10"
     }
 
 task_ext_id:
@@ -422,16 +430,22 @@ import traceback  # noqa: E402
 import warnings  # noqa: E402
 
 from ansible.module_utils.basic import missing_required_lib  # noqa: E402
+from ..module_utils.v4.constants import Tasks as TASK_CONSTANTS  # noqa: E402
+from ..module_utils.v4.prism.helpers import get_infra_domain  # noqa: E402
 
 from ..module_utils.utils import remove_param_with_none_value  # noqa: E402
 from ..module_utils.v4.base_module_v4 import BaseModuleV4  # noqa: E402
 from ..module_utils.v4.prism.pc_api_client import (  # noqa: E402
     get_infra_domain_api_instance,
 )
-from ..module_utils.v4.prism.tasks import wait_for_completion  # noqa: E402
+from ..module_utils.v4.prism.tasks import (
+    get_entity_ext_id_from_task,
+    wait_for_completion,
+)  # noqa: E402
 from ..module_utils.v4.spec_generator import SpecGenerator  # noqa: E402
 from ..module_utils.v4.utils import (  # noqa: E402
     raise_api_exception,
+    validate_required_params,
     strip_internal_attributes,
 )
 
@@ -570,6 +584,9 @@ def get_module_spec():
 
 
 def create_infra_domain(module, result, api_instance):
+    validate_required_params(
+        module, ["name", "fqdn", "cluster_associations", "platform_config", "size"]
+    )
     sg = SpecGenerator(module)
     default_spec = prism_sdk.InfraDomain()
     spec, err = sg.generate_spec(obj=default_spec)
@@ -596,6 +613,21 @@ def create_infra_domain(module, result, api_instance):
     if task_ext_id and module.params.get("wait"):
         resp = wait_for_completion(module, task_ext_id)
         result["response"] = strip_internal_attributes(resp.to_dict())
+        ext_id = get_entity_ext_id_from_task(
+            resp, rel=TASK_CONSTANTS.RelEntityType.INFRA_DOMAIN
+        )
+        if ext_id:
+            result["ext_id"] = ext_id
+            resp = get_infra_domain(module, api_instance, ext_id)
+            result["response"] = strip_internal_attributes(resp.to_dict())
+        else:
+            raise_api_exception(
+                module=module,
+                exception=Exception(
+                    "Failed to get entity ext_id from task for Infrastructure Domain"
+                ),
+                msg="Failed to get entity ext_id from task for Infrastructure Domain",
+            )
     result["changed"] = True
 
 

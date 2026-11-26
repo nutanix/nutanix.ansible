@@ -95,6 +95,7 @@ class Tasks:
         NVMF_CLIENT = "volumes:config:nvmf-client"
         CONSISTENCY_RULE = "datapolicies:config:consistency-rule"
         APPROVAL_POLICY = "security:management:approval-policy"
+        INFRA_DOMAIN = "prism:config:infra-domain"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""
