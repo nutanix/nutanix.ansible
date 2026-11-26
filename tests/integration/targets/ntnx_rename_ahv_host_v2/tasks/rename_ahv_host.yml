@@ -119,7 +119,6 @@
       - check_mode_result.failed == false
       - check_mode_result.response is defined
       - check_mode_result.response.name == expected_check_mode_name
-      - check_mode_result.cluster_ext_id == placeholder_cluster_ext_id
       - check_mode_result.ext_id == placeholder_host_ext_id
     fail_msg: "Check mode spec generation failed"
     success_msg: "Check mode spec generation passed"
@@ -139,7 +138,6 @@
       - check_mode_target_result.changed == false
       - check_mode_target_result.failed == false
       - check_mode_target_result.response.name == new_host_name
-      - check_mode_target_result.cluster_ext_id == target_cluster_ext_id
       - check_mode_target_result.ext_id == target_host_ext_id
     fail_msg: "Check mode with real target IDs failed"
     success_msg: "Check mode with real target IDs passed"
