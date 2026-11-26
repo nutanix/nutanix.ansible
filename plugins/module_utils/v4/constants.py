@@ -96,6 +96,7 @@ class Tasks:
         CONSISTENCY_RULE = "datapolicies:config:consistency-rule"
         APPROVAL_POLICY = "security:management:approval-policy"
         INFRA_DOMAIN = "prism:config:infra-domain"
+        SMTP_SERVER = "multidomain:config:smtp-server"
 
     class CompletetionDetailsName:
         """Completion details name for the task entities affected"""

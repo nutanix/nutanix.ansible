@@ -240,6 +240,29 @@ def get_registration(module, api_instance, domain_manager_ext_id, ext_id):
         )
 
 
+def get_smtp_server(module, api_instance, domain_manager_ext_id, ext_id):
+    """
+    This method will return SMTP server info using external ID.
+    Args:
+        module: Ansible module
+        api_instance: SmtpServerApi instance from ntnx_prism_py_client sdk
+        domain_manager_ext_id (str): domain manager external ID
+        ext_id (str): SMTP server external ID
+    return:
+        smtp_server_info (object): SMTP server info
+    """
+    try:
+        return api_instance.get_smtp_server_by_id(
+            domainManagerExtId=domain_manager_ext_id, extId=ext_id
+        ).data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching SMTP server info using ext_id",
+        )
+
+
 def get_infra_domain(module, api_instance, ext_id):
     """
     This method will return infra domain info using external ID.

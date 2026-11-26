@@ -168,3 +168,15 @@ def get_infra_domain_api_instance(module):
     """
     api_client = get_pc_api_client(module)
     return ntnx_prism_py_client.InfraDomainApi(api_client=api_client)
+
+
+def get_smtp_server_api_instance(module):
+    """
+    This method will return SMTP server API instance.
+    Args:
+        module (object): Ansible module object
+    return:
+        api_instance (object): SMTP server API instance
+    """
+    api_client = get_pc_api_client(module)
+    return ntnx_prism_py_client.SmtpServerApi(api_client=api_client)

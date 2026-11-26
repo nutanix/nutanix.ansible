@@ -1,0 +1,70 @@
+---
+# Summary:
+# This playbook will do:
+# 1. Attach a device bundle to a VM
+# 2. Get device bundle of a VM
+# 3. List all device bundles of a VM
+# 4. List device bundles of a VM with limit
+# 5. List device bundles of a VM with filter
+# 6. List device bundles of a VM with fetch all
+# 7. Remove a device bundle from a VM
+
+- name: VM device bundle CRUD playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Setting Variables
+      ansible.builtin.set_fact:
+        vm_ext_id: "23423423-2342-2342-2342-234234234234"
+        device_bundle_ext_id: "78177620-ddf4-43f2-8ede-8790e92ae3fa"
+        device_bundle_profile_ext_id: "56756756-5675-5675-5675-567567567567"
+
+    - name: Attach a device bundle for a VM
+      nutanix.ncp.ntnx_vm_device_bundle_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        backing_info:
+          device_bundle_profile:
+            ext_id: "{{ device_bundle_profile_ext_id }}"
+      register: result
+
+    - name: Get a specific device bundle attached to a VM
+      nutanix.ncp.ntnx_vm_device_bundles_info_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        ext_id: "{{ device_bundle_ext_id }}"
+      register: result
+
+    - name: List all device bundles attached to a VM
+      nutanix.ncp.ntnx_vm_device_bundles_info_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+      register: result
+
+    - name: List device bundles attached to a VM with filter
+      nutanix.ncp.ntnx_vm_device_bundles_info_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        filter: "backingInfo/assignedInstanceInfo/extId eq '{{ device_bundle_ext_id }}'"
+      register: result
+
+    - name: List device bundles attached to a VM with limit
+      nutanix.ncp.ntnx_vm_device_bundles_info_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        limit: 1
+      register: result
+
+    - name: List all device bundles attached to a VM with fetch_all
+      nutanix.ncp.ntnx_vm_device_bundles_info_v2:
+        vm_ext_id: "{{ vm_ext_id }}"
+        fetch_all: true
+      register: result
+
+    - name: Remove a device bundle from a VM
+      nutanix.ncp.ntnx_vm_device_bundle_v2:
+        state: absent
+        vm_ext_id: "{{ vm_ext_id }}"
+        ext_id: "{{ device_bundle_ext_id }}"
+      register: result
