@@ -4,6 +4,19 @@ Nutanix.Ncp Release Notes
 
 .. contents:: Topics
 
+v2.6.1
+======
+
+Release Summary
+---------------
+
+Bump ntnx_security_py_client SDK from v4.1.2 to v4.2.1 for the Security modules. [#1439](https://github.com/nutanix/nutanix.ansible/issues/1439)
+
+Minor Changes
+-------------
+
+- ntnx_security_py_client - [Imprv] Update ntnx-security-py-client SDK dependency from 4.1.2 to 4.2.1 [#1439](https://github.com/nutanix/nutanix.ansible/issues/1439)
+
 v2.6.0
 ======
 

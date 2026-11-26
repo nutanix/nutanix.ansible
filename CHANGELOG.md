@@ -2,9 +2,12 @@
 
 **Topics**
 
-- <a href="#v2-6-0">v2\.6\.0</a>
+- <a href="#v2-6-1">v2\.6\.1</a>
     - <a href="#release-summary">Release Summary</a>
     - <a href="#minor-changes">Minor Changes</a>
+- <a href="#v2-6-0">v2\.6\.0</a>
+    - <a href="#release-summary-1">Release Summary</a>
+    - <a href="#minor-changes-1">Minor Changes</a>
     - <a href="#deprecated-features">Deprecated Features</a>
     - <a href="#new-plugins">New Plugins</a>
         - <a href="#lookup">Lookup</a>
@@ -81,15 +84,28 @@
     - <a href="#bugfixes-9">Bugfixes</a>
     - <a href="#new-modules-15">New Modules</a>
 
-<a id="v2-6-0"></a>
-## v2\.6\.0
+<a id="v2-6-1"></a>
+## v2\.6\.1
 
 <a id="release-summary"></a>
 ### Release Summary
 
-Built on v4 SDKs\. Adds Projects 2\.0/v4\, Resource Groups\, Role Memberships\, Directory Services\, SNMP\, Load Balancer Sessions\, VPC Virtual Switch Mapping\, VM affinity/startup/placement policies\, Guest Customization Profiles\, Flow directory server configs\, Security Policy export/import\, Object Store statistics\, and the ntnx\_ext\_id lookup with compatibility and usability updates\.
+Bump ntnx_security_py_client SDK from v4.1.2 to v4.2.1 for the Security modules \([\#1439](https\://github\.com/nutanix/nutanix\.ansible/issues/1439)\)
 
 <a id="minor-changes"></a>
+### Minor Changes
+
+* ntnx_security_py_client \- \[Imprv\] Update ntnx-security-py-client SDK dependency from 4.1.2 to 4.2.1 \([\#1439](https\://github\.com/nutanix/nutanix\.ansible/issues/1439)\)
+
+<a id="v2-6-0"></a>
+## v2\.6\.0
+
+<a id="release-summary-1"></a>
+### Release Summary
+
+Built on v4 SDKs\. Adds Projects 2\.0/v4\, Resource Groups\, Role Memberships\, Directory Services\, SNMP\, Load Balancer Sessions\, VPC Virtual Switch Mapping\, VM affinity/startup/placement policies\, Guest Customization Profiles\, Flow directory server configs\, Security Policy export/import\, Object Store statistics\, and the ntnx\_ext\_id lookup with compatibility and usability updates\.
+
+<a id="minor-changes-1"></a>
 ### Minor Changes
 
 * All create v2 modules \- \[Imprv\] Raise an API exception when entity ext\_id is missing from task responses for create \(non\-info\) v2 modules \([\#1010](https\://github\.com/nutanix/nutanix\.ansible/issues/1010)\)
