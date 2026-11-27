@@ -473,7 +473,7 @@ def get_gateway(module, api_instance, ext_id):
     """
     This method will return network gateway info using its ext_id
     Args:
-        module: Ansible module
+        module (object): Ansible module object
         api_instance: GatewaysApi instance from ntnx_networking_py_client sdk
         ext_id (str): gateway external ID
     return:
@@ -486,6 +486,25 @@ def get_gateway(module, api_instance, ext_id):
             module=module,
             exception=e,
             msg="Api Exception raised while fetching gateway info using ext_id",
+        )
+
+
+def get_flow_controller_config(module, api_instance):
+    """
+    This method will return flow controller config info.
+    Args:
+        module (object): Ansible module object
+        api_instance (object): FlowControllerConfigApi instance
+    return:
+        info (object): flow controller config info
+    """
+    try:
+        return api_instance.get_flow_controller_config().data
+    except Exception as e:
+        raise_api_exception(
+            module=module,
+            exception=e,
+            msg="Api Exception raised while fetching flow controller config info",
         )
 
 

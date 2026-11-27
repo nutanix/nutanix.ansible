@@ -1,0 +1,78 @@
+---
+# Test plan for ntnx_flow_controller_config_info_v2
+# Singleton resource - only Get operation, no list/filter/limit/fetch_all
+# Scenarios:
+# 1. Get Flow Controller config (singleton)
+# 2. Verify response contains expected fields
+# 3. Verify required_resources computed field is present
+# 4. Verify capabilities structure
+
+- name: Start ntnx_flow_controller_config_info_v2 tests
+  ansible.builtin.debug:
+    msg: Start ntnx_flow_controller_config_info_v2 tests
+
+- name: Get Flow Controller configuration
+  nutanix.ncp.ntnx_flow_controller_config_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Assert Flow Controller config fetched
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.response.vm_count is defined
+      - result.response.subnet_count is defined
+      - result.response.capabilities is defined
+    fail_msg: Failed to fetch Flow Controller configuration
+    success_msg: Flow Controller configuration fetched
+
+- name: Assert Flow Controller config contains vm_count within valid range
+  ansible.builtin.assert:
+    that:
+      - result.response.vm_count >= 500
+      - result.response.vm_count <= 25000
+    fail_msg: vm_count out of valid range 500-25000
+    success_msg: vm_count within valid range
+
+- name: Assert Flow Controller config contains subnet_count within valid range
+  ansible.builtin.assert:
+    that:
+      - result.response.subnet_count >= 100
+      - result.response.subnet_count <= 5000
+    fail_msg: subnet_count out of valid range 100-5000
+    success_msg: subnet_count within valid range
+
+- name: Assert capabilities structure
+  ansible.builtin.assert:
+    that:
+      - result.response.capabilities.vlan_networking is defined or result.response.capabilities.virtual_networking is defined
+      - result.response.required_resources is defined
+    fail_msg: Capabilities structure missing
+    success_msg: Capabilities structure present
+
+- name: Assert required_resources contains deployment modes
+  ansible.builtin.assert:
+    that:
+      - result.response.required_resources | length > 0
+      - result.response.required_resources[0].deployment_mode is defined
+      - result.response.required_resources[0].cpu is defined
+      - result.response.required_resources[0].memory_mib is defined
+      - result.response.required_resources[0].disk_mib is defined
+    fail_msg: required_resources missing or incomplete
+    success_msg: required_resources present
+
+- name: Get Flow Controller configuration again for consistency
+  nutanix.ncp.ntnx_flow_controller_config_info_v2:
+  register: result2
+  ignore_errors: true
+
+- name: Assert consistent response on second fetch
+  ansible.builtin.assert:
+    that:
+      - result2.failed == false
+      - result2.response.vm_count == result.response.vm_count
+      - result2.response.subnet_count == result.response.subnet_count
+    fail_msg: Second fetch inconsistent with first
+    success_msg: Second fetch consistent

@@ -1,0 +1,65 @@
+---
+# Summary:
+# This playbook demonstrates the ntnx_flow_controller_config_v2 and
+# ntnx_flow_controller_config_info_v2 modules for Flow Controller configuration.
+# It covers fetching the current configuration, updating it, and verifying.
+
+- name: Flow Controller Config playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip | default(lookup('env', 'NUTANIX_HOST')) }}"
+      nutanix_username: "{{ username | default(lookup('env', 'NUTANIX_USERNAME')) }}"
+      nutanix_password: "{{ password | default(lookup('env', 'NUTANIX_PASSWORD')) }}"
+      nutanix_port: "{{ port | default(lookup('env', 'NUTANIX_PORT') | default(9440, true)) }}"
+      validate_certs: "{{ validate_certs | default(false) }}"
+  tasks:
+    - name: Get Flow Controller configuration
+      nutanix.ncp.ntnx_flow_controller_config_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: Update Flow Controller configuration with all fields
+      nutanix.ncp.ntnx_flow_controller_config_v2:
+        state: present
+        vm_count: 1000
+        subnet_count: 200
+        capabilities:
+          vlan_networking:
+            is_enabled: true
+          virtual_networking:
+            is_enabled: true
+            scale:
+              vpc_count: 20
+          network_security_app_centric:
+            is_enabled: true
+            scale:
+              security_policy_count: 100
+          security_analytics:
+            is_enabled: true
+            scale:
+              analytics_retention_days: 7
+              analytics_storage_gib: 100
+          containers:
+            is_enabled: true
+            scale:
+              kubernetes_cluster_count: 5
+          network_security_rule_centric:
+            is_enabled: true
+            scale:
+              security_policy_count: 50
+      register: result
+      ignore_errors: true
+
+    - name: Update Flow Controller configuration with minimal fields
+      nutanix.ncp.ntnx_flow_controller_config_v2:
+        vm_count: 600
+        subnet_count: 150
+      register: result
+      ignore_errors: true
+
+    - name: Get Flow Controller configuration after update
+      nutanix.ncp.ntnx_flow_controller_config_info_v2:
+      register: result
+      ignore_errors: true
