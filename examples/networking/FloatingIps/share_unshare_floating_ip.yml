@@ -1,0 +1,48 @@
+---
+# Summary:
+# This playbook demonstrates sharing and unsharing floating IPs with projects
+# via ntnx_floating_ips_v2.
+# 1. Create a floating IP shared with a project.
+# 2. Update sharing to add/remove projects.
+# 3. Unshare all by passing an empty list.
+
+- name: Share and Unshare Floating IP playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: <pc_ip>
+      nutanix_username: <user>
+      nutanix_password: <pass>
+      validate_certs: false
+  tasks:
+    - name: Create floating IP shared with a project
+      nutanix.ncp.ntnx_floating_ips_v2:
+        state: present
+        name: "test-shared-fip"
+        external_subnet_reference: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
+        association:
+          vm_nic_association:
+            vm_nic_reference: "33dba56c-f123-4ec6-8b38-901e1cf716c2"
+        shared_with_projects:
+          - "12345678-1234-1234-1234-123456789012"
+      register: result_create
+      ignore_errors: true
+
+    - name: Update floating IP sharing - add a project
+      nutanix.ncp.ntnx_floating_ips_v2:
+        state: present
+        ext_id: "{{ result_create.ext_id | default('550e8400-e29b-41d4-a716-446655440000') }}"
+        shared_with_projects:
+          - "12345678-1234-1234-1234-123456789012"
+          - "87654321-4321-4321-4321-210987654321"
+      register: result_update
+      ignore_errors: true
+
+    - name: Unshare floating IP from all projects
+      nutanix.ncp.ntnx_floating_ips_v2:
+        state: present
+        ext_id: "{{ result_create.ext_id | default('550e8400-e29b-41d4-a716-446655440000') }}"
+        shared_with_projects: []
+      register: result_unshare
+      ignore_errors: true
