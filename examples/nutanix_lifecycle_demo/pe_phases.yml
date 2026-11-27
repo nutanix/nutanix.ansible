@@ -1,0 +1,287 @@
+---
+# ============================================================================
+# Phases 1–3 — PE-Targeted Operations
+# (Foundation, PE Setup, PC Deployment)
+# ============================================================================
+
+- name: "Nutanix Full Lifecycle — Phases 1-3 (PE)"
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - nutanix.ncp
+
+  vars_files:
+    - vars/main.yml
+
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ pe_ip }}"
+      nutanix_username: "{{ cluster_username }}"
+      nutanix_password: "{{ cluster_password }}"
+      validate_certs: false
+      nutanix_debug: true
+      nutanix_log_file: "{{ playbook_dir }}/nutanix_lifecycle_demo.log"
+
+  tasks:
+
+    # ════════════════════════════════════════════════════════════════════
+    #  PHASE 1 — FOUNDATION: Image Nodes & Create Cluster
+    # ════════════════════════════════════════════════════════════════════
+
+    - name: "========== PHASE 1: FOUNDATION — Image Nodes & Create Cluster =========="
+      ansible.builtin.debug:
+        msg: "Imaging bare-metal nodes and creating a Nutanix cluster..."
+
+    - name: "1a. Image nodes (manual mode)"
+      nutanix.ncp.ntnx_foundation:
+        timeout: "{{ foundation_timeout }}"
+        nutanix_host: "{{ foundation_host }}"
+        cvm_gateway: "{{ cvm_gateway }}"
+        cvm_netmask: "{{ cvm_netmask }}"
+        hypervisor_gateway: "{{ hypervisor_gateway }}"
+        hypervisor_netmask: "{{ hypervisor_netmask }}"
+        default_ipmi_user: "{{ default_ipmi_user }}"
+        nos_package: "{{ nos_package }}"
+        hypervisor_iso:
+          kvm:
+            filename: "{{ hypervisor_iso.kvm.filename }}"
+        blocks:
+          - block_id: "{{ foundation_block_id }}"
+            nodes:
+              - manual_mode:
+                  cvm_ip: "{{ foundation_nodes[0].cvm_ip }}"
+                  cvm_gb_ram: "{{ foundation_nodes[0].cvm_gb_ram }}"
+                  hypervisor_hostname: "{{ foundation_nodes[0].hypervisor_hostname }}"
+                  ipmi_netmask: "{{ foundation_nodes[0].ipmi_netmask }}"
+                  ipmi_gateway: "{{ foundation_nodes[0].ipmi_gateway }}"
+                  ipmi_ip: "{{ foundation_nodes[0].ipmi_ip }}"
+                  ipmi_password: "{{ foundation_nodes[0].ipmi_password }}"
+                  hypervisor: "{{ foundation_nodes[0].hypervisor }}"
+                  hypervisor_ip: "{{ foundation_nodes[0].hypervisor_ip }}"
+                  node_position: "{{ foundation_nodes[0].node_position }}"
+              - manual_mode:
+                  cvm_ip: "{{ foundation_nodes[1].cvm_ip }}"
+                  cvm_gb_ram: "{{ foundation_nodes[1].cvm_gb_ram }}"
+                  hypervisor_hostname: "{{ foundation_nodes[1].hypervisor_hostname }}"
+                  ipmi_netmask: "{{ foundation_nodes[1].ipmi_netmask }}"
+                  ipmi_gateway: "{{ foundation_nodes[1].ipmi_gateway }}"
+                  ipmi_ip: "{{ foundation_nodes[1].ipmi_ip }}"
+                  ipmi_password: "{{ foundation_nodes[1].ipmi_password }}"
+                  hypervisor: "{{ foundation_nodes[1].hypervisor }}"
+                  hypervisor_ip: "{{ foundation_nodes[1].hypervisor_ip }}"
+                  node_position: "{{ foundation_nodes[1].node_position }}"
+              - manual_mode:
+                  cvm_ip: "{{ foundation_nodes[2].cvm_ip }}"
+                  cvm_gb_ram: "{{ foundation_nodes[2].cvm_gb_ram }}"
+                  hypervisor_hostname: "{{ foundation_nodes[2].hypervisor_hostname }}"
+                  ipmi_netmask: "{{ foundation_nodes[2].ipmi_netmask }}"
+                  ipmi_gateway: "{{ foundation_nodes[2].ipmi_gateway }}"
+                  ipmi_ip: "{{ foundation_nodes[2].ipmi_ip }}"
+                  ipmi_password: "{{ foundation_nodes[2].ipmi_password }}"
+                  hypervisor: "{{ foundation_nodes[2].hypervisor }}"
+                  hypervisor_ip: "{{ foundation_nodes[2].hypervisor_ip }}"
+                  node_position: "{{ foundation_nodes[2].node_position }}"
+      register: foundation_result
+
+    - name: "Show Foundation output"
+      ansible.builtin.debug:
+        var: foundation_result
+
+    - name: Create Clusters on one foundation node by SSH to node and running commands
+      ansible.builtin.shell: >-
+        sshpass -p '{{ nutanix_default.password }}' ssh
+        -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+        {{ nutanix_default.username }}@{{ foundation_nodes[0].cvm_ip }}
+        "/usr/local/nutanix/cluster/bin/cluster
+        -s {{ foundation_nodes | map(attribute='cvm_ip') | join(',') }}
+        --cluster_name=Superman
+        --cluster_external_ip={{ pe_ip }}
+        --dns_servers=8.8.8.8,1.1.1.1
+        --ntp_servers=0.pool.ntp.org
+        --redundancy_factor=2
+        create"
+      register: cluster_result
+
+    - name: Show Cluster creation output
+      ansible.builtin.debug:
+        var: cluster_result
+
+    - name: ">> Phase 1 Complete — Press Enter to continue to PE Setup"
+      ansible.builtin.pause:
+        prompt: >-
+          Foundation imaging and cluster creation is complete.
+          Verify the new cluster is visible, then press Enter to continue...
+
+    # ════════════════════════════════════════════════════════════════════
+    #  PHASE 2 — PE SETUP: Reset Credentials & Create PE Subnet
+    # ════════════════════════════════════════════════════════════════════
+
+    - name: "========== PHASE 2: PE SETUP — Reset Credentials & Create Subnet =========="
+      ansible.builtin.debug:
+        msg: "Resetting PE admin password and creating a subnet on the PE cluster..."
+
+    - name: "2a. Reset PE admin password via ncli"
+      ansible.builtin.shell: >-
+        sshpass -p '{{ nutanix_default.password }}' ssh
+        -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+        {{ nutanix_default.username }}@{{ foundation_nodes[0].cvm_ip }}
+        /home/nutanix/prism/cli/ncli user reset-password
+        user-name={{ cluster_username }} password={{ cluster_password }}
+      register: reset_result
+
+    - name: "Show password reset output"
+      ansible.builtin.debug:
+        var: reset_result.stdout
+
+    - name: "2a-ii. Set external Data Services IP address"
+      ansible.builtin.shell: >-
+        sshpass -p '{{ cluster_password }}' ssh
+        -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+        {{ cluster_username }}@{{ foundation_nodes[0].cvm_ip }}
+        /home/nutanix/prism/cli/ncli cluster
+        edit-params external-data-services-ip-address={{ pe_dsip }}
+      register: dsip_result
+
+    - name: "Show DSIP configuration output"
+      ansible.builtin.debug:
+        var: dsip_result.stdout
+
+    - name: "2a-iii. Accept End User License Agreement"
+      nutanix.ncp.ntnx_eula_accept_v2:
+        user_name: "{{ eula_user_name }}"
+        login_id: "{{ eula_login_id }}"
+        job_title: "{{ eula_job_title }}"
+        company_name: "{{ eula_company_name }}"
+      register: eula_result
+      ignore_errors: true
+
+    - name: "Show EULA acceptance output"
+      ansible.builtin.debug:
+        var: eula_result
+
+    - name: ">> Password Reset & EULA Complete — Press Enter to continue"
+      ansible.builtin.pause:
+        prompt: >-
+          PE admin password has been reset and EULA accepted.
+          Press Enter to discover PE infrastructure and create a subnet...
+
+    # ── 2b. Discover PE infrastructure ─────────────────────────────────
+    - name: "2b. Fetch PE clusters"
+      nutanix.ncp.ntnx_clusters_info_v2:
+      register: pe_clusters_result
+
+    - name: "Set PE cluster_uuid (first AOS cluster)"
+      ansible.builtin.set_fact:
+        pe_cluster_uuid: >-
+          {{ (pe_clusters_result.response
+          | selectattr('config.cluster_function', 'contains', 'AOS')
+          | first).ext_id }}
+
+    - name: "2c. Fetch PE virtual switches"
+      nutanix.ncp.ntnx_virtual_switches_info_v2:
+        cluster_ext_id: "{{ pe_cluster_uuid }}"
+      register: pe_vs_result
+
+    - name: "Show PE virtual switches"
+      ansible.builtin.debug:
+        msg: "VSwitch: {{ item.name }} | ext_id: {{ item.ext_id }}"
+      loop: "{{ pe_vs_result.response }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: "Set PE virtual_switch_uuid (default virtual switch)"
+      ansible.builtin.set_fact:
+        pe_virtual_switch_uuid: >-
+          {{ (pe_vs_result.response
+          | selectattr('is_default', 'equalto', true)
+          | first).ext_id }}
+
+    - name: "Show PE infrastructure"
+      ansible.builtin.debug:
+        msg:
+          - "PE Cluster UUID:        {{ pe_cluster_uuid }}"
+          - "PE Virtual Switch UUID: {{ pe_virtual_switch_uuid }}"
+
+    # ── 2d. Create PE Subnet ──────────────────────────────────────────
+    - name: "2d. Create VLAN Subnet on PE"
+      nutanix.ncp.ntnx_subnets_v2:
+        state: present
+        name: "{{ pe_subnet_name }}"
+        description: "PE subnet created by Ansible for lifecycle demo"
+        subnet_type: VLAN
+        cluster_reference: "{{ pe_cluster_uuid }}"
+        virtual_switch_reference: "{{ pe_virtual_switch_uuid }}"
+        network_id: "{{ pe_subnet_vlan_id }}"
+        ip_config:
+          - ipv4:
+              ip_subnet:
+                ip:
+                  value: "{{ pe_subnet_ip }}"
+                prefix_length: "{{ pe_subnet_prefix }}"
+              default_gateway_ip:
+                value: "{{ pe_subnet_gateway }}"
+      register: pe_subnet_result
+
+    - name: "Show PE Subnet creation output"
+      ansible.builtin.debug:
+        var: pe_subnet_result
+
+    - name: ">> Phase 2 Complete — Press Enter to continue to PC Deployment"
+      ansible.builtin.pause:
+        prompt: >-
+          PE subnet '{{ pe_subnet_name }}' created successfully.
+          Verify in Prism Element, then press Enter to deploy Prism Central...
+
+    # ════════════════════════════════════════════════════════════════════
+    #  PHASE 3 — DEPLOY PRISM CENTRAL
+    # ════════════════════════════════════════════════════════════════════
+
+    - name: "========== PHASE 3: DEPLOY PRISM CENTRAL =========="
+      ansible.builtin.debug:
+        msg: "Deploying Prism Central from PE — this may take several minutes..."
+
+    - name: "3a. Deploy Prism Central"
+      nutanix.ncp.ntnx_pc_deploy_v2:
+        config:
+          name: "{{ pc.name }}_pc"
+          size: "{{ pc.size }}"
+          build_info:
+            version: "{{ pc.build_info.version }}"
+        network:
+          external_networks:
+            - default_gateway:
+                ipv4:
+                  value: "{{ pc.external_networks.default_gateway.ipv4 }}"
+              subnet_mask:
+                ipv4:
+                  value: "{{ pc.external_networks.subnet_mask.ipv4 }}"
+              ip_ranges:
+                - begin:
+                    ipv4:
+                      value: "{{ pc.external_networks.ip_ranges.begin.ipv4 }}"
+                  end:
+                    ipv4:
+                      value: "{{ pc.external_networks.ip_ranges.end.ipv4 }}"
+              network_ext_id: "{{ pc.external_networks.network_ext_id }}"
+          name_servers:
+            - ipv4:
+                value: "{{ pc.name_servers.ipv4[0] }}"
+            - ipv4:
+                value: "{{ pc.name_servers.ipv4[1] }}"
+          ntp_servers:
+            - fqdn:
+                value: "{{ pc.ntp_servers.fqdn[0] }}"
+            - fqdn:
+                value: "{{ pc.ntp_servers.fqdn[1] }}"
+      register: pc_deploy_result
+      ignore_errors: true
+
+    - name: "Show PC deployment output"
+      ansible.builtin.debug:
+        var: pc_deploy_result
+
+    - name: ">> Phase 3 Complete — Press Enter to continue to Registration"
+      ansible.builtin.pause:
+        prompt: >-
+          Prism Central deployment initiated.
+          Verify PC is accessible, then press Enter...
