@@ -1,0 +1,21 @@
+---
+- name: Validate required parameters
+  ansible.builtin.assert:
+    that:
+      - ai_config_nutanix_host != ''
+      - ai_config_nutanix_password != ''
+      - ai_config_vm_names | length > 0
+    fail_msg: >-
+      Required parameters missing. Set ai_config_nutanix_host,
+      ai_config_nutanix_password, and ai_config_vm_names.
+
+- name: Get cluster GPU availability
+  ansible.builtin.include_tasks: discover_gpus.yml
+  when: ai_config_gpu_name == ''
+
+- name: Configure GPU on each target VM
+  ansible.builtin.include_tasks: configure_vm_gpu.yml
+  loop: "{{ ai_config_vm_names }}"
+  loop_control:
+    loop_var: _ai_config_vm_name
+    label: "{{ _ai_config_vm_name }}"

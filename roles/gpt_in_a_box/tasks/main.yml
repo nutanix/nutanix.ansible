@@ -1,0 +1,42 @@
+---
+- name: Validate required parameters
+  ansible.builtin.assert:
+    that:
+      - gptbox_nutanix_host != ''
+      - gptbox_nutanix_password != ''
+      - gptbox_cluster_name != ''
+      - gptbox_subnet_name != ''
+    fail_msg: >-
+      Required parameters missing. Set gptbox_nutanix_host, gptbox_nutanix_password,
+      gptbox_cluster_name, and gptbox_subnet_name.
+
+- name: Gather cluster information
+  ansible.builtin.include_tasks: gather_cluster.yml
+
+- name: Provision GPU worker VMs for NKP
+  ansible.builtin.include_tasks: provision_workers.yml
+  when: gptbox_state == 'present'
+
+- name: Configure GPU resources on workers
+  ansible.builtin.include_role:
+    name: nutanix.ansible.ai_workload_config
+  vars:
+    ai_config_nutanix_host: "{{ gptbox_nutanix_host }}"
+    ai_config_nutanix_username: "{{ gptbox_nutanix_username }}"
+    ai_config_nutanix_password: "{{ gptbox_nutanix_password }}"
+    ai_config_cluster_name: "{{ gptbox_cluster_name }}"
+    ai_config_vm_names: "{{ _gptbox_worker_vms | default([]) }}"
+    ai_config_gpu_mode: "{{ gptbox_gpu_mode }}"
+    ai_config_gpu_name: "{{ gptbox_gpu_name }}"
+    ai_config_gpu_count: "{{ gptbox_gpu_count_per_worker }}"
+  when: gptbox_state == 'present'
+
+- name: Deploy AI model inference endpoint
+  ansible.builtin.include_tasks: deploy_model.yml
+  when:
+    - gptbox_state == 'present'
+    - gptbox_deploy_model
+
+- name: Teardown GPT-in-a-Box
+  ansible.builtin.include_tasks: teardown.yml
+  when: gptbox_state == 'absent'

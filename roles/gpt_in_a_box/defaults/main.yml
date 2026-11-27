@@ -1,0 +1,42 @@
+---
+# Nutanix Prism Central connection
+gptbox_nutanix_host: ""
+gptbox_nutanix_username: admin
+gptbox_nutanix_password: ""
+gptbox_nutanix_validate_certs: false
+
+# Cluster configuration
+gptbox_cluster_name: ""
+gptbox_subnet_name: ""
+
+# NKP (Nutanix Kubernetes Platform) configuration
+gptbox_nkp_name: gpt-in-a-box
+gptbox_nkp_k8s_version: "1.28"
+gptbox_nkp_control_plane_count: 3
+gptbox_nkp_worker_count: 3
+gptbox_nkp_control_plane_vcpus: 8
+gptbox_nkp_control_plane_memory_gb: 16
+gptbox_nkp_worker_vcpus: 16
+gptbox_nkp_worker_memory_gb: 64
+gptbox_nkp_worker_disk_gb: 200
+
+# GPU configuration for worker nodes
+gptbox_gpu_mode: passthrough
+gptbox_gpu_name: ""
+gptbox_gpu_count_per_worker: 1
+gptbox_gpu_vendor: NVIDIA
+
+# Model deployment
+gptbox_deploy_model: true
+gptbox_model_name: llama-2-7b
+gptbox_model_endpoint_name: llm-inference
+gptbox_model_replicas: 1
+gptbox_model_gpu_count: 1
+gptbox_inference_port: 8080
+
+# Storage configuration
+gptbox_storage_container: default-container
+gptbox_model_storage_size_gb: 100
+
+# State management
+gptbox_state: present
