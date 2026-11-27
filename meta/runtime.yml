@@ -554,6 +554,7 @@ action_groups:
     - ntnx_vcenter_integrations_info_v2
     - ntnx_cluster_ssh_access_control_v2
     - ntnx_cluster_ssh_access_control_info_v2
+    - ntnx_update_external_ssh_access_control_by_cluster_id_v2
     - ntnx_rename_ahv_host_v2
     - ntnx_high_availability_config_v2
     - ntnx_high_availability_configs_info_v2

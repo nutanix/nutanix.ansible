@@ -1,0 +1,69 @@
+# Summary:
+# External SSH Access Control - Update by Cluster ID playbook
+# Demonstrates the update operation for external SSH access control
+# using the dedicated action module.
+# The module updates SSH settings for a specific cluster identified
+# by its external ID. The underlying API is PUT
+# /api/clustermgmt/v4.5/config/clusters/{clusterExtId}/external-ssh-access-control
+
+- name: Update external SSH access control by cluster ID playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Discover a cluster to work with
+      nutanix.ncp.ntnx_clusters_info_v2:
+        filter: "config/clusterFunction/any(f:f eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+      register: clusters_info
+
+    - name: Pick the first AOS cluster
+      ansible.builtin.set_fact:
+        cluster_ext_id: "{{ clusters_info.response[0].ext_id }}"
+
+    - name: Get external SSH access control before update
+      nutanix.ncp.ntnx_cluster_ssh_access_control_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: ssh_info_before
+      ignore_errors: true
+
+    - name: Print SSH access control before update
+      ansible.builtin.debug:
+        var: ssh_info_before
+
+    - name: Update external SSH access control by cluster ID - enable SSH
+      nutanix.ncp.ntnx_update_external_ssh_access_control_by_cluster_id_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        is_ssh_enabled: true
+        is_password_login_enabled: false
+      register: ssh_update_enable
+      ignore_errors: true
+
+    - name: Print update result (enable)
+      ansible.builtin.debug:
+        var: ssh_update_enable
+
+    - name: Update external SSH access control by cluster ID - disable SSH
+      nutanix.ncp.ntnx_update_external_ssh_access_control_by_cluster_id_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+        is_ssh_enabled: false
+      register: ssh_update_disable
+      ignore_errors: true
+
+    - name: Print update result (disable)
+      ansible.builtin.debug:
+        var: ssh_update_disable
+
+    - name: Get external SSH access control after update
+      nutanix.ncp.ntnx_cluster_ssh_access_control_info_v2:
+        cluster_ext_id: "{{ cluster_ext_id }}"
+      register: ssh_info_after
+      ignore_errors: true
+
+    - name: Print SSH access control after update
+      ansible.builtin.debug:
+        var: ssh_info_after
