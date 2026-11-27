@@ -89,6 +89,15 @@ DOCUMENTATION = r"""
                   in keyed_groups, compose, or groups expressions.
             default: true
             type: bool
+        custom_headers:
+            description:
+                - Custom HTTP headers to add to all API requests. Useful for environments that
+                  require additional headers such as Cloudflare Access service tokens.
+                - Headers can also be supplied via environment variables using the NUTANIX_HEADER_
+                  prefix (e.g. NUTANIX_HEADER_CF_ACCESS_CLIENT_ID becomes Cf-Access-Client-Id).
+                  Inventory file values take precedence over environment variables.
+            required: false
+            type: dict
         fetch_all_vms:
             description:
                 - Set to C(True) to fetch all VMs
@@ -298,6 +307,15 @@ EXAMPLES = r"""
   nutanix_host: 10.x.x.x
   nutanix_api_key: api_key
   validate_certs: false
+
+# Using an API key and custom headers (e.g. Cloudflare Access service tokens)
+- plugin: nutanix.ncp.ntnx_prism_vm_inventory_v2
+  nutanix_host: 10.x.x.x
+  nutanix_api_key: api_key
+  custom_headers:
+    Cf-Access-Client-Id: client_id
+    Cf-Access-Client-Secret: client_secret
+  validate_certs: true
 """
 
 import json  # noqa: E402
@@ -336,6 +354,7 @@ class Mock_Module:
         nutanix_debug=False,
         nutanix_log_file=None,
         nutanix_api_key=None,
+        custom_headers=None,
     ):
         self.tmpdir = tempfile.gettempdir()
         self.params = {
@@ -350,6 +369,7 @@ class Mock_Module:
             "nutanix_debug": nutanix_debug,
             "nutanix_log_file": nutanix_log_file,
             "nutanix_api_key": nutanix_api_key,
+            "custom_headers": custom_headers,
         }
 
     def jsonify(self, data):
@@ -673,9 +693,13 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
         self.nutanix_port = self.get_option("nutanix_port") or os.environ.get(
             "NUTANIX_PORT", "9440"
         )
-        self.nutanix_api_key = self.get_option("nutanix_api_key") or os.environ.get(
+        _raw_api_key = self.get_option("nutanix_api_key") or os.environ.get(
             "NUTANIX_API_KEY"
         )
+        # Convert to plain str: get_option() may return a str subclass, which the
+        # SDK's set_api_key rejects (it checks `type(key) is str`).
+        self.nutanix_api_key = str(_raw_api_key) if _raw_api_key else None
+        self.custom_headers = self.get_option("custom_headers")
 
         # Validate required parameters
         if not self.nutanix_host:
@@ -729,6 +753,7 @@ class InventoryModule(BaseInventoryPlugin, Constructable):
             self.nutanix_debug,
             self.nutanix_log_file,
             self.nutanix_api_key,
+            self.custom_headers,
         )
 
         # Get API instances

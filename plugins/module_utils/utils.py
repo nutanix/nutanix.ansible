@@ -3,7 +3,47 @@
 
 from __future__ import absolute_import, division, print_function
 
+import os
+
+from ansible.module_utils.common.text.converters import to_text
+
 __metaclass__ = type
+
+
+def get_custom_headers(module_params):
+    """
+    Build a dict of custom HTTP headers from environment variables and module parameters.
+
+    Environment variables with the NUTANIX_HEADER_ prefix are converted to headers by
+    stripping the prefix, replacing underscores with dashes, and title-casing each segment
+    (e.g. NUTANIX_HEADER_CF_ACCESS_CLIENT_ID becomes Cf-Access-Client-Id).
+
+    Config values (module_params['custom_headers']) take precedence over environment
+    variables. Header names are case-insensitive, so a config header replaces an
+    environment header of the same name in any case.
+
+    Config values are converted to text: in an inventory file a header value can be
+    vault-encrypted, which reaches here as a vault object rather than a str, and the
+    SDK only accepts primitive header values.
+    """
+    custom_headers = {}
+    header_prefix = "NUTANIX_HEADER_"
+    for key, value in os.environ.items():
+        if key.startswith(header_prefix):
+            header_name = key[len(header_prefix) :]
+            if not header_name:
+                continue
+            header_name = "-".join(
+                part[0].upper() + part[1:].lower() if part else part
+                for part in header_name.split("_")
+            )
+            custom_headers[header_name] = value
+    config_headers = module_params.get("custom_headers") or {}
+    for name, value in config_headers.items():
+        for existing in [k for k in custom_headers if k.lower() == name.lower()]:
+            del custom_headers[existing]
+        custom_headers[name] = value if value is None else to_text(value)
+    return custom_headers
 
 
 def remove_param_with_none_value(d):
