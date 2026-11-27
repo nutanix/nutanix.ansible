@@ -1,0 +1,43 @@
+---
+- name: Volume group recovery points info playbook
+  hosts: localhost
+  gather_facts: false
+  module_defaults:
+    group/nutanix.ncp.ntnx:
+      nutanix_host: "{{ ip }}"
+      nutanix_username: "{{ username }}"
+      nutanix_password: "{{ password }}"
+      validate_certs: false
+  tasks:
+    - name: Set variables
+      ansible.builtin.set_fact:
+        vg_recovery_point_ext_id: "b387359d-fa5c-4d58-9eb2-3af1a4976319"
+
+    - name: Get volume group recovery point by ext_id
+      nutanix.ncp.ntnx_volume_group_recovery_points_info_v2:
+        ext_id: "{{ vg_recovery_point_ext_id }}"
+      register: result
+      ignore_errors: true
+
+    - name: List all volume group recovery points
+      nutanix.ncp.ntnx_volume_group_recovery_points_info_v2:
+      register: result
+      ignore_errors: true
+
+    - name: List volume group recovery points with filter
+      nutanix.ncp.ntnx_volume_group_recovery_points_info_v2:
+        filter: "volumeGroupName eq 'vg1'"
+      register: result
+      ignore_errors: true
+
+    - name: List volume group recovery points with limit
+      nutanix.ncp.ntnx_volume_group_recovery_points_info_v2:
+        limit: 1
+      register: result
+      ignore_errors: true
+
+    - name: List all volume group recovery points with fetch_all
+      nutanix.ncp.ntnx_volume_group_recovery_points_info_v2:
+        fetch_all: true
+      register: result
+      ignore_errors: true

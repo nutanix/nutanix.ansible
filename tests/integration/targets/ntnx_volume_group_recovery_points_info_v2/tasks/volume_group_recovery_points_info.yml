@@ -1,0 +1,114 @@
+---
+- name: Start ntnx_volume_group_recovery_points_info_v2 tests
+  ansible.builtin.debug:
+    msg: "Starting ntnx_volume_group_recovery_points_info_v2 tests"
+
+- name: List all volume group recovery points
+  nutanix.ncp.ntnx_volume_group_recovery_points_info_v2:
+  register: result
+  ignore_errors: true
+
+- name: Verify list all volume group recovery points
+  ansible.builtin.assert:
+    that:
+      - result.changed == false
+      - result.failed == false
+      - result.response is defined
+      - result.total_available_results is defined
+    fail_msg: "Failed to list all volume group recovery points"
+    success_msg: "Listed all volume group recovery points successfully"
+
+- name: List volume group recovery points with limit
+  nutanix.ncp.ntnx_volume_group_recovery_points_info_v2:
+    limit: 1
+  register: result_limit
+  ignore_errors: true
+
+- name: Verify volume group recovery points with limit
+  ansible.builtin.assert:
+    that:
+      - result_limit.changed == false
+      - result_limit.failed == false
+      - result_limit.response is defined
+      - result_limit.response | length <= 1
+    fail_msg: "Failed to list volume group recovery points with limit"
+    success_msg: "Listed volume group recovery points with limit successfully"
+
+- name: List volume group recovery points with filter
+  nutanix.ncp.ntnx_volume_group_recovery_points_info_v2:
+    filter: "volumeGroupName eq 'test-vg'"
+  register: result_filter
+  ignore_errors: true
+
+- name: Verify volume group recovery points with filter
+  ansible.builtin.assert:
+    that:
+      - result_filter.changed == false
+      - result_filter.failed == false
+      - result_filter.response is defined
+    fail_msg: "Failed to list volume group recovery points with filter"
+    success_msg: "Listed volume group recovery points with filter successfully"
+
+- name: List all volume group recovery points with fetch_all
+  nutanix.ncp.ntnx_volume_group_recovery_points_info_v2:
+    fetch_all: true
+  register: result_fetch_all
+  ignore_errors: true
+
+- name: Verify volume group recovery points with fetch_all
+  ansible.builtin.assert:
+    that:
+      - result_fetch_all.changed == false
+      - result_fetch_all.failed == false
+      - result_fetch_all.response is defined
+      - result_fetch_all.total_available_results is defined
+      - (result_fetch_all.response | length)
+          == (result_fetch_all.total_available_results | int)
+    fail_msg: "Failed to list all volume group recovery points with fetch_all"
+    success_msg: "Listed all volume group recovery points with fetch_all"
+
+- name: Get volume group recovery point using ext_id when available
+  nutanix.ncp.ntnx_volume_group_recovery_points_info_v2:
+    ext_id: "{{ result.response[0].ext_id }}"
+  register: result_get
+  ignore_errors: true
+  when: result.response is defined and result.response | length > 0
+
+- name: Verify get volume group recovery point using ext_id
+  ansible.builtin.assert:
+    that:
+      - result_get.changed == false
+      - result_get.failed == false
+      - result_get.response is defined
+      - result_get.ext_id is defined
+      - result_get.response.ext_id == result.response[0].ext_id
+    fail_msg: "Failed to get volume group recovery point using ext_id"
+    success_msg: "Got volume group recovery point using ext_id successfully"
+  when: result.response is defined and result.response | length > 0
+
+- name: Get volume group recovery point with invalid ext_id
+  nutanix.ncp.ntnx_volume_group_recovery_points_info_v2:
+    ext_id: "00000000-0000-0000-0000-000000000000"
+  register: result_invalid
+  ignore_errors: true
+
+- name: Verify get volume group recovery point with invalid ext_id
+  ansible.builtin.assert:
+    that:
+      - result_invalid.failed == true
+      - result_invalid.msg is defined
+    fail_msg: "Invalid ext_id test failed to produce error"
+    success_msg: "Invalid ext_id correctly produced error"
+
+- name: List volume group recovery points with invalid filter
+  nutanix.ncp.ntnx_volume_group_recovery_points_info_v2:
+    filter: "invalidField eq 'invalid'"
+  register: result_invalid_filter
+  ignore_errors: true
+
+- name: Verify volume group recovery points with invalid filter
+  ansible.builtin.assert:
+    that:
+      - result_invalid_filter.failed == true
+    fail_msg: "Invalid filter test failed"
+    success_msg: "Invalid filter correctly produced error"

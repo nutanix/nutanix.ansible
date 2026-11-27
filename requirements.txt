@@ -7,7 +7,7 @@ ntnx-microseg-py-client==4.3.1
 ntnx-networking-py-client==4.4.2
 ntnx-prism-py-client==4.4.1
 ntnx-vmm-py-client==17.7.0.27452
-ntnx-volumes-py-client==4.3.1
+ntnx-volumes-py-client==17.7.0.27511
 ntnx-dataprotection-py-client==4.4.1
 ntnx-datapolicies-py-client==4.3.1
 ntnx-lifecycle-py-client==4.3.1
