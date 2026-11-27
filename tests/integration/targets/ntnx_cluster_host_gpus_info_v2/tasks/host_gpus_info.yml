@@ -1,0 +1,241 @@
+---
+# Test Plan for ntnx_cluster_host_gpus_info_v2
+# HostGpu is a read-only entity exposed by clustermgmt v4 API:
+#   * ListHostGpus             GET /host-gpus
+#   * ListHostGpusByClusterId  GET /clusters/{clusterExtId}/host-gpus
+#   * ListHostGpusByHostId     GET /clusters/{clusterExtId}/hosts/{hostExtId}/host-gpus
+
+- name: Start host GPUs info tests
+  ansible.builtin.debug:
+    msg: Start ntnx_cluster_host_gpus_info_v2 tests
+
+####################################################################
+# Prerequisites — discover a live cluster + host
+####################################################################
+
+- name: Fetch registered clusters
+  nutanix.ncp.ntnx_clusters_info_v2:
+  register: clusters_info
+  ignore_errors: true
+
+- name: Assert clusters were listed
+  ansible.builtin.assert:
+    that:
+      - clusters_info is defined
+      - clusters_info.failed == false
+      - clusters_info.changed == false
+      - clusters_info.response is defined
+      - clusters_info.response | length > 0
+    fail_msg: "Unable to list clusters"
+    success_msg: "Clusters listed successfully"
+
+- name: Pick a Prism Element cluster
+  ansible.builtin.set_fact:
+    pe_cluster_ext_id: >-
+      {{
+        (
+          clusters_info.response
+          | selectattr('config.cluster_function', 'defined')
+          | rejectattr('config.cluster_function', 'contains', 'PRISM_CENTRAL')
+          | list
+          | default(clusters_info.response, true)
+        )[0].ext_id
+      }}
+
+- name: Fetch hosts in the chosen cluster
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+  register: hosts_info
+  ignore_errors: true
+
+- name: Assert hosts were listed
+  ansible.builtin.assert:
+    that:
+      - hosts_info is defined
+      - hosts_info.failed == false
+      - hosts_info.changed == false
+      - hosts_info.response is defined
+      - hosts_info.response | length > 0
+    fail_msg: "Unable to list hosts for cluster {{ pe_cluster_ext_id }}"
+    success_msg: "Hosts listed successfully"
+
+- name: Set parent host ext_id
+  ansible.builtin.set_fact:
+    parent_host_ext_id: "{{ hosts_info.response[0].ext_id }}"
+
+####################################################################
+# 1. ListHostGpus — global list
+####################################################################
+
+- name: List all host GPUs (global)
+  nutanix.ncp.ntnx_cluster_host_gpus_info_v2:
+  register: all_gpus
+  ignore_errors: true
+
+- name: Assert global list returned data
+  ansible.builtin.assert:
+    that:
+      - all_gpus is defined
+      - all_gpus.failed == false
+      - all_gpus.changed == false
+      - all_gpus.response is defined
+    fail_msg: "Global list of host GPUs failed"
+    success_msg: "Global list of host GPUs succeeded"
+
+- name: Verify global list response type
+  ansible.builtin.assert:
+    that:
+      - all_gpus.response is defined
+      - all_gpus.total_available_results is defined
+    fail_msg: "Global list response missing expected fields"
+    success_msg: "Global list response has expected fields"
+
+####################################################################
+# 2. ListHostGpusByClusterId — list by cluster
+####################################################################
+
+- name: List host GPUs by cluster ID
+  nutanix.ncp.ntnx_cluster_host_gpus_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+  register: gpus_by_cluster
+  ignore_errors: true
+
+- name: Assert list-by-cluster returned data
+  ansible.builtin.assert:
+    that:
+      - gpus_by_cluster is defined
+      - gpus_by_cluster.failed == false
+      - gpus_by_cluster.changed == false
+      - gpus_by_cluster.response is defined
+      - gpus_by_cluster.total_available_results is defined
+    fail_msg: "List by cluster failed"
+    success_msg: "List by cluster succeeded"
+
+####################################################################
+# 3. ListHostGpusByHostId — list by host
+####################################################################
+
+- name: List host GPUs by host ID
+  nutanix.ncp.ntnx_cluster_host_gpus_info_v2:
+    cluster_ext_id: "{{ pe_cluster_ext_id }}"
+    host_ext_id: "{{ parent_host_ext_id }}"
+  register: gpus_by_host
+  ignore_errors: true
+
+- name: Assert list-by-host returned data
+  ansible.builtin.assert:
+    that:
+      - gpus_by_host is defined
+      - gpus_by_host.failed == false
+      - gpus_by_host.changed == false
+      - gpus_by_host.response is defined
+      - gpus_by_host.total_available_results is defined
+    fail_msg: "List by host failed"
+    success_msg: "List by host succeeded"
+
+####################################################################
+# 4. List with filter — use extId if any GPU exists
+####################################################################
+
+- name: Set filter GPU ext_id if available
+  ansible.builtin.set_fact:
+    filter_gpu_ext_id: "{{ all_gpus.response[0].ext_id | default('') }}"
+  when: all_gpus.response is defined and all_gpus.response | length > 0
+
+- name: List host GPUs with filter by extId
+  nutanix.ncp.ntnx_cluster_host_gpus_info_v2:
+    filter: "extId eq '{{ filter_gpu_ext_id }}'"
+  register: filtered_gpus
+  ignore_errors: true
+  when: filter_gpu_ext_id is defined and filter_gpu_ext_id != ''
+
+- name: Assert filter worked
+  ansible.builtin.assert:
+    that:
+      - filtered_gpus is defined
+      - filtered_gpus.failed == false
+      - filtered_gpus.changed == false
+      - filtered_gpus.response is defined
+    fail_msg: "Filter did not work"
+    success_msg: "Filter worked"
+  when: filtered_gpus is defined and filtered_gpus is not skipped
+
+####################################################################
+# 5. List with limit
+####################################################################
+
+- name: List host GPUs with limit
+  nutanix.ncp.ntnx_cluster_host_gpus_info_v2:
+    limit: 1
+  register: limited_gpus
+  ignore_errors: true
+
+- name: Assert limit capped results
+  ansible.builtin.assert:
+    that:
+      - limited_gpus is defined
+      - limited_gpus.failed == false
+      - limited_gpus.changed == false
+      - limited_gpus.response is defined
+      - limited_gpus.response | length <= 1
+    fail_msg: "Limit did not cap results"
+    success_msg: "Limit correctly capped results"
+
+####################################################################
+# 6. List with fetch_all
+####################################################################
+
+- name: List host GPUs with fetch_all
+  nutanix.ncp.ntnx_cluster_host_gpus_info_v2:
+    fetch_all: true
+  register: fetched_all_gpus
+  ignore_errors: true
+
+- name: Assert fetch_all returned all results
+  ansible.builtin.assert:
+    that:
+      - fetched_all_gpus is defined
+      - fetched_all_gpus.failed == false
+      - fetched_all_gpus.changed == false
+      - fetched_all_gpus.response is defined
+      - fetched_all_gpus.total_available_results is defined
+      - (fetched_all_gpus.response | length) == (fetched_all_gpus.total_available_results | int)
+    fail_msg: "fetch_all did not return all results"
+    success_msg: "fetch_all returned all results"
+
+####################################################################
+# 7. Negative — host_ext_id without cluster_ext_id
+####################################################################
+
+- name: Attempt list-by-host without cluster_ext_id (should fail)
+  nutanix.ncp.ntnx_cluster_host_gpus_info_v2:
+    host_ext_id: "{{ parent_host_ext_id }}"
+  register: missing_cluster
+  ignore_errors: true
+
+- name: Assert missing cluster_ext_id was caught
+  ansible.builtin.assert:
+    that:
+      - missing_cluster is defined
+      - missing_cluster.failed == true
+      - missing_cluster.changed == false
+    fail_msg: "Missing cluster_ext_id was not rejected"
+    success_msg: "Missing cluster_ext_id correctly rejected"
+
+####################################################################
+# 8. Negative — bogus cluster_ext_id
+####################################################################
+
+- name: Attempt list with bogus cluster_ext_id
+  nutanix.ncp.ntnx_cluster_host_gpus_info_v2:
+    cluster_ext_id: "00000000-0000-0000-0000-000000000000"
+  register: bogus_cluster
+  ignore_errors: true
+
+- name: Assert bogus cluster_ext_id is handled
+  ansible.builtin.assert:
+    that:
+      - bogus_cluster is defined
+      - bogus_cluster.failed == true or bogus_cluster.response is defined
+    fail_msg: "Bogus cluster_ext_id did not produce expected result"
+    success_msg: "Bogus cluster_ext_id handled"

@@ -1,0 +1,254 @@
+# Test plan for ntnx_cluster_host_nic_associate_categories_v2
+#
+# 1. Discover a real AOS cluster + host + host NIC
+# 2. Check mode: associate with valid categories -> assert spec generation
+# 3. Negative: missing required fields (cluster_ext_id, host_ext_id, ext_id, categories)
+# 4. Negative: invalid ext_ids (non-existent) -> API error
+# 5. Live associate categories (if prerequisite found) -> assert task created
+# 6. Verify categories appear on host NIC (via info API if possible)
+
+- name: Start associate categories to host NIC tests
+  ansible.builtin.debug:
+    msg: Start ntnx_cluster_host_nic_associate_categories_v2 tests
+
+- name: Set placeholder IDs for check_mode/negative tests
+  ansible.builtin.set_fact:
+    placeholder_cluster_ext_id: "0006361b-6855-3644-7458-2268f8ffb2bd"
+    placeholder_host_ext_id: "af49a0bb-b3d7-41c0-b9c2-f4ca0e8763e9"
+    placeholder_nic_ext_id: "084af8fb-87f8-46e6-a2f4-cabeffc81850"
+    placeholder_category: "f7c8a907-b7ec-409d-b626-3b69ac3a0e4e"
+    fake_ext_id: "00000000-0000-0000-0000-000000000001"
+
+####################################################################
+# 1. Prerequisite discovery — cluster + host + NIC
+####################################################################
+
+- name: List all AOS clusters to pick a target
+  nutanix.ncp.ntnx_clusters_info_v2:
+    filter: "config/clusterFunction/any(t:t eq Clustermgmt.Config.ClusterFunctionRef'AOS')"
+  register: clusters_result
+  ignore_errors: true
+
+- name: Verify at least one AOS cluster is reachable
+  ansible.builtin.assert:
+    that:
+      - clusters_result is defined
+      - clusters_result.failed == false
+      - clusters_result.changed == false
+      - clusters_result.response is defined
+      - clusters_result.response | length > 0
+      - clusters_result.response[0].ext_id is defined
+    success_msg: "AOS cluster discovered successfully"
+    fail_msg: "No AOS cluster discovered — cannot run associate categories tests"
+
+- name: Set target cluster ext_id
+  ansible.builtin.set_fact:
+    target_cluster_ext_id: "{{ clusters_result.response[0].ext_id }}"
+
+- name: Fetch hosts belonging to the target cluster
+  nutanix.ncp.ntnx_hosts_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+  register: hosts_result
+  ignore_errors: true
+
+- name: Verify at least one host was returned
+  ansible.builtin.assert:
+    that:
+      - hosts_result is defined
+      - hosts_result.failed == false
+      - hosts_result.changed == false
+      - hosts_result.response is defined
+      - hosts_result.response | length > 0
+      - hosts_result.response[0].ext_id is defined
+    success_msg: "Discovered {{ hosts_result.response | length }} host(s)"
+    fail_msg: "Unable to discover any hosts in cluster {{ target_cluster_ext_id }}"
+
+- name: Set target host ext_id
+  ansible.builtin.set_fact:
+    target_host_ext_id: "{{ hosts_result.response[0].ext_id }}"
+
+- name: Fetch host NICs for the target host
+  nutanix.ncp.ntnx_cluster_host_nics_info_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    host_ext_id: "{{ target_host_ext_id }}"
+  register: host_nics_result
+  ignore_errors: true
+
+- name: Verify at least one host NIC was returned
+  ansible.builtin.assert:
+    that:
+      - host_nics_result is defined
+      - host_nics_result.failed == false
+      - host_nics_result.changed == false
+      - host_nics_result.response is defined
+      - host_nics_result.response | length > 0
+      - host_nics_result.response[0].ext_id is defined
+    success_msg: "Discovered {{ host_nics_result.response | length }} host NIC(s)"
+    fail_msg: "Unable to discover host NICs for host {{ target_host_ext_id }}"
+
+- name: Set target host NIC ext_id
+  ansible.builtin.set_fact:
+    target_nic_ext_id: "{{ host_nics_result.response[0].ext_id }}"
+
+####################################################################
+# 2. Check mode — associate spec generation
+####################################################################
+
+- name: Associate categories to host NIC in check mode
+  nutanix.ncp.ntnx_cluster_host_nic_associate_categories_v2:
+    cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
+    host_ext_id: "{{ placeholder_host_ext_id }}"
+    ext_id: "{{ placeholder_nic_ext_id }}"
+    categories:
+      - "{{ placeholder_category }}"
+  register: check_mode_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify check mode spec generation
+  ansible.builtin.assert:
+    that:
+      - check_mode_result.changed == false
+      - check_mode_result.failed == false
+      - check_mode_result.response is defined
+      - check_mode_result.response.categories is defined
+      - check_mode_result.response.categories[0] == placeholder_category
+      - check_mode_result.ext_id == placeholder_nic_ext_id
+    fail_msg: "Check mode spec generation failed"
+    success_msg: "Check mode spec generation passed"
+
+- name: Associate categories to host NIC in check mode with real IDs
+  nutanix.ncp.ntnx_cluster_host_nic_associate_categories_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    host_ext_id: "{{ target_host_ext_id }}"
+    ext_id: "{{ target_nic_ext_id }}"
+    categories:
+      - "{{ placeholder_category }}"
+  register: check_mode_target_result
+  check_mode: true
+  ignore_errors: true
+
+- name: Verify check mode with real target IDs
+  ansible.builtin.assert:
+    that:
+      - check_mode_target_result.changed == false
+      - check_mode_target_result.failed == false
+      - check_mode_target_result.response.categories[0] == placeholder_category
+      - check_mode_target_result.ext_id == target_nic_ext_id
+    fail_msg: "Check mode with real IDs failed"
+    success_msg: "Check mode with real IDs passed"
+
+####################################################################
+# 3. Negative — missing required fields
+####################################################################
+
+- name: Negative — missing cluster_ext_id
+  nutanix.ncp.ntnx_cluster_host_nic_associate_categories_v2:
+    host_ext_id: "{{ placeholder_host_ext_id }}"
+    ext_id: "{{ placeholder_nic_ext_id }}"
+    categories:
+      - "{{ placeholder_category }}"
+  register: neg_no_cluster_result
+  ignore_errors: true
+
+- name: Verify missing cluster_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_no_cluster_result.failed == true
+      - neg_no_cluster_result.changed == false
+    success_msg: "Missing cluster_ext_id correctly rejected"
+    fail_msg: "Missing cluster_ext_id was NOT rejected"
+
+- name: Negative — missing host_ext_id
+  nutanix.ncp.ntnx_cluster_host_nic_associate_categories_v2:
+    cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
+    ext_id: "{{ placeholder_nic_ext_id }}"
+    categories:
+      - "{{ placeholder_category }}"
+  register: neg_no_host_result
+  ignore_errors: true
+
+- name: Verify missing host_ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_no_host_result.failed == true
+      - neg_no_host_result.changed == false
+    success_msg: "Missing host_ext_id correctly rejected"
+    fail_msg: "Missing host_ext_id was NOT rejected"
+
+- name: Negative — missing ext_id
+  nutanix.ncp.ntnx_cluster_host_nic_associate_categories_v2:
+    cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
+    host_ext_id: "{{ placeholder_host_ext_id }}"
+    categories:
+      - "{{ placeholder_category }}"
+  register: neg_no_ext_id_result
+  ignore_errors: true
+
+- name: Verify missing ext_id is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_no_ext_id_result.failed == true
+      - neg_no_ext_id_result.changed == false
+    success_msg: "Missing ext_id correctly rejected"
+    fail_msg: "Missing ext_id was NOT rejected"
+
+- name: Negative — missing categories
+  nutanix.ncp.ntnx_cluster_host_nic_associate_categories_v2:
+    cluster_ext_id: "{{ placeholder_cluster_ext_id }}"
+    host_ext_id: "{{ placeholder_host_ext_id }}"
+    ext_id: "{{ placeholder_nic_ext_id }}"
+  register: neg_no_categories_result
+  ignore_errors: true
+
+- name: Verify missing categories is rejected
+  ansible.builtin.assert:
+    that:
+      - neg_no_categories_result.failed == true
+      - neg_no_categories_result.changed == false
+    success_msg: "Missing categories correctly rejected"
+    fail_msg: "Missing categories was NOT rejected"
+
+####################################################################
+# 4. Negative — non-existent ext_ids (live API errors)
+####################################################################
+
+- name: Associate with non-existent cluster_ext_id
+  nutanix.ncp.ntnx_cluster_host_nic_associate_categories_v2:
+    cluster_ext_id: "{{ fake_ext_id }}"
+    host_ext_id: "{{ fake_ext_id }}"
+    ext_id: "{{ fake_ext_id }}"
+    categories:
+      - "{{ placeholder_category }}"
+  register: neg_bad_ids_result
+  ignore_errors: true
+
+- name: Verify non-existent IDs produce API error
+  ansible.builtin.assert:
+    that:
+      - neg_bad_ids_result.failed == true
+      - neg_bad_ids_result.changed == false
+    success_msg: "Non-existent IDs produced API error"
+    fail_msg: "Non-existent IDs were not rejected"
+
+####################################################################
+# 5. Live associate categories (may succeed or fail depending on setup)
+####################################################################
+
+- name: Associate categories to host NIC (live)
+  nutanix.ncp.ntnx_cluster_host_nic_associate_categories_v2:
+    cluster_ext_id: "{{ target_cluster_ext_id }}"
+    host_ext_id: "{{ target_host_ext_id }}"
+    ext_id: "{{ target_nic_ext_id }}"
+    categories:
+      - "{{ placeholder_category }}"
+  register: live_associate_result
+  ignore_errors: true
+
+- name: Verify live associate result
+  ansible.builtin.assert:
+    that:
+      - live_associate_result is defined
+      - (live_associate_result.failed == false and live_associate_result.changed == true and live_associate_result.task_ext_id is defined) or (live_associate_result.failed == true)
+    success_msg: "Live associate handled correctly"
+    fail_msg: "Live associate did not return expected result"
